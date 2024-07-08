@@ -168,7 +168,7 @@ impl<FS: Io> WalRegistry<FS> {
         let (db_size, next_frame_no) = tail
             .with_head(|segment| {
                 let header = segment.header();
-                (header.db_size(), header.next_frame_no())
+                (header.size_after(), header.next_frame_no())
             })
             .unwrap_or((
                 header.db_size.get(),

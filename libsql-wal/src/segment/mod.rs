@@ -34,8 +34,8 @@ bitflags::bitflags! {
 pub struct SegmentHeader {
     pub start_frame_no: U64,
     pub last_commited_frame_no: U64,
-    /// size of the database in pages
-    pub db_size: U32,
+    /// size of the database in pages, after applying the segment.
+    pub size_after: U32,
     /// byte offset of the index. If 0, then the index wasn't written, and must be recovered.
     /// If non-0, the segment is sealed, and must not be written to anymore
     pub index_offset: U64,
@@ -82,8 +82,9 @@ impl SegmentHeader {
         self.last_commited_frame_no.get()
     }
 
-    pub fn db_size(&self) -> u32 {
-        self.db_size.get()
+    /// size fo the db after applying this segment
+    pub fn size_after(&self) -> u32 {
+        self.size_after.get()
     }
 
     fn is_empty(&self) -> bool {

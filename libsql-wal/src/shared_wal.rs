@@ -54,7 +54,7 @@ impl<IO: Io> SharedWal<IO> {
         let current = self.current.load();
         current.inc_reader_count();
         let (max_frame_no, db_size) =
-            current.with_header(|header| (header.last_committed(), header.db_size()));
+            current.with_header(|header| (header.last_committed(), header.size_after()));
         let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
         ReadTransaction {
             id,
