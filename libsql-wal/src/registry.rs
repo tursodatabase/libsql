@@ -18,15 +18,6 @@ use crate::shared_wal::SharedWal;
 use crate::transaction::{Transaction, TxGuard};
 use libsql_sys::name::{NamespaceName, NamespaceResolver};
 
-/// called on every segment on swap.
-pub trait SegmentSwapHandler<F>: Send + Sync + 'static {
-    fn handle_segment_swap(&self, namespace: NamespaceName, log: Arc<SealedSegment<F>>);
-}
-
-// ignore segments
-impl<F> SegmentSwapHandler<F> for () {
-    fn handle_segment_swap(&self, _namespace: NamespaceName, _log: Arc<SealedSegment<F>>) {}
-}
 
 enum Slot<FS: Io> {
     Wal(Arc<SharedWal<FS>>),
@@ -37,53 +28,57 @@ enum Slot<FS: Io> {
 }
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
-pub struct WalRegistry<IO: Io> {
+pub struct WalRegistry<IO: Io, S> {
     fs: IO,
     path: PathBuf,
     shutdown: AtomicBool,
     opened: RwLock<HashMap<NamespaceName, Slot<IO>>>,
-    resolver: Box<dyn NamespaceResolver + Send + Sync + 'static>,
-    swap_handler: Box<dyn SegmentSwapHandler<IO::File>>,
+    storage: S,
 }
 
-impl WalRegistry<StdIO> {
-    pub fn new(
-        path: PathBuf,
-        resolver: impl NamespaceResolver,
-        swap_handler: impl SegmentSwapHandler<<StdIO as Io>::File>,
-    ) -> Result<Self> {
-        Self::new_with_fs(StdIO(()), path, resolver, swap_handler)
+impl<S> WalRegistry<StdIO, S> {
+    pub fn new(path: PathBuf, storage: S) -> Result<Self> {
+        Self::new_with_io(StdIO(()), path, storage)
     }
 }
 
-impl<FS: Io> WalRegistry<FS> {
-    pub fn new_with_fs(
-        fs: FS,
+impl<IO: Io, S> WalRegistry<IO, S> {
+    pub fn new_with_io(
+        io: IO,
         path: PathBuf,
-        resolver: impl NamespaceResolver + Send + Sync + 'static,
-        swap_handler: impl SegmentSwapHandler<FS::File>,
+        storage: S,
     ) -> Result<Self> {
-        fs.create_dir_all(&path)?;
-        Ok(Self {
-            fs,
+        io.create_dir_all(&path)?;
+        let registry = Self {
+            fs: io,
             path,
             opened: Default::default(),
             shutdown: Default::default(),
-            resolver: Box::new(resolver),
-            swap_handler: Box::new(swap_handler),
-        })
+            storage,
+        };
+
+        Ok(registry)
+    }
     }
 
-    #[tracing::instrument(skip(self, db_path))]
-    pub fn open(self: Arc<Self>, db_path: &Path) -> Result<Arc<SharedWal<FS>>> {
+impl<IO, S> WalRegistry<IO, S>
+where
+    IO: Io,
+    S: Storage<Segment = SealedSegment<IO::File>>,
+{
+    #[tracing::instrument(skip(self))]
+    pub fn open(
+        self: Arc<Self>,
+        db_path: &Path,
+        namespace: &NamespaceName,
+    ) -> Result<Arc<SharedWal<IO>>> {
         if self.shutdown.load(Ordering::SeqCst) {
             todo!("open after shutdown");
         }
 
-        let namespace = self.resolver.resolve(db_path);
         loop {
             let mut opened = self.opened.upgradable_read();
-            if let Some(entry) = opened.get(&namespace) {
+            if let Some(entry) = opened.get(namespace) {
                 match entry {
                     Slot::Wal(wal) => return Ok(wal.clone()),
                     Slot::Building(cond) => {
@@ -153,10 +148,8 @@ impl<FS: Io> WalRegistry<FS> {
             if let Some(sealed) =
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
-                let sealed = Arc::new(sealed);
-                self.swap_handler
-                    .handle_segment_swap(namespace.clone(), sealed.clone());
-                tail.push_log(sealed);
+                self.storage.store(&namespace, sealed.clone());
+                tail.push(sealed);
             }
         }
 
