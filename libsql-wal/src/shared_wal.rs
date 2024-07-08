@@ -42,6 +42,8 @@ pub struct SharedWal<IO: Io> {
     pub(crate) registry: Arc<dyn SwapLog<IO>>,
     #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
+    /// max frame_no acknoledged by the durable storage
+    pub(crate) durable_frame_no: AtomicU64,
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
 }
 

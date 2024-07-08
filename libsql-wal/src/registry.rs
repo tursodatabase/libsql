@@ -246,6 +246,8 @@ where
 
         let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
 
+        let durable_frame_no = self.storage.durable_frame_no(&namespace).into();
+
         let shared = Arc::new(SharedWal {
             current,
             wal_lock: Default::default(),
@@ -254,6 +256,7 @@ where
             namespace: namespace.clone(),
             checkpointed_frame_no: header.replication_index.get().into(),
             new_frame_notifier,
+            durable_frame_no,
         });
 
         opened.with_upgraded(|opened| {
