@@ -6,10 +6,43 @@ use libsql_sys::name::NamespaceName;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 
+use crate::io::Io;
+use crate::registry::WalRegistry;
+
 pub(crate) type NotifyCheckpointer = mpsc::Sender<NamespaceName>;
 
-pub trait PerformCheckpoint{
-    fn checkpoint(&self, namespace: &NamespaceName) -> impl Future<Output = crate::error::Result<()>> + Sync + Send;
+type LibsqlCheckpointer<IO, S> = Checkpointer<WalRegistry<IO, S>>;
+
+impl<IO, S> LibsqlCheckpointer<IO, S>
+where
+    IO: Io,
+    S: Sync + Send + 'static
+{
+    pub fn new(
+        registry: WalRegistry<IO, S>,
+        notifier: mpsc::Receiver<NamespaceName>,
+        max_checkpointing_conccurency: usize
+    ) -> Self {
+        Self::new_with_performer(registry, notifier, max_checkpointing_conccurency)
+    }
+}
+
+trait PerformCheckpoint{
+    fn checkpoint(&self, namespace: &NamespaceName) -> impl Future<Output = crate::error::Result<()>> + Send;
+}
+
+impl<IO, S> PerformCheckpoint for WalRegistry<IO, S>
+where IO: Io,
+      S: Sync + Send + 'static
+{
+    fn checkpoint(&self, namespace: &NamespaceName) -> impl Future<Output = crate::error::Result<()>> + Send {
+        let namespace = namespace.clone();
+        async move {
+            let registry = self.get_async(&namespace).await.expect("namespace not openned");
+            registry.checkpoint().await?;
+            Ok(())
+        }
+    }
 }
 
 const CHECKPOINTER_ERROR_THRES: usize = 16;
@@ -35,10 +68,11 @@ pub struct Checkpointer<P> {
     errors: usize,
 }
 
+#[allow(private_bounds)]
 impl<P> Checkpointer<P>
 where 
     P: PerformCheckpoint + Send + Sync + 'static {
-    pub fn new(
+    fn new_with_performer(
         perform_checkpoint: P,
         notifier: mpsc::Receiver<NamespaceName>,
         max_checkpointing_conccurency: usize
@@ -154,7 +188,7 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
         let ns = NamespaceName::from("test");
 
         sender.send(ns.clone()).await.unwrap();
@@ -186,7 +220,7 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
         let ns = NamespaceName::from("test");
 
         sender.send(ns.clone()).await.unwrap();
@@ -217,7 +251,7 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
 
         drop(sender);
 
@@ -243,7 +277,7 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
 
         drop(sender);
 
@@ -277,7 +311,7 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
 
 
         let ns: NamespaceName = "test".into();
@@ -310,7 +344,7 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
 
 
         let ns1: NamespaceName = "test1".into();
@@ -346,7 +380,7 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new(TestPerformCheckoint, receiver, 2);
+        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 2);
 
 
         let ns1: NamespaceName = "test1".into();
