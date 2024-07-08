@@ -279,39 +279,17 @@ impl<IO: Io> SharedWal<IO> {
 
 #[cfg(test)]
 mod test {
-    use std::path::Path;
-
     use crossbeam::atomic::AtomicConsume;
-    use libsql_sys::rusqlite::OpenFlags;
-    use tempfile::tempdir;
 
-    use crate::wal::LibsqlWalManager;
+    use crate::test::{seal_current_segment, TestEnv};
 
     use super::*;
 
-    #[test]
-    fn checkpoint() {
-        let tmp = tempdir().unwrap();
-        let resolver = |path: &Path| {
-            let name = path.file_name().unwrap().to_str().unwrap();
-            NamespaceName::from_string(name.to_string())
-        };
-
-        let registry =
-            Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
-        let wal_manager = LibsqlWalManager::new(registry.clone());
-
-        let db_path = tmp.path().join("test/data");
-        let conn = libsql_sys::Connection::open(
-            db_path.clone(),
-            OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-            wal_manager.clone(),
-            100000,
-            None,
-        )
-        .unwrap();
-
-        let shared = registry.open(&db_path).unwrap();
+    #[tokio::test]
+    async fn checkpoint() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
 
         assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
 
@@ -321,19 +299,14 @@ mod test {
 
         assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
 
-        let mut tx = Transaction::Read(shared.begin_read(666));
-        shared.upgrade(&mut tx).unwrap();
-        {
-            let mut tx = tx.as_write_mut().unwrap().lock();
-            tx.commit();
-            shared.swap_current(&tx).unwrap();
-        }
-        tx.end();
+        seal_current_segment(&shared);
 
-        let frame_no = shared.checkpoint().unwrap().unwrap();
+        shared.durable_frame_no.store(99999, Ordering::Relaxed);
+
+        let frame_no = shared.checkpoint().await.unwrap().unwrap();
         assert_eq!(frame_no, 4);
         assert_eq!(shared.checkpointed_frame_no.load_consume(), 4);
 
-        assert!(shared.checkpoint().unwrap().is_none());
+        assert!(shared.checkpoint().await.unwrap().is_none());
     }
 }
