@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 use std::io::BufWriter;
 use std::mem::size_of;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{
-    atomic::{AtomicBool, AtomicU64, Ordering},
+    atomic::{AtomicU64, Ordering},
     Arc,
 };
 
@@ -17,23 +18,34 @@ use crate::io::file::{BufCopy, FileExt};
 use super::{frame_offset, page_offset, Frame, FrameHeader, SegmentHeader};
 
 /// an immutable, wal segment
+#[derive(Debug)]
 pub struct SealedSegment<F> {
+    inner: Arc<SealedSegmentInner<F>>,
+}
+
+impl<F> Clone for SealedSegment<F> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+pub struct SealedSegmentInner<F> {
     pub read_locks: Arc<AtomicU64>,
     header: SegmentHeader,
     file: Arc<F>,
     index: Map<Vec<u8>>,
     path: PathBuf,
-    checkpointed: AtomicBool,
 }
 
-impl<F> std::fmt::Debug for SealedSegment<F> {
+impl<F> std::fmt::Debug for SealedSegmentInner<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SealedSegment")
             .field("read_locks", &self.read_locks)
             .field("header", &self.header)
             .field("index", &self.index)
             .field("path", &self.path)
-            .field("checkpointed", &self.checkpointed)
             .finish()
     }
 }
@@ -41,12 +53,25 @@ impl<F> std::fmt::Debug for SealedSegment<F> {
 impl<F> SealedSegment<F> {
     pub fn empty(f: F) -> Self {
         Self {
-            read_locks: Default::default(),
-            header: SegmentHeader::new_zeroed(),
-            file: Arc::new(f),
-            index: Map::default(),
-            path: PathBuf::new(),
-            checkpointed: Default::default(),
+            inner: SealedSegmentInner {
+                read_locks: Default::default(),
+                header: SegmentHeader::new_zeroed(),
+                file: Arc::new(f),
+                index: Map::default().map_data(Into::into).unwrap(),
+                path: PathBuf::new(),
+            }
+            .into(),
+        }
+    }
+}
+
+impl<F> Deref for SealedSegment<F> {
+    type Target = SealedSegmentInner<F>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
         }
     }
 }
@@ -76,12 +101,14 @@ impl<F: FileExt> SealedSegment<F> {
         file.read_exact_at(&mut slice, index_offset)?;
         let index = Map::new(slice)?;
         Ok(Some(Self {
-            file,
-            path,
-            read_locks,
-            checkpointed: false.into(),
-            index,
-            header,
+            inner: SealedSegmentInner {
+                file,
+                path,
+                read_locks,
+                index,
+                header,
+            }
+            .into(),
         }))
     }
 
@@ -117,12 +144,14 @@ impl<F: FileExt> SealedSegment<F> {
         let index = Map::new(index_bytes).unwrap();
 
         Ok(SealedSegment {
-            read_locks: Default::default(),
-            header,
-            file,
-            index,
-            path,
-            checkpointed: false.into(),
+            inner: SealedSegmentInner {
+                read_locks: Default::default(),
+                header,
+                file,
+                index,
+                path,
+            }
+            .into(),
         })
     }
 
