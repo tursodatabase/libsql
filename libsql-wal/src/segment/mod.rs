@@ -21,6 +21,7 @@ use crate::error::{Error, Result};
 use crate::io::buf::IoBufMut;
 use crate::io::FileExt;
 
+pub(crate) mod compacted;
 pub mod current;
 pub mod list;
 pub mod sealed;
