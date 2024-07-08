@@ -10,6 +10,7 @@ pub mod shared_wal;
 pub mod storage;
 pub mod transaction;
 pub mod wal;
+pub mod checkpointer;
 
 #[cfg(any(debug_assertions, test))]
 pub mod test {
