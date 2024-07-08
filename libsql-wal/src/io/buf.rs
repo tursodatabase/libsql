@@ -126,6 +126,13 @@ impl<T> ZeroCopyBuf<T> {
         }
     }
 
+    pub fn map_slice<F>(self, f: F) -> MapSlice<T, F>
+    where
+        for<'a> F: Fn(&'a Self) -> &'a [u8] + Unpin + 'static,
+    {
+        MapSlice { inner: self, f }
+    }
+
     #[inline]
     pub fn is_init(&self) -> bool {
         self.init == size_of::<T>()
@@ -146,6 +153,35 @@ impl<T> ZeroCopyBuf<T> {
 
     pub fn deinit(&mut self) {
         self.init = 0;
+    }
+}
+
+pub struct MapSlice<T, F> {
+    inner: ZeroCopyBuf<T>,
+    f: F,
+}
+
+impl<T, F> MapSlice<T, F> {
+    pub(crate) fn into_inner(self) -> ZeroCopyBuf<T> {
+        self.inner
+    }
+}
+
+unsafe impl<T, F> IoBuf for MapSlice<T, F>
+where
+    for<'a> F: Fn(&'a ZeroCopyBuf<T>) -> &'a [u8] + Unpin + 'static,
+    T: Unpin + 'static + AsBytes,
+{
+    fn stable_ptr(&self) -> *const u8 {
+        (self.f)(&self.inner).as_ptr()
+    }
+
+    fn bytes_init(&self) -> usize {
+        (self.f)(&self.inner).len()
+    }
+
+    fn bytes_total(&self) -> usize {
+        (self.f)(&self.inner).len()
     }
 }
 
