@@ -23,12 +23,7 @@ pub mod rpc {
 // What does (not) work:
 // - there are no read txn locks nor upgrades
 // - no lock stealing
-// - write set is kept in mem
-// - txns don't use max_frame_no yet
 // - no savepoints, yet
-// - no multi tenancy, uses `default` namespace
-// - txn can read new frames after it started (since there are no read locks)
-// - requires huge memory as it assumes all the txn data fits in the memory
 
 #[derive(Clone, Default)]
 pub struct DurableWalConfig {
