@@ -42,6 +42,7 @@ use libsql_sys::wal::either::Either as EitherWAL;
 use libsql_sys::wal::either::Either3 as EitherWAL;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
+use libsql_wal::storage::NoStorage;
 use libsql_wal::wal::LibsqlWalManager;
 use namespace::meta_store::MetaStoreHandle;
 use namespace::{NamespaceConfig, NamespaceName};
@@ -702,9 +703,9 @@ where
 
         match self.use_custom_wal {
             Some(CustomWAL::LibsqlWal) => {
-                let registry = Arc::new(WalRegistry::new(wal_path, namespace_resolver, ())?);
+                let registry = Arc::new(WalRegistry::new(wal_path, NoStorage)?);
 
-                let wal = LibsqlWalManager::new(registry.clone());
+                let wal = LibsqlWalManager::new(registry.clone(), Arc::new(namespace_resolver));
                 let shutdown_notify = self.shutdown.clone();
                 let shutdown_fut = Box::pin(async move {
                     shutdown_notify.notified().await;
