@@ -16,29 +16,39 @@ type LibsqlCheckpointer<IO, S> = Checkpointer<WalRegistry<IO, S>>;
 impl<IO, S> LibsqlCheckpointer<IO, S>
 where
     IO: Io,
-    S: Sync + Send + 'static
+    S: Sync + Send + 'static,
 {
     pub fn new(
         registry: WalRegistry<IO, S>,
         notifier: mpsc::Receiver<NamespaceName>,
-        max_checkpointing_conccurency: usize
+        max_checkpointing_conccurency: usize,
     ) -> Self {
         Self::new_with_performer(registry, notifier, max_checkpointing_conccurency)
     }
 }
 
-trait PerformCheckpoint{
-    fn checkpoint(&self, namespace: &NamespaceName) -> impl Future<Output = crate::error::Result<()>> + Send;
+trait PerformCheckpoint {
+    fn checkpoint(
+        &self,
+        namespace: &NamespaceName,
+    ) -> impl Future<Output = crate::error::Result<()>> + Send;
 }
 
 impl<IO, S> PerformCheckpoint for WalRegistry<IO, S>
-where IO: Io,
-      S: Sync + Send + 'static
+where
+    IO: Io,
+    S: Sync + Send + 'static,
 {
-    fn checkpoint(&self, namespace: &NamespaceName) -> impl Future<Output = crate::error::Result<()>> + Send {
+    fn checkpoint(
+        &self,
+        namespace: &NamespaceName,
+    ) -> impl Future<Output = crate::error::Result<()>> + Send {
         let namespace = namespace.clone();
         async move {
-            let registry = self.get_async(&namespace).await.expect("namespace not openned");
+            let registry = self
+                .get_async(&namespace)
+                .await
+                .expect("namespace not openned");
             registry.checkpoint().await?;
             Ok(())
         }
@@ -70,13 +80,14 @@ pub struct Checkpointer<P> {
 
 #[allow(private_bounds)]
 impl<P> Checkpointer<P>
-where 
-    P: PerformCheckpoint + Send + Sync + 'static {
+where
+    P: PerformCheckpoint + Send + Sync + 'static,
+{
     fn new_with_performer(
         perform_checkpoint: P,
         notifier: mpsc::Receiver<NamespaceName>,
-        max_checkpointing_conccurency: usize
-        ) -> Self {
+        max_checkpointing_conccurency: usize,
+    ) -> Self {
         Self {
             perform_checkpoint: Arc::new(perform_checkpoint),
             scheduled: Default::default(),
@@ -90,13 +101,12 @@ where
         }
     }
 
-
     #[tracing::instrument(skip(self))]
     pub async fn run(mut self) {
         loop {
             if self.should_exit() {
                 tracing::info!("checkpointer exited cleanly.");
-                return
+                return;
             }
 
             if self.errors > CHECKPOINTER_ERROR_THRES {
@@ -108,7 +118,10 @@ where
     }
 
     fn should_exit(&self) -> bool {
-        self.shutting_down && self.scheduled.is_empty() && self.checkpointing.is_empty() && self.join_set.is_empty()
+        self.shutting_down
+            && self.scheduled.is_empty()
+            && self.checkpointing.is_empty()
+            && self.join_set.is_empty()
     }
 
     async fn step(&mut self) {
@@ -145,17 +158,17 @@ where
         if n_available > 0 {
             for namespace in self
                 .scheduled
-                    .difference(&self.checkpointing)
-                    .take(n_available)
-                    .cloned()
-                    {
-                        self.processing.push(namespace.clone());
-                        let perform_checkpoint = self.perform_checkpoint.clone();
-                        self.join_set.spawn(async move {
-                            let ret = perform_checkpoint.checkpoint(&namespace).await;
-                            (namespace, ret)
-                        });
-                    }
+                .difference(&self.checkpointing)
+                .take(n_available)
+                .cloned()
+            {
+                self.processing.push(namespace.clone());
+                let perform_checkpoint = self.perform_checkpoint.clone();
+                self.join_set.spawn(async move {
+                    let ret = perform_checkpoint.checkpoint(&namespace).await;
+                    (namespace, ret)
+                });
+            }
 
             for namespace in self.processing.drain(..) {
                 self.scheduled.remove(&namespace);
@@ -281,7 +294,6 @@ mod test {
 
         drop(sender);
 
-
         checkpointer.step().await;
 
         let ns: NamespaceName = "test".into();
@@ -312,7 +324,6 @@ mod test {
 
         let (sender, receiver) = mpsc::channel(8);
         let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
-
 
         let ns: NamespaceName = "test".into();
 
@@ -345,7 +356,6 @@ mod test {
 
         let (sender, receiver) = mpsc::channel(8);
         let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
-
 
         let ns1: NamespaceName = "test1".into();
         let ns2: NamespaceName = "test2".into();
@@ -381,7 +391,6 @@ mod test {
 
         let (sender, receiver) = mpsc::channel(8);
         let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 2);
-
 
         let ns1: NamespaceName = "test1".into();
         let ns2: NamespaceName = "test2".into();

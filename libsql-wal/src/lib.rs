@@ -1,5 +1,6 @@
 #![allow(async_fn_in_trait, dead_code)]
 
+pub mod checkpointer;
 pub mod error;
 pub mod io;
 pub mod registry;
@@ -9,7 +10,6 @@ pub mod shared_wal;
 pub mod storage;
 pub mod transaction;
 pub mod wal;
-pub mod checkpointer;
 
 #[cfg(any(debug_assertions, test))]
 pub mod test {
