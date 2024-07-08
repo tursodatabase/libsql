@@ -251,16 +251,20 @@ impl<IO: Io> SharedWal<IO> {
         Ok(())
     }
 
-    pub fn checkpoint(&self) -> Result<Option<u64>> {
-        let current = self.current.load();
-        match current.tail().checkpoint(&self.db_file)? {
-            Some(frame_no) => {
-                self.checkpointed_frame_no
-                    .store(frame_no, Ordering::Relaxed);
-                Ok(Some(frame_no))
-            }
-            None => Ok(None),
+    pub async fn checkpoint(&self) -> Result<Option<u64>> {
+        let durable_frame_no = self.durable_frame_no.load(Ordering::SeqCst);
+        let checkpointed_frame_no = self
+            .current
+            .load()
+            .tail()
+            .checkpoint(&self.db_file, durable_frame_no)
+            .await?;
+        if let Some(checkpointed_frame_no) = checkpointed_frame_no {
+            self.checkpointed_frame_no
+                .store(checkpointed_frame_no, Ordering::SeqCst);
         }
+
+        Ok(checkpointed_frame_no)
     }
 
     pub fn last_committed_frame_no(&self) -> u64 {

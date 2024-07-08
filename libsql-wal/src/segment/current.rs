@@ -594,7 +594,8 @@ mod test {
         }
 
         seal_current_segment(&shared);
-        shared.checkpoint().unwrap();
+        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        shared.checkpoint().await.unwrap();
 
         let mut orig = Vec::new();
         shared

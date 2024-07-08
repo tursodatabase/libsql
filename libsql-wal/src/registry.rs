@@ -287,7 +287,6 @@ where
             // the next startup doesn't find an unsealed segment.
             shared.current.load().seal()?;
             drop(tx);
-            shared.current.load().tail().checkpoint(&shared.db_file)?;
         }
 
         Ok(())
