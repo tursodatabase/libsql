@@ -5086,6 +5086,9 @@ void sqlite3QuoteValue(StrAccum*,sqlite3_value*);
 void sqlite3RegisterBuiltinFunctions(void);
 void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterJsonFunctions(void);
+#ifndef SQLITE_OMIT_VECTOR
+void sqlite3RegisterVectorFunctions(void);
+#endif
 void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3*);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON)
   int sqlite3JsonTableFunctions(sqlite3*);
@@ -5316,7 +5319,7 @@ void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*);
-void libsqlAlterAlterColumn(Parse*, SrcList*, Token*, Token*);
+void libsqlAlterAlterColumn(Parse*, SrcList*, Token*, Token*, int);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);

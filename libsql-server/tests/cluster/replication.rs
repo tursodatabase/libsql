@@ -237,3 +237,97 @@ fn replica_lazy_creation() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn replica_interactive_transaction() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    let prim_tmp = tempfile::tempdir().unwrap();
+
+    sim.host("primary", {
+        let prim_path = prim_tmp.path().to_path_buf();
+        move || {
+            let prim_path = prim_path.clone();
+            async move {
+                let primary = TestServer {
+                    path: prim_path.into(),
+                    db_config: DbConfig {
+                        max_log_size: 1,
+                        ..Default::default()
+                    },
+                    rpc_server_config: Some(RpcServerConfig {
+                        acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 5050)).await.unwrap(),
+                        tls_config: None,
+                    }),
+                    ..Default::default()
+                };
+
+                primary.start_sim(8080).await.unwrap();
+
+                Ok(())
+            }
+        }
+    });
+
+    sim.host("replica", {
+        move || async move {
+            let tmp = tempfile::tempdir().unwrap();
+            let replica = TestServer {
+                path: tmp.path().to_path_buf().into(),
+                db_config: DbConfig {
+                    max_log_size: 1,
+                    ..Default::default()
+                },
+                rpc_client_config: Some(RpcClientConfig {
+                    remote_url: "http://primary:5050".into(),
+                    tls_config: None,
+                    connector: TurmoilConnector,
+                }),
+                ..Default::default()
+            };
+
+            replica.start_sim(8080).await.unwrap();
+
+            Ok(())
+        }
+    });
+
+    sim.client("client", async move {
+        let db = Database::open_remote_with_connector("http://replica:8080", "", TurmoilConnector)
+            .unwrap();
+        let conn = db.connect().unwrap();
+
+        let tx = conn
+            .transaction_with_behavior(libsql::TransactionBehavior::Immediate)
+            .await
+            .unwrap();
+
+        tx.execute("create table test (x)", ()).await.unwrap();
+        tx.execute("insert into test values (12)", ())
+            .await
+            .unwrap();
+        tx.execute("insert into test values (12)", ())
+            .await
+            .unwrap();
+        tx.commit().await.unwrap();
+
+        let count = conn
+            .query("select count(0) from test", ())
+            .await
+            .unwrap()
+            .next()
+            .await
+            .unwrap()
+            .unwrap()
+            .get::<u32>(0)
+            .unwrap();
+
+        assert_eq!(count, 2);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

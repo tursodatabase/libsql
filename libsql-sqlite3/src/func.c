@@ -2869,6 +2869,9 @@ void sqlite3RegisterBuiltinFunctions(void){
   sqlite3WindowFunctions();
   sqlite3RegisterDateTimeFunctions();
   sqlite3RegisterJsonFunctions();
+#ifndef SQLITE_OMIT_VECTOR
+  sqlite3RegisterVectorFunctions();
+#endif
   sqlite3InsertBuiltinFuncs(aBuiltinFunc, ArraySize(aBuiltinFunc));
 
 #if 0  /* Enable to print out how the built-in functions are hashed */

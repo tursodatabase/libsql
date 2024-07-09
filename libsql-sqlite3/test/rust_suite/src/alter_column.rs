@@ -184,3 +184,25 @@ fn test_update_view_forbidden() {
         .execute("ALTER TABLE v ALTER COLUMN id TO id", ())
         .is_err());
 }
+
+#[test]
+fn test_comment_in_the_end() {
+    let conn = Connection::open_in_memory().unwrap();
+
+    conn.execute("CREATE TABLE t(id)", ()).unwrap();
+    conn.execute(
+        "ALTER TABLE t ALTER COLUMN id TO id CHECK(id < 5); -- explanation for alter command ",
+        (),
+    )
+    .unwrap();
+}
+
+#[test]
+fn test_table_with_index() {
+    let conn = Connection::open_in_memory().unwrap();
+
+    conn.execute("CREATE TABLE t(id)", ()).unwrap();
+    conn.execute("CREATE INDEX i ON t(id)", ()).unwrap();
+    conn.execute("ALTER TABLE t ALTER COLUMN id TO id TEXT", ())
+        .unwrap();
+}

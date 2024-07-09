@@ -1,13 +1,15 @@
-use std::mem::offset_of;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use arc_swap::ArcSwapOption;
+use fst::raw::IndexedValue;
 use fst::{map::OpBuilder, Streamer};
-use libsql_sys::ffi::Sqlite3DbHeader;
-use zerocopy::{AsBytes, FromZeroes};
+use roaring::RoaringBitmap;
+use tokio_stream::Stream;
+use zerocopy::FromZeroes;
 
 use crate::error::Result;
+use crate::io::buf::ZeroCopyBuf;
 use crate::io::file::FileExt;
 use crate::segment::{sealed::SealedSegment, Frame};
 
@@ -134,13 +136,6 @@ impl<F> SegmentList<F> {
             db_file.write_all_at(&buf.data(), (page_no as u64 - 1) * 4096)?;
         }
 
-        let last_replication_index =
-            zerocopy::byteorder::big_endian::U64::new(last_replication_index);
-        db_file.write_all_at(
-            last_replication_index.as_bytes(),
-            offset_of!(Sqlite3DbHeader, replication_index) as _,
-        )?;
-
         db_file.sync_all()?;
 
         match last_untaken {
@@ -167,10 +162,298 @@ impl<F> SegmentList<F> {
 
         self.checkpointing.store(false, Ordering::SeqCst);
 
-        Ok(Some(last_replication_index.get()))
+        Ok(Some(last_replication_index))
     }
 
     pub(crate) fn len(&self) -> usize {
         self.len.load(Ordering::Relaxed)
+    }
+
+    /// returnsstream pages from the sealed segment list, and what's the lowest replication index
+    /// that was covered. If the returned index is less than start frame_no, the missing frames
+    /// must be read somewhere else.
+    pub async fn stream_pages_from<'a>(
+        &self,
+        start_frame_no: u64,
+        seen: &'a mut RoaringBitmap,
+    ) -> (impl Stream<Item = crate::error::Result<Frame>> + 'a, u64)
+    where
+        F: FileExt,
+    {
+        // collect all the segments we need to read from to be up to date.
+        // We keep a reference to them so that they are not discarded while we read them.
+        let mut segments = Vec::new();
+        let mut current = self.head.load();
+        while current.is_some() {
+            let current_ref = current.as_ref().unwrap();
+            if current_ref.segment.header().last_committed() >= start_frame_no {
+                segments.push(current_ref.segment.clone());
+                current = current_ref.next.load();
+            } else {
+                break;
+            }
+        }
+
+        let new_start_frame_no = segments
+            .last()
+            .map(|s| s.header().start_frame_no.get())
+            .unwrap_or(start_frame_no)
+            .max(start_frame_no);
+
+        let stream = async_stream::try_stream! {
+            let mut union = fst::map::OpBuilder::from_iter(segments.iter().map(|s| s.index())).union();
+            while let Some((key_bytes, indexes)) = union.next() {
+                let page_no = u32::from_be_bytes(key_bytes.try_into().unwrap());
+                // we already have a more recent version of this page.
+                if seen.contains(page_no) {
+                    continue;
+                }
+                let IndexedValue { index: segment_offset, value: frame_offset } = indexes.iter().min_by_key(|i| i.index).unwrap();
+                let segment = &segments[*segment_offset];
+
+                // we can ignore any frame with a replication index less than start_frame_no
+                if segment.header().start_frame_no.get() + frame_offset < start_frame_no {
+                    continue
+                }
+
+                let buf = ZeroCopyBuf::<Frame>::new_uninit();
+                let (buf, ret) = segment.read_frame_offset_async(*frame_offset as u32, buf).await;
+                ret?;
+                let mut frame = buf.into_inner();
+                frame.header_mut().size_after = 0.into();
+                seen.insert(page_no);
+                yield frame;
+            }
+        };
+
+        (stream, new_start_frame_no)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::io::{Read, Seek, Write};
+    use tempfile::{tempfile, NamedTempFile};
+    use tokio_stream::StreamExt as _;
+
+    use crate::test::{seal_current_segment, TestEnv};
+
+    use super::*;
+
+    #[tokio::test]
+    async fn stream_pages() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16));", ())
+            .unwrap();
+        conn.execute("CREATE INDEX i1 ON t1(b);", ()).unwrap();
+
+        for _ in 0..100 {
+            for _ in 0..10 {
+                conn.execute(
+                    "REPLACE INTO t1 VALUES(abs(random() % 500), randomblob(16));",
+                    (),
+                )
+                .unwrap();
+            }
+            seal_current_segment(&shared);
+        }
+
+        seal_current_segment(&shared);
+
+        let current = shared.current.load();
+        let segment_list = current.tail();
+        let mut seen = RoaringBitmap::new();
+        let (stream, _) = segment_list.stream_pages_from(0, &mut seen).await;
+        tokio::pin!(stream);
+
+        let mut file = NamedTempFile::new().unwrap();
+        let mut tx = shared.begin_read(999999).into();
+        while let Some(frame) = stream.next().await {
+            let frame = frame.unwrap();
+            let mut buffer = [0; 4096];
+            shared
+                .read_page(&mut tx, frame.header.page_no(), &mut buffer)
+                .unwrap();
+            assert_eq!(buffer, frame.data());
+            file.write_all(frame.data()).unwrap();
+        }
+
+        drop(tx);
+
+        shared.checkpoint().unwrap();
+        file.seek(std::io::SeekFrom::Start(0)).unwrap();
+        let mut copy_ytes = Vec::new();
+        file.read_to_end(&mut copy_ytes).unwrap();
+
+        let mut orig_bytes = Vec::new();
+        shared
+            .db_file
+            .try_clone()
+            .unwrap()
+            .read_to_end(&mut orig_bytes)
+            .unwrap();
+
+        assert_eq!(orig_bytes, copy_ytes);
+    }
+
+    #[tokio::test]
+    async fn stream_pages_skip_before_start_fno() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("CREATE TABLE test(x);", ()).unwrap();
+
+        for _ in 0..10 {
+            conn.execute("INSERT INTO test VALUES(42)", ()).unwrap();
+        }
+
+        seal_current_segment(&shared);
+
+        let current = shared.current.load();
+        let segment_list = current.tail();
+        let mut seen = RoaringBitmap::new();
+        let (stream, replicated_until) = segment_list.stream_pages_from(10, &mut seen).await;
+        tokio::pin!(stream);
+
+        assert_eq!(replicated_until, 10);
+
+        while let Some(frame) = stream.next().await {
+            let frame = frame.unwrap();
+            assert!(frame.header().frame_no() >= 10);
+        }
+    }
+
+    #[tokio::test]
+    async fn stream_pages_ignore_already_seen_pages() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("CREATE TABLE test(x);", ()).unwrap();
+
+        for _ in 0..10 {
+            conn.execute("INSERT INTO test VALUES(42)", ()).unwrap();
+        }
+
+        seal_current_segment(&shared);
+
+        let current = shared.current.load();
+        let segment_list = current.tail();
+        let mut seen = RoaringBitmap::from_sorted_iter([1]).unwrap();
+        let (stream, replicated_until) = segment_list.stream_pages_from(1, &mut seen).await;
+        tokio::pin!(stream);
+
+        assert_eq!(replicated_until, 1);
+
+        while let Some(frame) = stream.next().await {
+            let frame = frame.unwrap();
+            assert_ne!(!frame.header().page_no(), 1);
+        }
+    }
+
+    #[tokio::test]
+    async fn stream_pages_resume_replication() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("CREATE TABLE test(x);", ()).unwrap();
+
+        for _ in 0..10 {
+            conn.execute("INSERT INTO test VALUES(42)", ()).unwrap();
+        }
+
+        seal_current_segment(&shared);
+
+        let current = shared.current.load();
+        let segment_list = current.tail();
+        let mut seen = RoaringBitmap::new();
+        let (stream, replicated_until) = segment_list.stream_pages_from(1, &mut seen).await;
+        tokio::pin!(stream);
+
+        assert_eq!(replicated_until, 1);
+
+        let mut tmp = tempfile().unwrap();
+
+        let mut last_offset = 0;
+        while let Some(frame) = stream.next().await {
+            let frame = frame.unwrap();
+            let offset = (frame.header().page_no() - 1) * 4096;
+            tmp.write_all_at(frame.data(), offset as u64).unwrap();
+            last_offset = last_offset.max(frame.header().frame_no());
+        }
+
+        for _ in 0..10 {
+            conn.execute("INSERT INTO test VALUES(42)", ()).unwrap();
+        }
+
+        seal_current_segment(&shared);
+
+        let mut seen = RoaringBitmap::new();
+        let (stream, replicated_until) =
+            segment_list.stream_pages_from(last_offset, &mut seen).await;
+        tokio::pin!(stream);
+
+        assert_eq!(replicated_until, last_offset);
+
+        while let Some(frame) = stream.next().await {
+            let frame = frame.unwrap();
+            let offset = (frame.header().page_no() - 1) * 4096;
+            tmp.write_all_at(frame.data(), offset as u64).unwrap();
+        }
+
+        shared.checkpoint().unwrap();
+        tmp.seek(std::io::SeekFrom::Start(0)).unwrap();
+        let mut copy_bytes = Vec::new();
+        tmp.read_to_end(&mut copy_bytes).unwrap();
+
+        let mut orig_bytes = Vec::new();
+        shared
+            .db_file
+            .try_clone()
+            .unwrap()
+            .read_to_end(&mut orig_bytes)
+            .unwrap();
+
+        assert_eq!(copy_bytes, orig_bytes);
+    }
+
+    #[tokio::test]
+    async fn stream_start_frame_no_before_sealed_segments() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("CREATE TABLE test(x);", ()).unwrap();
+
+        for _ in 0..10 {
+            conn.execute("INSERT INTO test VALUES(42)", ()).unwrap();
+        }
+
+        seal_current_segment(&shared);
+        shared.checkpoint().unwrap();
+
+        for _ in 0..10 {
+            conn.execute("INSERT INTO test VALUES(42)", ()).unwrap();
+        }
+        seal_current_segment(&shared);
+
+        let current = shared.current.load();
+        let segment_list = current.tail();
+        let mut seen = RoaringBitmap::new();
+        let (stream, replicated_from) = segment_list.stream_pages_from(0, &mut seen).await;
+        tokio::pin!(stream);
+
+        let mut count = 0;
+        while let Some(_) = stream.next().await {
+            count += 1;
+        }
+
+        assert_eq!(count, 1);
+        assert_eq!(replicated_from, 13);
     }
 }

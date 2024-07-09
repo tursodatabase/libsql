@@ -37,13 +37,13 @@ enum Slot<FS: Io> {
 }
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
-pub struct WalRegistry<FS: Io> {
-    fs: FS,
+pub struct WalRegistry<IO: Io> {
+    fs: IO,
     path: PathBuf,
     shutdown: AtomicBool,
-    opened: RwLock<HashMap<NamespaceName, Slot<FS>>>,
+    opened: RwLock<HashMap<NamespaceName, Slot<IO>>>,
     resolver: Box<dyn NamespaceResolver + Send + Sync + 'static>,
-    swap_handler: Box<dyn SegmentSwapHandler<FS::File>>,
+    swap_handler: Box<dyn SegmentSwapHandler<IO::File>>,
 }
 
 impl WalRegistry<StdIO> {

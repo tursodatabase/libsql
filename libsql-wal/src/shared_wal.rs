@@ -157,7 +157,7 @@ impl<IO: Io> SharedWal<IO> {
     }
 
     #[tracing::instrument(skip(self, tx, buffer))]
-    pub fn read_frame(
+    pub fn read_page(
         &self,
         tx: &mut Transaction<IO::File>,
         page_no: u32,
@@ -241,7 +241,7 @@ impl<IO: Io> SharedWal<IO> {
     }
 
     /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
-    fn swap_current(&self, tx: &TxGuard<IO::File>) -> Result<()> {
+    pub(crate) fn swap_current(&self, tx: &TxGuard<IO::File>) -> Result<()> {
         self.registry.swap_current(self, tx)?;
         Ok(())
     }

@@ -13,6 +13,12 @@ pub enum Transaction<F> {
     Read(ReadTransaction<F>),
 }
 
+impl<T> From<ReadTransaction<T>> for Transaction<T> {
+    fn from(value: ReadTransaction<T>) -> Self {
+        Self::Read(value)
+    }
+}
+
 impl<F> Transaction<F> {
     pub fn as_write_mut(&mut self) -> Option<&mut WriteTransaction<F>> {
         if let Self::Write(ref mut v) = self {
