@@ -199,7 +199,10 @@ impl Wal for DurableWal {
         let remote_frame_no = tokio::task::block_in_place(|| rt.block_on(self.frames_count()));
         let local_frame_no = self.local_cache.get_max_frame_num().unwrap();
         if local_frame_no < remote_frame_no {
-            warn!("cache is lagging behind the remote!")
+            warn!(
+                "cache (max_frame_num = {:?}) is lagging behind the remote(max_frame_num = {:?})!",
+                local_frame_no, remote_frame_no
+            )
             // TODO: replicate data from source
         }
         self.max_frame_no = local_frame_no;

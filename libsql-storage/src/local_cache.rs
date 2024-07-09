@@ -42,7 +42,7 @@ impl LocalCache {
             [],
         )?;
         self.conn.execute(
-            "CREATE INDEX idx_page_no_frame_no ON frames (page_no, frame_no)",
+            "CREATE INDEX IF NOT EXISTS idx_page_no_frame_no ON frames (page_no, frame_no)",
             [],
         )?;
 
@@ -97,11 +97,11 @@ impl LocalCache {
     pub fn get_max_frame_num(&self) -> Result<u64> {
         match self
             .conn
-            .query_row("select MAX(frame_no) from frames", params![], |row| {
-                row.get(0)
+            .query_row("SELECT MAX(frame_no) from frames", (), |row| {
+                row.get::<_, Option<u64>>(0)
             }) {
-            Ok(frame_no) => Ok(frame_no),
-            Err(Error::QueryReturnedNoRows) => Ok(0),
+            Ok(Some(frame_no)) => Ok(frame_no),
+            Ok(None) | Err(Error::QueryReturnedNoRows) => Ok(0),
             Err(e) => Err(e),
         }
     }
