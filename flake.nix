@@ -25,6 +25,7 @@
               cmake
               gnumake
               clang
+              rustPlatform.bindgenHook
             ];
             buildInputs = with pkgs; [
               icu.dev
