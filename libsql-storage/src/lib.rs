@@ -235,14 +235,6 @@ impl Wal for DurableWal {
         if self.max_frame_no == 0 {
             return Ok(None);
         }
-        let rt = tokio::runtime::Handle::current();
-        // TODO: find_frame should account for `max_frame_no` of this txn
-        let frame_no =
-            tokio::task::block_in_place(|| rt.block_on(self.find_frame_by_page_no(page_no)))
-                .unwrap();
-        if frame_no.is_none() {
-            return Ok(None);
-        }
         return Ok(Some(page_no));
     }
 
