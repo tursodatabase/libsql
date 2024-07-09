@@ -64,3 +64,6 @@ libsql
 /libsql.wasm
 zig-out/
 .zig-cache
+testdir*/
+testrunner.db
+testrunner.log

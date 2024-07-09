@@ -3,6 +3,7 @@
 .idea/
 .direnv/
 *.sqld
+tags
 
 libsql-server/testrollbackrestore/**
 libsql-server/testbackuprestore/**
