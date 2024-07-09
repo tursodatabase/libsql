@@ -499,9 +499,9 @@ impl Connection for WriteProxyConnection<RpcStream> {
     async fn is_autocommit(&self) -> Result<bool> {
         let state = self.state.lock().await;
         Ok(match *state {
-                    TxnStatus::Txn => false,
-                    TxnStatus::Init | TxnStatus::Invalid => true,
-                })
+            TxnStatus::Txn => false,
+            TxnStatus::Init | TxnStatus::Invalid => true,
+        })
     }
 
     async fn checkpoint(&self) -> Result<()> {

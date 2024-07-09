@@ -321,7 +321,8 @@ fn replica_interactive_transaction() {
             .await
             .unwrap()
             .unwrap()
-            .get::<u32>(0).unwrap();
+            .get::<u32>(0)
+            .unwrap();
 
         assert_eq!(count, 2);
 
