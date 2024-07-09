@@ -10,6 +10,48 @@ const BUNDLED_DIR: &str = "bundled";
 const SQLITE_DIR: &str = "../libsql-sqlite3";
 
 fn main() {
+    if cfg!(feature = "zig-build") && !cfg!(feature = "multiple-ciphers") {
+        println!("cargo:rerun-if-changed=../libsql-sqlite3/");
+
+        let out_dir_str = env::var("OUT_DIR").unwrap();
+        let out_dir = Path::new(out_dir_str.as_str());
+
+        Command::new("zig")
+            .arg("build")
+            .args([
+                "--build-file",
+                PathBuf::from("../libsql-sqlite3/build.zig")
+                    .canonicalize()
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+            ])
+            .args([
+                "--cache-dir",
+                out_dir.join(".zig-cache").to_str().unwrap().as_ref(),
+            ])
+            .args(["--prefix", out_dir.to_str().unwrap().as_ref()])
+            .spawn()
+            .unwrap();
+
+        bindings::write_to_out_dir(
+            HeaderLocation::FromPath(
+                out_dir
+                    .join("include/sqlite3.h")
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            ),
+            out_dir.join("bindgen.rs").as_path(),
+        );
+
+        println!("cargo:rerun-if-changed=../libsql-sqlite3/");
+        println!("cargo:rustc-link-search={}", out_dir.join("lib/").to_str().unwrap());
+        println!("cargo:rustc-link-lib=static=sqlite3");
+
+        return;
+    }
+
     let target = env::var("TARGET").unwrap();
     let host = env::var("HOST").unwrap();
 
