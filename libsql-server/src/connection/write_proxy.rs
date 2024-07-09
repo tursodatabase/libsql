@@ -370,27 +370,30 @@ where
         program: Program,
         builder: B,
     ) -> crate::Result<(B, TxnStatus, Option<FrameNo>)> {
-        let mut txn_status = TxnStatus::Invalid;
+        let txn_status = Arc::new(parking_lot::Mutex::new(TxnStatus::Invalid));
         let mut new_frame_no = None;
         let builder_config = self.builder_config.clone();
-        let cb = move |response: exec_resp::Response, builder: &mut B| match response {
-            exec_resp::Response::ProgramResp(resp) => {
-                crate::rpc::streaming_exec::apply_program_resp_to_builder(
-                    &builder_config,
-                    builder,
-                    resp,
-                    |last_frame_no, is_autocommit| {
-                        txn_status = if is_autocommit {
-                            TxnStatus::Init
-                        } else {
-                            TxnStatus::Txn
-                        };
-                        new_frame_no = last_frame_no;
-                    },
-                )
+        let cb = {
+            let txn_status = txn_status.clone();
+            move |response: exec_resp::Response, builder: &mut B| match response {
+                exec_resp::Response::ProgramResp(resp) => {
+                    crate::rpc::streaming_exec::apply_program_resp_to_builder(
+                        &builder_config,
+                        builder,
+                        resp,
+                        |last_frame_no, is_autocommit| {
+                            *txn_status.lock() = if is_autocommit {
+                                TxnStatus::Init
+                            } else {
+                                TxnStatus::Txn
+                            };
+                            new_frame_no = last_frame_no;
+                        },
+                    )
+                }
+                exec_resp::Response::DescribeResp(_) => Err(Error::PrimaryStreamMisuse),
+                exec_resp::Response::Error(e) => Err(Error::RpcQueryError(e)),
             }
-            exec_resp::Response::DescribeResp(_) => Err(Error::PrimaryStreamMisuse),
-            exec_resp::Response::Error(e) => Err(Error::RpcQueryError(e)),
         };
 
         let builder = self
@@ -403,6 +406,7 @@ where
             )
             .await?;
 
+        let txn_status = *txn_status.lock();
         Ok((builder, txn_status, new_frame_no))
     }
 
@@ -495,9 +499,9 @@ impl Connection for WriteProxyConnection<RpcStream> {
     async fn is_autocommit(&self) -> Result<bool> {
         let state = self.state.lock().await;
         Ok(match *state {
-            TxnStatus::Txn => false,
-            TxnStatus::Init | TxnStatus::Invalid => true,
-        })
+                    TxnStatus::Txn => false,
+                    TxnStatus::Init | TxnStatus::Invalid => true,
+                })
     }
 
     async fn checkpoint(&self) -> Result<()> {
