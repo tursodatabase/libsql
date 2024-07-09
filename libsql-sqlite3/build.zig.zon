@@ -24,8 +24,8 @@
     // internet connectivity.
     .dependencies = .{
         .@"build.crab" = .{
-            .url = "https://github.com/akarpovskii/build.crab/archive/refs/tags/v0.1.5.tar.gz",
-            .hash = "1220c7d071bdde500955b0d5b807cb1a66687b915a020c3e87496623243912c77bed",
+            .url = "https://github.com/akarpovskii/build.crab/archive/refs/tags/v0.1.6.tar.gz",
+            .hash = "12204d44b1484cd3ca05c48e859c904f21665199d2e349ed86e4a143900a05c69baf",
         },
         .zlib = .{
             .url = "https://github.com/allyourcodebase/zlib/archive/refs/tags/1.3.1.tar.gz",

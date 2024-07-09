@@ -35,29 +35,49 @@ const sources = .{
         "ext/recover/sqlite3recover.c",
         "test/vt02.c",
     },
-    .@"test" = &.{
-        "src/test1.c",          "src/test2.c",
-        "src/test3.c",          "src/test4.c",
-        "src/test5.c",          "src/test6.c",
-        "src/test8.c",          "src/test9.c",
-        "src/test_autoext.c",   "src/test_async.c",
-        "src/test_backup.c",    "src/test_bestindex.c",
-        "src/test_blob.c",      "src/test_btree.c",
-        "src/test_config.c",    "src/test_delete.c",
-        "src/test_demovfs.c",   "src/test_devsym.c",
-        "src/test_fs.c",        "src/test_func.c",
-        "src/test_hexio.c",     "src/test_init.c",
-        "src/test_intarray.c",  "src/test_journal.c",
-        "src/test_malloc.c",    "src/test_md5.c",
-        "src/test_multiplex.c", "src/test_mutex.c",
-        "src/test_onefile.c",   "src/test_osinst.c",
-        "src/test_pcache.c",    "src/test_quota.c",
-        "src/test_rtree.c",     "src/test_schema.c",
-        "src/test_superlock.c", "src/test_syscall.c",
-        "src/test_tclsh.c",     "src/test_tclvar.c",
-        "src/test_thread.c",    "src/test_vdbecov.c",
-        "src/test_vfs.c",       "src/test_windirent.c",
-        "src/test_window.c",    "src/test_wsd.c",
+    .testfixture = &.{
+        "src/test1.c",                  "src/test2.c",
+        "src/test3.c",                  "src/test4.c",
+        "src/test5.c",                  "src/test6.c",
+        "src/test8.c",                  "src/test9.c",
+        "src/test_autoext.c",           "src/test_async.c",
+        "src/test_backup.c",            "src/test_bestindex.c",
+        "src/test_blob.c",              "src/test_btree.c",
+        "src/test_config.c",            "src/test_delete.c",
+        "src/test_demovfs.c",           "src/test_devsym.c",
+        "src/test_fs.c",                "src/test_func.c",
+        "src/test_hexio.c",             "src/test_init.c",
+        "src/test_intarray.c",          "src/test_journal.c",
+        "src/test_malloc.c",            "src/test_md5.c",
+        "src/test_multiplex.c",         "src/test_mutex.c",
+        "src/test_onefile.c",           "src/test_osinst.c",
+        "src/test_pcache.c",            "src/test_quota.c",
+        "src/test_rtree.c",             "src/test_schema.c",
+        "src/test_superlock.c",         "src/test_syscall.c",
+        "src/test_tclsh.c",             "src/test_tclvar.c",
+        "src/test_thread.c",            "src/test_vdbecov.c",
+        "src/test_vfs.c",               "src/test_windirent.c",
+        "src/test_window.c",            "src/test_wsd.c",
+        "src/tclsqlite.c",              "ext/rbu/test_rbu.c",
+        "ext/misc/cksumvfs.c",          "ext/misc/stmt.c",
+        "ext/expert/sqlite3expert.c",   "ext/expert/test_expert.c",
+        "ext/misc/amatch.c",            "ext/misc/appendvfs.c",
+        "ext/misc/basexx.c",            "ext/misc/carray.c",
+        "ext/misc/closure.c",           "ext/misc/csv.c",
+        "ext/misc/decimal.c",           "ext/misc/eval.c",
+        "ext/misc/explain.c",           "ext/misc/fileio.c",
+        "ext/misc/fuzzer.c",            "ext/fts5/fts5_tcl.c",
+        "ext/fts5/fts5_test_mi.c",      "ext/fts5/fts5_test_tok.c",
+        "ext/misc/ieee754.c",           "ext/misc/mmapwarm.c",
+        "ext/misc/nextchar.c",          "ext/misc/normalize.c",
+        "ext/misc/percentile.c",        "ext/misc/prefixes.c",
+        "ext/misc/qpvtab.c",            "ext/misc/regexp.c",
+        "ext/misc/remember.c",          "ext/misc/series.c",
+        "ext/misc/spellfix.c",          "ext/misc/totype.c",
+        "ext/misc/unionvtab.c",         "ext/misc/wholenumber.c",
+        "ext/misc/zipfile.c",           "ext/userauth/userauth.c",
+        "ext/rtree/test_rtreedoc.c",    "ext/recover/test_recover.c",
+        "ext/recover/sqlite3recover.c", "ext/recover/dbdata.c",
     },
 };
 
@@ -190,17 +210,13 @@ fn cflags(b: *Build, flags: []const []const u8) [][]const u8 {
             "-g",
             // "-O3",
             "-DBUILD_sqlite",
-            "-DSQLITE_HAVE_ZLIB",
             "-DNDEBUG",
             "-DSQLITE_ENABLE_MATH_FUNCTIONS",
-            "-DSQLITE_TEMP_STORE=2",
-            "-DSQLITE_USE_URI=1",
+            // "-DSQLITE_TEMP_STORE=2",
+            // "-DSQLITE_USE_URI=1",
             "-DSQLITE_THREADSAFE=1",
             "-D_HAVE_SQLITE_CONFIG",
             "-DSQLITE_CORE",
-
-            // FIX: make this configurable
-            "-DSQLITE_OS_UNIX=1",
         },
         flags,
     }) catch @panic("OOM");
@@ -209,18 +225,22 @@ fn cflags(b: *Build, flags: []const []const u8) [][]const u8 {
 const Sqlite3Options = struct {
     target: Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-    wasm_runtime: bool,
-    icu: bool,
+    wasm_runtime: bool = false,
+    icu: bool = false,
+    fts3: bool = false,
+    fts5: bool = false,
+    geopoly: bool = false,
+    rtree: bool = false,
+    session: bool = false,
+    preupdate_hook: bool = false,
     @"test": bool = false,
 };
 
-const Sqlite3 = struct {
-    target: Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
-    wasm_runtime: bool,
-    icu: bool,
-    @"test": bool = false,
-};
+fn filterIncludes(b: *Build, lp: LazyPath) LazyPath {
+    const filtered = b.addSystemCommand(&.{ "grep", "-v", "#include" });
+    filtered.addFileArg(lp);
+    return filtered.captureStdOut();
+}
 
 fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
     h: LazyPath,
@@ -399,15 +419,11 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
             );
             break :base base.getOutput();
         },
-        b.path("ext/rtree/sqlite3rtree.h"),
-        b.path("ext/session/sqlite3session.h"),
-        b.path("ext/fts5/fts5.h"),
+        filterIncludes(b, b.path("ext/rtree/sqlite3rtree.h")),
+        filterIncludes(b, b.path("ext/session/sqlite3session.h")),
+        filterIncludes(b, b.path("ext/fts5/fts5.h")),
         b.path("src/page_header.h"), // this must be above wal.h, since it depends on this
-        filtered: { // wal.h without includes
-            const filtered = b.addSystemCommand(&.{ "grep", "-v", "#include" });
-            filtered.addFileArg(b.path("src/wal.h"));
-            break :filtered filtered.captureStdOut();
-        },
+        filterIncludes(b, b.path("src/wal.h")),
         b.path("ext/udf/wasm_bindings.h"),
         // b.path("ext/recover/sqlite3recover.h"),
     }).getOutput();
@@ -421,6 +437,7 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
         });
 
         lib.addIncludePath(h.dirname());
+        lib.addIncludePath(opcodes.h.dirname());
         lib.addIncludePath(b.path("src"));
         lib.addIncludePath(b.path("ext/session/"));
 
@@ -428,13 +445,14 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
             .files = &.{
                 "ext/session/sqlite3session.c",
             },
-            .flags = cflags(b, &.{
-                // "-DSQLITE_OMIT_LOAD_EXTENSION",
-            }),
+            .flags = cflags(b, &.{}),
         });
 
         if (options.@"test") lib.root_module.addCMacro("SQLITE_TEST", "1");
-        // lib.root_module.addCMacro("SQLITE_CORE", "1");
+
+        lib.root_module.addCMacro("SQLITE_ENABLE_SESSION", "1");
+        lib.root_module.addCMacro("SQLITE_ENABLE_PREUPDATE_HOOK", "1");
+
         break :session lib;
     };
 
@@ -465,10 +483,7 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
                 "ext/fts3/fts3_unicode2.c",
                 "ext/fts3/fts3_write.c",
             },
-            .flags = cflags(b, &.{
-                // "-DSQLITE_OMIT_LOAD_EXTENSION",
-                // "-DSQLITE_ENABLE_FTS3",
-            }),
+            .flags = cflags(b, &.{}),
         });
 
         if (options.@"test") {
@@ -477,8 +492,8 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
             // lib.linkSystemLibrary("tcl");
         }
 
-        // lib.root_module.addCMacro("SQLITE_CORE", "1");
         lib.root_module.addCMacro("SQLITE_ENABLE_FTS3", "1");
+        lib.root_module.addCMacro("SQLITE_ENABLE_FTS3_PARENTHESIS", "1");
         break :fts3 lib;
     };
 
@@ -515,10 +530,11 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
             .files = &.{"ext/icu/icu.c"},
             .flags = cflags(b, &.{}),
         });
+
         if (options.@"test") lib.root_module.addCMacro("SQLITE_TEST", "1");
-        // lib.root_module.addCMacro("SQLITE_CORE", "1");
         lib.root_module.addCMacro("SQLITE_ENABLE_ICU", "1");
         lib.linkSystemLibrary("icu-io");
+
         break :icu lib;
     };
 
@@ -541,7 +557,6 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
             .name = "fts5",
             .target = options.target,
             .optimize = options.optimize,
-            .use_llvm = false,
             .link_libc = true,
         });
 
@@ -550,10 +565,7 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
         lib.addIncludePath(b.path("ext/fts5/"));
         lib.addIncludePath(fts5parse.h.dirname());
 
-        lib.addCSourceFile(.{
-            .file = fts5parse.c,
-            .flags = cflags(b, &.{}),
-        });
+        lib.addCSourceFile(.{ .file = fts5parse.c, .flags = cflags(b, &.{}) });
         lib.addCSourceFiles(.{
             .files = &.{
                 "ext/fts5/fts5_aux.c",      "ext/fts5/fts5_buffer.c",
@@ -563,13 +575,10 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
                 "ext/fts5/fts5_tokenize.c", "ext/fts5/fts5_unicode2.c",
                 "ext/fts5/fts5_varint.c",   "ext/fts5/fts5_vocab.c",
             },
-            .flags = cflags(b, &.{
-                // "-DSQLITE_ENABLE_FTS5",
-            }),
+            .flags = cflags(b, &.{}),
         });
 
-        lib.root_module.addCMacro("SQLITE_CORE", "1");
-        lib.root_module.addCMacro("SQLITE_DEBUG", "1");
+        // lib.root_module.addCMacro("SQLITE_DEBUG", "1");
         lib.root_module.addCMacro("SQLITE_ENABLE_FTS5", "1");
 
         if (options.@"test") lib.root_module.addCMacro("SQLITE_TEST", "1");
@@ -602,6 +611,8 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
     lib.addCSourceFile(.{ .file = parse.c, .flags = cflags(b, &.{}) });
     lib.addCSourceFiles(.{ .files = sources.sqlite3, .flags = cflags(b, &.{}) });
 
+    lib.addCSourceFile(.{ .file = b.path("ext/misc/stmt.c"), .flags = cflags(b, &.{}) });
+
     lib.linkLibrary(fts3);
     lib.linkLibrary(fts5);
     lib.linkLibrary(icu);
@@ -614,29 +625,40 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
         lib.root_module.addCMacro("SQLITE_NO_SYNC", "1");
     }
 
-    // lib.root_module.addCMacro("SQLITE_ENABLE_FTS4", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_FTS3", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_FTS5", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_ICU", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_RTREE", "1");
     lib.root_module.addCMacro("SQLITE_ENABLE_DBPAGE_VTAB", "1");
     lib.root_module.addCMacro("SQLITE_ENABLE_DBSTAT_VTAB", "1");
     lib.root_module.addCMacro("SQLITE_ENABLE_STMTVTAB", "1");
     lib.root_module.addCMacro("SQLITE_ENABLE_BYTECODE_VTAB", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_STAT4", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_DESERIALIZE", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_FTS3_PARENTHESIS", "1");
+    lib.root_module.addCMacro("SQLITE_ENABLE_COLUMN_METADATA", "1");
 
-    // lib.root_module.addCMacro("SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION", "1");
-    // lib.root_module.addCMacro("SQLITE_DEBUG", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_STMT_SCANSTATUS", "1");
-    lib.root_module.addCMacro("SQLITE_ENABLE_OFFSET_SQL_FUNC", "1");
-    lib.root_module.addCMacro("SQLITE_ENABLE_API_ARMOR", "1");
+    if (options.target.result.os.tag == .windows) {
+        lib.root_module.addCMacro("SQLITE_OS_WIN", "1");
+    } else {
+        lib.root_module.addCMacro("SQLITE_OS_UNIX", "1");
+    }
+
+    // lib.root_module.addCMacro("SQLITE_DEFAULT_FOREIGN_KEYS", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_API_ARMOR", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_COLUMN_METADATA", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_DBSTAT_VTAB", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_FTS3", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_FTS3_PARENTHESIS", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_FTS5", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_JSON1", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_LOAD_EXTENSION", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_MEMORY_MANAGEMENT", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_RTREE", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_STAT2", "1");
+    // lib.root_module.addCMacro("SQLITE_ENABLE_STAT4", "1");
+    // lib.root_module.addCMacro("SQLITE_SOUNDEX", "1");
+    // lib.root_module.addCMacro("SQLITE_THREADSAFE", "1");
+    lib.root_module.addCMacro("SQLITE_USE_URI", "1");
+    // lib.root_module.addCMacro("HAVE_USLEEP", "1");
+
     lib.root_module.addCMacro("SQLITE_ENABLE_EXPLAIN_COMMENTS", "1");
 
     if (options.wasm_runtime) {
-        const libsql_wasm = crab.addCargoBuildWithUserOptions(b, .{
-            .name = "liblibsql_wasm.a",
+        const libsql_wasm = crab.addCargoBuild(b, .{
             .manifest_path = b.path("crates/wasmtime-bindings/Cargo.toml"),
             .cargo_args = &.{
                 "--release",
@@ -651,11 +673,10 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
         lib.addIncludePath(b.path(".")); // to reach "ext/udf/wasm_bindings.h"
         lib.addCSourceFile(.{
             .file = b.path("ext/udf/wasmedge_bindings.c"),
-            .flags = &.{
-                "-DSQLITE_CORE",
-            },
+            .flags = cflags(b, &.{}),
         });
-        lib.addObjectFile(libsql_wasm);
+        lib.addLibraryPath(libsql_wasm);
+        lib.linkSystemLibrary("libsql_wasm");
     }
 
     if (options.icu) {}
@@ -728,42 +749,14 @@ pub fn build(b: *std.Build) void {
         .root_source_file = null,
         .target = target,
         .optimize = .ReleaseFast,
+        .link_libc = true,
     });
     testfixture.linkLibrary(sqlite3_test.lib);
     testfixture.addIncludePath(b.path("src/"));
-    testfixture.addIncludePath(sqlite3_test.h.dirname());
-    testfixture.addCSourceFiles(.{
-        .files = sources.@"test",
-        .flags = cflags(b, &.{}),
-    });
-    testfixture.addCSourceFiles(.{
-        .files = &.{
-            "src/tclsqlite.c",              "ext/rbu/test_rbu.c",
-            "ext/misc/cksumvfs.c",          "ext/misc/stmt.c",
-            "ext/expert/sqlite3expert.c",   "ext/expert/test_expert.c",
-            "ext/misc/amatch.c",            "ext/misc/appendvfs.c",
-            "ext/misc/basexx.c",            "ext/misc/carray.c",
-            "ext/misc/closure.c",           "ext/misc/csv.c",
-            "ext/misc/decimal.c",           "ext/misc/eval.c",
-            "ext/misc/explain.c",           "ext/misc/fileio.c",
-            "ext/misc/fuzzer.c",            "ext/fts5/fts5_tcl.c",
-            "ext/fts5/fts5_test_mi.c",      "ext/fts5/fts5_test_tok.c",
-            "ext/misc/ieee754.c",           "ext/misc/mmapwarm.c",
-            "ext/misc/nextchar.c",          "ext/misc/normalize.c",
-            "ext/misc/percentile.c",        "ext/misc/prefixes.c",
-            "ext/misc/qpvtab.c",            "ext/misc/regexp.c",
-            "ext/misc/remember.c",          "ext/misc/series.c",
-            "ext/misc/spellfix.c",          "ext/misc/totype.c",
-            "ext/misc/unionvtab.c",         "ext/misc/wholenumber.c",
-            "ext/misc/zipfile.c",           "ext/userauth/userauth.c",
-            "ext/rtree/test_rtreedoc.c",    "ext/recover/test_recover.c",
-            "ext/recover/sqlite3recover.c", "ext/recover/dbdata.c",
-        },
-        .flags = cflags(b, &.{}),
-    });
+    testfixture.addCSourceFiles(.{ .files = sources.testfixture, .flags = cflags(b, &.{}) });
 
+    testfixture.root_module.addCMacro("SQLITE_HAVE_ZLIB", "1");
     testfixture.root_module.addCMacro("SQLITE_TEST", "1");
-    testfixture.root_module.addCMacro("SQLITE_CRASH_TEST", "1");
 
     testfixture.root_module.addCMacro("SQLITE_ENABLE_STMTVTAB", "1");
     testfixture.root_module.addCMacro("SQLITE_ENABLE_DBPAGE_VTAB", "1");
@@ -772,39 +765,24 @@ pub fn build(b: *std.Build) void {
     testfixture.root_module.addCMacro("SQLITE_DEFAULT_PAGE_SIZE", "1024");
     testfixture.root_module.addCMacro("TCLSH_INIT_PROC", "sqlite3TestInit");
     testfixture.root_module.addCMacro("SQLITE_SERIES_CONSTRAINT_VERIFY", "1");
-    testfixture.root_module.addCMacro("SQLITE_CKSUMVFS_STATIC", "");
+    testfixture.root_module.addCMacro("SQLITE_CKSUMVFS_STATIC", "1");
 
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_MATH_FUNCTIONS", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_FTS5", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_RTREE", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_SESSION", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_STAT4", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_STMTVTAB", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_DBPAGE_VTAB", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_BYTECODE_VTAB", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_STMT_SCANSTATUS", "1");
-    // testfixture.root_module.addCMacro("SQLITE_ENABLE_OFFSET_SQL_FUNC", "1");
-
-    testfixture.linkSystemLibrary("z");
-    testfixture.linkSystemLibrary("m");
-    // TODO: Package TCL
+    testfixture.linkLibrary(zlib.artifact("z"));
     testfixture.linkSystemLibrary("tcl");
-    testfixture.linkLibC();
 
-    // run text
     {
         const run = b.addRunArtifact(testfixture);
-        const step = b.step("test", "Run testfixture");
+        const step = b.step("test", "Run testfixture (default: testrunner.tcl veryquick)");
 
         if (b.args) |args| {
             run.addArgs(args);
+        } else {
+            run.addArgs(&.{ "test/testrunner.tcl", "veryquick" });
         }
 
         step.dependOn(&run.step);
     }
 
-    // run fuzzcheck
     {
         const run = b.addRunArtifact(fuzzcheck);
         const step = b.step("fuzzcheck", "Run fuzzcheck (default: test/fuzzdata[1..=8].db)");
