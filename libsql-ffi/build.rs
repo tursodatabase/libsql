@@ -32,6 +32,8 @@ fn main() {
             ])
             .args(["--prefix", out_dir.to_str().unwrap().as_ref()])
             .spawn()
+            .unwrap()
+            .wait()
             .unwrap();
 
         bindings::write_to_out_dir(
