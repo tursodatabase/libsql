@@ -246,7 +246,8 @@ impl Wal for DurableWal {
     #[tracing::instrument(skip_all, fields(page_no))]
     fn read_frame(&mut self, page_no: std::num::NonZeroU32, buffer: &mut [u8]) -> Result<()> {
         trace!("DurableWal::read_frame()");
-        let rt = tokio::runtime::Handle::current();
+        // to read a frame, first we check in transaction cache, then frames cache and lastly
+        // storage server
         if let Ok(Some(frame)) = self
             .local_cache
             .get_page(self.conn_id.as_str(), u32::from(page_no))
@@ -258,13 +259,11 @@ impl Wal for DurableWal {
             buffer.copy_from_slice(&frame);
             return Ok(());
         }
-        // TODO: this call is unnecessary since `read_frame` is always called after `find_frame`
-        let frame_no =
-            tokio::task::block_in_place(|| rt.block_on(self.find_frame_by_page_no(page_no)))
-                .unwrap()
-                .unwrap();
         // check if the frame exists in the local cache
-        if let Ok(Some(frame)) = self.local_cache.get_frame(frame_no.into()) {
+        if let Ok(Some(frame)) = self
+            .local_cache
+            .get_frame_by_page(u32::from(page_no), self.max_frame_no)
+        {
             trace!(
                 "DurableWal::read_frame(page_no: {:?}) -- read cache hit",
                 page_no
@@ -272,6 +271,11 @@ impl Wal for DurableWal {
             buffer.copy_from_slice(&frame);
             return Ok(());
         }
+        let rt = tokio::runtime::Handle::current();
+        let frame_no =
+            tokio::task::block_in_place(|| rt.block_on(self.find_frame_by_page_no(page_no)))
+                .unwrap()
+                .unwrap();
         let req = rpc::ReadFrameRequest {
             namespace: self.namespace.to_string(),
             frame_no: frame_no.get(),
@@ -281,7 +285,9 @@ impl Wal for DurableWal {
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         let frame = resp.into_inner().frame.unwrap();
         buffer.copy_from_slice(&frame);
-        let _ = self.local_cache.insert_frame(frame_no.into(), &frame);
+        let _ = self
+            .local_cache
+            .insert_frame(frame_no.into(), u32::from(page_no), &frame);
         Ok(())
     }
 
