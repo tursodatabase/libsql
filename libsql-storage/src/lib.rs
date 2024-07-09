@@ -388,7 +388,7 @@ impl Wal for DurableWal {
 
         let req = rpc::InsertFramesRequest {
             namespace: self.namespace.to_string(),
-            frames,
+            frames: frames.clone(),
             max_frame_no: self.max_frame_no,
         };
         let mut binding = self.client.clone();
@@ -401,6 +401,10 @@ impl Wal for DurableWal {
             }
             return Err(rusqlite::ffi::Error::new(SQLITE_ABORT));
         }
+        // TODO: fix parity with storage server frame num with local cache
+        self.local_cache
+            .insert_frames(self.max_frame_no, frames)
+            .unwrap();
         Ok(resp.unwrap().into_inner().num_frames as usize)
     }
 

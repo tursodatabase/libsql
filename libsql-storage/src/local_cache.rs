@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use crate::rpc::Frame;
 use libsql_sys::rusqlite::{ffi, params, Connection, Error, Result};
 
 /// We use LocalCache to cache frames and transaction state. Each namespace gets its own cache
@@ -69,6 +70,21 @@ impl LocalCache {
             }
             Err(e) => Err(e.into()),
         }
+    }
+
+    pub fn insert_frames(&mut self, frame_no: u64, frames: Vec<Frame>) -> Result<()> {
+        let tx = self.conn.transaction().unwrap();
+        {
+            let mut stmt =
+                tx.prepare("INSERT INTO frames (frame_no, page_no, data) VALUES (?1, ?2, ?3)")?;
+            let mut frame_no = frame_no;
+            for f in frames {
+                frame_no += 1;
+                stmt.execute(params![frame_no, f.page_no, f.data]).unwrap();
+            }
+        }
+        tx.commit().unwrap();
+        Ok(())
     }
 
     pub fn get_frame(&self, frame_no: u64) -> Result<Option<Vec<u8>>> {
