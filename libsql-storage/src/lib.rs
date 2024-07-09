@@ -13,7 +13,7 @@ use libsql_sys::rusqlite;
 use libsql_sys::wal::{Result, Vfs, Wal, WalManager};
 use rpc::storage_client::StorageClient;
 use tonic::transport::Channel;
-use tracing::{error, trace};
+use tracing::{error, trace, warn};
 
 pub mod rpc {
     #![allow(clippy::all)]
@@ -196,8 +196,13 @@ impl Wal for DurableWal {
         // - save the current max_frame_no for this txn
         trace!("DurableWal::begin_read_txn()");
         let rt = tokio::runtime::Handle::current();
-        let frame_no = tokio::task::block_in_place(|| rt.block_on(self.frames_count()));
-        self.max_frame_no = frame_no;
+        let remote_frame_no = tokio::task::block_in_place(|| rt.block_on(self.frames_count()));
+        let local_frame_no = self.local_cache.get_max_frame_num().unwrap();
+        if local_frame_no < remote_frame_no {
+            warn!("cache is lagging behind the remote!")
+            // TODO: replicate data from source
+        }
+        self.max_frame_no = local_frame_no;
         Ok(true)
     }
 

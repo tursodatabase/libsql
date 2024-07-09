@@ -77,6 +77,18 @@ impl LocalCache {
         }
     }
 
+    pub fn get_max_frame_num(&self) -> Result<u64> {
+        match self
+            .conn
+            .query_row("select MAX(frame_no) from frames", params![], |row| {
+                row.get(0)
+            }) {
+            Ok(frame_no) => Ok(frame_no),
+            Err(Error::QueryReturnedNoRows) => Ok(0),
+            Err(e) => Err(e),
+        }
+    }
+
     pub fn insert_page(&self, txn_id: &str, page_no: u32, frame_data: &[u8]) -> Result<()> {
         self.conn.execute(
             "INSERT INTO transactions (txn_id, page_no, data) VALUES (?1, ?2, ?3)
