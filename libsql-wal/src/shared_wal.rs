@@ -206,7 +206,6 @@ impl<IO: Io> SharedWal<IO> {
         // The replication index from page 1 must match that of the SharedWal
         #[cfg(debug_assertions)]
         {
-            use crossbeam::atomic::AtomicConsume;
             use libsql_sys::ffi::Sqlite3DbHeader;
             use zerocopy::FromBytes;
 
@@ -214,7 +213,7 @@ impl<IO: Io> SharedWal<IO> {
                 let header = Sqlite3DbHeader::read_from_prefix(buffer).unwrap();
                 assert_eq!(
                     header.replication_index.get(),
-                    self.checkpointed_frame_no.load_consume()
+                    self.checkpointed_frame_no.load(Ordering::Relaxed)
                 );
             }
         }
@@ -279,8 +278,6 @@ impl<IO: Io> SharedWal<IO> {
 
 #[cfg(test)]
 mod test {
-    use crossbeam::atomic::AtomicConsume;
-
     use crate::test::{seal_current_segment, TestEnv};
 
     use super::*;
@@ -291,13 +288,13 @@ mod test {
         let conn = env.open_conn("test");
         let shared = env.shared("test");
 
-        assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
+        assert_eq!(shared.checkpointed_frame_no.load(Ordering::Relaxed), 0);
 
         conn.execute("create table test (x)", ()).unwrap();
         conn.execute("insert into test values (12)", ()).unwrap();
         conn.execute("insert into test values (12)", ()).unwrap();
 
-        assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
+        assert_eq!(shared.checkpointed_frame_no.load(Ordering::Relaxed), 0);
 
         seal_current_segment(&shared);
 
@@ -305,7 +302,7 @@ mod test {
 
         let frame_no = shared.checkpoint().await.unwrap().unwrap();
         assert_eq!(frame_no, 4);
-        assert_eq!(shared.checkpointed_frame_no.load_consume(), 4);
+        assert_eq!(shared.checkpointed_frame_no.load(Ordering::Relaxed), 4);
 
         assert!(shared.checkpoint().await.unwrap().is_none());
     }

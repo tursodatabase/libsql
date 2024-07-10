@@ -10,7 +10,7 @@ pub mod storage;
 pub mod transaction;
 pub mod wal;
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, test))]
 pub mod test {
     use std::fs::OpenOptions;
     use std::path::PathBuf;
