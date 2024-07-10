@@ -7,5 +7,5 @@ pub enum Error {
     #[error("error compacting segment: {0}")]
     Compact(#[from] crate::error::Error),
     #[error("frame not {0} found")]
-    FrameNotFound(u64)
+    FrameNotFound(u64),
 }

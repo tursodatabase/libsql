@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use tokio::io::{AsyncBufRead, AsyncBufReadExt};
 
-use crate::storage::{Error, Result};
 use crate::io::{FileExt, Io};
 use crate::segment::compacted::CompactedSegmentDataHeader;
+use crate::storage::{Error, Result};
 use libsql_sys::name::NamespaceName;
 
 use super::{Backend, SegmentMeta};
