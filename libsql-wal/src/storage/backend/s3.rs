@@ -7,16 +7,8 @@ use aws_sdk_s3::{primitives::ByteStream, types::CreateBucketConfiguration, Clien
 use libsql_sys::name::NamespaceName;
 use tokio::io::AsyncBufRead;
 
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/s3.rs
 use super::{fs::RemoteStorage, SegmentMeta};
-use crate::bottomless::{Error, Result};
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/s3.rs
-use super::Storage;
-use crate::{bottomless::Result, io::file::FileExt};
-=======
-use super::Backend;
-use crate::{io::file::FileExt, storage::Result};
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/s3.rs
+use crate::storage::{Error, Result};
 
 pub struct S3Storage {
     client: Client,
@@ -24,19 +16,11 @@ pub struct S3Storage {
     config: S3Config,
 }
 
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/s3.rs
 pub struct S3Config {
     bucket: String,
     aws_config: SdkConfig,
     cluster_id: String,
 }
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/s3.rs
-impl Storage for S3Storage {
-    type Config = S3Config;
-=======
-impl Backend for S3Storage {
-    type Config = S3Config;
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/s3.rs
 
 fn s3_folder_key(cluster_id: &str, ns: &NamespaceName) -> String {
     format!("ns-{}:{}-v2", cluster_id, ns)
@@ -56,7 +40,6 @@ impl S3Storage {
 
         let client = Client::new(&config.aws_config);
 
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/s3.rs
         let bucket_config = CreateBucketConfiguration::builder()
             .location_constraint(aws_sdk_s3::types::BucketLocationConstraint::UsWest2)
             .build();
@@ -196,7 +179,7 @@ mod tests {
                 .unwrap();
 
         let f_path = dir.path().join("fs-segments");
-        let file = std::fs::write(&f_path, vec![0; 8092]).unwrap();
+        std::fs::write(&f_path, vec![0; 8092]).unwrap();
 
         let ns = NamespaceName::from_string("foobarbaz".into());
 
@@ -217,28 +200,5 @@ mod tests {
         storage.fetch(&ns, 1).await.unwrap();
 
         assert!(storage.fetch(&ns, 65).await.is_err());
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/s3.rs
-    fn store(
-        &self,
-        config: &Self::Config,
-        meta: super::SegmentMeta,
-        segment_data: impl FileExt,
-        segment_index: Vec<u8>,
-    ) -> impl Future<Output = Result<()>> + Send {
-        todo!();
-        #[allow(unreachable_code)]
-        std::future::ready(Ok(()))
-=======
-    fn store(
-        &self,
-        _config: &Self::Config,
-        _meta: super::SegmentMeta,
-        _segment_data: impl FileExt,
-        _segment_index: Vec<u8>,
-    ) -> impl Future<Output = Result<()>> + Send {
-        todo!();
-        #[allow(unreachable_code)]
-        std::future::ready(Ok(()))
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/s3.rs
     }
 }

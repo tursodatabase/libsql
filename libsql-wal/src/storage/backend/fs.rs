@@ -2,51 +2,23 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
 use tokio::io::{AsyncBufRead, AsyncBufReadExt};
 
-use crate::bottomless::job::CompactedSegmentDataHeader;
-use crate::bottomless::{Error, Result};
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-use crate::bottomless::job::CompactedSegmentDataHeader;
-use crate::bottomless::{Error, Result};
-=======
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
+use crate::storage::{Error, Result};
 use crate::io::{FileExt, Io};
 use crate::segment::compacted::CompactedSegmentDataHeader;
-use crate::storage::{Error, Result};
 use libsql_sys::name::NamespaceName;
 
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
-use super::{SegmentMeta, Storage};
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-use super::Storage;
-=======
-use super::Backend;
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
+use super::{Backend, SegmentMeta};
 
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
-pub struct FsStorage<I, S> {
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-pub struct FsStorage<I> {
-=======
-pub struct FsBackend<I> {
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
+pub struct FsBackend<I, S> {
     prefix: PathBuf,
     io: Arc<I>,
     remote_storage: Arc<S>,
 }
 
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
-impl<I: Io, S> FsStorage<I, S> {
+impl<I: Io, S> FsBackend<I, S> {
     fn new(prefix: PathBuf, io: I, remote_storage: S) -> Result<Self> {
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-impl<I: Io> FsStorage<I> {
-    fn new(prefix: PathBuf, io: I) -> Result<Self> {
-=======
-impl<I: Io> FsBackend<I> {
-    pub fn new(prefix: PathBuf, io: I) -> Result<Self> {
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
         io.create_dir_all(&prefix.join("segments")).unwrap();
 
         Ok(FsBackend {
@@ -90,13 +62,7 @@ impl RemoteStorage for () {
 }
 
 // TODO(lucio): handle errors for fs module
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
-impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-impl<I: Io> Storage for FsStorage<I> {
-=======
-impl<I: Io> Backend for FsBackend<I> {
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
+impl<I: Io, S: RemoteStorage> Backend for FsBackend<I, S> {
     type Config = ();
 
     async fn store(
@@ -104,56 +70,25 @@ impl<I: Io> Backend for FsBackend<I> {
         _config: &Self::Config,
         meta: super::SegmentMeta,
         segment_data: impl crate::io::file::FileExt,
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
-        segment_index: Vec<u8>,
-    ) -> Result<()> {
-        let key = generate_key(&meta);
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-        segment_index: Vec<u8>,
-    ) -> impl Future<Output = Result<()>> + Send {
-        let key = format!(
-            "{:019}-{:019}-{:019}.segment",
-            meta.start_frame_no,
-            meta.end_frame_no,
-            meta.created_at.timestamp()
-        );
-=======
         _segment_index: Vec<u8>,
-    ) -> impl Future<Output = Result<()>> + Send {
+    ) -> Result<()> {
         let key = format!(
             "{:019}-{:019}-{:019}.segment",
             meta.start_frame_no,
             meta.end_frame_no,
             meta.created_at.timestamp()
         );
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
 
         let path = self.prefix.join("segments").join(&key);
 
         let buf = Vec::with_capacity(segment_data.len().unwrap() as usize);
 
         let f = self.io.open(true, false, true, &path).unwrap();
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
         let (buf, res) = segment_data.read_exact_at_async(buf, 0).await;
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-        async move {
-            let (buf, res) = segment_data.read_exact_at_async(buf, 0).await;
-=======
-        async move {
-            let (buf, res) = segment_data.read_exact_at_async(buf, 0).await;
-            res?;
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
+        res?;
 
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
         let (_, res) = f.write_all_at_async(buf, 0).await;
         res?;
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-            let (_, res) = f.write_all_at_async(buf, 0).await;
-            res.unwrap();
-=======
-            let (_, res) = f.write_all_at_async(buf, 0).await;
-            res?;
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
 
         self.remote_storage.upload(&path, &meta).await?;
 
@@ -297,13 +232,7 @@ mod tests {
     #[tokio::test]
     async fn read_write() {
         let dir = tempdir().unwrap();
-<<<<<<< HEAD:libsql-wal/src/bottomless/storage/fs.rs
-        let fs = FsStorage::new(dir.path().into(), StdIO::default(), ()).unwrap();
-||||||| parent of 2823bdd09e (rename bottomless to storage):libsql-wal/src/bottomless/storage/fs.rs
-        let fs = FsStorage::new(dir.path().into(), StdIO::default()).unwrap();
-=======
-        let fs = FsBackend::new(dir.path().into(), StdIO::default()).unwrap();
->>>>>>> 2823bdd09e (rename bottomless to storage):libsql-wal/src/storage/backend/fs.rs
+        let fs = FsBackend::new(dir.path().into(), StdIO::default(), ()).unwrap();
 
         let namespace = NamespaceName::from_string("".into());
         let segment = CompactedSegmentDataHeader {
