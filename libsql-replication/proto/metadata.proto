@@ -26,5 +26,5 @@ message DatabaseConfig {
     optional uint64 max_row_size = 10;
     optional bool shared_schema = 11;
     optional string shared_schema_name = 12;
-    DurabilityMode durability_mode = 13;
+    optional DurabilityMode durability_mode = 13;
 }

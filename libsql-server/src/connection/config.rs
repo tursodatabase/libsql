@@ -84,9 +84,10 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
                 .shared_schema_name
                 .clone()
                 .map(NamespaceName::new_unchecked),
-            durability_mode: DurabilityMode::from(metadata::DurabilityMode::try_from(
-                value.durability_mode,
-            )),
+            durability_mode: match value.durability_mode {
+                None => DurabilityMode::default(),
+                Some(m) => DurabilityMode::from(metadata::DurabilityMode::try_from(m)),
+            },
         }
     }
 }
@@ -106,7 +107,7 @@ impl From<&DatabaseConfig> for metadata::DatabaseConfig {
             max_row_size: Some(value.max_row_size),
             shared_schema: Some(value.is_shared_schema),
             shared_schema_name: value.shared_schema_name.as_ref().map(|s| s.to_string()),
-            durability_mode: metadata::DurabilityMode::from(value.durability_mode).into(),
+            durability_mode: Some(metadata::DurabilityMode::from(value.durability_mode).into()),
         }
     }
 }

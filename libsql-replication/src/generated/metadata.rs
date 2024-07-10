@@ -30,8 +30,8 @@ pub struct DatabaseConfig {
     pub shared_schema: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "12")]
     pub shared_schema_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(enumeration = "DurabilityMode", tag = "13")]
-    pub durability_mode: i32,
+    #[prost(enumeration = "DurabilityMode", optional, tag = "13")]
+    pub durability_mode: ::core::option::Option<i32>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
