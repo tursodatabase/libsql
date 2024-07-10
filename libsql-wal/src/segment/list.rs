@@ -1,73 +1,68 @@
+use core::fmt;
+use std::ops::Deref;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use arc_swap::ArcSwapOption;
+use fst::map::{OpBuilder, Union};
 use fst::raw::IndexedValue;
-use fst::{map::OpBuilder, Streamer};
+use fst::Streamer;
 use roaring::RoaringBitmap;
 use tokio_stream::Stream;
-use zerocopy::FromZeroes;
 
 use crate::error::Result;
 use crate::io::buf::ZeroCopyBuf;
-use crate::io::file::FileExt;
-use crate::segment::{sealed::SealedSegment, Frame};
+use crate::io::FileExt;
+use crate::segment::Frame;
 
-struct SegmentNode<F> {
-    segment: Arc<SealedSegment<F>>,
-    next: ArcSwapOption<SegmentNode<F>>,
-}
+use super::Segment;
 
-pub struct SegmentList<F> {
-    head: ArcSwapOption<SegmentNode<F>>,
-    len: AtomicUsize,
-    /// Whether the segment list is already being checkpointed
+#[derive(Debug)]
+pub struct SegmentList<Seg> {
+    list: List<Seg>,
     checkpointing: AtomicBool,
 }
 
-impl<F> Default for SegmentList<F> {
+impl<Seg> Default for SegmentList<Seg> {
     fn default() -> Self {
         Self {
-            head: Default::default(),
-            len: Default::default(),
+            list: Default::default(),
             checkpointing: Default::default(),
         }
     }
 }
 
-impl<F> SegmentList<F> {
-    /// Prepend the list with the passed sealed segment
-    pub fn push_log(&self, segment: Arc<SealedSegment<F>>) {
-        let segment = Arc::new(SegmentNode {
-            segment,
-            next: self.head.load().clone().into(),
-        });
+impl<Seg> Deref for SegmentList<Seg> {
+    type Target = List<Seg>;
 
-        self.head.swap(Some(segment));
-        self.len.fetch_add(1, Ordering::Relaxed);
+    fn deref(&self) -> &Self::Target {
+        &self.list
     }
+}
 
-    /// Call f on the head of the segments list, if it exists. The head of the list is the most
-    /// recent segment.
-    pub fn with_head<R>(&self, f: impl FnOnce(&SealedSegment<F>) -> R) -> Option<R> {
-        let head = self.head.load();
-        head.as_ref().map(|link| f(&link.segment))
+impl<Seg> SegmentList<Seg>
+where
+    Seg: Segment,
+{
+    pub(crate) fn push(&self, segment: Seg) {
+        self.list.prepend(segment);
     }
-
     /// attempt to read page_no with frame_no less than max_frame_no. Returns whether such a page
     /// was found
-    pub fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> Result<bool>
-    where
-        F: FileExt,
-    {
+    pub(crate) fn read_page(
+        &self,
+        page_no: u32,
+        max_frame_no: u64,
+        buf: &mut [u8],
+    ) -> Result<bool> {
         let mut prev_seg = u64::MAX;
-        let mut current = self.head.load();
+        let mut current = self.list.head.load();
         let mut i = 0;
         while let Some(link) = &*current {
-            let last = link.segment.header().last_commited_frame_no();
+            let last = link.item.last_committed();
             assert!(prev_seg > last);
             prev_seg = last;
-            if link.segment.read_page(page_no, max_frame_no, buf)? {
+            if link.item.read_page(page_no, max_frame_no, buf)? {
                 tracing::trace!("found {page_no} in segment {i}");
                 return Ok(true);
             }
@@ -81,7 +76,7 @@ impl<F> SegmentList<F> {
 
     /// Checkpoints as many segments as possible to the main db file, and return the checkpointed
     /// frame_no, if anything was checkpointed
-    pub fn checkpoint(&self, db_file: &F) -> Result<Option<u64>>
+    pub async fn checkpoint<F>(&self, db_file: &F, until_frame_no: u64) -> Result<Option<u64>>
     where
         F: FileExt,
     {
@@ -100,14 +95,17 @@ impl<F> SegmentList<F> {
         let mut last_untaken = None;
         // find the longest chain of segments that can be checkpointed, iow, segments that do not have
         // readers pointing to them
-        while let Some(link) = &*current {
-            if link.segment.read_locks.load(Ordering::SeqCst) != 0 {
-                segs.clear();
-                last_untaken = current.clone();
-            } else {
-                segs.push(link.clone());
+        while let Some(segment) = &*current {
+            // skip any segment more recent than until_frame_no
+            if segment.last_committed() <= until_frame_no {
+                if !segment.is_checkpointable() {
+                    segs.clear();
+                    last_untaken = current.clone();
+                } else {
+                    segs.push(segment.clone());
+                }
             }
-            current = link.next.load();
+            current = segment.next.load();
         }
 
         // nothing to checkpoint rn
@@ -115,27 +113,45 @@ impl<F> SegmentList<F> {
             return Ok(None);
         }
 
-        let size_after = segs.first().unwrap().segment.header().db_size();
+        let size_after = segs.first().unwrap().size_after();
 
-        let mut union = segs
+        let union = segs
             .iter()
-            .map(|s| s.segment.index())
+            .map(|s| s.index())
             .collect::<OpBuilder>()
             .union();
-        let mut buf = Frame::new_box_zeroed();
+
+        /// Safety: Union contains a Box<dyn trait> that doesn't require Send, to it's not send.
+        /// That's an issue for us, but all the indexes we have are safe to send, so we're good.
+        /// FIXME: we could implement union ourselves.
+        unsafe impl Send for SendUnion<'_> {}
+        unsafe impl Sync for SendUnion<'_> {}
+        struct SendUnion<'a>(Union<'a>);
+
+        let mut union = SendUnion(union);
+
+        let mut buf = ZeroCopyBuf::<Frame>::new_uninit();
         let mut last_replication_index = 0;
-        while let Some((k, v)) = union.next() {
+        while let Some((k, v)) = union.0.next() {
             let page_no = u32::from_be_bytes(k.try_into().unwrap());
             let v = v.iter().min_by_key(|i| i.index).unwrap();
             let offset = v.value as u32;
 
             let seg = &segs[v.index];
-            seg.segment.read_frame_offset(offset, &mut buf)?;
-            assert_eq!(buf.header().page_no(), page_no);
-            last_replication_index = last_replication_index.max(buf.header().frame_no());
-            db_file.write_all_at(&buf.data(), (page_no as u64 - 1) * 4096)?;
+            let (frame, ret) = seg.item.read_frame_offset_async(offset, buf).await;
+            ret?;
+            assert_eq!(frame.get_ref().header().page_no(), page_no);
+            last_replication_index =
+                last_replication_index.max(frame.get_ref().header().frame_no());
+            let read_buf = frame.map_slice(|f| f.get_ref().data());
+            let (read_buf, ret) = db_file
+                .write_all_at_async(read_buf, (page_no as u64 - 1) * 4096)
+                .await;
+            ret?;
+            buf = read_buf.into_inner();
         }
 
+        //// todo: make async
         db_file.sync_all()?;
 
         match last_untaken {
@@ -150,23 +166,13 @@ impl<F> SegmentList<F> {
             }
         }
 
-        drop(union);
-
         self.len.fetch_sub(segs.len(), Ordering::Relaxed);
-
-        for seg in segs {
-            seg.segment.checkpointed();
-        }
 
         db_file.set_len(size_after as u64 * 4096)?;
 
         self.checkpointing.store(false, Ordering::SeqCst);
 
         Ok(Some(last_replication_index))
-    }
-
-    pub(crate) fn len(&self) -> usize {
-        self.len.load(Ordering::Relaxed)
     }
 
     /// returnsstream pages from the sealed segment list, and what's the lowest replication index
@@ -176,18 +182,15 @@ impl<F> SegmentList<F> {
         &self,
         start_frame_no: u64,
         seen: &'a mut RoaringBitmap,
-    ) -> (impl Stream<Item = crate::error::Result<Frame>> + 'a, u64)
-    where
-        F: FileExt,
-    {
+    ) -> (impl Stream<Item = crate::error::Result<Frame>> + 'a, u64) {
         // collect all the segments we need to read from to be up to date.
         // We keep a reference to them so that they are not discarded while we read them.
         let mut segments = Vec::new();
-        let mut current = self.head.load();
+        let mut current = self.list.head.load();
         while current.is_some() {
             let current_ref = current.as_ref().unwrap();
-            if current_ref.segment.header().last_committed() >= start_frame_no {
-                segments.push(current_ref.segment.clone());
+            if current_ref.item.last_committed() >= start_frame_no {
+                segments.push(current_ref.clone());
                 current = current_ref.next.load();
             } else {
                 break;
@@ -196,7 +199,7 @@ impl<F> SegmentList<F> {
 
         let new_start_frame_no = segments
             .last()
-            .map(|s| s.header().start_frame_no.get())
+            .map(|s| s.start_frame_no())
             .unwrap_or(start_frame_no)
             .max(start_frame_no);
 
@@ -212,7 +215,7 @@ impl<F> SegmentList<F> {
                 let segment = &segments[*segment_offset];
 
                 // we can ignore any frame with a replication index less than start_frame_no
-                if segment.header().start_frame_no.get() + frame_offset < start_frame_no {
+                if segment.start_frame_no() + frame_offset < start_frame_no {
                     continue
                 }
 
@@ -227,6 +230,69 @@ impl<F> SegmentList<F> {
         };
 
         (stream, new_start_frame_no)
+    }
+}
+
+struct Node<T> {
+    item: T,
+    next: ArcSwapOption<Node<T>>,
+}
+
+impl<T> Deref for Node<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.item
+    }
+}
+
+pub struct List<T> {
+    head: ArcSwapOption<Node<T>>,
+    len: AtomicUsize,
+}
+
+impl<T: fmt::Debug> fmt::Debug for List<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut list = f.debug_list();
+        let mut current = self.head.load();
+        while current.is_some() {
+            list.entry(&current.as_ref().unwrap().item);
+            current = current.as_ref().unwrap().next.load();
+        }
+        list.finish()
+    }
+}
+
+impl<F> Default for List<F> {
+    fn default() -> Self {
+        Self {
+            head: Default::default(),
+            len: Default::default(),
+        }
+    }
+}
+
+impl<T> List<T> {
+    /// Prepend the list with the passed sealed segment
+    pub fn prepend(&self, item: T) {
+        let node = Arc::new(Node {
+            item,
+            next: self.head.load().clone().into(),
+        });
+
+        self.head.swap(Some(node));
+        self.len.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Call f on the head of the segments list, if it exists. The head of the list is the most
+    /// recent segment.
+    pub fn with_head<R>(&self, f: impl FnOnce(&T) -> R) -> Option<R> {
+        let head = self.head.load();
+        head.as_ref().map(|link| f(&link.item))
+    }
+
+    fn len(&self) -> usize {
+        self.len.load(Ordering::Relaxed)
     }
 }
 
@@ -283,7 +349,8 @@ mod test {
 
         drop(tx);
 
-        shared.checkpoint().unwrap();
+        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        shared.checkpoint().await.unwrap();
         file.seek(std::io::SeekFrom::Start(0)).unwrap();
         let mut copy_ytes = Vec::new();
         file.read_to_end(&mut copy_ytes).unwrap();
@@ -406,7 +473,9 @@ mod test {
             tmp.write_all_at(frame.data(), offset as u64).unwrap();
         }
 
-        shared.checkpoint().unwrap();
+        shared.durable_frame_no.store(99999, Ordering::Relaxed);
+
+        shared.checkpoint().await.unwrap();
         tmp.seek(std::io::SeekFrom::Start(0)).unwrap();
         let mut copy_bytes = Vec::new();
         tmp.read_to_end(&mut copy_bytes).unwrap();
@@ -435,7 +504,8 @@ mod test {
         }
 
         seal_current_segment(&shared);
-        shared.checkpoint().unwrap();
+        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        shared.checkpoint().await.unwrap();
 
         for _ in 0..10 {
             conn.execute("INSERT INTO test VALUES(42)", ()).unwrap();

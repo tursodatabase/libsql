@@ -1,39 +1,10 @@
-use std::{path::Path, sync::Arc};
-
-use libsql_sys::name::NamespaceName;
-use libsql_sys::rusqlite::OpenFlags;
-use libsql_wal::registry::WalRegistry;
-use libsql_wal::wal::LibsqlWalManager;
-use tempfile::tempdir;
+use libsql_wal::test::TestEnv;
 
 #[test]
 fn transaction_rollback() {
-    let tmp = tempdir().unwrap();
-    let resolver = |path: &Path| {
-        let name = path.file_name().unwrap().to_str().unwrap();
-        NamespaceName::from_string(name.to_string())
-    };
-
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
-    let wal_manager = LibsqlWalManager::new(registry.clone());
-
-    let mut conn1 = libsql_sys::Connection::open(
-        tmp.path().join("test/data").clone(),
-        OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-        wal_manager.clone(),
-        100000,
-        None,
-    )
-    .unwrap();
-
-    let conn2 = libsql_sys::Connection::open(
-        tmp.path().join("test/data").clone(),
-        OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-        wal_manager.clone(),
-        100000,
-        None,
-    )
-    .unwrap();
+    let env = TestEnv::new();
+    let mut conn1 = env.open_conn("test");
+    let conn2 = env.open_conn("test");
 
     let tx = conn1.transaction().unwrap();
     tx.execute("create table test (x)", ()).unwrap();
@@ -81,22 +52,8 @@ fn transaction_rollback() {
 
 #[test]
 fn transaction_savepoints() {
-    let tmp = tempdir().unwrap();
-    let resolver = |path: &Path| {
-        let name = path.file_name().unwrap().to_str().unwrap();
-        NamespaceName::from_string(name.to_string())
-    };
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
-    let wal_manager = LibsqlWalManager::new(registry.clone());
-
-    let mut conn = libsql_sys::Connection::open(
-        tmp.path().join("test/data").clone(),
-        OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-        wal_manager.clone(),
-        100000,
-        None,
-    )
-    .unwrap();
+    let env = TestEnv::new();
+    let mut conn = env.open_conn("test");
 
     let mut tx = conn.transaction().unwrap();
     tx.execute("create table test (x)", ()).unwrap();

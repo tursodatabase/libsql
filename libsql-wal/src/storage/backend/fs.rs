@@ -4,24 +4,24 @@ use std::sync::Arc;
 
 use tokio::io::{AsyncBufRead, AsyncBufReadExt};
 
-use crate::bottomless::job::CompactedSegmentDataHeader;
-use crate::bottomless::{Error, Result};
 use crate::io::{FileExt, Io};
+use crate::segment::compacted::CompactedSegmentDataHeader;
+use crate::storage::{Error, Result};
 use libsql_sys::name::NamespaceName;
 
-use super::{SegmentMeta, Storage};
+use super::{Backend, SegmentMeta};
 
-pub struct FsStorage<I, S> {
+pub struct FsBackend<I, S> {
     prefix: PathBuf,
     io: Arc<I>,
     remote_storage: Arc<S>,
 }
 
-impl<I: Io, S> FsStorage<I, S> {
+impl<I: Io, S> FsBackend<I, S> {
     fn new(prefix: PathBuf, io: I, remote_storage: S) -> Result<Self> {
         io.create_dir_all(&prefix.join("segments")).unwrap();
 
-        Ok(FsStorage {
+        Ok(FsBackend {
             prefix,
             io: Arc::new(io),
             remote_storage: Arc::new(remote_storage),
@@ -62,17 +62,22 @@ impl RemoteStorage for () {
 }
 
 // TODO(lucio): handle errors for fs module
-impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
+impl<I: Io, S: RemoteStorage> Backend for FsBackend<I, S> {
     type Config = ();
 
     async fn store(
         &self,
-        config: &Self::Config,
+        _config: &Self::Config,
         meta: super::SegmentMeta,
         segment_data: impl crate::io::file::FileExt,
-        segment_index: Vec<u8>,
+        _segment_index: Vec<u8>,
     ) -> Result<()> {
-        let key = generate_key(&meta);
+        let key = format!(
+            "{:019}-{:019}-{:019}.segment",
+            meta.start_frame_no,
+            meta.end_frame_no,
+            meta.created_at.timestamp()
+        );
 
         let path = self.prefix.join("segments").join(&key);
 
@@ -80,6 +85,7 @@ impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
 
         let f = self.io.open(true, false, true, &path).unwrap();
         let (buf, res) = segment_data.read_exact_at_async(buf, 0).await;
+        res?;
 
         let (_, res) = f.write_all_at_async(buf, 0).await;
         res?;
@@ -221,12 +227,12 @@ mod tests {
     use zerocopy::{AsBytes, FromZeroes};
 
     use super::*;
-    use crate::{bottomless::Storage, io::StdIO};
+    use crate::io::StdIO;
 
     #[tokio::test]
     async fn read_write() {
         let dir = tempdir().unwrap();
-        let fs = FsStorage::new(dir.path().into(), StdIO::default(), ()).unwrap();
+        let fs = FsBackend::new(dir.path().into(), StdIO::default(), ()).unwrap();
 
         let namespace = NamespaceName::from_string("".into());
         let segment = CompactedSegmentDataHeader {
@@ -238,7 +244,7 @@ mod tests {
 
         fs.store(
             &(),
-            crate::bottomless::storage::SegmentMeta {
+            crate::storage::backend::SegmentMeta {
                 namespace: namespace.clone(),
                 segment_id: Uuid::new_v4(),
                 start_frame_no: 0,

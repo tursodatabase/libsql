@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::future::Future;
 use std::path::Path;
 use std::sync::Arc;
@@ -10,8 +11,8 @@ use super::Result;
 use crate::io::file::FileExt;
 use libsql_sys::name::NamespaceName;
 
-mod fs;
-mod s3;
+pub mod fs;
+pub mod s3;
 
 #[derive(Debug)]
 pub struct SegmentMeta {
@@ -35,7 +36,7 @@ pub struct DbMeta {
     pub max_frame_no: u64,
 }
 
-pub trait Storage: Send + Sync + 'static {
+pub trait Backend: Send + Sync + 'static {
     /// Config type associated with the Storage
     type Config: Send + Sync + 'static;
 
@@ -89,7 +90,7 @@ pub trait Storage: Send + Sync + 'static {
     fn default_config(&self) -> Arc<Self::Config>;
 }
 
-impl<T: Storage> Storage for Arc<T> {
+impl<T: Backend> Backend for Arc<T> {
     type Config = T::Config;
 
     fn store(

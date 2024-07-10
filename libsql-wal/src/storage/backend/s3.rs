@@ -8,7 +8,7 @@ use libsql_sys::name::NamespaceName;
 use tokio::io::AsyncBufRead;
 
 use super::{fs::RemoteStorage, SegmentMeta};
-use crate::bottomless::{Error, Result};
+use crate::storage::{Error, Result};
 
 pub struct S3Storage {
     client: Client,
@@ -179,7 +179,7 @@ mod tests {
                 .unwrap();
 
         let f_path = dir.path().join("fs-segments");
-        let file = std::fs::write(&f_path, vec![0; 8092]).unwrap();
+        std::fs::write(&f_path, vec![0; 8092]).unwrap();
 
         let ns = NamespaceName::from_string("foobarbaz".into());
 

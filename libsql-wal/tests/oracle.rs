@@ -14,6 +14,8 @@ use libsql_sys::rusqlite::OpenFlags;
 use libsql_sys::wal::{Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
 use libsql_wal::registry::WalRegistry;
+use libsql_wal::storage::TestStorage;
+use libsql_wal::test::seal_current_segment;
 use libsql_wal::wal::LibsqlWalManager;
 use once_cell::sync::Lazy;
 use rand::Rng;
@@ -75,14 +77,27 @@ fn run_test_sample(path: &Path) -> Result {
     std::env::set_current_dir(tmp.path().join("test")).unwrap();
 
     let resolver = |path: &Path| {
-        let name = path.file_name().unwrap().to_str().unwrap();
+        if path.file_name().unwrap() != "data" {
+            return NamespaceName::from_string(
+                path.file_name().unwrap().to_str().unwrap().to_string(),
+            );
+        }
+        let name = path
+            .parent()
+            .unwrap()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap();
         NamespaceName::from_string(name.to_string())
     };
 
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
-    let wal_manager = LibsqlWalManager::new(registry.clone());
+    let registry =
+        Arc::new(WalRegistry::new(tmp.path().join("test/wals"), TestStorage::new()).unwrap());
+    let wal_manager = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
+    let db_path = tmp.path().join("test/data").clone();
     let libsql_conn = libsql_sys::Connection::open(
-        tmp.path().join("test/data").clone(),
+        &db_path,
         OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
         wal_manager.clone(),
         100000,
@@ -106,8 +121,15 @@ fn run_test_sample(path: &Path) -> Result {
 
     drop(libsql_conn);
 
-    // for checkpoint
-    registry.shutdown().unwrap();
+    let shared = registry.clone().open(&db_path, &"test".into()).unwrap();
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    seal_current_segment(&shared);
+    rt.block_on(async {
+        shared.checkpoint().await.unwrap();
+    });
 
     std::env::set_current_dir(curdir).unwrap();
     match std::panic::catch_unwind(|| {

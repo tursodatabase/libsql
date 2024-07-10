@@ -7,15 +7,21 @@
 //! maximum frame_no that this reader is allowed to read. The reader also keeps a reference to the
 //! head segment at the moment it was created.
 #![allow(dead_code)]
+use std::future::Future;
+use std::io;
 use std::mem::offset_of;
 use std::mem::size_of;
 use std::num::NonZeroU64;
+use std::sync::Arc;
 
 use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::AsBytes;
 
 use crate::error::{Error, Result};
+use crate::io::buf::IoBufMut;
+use crate::io::FileExt;
 
+pub(crate) mod compacted;
 pub mod current;
 pub mod list;
 pub mod sealed;
@@ -34,8 +40,8 @@ bitflags::bitflags! {
 pub struct SegmentHeader {
     pub start_frame_no: U64,
     pub last_commited_frame_no: U64,
-    /// size of the database in pages
-    pub db_size: U32,
+    /// size of the database in pages, after applying the segment.
+    pub size_after: U32,
     /// byte offset of the index. If 0, then the index wasn't written, and must be recovered.
     /// If non-0, the segment is sealed, and must not be written to anymore
     pub index_offset: U64,
@@ -82,8 +88,9 @@ impl SegmentHeader {
         self.last_commited_frame_no.get()
     }
 
-    pub fn db_size(&self) -> u32 {
-        self.db_size.get()
+    /// size fo the db after applying this segment
+    pub fn size_after(&self) -> u32 {
+        self.size_after.get()
     }
 
     fn is_empty(&self) -> bool {
@@ -115,6 +122,67 @@ impl SegmentHeader {
         } else {
             NonZeroU64::new(self.last_commited_frame_no.get() + 1).unwrap()
         }
+    }
+}
+
+pub trait Segment: Send + Sync + 'static {
+    fn compact(
+        &self,
+        out_file: &impl FileExt,
+        id: uuid::Uuid,
+    ) -> impl Future<Output = Result<Vec<u8>>> + Send;
+    fn start_frame_no(&self) -> u64;
+    fn last_committed(&self) -> u64;
+    fn index(&self) -> &fst::Map<Arc<[u8]>>;
+    fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> io::Result<bool>;
+    /// returns the number of readers currently holding a reference to this log.
+    /// The read count must monotonically decrease.
+    fn is_checkpointable(&self) -> bool;
+    /// The size of the database after applying this segment.
+    fn size_after(&self) -> u32;
+    async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
+    where
+        B: IoBufMut + Send + 'static;
+}
+
+impl<T: Segment> Segment for Arc<T> {
+    fn compact(
+        &self,
+        out_file: &impl FileExt,
+        id: uuid::Uuid,
+    ) -> impl Future<Output = Result<Vec<u8>>> + Send {
+        self.as_ref().compact(out_file, id)
+    }
+
+    fn start_frame_no(&self) -> u64 {
+        self.as_ref().start_frame_no()
+    }
+
+    fn last_committed(&self) -> u64 {
+        self.as_ref().last_committed()
+    }
+
+    fn index(&self) -> &fst::Map<Arc<[u8]>> {
+        self.as_ref().index()
+    }
+
+    fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> io::Result<bool> {
+        self.as_ref().read_page(page_no, max_frame_no, buf)
+    }
+
+    async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
+    where
+        B: IoBufMut + Send + 'static,
+    {
+        self.as_ref().read_frame_offset_async(offset, buf).await
+    }
+
+    fn is_checkpointable(&self) -> bool {
+        self.as_ref().is_checkpointable()
+    }
+
+    fn size_after(&self) -> u32 {
+        self.as_ref().size_after()
     }
 }
 
