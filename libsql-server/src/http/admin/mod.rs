@@ -22,7 +22,7 @@ use tower_http::trace::DefaultOnResponse;
 use url::Url;
 
 use crate::auth::parse_jwt_keys;
-use crate::connection::config::DatabaseConfig;
+use crate::connection::config::{DatabaseConfig, DurabilityMode};
 use crate::error::{Error, LoadDumpError};
 use crate::hrana;
 use crate::namespace::{DumpStream, NamespaceName, NamespaceStore, RestoreOption};
@@ -197,6 +197,7 @@ async fn handle_get_config<C: Connector>(
         jwt_key: config.jwt_key.clone(),
         allow_attach: config.allow_attach,
         txn_timeout_s: config.txn_timeout.map(|d| d.as_secs() as u64),
+        durability_mode: Some(config.durability_mode),
     };
     Ok(Json(resp))
 }
@@ -244,6 +245,8 @@ struct HttpDatabaseConfig {
     allow_attach: bool,
     #[serde(default)]
     txn_timeout_s: Option<u64>,
+    #[serde(default)]
+    durability_mode: Option<DurabilityMode>,
 }
 
 async fn handle_post_config<C>(
@@ -272,6 +275,9 @@ async fn handle_post_config<C>(
         config.heartbeat_url = Some(Url::parse(&url)?);
     }
     config.jwt_key = req.jwt_key;
+    if let Some(mode) = req.durability_mode {
+        config.durability_mode = mode;
+    }
 
     store.store(config).await?;
 
@@ -295,6 +301,8 @@ struct CreateNamespaceReq {
     shared_schema_name: Option<NamespaceName>,
     #[serde(default)]
     allow_attach: bool,
+    #[serde(default)]
+    durability_mode: Option<DurabilityMode>,
 }
 
 async fn handle_create_namespace<C: Connector>(
@@ -346,6 +354,7 @@ async fn handle_create_namespace<C: Connector>(
     if let Some(max_db_size) = req.max_db_size {
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
+    config.durability_mode = req.durability_mode.unwrap_or(DurabilityMode::default());
 
     app_state.namespaces.create(namespace, dump, config).await?;
 
