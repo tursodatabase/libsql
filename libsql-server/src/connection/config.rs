@@ -113,19 +113,14 @@ impl From<&DatabaseConfig> for metadata::DatabaseConfig {
 }
 
 /// Durability mode specifies the `PRAGMA SYNCHRONOUS` setting for the connection
-#[derive(PartialEq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Clone, Copy, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum DurabilityMode {
     Extra,
     Strong,
+    #[default]
     Relaxed,
     Off,
-}
-
-impl Default for DurabilityMode {
-    fn default() -> Self {
-        DurabilityMode::Relaxed
-    }
 }
 
 impl ToSql for DurabilityMode {
