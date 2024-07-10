@@ -87,17 +87,6 @@ impl LocalCache {
         Ok(())
     }
 
-    pub fn get_frame(&self, frame_no: u64) -> Result<Option<Vec<u8>>> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT data FROM frames WHERE frame_no = ?1")?;
-        match stmt.query_row(params![frame_no], |row| row.get(0)) {
-            Ok(frame_data) => Ok(Some(frame_data)),
-            Err(Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(e),
-        }
-    }
-
     pub fn get_frame_by_page(&self, page_no: u32, max_frame_no: u64) -> Result<Option<Vec<u8>>> {
         let mut stmt = self.conn.prepare(
             "SELECT data FROM frames WHERE page_no=?1 AND frame_no <= ?2
