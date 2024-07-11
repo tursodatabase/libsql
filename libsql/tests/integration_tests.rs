@@ -271,11 +271,11 @@ async fn connection_execute_batch_inserts_returning() {
     let mut batch_rows = conn
         .execute_batch(
             "BEGIN;
-        INSERT INTO foo VALUES (1) RETURNING *;
-        INSERT INTO foo VALUES (2) RETURNING *;
-        INSERT INTO foo VALUES (3) RETURNING *;
-        COMMIT;
-        ",
+            INSERT INTO foo VALUES (1) RETURNING *;
+            INSERT INTO foo VALUES (2) RETURNING *;
+            INSERT INTO foo VALUES (3) RETURNING *;
+            COMMIT;
+            ",
         )
         .await
         .unwrap();

@@ -154,20 +154,52 @@ impl Connection {
 
                 let tail = stmt.tail();
 
+                // Check if there are rows to be extracted, we must do this upfront due to the lazy
+                // nature of sqlite and our somewhat hacked batch command.
                 if returned_rows {
+                    // Extract columns
                     let cols = stmt
                         .columns()
                         .iter()
-                        .map(|c| {
-                            let decl_type = c.decl_type().unwrap().to_string();
+                        .enumerate()
+                        .map(|(i, c)| {
+                            use crate::value::ValueType;
 
-                            (c.name.to_string(), decl_type)
+                            let val = stmt.inner.column_type(i as i32);
+                            let t = match val {
+                                libsql_sys::ffi::SQLITE_INTEGER => ValueType::Integer,
+                                libsql_sys::ffi::SQLITE_FLOAT => ValueType::Real,
+                                libsql_sys::ffi::SQLITE_BLOB => ValueType::Blob,
+                                libsql_sys::ffi::SQLITE_TEXT => ValueType::Text,
+                                libsql_sys::ffi::SQLITE_NULL => ValueType::Null,
+                                _ => unreachable!("unknown column type {} at index {}", val, i),
+                            };
+
+                            (c.name.to_string(), t)
                         })
                         .collect::<Vec<_>>();
 
-                    let rows_sys = Rows::new(stmt);
-
                     let mut rows = Vec::new();
+
+                    // If returned rows we must extract the rows available right away instead of
+                    // using the `Rows` type we have already. This is due to the step api once its
+                    // returned SQLITE_ROWS we must extract them before we call step again.
+                    {
+                        let row = crate::local::Row { stmt: stmt.clone() };
+
+                        let mut values = Vec::with_capacity(cols.len());
+
+                        for i in 0..cols.len() {
+                            let value = row.get_value(i as i32)?;
+
+                            values.push(value);
+                        }
+
+                        rows.push(values);
+                    }
+
+                    // Now we can use the normal rows type to extract any n+1 rows
+                    let rows_sys = Rows::new(stmt);
 
                     while let Some(row) = rows_sys.next()? {
                         let mut values = Vec::with_capacity(cols.len());
@@ -180,6 +212,8 @@ impl Connection {
 
                         rows.push(values);
                     }
+
+                    rows.len();
 
                     batch_rows.push(Some(crate::Rows::new(BatchedRows::new(cols, rows))));
                 } else {

@@ -186,12 +186,12 @@ impl fmt::Debug for Row {
 #[derive(Debug)]
 pub(crate) struct BatchedRows {
     /// Colname, decl_type
-    cols: Arc<Vec<(String, String)>>,
+    cols: Arc<Vec<(String, crate::value::ValueType)>>,
     rows: VecDeque<Vec<Value>>,
 }
 
 impl BatchedRows {
-    pub fn new(cols: Vec<(String, String)>, rows: Vec<Vec<Value>>) -> Self {
+    pub fn new(cols: Vec<(String, crate::value::ValueType)>, rows: Vec<Vec<Value>>) -> Self {
         Self {
             cols: Arc::new(cols),
             rows: rows.into(),
@@ -202,6 +202,7 @@ impl BatchedRows {
 #[async_trait::async_trait]
 impl RowsInner for BatchedRows {
     async fn next(&mut self) -> Result<Option<crate::Row>> {
+        dbg!(self.rows.len());
         let cols = self.cols.clone();
         let row = self.rows.pop_front();
 
@@ -215,21 +216,24 @@ impl RowsInner for BatchedRows {
     }
 
     fn column_count(&self) -> i32 {
-        todo!()
+        self.cols.len() as i32
     }
 
     fn column_name(&self, idx: i32) -> Option<&str> {
-        todo!()
+        self.cols.get(idx as usize).map(|s| s.0.as_str())
     }
 
     fn column_type(&self, idx: i32) -> Result<crate::value::ValueType> {
-        todo!()
+        self.cols
+            .get(idx as usize)
+            .ok_or(Error::InvalidColumnIndex)
+            .map(|(_, vt)| vt.clone())
     }
 }
 
 #[derive(Debug)]
 pub(crate) struct BatchedRow {
-    cols: Arc<Vec<(String, String)>>,
+    cols: Arc<Vec<(String, crate::value::ValueType)>>,
     row: Vec<Value>,
 }
 
@@ -246,15 +250,25 @@ impl RowInner for BatchedRow {
     }
 
     fn column_str(&self, idx: i32) -> Result<&str> {
-        todo!()
-    }
-
-    fn column_type(&self, idx: i32) -> Result<crate::value::ValueType> {
-        todo!()
+        self.row
+            .get(idx as usize)
+            .ok_or(Error::InvalidColumnIndex)
+            .and_then(|v| {
+                v.as_text()
+                    .map(String::as_str)
+                    .ok_or(Error::InvalidColumnType)
+            })
     }
 
     fn column_count(&self) -> usize {
-        todo!()
+        self.cols.len()
+    }
+
+    fn column_type(&self, idx: i32) -> Result<crate::value::ValueType> {
+        self.cols
+            .get(idx as usize)
+            .ok_or(Error::InvalidColumnIndex)
+            .map(|(_, vt)| vt.clone())
     }
 }
 
