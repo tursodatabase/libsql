@@ -13,7 +13,6 @@
 set testdir [file dirname $argv0]
 source $testdir/permutations.test
 
-run_test suite libsql_vector
 run_test_suite veryquick
 
 finish_test
