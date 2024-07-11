@@ -32,6 +32,8 @@ zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
 
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-s3 = "1"
+http-body = "1.0.0"
+tokio-util = "0.7.11"
 
 [dev-dependencies]
 criterion = "0.5.1"
