@@ -61,7 +61,7 @@ impl BatchRows {
         }
     }
 
-    #[cfg(feature = "hrana")]
+    #[cfg(any(feature = "hrana", feature = "core"))]
     pub(crate) fn new(rows: Vec<Option<Rows>>) -> Self {
         Self {
             inner: rows.into(),
