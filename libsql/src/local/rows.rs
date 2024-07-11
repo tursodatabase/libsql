@@ -202,7 +202,6 @@ impl BatchedRows {
 #[async_trait::async_trait]
 impl RowsInner for BatchedRows {
     async fn next(&mut self) -> Result<Option<crate::Row>> {
-        dbg!(self.rows.len());
         let cols = self.cols.clone();
         let row = self.rows.pop_front();
 
