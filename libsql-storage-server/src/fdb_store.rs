@@ -7,7 +7,8 @@ use foundationdb::tuple::pack;
 use foundationdb::tuple::unpack;
 use foundationdb::{KeySelector, Transaction};
 use libsql_storage::rpc::Frame;
-use tracing::error;
+use tokio::time::Instant;
+use tracing::{error, trace};
 
 pub struct FDBFrameStore {
     _network: NetworkAutoStop,
@@ -52,9 +53,12 @@ impl FDBFrameStore {
         Self { _network }
     }
 
+    #[tracing::instrument(skip(self, txn))]
     async fn get_max_frame_no(&self, txn: &Transaction, namespace: &str) -> u64 {
         let key = max_frame_key(namespace);
+        let start = Instant::now();
         let result = txn.get(&key, false).await;
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         if let Err(e) = result {
             error!("get failed: {:?}", e);
             return 0;
@@ -89,6 +93,7 @@ impl FDBFrameStore {
 
 #[async_trait]
 impl FrameStore for FDBFrameStore {
+    #[tracing::instrument(skip(self, frames))]
     async fn insert_frames(
         &self,
         namespace: &str,
@@ -101,6 +106,7 @@ impl FrameStore for FDBFrameStore {
         if frame_no != max_frame_no {
             return Err(WriteConflict);
         }
+        let start = Instant::now();
         for f in frames {
             frame_no += 1;
             self.insert_with_tx(namespace, &txn, frame_no, f).await;
@@ -108,14 +114,18 @@ impl FrameStore for FDBFrameStore {
         let key = max_frame_key(namespace);
         txn.set(&key, &pack(&(frame_no)));
         txn.commit().await.expect("commit failed");
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         Ok(frame_no)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn read_frame(&self, namespace: &str, frame_no: u64) -> Option<bytes::Bytes> {
         let key = frame_key(namespace, frame_no);
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
+        let start = Instant::now();
         let frame = txn.get(&key, false).await;
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         if let Ok(Some(data)) = frame {
             return Some(data.to_vec().into());
         }
@@ -131,9 +141,11 @@ impl FrameStore for FDBFrameStore {
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
         let page_key = page_index_key(namespace, page_no, max_frame_no);
+        let start = Instant::now();
         let result = txn
             .get_key(&KeySelector::last_less_or_equal(&page_key), false)
             .await;
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         let unpacked: (String, String, u32, u64) =
             unpack(&result.unwrap().to_vec()).expect("failed to decode");
         // It is important to verify that the data we got from Foundation DB matches with what we
@@ -150,10 +162,12 @@ impl FrameStore for FDBFrameStore {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn frame_page_no(&self, namespace: &str, frame_no: u64) -> Option<u32> {
         let key = frame_page_key(namespace, frame_no);
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
+        let start = Instant::now();
         let page_no: u32 = unpack(
             &txn.get(&key, true)
                 .await
@@ -161,6 +175,7 @@ impl FrameStore for FDBFrameStore {
                 .expect("frame not found"),
         )
         .expect("failed to decode u64");
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         Some(page_no)
     }
 

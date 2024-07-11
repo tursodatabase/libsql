@@ -1,10 +1,5 @@
 mod local_cache;
 
-use std::ffi::OsStr;
-use std::os::unix::ffi::OsStrExt;
-use std::path::Path;
-use std::sync::{Arc, Mutex};
-
 use crate::local_cache::LocalCache;
 use crate::rpc::Frame;
 use libsql_sys::ffi::{SQLITE_ABORT, SQLITE_BUSY};
@@ -12,6 +7,11 @@ use libsql_sys::name::{NamespaceName, NamespaceResolver};
 use libsql_sys::rusqlite;
 use libsql_sys::wal::{Result, Vfs, Wal, WalManager};
 use rpc::storage_client::StorageClient;
+use std::ffi::OsStr;
+use std::os::unix::ffi::OsStrExt;
+use std::path::Path;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use tonic::transport::Channel;
 use tracing::{error, trace};
 
@@ -194,6 +194,7 @@ impl DurableWal {
 impl Wal for DurableWal {
     fn limit(&mut self, _size: i64) {}
 
+    #[tracing::instrument(skip(self))]
     fn begin_read_txn(&mut self) -> Result<bool> {
         trace!("DurableWal::begin_read_txn()");
         // TODO:
@@ -201,7 +202,9 @@ impl Wal for DurableWal {
         // - save the current max_frame_no for this txn
         trace!("DurableWal::begin_read_txn()");
         let rt = tokio::runtime::Handle::current();
+        let start = Instant::now();
         let frame_no = tokio::task::block_in_place(|| rt.block_on(self.frames_count()));
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         self.max_frame_no = frame_no;
         Ok(true)
     }
@@ -234,9 +237,11 @@ impl Wal for DurableWal {
         }
         let rt = tokio::runtime::Handle::current();
         // TODO: find_frame should account for `max_frame_no` of this txn
+        let start = Instant::now();
         let frame_no =
             tokio::task::block_in_place(|| rt.block_on(self.find_frame_by_page_no(page_no)))
                 .unwrap();
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         if frame_no.is_none() {
             return Ok(None);
         }
@@ -277,8 +282,10 @@ impl Wal for DurableWal {
             frame_no: frame_no.get(),
         };
         let mut binding = self.client.clone();
+        let start = Instant::now();
         let resp = binding.read_frame(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         let frame = resp.into_inner().frame.unwrap();
         buffer.copy_from_slice(&frame);
         let _ = self.local_cache.insert_frame(frame_no.into(), &frame);
@@ -384,8 +391,10 @@ impl Wal for DurableWal {
         };
         let mut binding = self.client.clone();
         trace!("sending DurableWal::insert_frames() {:?}", req.frames.len());
+        let start = Instant::now();
         let resp = binding.insert_frames(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp));
+        trace!("elapsed: {:?}", start.elapsed().as_millis());
         if let Err(e) = resp {
             if e.code() == tonic::Code::Aborted {
                 return Err(rusqlite::ffi::Error::new(SQLITE_BUSY));
