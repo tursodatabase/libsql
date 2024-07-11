@@ -1,14 +1,17 @@
 //! S3 implementation of storage
 
-use std::{path::Path, pin::Pin};
+use std::{path::Path, pin::Pin, sync::Arc, task::Poll};
 
 use aws_config::SdkConfig;
 use aws_sdk_s3::{primitives::ByteStream, types::CreateBucketConfiguration, Client};
+use bytes::{Bytes, BytesMut};
+use http_body::{Frame, SizeHint};
 use libsql_sys::name::NamespaceName;
 use tokio::io::AsyncBufRead;
+use tokio_util::sync::ReusableBoxFuture;
 
 use super::{fs::RemoteStorage, SegmentMeta};
-use crate::storage::{Error, Result};
+use crate::{io::FileExt, storage::{Error, Result}};
 
 pub struct S3Storage {
     client: Client,
@@ -52,6 +55,105 @@ impl S3Storage {
             .unwrap();
 
         Ok(Self { client, config })
+    }
+}
+
+#[derive(Clone, Copy)]
+enum StreamState {
+    Init,
+    WaitingChunk,
+    Done,
+}
+
+struct FileStreamBody<F> {
+    inner: Arc<F>,
+    current_offset: u64,
+    chunk_size: usize,
+    state: StreamState,
+    fut: ReusableBoxFuture<'static, std::io::Result<Bytes>>,
+}
+
+impl<F> FileStreamBody<F> {
+    fn new(inner: F) -> Self {
+        Self::new_inner(inner.into())
+    }
+
+    fn new_inner(inner: Arc<F>) -> Self {
+        Self {
+            inner,
+            current_offset: 0,
+            chunk_size: 4096,
+            state: StreamState::Init,
+            fut: ReusableBoxFuture::new(std::future::pending()),
+        }
+    }
+
+    fn into_byte_stream(self) -> ByteStream
+    where
+        F: FileExt,
+    {
+        let body = SdkBody::retryable(move || {
+            let s = Self::new_inner(self.inner.clone());
+            SdkBody::from_body_1_x(s)
+        });
+
+        ByteStream::new(body)
+    }
+}
+
+impl<F> http_body::Body for FileStreamBody<F>
+where
+    F: FileExt,
+{
+    type Data = Bytes;
+    type Error = std::io::Error;
+
+    fn poll_frame(
+        mut self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Option<Result<Frame<Self::Data>, Self::Error>>> {
+        loop {
+            match self.state {
+                StreamState::Init => {
+                    let f = self.inner.clone();
+                    let chunk_size = self.chunk_size;
+                    let current_offset = self.current_offset;
+                    let fut = async move {
+                        let buf = BytesMut::with_capacity(chunk_size);
+                        let (buf, ret) = f.read_at_async(buf, current_offset).await;
+                        ret.map(|_| buf.freeze())
+                    };
+                    self.fut.set(fut);
+                    self.state = StreamState::WaitingChunk;
+                }
+                StreamState::WaitingChunk => match self.fut.poll(cx) {
+                    Poll::Ready(Ok(buf)) => {
+                        // TODO: we perform one too many read, 
+                        if buf.is_empty() {
+                            self.state = StreamState::Done;
+                            return Poll::Ready(None);
+                        } else {
+                            self.state = StreamState::Init;
+                            self.current_offset += buf.len() as u64;
+                            return Poll::Ready(Some(Ok(Frame::data(buf))));
+                        }
+                    }
+                    Poll::Ready(Err(e)) => {
+                        self.state = StreamState::Done;
+                        return Poll::Ready(Some(Err(e)));
+                    }
+                    Poll::Pending => return Poll::Pending,
+                },
+                StreamState::Done => return Poll::Ready(None),
+            }
+        }
+    }
+
+    fn size_hint(&self) -> SizeHint {
+        match self.inner.len() {
+            Ok(n) => SizeHint::with_exact(n),
+            Err(_) => SizeHint::new(),
+        }
     }
 }
 
