@@ -1,12 +1,15 @@
 use crate::local::{Connection, Statement};
 use crate::params::Params;
+use crate::rows::{RowInner, RowsInner};
 use crate::{errors, Error, Result};
 use crate::{Value, ValueRef};
 use libsql_sys::ValueType;
 
-use std::fmt;
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::ffi::c_char;
+use std::fmt;
+use std::sync::Arc;
 /// Query result rows.
 #[derive(Debug, Clone)]
 pub struct Rows {
@@ -165,7 +168,9 @@ impl fmt::Debug for Row {
                         ValueRef::Null => dbg_map.value(&(value_type, ())),
                         ValueRef::Integer(i) => dbg_map.value(&(value_type, i)),
                         ValueRef::Real(f) => dbg_map.value(&(value_type, f)),
-                        ValueRef::Text(s) => dbg_map.value(&(value_type, String::from_utf8_lossy(s))),
+                        ValueRef::Text(s) => {
+                            dbg_map.value(&(value_type, String::from_utf8_lossy(s)))
+                        }
                         ValueRef::Blob(b) => dbg_map.value(&(value_type, b.len())),
                     };
                 }
@@ -175,6 +180,94 @@ impl fmt::Debug for Row {
             }
         }
         dbg_map.finish()
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct BatchedRows {
+    /// Colname, decl_type
+    cols: Arc<Vec<(String, crate::value::ValueType)>>,
+    rows: VecDeque<Vec<Value>>,
+}
+
+impl BatchedRows {
+    pub fn new(cols: Vec<(String, crate::value::ValueType)>, rows: Vec<Vec<Value>>) -> Self {
+        Self {
+            cols: Arc::new(cols),
+            rows: rows.into(),
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl RowsInner for BatchedRows {
+    async fn next(&mut self) -> Result<Option<crate::Row>> {
+        let cols = self.cols.clone();
+        let row = self.rows.pop_front();
+
+        if let Some(row) = row {
+            Ok(Some(crate::Row {
+                inner: Box::new(BatchedRow { cols, row }),
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn column_count(&self) -> i32 {
+        self.cols.len() as i32
+    }
+
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        self.cols.get(idx as usize).map(|s| s.0.as_str())
+    }
+
+    fn column_type(&self, idx: i32) -> Result<crate::value::ValueType> {
+        self.cols
+            .get(idx as usize)
+            .ok_or(Error::InvalidColumnIndex)
+            .map(|(_, vt)| vt.clone())
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct BatchedRow {
+    cols: Arc<Vec<(String, crate::value::ValueType)>>,
+    row: Vec<Value>,
+}
+
+impl RowInner for BatchedRow {
+    fn column_value(&self, idx: i32) -> Result<Value> {
+        self.row
+            .get(idx as usize)
+            .cloned()
+            .ok_or(Error::InvalidColumnIndex)
+    }
+
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        self.cols.get(idx as usize).map(|c| c.0.as_str())
+    }
+
+    fn column_str(&self, idx: i32) -> Result<&str> {
+        self.row
+            .get(idx as usize)
+            .ok_or(Error::InvalidColumnIndex)
+            .and_then(|v| {
+                v.as_text()
+                    .map(String::as_str)
+                    .ok_or(Error::InvalidColumnType)
+            })
+    }
+
+    fn column_count(&self) -> usize {
+        self.cols.len()
+    }
+
+    fn column_type(&self, idx: i32) -> Result<crate::value::ValueType> {
+        self.cols
+            .get(idx as usize)
+            .ok_or(Error::InvalidColumnIndex)
+            .map(|(_, vt)| vt.clone())
     }
 }
 
