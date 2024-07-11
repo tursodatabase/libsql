@@ -173,17 +173,6 @@ impl DurableWal {
             .flatten();
         Ok(frame_no)
     }
-
-    async fn frames_count(&self) -> u64 {
-        let req = rpc::FramesInWalRequest {
-            namespace: self.namespace.to_string(),
-        };
-        let mut binding = self.client.clone();
-        let resp = binding.frames_in_wal(req).await.unwrap();
-        let count = resp.into_inner().count;
-        trace!("DurableWal::frames_in_wal() = {}", count);
-        count
-    }
 }
 
 impl Wal for DurableWal {
@@ -195,17 +184,7 @@ impl Wal for DurableWal {
         // - create a read lock
         // - save the current max_frame_no for this txn
         trace!("DurableWal::begin_read_txn()");
-        let rt = tokio::runtime::Handle::current();
-        let remote_frame_no = tokio::task::block_in_place(|| rt.block_on(self.frames_count()));
-        let local_frame_no = self.local_cache.get_max_frame_num().unwrap();
-        if local_frame_no < remote_frame_no {
-            warn!(
-                "cache (max_frame_num = {:?}) is lagging behind the remote(max_frame_num = {:?})!",
-                local_frame_no, remote_frame_no
-            )
-            // TODO: replicate data from source
-        }
-        self.max_frame_no = local_frame_no;
+        self.max_frame_no = self.local_cache.get_max_frame_num().unwrap();
         Ok(true)
     }
 
@@ -287,12 +266,10 @@ impl Wal for DurableWal {
     }
 
     fn db_size(&self) -> u32 {
-        let rt = tokio::runtime::Handle::current();
-        let size = tokio::task::block_in_place(|| rt.block_on(self.frames_count()))
-            .try_into()
-            .unwrap();
+        let size = self.local_cache.get_max_frame_num().unwrap();
         trace!("DurableWal::db_size() => {}", size);
-        size
+        // TODO: serve the db size from the meta table
+        size as u32
     }
 
     fn begin_write_txn(&mut self) -> Result<()> {
