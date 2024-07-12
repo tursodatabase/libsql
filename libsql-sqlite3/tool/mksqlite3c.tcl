@@ -189,6 +189,7 @@ foreach hdr {
    vdbe.h
    vdbeInt.h
    vectorInt.h
+   vectorIndexInt.h
    vxworks.h
    wal.h
    whereInt.h
@@ -469,6 +470,7 @@ set flist {
    vector.c
    vectorfloat32.c
    vectorfloat64.c
+   vectordiskann.c
    rtree.c
    icu.c
    fts3_icu.c

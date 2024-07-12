@@ -67,6 +67,27 @@ Vector *vectorAlloc(VectorType type, VectorDims dims){
 }
 
 /*
+** Initialize a static Vector object.
+**
+** Note that that the vector object points to the blob so if
+** you free the blob, the vector becomes invalid.
+**/
+void vectorInitStatic(Vector *pVector, VectorType type, const unsigned char *pBlob, size_t nBlobSize){
+  switch (type) {
+    case VECTOR_TYPE_FLOAT32:
+      vectorF32InitFromBlob(pVector, pBlob, nBlobSize);
+      break;
+    case VECTOR_TYPE_FLOAT64:
+      vectorF64InitFromBlob(pVector, pBlob, nBlobSize);
+      break;
+    default:
+      assert(0);
+  }
+  pVector->type = type;
+  pVector->flags = VECTOR_FLAGS_STATIC;
+}
+
+/*
  * Allocate a Vector object and its data buffer from the SQLite context. 
 */
 static Vector* vectorContextAlloc(sqlite3_context *context, int type, int dims){
@@ -259,7 +280,7 @@ int detectTextVectorParameters(sqlite3_value *arg, int typeHint, int *pType, int
   const u8 *text;
   int textBytes;
   int iText;
-  int textHasDigit;
+  int textHasDigit = 0;
   
   assert( sqlite3_value_type(arg) == SQLITE_TEXT );
   text = sqlite3_value_text(arg);
@@ -390,6 +411,19 @@ size_t vectorDeserializeFromBlob(Vector *pVector, const unsigned char *pBlob, si
       assert(0);
   }
   return 0;
+}
+
+void vectorInitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlobSize){
+  switch (pVector->type) {
+    case VECTOR_TYPE_FLOAT32:
+      vectorF32InitFromBlob(pVector, pBlob, nBlobSize);
+      break;
+    case VECTOR_TYPE_FLOAT64:
+      vectorF64InitFromBlob(pVector, pBlob, nBlobSize);
+      break;
+    default:
+      assert(0);
+  }
 }
 
 /**************************************************************************
@@ -542,6 +576,14 @@ out_free:
 }
 
 /*
+ * Marker function which is used in index creation syntax: CREATE INDEX idx ON t(libsql_vector_idx(emb));
+*/
+static void libsqlVectorIdx(sqlite3_context *context, int argc, sqlite3_value **argv){ 
+  // it's important for this function to be no-op as sqlite will apply this function to the column before feeding it to the index
+  sqlite3_result_value(context, argv[0]);
+}
+
+/*
 ** Register vector functions.
 */
 void sqlite3RegisterVectorFunctions(void){
@@ -551,6 +593,8 @@ void sqlite3RegisterVectorFunctions(void){
     FUNCTION(vector64,            1, 0, 0, vector64Func),
     FUNCTION(vector_extract,      1, 0, 0, vectorExtractFunc),
     FUNCTION(vector_distance_cos, 2, 0, 0, vectorDistanceCosFunc),
+
+    FUNCTION(libsql_vector_idx,  -1, 0, 0, libsqlVectorIdx),
   };
   sqlite3InsertBuiltinFuncs(aVectorFuncs, ArraySize(aVectorFuncs));
 }

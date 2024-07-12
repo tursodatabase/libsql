@@ -117,6 +117,7 @@ foreach hdr {
    vdbe.h
    vdbeInt.h
    vectorInt.h
+   vectorIndexInt.h
    vxworks.h
    wal.h
    whereInt.h
