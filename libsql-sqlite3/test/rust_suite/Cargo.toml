@@ -8,7 +8,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dev-dependencies]
-libsql-sys = { path = "../../../libsql-sys", features = ["wal", "wasmtime-bindings", "rusqlite"], default_features = false }
+libsql-sys = { path = "../../../libsql-sys", features = ["wal", "wasmtime-bindings", "rusqlite"], default-features = false }
 
 itertools = "0.10"
 tempfile = "3.3"

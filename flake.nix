@@ -26,6 +26,7 @@
               gnumake
               clang
               rustPlatform.bindgenHook
+              wasmtime
             ];
             buildInputs = with pkgs; [
               icu.dev

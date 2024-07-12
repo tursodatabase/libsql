@@ -78,38 +78,17 @@ const sources = .{
         "ext/misc/wholenumber.c",     "ext/misc/zipfile.c",
         "ext/userauth/userauth.c",    "ext/rtree/test_rtreedoc.c",
         "ext/recover/test_recover.c", "ext/recover/sqlite3recover.c",
-        "ext/recover/dbdata.c",
+        "ext/recover/dbdata.c",       "ext/session/test_session.c",
+        "ext/fts3/fts3_test.c",
     },
-};
-
-pub const Debug = struct {
-    step: std.Build.Step,
-    path: std.Build.LazyPath,
-
-    pub fn create(b: *Build, path: LazyPath) *Debug {
-        const self = b.allocator.create(Debug) catch @panic("OOM");
-        self.* = .{
-            .step = std.Build.Step.init(.{
-                .id = .custom,
-                .name = "debug path",
-                .owner = b,
-                .makeFn = make,
-            }),
-            .path = path,
-        };
-
-        path.addStepDependencies(&self.step);
-
-        return self;
-    }
-
-    pub fn make(step: *Build.Step, _: std.Progress.Node) !void {
-        const self: *Debug = @fieldParentPtr("step", step);
-
-        const b = self.step.owner;
-
-        std.debug.print("lazy_path: {s}\n", .{self.path.getPath(b)});
-    }
+    .fts5 = &.{
+        "ext/fts5/fts5_aux.c",      "ext/fts5/fts5_buffer.c",
+        "ext/fts5/fts5_config.c",   "ext/fts5/fts5_expr.c",
+        "ext/fts5/fts5_hash.c",     "ext/fts5/fts5_index.c",
+        "ext/fts5/fts5_main.c",     "ext/fts5/fts5_storage.c",
+        "ext/fts5/fts5_tokenize.c", "ext/fts5/fts5_unicode2.c",
+        "ext/fts5/fts5_varint.c",   "ext/fts5/fts5_vocab.c",
+    },
 };
 
 pub const Amalgamation = struct {
@@ -226,15 +205,14 @@ fn cflags(b: *Build, flags: []const []const u8) [][]const u8 {
 const Sqlite3Options = struct {
     target: Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-    wasm_runtime: bool = false,
-    icu: bool = false,
-    fts3: bool = false,
-    fts5: bool = false,
-    geopoly: bool = false,
-    rtree: bool = false,
-    session: bool = false,
-    preupdate_hook: bool = false,
-    @"test": bool = false,
+    wasm_runtime: bool,
+    icu: bool,
+    fts3: bool,
+    fts5: bool,
+    geopoly: bool,
+    rtree: bool,
+    session: bool,
+    @"test": bool,
 };
 
 fn filterIncludes(b: *Build, lp: LazyPath) LazyPath {
@@ -243,10 +221,7 @@ fn filterIncludes(b: *Build, lp: LazyPath) LazyPath {
     return filtered.captureStdOut();
 }
 
-fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
-    h: LazyPath,
-    lib: *Build.Step.Compile,
-} {
+fn addLibsql(b: *Build, options: Sqlite3Options) *Build.Step.Compile {
     const sqlite_cfg = b.addConfigHeader(
         .{
             .include_path = "sqlite_cfg.h",
@@ -426,46 +401,64 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
         b.path("src/page_header.h"), // this must be above wal.h, since it depends on this
         filterIncludes(b, b.path("src/wal.h")),
         b.path("ext/udf/wasm_bindings.h"),
-        // b.path("ext/recover/sqlite3recover.h"),
     }).getOutput();
 
-    const session = session: {
-        const lib = b.addStaticLibrary(.{
-            .name = "session",
-            .target = options.target,
-            .optimize = options.optimize,
-            .link_libc = true,
-        });
+    const lib = b.addStaticLibrary(.{
+        .name = "sqlite3",
+        .target = options.target,
+        .optimize = options.optimize,
+        .link_libc = true,
+    });
+    lib.installHeader(h, "sqlite3.h");
 
-        lib.addIncludePath(h.dirname());
-        lib.addIncludePath(opcodes.h.dirname());
-        lib.addIncludePath(b.path("src"));
-        lib.addIncludePath(b.path("ext/session/"));
+    lib.addIncludePath(h.dirname());
+    lib.addIncludePath(b.path("src/"));
 
+    lib.addIncludePath(opcodes.h.dirname());
+    lib.addIncludePath(keywordhash.h.dirname());
+    lib.addIncludePath(parse.h.dirname());
+    lib.addConfigHeader(sqlite_cfg);
+
+    lib.addCSourceFile(.{ .file = opcodes.c, .flags = cflags(b, &.{}) });
+    lib.addCSourceFile(.{ .file = parse.c, .flags = cflags(b, &.{}) });
+    lib.addCSourceFiles(.{ .files = sources.sqlite3, .flags = cflags(b, &.{}) });
+    lib.addCSourceFile(.{ .file = b.path("ext/misc/stmt.c"), .flags = cflags(b, &.{}) });
+
+    if (options.fts5) {
+        var fts5parse = fts5parse: {
+            const run = b.addRunArtifact(lemon);
+            run.setCwd(b.path("tool/"));
+            run.addArg("-DSQLITE_ENABLE_MATH_FUNCTIONS");
+            const dir = run.addPrefixedOutputDirectoryArg("-d", ".");
+            run.addArg("-S");
+            run.addFileArg(b.path("ext/fts5/fts5parse.y"));
+
+            break :fts5parse .{
+                .h = dir.path(b, "fts5parse.h"),
+                .c = dir.path(b, "fts5parse.c"),
+            };
+        };
+
+        lib.addIncludePath(b.path("ext/fts5/"));
+        lib.addIncludePath(fts5parse.h.dirname());
+
+        lib.addCSourceFile(.{ .file = fts5parse.c, .flags = cflags(b, &.{}) });
         lib.addCSourceFiles(.{
             .files = &.{
-                "ext/session/sqlite3session.c",
+                "ext/fts5/fts5_aux.c",      "ext/fts5/fts5_buffer.c",
+                "ext/fts5/fts5_config.c",   "ext/fts5/fts5_expr.c",
+                "ext/fts5/fts5_hash.c",     "ext/fts5/fts5_index.c",
+                "ext/fts5/fts5_main.c",     "ext/fts5/fts5_storage.c",
+                "ext/fts5/fts5_tokenize.c", "ext/fts5/fts5_unicode2.c",
+                "ext/fts5/fts5_varint.c",   "ext/fts5/fts5_vocab.c",
             },
             .flags = cflags(b, &.{}),
         });
 
-        if (options.@"test") lib.root_module.addCMacro("SQLITE_TEST", "1");
+        lib.root_module.addCMacro("SQLITE_ENABLE_FTS5", "1");
+    }
 
-        lib.root_module.addCMacro("SQLITE_ENABLE_SESSION", "1");
-        lib.root_module.addCMacro("SQLITE_ENABLE_PREUPDATE_HOOK", "1");
-
-        break :session lib;
-    };
-
-    const fts3 = fts3: {
-        const lib = b.addStaticLibrary(.{
-            .name = "fts3",
-            .target = options.target,
-            .optimize = options.optimize,
-            .link_libc = true,
-        });
-        lib.addIncludePath(h.dirname());
-        lib.addIncludePath(b.path("src"));
+    if (options.fts3) {
         lib.addIncludePath(b.path("ext/fts3/"));
         lib.addCSourceFiles(.{
             .files = &.{
@@ -487,143 +480,83 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
             .flags = cflags(b, &.{}),
         });
 
-        if (options.@"test") {
-            // lib.root_module.addCMacro("SQLITE_TEST", "1");
-            // lib.root_module.addCMacro("USE_TCL_STUBS", "");
-            // lib.linkSystemLibrary("tcl");
-        }
-
         lib.root_module.addCMacro("SQLITE_ENABLE_FTS3", "1");
         lib.root_module.addCMacro("SQLITE_ENABLE_FTS3_PARENTHESIS", "1");
-        break :fts3 lib;
-    };
+    }
 
-    const rtree = rtree: {
-        const lib = b.addStaticLibrary(.{
-            .name = "rtree",
-            .target = options.target,
-            .optimize = options.optimize,
-            .link_libc = true,
-        });
-        lib.addIncludePath(h.dirname());
-        lib.addIncludePath(b.path("src"));
-        lib.addCSourceFiles(.{
-            .files = &.{
-                "ext/rtree/rtree.c",
+    if (options.rtree) {
+        lib.addCSourceFile(.{ .file = b.path("ext/rtree/rtree.c"), .flags = cflags(b, &.{}) });
+        lib.root_module.addCMacro("SQLITE_ENABLE_RTREE", "1");
+        if (options.geopoly) lib.root_module.addCMacro("SQLITE_ENABLE_GEOPOLY", "1");
+    }
+
+    if (options.wasm_runtime) {
+        const libsql_wasm = crab.addCargoBuild(b, .{
+            .manifest_path = b.path("crates/wasmtime-bindings/Cargo.toml"),
+            .cargo_args = &.{
+                "--release",
+                "--lib",
             },
+        }, .{
+            .target = options.target,
+            .optimize = .ReleaseSafe,
+        });
+
+        lib.root_module.addCMacro("LIBSQL_ENABLE_WASM_RUNTIME", "");
+        lib.addIncludePath(b.path(".")); // to reach "ext/udf/wasm_bindings.h"
+        lib.addCSourceFile(.{
+            .file = b.path("ext/udf/wasmedge_bindings.c"),
             .flags = cflags(b, &.{}),
         });
-        if (options.@"test") lib.root_module.addCMacro("SQLITE_TEST", "1");
-        lib.root_module.addCMacro("SQLITE_ENABLE_RTREE", "1");
-        break :rtree lib;
-    };
+        lib.addLibraryPath(libsql_wasm);
+        lib.linkSystemLibrary("libsql_wasm");
+    }
 
-    const icu = icu: {
-        const lib = b.addStaticLibrary(.{
-            .name = "rtree",
-            .target = options.target,
-            .optimize = options.optimize,
-            .link_libc = true,
-        });
-        lib.addIncludePath(h.dirname());
-        lib.addIncludePath(b.path("src"));
+    if (options.icu) {
         lib.addCSourceFiles(.{
             .files = &.{"ext/icu/icu.c"},
             .flags = cflags(b, &.{}),
         });
 
-        if (options.@"test") lib.root_module.addCMacro("SQLITE_TEST", "1");
         lib.root_module.addCMacro("SQLITE_ENABLE_ICU", "1");
-        lib.linkSystemLibrary("icu-io");
+        lib.linkSystemLibrary("icuuc");
+        lib.linkSystemLibrary("icuio");
+        lib.linkSystemLibrary("icui18n");
+    }
 
-        break :icu lib;
-    };
+    if (options.session) {
+        lib.addIncludePath(b.path("ext/session/"));
 
-    const fts5 = fts5: {
-        var fts5parse = fts5parse: {
-            const run = b.addRunArtifact(lemon);
-            run.setCwd(b.path("tool/"));
-            run.addArg("-DSQLITE_ENABLE_MATH_FUNCTIONS");
-            const dir = run.addPrefixedOutputDirectoryArg("-d", ".");
-            run.addArg("-S");
-            run.addFileArg(b.path("ext/fts5/fts5parse.y"));
-
-            break :fts5parse .{
-                .h = dir.path(b, "fts5parse.h"),
-                .c = dir.path(b, "fts5parse.c"),
-            };
-        };
-
-        const lib = b.addStaticLibrary(.{
-            .name = "fts5",
-            .target = options.target,
-            .optimize = options.optimize,
-            .link_libc = true,
-        });
-
-        lib.addIncludePath(h.dirname()); // includes fts5.h, for some stupid reason
-        lib.addIncludePath(b.path("src"));
-        lib.addIncludePath(b.path("ext/fts5/"));
-        lib.addIncludePath(fts5parse.h.dirname());
-
-        lib.addCSourceFile(.{ .file = fts5parse.c, .flags = cflags(b, &.{}) });
         lib.addCSourceFiles(.{
-            .files = &.{
-                "ext/fts5/fts5_aux.c",      "ext/fts5/fts5_buffer.c",
-                "ext/fts5/fts5_config.c",   "ext/fts5/fts5_expr.c",
-                "ext/fts5/fts5_hash.c",     "ext/fts5/fts5_index.c",
-                "ext/fts5/fts5_main.c",     "ext/fts5/fts5_storage.c",
-                "ext/fts5/fts5_tokenize.c", "ext/fts5/fts5_unicode2.c",
-                "ext/fts5/fts5_varint.c",   "ext/fts5/fts5_vocab.c",
-            },
+            .files = &.{"ext/session/sqlite3session.c"},
             .flags = cflags(b, &.{}),
         });
 
-        // lib.root_module.addCMacro("SQLITE_DEBUG", "1");
-        lib.root_module.addCMacro("SQLITE_ENABLE_FTS5", "1");
-
-        if (options.@"test") lib.root_module.addCMacro("SQLITE_TEST", "1");
-
-        break :fts5 lib;
-    };
-
-    const lib = b.addStaticLibrary(.{
-        .name = "sqlite3",
-        .target = options.target,
-        .optimize = options.optimize,
-        .link_libc = true,
-    });
-    lib.installHeader(h, "sqlite3.h");
+        lib.root_module.addCMacro("SQLITE_ENABLE_SESSION", "1");
+        lib.root_module.addCMacro("SQLITE_ENABLE_PREUPDATE_HOOK", "1");
+    }
 
     if (options.@"test") {
         lib.installHeader(keywordhash.h, "keywordhash.h");
         lib.installHeader(opcodes.h, "opcodes.h");
-    }
 
-    lib.addIncludePath(h.dirname());
-    lib.addIncludePath(b.path("src/"));
-
-    lib.addIncludePath(opcodes.h.dirname());
-    lib.addIncludePath(keywordhash.h.dirname());
-    lib.addIncludePath(parse.h.dirname());
-    lib.addConfigHeader(sqlite_cfg);
-
-    lib.addCSourceFile(.{ .file = opcodes.c, .flags = cflags(b, &.{}) });
-    lib.addCSourceFile(.{ .file = parse.c, .flags = cflags(b, &.{}) });
-    lib.addCSourceFiles(.{ .files = sources.sqlite3, .flags = cflags(b, &.{}) });
-
-    lib.addCSourceFile(.{ .file = b.path("ext/misc/stmt.c"), .flags = cflags(b, &.{}) });
-
-    lib.linkLibrary(fts3);
-    lib.linkLibrary(fts5);
-    lib.linkLibrary(icu);
-    lib.linkLibrary(rtree);
-    lib.linkLibrary(session);
-
-    if (options.@"test") {
         lib.root_module.addCMacro("SQLITE_DEFAULT_PAGE_SIZE", "1024");
         lib.root_module.addCMacro("SQLITE_TEST", "1");
         lib.root_module.addCMacro("SQLITE_NO_SYNC", "1");
+
+        lib.linkSystemLibrary("tcl8.6");
+    }
+
+    if (options.target.result.os.tag == .wasi) {
+        lib.root_module.addCMacro("SQLITE_WASI", "1");
+        lib.root_module.addCMacro("SQLITE_OMIT_SHARED_MEM", "1");
+        lib.root_module.addCMacro("SQLITE_OMIT_SHARED_CACHE", "1");
+    }
+
+    if (options.target.result.os.tag == .windows) {
+        lib.root_module.addCMacro("SQLITE_OS_WIN", "1");
+    } else {
+        lib.root_module.addCMacro("SQLITE_OS_UNIX", "1");
     }
 
     lib.root_module.addCMacro("SQLITE_ENABLE_DBPAGE_VTAB", "1");
@@ -632,11 +565,7 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
     lib.root_module.addCMacro("SQLITE_ENABLE_BYTECODE_VTAB", "1");
     lib.root_module.addCMacro("SQLITE_ENABLE_COLUMN_METADATA", "1");
 
-    if (options.target.result.os.tag == .windows) {
-        lib.root_module.addCMacro("SQLITE_OS_WIN", "1");
-    } else {
-        lib.root_module.addCMacro("SQLITE_OS_UNIX", "1");
-    }
+    lib.root_module.addCMacro("SQLITE_ENABLE_LOAD_EXTENSION", "1");
 
     // lib.root_module.addCMacro("SQLITE_DEFAULT_FOREIGN_KEYS", "1");
     // lib.root_module.addCMacro("SQLITE_ENABLE_API_ARMOR", "1");
@@ -646,7 +575,6 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
     // lib.root_module.addCMacro("SQLITE_ENABLE_FTS3_PARENTHESIS", "1");
     // lib.root_module.addCMacro("SQLITE_ENABLE_FTS5", "1");
     // lib.root_module.addCMacro("SQLITE_ENABLE_JSON1", "1");
-    // lib.root_module.addCMacro("SQLITE_ENABLE_LOAD_EXTENSION", "1");
     // lib.root_module.addCMacro("SQLITE_ENABLE_MEMORY_MANAGEMENT", "1");
     // lib.root_module.addCMacro("SQLITE_ENABLE_RTREE", "1");
     // lib.root_module.addCMacro("SQLITE_ENABLE_STAT2", "1");
@@ -682,10 +610,7 @@ fn addSqlite3(b: *Build, options: Sqlite3Options) struct {
 
     if (options.icu) {}
 
-    return .{
-        .h = h,
-        .lib = lib,
-    };
+    return lib;
 }
 
 pub fn build(b: *std.Build) void {
@@ -697,24 +622,48 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const wasm_runtime = b.option(
-        bool,
-        "wasm-runtime",
-        "enable wasm runtime (default: false)",
-    ) orelse false;
-
-    const icu = b.option(
-        bool,
-        "icu",
-        "Enable icu extension (default: false)",
-    ) orelse false;
-
-    const sqlite3 = addSqlite3(b, .{
+    const options: Sqlite3Options = .{
         .target = target,
         .optimize = optimize,
-        .wasm_runtime = wasm_runtime,
-        .icu = icu,
-    });
+        .wasm_runtime = b.option(
+            bool,
+            "wasm-runtime",
+            "Enable wasm runtime (default: false)",
+        ) orelse false,
+        .icu = b.option(
+            bool,
+            "icu",
+            "Enable icu extension (default: false)",
+        ) orelse false,
+        .fts3 = b.option(
+            bool,
+            "fts3",
+            "Enable fts3 extension (default: true)",
+        ) orelse true,
+        .fts5 = b.option(
+            bool,
+            "fts5",
+            "Enable fts5 extension (default: true)",
+        ) orelse true,
+        .rtree = b.option(
+            bool,
+            "rtree",
+            "Enable rtree extension (default: true)",
+        ) orelse true,
+        .session = b.option(
+            bool,
+            "session",
+            "Enable session extension (default: true)",
+        ) orelse true,
+        .geopoly = b.option(
+            bool,
+            "geopoly",
+            "Enable geopoly extension (default: true)",
+        ) orelse true,
+        .@"test" = false,
+    };
+
+    const libsql = addLibsql(b, options);
 
     const fuzzcheck = b.addExecutable(.{
         .name = "fuzzcheck",
@@ -729,7 +678,7 @@ pub fn build(b: *std.Build) void {
         .flags = cflags(b, &.{}),
     });
     fuzzcheck.linkSystemLibrary("m");
-    fuzzcheck.linkLibrary(sqlite3.lib);
+    fuzzcheck.linkLibrary(libsql);
     fuzzcheck.linkLibrary(zlib.artifact("z"));
     fuzzcheck.linkLibC();
 
@@ -737,44 +686,53 @@ pub fn build(b: *std.Build) void {
     fuzzcheck.root_module.addCMacro("SQLITE_NO_SYNC", "1");
     fuzzcheck.root_module.addCMacro("SQLITE_OMIT_LOAD_EXTENSION", "1");
 
-    const sqlite3_test = addSqlite3(b, .{
-        .target = target,
-        .optimize = optimize,
-        .wasm_runtime = wasm_runtime,
-        .icu = icu,
-        .@"test" = true,
-    });
-
     const testfixture = b.addExecutable(.{
         .name = "testfixture",
         .root_source_file = null,
         .target = target,
         .optimize = .ReleaseFast,
-        .link_libc = true,
     });
-    testfixture.linkLibrary(sqlite3_test.lib);
+    testfixture.linkLibC();
+    testfixture.linkLibrary(
+        addLibsql(b, .{
+            .target = options.target,
+            .optimize = options.optimize,
+            .rtree = options.rtree,
+            .session = options.session,
+            .fts3 = options.fts3,
+            .fts5 = options.fts5,
+            .geopoly = options.geopoly,
+            .icu = options.icu,
+            .wasm_runtime = options.wasm_runtime,
+            .@"test" = true,
+        }),
+    );
     testfixture.addIncludePath(b.path("src/"));
     testfixture.addCSourceFiles(.{ .files = sources.testfixture, .flags = cflags(b, &.{}) });
 
     testfixture.root_module.addCMacro("SQLITE_HAVE_ZLIB", "1");
     testfixture.root_module.addCMacro("SQLITE_TEST", "1");
 
+    testfixture.root_module.addCMacro("TCLSH_INIT_PROC", "sqlite3TestInit");
     testfixture.root_module.addCMacro("SQLITE_ENABLE_STMTVTAB", "1");
     testfixture.root_module.addCMacro("SQLITE_ENABLE_DBPAGE_VTAB", "1");
     testfixture.root_module.addCMacro("SQLITE_ENABLE_BYTECODE_VTAB", "1");
-
-    testfixture.root_module.addCMacro("SQLITE_DEFAULT_PAGE_SIZE", "1024");
-    testfixture.root_module.addCMacro("TCLSH_INIT_PROC", "sqlite3TestInit");
     testfixture.root_module.addCMacro("SQLITE_SERIES_CONSTRAINT_VERIFY", "1");
     testfixture.root_module.addCMacro("SQLITE_CKSUMVFS_STATIC", "1");
+    testfixture.root_module.addCMacro("SQLITE_DEFAULT_PAGE_SIZE", "1024");
+
+    if (options.icu) testfixture.root_module.addCMacro("SQLITE_ENABLE_ICU", "1");
+    if (options.fts3) testfixture.root_module.addCMacro("SQLITE_ENABLE_FTS3", "1");
+    if (options.session) {
+        testfixture.root_module.addCMacro("SQLITE_ENABLE_SESSION", "1");
+        testfixture.root_module.addCMacro("SQLITE_ENABLE_PREUPDATE_HOOK", "1");
+    }
 
     testfixture.linkLibrary(zlib.artifact("z"));
     testfixture.linkSystemLibrary("tcl");
 
     {
         const run = b.addRunArtifact(testfixture);
-        const step = b.step("test", "Run testfixture (default: testrunner.tcl veryquick)");
-
         if (b.args) |args| {
             run.addArgs(args);
         } else {
@@ -783,16 +741,18 @@ pub fn build(b: *std.Build) void {
 
         const rust_suite = b.addSystemCommand(&.{ "cargo", "test" });
         rust_suite.setCwd(b.path("test/rust_suite"));
+        rust_suite.step.dependOn(&run.step);
 
-
+        const step = b.step(
+            "test",
+            "Run testfixture (default: testrunner.tcl veryquick)",
+        );
         step.dependOn(&run.step);
         step.dependOn(&rust_suite.step);
     }
 
     {
         const run = b.addRunArtifact(fuzzcheck);
-        const step = b.step("fuzzcheck", "Run fuzzcheck (default: test/fuzzdata[1..=8].db)");
-
         if (b.args) |args| {
             run.addArgs(args);
         } else {
@@ -810,13 +770,14 @@ pub fn build(b: *std.Build) void {
             }
         }
 
+        const step = b.step(
+            "fuzzcheck",
+            "Run fuzzcheck (default: test/fuzzdata[1..=8].db)",
+        );
         step.dependOn(&run.step);
     }
 
-    // b.getInstallStep().dependOn(
-    //     &b.addInstallArtifact(testfixture, .{}).step,
-    // );
-    b.getInstallStep().dependOn(
-        &b.addInstallArtifact(sqlite3.lib, .{}).step,
-    );
+    b.getInstallStep().dependOn(&b.addInstallArtifact(testfixture, .{}).step);
+    b.getInstallStep().dependOn(&b.addInstallArtifact(fuzzcheck, .{}).step);
+    b.getInstallStep().dependOn(&b.addInstallArtifact(libsql, .{}).step);
 }
