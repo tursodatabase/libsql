@@ -7,6 +7,7 @@ use tokio::sync::{mpsc, oneshot};
 
 use super::super::{batch, cursor, stmt, ProtocolError, Version};
 use super::{proto, Server};
+use crate::auth::constants::AUTH_HEADER;
 use crate::auth::user_auth_strategies::UserAuthContext;
 use crate::auth::{Auth, AuthError, Authenticated, Jwt};
 use crate::connection::{Connection as _, RequestContext};
@@ -98,12 +99,25 @@ pub(super) async fn handle_hello(
         .with(namespace.clone(), |ns| ns.jwt_keys())
         .await??;
 
-    namespace_jwt_keys
+    let auth_strategy = namespace_jwt_keys
         .map(Jwt::new)
         .map(Auth::new)
-        .unwrap_or_else(|| server.user_auth_strategy.clone())
-        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
+        .unwrap_or_else(|| server.user_auth_strategy.clone());
+
+    let context: UserAuthContext =
+        build_context(jwt, &auth_strategy.user_strategy.required_fields());
+
+    auth_strategy
+        .authenticate(context)
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))
+}
+
+fn build_context(jwt: Option<String>, required_fields: &Vec<&'static str>) -> UserAuthContext {
+    let mut ctx = UserAuthContext::empty();
+    if required_fields.contains(&AUTH_HEADER) && jwt.is_some() {
+        ctx.add_field(AUTH_HEADER, jwt.unwrap());
+    }
+    ctx
 }
 
 pub(super) async fn handle_request(
