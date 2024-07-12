@@ -1,7 +1,7 @@
 use axum::extract::FromRequestParts;
 
 use crate::{
-    auth::{Auth, AuthError, Jwt, UserAuthContext},
+    auth::{Auth, Jwt},
     connection::RequestContext,
 };
 
@@ -26,21 +26,15 @@ impl FromRequestParts<AppState> for RequestContext {
             .with(namespace.clone(), |ns| ns.jwt_keys())
             .await??;
 
-        let context = parts
-            .headers
-            .get(hyper::header::AUTHORIZATION)
-            .ok_or(AuthError::AuthHeaderNotFound)
-            .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
-            .and_then(|t| UserAuthContext::from_auth_str(t));
-
-        let authenticated = namespace_jwt_keys
+        let auth = namespace_jwt_keys
             .map(Jwt::new)
             .map(Auth::new)
-            .unwrap_or_else(|| state.user_auth_strategy.clone())
-            .authenticate(context)?;
+            .unwrap_or_else(|| state.user_auth_strategy.clone());
+
+        let context = super::build_context(&parts.headers, &auth.user_strategy.required_fields());
 
         Ok(Self::new(
-            authenticated,
+            auth.authenticate(context)?,
             namespace,
             state.namespaces.meta_store().clone(),
         ))

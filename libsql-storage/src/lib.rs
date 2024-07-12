@@ -13,7 +13,7 @@ use libsql_sys::rusqlite;
 use libsql_sys::wal::{Result, Vfs, Wal, WalManager};
 use rpc::storage_client::StorageClient;
 use tonic::transport::Channel;
-use tracing::{error, trace};
+use tracing::{error, trace, warn};
 
 pub mod rpc {
     #![allow(clippy::all)]
@@ -23,12 +23,7 @@ pub mod rpc {
 // What does (not) work:
 // - there are no read txn locks nor upgrades
 // - no lock stealing
-// - write set is kept in mem
-// - txns don't use max_frame_no yet
 // - no savepoints, yet
-// - no multi tenancy, uses `default` namespace
-// - txn can read new frames after it started (since there are no read locks)
-// - requires huge memory as it assumes all the txn data fits in the memory
 
 #[derive(Clone, Default)]
 pub struct DurableWalConfig {
@@ -178,17 +173,6 @@ impl DurableWal {
             .flatten();
         Ok(frame_no)
     }
-
-    async fn frames_count(&self) -> u64 {
-        let req = rpc::FramesInWalRequest {
-            namespace: self.namespace.to_string(),
-        };
-        let mut binding = self.client.clone();
-        let resp = binding.frames_in_wal(req).await.unwrap();
-        let count = resp.into_inner().count;
-        trace!("DurableWal::frames_in_wal() = {}", count);
-        count
-    }
 }
 
 impl Wal for DurableWal {
@@ -200,9 +184,7 @@ impl Wal for DurableWal {
         // - create a read lock
         // - save the current max_frame_no for this txn
         trace!("DurableWal::begin_read_txn()");
-        let rt = tokio::runtime::Handle::current();
-        let frame_no = tokio::task::block_in_place(|| rt.block_on(self.frames_count()));
-        self.max_frame_no = frame_no;
+        self.max_frame_no = self.local_cache.get_max_frame_num().unwrap();
         Ok(true)
     }
 
@@ -232,21 +214,14 @@ impl Wal for DurableWal {
         if self.max_frame_no == 0 {
             return Ok(None);
         }
-        let rt = tokio::runtime::Handle::current();
-        // TODO: find_frame should account for `max_frame_no` of this txn
-        let frame_no =
-            tokio::task::block_in_place(|| rt.block_on(self.find_frame_by_page_no(page_no)))
-                .unwrap();
-        if frame_no.is_none() {
-            return Ok(None);
-        }
         return Ok(Some(page_no));
     }
 
     #[tracing::instrument(skip_all, fields(page_no))]
     fn read_frame(&mut self, page_no: std::num::NonZeroU32, buffer: &mut [u8]) -> Result<()> {
         trace!("DurableWal::read_frame()");
-        let rt = tokio::runtime::Handle::current();
+        // to read a frame, first we check in transaction cache, then frames cache and lastly
+        // storage server
         if let Ok(Some(frame)) = self
             .local_cache
             .get_page(self.conn_id.as_str(), u32::from(page_no))
@@ -258,13 +233,11 @@ impl Wal for DurableWal {
             buffer.copy_from_slice(&frame);
             return Ok(());
         }
-        // TODO: this call is unnecessary since `read_frame` is always called after `find_frame`
-        let frame_no =
-            tokio::task::block_in_place(|| rt.block_on(self.find_frame_by_page_no(page_no)))
-                .unwrap()
-                .unwrap();
         // check if the frame exists in the local cache
-        if let Ok(Some(frame)) = self.local_cache.get_frame(frame_no.into()) {
+        if let Ok(Some(frame)) = self
+            .local_cache
+            .get_frame_by_page(u32::from(page_no), self.max_frame_no)
+        {
             trace!(
                 "DurableWal::read_frame(page_no: {:?}) -- read cache hit",
                 page_no
@@ -272,6 +245,11 @@ impl Wal for DurableWal {
             buffer.copy_from_slice(&frame);
             return Ok(());
         }
+        let rt = tokio::runtime::Handle::current();
+        let frame_no =
+            tokio::task::block_in_place(|| rt.block_on(self.find_frame_by_page_no(page_no)))
+                .unwrap()
+                .unwrap();
         let req = rpc::ReadFrameRequest {
             namespace: self.namespace.to_string(),
             frame_no: frame_no.get(),
@@ -281,17 +259,17 @@ impl Wal for DurableWal {
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         let frame = resp.into_inner().frame.unwrap();
         buffer.copy_from_slice(&frame);
-        let _ = self.local_cache.insert_frame(frame_no.into(), &frame);
+        let _ = self
+            .local_cache
+            .insert_frame(frame_no.into(), u32::from(page_no), &frame);
         Ok(())
     }
 
     fn db_size(&self) -> u32 {
-        let rt = tokio::runtime::Handle::current();
-        let size = tokio::task::block_in_place(|| rt.block_on(self.frames_count()))
-            .try_into()
-            .unwrap();
+        let size = self.local_cache.get_max_frame_num().unwrap();
         trace!("DurableWal::db_size() => {}", size);
-        size
+        // TODO: serve the db size from the meta table
+        size as u32
     }
 
     fn begin_write_txn(&mut self) -> Result<()> {
@@ -379,7 +357,7 @@ impl Wal for DurableWal {
 
         let req = rpc::InsertFramesRequest {
             namespace: self.namespace.to_string(),
-            frames,
+            frames: frames.clone(),
             max_frame_no: self.max_frame_no,
         };
         let mut binding = self.client.clone();
@@ -392,6 +370,10 @@ impl Wal for DurableWal {
             }
             return Err(rusqlite::ffi::Error::new(SQLITE_ABORT));
         }
+        // TODO: fix parity with storage server frame num with local cache
+        self.local_cache
+            .insert_frames(self.max_frame_no, frames)
+            .unwrap();
         Ok(resp.unwrap().into_inner().num_frames as usize)
     }
 

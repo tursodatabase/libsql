@@ -5,13 +5,14 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 use std::sync::Arc;
 
+use libsql_wal::io::{file::FileExt, Io};
+use libsql_wal::registry::WalRegistry;
+use libsql_wal::storage::TestStorage;
+use libsql_wal::wal::LibsqlWalManager;
+
 use libsql_sys::name::NamespaceName;
 use libsql_sys::rusqlite::{self, ErrorCode, OpenFlags};
-use libsql_wal::{
-    io::{file::FileExt, Io},
-    registry::WalRegistry,
-    wal::LibsqlWalManager,
-};
+
 use parking_lot::Mutex;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -184,9 +185,15 @@ fn flaky_fs() {
         let name = path.file_name().unwrap().to_str().unwrap();
         NamespaceName::from_string(name.to_string())
     };
-    let registry =
-        Arc::new(WalRegistry::new_with_fs(fs, tmp.path().join("test/wals"), resolver, ()).unwrap());
-    let wal_manager = LibsqlWalManager::new(registry.clone());
+    let registry = Arc::new(
+        WalRegistry::new_with_io(
+            fs,
+            tmp.path().join("test/wals"),
+            TestStorage::<FlakyFile>::new(),
+        )
+        .unwrap(),
+    );
+    let wal_manager = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
 
     let conn = libsql_sys::Connection::open(
         tmp.path().join("test/data").clone(),

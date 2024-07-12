@@ -261,6 +261,48 @@ async fn connection_execute_batch_inserts() {
 }
 
 #[tokio::test]
+async fn connection_execute_batch_inserts_returning() {
+    let conn = setup().await;
+
+    conn.execute("CREATE TABLE foo(x INTEGER)", ())
+        .await
+        .unwrap();
+
+    let mut batch_rows = conn
+        .execute_batch(
+            "BEGIN;
+            INSERT INTO foo VALUES (1) RETURNING *;
+            INSERT INTO foo VALUES (2) RETURNING *;
+            INSERT INTO foo VALUES (3) RETURNING *;
+            COMMIT;
+            ",
+        )
+        .await
+        .unwrap();
+
+    assert!(batch_rows.next_stmt_row().unwrap().is_none());
+
+    let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<u64>(0).unwrap(),
+        1
+    );
+    let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<u64>(0).unwrap(),
+        2
+    );
+
+    let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<u64>(0).unwrap(),
+        3
+    );
+
+    assert!(batch_rows.next_stmt_row().unwrap().is_none());
+}
+
+#[tokio::test]
 async fn connection_execute_batch_newline() {
     // This test checks that we handle a null raw
     // stament in execute_batch. What happens when there

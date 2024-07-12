@@ -11,7 +11,6 @@ use parking_lot::{Mutex, MutexGuard};
 use crate::error::{Error, Result};
 use crate::io::file::FileExt;
 use crate::io::Io;
-use crate::registry::WalRegistry;
 use crate::segment::current::CurrentSegment;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 use libsql_sys::name::NamespaceName;
@@ -31,14 +30,20 @@ pub struct WalLock {
     pub(crate) waiters: Injector<(Unparker, u64)>,
 }
 
+pub(crate) trait SwapLog<IO: Io>: Sync + Send + 'static {
+    fn swap_current(&self, shared: &SharedWal<IO>, tx: &TxGuard<IO::File>) -> Result<()>;
+}
+
 pub struct SharedWal<IO: Io> {
     pub(crate) current: ArcSwap<CurrentSegment<IO::File>>,
     pub(crate) wal_lock: Arc<WalLock>,
     pub(crate) db_file: IO::File,
     pub(crate) namespace: NamespaceName,
-    pub(crate) registry: Arc<WalRegistry<IO>>,
+    pub(crate) registry: Arc<dyn SwapLog<IO>>,
     #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
+    /// max frame_no acknoledged by the durable storage
+    pub(crate) durable_frame_no: AtomicU64,
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
 }
 
@@ -54,7 +59,7 @@ impl<IO: Io> SharedWal<IO> {
         let current = self.current.load();
         current.inc_reader_count();
         let (max_frame_no, db_size) =
-            current.with_header(|header| (header.last_committed(), header.db_size()));
+            current.with_header(|header| (header.last_committed(), header.size_after()));
         let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
         ReadTransaction {
             id,
@@ -201,7 +206,6 @@ impl<IO: Io> SharedWal<IO> {
         // The replication index from page 1 must match that of the SharedWal
         #[cfg(debug_assertions)]
         {
-            use crossbeam::atomic::AtomicConsume;
             use libsql_sys::ffi::Sqlite3DbHeader;
             use zerocopy::FromBytes;
 
@@ -209,7 +213,7 @@ impl<IO: Io> SharedWal<IO> {
                 let header = Sqlite3DbHeader::read_from_prefix(buffer).unwrap();
                 assert_eq!(
                     header.replication_index.get(),
-                    self.checkpointed_frame_no.load_consume()
+                    self.checkpointed_frame_no.load(Ordering::Relaxed)
                 );
             }
         }
@@ -246,16 +250,20 @@ impl<IO: Io> SharedWal<IO> {
         Ok(())
     }
 
-    pub fn checkpoint(&self) -> Result<Option<u64>> {
-        let current = self.current.load();
-        match current.tail().checkpoint(&self.db_file)? {
-            Some(frame_no) => {
-                self.checkpointed_frame_no
-                    .store(frame_no, Ordering::Relaxed);
-                Ok(Some(frame_no))
-            }
-            None => Ok(None),
+    pub async fn checkpoint(&self) -> Result<Option<u64>> {
+        let durable_frame_no = self.durable_frame_no.load(Ordering::SeqCst);
+        let checkpointed_frame_no = self
+            .current
+            .load()
+            .tail()
+            .checkpoint(&self.db_file, durable_frame_no)
+            .await?;
+        if let Some(checkpointed_frame_no) = checkpointed_frame_no {
+            self.checkpointed_frame_no
+                .store(checkpointed_frame_no, Ordering::SeqCst);
         }
+
+        Ok(checkpointed_frame_no)
     }
 
     pub fn last_committed_frame_no(&self) -> u64 {
@@ -270,61 +278,32 @@ impl<IO: Io> SharedWal<IO> {
 
 #[cfg(test)]
 mod test {
-    use std::path::Path;
-
-    use crossbeam::atomic::AtomicConsume;
-    use libsql_sys::rusqlite::OpenFlags;
-    use tempfile::tempdir;
-
-    use crate::wal::LibsqlWalManager;
+    use crate::test::{seal_current_segment, TestEnv};
 
     use super::*;
 
-    #[test]
-    fn checkpoint() {
-        let tmp = tempdir().unwrap();
-        let resolver = |path: &Path| {
-            let name = path.file_name().unwrap().to_str().unwrap();
-            NamespaceName::from_string(name.to_string())
-        };
+    #[tokio::test]
+    async fn checkpoint() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
 
-        let registry =
-            Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
-        let wal_manager = LibsqlWalManager::new(registry.clone());
-
-        let db_path = tmp.path().join("test/data");
-        let conn = libsql_sys::Connection::open(
-            db_path.clone(),
-            OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-            wal_manager.clone(),
-            100000,
-            None,
-        )
-        .unwrap();
-
-        let shared = registry.open(&db_path).unwrap();
-
-        assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
+        assert_eq!(shared.checkpointed_frame_no.load(Ordering::Relaxed), 0);
 
         conn.execute("create table test (x)", ()).unwrap();
         conn.execute("insert into test values (12)", ()).unwrap();
         conn.execute("insert into test values (12)", ()).unwrap();
 
-        assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
+        assert_eq!(shared.checkpointed_frame_no.load(Ordering::Relaxed), 0);
 
-        let mut tx = Transaction::Read(shared.begin_read(666));
-        shared.upgrade(&mut tx).unwrap();
-        {
-            let mut tx = tx.as_write_mut().unwrap().lock();
-            tx.commit();
-            shared.swap_current(&tx).unwrap();
-        }
-        tx.end();
+        seal_current_segment(&shared);
 
-        let frame_no = shared.checkpoint().unwrap().unwrap();
+        shared.durable_frame_no.store(99999, Ordering::Relaxed);
+
+        let frame_no = shared.checkpoint().await.unwrap().unwrap();
         assert_eq!(frame_no, 4);
-        assert_eq!(shared.checkpointed_frame_no.load_consume(), 4);
+        assert_eq!(shared.checkpointed_frame_no.load(Ordering::Relaxed), 4);
 
-        assert!(shared.checkpoint().unwrap().is_none());
+        assert!(shared.checkpoint().await.unwrap().is_none());
     }
 }

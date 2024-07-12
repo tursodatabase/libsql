@@ -1,44 +1,40 @@
-#![allow(dead_code, unused_variables, async_fn_in_trait)]
-use std::sync::Arc;
-use std::time::Duration;
+//! `AsyncStorage` is a `Storage` implementation that defer storage to a background thread. The
+//! durable frame_no is notified asynchronously.
 
-use chrono::{DateTime, Utc};
+use std::sync::Arc;
+
+use chrono::Utc;
+use libsql_sys::name::NamespaceName;
 use tokio::sync::{mpsc, oneshot};
-use tokio::task::{JoinHandle, JoinSet};
+use tokio::task::JoinSet;
 
 use crate::io::Io;
-use crate::segment::sealed::SealedSegment;
-use libsql_sys::name::NamespaceName;
+use crate::segment::Segment;
 
-use self::job::JobResult;
-use self::scheduler::Scheduler;
-use self::storage::Storage;
+use super::backend::Backend;
+use super::scheduler::Scheduler;
+use super::{Storage, StoreSegmentRequest};
 
-mod job;
-mod restore;
-mod scheduler;
-pub mod storage;
-
-/// Backgroung loop task state.
+/// Background loop task state.
 ///
 /// The background loop task is not allowed to exit, unless it was notified for shutdown.
 ///
 /// On shutdown, attempts to empty the queue, and flush the receiver. When the last handle of the
 /// receiver is dropped, and the queue is empty, exit.
-pub struct BottomlessLoop<S: Storage, FS: Io> {
-    receiver: mpsc::Receiver<StoreSegmentRequest<S::Config, Arc<SealedSegment<FS::File>>>>,
-    scheduler: Scheduler<S::Config, Arc<SealedSegment<FS::File>>>,
-    storage: Arc<S>,
-    filesystem: Arc<FS>,
+pub struct AsyncStorageLoop<B: Backend, IO: Io, S> {
+    receiver: mpsc::UnboundedReceiver<StoreSegmentRequest<B::Config, S>>,
+    scheduler: Scheduler<B::Config, S>,
+    backend: Arc<B>,
+    io: Arc<IO>,
     max_in_flight: usize,
-    in_flight_futs: JoinSet<JobResult<S::Config, Arc<SealedSegment<FS::File>>>>,
     force_shutdown: oneshot::Receiver<()>,
 }
 
-impl<S, FS> BottomlessLoop<S, FS>
+impl<B, FS, S> AsyncStorageLoop<B, FS, S>
 where
     FS: Io,
-    S: Storage + 'static,
+    B: Backend + 'static,
+    S: Segment,
 {
     /// Schedules durability jobs. This loop is not allowed to fail, or lose jobs.
     /// A job is prepared by calling `Scheduler::prepare(..)`. The job is spawned, and it returns a
@@ -49,8 +45,9 @@ where
     /// The loop is only allowed to shutdown if the receiver is closed, and the scheduler is empty,
     /// or if `force_shutdown` is called, in which case everything is dropped in place.
     #[tracing::instrument(skip(self))]
-    async fn run(mut self) {
+    pub async fn run(mut self) {
         let mut shutting_down = false;
+        let mut in_flight_futs = JoinSet::new();
         // run the loop until shutdown.
         loop {
             if shutting_down && self.scheduler.is_empty() {
@@ -58,23 +55,22 @@ where
             }
 
             // schedule as much work as possible
-            while self.scheduler.has_work() && self.in_flight_futs.len() < self.max_in_flight {
+            while self.scheduler.has_work() && in_flight_futs.len() < self.max_in_flight {
                 let job = self
                     .scheduler
                     .schedule()
                     .expect("scheduler has work, but didn't return a job");
-                self.in_flight_futs
-                    .spawn(job.perform(self.storage.clone(), self.filesystem.clone()));
+                in_flight_futs.spawn(job.perform(self.backend.clone(), self.io.clone()));
             }
 
             tokio::select! {
                 biased;
-                Some(join_result) = self.in_flight_futs.join_next(), if !self.in_flight_futs.is_empty() => {
+                Some(join_result) = in_flight_futs.join_next(), if !in_flight_futs.is_empty() => {
                     match join_result {
                         Ok(job_result) => {
                             // if shutting down, log progess:
                             if shutting_down {
-                                tracing::info!("processed job, {} jobs remaining", self.in_flight_futs.len());
+                                tracing::info!("processed job, {} jobs remaining", in_flight_futs.len());
                             }
                             self.scheduler.report(job_result).await;
                         }
@@ -112,81 +108,94 @@ where
 
 pub struct BottomlessConfig<C> {
     /// The maximum number of store jobs that can be processed conccurently
-    max_jobs_conccurency: usize,
+    pub max_jobs_conccurency: usize,
     /// The maximum number of jobs that can be enqueued before throttling
-    max_enqueued_jobs: usize,
-    config: C,
+    pub max_enqueued_jobs: usize,
+    pub config: C,
 }
 
-pub struct Bottomless<C, S> {
+pub struct AsyncStorage<C, S> {
     /// send request to the main loop
-    job_sender: mpsc::Sender<StoreSegmentRequest<C, S>>,
+    job_sender: mpsc::UnboundedSender<StoreSegmentRequest<C, S>>,
     /// receiver for the current max durable index
     durable_notifier: mpsc::Receiver<(NamespaceName, u64)>,
-    /// join handle to the `BottomlessLoop`
-    loop_handle: JoinHandle<()>,
     force_shutdown: oneshot::Sender<()>,
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error("io error: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("an error occured while storing a segment: {0}")]
-    Store(String),
-}
-
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-impl<C, F> Bottomless<C, F> {
-    pub async fn new<S: Storage>(_storage: S) -> Result<Bottomless<S::Config, F>> {
-        todo!()
-    }
-    /// Send a request make a segment durable. Return a future that resolves when that segment
-    /// becomes durable.
-    pub async fn store(&self, _request: StoreSegmentRequest<C, F>) {
-        assert!(
-            !self.job_sender.is_closed(),
-            "bottomless loop was closed before the handle was dropped"
-        );
-        todo!();
-    }
-
-    /// Tries to shutdown bottomless gracefully.
-    /// If timeout expires, bottomless is forcefully shutdown.
-    pub async fn shutdown(self, timeout: Duration) {
-        let (mut handle, force_shutdown) = {
-            // we drop the sender, the loop will finish processing scheduled job and exit
-            // gracefully.
-            let Self {
-                loop_handle,
-                force_shutdown,
-                ..
-            } = self;
-            (loop_handle, force_shutdown)
+impl<C, S> Storage for AsyncStorage<C, S>
+where
+    C: Send + Sync + 'static,
+    S: Segment,
+{
+    type Segment = S;
+    fn store(&self, namespace: &NamespaceName, segment: Self::Segment) {
+        let req = StoreSegmentRequest {
+            namespace: namespace.clone(),
+            segment,
+            created_at: Utc::now(),
+            storage_config_override: None,
         };
 
-        match tokio::time::timeout(timeout, &mut handle).await {
-            Ok(_) => (),
-            Err(_) => {
-                tracing::error!("Bottomless graceful shutdown elapsed, shutting down forcefully");
-                let _ = force_shutdown.send(());
-                handle
-                    .await
-                    .expect("bottomless loop panicked while shutting down");
-            }
-        }
+        self.job_sender
+            .send(req)
+            .expect("bottomless loop was closed before the handle was dropped");
+    }
+
+    fn durable_frame_no(&self, _namespace: &NamespaceName) -> u64 {
+        todo!()
     }
 }
 
-#[derive(Debug)]
-pub struct StoreSegmentRequest<C, T> {
-    namespace: NamespaceName,
-    /// Path to the segment. Read-only for bottomless
-    segment: T,
-    /// When this segment was created
-    created_at: DateTime<Utc>,
-    /// alternative configuration to use with the storage layer.
-    /// e.g: S3 overrides
-    storage_config_override: Option<Arc<C>>,
+pub struct AsyncStorageInitConfig<S> {
+    storage: S,
+    max_in_flight_jobs: usize,
+}
+
+impl<C, S> AsyncStorage<C, S> {
+    pub async fn new<B, IO>(
+        config: AsyncStorageInitConfig<B>,
+        io: Arc<IO>,
+    ) -> (AsyncStorage<C, S>, AsyncStorageLoop<B, IO, S>)
+    where
+        B: Backend<Config = C>,
+        IO: Io,
+        S: Segment,
+        C: Send + Sync + 'static,
+    {
+        let (job_snd, job_rcv) = tokio::sync::mpsc::unbounded_channel();
+        let (durable_notifier_snd, durable_notifier_rcv) = tokio::sync::mpsc::channel(16);
+        let (shutdown_snd, shutdown_rcv) = tokio::sync::oneshot::channel();
+        let scheduler = Scheduler::new(durable_notifier_snd);
+        let storage_loop = AsyncStorageLoop {
+            receiver: job_rcv,
+            scheduler,
+            backend: Arc::new(config.storage),
+            io,
+            max_in_flight: config.max_in_flight_jobs,
+            force_shutdown: shutdown_rcv,
+        };
+
+        let this = Self {
+            job_sender: job_snd,
+            durable_notifier: durable_notifier_rcv,
+            force_shutdown: shutdown_snd,
+        };
+
+        (this, storage_loop)
+    }
+
+    /// send shutdown signal to bottomless.
+    /// return a function that can be called to force shutdown, if necessary
+    pub fn send_shutdown(self) -> impl FnOnce() {
+        let force_shutdown = {
+            // we drop the sender, the loop will finish processing scheduled job and exit
+            // gracefully.
+            let Self { force_shutdown, .. } = self;
+            force_shutdown
+        };
+
+        || {
+            let _ = force_shutdown.send(());
+        }
+    }
 }

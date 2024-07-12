@@ -94,8 +94,12 @@ impl ReplicationLogService {
         };
 
         if let Some(auth) = auth {
-            let user_credential = parse_grpc_auth_header(req.metadata());
-            auth.authenticate(user_credential)?;
+            let context =
+                parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields())
+                    .map_err(|e| {
+                        tonic::Status::internal(format!("Error parsing auth header: {}", e))
+                    })?;
+            auth.authenticate(context)?;
         }
 
         Ok(())

@@ -455,6 +455,9 @@ impl<W: Wal> Connection<W> {
 
         let config = config_store.get();
         conn.pragma_update(None, "max_page_count", config.max_db_pages)?;
+        tracing::info!("setting PRAGMA synchronous to {}", config.durability_mode);
+        conn.pragma_update(None, "synchronous", config.durability_mode)?;
+
         conn.set_limit(
             rusqlite::limits::Limit::SQLITE_LIMIT_LENGTH,
             config.max_row_size as i32,

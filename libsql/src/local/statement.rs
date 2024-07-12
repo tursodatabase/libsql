@@ -221,11 +221,12 @@ impl Statement {
         }
     }
 
-    pub(crate) fn step(&self) -> Result<()> {
+    /// Returns true if this statement has rows ready to be read.
+    pub(crate) fn step(&self) -> Result<bool> {
         let err = self.inner.step();
         match err {
-            crate::ffi::SQLITE_DONE => Ok(()),
-            crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
+            crate::ffi::SQLITE_DONE => Ok(false),
+            crate::ffi::SQLITE_ROW => Ok(true),
             _ => Err(Error::SqliteFailure(
                 errors::extended_error_code(self.conn.raw),
                 errors::error_from_handle(self.conn.raw),

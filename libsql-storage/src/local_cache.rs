@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use crate::rpc::Frame;
 use libsql_sys::rusqlite::{ffi, params, Connection, Error, Result};
 
 /// We use LocalCache to cache frames and transaction state. Each namespace gets its own cache
@@ -36,8 +37,13 @@ impl LocalCache {
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS frames (
                 frame_no INTEGER PRIMARY KEY NOT NULL,
+                page_no INTEGER NOT NULL,
                 data BLOB NOT NULL
             )",
+            [],
+        )?;
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_page_no_frame_no ON frames (page_no, frame_no)",
             [],
         )?;
 
@@ -53,10 +59,10 @@ impl LocalCache {
         Ok(())
     }
 
-    pub fn insert_frame(&self, frame_no: u64, frame_data: &[u8]) -> Result<()> {
+    pub fn insert_frame(&self, frame_no: u64, page_no: u32, frame_data: &[u8]) -> Result<()> {
         match self.conn.execute(
-            "INSERT INTO frames (frame_no, data) VALUES (?1, ?2)",
-            params![frame_no, frame_data],
+            "INSERT INTO frames (frame_no, page_no, data) VALUES (?1, ?2, ?3)",
+            params![frame_no, page_no, frame_data],
         ) {
             Ok(_) => Ok(()),
             Err(Error::SqliteFailure(e, _)) if e.code == ffi::ErrorCode::ConstraintViolation => {
@@ -66,13 +72,41 @@ impl LocalCache {
         }
     }
 
-    pub fn get_frame(&self, frame_no: u64) -> Result<Option<Vec<u8>>> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT data FROM frames WHERE frame_no = ?1")?;
-        match stmt.query_row(params![frame_no], |row| row.get(0)) {
+    pub fn insert_frames(&mut self, frame_no: u64, frames: Vec<Frame>) -> Result<()> {
+        let tx = self.conn.transaction().unwrap();
+        {
+            let mut stmt =
+                tx.prepare("INSERT INTO frames (frame_no, page_no, data) VALUES (?1, ?2, ?3)")?;
+            let mut frame_no = frame_no;
+            for f in frames {
+                frame_no += 1;
+                stmt.execute(params![frame_no, f.page_no, f.data]).unwrap();
+            }
+        }
+        tx.commit().unwrap();
+        Ok(())
+    }
+
+    pub fn get_frame_by_page(&self, page_no: u32, max_frame_no: u64) -> Result<Option<Vec<u8>>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT data FROM frames WHERE page_no=?1 AND frame_no <= ?2
+            ORDER BY frame_no DESC LIMIT 1",
+        )?;
+        match stmt.query_row(params![page_no, max_frame_no], |row| row.get(0)) {
             Ok(frame_data) => Ok(Some(frame_data)),
             Err(Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn get_max_frame_num(&self) -> Result<u64> {
+        match self
+            .conn
+            .query_row("SELECT MAX(frame_no) from frames", (), |row| {
+                row.get::<_, Option<u64>>(0)
+            }) {
+            Ok(Some(frame_no)) => Ok(frame_no),
+            Ok(None) | Err(Error::QueryReturnedNoRows) => Ok(0),
             Err(e) => Err(e),
         }
     }

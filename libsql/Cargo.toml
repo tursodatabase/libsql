@@ -1,6 +1,6 @@
 [package]
 name = "libsql"
-version = "0.5.0-alpha.1"
+version = "0.5.0-alpha.2"
 edition = "2021"
 description = "libSQL library: the main gateway for interacting with the database"
 repository = "https://github.com/tursodatabase/libsql"

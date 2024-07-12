@@ -30,6 +30,9 @@ uuid = { version = "1.8.0", features = ["v4"] }
 walkdir = "2.5.0"
 zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
 
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-s3 = "1"
+
 [dev-dependencies]
 criterion = "0.5.1"
 hex = "0.4.3"
@@ -38,6 +41,12 @@ once_cell = "1.19.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 regex = "1.10.4"
+s3s = { git = "https://github.com/Nugine/s3s" }
+s3s-fs = { git = "https://github.com/Nugine/s3s" }
+s3s-aws = { git = "https://github.com/Nugine/s3s" }
+tracing-subscriber = "0.3"
+aws-credential-types = { version = "1", features = ["test-util"] }
+tokio = { version = "*", features = ["test-util"] }
 
 [[bench]]
 name = "benchmarks"

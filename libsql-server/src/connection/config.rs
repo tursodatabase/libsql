@@ -1,11 +1,15 @@
 use crate::{namespace::NamespaceName, LIBSQL_PAGE_SIZE};
 use bytesize::mb;
+use rusqlite::types::ToSqlOutput;
+use rusqlite::ToSql;
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
+use std::str::FromStr;
 use url::Url;
 
+use super::TXN_TIMEOUT;
 use libsql_replication::rpc::metadata;
 use tokio::time::Duration;
-
-use super::TXN_TIMEOUT;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct DatabaseConfig {
@@ -29,6 +33,8 @@ pub struct DatabaseConfig {
     pub is_shared_schema: bool,
     #[serde(default)]
     pub shared_schema_name: Option<NamespaceName>,
+    #[serde(default)]
+    pub durability_mode: DurabilityMode,
 }
 
 const fn default_max_size() -> u64 {
@@ -54,6 +60,7 @@ impl Default for DatabaseConfig {
             max_row_size: default_max_row_size(),
             is_shared_schema: false,
             shared_schema_name: None,
+            durability_mode: DurabilityMode::default(),
         }
     }
 }
@@ -77,6 +84,10 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
                 .shared_schema_name
                 .clone()
                 .map(NamespaceName::new_unchecked),
+            durability_mode: match value.durability_mode {
+                None => DurabilityMode::default(),
+                Some(m) => DurabilityMode::from(metadata::DurabilityMode::try_from(m)),
+            },
         }
     }
 }
@@ -96,6 +107,80 @@ impl From<&DatabaseConfig> for metadata::DatabaseConfig {
             max_row_size: Some(value.max_row_size),
             shared_schema: Some(value.is_shared_schema),
             shared_schema_name: value.shared_schema_name.as_ref().map(|s| s.to_string()),
+            durability_mode: Some(metadata::DurabilityMode::from(value.durability_mode).into()),
+        }
+    }
+}
+
+/// Durability mode specifies the `PRAGMA SYNCHRONOUS` setting for the connection
+#[derive(PartialEq, Clone, Copy, Debug, Deserialize, Serialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum DurabilityMode {
+    Extra,
+    Strong,
+    #[default]
+    Relaxed,
+    Off,
+}
+
+impl ToSql for DurabilityMode {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        match self {
+            DurabilityMode::Extra => Ok(ToSqlOutput::from("extra")),
+            DurabilityMode::Strong => Ok(ToSqlOutput::from("full")),
+            DurabilityMode::Relaxed => Ok(ToSqlOutput::from("normal")),
+            DurabilityMode::Off => Ok(ToSqlOutput::from("off")),
+        }
+    }
+}
+
+impl FromStr for DurabilityMode {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<DurabilityMode, Self::Err> {
+        match input {
+            "extra" => Ok(DurabilityMode::Extra),
+            "strong" => Ok(DurabilityMode::Strong),
+            "relaxed" => Ok(DurabilityMode::Relaxed),
+            "off" => Ok(DurabilityMode::Off),
+            _ => Err(()),
+        }
+    }
+}
+
+impl Display for DurabilityMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let m = match self {
+            DurabilityMode::Extra => "extra",
+            DurabilityMode::Strong => "strong",
+            DurabilityMode::Relaxed => "relaxed",
+            DurabilityMode::Off => "off",
+        };
+        write!(f, "{m}")
+    }
+}
+
+impl From<DurabilityMode> for metadata::DurabilityMode {
+    fn from(value: DurabilityMode) -> Self {
+        match value {
+            DurabilityMode::Relaxed => metadata::DurabilityMode::Relaxed,
+            DurabilityMode::Strong => metadata::DurabilityMode::Strong,
+            DurabilityMode::Extra => metadata::DurabilityMode::Extra,
+            DurabilityMode::Off => metadata::DurabilityMode::Off,
+        }
+    }
+}
+
+impl From<Result<metadata::DurabilityMode, prost::DecodeError>> for DurabilityMode {
+    fn from(value: Result<metadata::DurabilityMode, prost::DecodeError>) -> Self {
+        match value {
+            Ok(mode) => match mode {
+                metadata::DurabilityMode::Relaxed => DurabilityMode::Relaxed,
+                metadata::DurabilityMode::Strong => DurabilityMode::Strong,
+                metadata::DurabilityMode::Extra => DurabilityMode::Extra,
+                metadata::DurabilityMode::Off => DurabilityMode::Off,
+            },
+            Err(_) => DurabilityMode::default(),
         }
     }
 }

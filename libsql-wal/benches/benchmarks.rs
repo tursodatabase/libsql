@@ -7,6 +7,7 @@ use libsql_sys::rusqlite::{self, OpenFlags};
 use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
 use libsql_wal::io::StdIO;
+use libsql_wal::storage::NoStorage;
 use libsql_wal::wal::LibsqlWal;
 use libsql_wal::{registry::WalRegistry, wal::LibsqlWalManager};
 use tempfile::tempdir;
@@ -58,8 +59,8 @@ fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal<StdIO>>)) {
     let tmp = tempdir().unwrap();
     let resolver = |_: &Path| NamespaceName::from_string("test".into());
 
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("wals"), resolver, ()).unwrap());
-    let wal_manager = LibsqlWalManager::new(registry.clone());
+    let registry = Arc::new(WalRegistry::new(tmp.path().join("wals"), NoStorage).unwrap());
+    let wal_manager = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
 
     let mut conn = libsql_sys::Connection::open(
         tmp.path().join("data"),

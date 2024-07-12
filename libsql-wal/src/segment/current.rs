@@ -34,7 +34,7 @@ pub struct CurrentSegment<F> {
     /// lock
     read_locks: Arc<AtomicU64>,
     sealed: AtomicBool,
-    tail: Arc<SegmentList<F>>,
+    tail: Arc<SegmentList<SealedSegment<F>>>,
 }
 
 impl<F> CurrentSegment<F> {
@@ -45,7 +45,7 @@ impl<F> CurrentSegment<F> {
         path: PathBuf,
         start_frame_no: NonZeroU64,
         db_size: u32,
-        tail: Arc<SegmentList<F>>,
+        tail: Arc<SegmentList<SealedSegment<F>>>,
     ) -> Result<Self>
     where
         F: FileExt,
@@ -53,7 +53,7 @@ impl<F> CurrentSegment<F> {
         let mut header = SegmentHeader {
             start_frame_no: start_frame_no.get().into(),
             last_commited_frame_no: 0.into(),
-            db_size: db_size.into(),
+            size_after: db_size.into(),
             index_offset: 0.into(),
             index_size: 0.into(),
             header_cheksum: 0.into(),
@@ -97,7 +97,7 @@ impl<F> CurrentSegment<F> {
     }
 
     pub fn db_size(&self) -> u32 {
-        self.header.lock().db_size.get()
+        self.header.lock().size_after.get()
     }
 
     /// insert a bunch of frames in the Wal. The frames needn't be ordered, therefore, on commit
@@ -142,7 +142,7 @@ impl<F> CurrentSegment<F> {
                 if tx.not_empty() {
                     let mut header = { *self.header.lock() };
                     header.last_commited_frame_no = last_frame_no.into();
-                    header.db_size = size_after.into();
+                    header.size_after = size_after.into();
                     // set frames unordered because there are no guarantees that we received frames
                     // in order.
                     header.set_flags(header.flags().union(SegmentFlags::FRAME_UNORDERED));
@@ -229,7 +229,7 @@ impl<F> CurrentSegment<F> {
                 let last_frame_no = tx.next_frame_no - 1;
                 let mut header = { *self.header.lock() };
                 header.last_commited_frame_no = last_frame_no.into();
-                header.db_size = size_after.into();
+                header.size_after = size_after.into();
                 header.recompute_checksum();
 
                 self.file.write_all_at(header.as_bytes(), 0)?;
@@ -356,7 +356,7 @@ impl<F> CurrentSegment<F> {
         self.sealed.load(Ordering::SeqCst)
     }
 
-    pub fn tail(&self) -> &Arc<SegmentList<F>> {
+    pub fn tail(&self) -> &Arc<SegmentList<SealedSegment<F>>> {
         &self.tail
     }
 
@@ -370,7 +370,7 @@ impl<F> CurrentSegment<F> {
         F: FileExt,
     {
         let (seg_start_frame_no, last_committed, db_size) =
-            self.with_header(|h| (h.start_frame_no.get(), h.last_committed(), h.db_size()));
+            self.with_header(|h| (h.start_frame_no.get(), h.last_committed(), h.size_after()));
         let replicated_until = seg_start_frame_no.max(start_frame_no);
 
         // TODO: optim, we could read less frames if we had a mapping from frame_no to page_no in
@@ -594,7 +594,8 @@ mod test {
         }
 
         seal_current_segment(&shared);
-        shared.checkpoint().unwrap();
+        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        shared.checkpoint().await.unwrap();
 
         let mut orig = Vec::new();
         shared

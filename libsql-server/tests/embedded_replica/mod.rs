@@ -757,6 +757,38 @@ fn replicate_with_snapshots() {
 
         assert_eq!(stat, 427);
 
+        db.sync().await.unwrap();
+
+        let conn = db.connect().unwrap();
+
+        let mut res = conn.query("select count(*) from test", ()).await.unwrap();
+        assert_eq!(
+            *res.next()
+                .await
+                .unwrap()
+                .unwrap()
+                .get_value(0)
+                .unwrap()
+                .as_integer()
+                .unwrap(),
+            ROW_COUNT
+        );
+
+        let stats = client
+            .get("http://primary:9090/v1/namespaces/default/stats")
+            .await?
+            .json_value()
+            .await
+            .unwrap();
+
+        let stat = stats
+            .get("embedded_replica_frames_replicated")
+            .unwrap()
+            .as_u64()
+            .unwrap();
+
+        assert_eq!(stat, 427);
+
         Ok(())
     });
 
