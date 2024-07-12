@@ -73,6 +73,7 @@ foreach hdr {
    vdbe.h
    vdbeInt.h
    vectorInt.h
+   vectorIndexInt.h
 } {
   set available_hdr($hdr) 1
 }
