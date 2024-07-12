@@ -2,9 +2,11 @@
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Frame {
-    #[prost(uint32, tag = "1")]
+    #[prost(uint64, tag = "1")]
+    pub frame_no: u64,
+    #[prost(uint32, tag = "2")]
     pub page_no: u32,
-    #[prost(bytes = "vec", tag = "2")]
+    #[prost(bytes = "vec", tag = "3")]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

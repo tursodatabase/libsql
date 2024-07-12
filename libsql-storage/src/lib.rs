@@ -352,6 +352,7 @@ impl Wal for DurableWal {
             .map(|(page_no, frame)| Frame {
                 page_no,
                 data: frame.into(),
+                frame_no: todo!(),
             })
             .collect();
 

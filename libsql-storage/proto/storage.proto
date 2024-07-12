@@ -3,8 +3,9 @@ syntax = "proto3";
 package storage;
 
 message Frame {
-  uint32 page_no = 1;
-  bytes data = 2;
+  uint64 frame_no = 1;
+  uint32 page_no = 2;
+  bytes data = 3;
 }
 
 message InsertFramesRequest {
