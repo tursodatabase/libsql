@@ -58,6 +58,44 @@ impl S3Storage {
     }
 }
 
+/// SegmentKey is used to index segment data, where keys a lexicographically ordered.
+/// The scheme is `{u64::MAX - start_frame_no}-{u64::MAX - end_frame_no}`. With that naming convention, when looking for
+/// the segment containing 'n', we can perform a prefix search with "{u64::MAX - n}". The first
+/// element of the range will be the biggest segment that contains n if it exists.
+/// Beware that if no segments contain n, either the smallest segment not containing n, if n < argmin
+/// {start_frame_no}, or the largest segment if n > argmax {end_frame_no} will be returned.
+/// e.g:
+/// ```ignore
+/// let mut map = BTreeMap::new();
+/// 
+/// let meta = SegmentMeta { start_frame_no: 1, end_frame_no: 100 };
+/// map.insert(SegmentKey(&meta).to_string(), meta);
+/// 
+/// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 500 };
+/// map.insert(SegmentKey(&meta).to_string(), meta);
+/// 
+/// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 1000 };
+/// map.insert(SegmentKey(&meta).to_string(), meta);
+/// 
+/// dbg!(map.range(format!("{:019}", u64::MAX - 50)..).next());
+/// dbg!(map.range(format!("{:019}", u64::MAX - 0)..).next());
+/// dbg!(map.range(format!("{:019}", u64::MAX - 1)..).next());
+/// dbg!(map.range(format!("{:019}", u64::MAX - 100)..).next());
+/// dbg!(map.range(format!("{:019}", u64::MAX - 101)..).next());
+/// dbg!(map.range(format!("{:019}", u64::MAX - 5000)..).next());
+/// ```
+pub struct SegmentKey<'a>(&'a SegmentMeta);
+
+impl fmt::Display for SegmentKey<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,
+            "{:019}-{:019}",
+            u64::MAX - self.0.start_frame_no,
+            u64::MAX - self.0.end_frame_no,
+        )
+    }
+}
+
 #[derive(Clone, Copy)]
 enum StreamState {
     Init,
