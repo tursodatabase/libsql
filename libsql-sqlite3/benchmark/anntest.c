@@ -67,7 +67,6 @@ double recall(int *pExact, int nExactSize, int *pAnn, int nAnnSize) {
 }
 
 int main(int argc, char* argv[]) {
-  srand(time(NULL));
   ensure(argc == 5, "path to the db file, recall type, ann query, exact query");
   sqlite3* db;
   int rc = sqlite3_open(argv[1], &db);
