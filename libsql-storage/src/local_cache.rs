@@ -1,8 +1,8 @@
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-
 use crate::rpc::Frame;
 use libsql_sys::rusqlite::{ffi, params, Connection, Error, Result};
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 /// We use LocalCache to cache frames and transaction state. Each namespace gets its own cache
 /// which is currently stored in a SQLite DB file, along with the main database file.
@@ -72,15 +72,14 @@ impl LocalCache {
         }
     }
 
-    pub fn insert_frames(&mut self, frame_no: u64, frames: Vec<Frame>) -> Result<()> {
+    pub fn insert_frames(&mut self, frames: Vec<Frame>) -> Result<()> {
         let tx = self.conn.transaction().unwrap();
         {
             let mut stmt =
                 tx.prepare("INSERT INTO frames (frame_no, page_no, data) VALUES (?1, ?2, ?3)")?;
-            let mut frame_no = frame_no;
             for f in frames {
-                frame_no += 1;
-                stmt.execute(params![frame_no, f.page_no, f.data]).unwrap();
+                stmt.execute(params![f.frame_no, f.page_no, f.data])
+                    .unwrap();
             }
         }
         tx.commit().unwrap();
@@ -111,13 +110,20 @@ impl LocalCache {
         }
     }
 
-    pub fn insert_page(&self, txn_id: &str, page_no: u32, frame_data: &[u8]) -> Result<()> {
-        self.conn.execute(
-            "INSERT INTO transactions (txn_id, page_no, data) VALUES (?1, ?2, ?3)
-                 ON CONFLICT(txn_id, page_no) DO UPDATE SET data = ?3",
-            params![txn_id, page_no, frame_data],
-        )?;
-        Ok(())
+    pub fn insert_pages(&mut self, txn_id: &str, pages: Vec<(u32, &[u8])>) -> Result<()> {
+        let tx = self.conn.transaction().unwrap();
+        {
+            let mut stmt = tx
+                .prepare(
+                    "INSERT INTO transactions (txn_id, page_no, data) VALUES (?1, ?2, ?3)
+                ON CONFLICT(txn_id, page_no) DO UPDATE SET data = ?3",
+                )
+                .unwrap();
+            for (page_no, frame_data) in pages {
+                stmt.execute(params![txn_id, page_no, frame_data]).unwrap();
+            }
+        }
+        tx.commit()
     }
 
     pub fn get_page(&self, txn_id: &str, page_no: u32) -> Result<Option<Vec<u8>>> {
@@ -131,18 +137,19 @@ impl LocalCache {
         }
     }
 
-    pub fn get_all_pages(&self, txn_id: &str) -> Result<Vec<(u32, Vec<u8>)>> {
+    pub fn get_all_pages(&self, txn_id: &str) -> Result<BTreeMap<u32, Vec<u8>>> {
         let mut stmt = self
             .conn
             .prepare("SELECT page_no, data FROM transactions WHERE txn_id = ?1")?;
-        let pages: Result<Vec<(u32, Vec<u8>)>> = stmt
+        let pages: BTreeMap<u32, Vec<u8>> = stmt
             .query_map(params![txn_id], |row| Ok((row.get(0)?, row.get(1)?)))?
+            .filter_map(|result| result.ok())
             .collect();
         self.conn.execute(
             "DELETE FROM transactions WHERE txn_id = ?1",
             params![txn_id],
         )?;
-        pages
+        Ok(pages)
     }
 }
 

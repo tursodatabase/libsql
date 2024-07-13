@@ -1,5 +1,6 @@
 mod local_cache;
 
+use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
@@ -324,58 +325,61 @@ impl Wal for DurableWal {
         sync_flags: std::ffi::c_int,
     ) -> Result<usize> {
         trace!("DurableWal::insert_frames()");
-        let rt = tokio::runtime::Handle::current();
         let mut lock_manager = self.lock_manager.lock().unwrap();
         if !lock_manager.is_lock_owner(self.namespace.to_string(), self.conn_id.clone()) {
             error!("DurableWal::insert_frames() was called without acquiring lock!",);
             return Err(rusqlite::ffi::Error::new(SQLITE_ABORT));
         };
-        // add the updated frames from frame_headers to writeCache
-        for (page_no, frame) in page_headers.iter() {
-            self.local_cache
-                .insert_page(self.conn_id.as_str(), page_no, frame.into())
-                .expect("failed to insert in local cache");
-            // todo: update size after
-        }
-
         // check if the size_after is > 0, if so then mark txn as committed
         if size_after <= 0 {
+            // add the updated frames from frame_headers to writeCache
+            let frames: Vec<(u32, &[u8])> = page_headers.iter().collect();
+            self.local_cache
+                .insert_pages(self.conn_id.as_str(), frames)
+                .unwrap();
             // todo: update new size
-            return Ok(0);
-        }
+            Ok(0)
+        } else {
+            let rt = tokio::runtime::Handle::current();
+            let mut pages: BTreeMap<u32, Vec<u8>> = self
+                .local_cache
+                .get_all_pages(self.conn_id.as_str())
+                .unwrap();
 
-        let frames: Vec<Frame> = self
-            .local_cache
-            .get_all_pages(self.conn_id.as_str())
-            .unwrap()
-            .into_iter()
-            .map(|(page_no, frame)| Frame {
-                page_no,
-                data: frame.into(),
-                frame_no: todo!(),
-            })
-            .collect();
-
-        let req = rpc::InsertFramesRequest {
-            namespace: self.namespace.to_string(),
-            frames: frames.clone(),
-            max_frame_no: self.max_frame_no,
-        };
-        let mut binding = self.client.clone();
-        trace!("sending DurableWal::insert_frames() {:?}", req.frames.len());
-        let resp = binding.insert_frames(req);
-        let resp = tokio::task::block_in_place(|| rt.block_on(resp));
-        if let Err(e) = resp {
-            if e.code() == tonic::Code::Aborted {
-                return Err(rusqlite::ffi::Error::new(SQLITE_BUSY));
+            for (p, d) in page_headers.iter() {
+                pages.insert(p, d.into());
             }
-            return Err(rusqlite::ffi::Error::new(SQLITE_ABORT));
+
+            let mut frames = Vec::new();
+            let mut frame_no = self.max_frame_no + 1;
+            for (p, d) in pages.to_owned() {
+                frames.push(Frame {
+                    frame_no,
+                    page_no: p,
+                    data: d.into(),
+                });
+                frame_no += 1;
+            }
+
+            let req = rpc::InsertFramesRequest {
+                namespace: self.namespace.to_string(),
+                frames: frames.clone(),
+                max_frame_no: self.max_frame_no,
+            };
+            let mut binding = self.client.clone();
+            trace!("sending DurableWal::insert_frames() {:?}", req.frames.len());
+            let resp = binding.insert_frames(req);
+            let resp = tokio::task::block_in_place(|| rt.block_on(resp));
+            if let Err(e) = resp {
+                if e.code() == tonic::Code::Aborted {
+                    return Err(rusqlite::ffi::Error::new(SQLITE_BUSY));
+                }
+                return Err(rusqlite::ffi::Error::new(SQLITE_ABORT));
+            }
+            // TODO: fix parity with storage server frame num with local cache
+            self.local_cache.insert_frames(frames).unwrap();
+            Ok(resp.unwrap().into_inner().num_frames as usize)
         }
-        // TODO: fix parity with storage server frame num with local cache
-        self.local_cache
-            .insert_frames(self.max_frame_no, frames)
-            .unwrap();
-        Ok(resp.unwrap().into_inner().num_frames as usize)
     }
 
     fn checkpoint(
