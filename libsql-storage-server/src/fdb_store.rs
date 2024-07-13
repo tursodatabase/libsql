@@ -68,21 +68,15 @@ impl FDBFrameStore {
         frame_no
     }
 
-    async fn insert_with_tx(
-        &self,
-        namespace: &str,
-        txn: &Transaction,
-        frame_no: u64,
-        frame: Frame,
-    ) {
-        let frame_data_key = frame_key(namespace, frame_no);
-        let frame_page_key = frame_page_key(namespace, frame_no);
+    async fn insert_with_tx(&self, namespace: &str, txn: &Transaction, frame: Frame) {
+        let frame_data_key = frame_key(namespace, frame.frame_no);
+        let frame_page_key = frame_page_key(namespace, frame.frame_no);
         let page_key = page_key(namespace, frame.page_no);
-        let page_frame_idx = page_index_key(namespace, frame.page_no, frame_no);
+        let page_frame_idx = page_index_key(namespace, frame.page_no, frame.frame_no);
 
         txn.set(&frame_data_key, &frame.data);
         txn.set(&frame_page_key, &pack(&frame.page_no));
-        txn.set(&page_key, &pack(&frame_no));
+        txn.set(&page_key, &pack(&frame.frame_no));
         txn.set(&page_frame_idx, &pack(&""));
     }
 }
@@ -97,15 +91,16 @@ impl FrameStore for FDBFrameStore {
     ) -> Result<u64, Error> {
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
-        let mut frame_no = self.get_max_frame_no(&txn, namespace).await;
+        let frame_no = self.get_max_frame_no(&txn, namespace).await;
+        let count = frames.len() as u64;
         if frame_no != max_frame_no {
             return Err(WriteConflict);
         }
         for f in frames {
-            frame_no += 1;
-            self.insert_with_tx(namespace, &txn, frame_no, f).await;
+            self.insert_with_tx(namespace, &txn, f).await;
         }
         let key = max_frame_key(namespace);
+        let frame_no = count + frame_no;
         txn.set(&key, &pack(&(frame_no)));
         txn.commit().await.expect("commit failed");
         Ok(frame_no)
