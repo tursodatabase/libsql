@@ -447,7 +447,7 @@ mod test {
                 _namespace: NamespaceName,
                 _frame_no: u64,
                 _dest_path: &Path,
-            ) -> Result<()> {
+            ) -> Result<fst::Map<Vec<u8>>> {
                 todo!()
             }
 
