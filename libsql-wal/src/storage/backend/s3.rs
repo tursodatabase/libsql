@@ -227,6 +227,101 @@ fn s3_folder_key(cluster_id: &str, ns: &NamespaceName) -> String {
     format!("ns-{}:{}-v2", cluster_id, ns)
 }
 
+impl<IO> Backend for S3Backend<IO> 
+where
+    IO: Io,
+{
+    type Config = S3Config;
+
+    async fn store(
+        &self,
+        config: &Self::Config,
+        meta: SegmentMeta,
+        segment_data: impl FileExt,
+        segment_index: Vec<u8>,
+    ) -> Result<()> {
+        let folder_key = FolderKey {
+                cluster_id: &config.cluster_id,
+                namespace: &meta.namespace
+            };
+        let segment_key = SegmentKey::from(&meta);
+        let s3_data_key = s3_segment_data_key(&folder_key, &segment_key);
+
+        let body = FileStreamBody::new(segment_data).into_byte_stream();
+
+        self.client
+            .put_object()
+            .bucket(&self.default_config.bucket)
+            .body(body)
+            .key(s3_data_key)
+            .send()
+            .await
+            .unwrap();
+
+        let s3_index_key = s3_segment_index_key(&folder_key, &segment_key);
+
+        // TODO: store meta about the index?
+        let body = ByteStream::from(segment_index);
+
+        self.client
+            .put_object()
+            .bucket(&self.default_config.bucket)
+            .body(body)
+            .key(s3_index_key)
+            .send()
+            .await
+            .unwrap();
+
+        Ok(())
+    }
+
+    async fn fetch_segment(
+        &self,
+        config: &Self::Config,
+        namespace: NamespaceName,
+        frame_no: u64,
+        dest_path: &Path,
+    ) -> Result<fst::Map<Vec<u8>>> {
+        let folder_key = 
+            FolderKey {
+                cluster_id: &config.cluster_id,
+                namespace: &namespace
+            };
+
+        let segment_key = self.find_segment(config, &folder_key, frame_no).await?;
+        if segment_key.includes(frame_no) {
+            let (_, index) = tokio::try_join!(
+                self.fetch_segment_data(config, &folder_key, &segment_key, dest_path),
+                self.fetch_segment_index(config, &folder_key, &segment_key),
+            )?;
+
+            Ok(index)
+        } else {
+            todo!("not found");
+        }
+    }
+
+    async fn meta(
+        &self,
+        config: &Self::Config,
+        namespace: NamespaceName,
+    ) -> Result<super::DbMeta> {
+        // request a key bigger than any other to get the last segment
+        let folder_key = FolderKey {
+            cluster_id: &config.cluster_id,
+            namespace: &namespace
+        };
+
+        let max_segment_key = self.find_segment(config, &folder_key, u64::MAX).await?;
+
+        Ok(super::DbMeta { max_frame_no: max_segment_key.end_frame_no })
+    }
+
+    fn default_config(&self) -> Arc<Self::Config> {
+        self.default_config.clone()
+    }
+}
+
 #[derive(Clone, Copy)]
 enum StreamState {
     Init,
