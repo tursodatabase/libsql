@@ -1,8 +1,8 @@
 // from tokio uring
 
-use std::{mem::{size_of, MaybeUninit}, ops::Deref};
+use std::mem::{size_of, MaybeUninit};
 
-use bytes::{Bytes, BytesMut};
+use bytes::BytesMut;
 use zerocopy::AsBytes;
 
 pub unsafe trait IoBuf: Unpin + 'static {
