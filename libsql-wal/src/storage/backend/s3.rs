@@ -1,17 +1,24 @@
-//! S3 implementation of storage
+//! S3 implementation of storage backend
 
-use std::{path::Path, pin::Pin, sync::Arc, task::Poll};
+use std::task::Poll;
+use std::sync::Arc;
+use std::str::FromStr;
+use std::pin::Pin;
+use std::path::Path;
+use std::fmt;
 
-use aws_config::SdkConfig;
-use aws_sdk_s3::{primitives::ByteStream, types::CreateBucketConfiguration, Client};
+use aws_config::SdkConfig; use aws_sdk_s3::Client;
+use aws_sdk_s3::types::CreateBucketConfiguration;
+use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use bytes::{Bytes, BytesMut};
 use http_body::{Frame, SizeHint};
 use libsql_sys::name::NamespaceName;
-use tokio::io::AsyncBufRead;
 use tokio_util::sync::ReusableBoxFuture;
 
-use super::{fs::RemoteStorage, SegmentMeta};
-use crate::{io::FileExt, storage::{Error, Result}};
+use super::{Backend, SegmentMeta};
+use crate::io::compat::copy_to_file;
+use crate::storage::Result;
+use crate::io::{FileExt, Io};
 
 pub struct S3Backend<IO> {
     client: Client,
@@ -136,16 +143,16 @@ pub struct S3Config {
 /// e.g:
 /// ```ignore
 /// let mut map = BTreeMap::new();
-/// 
+///
 /// let meta = SegmentMeta { start_frame_no: 1, end_frame_no: 100 };
 /// map.insert(SegmentKey(&meta).to_string(), meta);
-/// 
+///
 /// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 500 };
 /// map.insert(SegmentKey(&meta).to_string(), meta);
-/// 
+///
 /// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 1000 };
 /// map.insert(SegmentKey(&meta).to_string(), meta);
-/// 
+///
 /// dbg!(map.range(format!("{:019}", u64::MAX - 50)..).next());
 /// dbg!(map.range(format!("{:019}", u64::MAX - 0)..).next());
 /// dbg!(map.range(format!("{:019}", u64::MAX - 1)..).next());
