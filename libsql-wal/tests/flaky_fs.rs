@@ -82,6 +82,18 @@ impl FileExt for FlakyFile {
         #[allow(unreachable_code)]
         ready((_buf, Ok(())))
     }
+
+    fn read_at(&self, _buf: &mut [u8], _offset: u64) -> std::io::Result<usize> {
+        todo!()
+    }
+
+    async fn read_at_async<B: libsql_wal::io::buf::IoBufMut + Send + 'static>(
+        &self,
+        _buf: B,
+        _offset: u64,
+    ) -> (B, std::io::Result<usize>) {
+        todo!()
+    }
 }
 
 impl FlakyIo {
