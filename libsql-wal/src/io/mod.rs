@@ -9,6 +9,7 @@ pub use self::file::FileExt;
 
 pub mod buf;
 pub mod file;
+pub mod compat;
 
 pub trait Io: Send + Sync + 'static {
     type File: FileExt;
