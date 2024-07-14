@@ -13,27 +13,18 @@ use tokio_util::sync::ReusableBoxFuture;
 use super::{fs::RemoteStorage, SegmentMeta};
 use crate::{io::FileExt, storage::{Error, Result}};
 
-pub struct S3Storage {
+pub struct S3Backend<IO> {
     client: Client,
-
-    config: S3Config,
+    default_config: Arc<S3Config>,
+    io: IO,
 }
 
-pub struct S3Config {
-    bucket: String,
-    aws_config: SdkConfig,
-    cluster_id: String,
-}
-
-fn s3_folder_key(cluster_id: &str, ns: &NamespaceName) -> String {
-    format!("ns-{}:{}-v2", cluster_id, ns)
-}
-
-impl S3Storage {
+impl<IO: Io> S3Backend<IO> {
     pub(crate) async fn from_sdk_config(
         aws_config: SdkConfig,
         bucket: String,
         cluster_id: String,
+        io: IO,
     ) -> Result<Self> {
         let config = S3Config {
             bucket,
@@ -44,6 +35,7 @@ impl S3Storage {
         let client = Client::new(&config.aws_config);
 
         let bucket_config = CreateBucketConfiguration::builder()
+            // TODO: get location from config
             .location_constraint(aws_sdk_s3::types::BucketLocationConstraint::UsWest2)
             .build();
         client
@@ -54,8 +46,85 @@ impl S3Storage {
             .await
             .unwrap();
 
-        Ok(Self { client, config })
+        Ok(Self { client, default_config: config.into(), io })
     }
+
+    async fn fetch_segment_data(
+        &self,
+        config: &S3Config,
+        folder_key: &FolderKey<'_>,
+        segment_key: &SegmentKey,
+        dest_path: &Path,
+        ) -> Result<()> {
+        let key = s3_segment_data_key(folder_key, segment_key);
+        let stream = self.s3_get(config, key).await?;
+        let reader = stream.into_async_read();
+        // TODO: make open async
+        let file = self.io.open(false, false, true, dest_path)?;
+        copy_to_file(reader, file).await?;
+
+        Ok(())
+    }
+
+    async fn s3_get(&self, config: &S3Config, key: String) -> Result<ByteStream> {
+        Ok(self
+            .client
+            .get_object()
+            .bucket(&config.bucket)
+            .key(key)
+            .send()
+            .await
+            .unwrap()
+            .body)
+    }
+
+    async fn fetch_segment_index(
+        &self,
+        config: &S3Config,
+        folder_key: &FolderKey<'_>,
+        segment_key: &SegmentKey,
+    ) -> Result<fst::Map<Vec<u8>>> {
+        let s3_index_key = s3_segment_index_key(folder_key, segment_key);
+        let stream = self.s3_get(config, s3_index_key).await?;
+        // TODO: parse header, check if too large to fit memory
+        let bytes = stream.collect().await.unwrap().to_vec();
+        let index = fst::Map::new(bytes).unwrap();
+        Ok(index)
+    }
+
+    /// Find the most recent, and biggest segment that may contain `frame_no`
+    async fn find_segment(
+        &self,
+        config: &S3Config,
+        folder_key: &FolderKey<'_>,
+        frame_no: u64
+        ) -> Result<SegmentKey> {
+        let lookup_key = s3_segment_index_lookup_key(&folder_key, frame_no);
+
+        let objects = self
+            .client
+            .list_objects_v2()
+            .bucket(&config.bucket)
+            .start_after(lookup_key)
+            .send()
+            .await
+            .unwrap();
+
+        let Some(contents) = objects.contents().first() else {
+            todo!("nothing")
+        };
+        let key = contents.key().unwrap();
+        let key_path: &Path = key.as_ref();
+        let segment_key: SegmentKey = key_path.file_stem().unwrap().to_str().unwrap().parse().unwrap();
+
+        Ok(segment_key)
+    }
+}
+
+pub struct S3Config {
+    bucket: String,
+    aws_config: SdkConfig,
+    cluster_id: String,
 }
 
 /// SegmentKey is used to index segment data, where keys a lexicographically ordered.
