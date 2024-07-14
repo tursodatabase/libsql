@@ -435,11 +435,13 @@ mod tests {
     use aws_config::{BehaviorVersion, Region, SdkConfig};
     use aws_sdk_s3::config::SharedCredentialsProvider;
     use chrono::Utc;
-    use s3s::{
-        auth::SimpleAuth,
-        service::{S3ServiceBuilder, SharedS3Service},
-    };
+    use fst::MapBuilder;
+    use s3s::auth::SimpleAuth;
+    use s3s::service::{S3ServiceBuilder, SharedS3Service};
+    use tempfile::NamedTempFile;
     use uuid::Uuid;
+
+    use crate::io::StdIO;
 
     use super::*;
 
@@ -472,37 +474,77 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn basic() {
+    async fn s3_basic() {
         let _ = tracing_subscriber::fmt::try_init();
         let dir = tempfile::tempdir().unwrap();
         let (aws_config, _s3) = setup(&dir);
 
+        let s3_config = S3Config {
+            bucket: "testbucket".into(),
+            aws_config: aws_config.clone(),
+            cluster_id: "123456789".into(),
+        };
+
         let storage =
-            S3Storage::from_sdk_config(aws_config, "testbucket".into(), "123456789".into())
+            S3Backend::from_sdk_config(aws_config, "testbucket".into(), "123456789".into(), StdIO(()))
                 .await
                 .unwrap();
 
         let f_path = dir.path().join("fs-segments");
-        std::fs::write(&f_path, vec![0; 8092]).unwrap();
+        std::fs::write(&f_path, vec![123; 8092]).unwrap();
 
         let ns = NamespaceName::from_string("foobarbaz".into());
 
-        storage
-            .upload(
-                &f_path,
-                &SegmentMeta {
-                    namespace: ns.clone(),
-                    segment_id: Uuid::new_v4(),
-                    start_frame_no: 0u64.into(),
-                    end_frame_no: 64u64.into(),
-                    created_at: Utc::now(),
-                },
-            )
-            .await
-            .unwrap();
+        let mut builder = MapBuilder::memory();
+        builder.insert(42u32.to_be_bytes(), 42).unwrap();
+        let index = builder.into_inner().unwrap();
+        storage.store(
+            &s3_config, 
+            SegmentMeta {
+                namespace: ns.clone(),
+                segment_id: Uuid::new_v4(),
+                start_frame_no: 0u64.into(),
+                end_frame_no: 64u64.into(),
+                created_at: Utc::now(),
+            },
+            std::fs::File::open(&f_path).unwrap(),
+            index,
+        ).await.unwrap();
 
-        storage.fetch(&ns, 1).await.unwrap();
+        let db_meta = storage.meta(&s3_config, ns.clone()).await.unwrap();
+        assert_eq!(db_meta.max_frame_no, 64);
 
-        assert!(storage.fetch(&ns, 65).await.is_err());
+        let mut builder = MapBuilder::memory();
+        builder.insert(44u32.to_be_bytes(), 44).unwrap();
+        let index = builder.into_inner().unwrap();
+        storage.store(
+            &s3_config, 
+            SegmentMeta {
+                namespace: ns.clone(),
+                segment_id: Uuid::new_v4(),
+                start_frame_no: 64u64.into(),
+                end_frame_no: 128u64.into(),
+                created_at: Utc::now(),
+            },
+            std::fs::File::open(&f_path).unwrap(),
+            index,
+        ).await.unwrap();
+
+        let db_meta = storage.meta(&s3_config, ns.clone()).await.unwrap();
+        assert_eq!(db_meta.max_frame_no, 128);
+
+        let tmp = NamedTempFile::new().unwrap();
+
+        let index = storage.fetch_segment(&s3_config, ns.clone(), 1, tmp.path()).await.unwrap();
+        assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
+
+        let index = storage.fetch_segment(&s3_config, ns.clone(), 63, tmp.path()).await.unwrap();
+        assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
+
+        let index = storage.fetch_segment(&s3_config, ns.clone(), 64, tmp.path()).await.unwrap();
+        assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
+
+        let index = storage.fetch_segment(&s3_config, ns.clone(), 65, tmp.path()).await.unwrap();
+        assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
     }
 }
