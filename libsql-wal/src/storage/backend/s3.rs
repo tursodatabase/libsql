@@ -153,16 +153,78 @@ pub struct S3Config {
 /// dbg!(map.range(format!("{:019}", u64::MAX - 101)..).next());
 /// dbg!(map.range(format!("{:019}", u64::MAX - 5000)..).next());
 /// ```
-pub struct SegmentKey<'a>(&'a SegmentMeta);
+#[derive(Debug, Clone, Copy)]
+pub struct SegmentKey {
+    start_frame_no: u64,
+    end_frame_no: u64,
+}
 
-impl fmt::Display for SegmentKey<'_> {
+impl SegmentKey {
+    fn includes(&self, frame_no: u64) -> bool {
+        (self.start_frame_no..self.end_frame_no).contains(&frame_no)
+    }
+}
+
+impl From<&SegmentMeta> for SegmentKey {
+    fn from(value: &SegmentMeta) -> Self {
+        Self {
+            start_frame_no: value.start_frame_no,
+            end_frame_no: value.end_frame_no,
+        }
+    }
+}
+
+impl FromStr for SegmentKey {
+    type Err = ();
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let (rev_start_fno, s) = s.split_at(20);
+        let start_frame_no = u64::MAX - rev_start_fno.parse::<u64>().map_err(|_| ())?;
+        let (_, rev_end_fno) = s.split_at(1);
+        let end_frame_no = u64::MAX - rev_end_fno.parse::<u64>().map_err(|_| ())?;
+        Ok(Self {
+            start_frame_no,
+            end_frame_no,
+        })
+    }
+}
+
+impl fmt::Display for SegmentKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f,
+        write!(
+            f,
             "{:019}-{:019}",
-            u64::MAX - self.0.start_frame_no,
-            u64::MAX - self.0.end_frame_no,
+            u64::MAX - self.start_frame_no,
+            u64::MAX - self.end_frame_no,
         )
     }
+}
+
+struct FolderKey<'a> {
+    cluster_id: &'a str,
+    namespace: &'a NamespaceName,
+}
+
+impl fmt::Display for FolderKey<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ns-{}:{}-v2", self.cluster_id, self.namespace)
+    }
+}
+
+fn s3_segment_data_key(folder_key: &FolderKey, segment_key: &SegmentKey) -> String {
+    format!("{folder_key}/segments/{segment_key}")
+}
+
+fn s3_segment_index_key(folder_key: &FolderKey, segment_key: &SegmentKey) -> String {
+    format!("{folder_key}/indexes/{segment_key}")
+}
+
+fn s3_segment_index_lookup_key(folder_key: &FolderKey, frame_no: u64) -> String {
+    format!("{folder_key}/indexes/{:019}", u64::MAX - frame_no)
+}
+
+fn s3_folder_key(cluster_id: &str, ns: &NamespaceName) -> String {
+    format!("ns-{}:{}-v2", cluster_id, ns)
 }
 
 #[derive(Clone, Copy)]
