@@ -930,7 +930,7 @@ static void diskAnnPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob, i
   nodeBinVector(pIndex, pNodeBlob, &nodeVector);
   nEdges = nodeBinEdges(pIndex, pNodeBlob);
 
-  assert( 0 <= iHintPosition && iHintPosition < nEdges );
+  assert( 0 <= iInserted && iInserted < nEdges );
 
 #if defined(SQLITE_DEBUG) && defined(SQLITE_VECTOR_TRACE)
   DiskAnnTrace(("before pruning:\n"));
@@ -939,7 +939,7 @@ static void diskAnnPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob, i
 
   nodeBinEdge(pIndex, pNodeBlob, iInserted, NULL, &hintVector);
 
-  // remove edges which is no longer interesting due to the addition of iHintPosition
+  // remove edges which is no longer interesting due to the addition of iInserted
   i = 0;
   while( i < nEdges ){
     Vector edgeVector;
