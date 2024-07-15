@@ -107,14 +107,14 @@ static inline void writeLE64(unsigned char *p, u64 v){
 **************************************************************************/
 
 // sqlite3_blob_* API return SQLITE_ERROR in any case but we need to distinguish between "row not found" and other errors in some cases
-static int blobSpotConvertRc(DiskAnnIndex *pIndex, int rc){
+static int blobSpotConvertRc(const DiskAnnIndex *pIndex, int rc){
   if( rc == SQLITE_ERROR && strncmp(sqlite3_errmsg(pIndex->db), "no such rowid", 13) == 0 ){
     return DISKANN_ROW_NOT_FOUND;
   }
   return rc;
 }
 
-int blobSpotCreate(DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid, int nBufferSize, int isWritable) {
+int blobSpotCreate(const DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid, int nBufferSize, int isWritable) {
   int rc = SQLITE_OK;
   BlobSpot *pBlobSpot;
   u8 *pBuffer;
@@ -158,7 +158,7 @@ out:
 }
 
 
-int blobSpotLoad(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize) {
+int blobSpotLoad(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize) {
   int rc;
   assert( pBlobSpot != NULL && pBlobSpot->pBlob != NULL );
   assert( pBlobSpot->nBufferSize == nBufferSize );
@@ -193,13 +193,13 @@ int blobSpotFree(BlobSpot *pBlobSpot) {
 ** Layout specific utilities
 **************************************************************************/
 
-int nodeEdgesMaxCount(DiskAnnIndex *pIndex){
+int nodeEdgesMaxCount(const DiskAnnIndex *pIndex){
   unsigned int nMaxEdges = (pIndex->nBlockSize - pIndex->nNodeVectorSize - VECTOR_NODE_METADATA_SIZE) / (pIndex->nEdgeVectorSize + VECTOR_EDGE_METADATA_SIZE);
   assert( nMaxEdges > 0);
   return nMaxEdges;
 }
 
-int nodeEdgesMetadataOffset(DiskAnnIndex *pIndex){
+int nodeEdgesMetadataOffset(const DiskAnnIndex *pIndex){
   unsigned int offset;
   unsigned int nMaxEdges = nodeEdgesMaxCount(pIndex);
   offset = VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + nMaxEdges * pIndex->nEdgeVectorSize;
@@ -207,7 +207,7 @@ int nodeEdgesMetadataOffset(DiskAnnIndex *pIndex){
   return offset;
 }
 
-void nodeBinInit(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, Vector *pVector){
+void nodeBinInit(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, Vector *pVector){
   assert( VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize <= pBlobSpot->nBufferSize );
 
   memset(pBlobSpot->pBuffer, 0, pBlobSpot->nBufferSize);
@@ -216,19 +216,19 @@ void nodeBinInit(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, Vector *
   vectorSerializeToBlob(pVector, pBlobSpot->pBuffer + VECTOR_NODE_METADATA_SIZE, pIndex->nNodeVectorSize);
 }
 
-void nodeBinVector(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, Vector *pVector) {
+void nodeBinVector(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, Vector *pVector) {
   assert( VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize <= pBlobSpot->nBufferSize );
 
   vectorInitStatic(pVector, pIndex->nNodeVectorType, pBlobSpot->pBuffer + VECTOR_NODE_METADATA_SIZE, pIndex->nNodeVectorSize);
 }
 
-u16 nodeBinEdges(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot) {
+u16 nodeBinEdges(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
   assert( VECTOR_NODE_METADATA_SIZE <= pBlobSpot->nBufferSize );
 
   return readLE16(pBlobSpot->pBuffer + sizeof(u64));
 }
 
-void nodeBinEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, Vector *pVector) {
+void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, Vector *pVector) {
   int offset = nodeEdgesMetadataOffset(pIndex);
 
   if( pRowid != NULL ){
@@ -246,7 +246,7 @@ void nodeBinEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iEdge, u64 *pRow
   }
 }
 
-int nodeBinEdgeFind(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid) {
+int nodeBinEdgeFindIdx(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, u64 nRowid) {
   int i, nEdges = nodeBinEdges(pIndex, pBlobSpot);
 
   for(i = 0; i < nEdges; i++){
@@ -259,13 +259,13 @@ int nodeBinEdgeFind(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid) {
   return -1;
 }
 
-void nodeBinPruneEdges(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int nPruned) {
+void nodeBinPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int nPruned) {
   assert( 0 <= nPruned && nPruned <= nodeBinEdges(pIndex, pBlobSpot) );
 
   writeLE16(pBlobSpot->pBuffer + sizeof(u64), nPruned);
 }
 
-void nodeBinInsertEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iInsert, u64 nRowid, Vector *pVector) {
+void nodeBinInsertEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iInsert, u64 nRowid, Vector *pVector) {
   int nMaxEdges = nodeEdgesMaxCount(pIndex);
   int nEdges = nodeBinEdges(pIndex, pBlobSpot);
   int edgeVectorOffset, edgeMetaOffset, itemsToMove;
@@ -293,7 +293,7 @@ void nodeBinInsertEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iInsert, u
   writeLE16(pBlobSpot->pBuffer + sizeof(u64), nEdges);
 }
 
-void nodeBinDeleteEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDelete) {
+void nodeBinDeleteEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDelete) {
   int nEdges = nodeBinEdges(pIndex, pBlobSpot);
   int edgeVectorOffset, edgeMetaOffset, itemsToMove;
 
@@ -312,7 +312,7 @@ void nodeBinDeleteEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDelete) {
   writeLE16(pBlobSpot->pBuffer + sizeof(u64), nEdges - 1);
 }
 
-void nodeBinDebug(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot) {
+void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
 #if defined(SQLITE_DEBUG) && defined(SQLITE_VECTOR_TRACE)
   int nEdges, nMaxEdges, i;
   u64 nRowid;
