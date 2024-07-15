@@ -97,4 +97,15 @@ int main() {
   blobSpotFree(pBlobSpot);
 
   ensure(sqlite3_close(db) == 0, "unable to close memory db: %s\n", sqlite3_errmsg(db));
+
+  VectorIdxParams params;
+  vectorIdxParamsInit(&params, NULL, 0);
+  vectorIdxParamsPutU64(&params, 1, 101);
+  vectorIdxParamsPutU64(&params, 2, 102);
+  vectorIdxParamsPutU64(&params, 1, 103);
+  vectorIdxParamsPutF64(&params, 3, 1.4);
+
+  ensure(vectorIdxParamsGetU64(&params, 1) == 103, "invalid parameter\n");
+  ensure(vectorIdxParamsGetU64(&params, 2) == 102, "invalid parameter\n");
+  ensure(vectorIdxParamsGetF64(&params, 3) == 1.4, "invalid parameter\n");
 }
