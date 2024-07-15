@@ -564,10 +564,7 @@ fn addSqlite(b: *Build, options: Sqlite3Options) *Build.Step.Compile {
         lib.root_module.addCMacro("SQLITE_OS_UNIX", "1");
     }
 
-    lib.addCSourceFile(.{
-        .file = b.path("ext/misc/stmt.c"),
-        .flags = &cflags,
-    });
+    lib.addCSourceFile(.{ .file = b.path("ext/misc/stmt.c"), .flags = &cflags });
     lib.root_module.addCMacro("SQLITE_ENABLE_STMTVTAB", "1");
 
     lib.root_module.addCMacro("SQLITE_ENABLE_DBPAGE_VTAB", "1"); // src/dbpage.c
@@ -582,6 +579,9 @@ fn addSqlite(b: *Build, options: Sqlite3Options) *Build.Step.Compile {
     lib.root_module.addCMacro("SQLITE_ENABLE_MEMORY_MANAGEMENT", "1");
     lib.root_module.addCMacro("SQLITE_ENABLE_STAT4", "1");
     lib.root_module.addCMacro("SQLITE_SOUNDEX", "1");
+
+    if (options.optimize == .Debug)
+        lib.root_module.addCMacro("SQLITE_DEBUG", "1");
 
     if (options.explain_comments)
         lib.root_module.addCMacro("SQLITE_ENABLE_EXPLAIN_COMMENTS", "1");
