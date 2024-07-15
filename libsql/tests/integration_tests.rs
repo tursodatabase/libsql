@@ -78,7 +78,8 @@ async fn connection_execute_transactional_batch_success() {
                 sqlite_schema
             WHERE
                 type ='table' AND
-                name NOT LIKE 'sqlite_%';",
+                name NOT LIKE 'sqlite_%' AND
+                name NOT LIKE 'libsql_%';",
             (),
         )
         .await
@@ -117,7 +118,8 @@ async fn connection_execute_transactional_batch_fail() {
                 sqlite_schema
             WHERE
                 type ='table' AND
-                name NOT LIKE 'sqlite_%';",
+                name NOT LIKE 'sqlite_%' AND
+                name NOT LIKE 'libsql_%';",
             (),
         )
         .await
@@ -152,7 +154,8 @@ async fn connection_execute_transactional_batch_transaction_fail() {
                 sqlite_schema
             WHERE
                 type ='table' AND
-                name NOT LIKE 'sqlite_%';",
+                name NOT LIKE 'sqlite_%' AND
+                name NOT LIKE 'libsql_%';",
             (),
         )
         .await
@@ -186,7 +189,8 @@ async fn connection_execute_transactional_batch_transaction_incorrect() {
                 sqlite_schema
             WHERE
                 type ='table' AND
-                name NOT LIKE 'sqlite_%';",
+                name NOT LIKE 'sqlite_%' AND
+                name NOT LIKE 'libsql_%';",
             (),
         )
         .await
@@ -219,7 +223,8 @@ async fn connection_execute_batch() {
                 sqlite_schema
             WHERE 
                 type ='table' AND 
-                name NOT LIKE 'sqlite_%';",
+                name NOT LIKE 'sqlite_%' AND
+                name NOT LIKE 'libsql_%';",
             (),
         )
         .await

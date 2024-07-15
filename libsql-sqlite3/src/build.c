@@ -23,6 +23,9 @@
 **     ROLLBACK
 */
 #include "sqliteInt.h"
+#ifndef SQLITE_OMIT_VECTOR
+#include "vectorIndexInt.h"
+#endif
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
@@ -830,7 +833,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
     pNext = pIndex->pNext;
     assert( pIndex->pSchema==pTable->pSchema
-         || (IsVirtual(pTable) && pIndex->idxType!=SQLITE_IDXTYPE_APPDEF) );
+         || (IsVirtual(pTable) && (pIndex->idxType&3)!=SQLITE_IDXTYPE_APPDEF) ); // '&3' is the LibSQL fix to treat VECTOR index as APPDEF
     if( db->pnBytesFreed==0 && !IsVirtual(pTable) ){
       char *zName = pIndex->zName;
       TESTONLY ( Index *pOld = ) sqlite3HashInsert(
@@ -1887,7 +1890,7 @@ void sqlite3AddPrimaryKey(
 #endif
   }else{
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0,
-                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY);
+                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY, 0);
     pList = 0;
   }
 
@@ -2388,7 +2391,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     assert( pParse->pNewTable==pTab );
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
-                       SQLITE_IDXTYPE_PRIMARYKEY);
+                       SQLITE_IDXTYPE_PRIMARYKEY, 0);
     if( pParse->nErr ){
       pTab->tabFlags &= ~TF_WithoutRowid;
       return;
@@ -3319,9 +3322,23 @@ static void destroyTable(Parse *pParse, Table *pTab){
   */
   Pgno iTab = pTab->tnum;
   Pgno iDestroyed = 0;
+  Index *pIdx;
+
+#ifndef SQLITE_OMIT_VECTOR
+  /*
+   * There are several places to delete vector index:
+   * 1. We can add this capability in the OP_Destroy op code. The problem is that it operates with root pages and since we are not maintain them properly - there is a small risk that we can delete something unrelated to vector index
+   * 2. We can add this capability in the OP_DropIndex op code. The problem is that db schema is locked at this moment and we will not be able to execute sqlite3_exec required for vectorIndexDrop
+   * 3. Delete index during the parsing stage (implemented variant) - it's hacky and dirty but seems to me as more safe way to delete only something that we really want
+  */
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    if( IsVectorIndex(pIdx) ){
+      vectorIndexDrop(pParse->db, pIdx->zName);
+    }
+  }
+#endif
 
   while( 1 ){
-    Index *pIdx;
     Pgno iLargest = 0;
 
     if( iDestroyed==0 || iTab<iDestroyed ){
@@ -3808,9 +3825,21 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1); VdbeCoverage(v);
   sqlite3VdbeJumpHere(v, addr1);
   if( memRootPage<0 ) sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
-  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, (int)tnum, iDb,
-                    (char *)pKey, P4_KEYINFO);
+#ifndef SQLITE_OMIT_VECTOR
+  /*
+   * Emit OP_OpenVectorIdx op code and set P5 to OPFLAG_FORDELETE if we are in the REINDEX phase and need to clear previous index
+  */
+  if( IsVectorIndex(pIndex) ){
+    sqlite3VdbeAddOp4(v, OP_OpenVectorIdx, iIdx, (int)tnum, iDb, (char *)pKey, P4_KEYINFO);
+    sqlite3VdbeChangeP5(v, (memRootPage<0)?OPFLAG_FORDELETE:0);
+  }else{
+    sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, (int)tnum, iDb, (char *)pKey, P4_KEYINFO);
+    sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
+  }
+#else
+  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, (int)tnum, iDb, (char *)pKey, P4_KEYINFO);
   sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
+#endif
 
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0); VdbeCoverage(v);
   if( IsUniqueIndex(pIndex) ){
@@ -3841,7 +3870,14 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     ** a different order from the main table.
     ** See ticket: https://www.sqlite.org/src/info/bba7b69f9849b5bf
     */
-    sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+#ifndef SQLITE_OMIT_VECTOR
+    // optimization have no sense for vector index - so we didn't implement OP_SeekEnd op code for vector index and should omit it
+    if( !IsVectorIndex(pIndex) ){
+      sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+    }
+#else
+      sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+#endif
   }
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
@@ -3933,7 +3969,8 @@ void sqlite3CreateIndex(
   Expr *pPIWhere,    /* WHERE clause for partial indices */
   int sortOrder,     /* Sort order of primary key when pList==NULL */
   int ifNotExist,    /* Omit error if index already exists */
-  u8 idxType         /* The index type */
+  u8 idxType,        /* The index type */
+  IdList *pUsing     /* Using */
 ){
   Table *pTab = 0;     /* Table to be indexed */
   Index *pIndex = 0;   /* The index to be created */
@@ -4257,6 +4294,14 @@ void sqlite3CreateIndex(
     requestedSortOrder = pListItem->fg.sortFlags & sortOrderMask;
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
   }
+
+
+#ifndef SQLITE_OMIT_VECTOR
+  if( vectorIndexCreate(pParse, pIndex, pUsing) != SQLITE_OK ) {
+    goto exit_create_index;
+  }
+  idxType = pIndex->idxType; // vectorIndexCreate can update idxType to 4 (VECTOR INDEX)
+#endif
 
   /* Append the table key to the end of the index.  For WITHOUT ROWID
   ** tables (when pPk!=0) this will be the declared PRIMARY KEY.  For
@@ -4604,11 +4649,22 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
     pParse->checkSchema = 1;
     goto exit_drop_index;
   }
-  if( pIndex->idxType!=SQLITE_IDXTYPE_APPDEF ){
+  if( (pIndex->idxType&3)!=SQLITE_IDXTYPE_APPDEF ){ // '&3' is a LibSQL fix to treat VECTOR index as APPDEF
     sqlite3ErrorMsg(pParse, "index associated with UNIQUE "
       "or PRIMARY KEY constraint cannot be dropped", 0);
     goto exit_drop_index;
   }
+#ifndef SQLITE_OMIT_VECTOR
+  /*
+   * There are several places to delete vector index:
+   * 1. We can add this capability in the OP_Destroy op code. The problem is that it operates with root pages and since we are not maintain them properly - there is a small risk that we can delete something unrelated to vector index
+   * 2. We can add this capability in the OP_DropIndex op code. The problem is that db schema is locked at this moment and we will not be able to execute sqlite3_exec required for vectorIndexDrop
+   * 3. Delete index during the parsing stage (implemented variant) - it's hacky and dirty but seems to me as more safe way to delete only something that we really want
+  */
+  if( IsVectorIndex(pIndex) ){
+    vectorIndexDrop(pParse->db, pIndex->zName);
+  }
+#endif
   iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
@@ -5563,6 +5619,7 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   }
   if( pKey ){
     assert( sqlite3KeyInfoIsWriteable(pKey) );
+    pKey->zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName); // LibSQL patch: necessary fix for vector search to make it work
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :

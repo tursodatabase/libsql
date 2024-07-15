@@ -15,6 +15,10 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
+#ifndef SQLITE_OMIT_VECTOR
+#include "vectorIndexInt.h"
+#endif
+
 /* Forward references */
 static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef);
 static void vdbeFreeOpArray(sqlite3 *, Op *, int);
@@ -2743,6 +2747,12 @@ void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
       assert( pVCur->pVtab->nRef>0 );
       pVCur->pVtab->nRef--;
       pModule->xClose(pVCur);
+      break;
+    }
+#endif
+#ifndef SQLITE_OMIT_VECTOR
+    case CURTYPE_VECTOR_IDX: {
+      vectorIndexCursorClose(p->db, pCx->uc.pVecIdx);
       break;
     }
 #endif

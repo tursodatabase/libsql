@@ -27,7 +27,7 @@ int main() {
     .zName = "t_idx",
     .zShadow = "t_idx_shadow",
     .nFormatVersion = 1,
-    .nDistanceFunc = 0,
+    .nDistanceFunc = VECTOR_METRIC_TYPE_COS,
     .nBlockSize = TEST_BLOCK_SIZE,
     .nVectorDims = 1,
     .nNodeVectorType = VECTOR_TYPE_FLOAT32,
