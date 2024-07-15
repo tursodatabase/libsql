@@ -30,10 +30,13 @@ uuid = { version = "1.8.0", features = ["v4"] }
 walkdir = "2.5.0"
 zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
 
-aws-config = { version = "1", features = ["behavior-version-latest"] }
-aws-sdk-s3 = "1"
+aws-config = { version = "1", optional = true, features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1", optional = true }
 http-body = "1.0.0"
 tokio-util = "0.7.11"
+hyper = { workspace = true, optional = true, features = ["client", "http2"] }
+tower = { workspace = true, optional = true }
+aws-smithy-runtime = { version = "1.6.2", optional = true, features = ["connector-hyper-0-14-x", "client"]}
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -53,5 +56,14 @@ tokio = { version = "*", features = ["test-util"] }
 [[bench]]
 name = "benchmarks"
 harness = false
+
 [features]
+default = ["s3"]
+s3 = [
+    "net",
+    "dep:hyper",
+    "dep:aws-smithy-runtime",
+    "dep:aws-sdk-s3",
+    "dep:aws-config",
+]
 net = ["dep:tower"]

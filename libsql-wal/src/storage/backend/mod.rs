@@ -13,6 +13,7 @@ use crate::io::file::FileExt;
 use libsql_sys::name::NamespaceName;
 
 // pub mod fs;
+#[cfg(feature = "s3")]
 pub mod s3;
 
 #[derive(Debug)]
