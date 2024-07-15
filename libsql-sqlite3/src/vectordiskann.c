@@ -119,6 +119,7 @@ int blobSpotCreate(const DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid
   BlobSpot *pBlobSpot;
   u8 *pBuffer;
 
+  DiskAnnTrace(("blob spot created: rowid=%lld, isWritable=%d\n", nRowid, isWritable));
   assert( nBufferSize > 0 );
 
   pBlobSpot = sqlite3_malloc(sizeof(BlobSpot));
@@ -143,6 +144,7 @@ int blobSpotCreate(const DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid
   pBlobSpot->pBuffer = pBuffer;
   pBlobSpot->nBufferSize = nBufferSize;
   pBlobSpot->isWritable = isWritable;
+  pBlobSpot->isInitialized = 0;
 
   *ppBlobSpot = pBlobSpot;
   return SQLITE_OK;
@@ -159,8 +161,14 @@ out:
 
 int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize) {
   int rc;
+
+  DiskAnnTrace(("blob spot reload: rowid=%lld\n", nRowid));
   assert( pBlobSpot != NULL && pBlobSpot->pBlob != NULL );
   assert( pBlobSpot->nBufferSize == nBufferSize );
+
+  if( pBlobSpot->nRowid == nRowid && pBlobSpot->isInitialized ){
+    return SQLITE_OK;
+  }
 
   if( pBlobSpot->nRowid != nRowid ){
     rc = sqlite3_blob_reopen(pBlobSpot->pBlob, nRowid);
@@ -169,7 +177,12 @@ int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, 
       return rc;
     }
   }
-  return sqlite3_blob_read(pBlobSpot->pBlob, pBlobSpot->pBuffer, nBufferSize, 0);
+  rc = sqlite3_blob_read(pBlobSpot->pBlob, pBlobSpot->pBuffer, nBufferSize, 0);
+  if( rc != SQLITE_OK ){
+    return rc;
+  }
+  pBlobSpot->isInitialized = 1;
+  return SQLITE_OK;
 }
 
 int blobSpotFlush(BlobSpot *pBlobSpot) {
