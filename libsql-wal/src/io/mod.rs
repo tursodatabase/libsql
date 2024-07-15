@@ -10,6 +10,8 @@ pub use self::file::FileExt;
 pub mod buf;
 pub mod file;
 pub mod compat;
+#[cfg(feature = "net")]
+pub mod net;
 
 pub trait Io: Send + Sync + 'static {
     type File: FileExt;

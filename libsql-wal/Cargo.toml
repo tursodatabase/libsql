@@ -53,3 +53,5 @@ tokio = { version = "*", features = ["test-util"] }
 [[bench]]
 name = "benchmarks"
 harness = false
+[features]
+net = ["dep:tower"]
