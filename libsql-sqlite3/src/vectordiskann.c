@@ -157,8 +157,7 @@ out:
   return rc;
 }
 
-
-int blobSpotLoad(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize) {
+int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize) {
   int rc;
   assert( pBlobSpot != NULL && pBlobSpot->pBlob != NULL );
   assert( pBlobSpot->nBufferSize == nBufferSize );
@@ -177,16 +176,14 @@ int blobSpotFlush(BlobSpot *pBlobSpot) {
   return sqlite3_blob_write(pBlobSpot->pBlob, pBlobSpot->pBuffer, pBlobSpot->nBufferSize, 0);
 }
 
-int blobSpotFree(BlobSpot *pBlobSpot) {
-  int rc = SQLITE_OK;
+void blobSpotFree(BlobSpot *pBlobSpot) {
   if( pBlobSpot->pBlob != NULL ){
-    rc = sqlite3_blob_close(pBlobSpot->pBlob);
+    sqlite3_blob_close(pBlobSpot->pBlob);
   }
   if( pBlobSpot->pBuffer != NULL ){
     sqlite3_free(pBlobSpot->pBuffer);
   }
   sqlite3_free(pBlobSpot);
-  return rc;
 }
 
 /**************************************************************************

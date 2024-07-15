@@ -44,15 +44,15 @@ int main() {
 
   // test2: create blob poiting to the existing row
   ensure(blobSpotCreate(&index, &pBlobSpot, 1, TEST_BLOCK_SIZE, DISKANN_BLOB_WRITABLE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
-  ensure(blobSpotFree(pBlobSpot) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  blobSpotFree(pBlobSpot);
 
   // test3: create blob poiting to the existing row and try to read more data than it has
   ensure(blobSpotCreate(&index, &pBlobSpot, 1, TEST_BLOCK_SIZE, DISKANN_BLOB_WRITABLE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
-  ensure(blobSpotLoad(&index, pBlobSpot, 1, TEST_BLOCK_SIZE) == SQLITE_ERROR, "unexpected error: %s\n", sqlite3_errmsg(db));
+  ensure(blobSpotReload(&index, pBlobSpot, 1, TEST_BLOCK_SIZE) == SQLITE_ERROR, "unexpected error: %s\n", sqlite3_errmsg(db));
   // test4: now read the amount we want and also reposition opened BlobSpot to another row
-  ensure(blobSpotLoad(&index, pBlobSpot, 2, TEST_BLOCK_SIZE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  ensure(blobSpotReload(&index, pBlobSpot, 2, TEST_BLOCK_SIZE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
   ensure(strncmp((const char*)pBlobSpot->pBuffer, "\x01\x02\x03\x04", 4) == 0, "unexpected blob content\n");
-  ensure(blobSpotFree(pBlobSpot) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  blobSpotFree(pBlobSpot);
 
   // test5: update row
   ensure(blobSpotCreate(&index, &pBlobSpot, 2, TEST_BLOCK_SIZE, DISKANN_BLOB_WRITABLE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
@@ -63,11 +63,11 @@ int main() {
 
   BlobSpot *pBlobSpotOther;
   ensure(blobSpotCreate(&index, &pBlobSpotOther, 2, TEST_BLOCK_SIZE, DISKANN_BLOB_WRITABLE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
-  ensure(blobSpotLoad(&index, pBlobSpotOther, 2, TEST_BLOCK_SIZE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  ensure(blobSpotReload(&index, pBlobSpotOther, 2, TEST_BLOCK_SIZE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
   nodeBinVector(&index, pBlobSpotOther, &vector);
   ensure(nodeBinEdges(&index, pBlobSpotOther) == 0, "unexpected edges count\n");
   ensure(((float*)vector.data)[0] == vectorData[0], "unexpected vector content\n");
-  ensure(blobSpotFree(pBlobSpotOther) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  blobSpotFree(pBlobSpotOther);
 
   Vector vector1 = { .type = VECTOR_TYPE_FLOAT32, .dims = 1, .flags = 0, .data = vectorData + 1 };
   Vector vector2 = { .type = VECTOR_TYPE_FLOAT32, .dims = 1, .flags = 0, .data = vectorData + 2 };
@@ -85,7 +85,7 @@ int main() {
   nodeBinDebug(&index, pBlobSpot);
 
   ensure(blobSpotFlush(pBlobSpot) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
-  ensure(blobSpotFree(pBlobSpot) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  blobSpotFree(pBlobSpot);
 
   ensure(sqlite3_close(db) == 0, "unable to close memory db: %s\n", sqlite3_errmsg(db));
 }

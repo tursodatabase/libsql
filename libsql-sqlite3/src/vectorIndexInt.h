@@ -52,7 +52,7 @@ struct BlobSpot {
 int blobSpotCreate(const DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid, int nBufferSize, int isWritable);
 int blobSpotLoad(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize);
 int blobSpotFlush(BlobSpot *pBlobSpot);
-int blobSpotFree(BlobSpot *pBlobSpot);
+void blobSpotFree(BlobSpot *pBlobSpot);
 
 /*
  * Accessor for node binary format
