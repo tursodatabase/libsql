@@ -190,8 +190,8 @@ int vectorIdxParamsPutU64(VectorIdxParams *, char, u64);
 int vectorIdxParamsPutF64(VectorIdxParams *, char, double);
 
 int vectorIdxKeyGet(Table*, VectorIdxKey *, const char **);
-int vectorIdxKeyColumnRender(const VectorIdxKey *, const char *, char *, int);
-int vectorIdxKeyPlaceholderRender(int, const char *, char *, int);
+int vectorIdxKeyDefsRender(const VectorIdxKey *, const char *, char *, int);
+int vectorIdxKeyNamesRender(int, const char *, char *, int);
 
 int vectorInRowAlloc(sqlite3 *, const UnpackedRecord *, VectorInRow *, char **);
 sqlite3_value* vectorInRowKey(const VectorInRow *, int);

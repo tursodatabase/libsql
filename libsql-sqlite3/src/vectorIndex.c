@@ -109,7 +109,7 @@ int vectorIdxKeyGet(Table *pTable, VectorIdxKey *pKey, const char **pzErrMsg) {
   return 0;
 }
 
-int vectorIdxKeyColumnRender(const VectorIdxKey *pKey, const char *prefix, char *pBuf, int nBufSize) {
+int vectorIdxKeyDefsRender(const VectorIdxKey *pKey, const char *prefix, char *pBuf, int nBufSize) {
   static const char * const azType[] = {
     /* SQLITE_AFF_BLOB    */ " BLOB",
     /* SQLITE_AFF_TEXT    */ " TEXT",
@@ -141,7 +141,7 @@ int vectorIdxKeyColumnRender(const VectorIdxKey *pKey, const char *prefix, char 
   return 0;
 }
 
-int vectorIdxKeyPlaceholderRender(int nKeyColumns, const char *prefix, char *pBuf, int nBufSize) {
+int vectorIdxKeyNamesRender(int nKeyColumns, const char *prefix, char *pBuf, int nBufSize) {
   int i, size;
   for(i = 0; i < nKeyColumns && nBufSize > 0; i++){
     if( i == 0 ){
