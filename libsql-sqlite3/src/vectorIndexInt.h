@@ -205,6 +205,15 @@ int vectorOutRowsPut(VectorOutRows *, int, int, const u64 *, sqlite3_value *);
 void vectorOutRowsGet(sqlite3_context *, const VectorOutRows *, int, int);
 void vectorOutRowsFree(sqlite3 *, VectorOutRows *);
 
+int diskAnnCreateIndex(sqlite3 *, const char *, const VectorIdxKey *, VectorIdxParams *);
+int diskAnnClearIndex(sqlite3 *, const char *);
+int diskAnnDropIndex(sqlite3 *, const char *);
+int diskAnnOpenIndex(sqlite3 *, const char *, const VectorIdxParams *, DiskAnnIndex **);
+void diskAnnCloseIndex(DiskAnnIndex *);
+int diskAnnInsert(const DiskAnnIndex *, const VectorInRow *, char **);
+int diskAnnDelete(const DiskAnnIndex *, const VectorInRow *, char **);
+int diskAnnSearch(const DiskAnnIndex *, const Vector *, int, const VectorIdxKey *, VectorOutRows *, char **);
+
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */
 #endif
