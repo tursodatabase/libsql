@@ -4,9 +4,9 @@ use std::path::Path;
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
+use fst::Map;
 use tokio::io::AsyncWrite;
 use uuid::Uuid;
-use fst::Map;
 
 use super::Result;
 use crate::io::file::FileExt;

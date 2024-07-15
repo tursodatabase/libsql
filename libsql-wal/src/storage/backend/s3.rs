@@ -1,16 +1,16 @@
 //! S3 implementation of storage backend
 
-use std::task::Poll;
-use std::sync::Arc;
-use std::str::FromStr;
-use std::pin::Pin;
-use std::path::Path;
 use std::fmt;
+use std::path::Path;
+use std::pin::Pin;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::task::Poll;
 
 use aws_config::SdkConfig;
-use aws_sdk_s3::Client;
-use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::primitives::{ByteStream, SdkBody};
+use aws_sdk_s3::types::CreateBucketConfiguration;
+use aws_sdk_s3::Client;
 use bytes::{Bytes, BytesMut};
 use http_body::{Frame, SizeHint};
 use libsql_sys::name::NamespaceName;
@@ -19,8 +19,8 @@ use tokio_util::sync::ReusableBoxFuture;
 use super::{Backend, SegmentMeta};
 use crate::io::compat::copy_to_file;
 use crate::io::net::Connector;
-use crate::storage::Result;
 use crate::io::{FileExt, Io};
+use crate::storage::Result;
 
 pub struct S3Backend<IO> {
     client: Client,
@@ -51,12 +51,12 @@ impl<IO: Io> S3Backend<IO> {
         cluster_id: String,
         io: IO,
         connector: C,
-    ) -> Result<Self> 
+    ) -> Result<Self>
     where
-        C:Connector,
+        C: Connector,
     {
-        let client = aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new()
-            .build(connector);
+        let client =
+            aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new().build(connector);
 
         let config = aws_sdk_s3::config::Builder::from(&aws_config)
             .http_client(client)
@@ -73,11 +73,7 @@ impl<IO: Io> S3Backend<IO> {
         Self::from_client(client, io, config).await
     }
 
-    async fn from_client(
-        client: Client,
-        io: IO,
-        default_config: S3Config,
-    ) -> Result<Self> {
+    async fn from_client(client: Client, io: IO, default_config: S3Config) -> Result<Self> {
         let bucket_config = CreateBucketConfiguration::builder()
             // TODO: get location from config
             .location_constraint(aws_sdk_s3::types::BucketLocationConstraint::UsWest2)
@@ -90,7 +86,11 @@ impl<IO: Io> S3Backend<IO> {
             .await
             .unwrap();
 
-        Ok(Self { client, default_config: default_config.into(), io })
+        Ok(Self {
+            client,
+            default_config: default_config.into(),
+            io,
+        })
     }
 
     async fn fetch_segment_data(
@@ -99,7 +99,7 @@ impl<IO: Io> S3Backend<IO> {
         folder_key: &FolderKey<'_>,
         segment_key: &SegmentKey,
         dest_path: &Path,
-        ) -> Result<()> {
+    ) -> Result<()> {
         let key = s3_segment_data_key(folder_key, segment_key);
         let stream = self.s3_get(config, key).await?;
         let reader = stream.into_async_read();
@@ -141,8 +141,8 @@ impl<IO: Io> S3Backend<IO> {
         &self,
         config: &S3Config,
         folder_key: &FolderKey<'_>,
-        frame_no: u64
-        ) -> Result<SegmentKey> {
+        frame_no: u64,
+    ) -> Result<SegmentKey> {
         let lookup_key = s3_segment_index_lookup_key(&folder_key, frame_no);
 
         let objects = self
@@ -159,7 +159,13 @@ impl<IO: Io> S3Backend<IO> {
         };
         let key = contents.key().unwrap();
         let key_path: &Path = key.as_ref();
-        let segment_key: SegmentKey = key_path.file_stem().unwrap().to_str().unwrap().parse().unwrap();
+        let segment_key: SegmentKey = key_path
+            .file_stem()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .parse()
+            .unwrap();
 
         Ok(segment_key)
     }
@@ -271,7 +277,7 @@ fn s3_folder_key(cluster_id: &str, ns: &NamespaceName) -> String {
     format!("ns-{}:{}-v2", cluster_id, ns)
 }
 
-impl<IO> Backend for S3Backend<IO> 
+impl<IO> Backend for S3Backend<IO>
 where
     IO: Io,
 {
@@ -285,9 +291,9 @@ where
         segment_index: Vec<u8>,
     ) -> Result<()> {
         let folder_key = FolderKey {
-                cluster_id: &config.cluster_id,
-                namespace: &meta.namespace
-            };
+            cluster_id: &config.cluster_id,
+            namespace: &meta.namespace,
+        };
         let segment_key = SegmentKey::from(&meta);
         let s3_data_key = s3_segment_data_key(&folder_key, &segment_key);
 
@@ -326,11 +332,10 @@ where
         frame_no: u64,
         dest_path: &Path,
     ) -> Result<fst::Map<Vec<u8>>> {
-        let folder_key = 
-            FolderKey {
-                cluster_id: &config.cluster_id,
-                namespace: &namespace
-            };
+        let folder_key = FolderKey {
+            cluster_id: &config.cluster_id,
+            namespace: &namespace,
+        };
 
         let segment_key = self.find_segment(config, &folder_key, frame_no).await?;
         if segment_key.includes(frame_no) {
@@ -345,20 +350,18 @@ where
         }
     }
 
-    async fn meta(
-        &self,
-        config: &Self::Config,
-        namespace: NamespaceName,
-    ) -> Result<super::DbMeta> {
+    async fn meta(&self, config: &Self::Config, namespace: NamespaceName) -> Result<super::DbMeta> {
         // request a key bigger than any other to get the last segment
         let folder_key = FolderKey {
             cluster_id: &config.cluster_id,
-            namespace: &namespace
+            namespace: &namespace,
         };
 
         let max_segment_key = self.find_segment(config, &folder_key, u64::MAX).await?;
 
-        Ok(super::DbMeta { max_frame_no: max_segment_key.end_frame_no })
+        Ok(super::DbMeta {
+            max_frame_no: max_segment_key.end_frame_no,
+        })
     }
 
     fn default_config(&self) -> Arc<Self::Config> {
@@ -436,7 +439,7 @@ where
                 }
                 StreamState::WaitingChunk => match self.fut.poll(cx) {
                     Poll::Ready(Ok(buf)) => {
-                        // TODO: we perform one too many read, 
+                        // TODO: we perform one too many read,
                         if buf.is_empty() {
                             self.state = StreamState::Done;
                             return Poll::Ready(None);
@@ -522,10 +525,14 @@ mod tests {
             cluster_id: "123456789".into(),
         };
 
-        let storage =
-            S3Backend::from_sdk_config(aws_config, "testbucket".into(), "123456789".into(), StdIO(()))
-                .await
-                .unwrap();
+        let storage = S3Backend::from_sdk_config(
+            aws_config,
+            "testbucket".into(),
+            "123456789".into(),
+            StdIO(()),
+        )
+        .await
+        .unwrap();
 
         let f_path = dir.path().join("fs-segments");
         std::fs::write(&f_path, vec![123; 8092]).unwrap();
@@ -535,18 +542,21 @@ mod tests {
         let mut builder = MapBuilder::memory();
         builder.insert(42u32.to_be_bytes(), 42).unwrap();
         let index = builder.into_inner().unwrap();
-        storage.store(
-            &s3_config, 
-            SegmentMeta {
-                namespace: ns.clone(),
-                segment_id: Uuid::new_v4(),
-                start_frame_no: 0u64.into(),
-                end_frame_no: 64u64.into(),
-                created_at: Utc::now(),
-            },
-            std::fs::File::open(&f_path).unwrap(),
-            index,
-        ).await.unwrap();
+        storage
+            .store(
+                &s3_config,
+                SegmentMeta {
+                    namespace: ns.clone(),
+                    segment_id: Uuid::new_v4(),
+                    start_frame_no: 0u64.into(),
+                    end_frame_no: 64u64.into(),
+                    created_at: Utc::now(),
+                },
+                std::fs::File::open(&f_path).unwrap(),
+                index,
+            )
+            .await
+            .unwrap();
 
         let db_meta = storage.meta(&s3_config, ns.clone()).await.unwrap();
         assert_eq!(db_meta.max_frame_no, 64);
@@ -554,34 +564,49 @@ mod tests {
         let mut builder = MapBuilder::memory();
         builder.insert(44u32.to_be_bytes(), 44).unwrap();
         let index = builder.into_inner().unwrap();
-        storage.store(
-            &s3_config, 
-            SegmentMeta {
-                namespace: ns.clone(),
-                segment_id: Uuid::new_v4(),
-                start_frame_no: 64u64.into(),
-                end_frame_no: 128u64.into(),
-                created_at: Utc::now(),
-            },
-            std::fs::File::open(&f_path).unwrap(),
-            index,
-        ).await.unwrap();
+        storage
+            .store(
+                &s3_config,
+                SegmentMeta {
+                    namespace: ns.clone(),
+                    segment_id: Uuid::new_v4(),
+                    start_frame_no: 64u64.into(),
+                    end_frame_no: 128u64.into(),
+                    created_at: Utc::now(),
+                },
+                std::fs::File::open(&f_path).unwrap(),
+                index,
+            )
+            .await
+            .unwrap();
 
         let db_meta = storage.meta(&s3_config, ns.clone()).await.unwrap();
         assert_eq!(db_meta.max_frame_no, 128);
 
         let tmp = NamedTempFile::new().unwrap();
 
-        let index = storage.fetch_segment(&s3_config, ns.clone(), 1, tmp.path()).await.unwrap();
+        let index = storage
+            .fetch_segment(&s3_config, ns.clone(), 1, tmp.path())
+            .await
+            .unwrap();
         assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
 
-        let index = storage.fetch_segment(&s3_config, ns.clone(), 63, tmp.path()).await.unwrap();
+        let index = storage
+            .fetch_segment(&s3_config, ns.clone(), 63, tmp.path())
+            .await
+            .unwrap();
         assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
 
-        let index = storage.fetch_segment(&s3_config, ns.clone(), 64, tmp.path()).await.unwrap();
+        let index = storage
+            .fetch_segment(&s3_config, ns.clone(), 64, tmp.path())
+            .await
+            .unwrap();
         assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
 
-        let index = storage.fetch_segment(&s3_config, ns.clone(), 65, tmp.path()).await.unwrap();
+        let index = storage
+            .fetch_segment(&s3_config, ns.clone(), 65, tmp.path())
+            .await
+            .unwrap();
         assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
     }
 }

@@ -10,8 +10,7 @@ pub trait FileExt: Send + Sync + 'static {
         let mut written = 0;
 
         while written != buf.len() {
-            written +=
-                self.write_at(&buf[written..], offset + written as u64)?;
+            written += self.write_at(&buf[written..], offset + written as u64)?;
         }
 
         Ok(())

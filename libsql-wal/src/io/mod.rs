@@ -8,8 +8,8 @@ use uuid::Uuid;
 pub use self::file::FileExt;
 
 pub mod buf;
-pub mod file;
 pub mod compat;
+pub mod file;
 #[cfg(feature = "net")]
 pub mod net;
 

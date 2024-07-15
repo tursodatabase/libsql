@@ -1,7 +1,7 @@
 use std::error::Error as StdError;
 
-use hyper::Uri;
 use hyper::client::connect::Connection;
+use hyper::Uri;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tower::Service;
 

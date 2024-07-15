@@ -96,9 +96,7 @@ unsafe impl IoBufMut for BytesMut {
     }
 
     unsafe fn set_init(&mut self, pos: usize) {
-        unsafe {
-            self.set_len(pos)
-        }
+        unsafe { self.set_len(pos) }
     }
 }
 
