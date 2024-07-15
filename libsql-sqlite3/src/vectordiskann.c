@@ -38,12 +38,14 @@
 ** Here is the (internal, non-API) interface between this module and the
 ** rest of the SQLite system:
 **
-**    diskAnnCreateIndex()     Create new index
+**    diskAnnCreateIndex()     Create new index and fill default values for diskann parameters (if some of them are omitted)
 **    diskAnnDropIndex()       Delete existing index
+**    diskAnnClearIndex()      Truncate existing index
 **    diskAnnOpenIndex()       Open index for operations (allocate all necessary internal structures)
 **    diskAnnCloseIndex()      Close index and free associated resources
-**    diskAnnSearch()          
-**    diskAnnInsert()          
+**    diskAnnSearch()          Search K nearest neighbours to the query vector in an opened index
+**    diskAnnInsert()          Insert single new(!) vector in an opened index
+**    diskAnnDelete()          Delete row by key from an opened index
 */
 #ifndef SQLITE_OMIT_VECTOR
 
@@ -379,7 +381,7 @@ void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
 }
 
 /*******************************************************************************
-** DiskANN shadow index operations (some of them exposed as DiskANN public API)
+** DiskANN shadow index operations (some of them exposed as DiskANN internal API)
 ********************************************************************************/
 
 int diskAnnCreateIndex(
@@ -1099,7 +1101,7 @@ out:
 }
 
 /**************************************************************************
-** DiskANN main public API
+** DiskANN main internal API
 **************************************************************************/
 
 // search k nearest neighbours for pVector in the pIndex (with pKey primary key structure) and put result in the pRows output
