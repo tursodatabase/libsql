@@ -212,6 +212,7 @@ fn filterIncludes(b: *Build, lp: LazyPath) LazyPath {
 }
 
 const cflags = [_][]const u8{
+    "-Wno-incompatible-pointer-types", // to compile with test8.c bug
     "-fno-sanitize=signed-integer-overflow",
     "-DBUILD_sqlite",
     "-DSQLITE_ENABLE_MATH_FUNCTIONS",

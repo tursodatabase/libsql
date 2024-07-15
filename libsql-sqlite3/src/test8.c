@@ -1337,30 +1337,32 @@ static sqlite3_module echoModule = {
 };
 
 static sqlite3_module echoModuleV2 = {
-  .iVersion = 700,                       /* iVersion */
-  .xCreate = echoCreate,
-  .xConnect = echoConnect,
-  .xBestIndex = echoBestIndex,
-  .xDisconnect = echoDisconnect, 
-  .xDestroy = echoDestroy,
-  .xOpen = echoOpen,                  /* xOpen - open a cursor */
-  .xClose = echoClose,                 /* xClose - close a cursor */
-  .xFilter = echoFilter,                /* xFilter - configure scan constraints */
-  .xNext = echoNext,                  /* xNext - advance a cursor */
-  .xEof = echoEof,                   /* xEof */
-  .xColumn = echoColumn,                /* xColumn - read data */
-  .xRowid = echoRowid,                 /* xRowid - read data */
-  .xUpdate = echoUpdate,                /* xUpdate - write data */
-  .xBegin = echoBegin,                 /* xBegin - begin transaction */
-  .xSync = echoSync,                  /* xSync - sync transaction */
-  .xCommit = echoCommit,                /* xCommit - commit transaction */
-  .xRollback = echoRollback,              /* xRollback - rollback transaction */
-  .xFindFunction = echoFindFunction,          /* xFindFunction - function overloading */
-  .xRename = echoRename,                /* xRename - rename the table */
-  .xSavepoint = echoSavepoint,
-  .xRelease = echoRelease,
-  .xRollbackTo = echoRollbackTo,
-  .xPreparedSql = echoPreparedSql,
+  700,                       /* iVersion */
+  echoCreate,
+  echoConnect,
+  echoBestIndex,
+  echoDisconnect, 
+  echoDestroy,
+  echoOpen,                  /* xOpen - open a cursor */
+  echoClose,                 /* xClose - close a cursor */
+  echoFilter,                /* xFilter - configure scan constraints */
+  echoNext,                  /* xNext - advance a cursor */
+  echoEof,                   /* xEof */
+  echoColumn,                /* xColumn - read data */
+  echoRowid,                 /* xRowid - read data */
+  echoUpdate,                /* xUpdate - write data */
+  echoBegin,                 /* xBegin - begin transaction */
+  echoSync,                  /* xSync - sync transaction */
+  echoCommit,                /* xCommit - commit transaction */
+  echoRollback,              /* xRollback - rollback transaction */
+  echoFindFunction,          /* xFindFunction - function overloading */
+  echoRename,                /* xRename - rename the table */
+  echoSavepoint,
+  echoRelease,
+  echoRollbackTo,
+  0,                         /* xShadowName */
+  echoPreparedSql,
+  0                          /* xIntegrity  */
 };
 
 /*
