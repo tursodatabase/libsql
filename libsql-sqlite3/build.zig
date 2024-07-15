@@ -489,6 +489,7 @@ fn addSqlite(b: *Build, options: Sqlite3Options) *Build.Step.Compile {
     }
 
     if (options.rtree) {
+        lib.addIncludePath(b.path("ext/rtree/"));
         lib.addCSourceFile(.{ .file = b.path("ext/rtree/rtree.c"), .flags = &cflags });
         lib.root_module.addCMacro("SQLITE_ENABLE_RTREE", "1");
         if (options.geopoly) lib.root_module.addCMacro("SQLITE_ENABLE_GEOPOLY", "1");
