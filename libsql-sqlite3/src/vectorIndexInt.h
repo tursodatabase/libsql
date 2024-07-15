@@ -49,8 +49,8 @@ struct BlobSpot {
 #define DISKANN_BLOB_READONLY 0
 
 /* BlobSpot operations */
-int blobSpotCreate(DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid, int nBufferSize, int isWritable);
-int blobSpotLoad(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize);
+int blobSpotCreate(const DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid, int nBufferSize, int isWritable);
+int blobSpotLoad(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize);
 int blobSpotFlush(BlobSpot *pBlobSpot);
 int blobSpotFree(BlobSpot *pBlobSpot);
 
@@ -60,17 +60,17 @@ int blobSpotFree(BlobSpot *pBlobSpot);
  *   [u64 nRowid] [u16 nEdges] [node vector] [edge vector] * nEdges [trash vector] * (nMaxEdges - nEdges) ([u64 legacyField] [u64 edgeId]) * nEdges
  *   Note, that node vector and edge vector can have different representations (and edge vector can be smaller in size than node vector)
 */
-int nodeEdgesMaxCount(DiskAnnIndex *pIndex);
-int nodeEdgesMetadataOffset(DiskAnnIndex *pIndex);
-void nodeBinInit(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, Vector *pVector);
-void nodeBinVector(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, Vector *pVector);
-u16 nodeBinEdges(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot);
-void nodeBinEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, Vector *pVector);
-int nodeBinEdgeFind(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid);
-void nodeBinPruneEdges(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int nPruned);
-void nodeBinInsertEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iInsert, u64 nRowid, Vector *pVector);
-void nodeBinDeleteEdge(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDelete);
-void nodeBinDebug(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot);
+int nodeEdgesMaxCount(const DiskAnnIndex *pIndex);
+int nodeEdgesMetadataOffset(const DiskAnnIndex *pIndex);
+void nodeBinInit(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, Vector *pVector);
+void nodeBinVector(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, Vector *pVector);
+u16 nodeBinEdges(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot);
+void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, Vector *pVector);
+int nodeBinEdgeFindIdx(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, u64 nRowid);
+void nodeBinPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int nPruned);
+void nodeBinInsertEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iInsert, u64 nRowid, Vector *pVector);
+void nodeBinDeleteEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDelete);
+void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot);
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */
