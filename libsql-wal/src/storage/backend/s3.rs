@@ -7,7 +7,8 @@ use std::pin::Pin;
 use std::path::Path;
 use std::fmt;
 
-use aws_config::SdkConfig; use aws_sdk_s3::Client;
+use aws_config::SdkConfig;
+use aws_sdk_s3::Client;
 use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use bytes::{Bytes, BytesMut};
@@ -17,6 +18,7 @@ use tokio_util::sync::ReusableBoxFuture;
 
 use super::{Backend, SegmentMeta};
 use crate::io::compat::copy_to_file;
+use crate::io::net::Connector;
 use crate::storage::Result;
 use crate::io::{FileExt, Io};
 
@@ -40,7 +42,42 @@ impl<IO: Io> S3Backend<IO> {
         };
 
         let client = Client::new(&config.aws_config);
+        Self::from_client(client, io, config).await
+    }
 
+    pub(crate) async fn from_sdk_config_and_connector<C>(
+        aws_config: SdkConfig,
+        bucket: String,
+        cluster_id: String,
+        io: IO,
+        connector: C,
+    ) -> Result<Self> 
+    where
+        C:Connector,
+    {
+        let client = aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new()
+            .build(connector);
+
+        let config = aws_sdk_s3::config::Builder::from(&aws_config)
+            .http_client(client)
+            .build();
+
+        let client = Client::from_conf(config);
+
+        let config = S3Config {
+            bucket,
+            cluster_id,
+            aws_config,
+        };
+
+        Self::from_client(client, io, config).await
+    }
+
+    async fn from_client(
+        client: Client,
+        io: IO,
+        default_config: S3Config,
+    ) -> Result<Self> {
         let bucket_config = CreateBucketConfiguration::builder()
             // TODO: get location from config
             .location_constraint(aws_sdk_s3::types::BucketLocationConstraint::UsWest2)
@@ -48,12 +85,12 @@ impl<IO: Io> S3Backend<IO> {
         client
             .create_bucket()
             .create_bucket_configuration(bucket_config)
-            .bucket(&config.bucket)
+            .bucket(&default_config.bucket)
             .send()
             .await
             .unwrap();
 
-        Ok(Self { client, default_config: config.into(), io })
+        Ok(Self { client, default_config: default_config.into(), io })
     }
 
     async fn fetch_segment_data(
