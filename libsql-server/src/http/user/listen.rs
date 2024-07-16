@@ -6,7 +6,8 @@ use crate::{
     namespace::{NamespaceName, NamespaceStore},
 };
 use axum::extract::State as AxumState;
-use axum::http::Uri;
+use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
+use axum::http::{HeaderValue, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum_extra::{extract::Query, json_lines::JsonLines};
 use futures::{Stream, StreamExt};
@@ -31,6 +32,9 @@ pub struct ListenQuery {
     table: String,
     action: Vec<Action>,
 }
+
+const EVENT_STREAM: HeaderValue = HeaderValue::from_static("text/event-stream");
+const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 
 pub(super) async fn handle_listen(
     auth: Authenticated,
@@ -61,7 +65,13 @@ pub(super) async fn handle_listen(
         query.action.clone(),
     )
     .await;
-    Ok(JsonLines::new(stream).into_response())
+
+    let mut response = JsonLines::new(stream).into_response();
+    let headers = response.headers_mut();
+    headers.insert(CONTENT_TYPE, EVENT_STREAM);
+    headers.insert(CACHE_CONTROL, NO_CACHE);
+
+    Ok(response)
 }
 
 static LAGGED_MSG: &str = "some changes were lost";
