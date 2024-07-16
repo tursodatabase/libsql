@@ -44,6 +44,7 @@ struct BlobSpot {
   int nBufferSize;      /* buffer size */
   u8 isWritable;        /* blob open mode (readonly or read/write) */
   u8 isInitialized;     /* was blob read after creation or not */
+  u8 isAborted;         /* set to true if last operation with blob failed with non-zero code */
 };
 
 /* Special error code for blobSpotCreate/blobSpotReload functions which will fire where rowid doesn't exists in the table */

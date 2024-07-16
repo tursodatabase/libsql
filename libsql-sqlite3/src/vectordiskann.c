@@ -179,6 +179,7 @@ int blobSpotCreate(const DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid
   pBlobSpot->nBufferSize = nBufferSize;
   pBlobSpot->isWritable = isWritable;
   pBlobSpot->isInitialized = 0;
+  pBlobSpot->isAborted = 0;
 
   *ppBlobSpot = pBlobSpot;
   return SQLITE_OK;
@@ -197,28 +198,51 @@ int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, 
   int rc;
 
   DiskAnnTrace(("blob spot reload: rowid=%lld\n", nRowid));
-  assert( pBlobSpot != NULL && pBlobSpot->pBlob != NULL );
+  assert( pBlobSpot != NULL && (pBlobSpot->pBlob != NULL || pBlobSpot->isAborted ) );
   assert( pBlobSpot->nBufferSize == nBufferSize );
 
   if( pBlobSpot->nRowid == nRowid && pBlobSpot->isInitialized ){
     return SQLITE_OK;
   }
 
+  // if last blob open/reopen operation aborted - we need to close current blob and open new one 
+  // (as all operations over aborted blob will return SQLITE_ABORT error)
+  if( pBlobSpot->isAborted ){
+    if( pBlobSpot->pBlob != NULL ){
+      sqlite3_blob_close(pBlobSpot->pBlob);
+    }
+    pBlobSpot->pBlob = NULL;
+    pBlobSpot->isInitialized = 0;
+    pBlobSpot->isAborted = 0;
+    pBlobSpot->nRowid = nRowid;
+
+    rc = sqlite3_blob_open(pIndex->db, pIndex->zDb, pIndex->zShadow, "data", nRowid, pBlobSpot->isWritable, &pBlobSpot->pBlob);
+    rc = blobSpotConvertRc(pIndex, rc);
+    if( rc != SQLITE_OK ){
+      goto abort;
+    }
+  }
+
   if( pBlobSpot->nRowid != nRowid ){
     rc = sqlite3_blob_reopen(pBlobSpot->pBlob, nRowid);
     rc = blobSpotConvertRc(pIndex, rc);
     if( rc != SQLITE_OK ){
-      return rc;
+      goto abort;
     }
     pBlobSpot->nRowid = nRowid;
     pBlobSpot->isInitialized = 0;
   }
   rc = sqlite3_blob_read(pBlobSpot->pBlob, pBlobSpot->pBuffer, nBufferSize, 0);
   if( rc != SQLITE_OK ){
-    return rc;
+    goto abort;
   }
   pBlobSpot->isInitialized = 1;
   return SQLITE_OK;
+
+abort:
+  pBlobSpot->isAborted = 1;
+  pBlobSpot->isInitialized = 0;
+  return rc;
 }
 
 int blobSpotFlush(BlobSpot *pBlobSpot) {
@@ -1019,6 +1043,7 @@ static int diskAnnSearchInternal(const DiskAnnIndex *pIndex, DiskAnnSearchCtx *p
     int iCandidate = diskAnnSearchCtxFindClosestCandidateIdx(pCtx);
     pCandidate = diskAnnSearchCtxGetCandidate(pCtx, iCandidate);
 
+    rc = SQLITE_OK;
     if( pReusableBlobSpot != NULL ){
       rc = blobSpotReload(pIndex, pReusableBlobSpot, pCandidate->nRowid, pIndex->nBlockSize);
       pCandidateBlob = pReusableBlobSpot;
@@ -1028,12 +1053,7 @@ static int diskAnnSearchInternal(const DiskAnnIndex *pIndex, DiskAnnSearchCtx *p
         rc = blobSpotCreate(pIndex, &pCandidate->pBlobSpot, pCandidate->nRowid, pIndex->nBlockSize, pCtx->blobMode);
       }
       if( rc == SQLITE_OK ){
-        // reload is required here because we can reuse blob from the pool (in which case it can point to random row from the table)
         rc = blobSpotReload(pIndex, pCandidate->pBlobSpot, pCandidate->nRowid, pIndex->nBlockSize);
-        if( rc != SQLITE_OK ){
-          *pzErrMsg = sqlite3_mprintf("failed to reload new blob for candidate");
-          goto out;
-        }
       }
       pCandidateBlob = pCandidate->pBlobSpot;
     }
@@ -1329,8 +1349,10 @@ int diskAnnDelete(
     u64 edgeRowid;
     nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, NULL);
     rc = blobSpotReload(pIndex, pEdgeBlob, edgeRowid, pIndex->nBlockSize);
-    if( rc != SQLITE_OK ){
-      *pzErrMsg = sqlite3_mprintf("failed to reload blob for edge row");
+    if( rc == DISKANN_ROW_NOT_FOUND ){
+      continue;
+    }else if( rc != SQLITE_OK ){
+      *pzErrMsg = sqlite3_mprintf("failed to reload blob for edge row: %d", rc);
       goto out;
     }
     iDelete = nodeBinEdgeFindIdx(pIndex, pEdgeBlob, edgeRowid);
