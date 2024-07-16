@@ -163,7 +163,7 @@ impl<IO: Io> S3Backend<IO> {
         config: &S3Config,
         folder_key: &FolderKey<'_>,
         frame_no: u64,
-    ) -> Result<SegmentKey> {
+    ) -> Result<Option<SegmentKey>> {
         let lookup_key = s3_segment_index_lookup_key(&folder_key, frame_no);
 
         let objects = self
@@ -177,6 +177,7 @@ impl<IO: Io> S3Backend<IO> {
 
         let Some(contents) = objects.contents().first() else {
             todo!("nothing")
+            return Ok(None);
         };
         let key = contents.key().unwrap();
         let key_path: &Path = key.as_ref();
@@ -358,7 +359,9 @@ where
             namespace: &namespace,
         };
 
-        let segment_key = self.find_segment(config, &folder_key, frame_no).await?;
+        let Some(segment_key) = self.find_segment(config, &folder_key, frame_no).await? else {
+            return Err(Error::FrameNotFound(frame_no));
+        };
         if segment_key.includes(frame_no) {
             let (_, index) = tokio::try_join!(
                 self.fetch_segment_data(config, &folder_key, &segment_key, dest_path),
@@ -381,7 +384,7 @@ where
         let max_segment_key = self.find_segment(config, &folder_key, u64::MAX).await?;
 
         Ok(super::DbMeta {
-            max_frame_no: max_segment_key.end_frame_no,
+            max_frame_no: max_segment_key.map(|s| s.end_frame_no).unwrap_or(0),
         })
     }
 
