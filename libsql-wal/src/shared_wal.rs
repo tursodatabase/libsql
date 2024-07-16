@@ -244,6 +244,20 @@ impl<IO: Io> SharedWal<IO> {
         Ok(())
     }
 
+    /// Cut the current log, and register it for storage
+    pub fn seal_current(&self) -> Result<()> {
+        let mut tx = self.begin_read(u64::MAX).into();
+        self.upgrade(&mut tx)?;
+        {
+            let mut guard = tx.as_write_mut().unwrap().lock();
+            guard.commit();
+            self.swap_current(&mut guard)?;
+        }
+        tx.end();
+
+        Ok(())
+    }
+
     /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
     pub(crate) fn swap_current(&self, tx: &TxGuard<IO::File>) -> Result<()> {
         self.registry.swap_current(self, tx)?;
