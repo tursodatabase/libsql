@@ -35,8 +35,11 @@ aws-sdk-s3 = { version = "1", optional = true }
 http-body = "1.0.0"
 tokio-util = "0.7.11"
 hyper = { workspace = true, optional = true, features = ["client", "http2"] }
-tower = { workspace = true, optional = true }
 aws-smithy-runtime = { version = "1.6.2", optional = true, features = ["connector-hyper-0-14-x", "client"]}
+clap = { version = "4.5.9", optional = true, features = ["derive"] }
+inquire = { version = "0.7.5", optional = true }
+tracing-subscriber = { version = "0.3.18", optional = true }
+aws-credential-types = { version = "1.2.0", optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -58,12 +61,22 @@ name = "benchmarks"
 harness = false
 
 [features]
-default = ["s3"]
+default = ["s3", "shell-bin"]
 s3 = [
-    "net",
     "dep:hyper",
     "dep:aws-smithy-runtime",
     "dep:aws-sdk-s3",
     "dep:aws-config",
+    "dep:aws-credential-types",
 ]
-net = ["dep:tower"]
+shell-bin = [
+    "dep:clap",
+    "dep:inquire",
+    "s3",
+    "dep:tracing-subscriber",
+]
+
+[[bin]]
+name = "shell"
+path = "src/bins/shell/main.rs"
+required-features = ["shell-bin"]  
