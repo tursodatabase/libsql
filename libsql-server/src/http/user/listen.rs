@@ -6,7 +6,8 @@ use crate::{
     namespace::{NamespaceName, NamespaceStore},
 };
 use axum::extract::State as AxumState;
-use axum::http::Uri;
+use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
+use axum::http::{HeaderValue, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum_extra::{extract::Query, json_lines::JsonLines};
 use futures::{Stream, StreamExt};
@@ -29,8 +30,11 @@ pub enum Action {
 #[derive(Deserialize)]
 pub struct ListenQuery {
     table: String,
-    action: Vec<Action>,
+    action: Option<Vec<Action>>,
 }
+
+const EVENT_STREAM: HeaderValue = HeaderValue::from_static("text/event-stream");
+const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 
 pub(super) async fn handle_listen(
     auth: Authenticated,
@@ -61,7 +65,13 @@ pub(super) async fn handle_listen(
         query.action.clone(),
     )
     .await;
-    Ok(JsonLines::new(stream).into_response())
+
+    let mut response = JsonLines::new(stream).into_response();
+    let headers = response.headers_mut();
+    headers.insert(CONTENT_TYPE, EVENT_STREAM);
+    headers.insert(CACHE_CONTROL, NO_CACHE);
+
+    Ok(response)
 }
 
 static LAGGED_MSG: &str = "some changes were lost";
@@ -90,7 +100,7 @@ async fn listen_stream(
     store: NamespaceStore,
     namespace: NamespaceName,
     table: String,
-    actions: Vec<Action>,
+    actions: Option<Vec<Action>>,
 ) -> impl Stream<Item = crate::Result<AggregatorEvent>> {
     async_stream::try_stream! {
         let _sub = Subscription {
@@ -116,17 +126,19 @@ async fn listen_stream(
     }
 }
 
-fn filter_actions(msg: &BroadcastMsg, actions: &Vec<Action>) -> bool {
-    for action in actions {
-        let count = match action {
-            Action::DELETE => msg.delete,
-            Action::INSERT => msg.insert,
-            Action::UPDATE => msg.update,
-            Action::UNKNOWN => msg.unknown,
-        };
-        if count > 0 {
-            return true;
+fn filter_actions(msg: &BroadcastMsg, actions: &Option<Vec<Action>>) -> bool {
+    actions.as_ref().map_or(true, |actions| {
+        for action in actions {
+            let count = match action {
+                Action::DELETE => msg.delete,
+                Action::INSERT => msg.insert,
+                Action::UPDATE => msg.update,
+                Action::UNKNOWN => msg.unknown,
+            };
+            if count > 0 {
+                return true;
+            }
         }
-    }
-    actions.is_empty()
+        false
+    })
 }
