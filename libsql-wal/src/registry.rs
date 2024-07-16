@@ -57,7 +57,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
         Ok(registry)
     }
 
-    pub(crate) async fn get_async(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO>>> {
+    pub async fn get_async(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO>>> {
         loop {
             let notify = {
                 let lock = self.opened.read();
