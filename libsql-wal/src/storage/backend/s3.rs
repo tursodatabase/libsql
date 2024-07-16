@@ -19,9 +19,8 @@ use tokio_util::sync::ReusableBoxFuture;
 
 use super::{Backend, SegmentMeta};
 use crate::io::compat::copy_to_file;
-use crate::io::net::Connector;
-use crate::io::{FileExt, Io};
-use crate::storage::Result;
+use crate::io::{FileExt, Io, StdIO};
+use crate::storage::{Error, Result};
 
 pub struct S3Backend<IO> {
     client: Client,
@@ -29,64 +28,42 @@ pub struct S3Backend<IO> {
     io: IO,
 }
 
+impl S3Backend<StdIO> {
+    pub async fn from_sdk_config(
+        aws_config: SdkConfig,
+        bucket: String,
+        cluster_id: String,
+    ) -> Result<S3Backend<StdIO>> {
+        Self::from_sdk_config_with_io(aws_config, bucket, cluster_id, StdIO(())).await
+    }
+}
+
 impl<IO: Io> S3Backend<IO> {
-    pub(crate) async fn from_sdk_config(
+    #[doc(hidden)]
+    pub async fn from_sdk_config_with_io(
         aws_config: SdkConfig,
         bucket: String,
         cluster_id: String,
         io: IO,
     ) -> Result<Self> {
+        let client = Client::new(&aws_config);
         let config = S3Config {
             bucket,
             cluster_id,
             aws_config,
         };
 
-        let client = Client::new(&config.aws_config);
-        Self::from_client(client, io, config).await
-    }
-
-    pub(crate) async fn from_sdk_config_and_connector<C>(
-        aws_config: SdkConfig,
-        bucket: String,
-        cluster_id: String,
-        io: IO,
-        connector: C,
-    ) -> Result<Self>
-    where
-        C: Connector,
-    {
-        let client =
-            aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new().build(connector);
-
-        let config = aws_sdk_s3::config::Builder::from(&aws_config)
-            .http_client(client)
-            .build();
-
-        let client = Client::from_conf(config);
-
-        let config = S3Config {
-            bucket,
-            cluster_id,
-            aws_config,
-        };
-
-        Self::from_client(client, io, config).await
-    }
-
-    async fn from_client(client: Client, io: IO, default_config: S3Config) -> Result<Self> {
         let bucket_config = CreateBucketConfiguration::builder()
             // TODO: get location from config
             .location_constraint(aws_sdk_s3::types::BucketLocationConstraint::UsWest2)
             .build();
-        client
 
         // TODO: we may need to create the bucket for config overrides. Maybe try lazy bucket
         // creation? or assume that the bucket exists?
         let create_bucket_ret = client
             .create_bucket()
             .create_bucket_configuration(bucket_config)
-            .bucket(&default_config.bucket)
+            .bucket(&config.bucket)
             .send()
             .await;
 
@@ -109,9 +86,10 @@ impl<IO: Io> S3Backend<IO> {
 
         Ok(Self {
             client,
-            default_config: default_config.into(),
+            default_config: config.into(),
             io,
         })
+
     }
 
     async fn fetch_segment_data(
@@ -175,8 +153,8 @@ impl<IO: Io> S3Backend<IO> {
             .await
             .unwrap();
 
+        dbg!(frame_no);
         let Some(contents) = objects.contents().first() else {
-            todo!("nothing")
             return Ok(None);
         };
         let key = contents.key().unwrap();
@@ -189,7 +167,7 @@ impl<IO: Io> S3Backend<IO> {
             .parse()
             .unwrap();
 
-        Ok(segment_key)
+        Ok(Some(segment_key))
     }
 }
 
@@ -549,7 +527,7 @@ mod tests {
             cluster_id: "123456789".into(),
         };
 
-        let storage = S3Backend::from_sdk_config(
+        let storage = S3Backend::from_sdk_config_with_io(
             aws_config,
             "testbucket".into(),
             "123456789".into(),
