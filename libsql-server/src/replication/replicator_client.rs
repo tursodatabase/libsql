@@ -95,7 +95,7 @@ impl ReplicatorClient for Client {
 
     #[tracing::instrument(skip(self))]
     async fn handshake(&mut self) -> Result<(), Error> {
-        tracing::info!("Attempting to perform handshake with primary.");
+        tracing::debug!("Attempting to perform handshake with primary.");
         let req = self.make_request(HelloRequest::new());
         let resp = self.client.hello(req).await?;
         let hello = resp.into_inner();

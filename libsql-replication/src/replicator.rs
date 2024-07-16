@@ -202,7 +202,7 @@ impl<C: ReplicatorClient> Replicator<C> {
     pub async fn try_perform_handshake(&mut self) -> Result<(), Error> {
         let mut error_printed = false;
         for _ in 0..HANDSHAKE_MAX_RETRIES {
-            tracing::info!("Attempting to perform handshake with primary.");
+            tracing::debug!("Attempting to perform handshake with primary.");
             match self.client.handshake().await {
                 Ok(_) => {
                     self.state = ReplicatorState::NeedFrames;
