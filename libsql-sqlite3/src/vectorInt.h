@@ -2,6 +2,7 @@
 #define _VECTOR_H
 
 #include "sqlite3.h"
+#include "sqliteInt.h" // for u16/u32 types
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,8 +95,13 @@ int vectorParseSqliteBlob   (sqlite3_value *, Vector *, char **);
 int vectorF32ParseSqliteBlob(sqlite3_value *, Vector *, char **);
 int vectorF64ParseSqliteBlob(sqlite3_value *, Vector *, char **);
 
+void vectorInitStatic(Vector *, VectorType, const unsigned char *, size_t);
+void vectorInitFromBlob(Vector *, const unsigned char *, size_t);
 void vectorF32InitFromBlob(Vector *, const unsigned char *, size_t);
 void vectorF64InitFromBlob(Vector *, const unsigned char *, size_t);
+
+/* Detect type and dimension of vector provided with first parameter of sqlite3_value * type */
+int detectVectorParameters(sqlite3_value *, int, int *, int *, char **);
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */

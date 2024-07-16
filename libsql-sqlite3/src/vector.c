@@ -67,6 +67,18 @@ Vector *vectorAlloc(VectorType type, VectorDims dims){
 }
 
 /*
+** Initialize a static Vector object.
+**
+** Note that the vector object points to the blob so if
+** you free the blob, the vector becomes invalid.
+**/
+void vectorInitStatic(Vector *pVector, VectorType type, const unsigned char *pBlob, size_t nBlobSize){
+  pVector->type = type;
+  pVector->flags = VECTOR_FLAGS_STATIC;
+  vectorInitFromBlob(pVector, pBlob, nBlobSize);
+}
+
+/*
  * Allocate a Vector object and its data buffer from the SQLite context. 
 */
 static Vector* vectorContextAlloc(sqlite3_context *context, int type, int dims){
@@ -259,7 +271,7 @@ int detectTextVectorParameters(sqlite3_value *arg, int typeHint, int *pType, int
   const u8 *text;
   int textBytes;
   int iText;
-  int textHasDigit;
+  int textHasDigit = 0;
   
   assert( sqlite3_value_type(arg) == SQLITE_TEXT );
   text = sqlite3_value_text(arg);
@@ -390,6 +402,19 @@ size_t vectorDeserializeFromBlob(Vector *pVector, const unsigned char *pBlob, si
       assert(0);
   }
   return 0;
+}
+
+void vectorInitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlobSize){
+  switch (pVector->type) {
+    case VECTOR_TYPE_FLOAT32:
+      vectorF32InitFromBlob(pVector, pBlob, nBlobSize);
+      break;
+    case VECTOR_TYPE_FLOAT64:
+      vectorF64InitFromBlob(pVector, pBlob, nBlobSize);
+      break;
+    default:
+      assert(0);
+  }
 }
 
 /**************************************************************************
