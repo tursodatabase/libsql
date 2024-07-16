@@ -3028,6 +3028,7 @@ dependencies = [
  "rustls-native-certs 0.6.3",
  "tokio",
  "tokio-rustls 0.24.1",
+ "webpki-roots 0.25.4",
 ]
 
 [[package]]
@@ -3395,7 +3396,7 @@ dependencies = [
  "futures",
  "http 0.2.12",
  "hyper 0.14.30",
- "hyper-rustls 0.25.0",
+ "hyper-rustls 0.24.2",
  "libsql-hrana",
  "libsql-sqlite3-parser",
  "libsql-sys",
