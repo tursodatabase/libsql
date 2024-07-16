@@ -176,6 +176,8 @@ int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, 
     if( rc != SQLITE_OK ){
       return rc;
     }
+    pBlobSpot->nRowid = nRowid;
+    pBlobSpot->isInitialized = 0;
   }
   rc = sqlite3_blob_read(pBlobSpot->pBlob, pBlobSpot->pBuffer, nBufferSize, 0);
   if( rc != SQLITE_OK ){
@@ -222,7 +224,8 @@ void nodeBinInit(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, Ve
 
   memset(pBlobSpot->pBuffer, 0, pBlobSpot->nBufferSize);
   writeLE64(pBlobSpot->pBuffer, nRowid);
-  writeLE16(pBlobSpot->pBuffer + sizeof(u64), 0);
+  // neighbours count already zero after memset - no need to set it explicitly
+
   vectorSerializeToBlob(pVector, pBlobSpot->pBuffer + VECTOR_NODE_METADATA_SIZE, pIndex->nNodeVectorSize);
 }
 
@@ -250,7 +253,7 @@ void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdg
     vectorInitStatic(
       pVector,
       pIndex->nEdgeVectorType,
-      pBlobSpot->pBuffer + VECTOR_NODE_METADATA_SIZE + (iEdge + 1) * pIndex->nNodeVectorSize,
+      pBlobSpot->pBuffer + VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + iEdge * pIndex->nNodeVectorSize,
       pIndex->nEdgeVectorSize
     );
   }
@@ -258,7 +261,7 @@ void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdg
 
 int nodeBinEdgeFindIdx(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, u64 nRowid) {
   int i, nEdges = nodeBinEdges(pIndex, pBlobSpot);
-
+  // todo: if edges will be sorted by identifiers we can use binary search here (although speed up will be visible only on pretty loaded nodes: >128 edges)
   for(i = 0; i < nEdges; i++){
     u64 edgeId;
     nodeBinEdge(pIndex, pBlobSpot, i, &edgeId, NULL);

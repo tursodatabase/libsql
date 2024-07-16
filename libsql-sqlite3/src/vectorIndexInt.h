@@ -24,14 +24,14 @@ struct DiskAnnIndex {
   int nBlockSize;      /* Size of the block which stores all data for single node */
   int nVectorDims;     /* Vector dimensions */
   int nNodeVectorType; /* Vector type of each node */
-  int nEdgeVectorType; /* Vector type of each node */
+  int nEdgeVectorType; /* Vector type of each edge */
   int nNodeVectorSize; /* Vector size of each node in bytes */
   int nEdgeVectorSize; /* Vector size of each edge in bytes */
 };
 
 /*
  * Simple utility class which holds sqlite3_blob handle poiting to the nRowid (undefined if pBlob == NULL)
- * Caller can re-load BlobSpot with blobSpotLoad(...) method which will reopen blob at new row position
+ * Caller can re-load BlobSpot with blobSpotReload(...) method which will reopen blob at new row position
  * sqlite3_blob_reopen API can be visibly faster than close/open pair since a lot of check can be omitted
 */
 struct BlobSpot {
@@ -39,11 +39,11 @@ struct BlobSpot {
   sqlite3_blob *pBlob;  /* BLOB handle */
   u8 *pBuffer;          /* buffer for BLOB data */
   int nBufferSize;      /* buffer size */
-  int isWritable;       /* blob open mode (readonly or read/write) */
-  int isInitialized;    /* was blob read after creation or not */
+  u8 isWritable;        /* blob open mode (readonly or read/write) */
+  u8 isInitialized;     /* was blob read after creation or not */
 };
 
-/* Special error code for blobSpotCreate/blobSpotLoad functions which will fire where rowid doesn't exists in the table */
+/* Special error code for blobSpotCreate/blobSpotReload functions which will fire where rowid doesn't exists in the table */
 #define DISKANN_ROW_NOT_FOUND 1001
 
 #define DISKANN_BLOB_WRITABLE 1

@@ -15,7 +15,8 @@
 #define ensure(condition, ...) { if (!(condition)) { eprintf(__VA_ARGS__); exit(1); } }
 
 #define TEST_BLOCK_SIZE 74
-#define ZERO74 "0102030400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+#define PAYLOAD1_74 "0102030400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+#define PAYLOAD2_74 "0506070800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 
 int main() {
   sqlite3 *db;
@@ -40,7 +41,8 @@ int main() {
   // test1: try read non existing row
   ensure(blobSpotCreate(&index, &pBlobSpot, 0, TEST_BLOCK_SIZE, DISKANN_BLOB_WRITABLE) == DISKANN_ROW_NOT_FOUND, "unexpected error: %s\n", sqlite3_errmsg(db));
   ensure(sqlite3_exec(db, "INSERT INTO t_idx_shadow VALUES (1, x'00')", 0, 0, 0) == 0, "unable to insert entry: %s\n", sqlite3_errmsg(db));
-  ensure(sqlite3_exec(db, "INSERT INTO t_idx_shadow VALUES (2, x'" ZERO74 "')", 0, 0, 0) == 0, "unable to insert entry: %s\n", sqlite3_errmsg(db));
+  ensure(sqlite3_exec(db, "INSERT INTO t_idx_shadow VALUES (2, x'" PAYLOAD1_74 "')", 0, 0, 0) == 0, "unable to insert entry: %s\n", sqlite3_errmsg(db));
+  ensure(sqlite3_exec(db, "INSERT INTO t_idx_shadow VALUES (3, x'" PAYLOAD2_74 "')", 0, 0, 0) == 0, "unable to insert entry: %s\n", sqlite3_errmsg(db));
 
   // test2: create blob poiting to the existing row
   ensure(blobSpotCreate(&index, &pBlobSpot, 1, TEST_BLOCK_SIZE, DISKANN_BLOB_WRITABLE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
@@ -49,7 +51,14 @@ int main() {
   // test3: create blob poiting to the existing row and try to read more data than it has
   ensure(blobSpotCreate(&index, &pBlobSpot, 1, TEST_BLOCK_SIZE, DISKANN_BLOB_WRITABLE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
   ensure(blobSpotReload(&index, pBlobSpot, 1, TEST_BLOCK_SIZE) == SQLITE_ERROR, "unexpected error: %s\n", sqlite3_errmsg(db));
+  blobSpotFree(pBlobSpot);
+
   // test4: now read the amount we want and also reposition opened BlobSpot to another row
+  ensure(blobSpotCreate(&index, &pBlobSpot, 2, TEST_BLOCK_SIZE, DISKANN_BLOB_WRITABLE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  ensure(blobSpotReload(&index, pBlobSpot, 2, TEST_BLOCK_SIZE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  ensure(strncmp((const char*)pBlobSpot->pBuffer, "\x01\x02\x03\x04", 4) == 0, "unexpected blob content\n");
+  ensure(blobSpotReload(&index, pBlobSpot, 3, TEST_BLOCK_SIZE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
+  ensure(strncmp((const char*)pBlobSpot->pBuffer, "\x05\x06\x07\x08", 4) == 0, "unexpected blob content\n");
   ensure(blobSpotReload(&index, pBlobSpot, 2, TEST_BLOCK_SIZE) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
   ensure(strncmp((const char*)pBlobSpot->pBuffer, "\x01\x02\x03\x04", 4) == 0, "unexpected blob content\n");
   blobSpotFree(pBlobSpot);

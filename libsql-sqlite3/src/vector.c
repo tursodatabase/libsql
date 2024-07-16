@@ -69,22 +69,13 @@ Vector *vectorAlloc(VectorType type, VectorDims dims){
 /*
 ** Initialize a static Vector object.
 **
-** Note that that the vector object points to the blob so if
+** Note that the vector object points to the blob so if
 ** you free the blob, the vector becomes invalid.
 **/
 void vectorInitStatic(Vector *pVector, VectorType type, const unsigned char *pBlob, size_t nBlobSize){
-  switch (type) {
-    case VECTOR_TYPE_FLOAT32:
-      vectorF32InitFromBlob(pVector, pBlob, nBlobSize);
-      break;
-    case VECTOR_TYPE_FLOAT64:
-      vectorF64InitFromBlob(pVector, pBlob, nBlobSize);
-      break;
-    default:
-      assert(0);
-  }
   pVector->type = type;
   pVector->flags = VECTOR_FLAGS_STATIC;
+  vectorInitFromBlob(pVector, pBlob, nBlobSize);
 }
 
 /*
