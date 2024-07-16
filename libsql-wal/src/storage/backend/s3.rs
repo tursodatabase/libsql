@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::task::Poll;
 
 use aws_config::SdkConfig;
+use aws_sdk_s3::operation::create_bucket::CreateBucketError;
 use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::Client;
@@ -79,12 +80,32 @@ impl<IO: Io> S3Backend<IO> {
             .location_constraint(aws_sdk_s3::types::BucketLocationConstraint::UsWest2)
             .build();
         client
+
+        // TODO: we may need to create the bucket for config overrides. Maybe try lazy bucket
+        // creation? or assume that the bucket exists?
+        let create_bucket_ret = client
             .create_bucket()
             .create_bucket_configuration(bucket_config)
             .bucket(&default_config.bucket)
             .send()
-            .await
-            .unwrap();
+            .await;
+
+        match create_bucket_ret {
+            Ok(_) => (),
+            Err(e) => {
+                if let Some(service_error) = e.as_service_error() {
+                    match service_error {
+                        CreateBucketError::BucketAlreadyExists(_)
+                        | CreateBucketError::BucketAlreadyOwnedByYou(_) => {
+                            tracing::debug!("bucket already exist");
+                        }
+                        _ => return Err(Error::unhandled(e, "failed to create bucket")),
+                    }
+                } else {
+                    return Err(Error::unhandled(e, "failed to create bucket"));
+                }
+            }
+        }
 
         Ok(Self {
             client,
