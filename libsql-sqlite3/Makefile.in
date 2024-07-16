@@ -196,7 +196,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo userauth.lo upsert.lo util.lo vacuum.lo \
          vector.lo vectorfloat32.lo vectorfloat64.lo \
-         vectorIndex.lo vectordiskann.lo \
+         vectorIndex.lo vectordiskann.lo vectorvtab.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo vdbevtab.lo \
          wal.lo walker.lo wasmedge_bindings.lo where.lo wherecode.lo whereexpr.lo \
@@ -308,6 +308,7 @@ SRC = \
   $(TOP)/src/vectorIndexInt.h \
   $(TOP)/src/vectorIndex.c \
   $(TOP)/src/vectordiskann.c \
+  $(TOP)/src/vectorvtab.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
   $(TOP)/src/vdbeapi.c \
@@ -586,8 +587,8 @@ HDR = \
    $(TOP)/src/sqliteLimit.h \
    $(TOP)/src/vdbe.h \
    $(TOP)/src/vdbeInt.h \
-   $(TOP)/src/vectorIndexInt.h \
    $(TOP)/src/vectorInt.h \
+   $(TOP)/src/vectorIndexInt.h \
    $(TOP)/src/vxworks.h \
    $(TOP)/src/whereInt.h \
    sqlite_cfg.h
@@ -1128,6 +1129,9 @@ vectorIndex.lo:	$(TOP)/src/vectorIndex.c $(HDR)
 
 vectordiskann.lo:	$(TOP)/src/vectordiskann.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectordiskann.c
+
+vectorvtab.lo:	$(TOP)/src/vectorvtab.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectorvtab.c
 
 vdbe.lo:	$(TOP)/src/vdbe.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbe.c

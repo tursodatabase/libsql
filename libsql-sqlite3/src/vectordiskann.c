@@ -726,6 +726,8 @@ static float diskAnnVectorDistance(const DiskAnnIndex *pIndex, const Vector *pVe
   switch( pIndex->nDistanceFunc ){
     case VECTOR_METRIC_TYPE_COS:
       return vectorDistanceCos(pVec1, pVec2);
+    case VECTOR_METRIC_TYPE_L2:
+      return vectorDistanceL2(pVec1, pVec2);
     default:
       assert(0);
     break;

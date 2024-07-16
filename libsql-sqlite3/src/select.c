@@ -1512,6 +1512,7 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
     p->enc = ENC(db);
     p->db = db;
     p->nRef = 1;
+    p->zIndexName = NULL; // LibSQL patch: necessary fix for vector search to make it work
     memset(&p[1], 0, nExtra);
   }else{
     return (KeyInfo*)sqlite3OomFault(db);
@@ -1527,7 +1528,10 @@ void sqlite3KeyInfoUnref(KeyInfo *p){
     assert( p->db!=0 );
     assert( p->nRef>0 );
     p->nRef--;
-    if( p->nRef==0 ) sqlite3DbNNFreeNN(p->db, p);
+    if( p->nRef==0 ){
+      sqlite3DbFree(p->db, p->zIndexName); // LibSQL patch: necessary fix for vector search to make it work
+      sqlite3DbNNFreeNN(p->db, p);
+    }
   }
 }
 

@@ -117,6 +117,19 @@ float vectorDistanceCos(const Vector *pVector1, const Vector *pVector2){
   return 0;
 }
 
+float vectorDistanceL2(const Vector *pVector1, const Vector *pVector2){
+  assert( pVector1->type == pVector2->type );
+  switch (pVector1->type) {
+    case VECTOR_TYPE_FLOAT32:
+      return vectorF32DistanceL2(pVector1, pVector2);
+    case VECTOR_TYPE_FLOAT64:
+      return vectorF64DistanceL2(pVector1, pVector2);
+    default:
+      assert(0);
+  }
+  return 0;
+}
+
 /*
  * Parses vector from text representation (e.g. '[1,2,3]'); vector type must be set
 */
@@ -567,6 +580,14 @@ out_free:
 }
 
 /*
+ * Marker function which is used in index creation syntax: CREATE INDEX idx ON t(libsql_vector_idx(emb));
+*/
+static void libsqlVectorIdx(sqlite3_context *context, int argc, sqlite3_value **argv){ 
+  // it's important for this function to be no-op as sqlite will apply this function to the column before feeding it to the index
+  sqlite3_result_value(context, argv[0]);
+}
+
+/*
 ** Register vector functions.
 */
 void sqlite3RegisterVectorFunctions(void){
@@ -576,6 +597,8 @@ void sqlite3RegisterVectorFunctions(void){
     FUNCTION(vector64,            1, 0, 0, vector64Func),
     FUNCTION(vector_extract,      1, 0, 0, vectorExtractFunc),
     FUNCTION(vector_distance_cos, 2, 0, 0, vectorDistanceCosFunc),
+
+    FUNCTION(libsql_vector_idx,  -1, 0, 0, libsqlVectorIdx),
   };
   sqlite3InsertBuiltinFuncs(aVectorFuncs, ArraySize(aVectorFuncs));
 }

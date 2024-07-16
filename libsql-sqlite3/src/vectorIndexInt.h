@@ -115,6 +115,7 @@ typedef u8 MetricType;
 /* metric type used for comparing two vectors */
 #define VECTOR_METRIC_TYPE_PARAM_ID    5
 #define VECTOR_METRIC_TYPE_COS         1
+#define VECTOR_METRIC_TYPE_L2          2
 
 /* block size */
 #define VECTOR_BLOCK_SIZE_PARAM_ID     6
@@ -214,6 +215,23 @@ void diskAnnCloseIndex(DiskAnnIndex *);
 int diskAnnInsert(const DiskAnnIndex *, const VectorInRow *, char **);
 int diskAnnDelete(const DiskAnnIndex *, const VectorInRow *, char **);
 int diskAnnSearch(const DiskAnnIndex *, const Vector *, int, const VectorIdxKey *, VectorOutRows *, char **);
+
+typedef struct VectorIdxCursor VectorIdxCursor;
+
+#define VECTOR_INDEX_VTAB_NAME         "vector_top_k"
+#define VECTOR_INDEX_GLOBAL_META_TABLE "libsql_vector_meta_shadow"
+#define VECTOR_INDEX_MARKER_FUNCTION   "libsql_vector_idx"
+
+int vectorIdxParseColumnType(const char *, int *, int *, char **);
+
+int vectorIndexCreate(Parse*, Index*, IdList*);
+int vectorIndexClear(sqlite3 *, const char *);
+int vectorIndexDrop(sqlite3 *, const char *);
+int vectorIndexCursorInit(sqlite3 *, VectorIdxCursor **, const char *);
+void vectorIndexCursorClose(sqlite3 *, VectorIdxCursor *);
+int vectorIndexInsert(VectorIdxCursor *, const UnpackedRecord *, char **);
+int vectorIndexDelete(VectorIdxCursor *, const UnpackedRecord *, char **);
+int vectorIndexSearch(sqlite3 *, int, sqlite3_value **, VectorOutRows *, char **);
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */

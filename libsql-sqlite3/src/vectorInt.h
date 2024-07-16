@@ -79,6 +79,13 @@ float vectorDistanceCos    (const Vector *, const Vector *);
 float vectorF32DistanceCos (const Vector *, const Vector *);
 double vectorF64DistanceCos(const Vector *, const Vector *);
 
+/*
+ * Calculates L2 distance between two vectors (vector must have same type and same dimensions)
+*/
+float vectorDistanceL2    (const Vector *, const Vector *);
+float vectorF32DistanceL2 (const Vector *, const Vector *);
+double vectorF64DistanceL2(const Vector *, const Vector *);
+
 /* 
  * Serializes vector to the sqlite_blob in little-endian format according to the IEEE-754 standard
  * LibSQL can append one trailing byte in the end of final blob. This byte will be later used to determine type of the blob
