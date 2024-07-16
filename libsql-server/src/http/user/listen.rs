@@ -30,7 +30,7 @@ pub enum Action {
 #[derive(Deserialize)]
 pub struct ListenQuery {
     table: String,
-    action: Vec<Action>,
+    action: Option<Vec<Action>>,
 }
 
 const EVENT_STREAM: HeaderValue = HeaderValue::from_static("text/event-stream");
@@ -100,7 +100,7 @@ async fn listen_stream(
     store: NamespaceStore,
     namespace: NamespaceName,
     table: String,
-    actions: Vec<Action>,
+    actions: Option<Vec<Action>>,
 ) -> impl Stream<Item = crate::Result<AggregatorEvent>> {
     async_stream::try_stream! {
         let _sub = Subscription {
@@ -126,17 +126,19 @@ async fn listen_stream(
     }
 }
 
-fn filter_actions(msg: &BroadcastMsg, actions: &Vec<Action>) -> bool {
-    for action in actions {
-        let count = match action {
-            Action::DELETE => msg.delete,
-            Action::INSERT => msg.insert,
-            Action::UPDATE => msg.update,
-            Action::UNKNOWN => msg.unknown,
-        };
-        if count > 0 {
-            return true;
+fn filter_actions(msg: &BroadcastMsg, actions: &Option<Vec<Action>>) -> bool {
+    actions.as_ref().map_or(true, |actions| {
+        for action in actions {
+            let count = match action {
+                Action::DELETE => msg.delete,
+                Action::INSERT => msg.insert,
+                Action::UPDATE => msg.update,
+                Action::UNKNOWN => msg.unknown,
+            };
+            if count > 0 {
+                return true;
+            }
         }
-    }
-    actions.is_empty()
+        false
+    })
 }
