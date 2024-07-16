@@ -192,13 +192,24 @@ where
     }
 }
 
-pub struct AsyncStorageInitConfig<S> {
-    storage: S,
-    max_in_flight_jobs: usize,
+pub struct AsyncStorageInitConfig<B> {
+    pub backend: Arc<B>,
+    pub max_in_flight_jobs: usize,
 }
 
 impl<C, S> AsyncStorage<C, S> {
-    pub async fn new<B, IO>(
+    pub async fn new<B>(
+        config: AsyncStorageInitConfig<B>,
+    ) -> (AsyncStorage<C, S>, AsyncStorageLoop<B, StdIO, S>)
+    where
+        B: Backend<Config = C>,
+        S: Segment,
+        C: Send + Sync + 'static,
+    {
+        Self::new_with_io(config, Arc::new(StdIO(()))).await
+    }
+
+    pub async fn new_with_io<B, IO>(
         config: AsyncStorageInitConfig<B>,
         io: Arc<IO>,
     ) -> (AsyncStorage<C, S>, AsyncStorageLoop<B, IO, S>)
@@ -215,7 +226,7 @@ impl<C, S> AsyncStorage<C, S> {
         let storage_loop = AsyncStorageLoop {
             receiver: job_rcv,
             scheduler,
-            backend: Arc::new(config.storage),
+            backend: config.backend,
             io,
             max_in_flight: config.max_in_flight_jobs,
             force_shutdown: shutdown_rcv,
