@@ -89,7 +89,6 @@ impl<IO: Io> S3Backend<IO> {
             default_config: config.into(),
             io,
         })
-
     }
 
     async fn fetch_segment_data(
