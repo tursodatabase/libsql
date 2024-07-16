@@ -61,7 +61,11 @@ pub trait Backend: Send + Sync + 'static {
     ) -> Result<Map<Vec<u8>>>;
 
     /// Fetch meta for `namespace`
-    async fn meta(&self, _config: &Self::Config, _namespace: NamespaceName) -> Result<DbMeta>;
+    fn meta(
+        &self,
+        _config: &Self::Config,
+        _namespace: NamespaceName,
+    ) -> impl Future<Output = Result<DbMeta>> + Send;
 
     /// Fetch meta batch
     /// implemented in terms of `meta`, can be specialized if implementation is able to query a

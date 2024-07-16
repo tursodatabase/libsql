@@ -105,7 +105,8 @@ where
         // sealing must the last fallible operation, because we don't want to end up in a situation
         // where the current log is sealed and it wasn't swapped.
         if let Some(sealed) = current.seal()? {
-            self.storage.store(&shared.namespace, sealed.clone());
+            // todo: pass config override here
+            self.storage.store(&shared.namespace, sealed.clone(), None);
             new.tail().push(sealed);
         }
 
@@ -207,7 +208,8 @@ where
             if let Some(sealed) =
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
-                self.storage.store(&namespace, sealed.clone());
+                // TODO: pass config override here
+                self.storage.store(&namespace, sealed.clone(), None);
                 tail.push(sealed);
             }
         }
@@ -242,7 +244,8 @@ where
 
         let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
 
-        let durable_frame_no = self.storage.durable_frame_no(&namespace).into();
+        // TODO: pass config override here
+        let durable_frame_no = self.storage.durable_frame_no(&namespace, None).into();
 
         let shared = Arc::new(SharedWal {
             current,
