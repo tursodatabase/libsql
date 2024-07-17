@@ -27,6 +27,9 @@ struct DiskAnnIndex {
   int nEdgeVectorType; /* Vector type of each edge */
   int nNodeVectorSize; /* Vector size of each node in bytes */
   int nEdgeVectorSize; /* Vector size of each edge in bytes */
+  float pruningAlpha;  /* Alpha parameter for edge pruning during INSERT operation */
+  int insertL;         /* Max size of candidate set (L) visited during INSERT operation */
+  int searchL;         /* Max size of candidate set (L) visited during SEARCH operation (can be overriden from query in future) */
 };
 
 /*
@@ -72,6 +75,135 @@ void nodeBinPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int nPru
 void nodeBinInsertEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iInsert, u64 nRowid, Vector *pVector);
 void nodeBinDeleteEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDelete);
 void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot);
+
+/**************************************************************************
+** Vector index utilities
+****************************************************************************/
+
+/* Vector index utility objects */
+typedef struct VectorIdxKey VectorIdxKey;
+typedef struct VectorIdxParams VectorIdxParams;
+typedef struct VectorInRow VectorInRow;
+typedef struct VectorOutRows VectorOutRows;
+
+typedef u8 IndexType;
+typedef u8 MetricType;
+
+/*
+ * All vector index parameters must be known to the vectorIndex module although it's interpretation are up to the specific implementation of the index
+ * (so, there is no validation of parameter values in the vectorIndex module - all this work must be delegated to the specific implementation)
+ * All enum-like type constants starts with 1 to make 0 an "unset" value placeholder
+*/
+
+/* format version which can help to upgrade vector on-disk format without breaking older version of the db */
+#define VECTOR_FORMAT_PARAM_ID         1
+/*
+ * 1 - initial version
+*/
+#define VECTOR_FORMAT_DEFAULT          1
+
+/* type of the vector index */
+#define VECTOR_INDEX_TYPE_PARAM_ID     2
+#define VECTOR_INDEX_TYPE_DISKANN      1
+
+/* type of the underlying vector for the vector index */
+#define VECTOR_TYPE_PARAM_ID           3
+/* dimension of the underlying vector for the vector index */
+#define VECTOR_DIM_PARAM_ID            4
+
+/* metric type used for comparing two vectors */
+#define VECTOR_METRIC_TYPE_PARAM_ID    5
+#define VECTOR_METRIC_TYPE_COS         1
+
+/* block size */
+#define VECTOR_BLOCK_SIZE_PARAM_ID     6
+#define VECTOR_BLOCK_SIZE_DEFAULT      128
+
+#define VECTOR_PRUNING_ALPHA_PARAM_ID  7
+#define VECTOR_PRUNING_ALPHA_DEFAULT   1.2
+
+#define VECTOR_INSERT_L_PARAM_ID       8
+#define VECTOR_INSERT_L_DEFAULT        70
+
+#define VECTOR_SEARCH_L_PARAM_ID       9
+#define VECTOR_SEARCH_L_DEFAULT        200
+
+/* total amount of vector index parameters */
+#define VECTOR_PARAM_IDS_COUNT         9
+
+/*
+ * Vector index parameters are stored in simple binary format (1 byte tag + 8 byte u64 integer / f64 float)
+ * This will allow us to add parameters in future version more easily as we have full control over the format (compared to the "rigid" SQL schema)
+ * For now, VectorIdxParams allocated on stack and have 128 bytes hard limit (so far we have 9 parameters and 72 are enough for us)
+*/
+#define VECTOR_INDEX_PARAMS_BUF_SIZE 128
+struct VectorIdxParams {
+  u8 pBinBuf[VECTOR_INDEX_PARAMS_BUF_SIZE];
+  int nBinSize;
+};
+
+
+/*
+ * Structure which holds information about primary key of the base table for vector index
+ * For tables with ROWID only this structure will have information about single column with INTEGER affinity and BINARY collation
+ * For now, VectorIdxKey allocated on stack have 16 columns hard limit (for now we are not supporting composite primary keys due to the limitation of virtual tables)
+*/
+#define VECTOR_INDEX_MAX_KEY_COLUMNS 16
+struct VectorIdxKey {
+  int nKeyColumns;
+  char aKeyAffinity[VECTOR_INDEX_MAX_KEY_COLUMNS];
+  /* collation is owned by the caller and structure is not responsible for reclamation of collation string resources */
+  const char *azKeyCollation[VECTOR_INDEX_MAX_KEY_COLUMNS];
+};
+
+/*
+ * Structure which holds information about input payload for vector index (for INSERT/DELETE operations)
+ * pVector must be NULL for DELETE operation
+ *
+ * Resources must be reclaimed with vectorInRowFree(...) method
+*/
+struct VectorInRow {
+  Vector *pVector;
+  int nKeys;
+  sqlite3_value *pKeyValues;
+};
+
+/*
+ * Structure which holds information about result set of SEARCH operation
+ * It have special optimization for cases when single INTEGER primary key is used - in this case aIntValues array stores all values instead of ppValues
+ * In other case generic ppValues stores all column information
+ *
+ * Resources must be reclaimed with vectorOutRowsFree(...) method
+*/
+#define VECTOR_OUT_ROWS_MAX_CELLS (1<<30)
+struct VectorOutRows {
+  int nRows;
+  int nCols;
+  i64 *aIntValues;
+  sqlite3_value **ppValues;
+};
+
+void vectorIdxParamsInit(VectorIdxParams *, u8 *, int);
+u64 vectorIdxParamsGetU64(const VectorIdxParams *, char);
+double vectorIdxParamsGetF64(const VectorIdxParams *, char);
+int vectorIdxParamsPutU64(VectorIdxParams *, char, u64);
+int vectorIdxParamsPutF64(VectorIdxParams *, char, double);
+
+int vectorIdxKeyGet(Table*, VectorIdxKey *, const char **);
+int vectorIdxKeyDefsRender(const VectorIdxKey *, const char *, char *, int);
+int vectorIdxKeyNamesRender(int, const char *, char *, int);
+
+int vectorInRowAlloc(sqlite3 *, const UnpackedRecord *, VectorInRow *, char **);
+sqlite3_value* vectorInRowKey(const VectorInRow *, int);
+int vectorInRowTryGetRowid(const VectorInRow *, u64 *);
+i64 vectorInRowLegacyId(const VectorInRow *);
+int vectorInRowPlaceholderRender(const VectorInRow *, char *, int);
+void vectorInRowFree(sqlite3 *, VectorInRow *);
+
+int vectorOutRowsAlloc(sqlite3 *, VectorOutRows *, int, int, char);
+int vectorOutRowsPut(VectorOutRows *, int, int, const u64 *, sqlite3_value *);
+void vectorOutRowsGet(sqlite3_context *, const VectorOutRows *, int, int);
+void vectorOutRowsFree(sqlite3 *, VectorOutRows *);
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */

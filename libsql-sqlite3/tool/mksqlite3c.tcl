@@ -471,6 +471,7 @@ set flist {
    vectordiskann.c
    vectorfloat32.c
    vectorfloat64.c
+   vectorIndex.c
    rtree.c
    icu.c
    fts3_icu.c
