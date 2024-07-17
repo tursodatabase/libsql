@@ -8,6 +8,7 @@ pub struct CompactedSegmentDataHeader {
     pub(crate) segment_id: lu128,
     pub(crate) start_frame_no: lu64,
     pub(crate) end_frame_no: lu64,
+    pub(crate) size_after: lu32,
 }
 
 #[derive(Debug, AsBytes, FromZeroes, FromBytes)]

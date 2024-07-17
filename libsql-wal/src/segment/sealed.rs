@@ -86,6 +86,7 @@ where
             segment_id: id.as_u128().into(),
             start_frame_no: self.header().start_frame_no,
             end_frame_no: self.header().last_commited_frame_no,
+            size_after: self.header.size_after,
         };
 
         hasher.update(header.as_bytes());
