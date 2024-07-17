@@ -1,11 +1,11 @@
+use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use aws_config::{BehaviorVersion, Region};
 use aws_credential_types::Credentials;
 use aws_sdk_s3::config::SharedCredentialsProvider;
-use clap::Parser;
-use libsql_wal::storage::backend::Backend;
+use clap::{Parser, ValueEnum};
 use tokio::task::{block_in_place, JoinSet};
 
 use libsql_sys::name::NamespaceName;
@@ -14,14 +14,12 @@ use libsql_wal::io::StdIO;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::segment::sealed::SealedSegment;
 use libsql_wal::storage::async_storage::{AsyncStorage, AsyncStorageInitConfig};
-use libsql_wal::storage::backend::s3::{S3Backend, S3Config};
+use libsql_wal::storage::backend::s3::S3Backend;
 use libsql_wal::storage::Storage;
 use libsql_wal::wal::LibsqlWalManager;
 
 #[derive(Debug, clap::Parser)]
 struct Cli {
-    #[arg(long, short = 'p')]
-    db_path: PathBuf,
     #[command(flatten)]
     s3_args: S3Args,
     #[arg(long, short = 'n')]
@@ -58,10 +56,24 @@ struct S3Args {
     s3_region_id: Option<String>,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
+enum RestoreOptions {
+    Latest,
+}
+
 #[derive(Debug, clap::Subcommand)]
 enum Subcommand {
-    Shell,
+    Shell {
+        #[arg(long, short = 'p')]
+        db_path: PathBuf,
+    },
     Infos,
+    Restore {
+        #[arg(long)]
+        from: RestoreOptions,
+        #[arg(long, short)]
+        path: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -70,19 +82,8 @@ async fn main() {
     let mut join_set = JoinSet::new();
 
     if cli.s3_args.enable_s3 {
-        let registry = setup_s3_registry(
-            &cli.db_path,
-            &cli.s3_args.s3_bucket.as_ref().unwrap(),
-            &cli.s3_args.cluster_id.as_ref().unwrap(),
-            &cli.s3_args.s3_url.as_ref().unwrap(),
-            &cli.s3_args.s3_region_id.as_ref().unwrap(),
-            &cli.s3_args.s3_access_key_id.as_ref().unwrap(),
-            &cli.s3_args.s3_access_key.as_ref().unwrap(),
-            &mut join_set,
-        )
-        .await;
-
-        handle(registry, &cli).await;
+        let storage = setup_s3_storage(&cli, &mut join_set).await;
+        handle(&cli, storage).await;
     } else {
         todo!()
     }
@@ -90,37 +91,49 @@ async fn main() {
     while join_set.join_next().await.is_some() {}
 }
 
-async fn handle<S, B>(env: Env<S, B>, cli: &Cli)
+async fn handle<S>(cli: &Cli, storage: S) 
 where
     S: Storage<Segment = SealedSegment<std::fs::File>>,
-    B: Backend,
 {
-    match cli.subcommand {
-        Subcommand::Shell => {
-            let path = cli.db_path.join("dbs").join(&cli.namespace);
+    match &cli.subcommand {
+        Subcommand::Shell { db_path } => {
+            let registry = WalRegistry::new(db_path.clone(), storage).unwrap();
             run_shell(
-                env.registry,
-                &path,
+                registry,
+                &db_path,
                 NamespaceName::from_string(cli.namespace.clone()),
             )
-            .await
+                .await;
         }
-        Subcommand::Infos => handle_infos(&cli.namespace, env).await,
+        Subcommand::Infos => handle_infos(&cli.namespace, storage).await,
+        Subcommand::Restore { from, path } => {
+            let namespace = NamespaceName::from_string(cli.namespace.clone());
+            handle_restore(&namespace, storage, *from, path).await
+        }
     }
 }
 
-async fn handle_infos<B, S>(namespace: &str, env: Env<S, B>)
+async fn handle_restore<S>(namespace: &NamespaceName, storage: S, _from: RestoreOptions, db_path: &Path)
 where
-    B: Backend,
+    S: Storage,
+{
+    let options = libsql_wal::storage::RestoreOptions::Latest;
+    let file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(db_path)
+        .unwrap();
+    storage.restore(file, &namespace, options, None).await.unwrap();
+}
+
+async fn handle_infos<S>(namespace: &str, storage: S)
+where
+    S: Storage,
 {
     let namespace = NamespaceName::from_string(namespace.to_owned());
-    let meta = env
-        .backend
-        .meta(&env.backend.default_config(), namespace.clone())
-        .await
-        .unwrap();
+    let durable = storage.durable_frame_no(&namespace, None).await;
     println!("namespace: {namespace}");
-    println!("max durable frame: {}", meta.max_frame_no);
+    println!("max durable frame: {durable}");
 }
 
 async fn run_shell<S>(registry: WalRegistry<StdIO, S>, db_path: &Path, namespace: NamespaceName)
@@ -204,33 +217,30 @@ async fn handle_builtin<S>(
     false
 }
 
-struct Env<S, B: Backend> {
-    registry: WalRegistry<StdIO, S>,
-    backend: Arc<B>,
-}
-
-async fn setup_s3_registry(
-    db_path: &Path,
-    bucket_name: &str,
-    cluster_id: &str,
-    url: &str,
-    region_id: &str,
-    access_key_id: &str,
-    secret_access_key: &str,
+async fn setup_s3_storage(
+    cli: &Cli,
     join_set: &mut JoinSet<()>,
-) -> Env<AsyncStorage<S3Config, SealedSegment<std::fs::File>>, S3Backend<StdIO>> {
-    let cred = Credentials::new(access_key_id, secret_access_key, None, None, "");
+) -> AsyncStorage<S3Backend<StdIO>, SealedSegment<std::fs::File>> {
+    let cred = Credentials::new(
+        cli.s3_args.s3_access_key_id.as_ref().unwrap(),
+        cli.s3_args.s3_access_key.as_ref().unwrap(),
+        None,
+        None,
+        "",
+    );
     let config = aws_config::SdkConfig::builder()
         .behavior_version(BehaviorVersion::latest())
-        .region(Region::new(region_id.to_string()))
+        .region(Region::new(
+            cli.s3_args.s3_region_id.as_ref().unwrap().to_string(),
+        ))
         .credentials_provider(SharedCredentialsProvider::new(cred))
-        .endpoint_url(url)
+        .endpoint_url(cli.s3_args.s3_url.as_ref().unwrap())
         .build();
     let backend = Arc::new(
         S3Backend::from_sdk_config(
             config.clone(),
-            bucket_name.to_string(),
-            cluster_id.to_string(),
+            cli.s3_args.s3_bucket.as_ref().unwrap().to_string(),
+            cli.s3_args.cluster_id.as_ref().unwrap().to_string(),
         )
         .await
         .unwrap(),
@@ -244,7 +254,6 @@ async fn setup_s3_registry(
     join_set.spawn(async move {
         storage_loop.run().await;
     });
-    let path = db_path.join("wals");
-    let registry = WalRegistry::new(path, storage).unwrap();
-    Env { registry, backend }
+
+    storage
 }
