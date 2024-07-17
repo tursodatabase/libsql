@@ -299,6 +299,7 @@ impl Scheduler {
         let Some(ref job) = self.current_job else {
             return Ok(());
         };
+        dbg!(job);
         if self.current_batch.is_empty()
             && matches!(
                 *job.status(),
@@ -310,7 +311,7 @@ impl Scheduler {
             const MAX_BATCH_SIZE: usize = 50;
             // get a batch of enqueued tasks
             let job_id = job.job_id();
-            self.current_batch = match *job.status() {
+            self.current_batch = match dbg!(*job.status()) {
                 MigrationJobStatus::WaitingDryRun => {
                     with_conn_async(self.migration_db.clone(), move |conn| {
                         get_next_pending_migration_tasks_batch(

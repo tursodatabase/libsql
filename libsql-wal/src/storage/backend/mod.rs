@@ -4,6 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
+use fst::Map;
 use tokio::io::AsyncWrite;
 use uuid::Uuid;
 
@@ -11,7 +12,8 @@ use super::Result;
 use crate::io::file::FileExt;
 use libsql_sys::name::NamespaceName;
 
-pub mod fs;
+// pub mod fs;
+#[cfg(feature = "s3")]
 pub mod s3;
 
 #[derive(Debug)]
@@ -56,10 +58,14 @@ pub trait Backend: Send + Sync + 'static {
         _namespace: NamespaceName,
         _frame_no: u64,
         _dest_path: &Path,
-    ) -> Result<()>;
+    ) -> Result<Map<Vec<u8>>>;
 
     /// Fetch meta for `namespace`
-    async fn meta(&self, _config: &Self::Config, _namespace: NamespaceName) -> Result<DbMeta>;
+    fn meta(
+        &self,
+        _config: &Self::Config,
+        _namespace: NamespaceName,
+    ) -> impl Future<Output = Result<DbMeta>> + Send;
 
     /// Fetch meta batch
     /// implemented in terms of `meta`, can be specialized if implementation is able to query a
@@ -110,7 +116,7 @@ impl<T: Backend> Backend for Arc<T> {
         namespace: NamespaceName,
         frame_no: u64,
         dest_path: &Path,
-    ) -> Result<()> {
+    ) -> Result<fst::Map<Vec<u8>>> {
         self.as_ref()
             .fetch_segment(config, namespace, frame_no, dest_path)
             .await

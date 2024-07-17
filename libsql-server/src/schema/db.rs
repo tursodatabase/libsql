@@ -181,6 +181,8 @@ pub(super) fn get_next_pending_migration_tasks_batch(
     status: MigrationTaskStatus,
     limit: usize,
 ) -> Result<Vec<MigrationTask>, Error> {
+    dbg!(job_id);
+    dbg!(status, status as u64);
     let txn = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
     let tasks = txn
         .prepare(
@@ -190,6 +192,7 @@ pub(super) fn get_next_pending_migration_tasks_batch(
             LIMIT ?",
         )?
         .query_map((job_id, status as u64, limit), |row| {
+            dbg!(row);
             let task_id = row.get::<_, i64>(0)?;
             let namespace = NamespaceName::from_string(row.get::<_, String>(1)?).unwrap();
             let status = MigrationTaskStatus::from_int(row.get::<_, u64>(2)?);
@@ -205,6 +208,7 @@ pub(super) fn get_next_pending_migration_tasks_batch(
         .collect::<Result<Vec<_>, Error>>()?;
 
     for task in tasks.iter() {
+        dbg!(task);
         txn.execute("INSERT INTO enqueued_tasks VALUES (?)", [task.task_id])?;
     }
 

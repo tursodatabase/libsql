@@ -20,10 +20,21 @@ pub type Result<T, E = self::error::Error> = std::result::Result<T, E>;
 
 pub trait Storage: Send + Sync + 'static {
     type Segment: Segment;
+    type Config;
     /// store the passed segment for `namespace`. This function is called in a context where
     /// blocking is acceptable.
-    fn store(&self, namespace: &NamespaceName, seg: Self::Segment);
-    fn durable_frame_no(&self, namespace: &NamespaceName) -> u64;
+    fn store(
+        &self,
+        namespace: &NamespaceName,
+        seg: Self::Segment,
+        config_override: Option<Arc<Self::Config>>,
+    );
+
+    fn durable_frame_no(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> u64;
 }
 
 /// a placeholder storage that doesn't store segment
@@ -31,11 +42,22 @@ pub trait Storage: Send + Sync + 'static {
 pub struct NoStorage;
 
 impl Storage for NoStorage {
+    type Config = ();
     type Segment = SealedSegment<std::fs::File>;
 
-    fn store(&self, _namespace: &NamespaceName, _seg: Self::Segment) {}
+    fn store(
+        &self,
+        _namespace: &NamespaceName,
+        _seg: Self::Segment,
+        _config: Option<Arc<Self::Config>>,
+    ) {
+    }
 
-    fn durable_frame_no(&self, _namespace: &NamespaceName) -> u64 {
+    fn durable_frame_no(
+        &self,
+        _namespace: &NamespaceName,
+        _config: Option<Arc<Self::Config>>,
+    ) -> u64 {
         u64::MAX
     }
 }
@@ -58,10 +80,21 @@ impl<F: FileExt> TestStorage<F> {
 
 impl<F: FileExt + Send + Sync + 'static> Storage for TestStorage<F> {
     type Segment = SealedSegment<F>;
+    type Config = ();
 
-    fn store(&self, _namespace: &NamespaceName, _seg: Self::Segment) {}
+    fn store(
+        &self,
+        _namespace: &NamespaceName,
+        _seg: Self::Segment,
+        _config: Option<Arc<Self::Config>>,
+    ) {
+    }
 
-    fn durable_frame_no(&self, _namespace: &NamespaceName) -> u64 {
+    fn durable_frame_no(
+        &self,
+        _namespace: &NamespaceName,
+        _config: Option<Arc<Self::Config>>,
+    ) -> u64 {
         u64::MAX
     }
 }

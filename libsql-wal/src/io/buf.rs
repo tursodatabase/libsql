@@ -2,6 +2,7 @@
 
 use std::mem::{size_of, MaybeUninit};
 
+use bytes::BytesMut;
 use zerocopy::AsBytes;
 
 pub unsafe trait IoBuf: Unpin + 'static {
@@ -72,6 +73,30 @@ unsafe impl<T: IoBufMut> IoBufMut for Box<T> {
 
     unsafe fn set_init(&mut self, pos: usize) {
         self.as_mut().set_init(pos)
+    }
+}
+
+unsafe impl IoBuf for BytesMut {
+    fn stable_ptr(&self) -> *const u8 {
+        self.as_ptr()
+    }
+
+    fn bytes_init(&self) -> usize {
+        self.len()
+    }
+
+    fn bytes_total(&self) -> usize {
+        self.capacity()
+    }
+}
+
+unsafe impl IoBufMut for BytesMut {
+    fn stable_mut_ptr(&mut self) -> *mut u8 {
+        self.as_mut_ptr()
+    }
+
+    unsafe fn set_init(&mut self, pos: usize) {
+        unsafe { self.set_len(pos) }
     }
 }
 

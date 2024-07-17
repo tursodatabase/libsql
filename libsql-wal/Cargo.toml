@@ -2,6 +2,7 @@
 name = "libsql-wal"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -30,8 +31,16 @@ uuid = { version = "1.8.0", features = ["v4"] }
 walkdir = "2.5.0"
 zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
 
-aws-config = { version = "1", features = ["behavior-version-latest"] }
-aws-sdk-s3 = "1"
+aws-config = { version = "1", optional = true, features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1", optional = true }
+http-body = "1.0.0"
+tokio-util = "0.7.11"
+hyper = { workspace = true, optional = true, features = ["client", "http2"] }
+aws-smithy-runtime = { version = "1.6.2", optional = true, features = ["connector-hyper-0-14-x", "client"]}
+clap = { version = "4.5.9", optional = true, features = ["derive"] }
+inquire = { version = "0.7.5", optional = true }
+tracing-subscriber = { version = "0.3.18", optional = true }
+aws-credential-types = { version = "1.2.0", optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -51,3 +60,24 @@ tokio = { version = "*", features = ["test-util"] }
 [[bench]]
 name = "benchmarks"
 harness = false
+
+[features]
+default = ["s3", "shell-bin"]
+s3 = [
+    "dep:hyper",
+    "dep:aws-smithy-runtime",
+    "dep:aws-sdk-s3",
+    "dep:aws-config",
+    "dep:aws-credential-types",
+]
+shell-bin = [
+    "dep:clap",
+    "dep:inquire",
+    "s3",
+    "dep:tracing-subscriber",
+]
+
+[[bin]]
+name = "shell"
+path = "src/bins/shell/main.rs"
+required-features = ["shell-bin"]  
