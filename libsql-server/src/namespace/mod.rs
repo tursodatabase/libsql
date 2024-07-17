@@ -872,30 +872,35 @@ where
     let mut line = String::new();
     let mut skipped_wasm_table = false;
     let mut n_stmt = 0;
+    let mut line_id = 0;
 
     while let Ok(n) = reader.read_line(&mut curr).await {
+        line_id += 1;
         if n == 0 {
             break;
         }
-        let frag = curr.trim();
-
-        if frag.is_empty() || frag.starts_with("--") {
+        let trimmed = curr.trim();
+        if trimmed.is_empty() || trimmed.starts_with("--") {
             curr.clear();
             continue;
         }
+        // FIXME: it's well known bug that comment ending with semicolon will be handled incorrectly by currend dump processing code
+        let statement_end = trimmed.ends_with(';');
 
-        line.push_str(frag);
+        // we want to concat original(non-trimmed) lines as trimming will join all them in one
+        // single-line statement which is incorrect if comments in the end are present
+        line.push_str(&curr);
         curr.clear();
 
         // This is a hack to ignore the libsql_wasm_func_table table because it is already created
         // by the system.
-        if !skipped_wasm_table && line == WASM_TABLE_CREATE {
+        if !skipped_wasm_table && line.trim() == WASM_TABLE_CREATE {
             skipped_wasm_table = true;
             line.clear();
             continue;
         }
 
-        if line.ends_with(';') {
+        if statement_end {
             n_stmt += 1;
             // dump must be performd within a txn
             if n_stmt > 2 && conn.is_autocommit().await.unwrap() {
@@ -905,7 +910,9 @@ where
             line = tokio::task::spawn_blocking({
                 let conn = conn.clone();
                 move || -> crate::Result<String, LoadDumpError> {
-                    conn.with_raw(|conn| conn.execute(&line, ()))?;
+                    conn.with_raw(|conn| conn.execute(&line, ())).map_err(|e| {
+                        LoadDumpError::Internal(format!("line: {}, error: {}", line_id, e))
+                    })?;
                     Ok(line)
                 }
             })
@@ -915,6 +922,7 @@ where
             line.push(' ');
         }
     }
+    tracing::debug!("loaded {} lines from dump", line_id);
 
     if !conn.is_autocommit().await.unwrap() {
         tokio::task::spawn_blocking({
