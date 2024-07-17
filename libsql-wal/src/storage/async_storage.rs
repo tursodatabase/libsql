@@ -13,7 +13,7 @@ use crate::segment::Segment;
 
 use super::backend::Backend;
 use super::scheduler::Scheduler;
-use super::{Storage, StoreSegmentRequest};
+use super::{RestoreOptions, Storage, StoreSegmentRequest};
 
 /// Background loop task state.
 ///
@@ -189,7 +189,7 @@ where
         &self,
         file: impl crate::io::FileExt,
         namespace: &NamespaceName,
-        restore_options: super::backend::RestoreOptions,
+        restore_options: RestoreOptions,
         config_override: Option<Arc<Self::Config>>,
     ) -> super::Result<()> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());

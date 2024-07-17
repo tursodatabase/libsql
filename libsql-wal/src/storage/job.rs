@@ -115,6 +115,7 @@ mod test {
 
     use crate::io::file::FileExt;
     use crate::io::StdIO;
+    use crate::storage::RestoreOptions;
     // use crate::registry::WalRegistry;
     // use crate::segment::compacted::CompactedSegmentDataHeader;
     // use crate::segment::sealed::SealedSegment;
@@ -461,6 +462,16 @@ mod test {
 
             fn default_config(&self) -> Arc<Self::Config> {
                 Arc::new(())
+            }
+
+            async fn restore(
+                &self,
+                _config: &Self::Config,
+                _namespace: &NamespaceName,
+                _restore_options: RestoreOptions,
+                _dest: impl FileExt,
+            ) -> Result<()> {
+                todo!()
             }
         }
 
