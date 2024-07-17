@@ -13,14 +13,20 @@ use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::Client;
 use bytes::{Bytes, BytesMut};
-use http_body::{Frame, SizeHint};
+use http_body::{Frame as HttpFrame, SizeHint};
 use libsql_sys::name::NamespaceName;
+use roaring::RoaringBitmap;
+use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
 use tokio_util::sync::ReusableBoxFuture;
+use zerocopy::{AsBytes, FromZeroes};
 
 use super::{Backend, SegmentMeta};
+use crate::io::buf::ZeroCopyBuf;
 use crate::io::compat::copy_to_file;
 use crate::io::{FileExt, Io, StdIO};
-use crate::storage::{Error, Result};
+use crate::segment::compacted::CompactedSegmentDataHeader;
+use crate::segment::Frame;
+use crate::storage::{Error, RestoreOptions, Result};
 
 pub struct S3Backend<IO> {
     client: Client,
@@ -91,20 +97,28 @@ impl<IO: Io> S3Backend<IO> {
         })
     }
 
+    async fn fetch_segment_data_reader(
+        &self,
+        config: &S3Config,
+        folder_key: &FolderKey<'_>,
+        segment_key: &SegmentKey,
+    ) -> Result<impl AsyncRead> {
+        let key = s3_segment_data_key(folder_key, segment_key);
+        let stream = self.s3_get(config, key).await?;
+        Ok(stream.into_async_read())
+    }
+
     async fn fetch_segment_data(
         &self,
         config: &S3Config,
         folder_key: &FolderKey<'_>,
         segment_key: &SegmentKey,
-        dest_path: &Path,
+        file: &impl FileExt,
     ) -> Result<()> {
-        let key = s3_segment_data_key(folder_key, segment_key);
-        let stream = self.s3_get(config, key).await?;
-        let reader = stream.into_async_read();
-        // TODO: make open async
-        let file = self.io.open(false, false, true, dest_path)?;
+        let reader = self
+            .fetch_segment_data_reader(config, folder_key, segment_key)
+            .await?;
         copy_to_file(reader, file).await?;
-
         Ok(())
     }
 
@@ -152,7 +166,6 @@ impl<IO: Io> S3Backend<IO> {
             .await
             .unwrap();
 
-        dbg!(frame_no);
         let Some(contents) = objects.contents().first() else {
             return Ok(None);
         };
@@ -167,6 +180,86 @@ impl<IO: Io> S3Backend<IO> {
             .unwrap();
 
         Ok(Some(segment_key))
+    }
+
+    // This method could probably be optimized a lot by using indexes and only downloading useful
+    // segments
+    async fn restore_latest(
+        &self,
+        config: &S3Config,
+        namespace: &NamespaceName,
+        dest: impl FileExt,
+    ) -> Result<()> {
+        let folder_key = FolderKey {
+            cluster_id: &config.cluster_id,
+            namespace,
+        };
+        let Some(latest_key) = self.find_segment(config, &folder_key, u64::MAX).await? else {
+            tracing::info!("nothing to restore for {namespace}");
+            return Ok(());
+        };
+
+        let reader = self
+            .fetch_segment_data_reader(config, &folder_key, &latest_key)
+            .await?;
+        let mut reader = BufReader::new(reader);
+        let mut header: CompactedSegmentDataHeader = CompactedSegmentDataHeader::new_zeroed();
+        reader.read_exact(header.as_bytes_mut()).await?;
+        let db_size = header.size_after.get();
+        let mut seen = RoaringBitmap::new();
+        let mut frame: Frame = Frame::new_zeroed();
+        loop {
+            for _ in 0..header.frame_count.get() {
+                reader.read_exact(frame.as_bytes_mut()).await?;
+                let page_no = frame.header().page_no();
+                if !seen.contains(page_no) {
+                    seen.insert(page_no);
+                    let offset = (page_no as u64 - 1) * 4096;
+                    let buf = ZeroCopyBuf::new_init(frame)
+                        .map_slice(|f| f.get_ref().data());
+                    let (buf, ret) = dest
+                        .write_all_at_async(buf, offset)
+                        .await;
+                    ret?;
+                    frame = buf.into_inner().into_inner();
+                }
+            }
+
+            // db is restored
+            if seen.len() == db_size as u64 {
+                break;
+            }
+
+            let next_frame_no = header.start_frame_no.get() - 1;
+            let Some(key) = self
+                .find_segment(config, &folder_key, next_frame_no)
+                .await?
+            else {
+                todo!("there should be a segment!");
+            };
+            let r = self
+                .fetch_segment_data_reader(config, &folder_key, &key)
+                .await?;
+            reader = BufReader::new(r);
+            reader.read_exact(header.as_bytes_mut()).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn fetch_segment_from_key(
+        &self,
+        config: &S3Config,
+        folder_key: &FolderKey<'_>,
+        segment_key: &SegmentKey,
+        dest_file: &impl FileExt,
+    ) -> Result<fst::Map<Vec<u8>>> {
+        let (_, index) = tokio::try_join!(
+            self.fetch_segment_data(config, &folder_key, &segment_key, dest_file),
+            self.fetch_segment_index(config, &folder_key, &segment_key),
+        )?;
+
+        Ok(index)
     }
 }
 
@@ -195,12 +288,12 @@ pub struct S3Config {
 /// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 1000 };
 /// map.insert(SegmentKey(&meta).to_string(), meta);
 ///
-/// dbg!(map.range(format!("{:019}", u64::MAX - 50)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 0)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 1)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 100)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 101)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 5000)..).next());
+/// map.range(format!("{:019}", u64::MAX - 50)..).next();
+/// map.range(format!("{:019}", u64::MAX - 0)..).next();
+/// map.range(format!("{:019}", u64::MAX - 1)..).next();
+/// map.range(format!("{:019}", u64::MAX - 100)..).next();
+/// map.range(format!("{:019}", u64::MAX - 101)..).next();
+/// map.range(format!("{:019}", u64::MAX - 5000)..).next();
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct SegmentKey {
@@ -340,12 +433,10 @@ where
             return Err(Error::FrameNotFound(frame_no));
         };
         if segment_key.includes(frame_no) {
-            let (_, index) = tokio::try_join!(
-                self.fetch_segment_data(config, &folder_key, &segment_key, dest_path),
-                self.fetch_segment_index(config, &folder_key, &segment_key),
-            )?;
-
-            Ok(index)
+            // TODO: make open async
+            let file = self.io.open(false, false, true, dest_path)?;
+            self.fetch_segment_from_key(config, &folder_key, &segment_key, &file)
+                .await
         } else {
             todo!("not found");
         }
@@ -367,6 +458,19 @@ where
 
     fn default_config(&self) -> Arc<Self::Config> {
         self.default_config.clone()
+    }
+
+    async fn restore(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        restore_options: RestoreOptions,
+        dest: impl FileExt,
+    ) -> Result<()> {
+        match restore_options {
+            RestoreOptions::Latest => self.restore_latest(config, &namespace, dest).await,
+            RestoreOptions::Timestamp(_) => todo!(),
+        }
     }
 }
 
@@ -423,7 +527,7 @@ where
     fn poll_frame(
         mut self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
-    ) -> Poll<Option<Result<Frame<Self::Data>, Self::Error>>> {
+    ) -> Poll<Option<Result<HttpFrame<Self::Data>, Self::Error>>> {
         loop {
             match self.state {
                 StreamState::Init => {
@@ -447,7 +551,7 @@ where
                         } else {
                             self.state = StreamState::Init;
                             self.current_offset += buf.len() as u64;
-                            return Poll::Ready(Some(Ok(Frame::data(buf))));
+                            return Poll::Ready(Some(Ok(HttpFrame::data(buf))));
                         }
                     }
                     Poll::Ready(Err(e)) => {

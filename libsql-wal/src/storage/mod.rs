@@ -30,7 +30,7 @@ pub trait Storage: Send + Sync + 'static {
         config_override: Option<Arc<Self::Config>>,
     );
 
-    fn durable_frame_no(
+    async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
         config_override: Option<Arc<Self::Config>>,
@@ -50,10 +50,9 @@ impl Storage for NoStorage {
         _namespace: &NamespaceName,
         _seg: Self::Segment,
         _config: Option<Arc<Self::Config>>,
-    ) {
-    }
+    ) { }
 
-    fn durable_frame_no(
+    async fn durable_frame_no(
         &self,
         _namespace: &NamespaceName,
         _config: Option<Arc<Self::Config>>,
@@ -90,7 +89,7 @@ impl<F: FileExt + Send + Sync + 'static> Storage for TestStorage<F> {
     ) {
     }
 
-    fn durable_frame_no(
+    async fn durable_frame_no(
         &self,
         _namespace: &NamespaceName,
         _config: Option<Arc<Self::Config>>,
