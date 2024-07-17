@@ -1180,7 +1180,7 @@ int diskAnnSearch(
     goto out;
   }
   for(i = 0; i < nOutRows; i++){
-    if( pRows->aRowids != NULL ){
+    if( pRows->aIntValues != NULL ){
       rc = vectorOutRowsPut(pRows, i, 0, &ctx.aCandidates[i]->nRowid, NULL);
     }else{
       rc = diskAnnGetShadowRowKeys(pIndex, ctx.aCandidates[i]->nRowid, pKey, pRows, i);
