@@ -170,7 +170,7 @@ struct VectorInRow {
 
 /*
  * Structure which holds information about result set of SEARCH operation
- * It have special optimization for cases when single INTEGER primary key is used - in this case aRowids array stores all primary key values
+ * It have special optimization for cases when single INTEGER primary key is used - in this case aIntValues array stores all values instead of ppValues
  * In other case generic ppValues stores all column information
  *
  * Resources must be reclaimed with vectorOutRowsFree(...) method
@@ -179,7 +179,7 @@ struct VectorInRow {
 struct VectorOutRows {
   int nRows;
   int nCols;
-  i64 *aRowids;
+  i64 *aIntValues;
   sqlite3_value **ppValues;
 };
 

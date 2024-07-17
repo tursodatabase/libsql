@@ -171,7 +171,7 @@ sqlite3_value* vectorInRowKey(const VectorInRow *pVectorInRow, int iKey) {
 }
 
 i64 vectorInRowLegacyId(const VectorInRow *pVectorInRow) {
-  if( pVectorInRow->nKeys == 1 && sqlite3_value_type(pVectorInRow->pKeyValues + 0) == SQLITE_INTEGER ){
+  if( pVectorInRow->nKeys == 1 && sqlite3_value_type(&pVectorInRow->pKeyValues[0]) == SQLITE_INTEGER ){
     return sqlite3_value_int64(pVectorInRow->pKeyValues);
   }
   return 0;
@@ -205,7 +205,7 @@ int vectorInRowPlaceholderRender(const VectorInRow *pVectorInRow, char *pBuf, in
 int vectorInRowAlloc(sqlite3 *db, const UnpackedRecord *pRecord, VectorInRow *pVectorInRow, char **pzErrMsg) {
   int rc = SQLITE_OK;
   int type, dims;
-  struct sqlite3_value *pVectorValue = pRecord->aMem + 0;
+  struct sqlite3_value *pVectorValue = &pRecord->aMem[0];
   pVectorInRow->pKeyValues = pRecord->aMem + 1;
   pVectorInRow->nKeys = pRecord->nField - 1;
   pVectorInRow->pVector = NULL;
@@ -242,7 +242,7 @@ int vectorInRowAlloc(sqlite3 *db, const UnpackedRecord *pRecord, VectorInRow *pV
   }
   rc = SQLITE_OK;
 out:
-  if( rc != SQLITE_OK ){
+  if( rc != SQLITE_OK && pVectorInRow->pVector != NULL ){
     vectorFree(pVectorInRow->pVector);
   }
   return rc;
@@ -260,7 +260,7 @@ int vectorOutRowsAlloc(sqlite3 *db, VectorOutRows *pRows, int nRows, int nCols, 
   assert( nCols > 0 && nRows >= 0 );
   pRows->nRows = nRows;
   pRows->nCols = nCols;
-  pRows->aRowids = NULL;
+  pRows->aIntValues = NULL;
   pRows->ppValues = NULL;
 
   if( (u64)nRows * (u64)nCols > VECTOR_OUT_ROWS_MAX_CELLS ){
@@ -268,8 +268,8 @@ int vectorOutRowsAlloc(sqlite3 *db, VectorOutRows *pRows, int nRows, int nCols, 
   }
 
   if( nCols == 1 && firstColumnAff == SQLITE_AFF_INTEGER ){
-    pRows->aRowids = sqlite3DbMallocRaw(db, nRows * sizeof(i64));
-    if( pRows->aRowids == NULL ){
+    pRows->aIntValues = sqlite3DbMallocRaw(db, nRows * sizeof(i64));
+    if( pRows->aIntValues == NULL ){
       return SQLITE_NOMEM_BKPT;
     }
   }else{
@@ -285,17 +285,17 @@ int vectorOutRowsPut(VectorOutRows *pRows, int iRow, int iCol, const u64 *pInt, 
   sqlite3_value *pCopy;
   assert( 0 <= iRow && iRow < pRows->nRows );
   assert( 0 <= iCol && iCol < pRows->nCols );
-  assert( pRows->aRowids != NULL || pRows->ppValues != NULL );
-  assert( pInt == NULL || pRows->aRowids != NULL );
+  assert( pRows->aIntValues != NULL || pRows->ppValues != NULL );
+  assert( pInt == NULL || pRows->aIntValues != NULL );
   assert( pInt != NULL || pValue != NULL );
 
-  if( pRows->aRowids != NULL && pInt != NULL ){
+  if( pRows->aIntValues != NULL && pInt != NULL ){
     assert( pRows->nCols == 1 );
-    pRows->aRowids[iRow] = *pInt;
-  }else if( pRows->aRowids != NULL ){
+    pRows->aIntValues[iRow] = *pInt;
+  }else if( pRows->aIntValues != NULL ){
     assert( pRows->nCols == 1 );
     assert( sqlite3_value_type(pValue) == SQLITE_INTEGER );
-    pRows->aRowids[iRow] = sqlite3_value_int64(pValue);
+    pRows->aIntValues[iRow] = sqlite3_value_int64(pValue);
   }else{
     // pValue can be unprotected and we must own sqlite3_value* - so we are making copy of it
     pCopy = sqlite3_value_dup(pValue);
@@ -310,10 +310,10 @@ int vectorOutRowsPut(VectorOutRows *pRows, int iRow, int iCol, const u64 *pInt, 
 void vectorOutRowsGet(sqlite3_context *context, const VectorOutRows *pRows, int iRow, int iCol) {
   assert( 0 <= iRow && iRow < pRows->nRows );
   assert( 0 <= iCol && iCol < pRows->nCols );
-  assert( pRows->aRowids != NULL || pRows->ppValues != NULL );
-  if( pRows->aRowids != NULL ){
+  assert( pRows->aIntValues != NULL || pRows->ppValues != NULL );
+  if( pRows->aIntValues != NULL ){
     assert( pRows->nCols == 1 );
-    sqlite3_result_int64(context, pRows->aRowids[iRow]);
+    sqlite3_result_int64(context, pRows->aIntValues[iRow]);
   }else{
     sqlite3_result_value(context, pRows->ppValues[iRow * pRows->nCols + iCol]);
   }
@@ -322,11 +322,11 @@ void vectorOutRowsGet(sqlite3_context *context, const VectorOutRows *pRows, int 
 void vectorOutRowsFree(sqlite3 *db, VectorOutRows *pRows) {
   int i;
   
-  // both aRowids and ppValues can be null if processing failing in the middle and we didn't created VectorOutRows
-  assert( pRows->aRowids == NULL || pRows->ppValues == NULL );
+  // both aIntValues and ppValues can be null if processing failing in the middle and we didn't created VectorOutRows
+  assert( pRows->aIntValues == NULL || pRows->ppValues == NULL );
  
-  if( pRows->aRowids != NULL ){
-    sqlite3DbFree(db, pRows->aRowids);
+  if( pRows->aIntValues != NULL ){
+    sqlite3DbFree(db, pRows->aIntValues);
   }else if( pRows->ppValues != NULL ){
     for(i = 0; i < pRows->nRows * pRows->nCols; i++){
       if( pRows->ppValues[i] != NULL ){
