@@ -82,7 +82,7 @@ where
         let mut hasher = crc32fast::Hasher::new();
 
         let header = CompactedSegmentDataHeader {
-            frame_count: (self.index().len() as u64).into(),
+            frame_count: (self.index().len() as u32).into(),
             segment_id: id.as_u128().into(),
             start_frame_no: self.header().start_frame_no,
             end_frame_no: self.header().last_commited_frame_no,
