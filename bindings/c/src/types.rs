@@ -6,6 +6,18 @@ pub const LIBSQL_NULL: i8 = 5;
 
 #[derive(Clone, Debug)]
 #[repr(C)]
+pub struct libsql_config {
+    pub db_path: *const std::ffi::c_char,
+    pub primary_url: *const std::ffi::c_char,
+    pub auth_token: *const std::ffi::c_char,
+    pub read_your_writes: std::ffi::c_char,
+    pub encryption_key: *const std::ffi::c_char,
+    pub sync_interval: std::ffi::c_int,
+    pub with_webpki: std::ffi::c_char,
+}
+
+#[derive(Clone, Debug)]
+#[repr(C)]
 pub struct blob {
     pub ptr: *const std::ffi::c_char,
     pub len: std::ffi::c_int,

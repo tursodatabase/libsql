@@ -27,6 +27,16 @@ typedef struct libsql_stmt libsql_stmt;
 
 typedef const libsql_database *libsql_database_t;
 
+typedef struct {
+  const char *db_path;
+  const char *primary_url;
+  const char *auth_token;
+  char read_your_writes;
+  const char *encryption_key;
+  int sync_interval;
+  char with_webpki;
+} libsql_config;
+
 typedef const libsql_connection *libsql_connection_t;
 
 typedef const libsql_stmt *libsql_stmt_t;
@@ -63,6 +73,8 @@ int libsql_open_sync_with_webpki(const char *db_path,
                                  const char *encryption_key,
                                  libsql_database_t *out_db,
                                  const char **out_err_msg);
+
+int libsql_open_sync_with_config(libsql_config config, libsql_database_t *out_db, const char **out_err_msg);
 
 int libsql_open_ext(const char *url, libsql_database_t *out_db, const char **out_err_msg);
 
