@@ -28,6 +28,8 @@ use tokio::sync::{mpsc, oneshot, Notify};
 use tokio::task::JoinSet;
 use tonic::transport::Server;
 
+use tower_http::compression::predicate::NotForContentType;
+use tower_http::compression::{DefaultPredicate, Predicate};
 use tower_http::{compression::CompressionLayer, cors};
 
 use crate::auth::{Auth, AuthError, Authenticated, Jwt, Permission, UserAuthContext};
@@ -428,7 +430,10 @@ where
                         .on_response(trace::response)
                         .on_failure(trace::failure),
                 )
-                .layer(CompressionLayer::new())
+                .layer(CompressionLayer::new().compress_when(
+                    // TODO: remove this when we upgrade tower-http to 0.5.3
+                    DefaultPredicate::new().and(NotForContentType::new("text/event-stream")),
+                ))
                 .layer(
                     cors::CorsLayer::new()
                         .allow_methods(cors::AllowMethods::any())
