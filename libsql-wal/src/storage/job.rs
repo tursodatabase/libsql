@@ -444,7 +444,7 @@ mod test {
             async fn fetch_segment(
                 &self,
                 _config: &Self::Config,
-                _namespace: NamespaceName,
+                _namespace: &NamespaceName,
                 _frame_no: u64,
                 _dest_path: &Path,
             ) -> Result<fst::Map<Vec<u8>>> {
@@ -454,7 +454,7 @@ mod test {
             async fn meta(
                 &self,
                 _config: &Self::Config,
-                _namespace: NamespaceName,
+                _namespace: &NamespaceName,
             ) -> Result<crate::storage::backend::DbMeta> {
                 todo!()
             }

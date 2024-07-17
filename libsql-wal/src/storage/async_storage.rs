@@ -117,7 +117,7 @@ where
         let backend = self.backend.clone();
         let config = config_override.unwrap_or_else(|| backend.default_config());
         tokio::spawn(async move {
-            let meta = backend.meta(&config, namespace).await.unwrap();
+            let meta = backend.meta(&config, &namespace).await.unwrap();
             let _ = ret.send(meta.max_frame_no);
         });
     }

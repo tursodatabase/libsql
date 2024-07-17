@@ -54,17 +54,17 @@ pub trait Backend: Send + Sync + 'static {
     /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
     async fn fetch_segment(
         &self,
-        _config: &Self::Config,
-        _namespace: NamespaceName,
-        _frame_no: u64,
-        _dest_path: &Path,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        frame_no: u64,
+        dest_path: &Path,
     ) -> Result<Map<Vec<u8>>>;
 
     /// Fetch meta for `namespace`
     fn meta(
         &self,
-        _config: &Self::Config,
-        _namespace: NamespaceName,
+        config: &Self::Config,
+        namespace: &NamespaceName,
     ) -> impl Future<Output = Result<DbMeta>> + Send;
 
     /// Fetch meta batch
@@ -113,7 +113,7 @@ impl<T: Backend> Backend for Arc<T> {
     async fn fetch_segment(
         &self,
         config: &Self::Config,
-        namespace: NamespaceName,
+        namespace: &NamespaceName,
         frame_no: u64,
         dest_path: &Path,
     ) -> Result<fst::Map<Vec<u8>>> {
@@ -122,7 +122,7 @@ impl<T: Backend> Backend for Arc<T> {
             .await
     }
 
-    async fn meta(&self, config: &Self::Config, namespace: NamespaceName) -> Result<DbMeta> {
+    async fn meta(&self, config: &Self::Config, namespace: &NamespaceName) -> Result<DbMeta> {
         self.as_ref().meta(config, namespace).await
     }
 

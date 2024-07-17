@@ -420,7 +420,7 @@ where
     async fn fetch_segment(
         &self,
         config: &Self::Config,
-        namespace: NamespaceName,
+        namespace: &NamespaceName,
         frame_no: u64,
         dest_path: &Path,
     ) -> Result<fst::Map<Vec<u8>>> {
@@ -442,7 +442,11 @@ where
         }
     }
 
-    async fn meta(&self, config: &Self::Config, namespace: NamespaceName) -> Result<super::DbMeta> {
+    async fn meta(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+    ) -> Result<super::DbMeta> {
         // request a key bigger than any other to get the last segment
         let folder_key = FolderKey {
             cluster_id: &config.cluster_id,
@@ -663,7 +667,7 @@ mod tests {
             .await
             .unwrap();
 
-        let db_meta = storage.meta(&s3_config, ns.clone()).await.unwrap();
+        let db_meta = storage.meta(&s3_config, &ns).await.unwrap();
         assert_eq!(db_meta.max_frame_no, 64);
 
         let mut builder = MapBuilder::memory();
@@ -685,31 +689,31 @@ mod tests {
             .await
             .unwrap();
 
-        let db_meta = storage.meta(&s3_config, ns.clone()).await.unwrap();
+        let db_meta = storage.meta(&s3_config, &ns).await.unwrap();
         assert_eq!(db_meta.max_frame_no, 128);
 
         let tmp = NamedTempFile::new().unwrap();
 
         let index = storage
-            .fetch_segment(&s3_config, ns.clone(), 1, tmp.path())
+            .fetch_segment(&s3_config, &ns, 1, tmp.path())
             .await
             .unwrap();
         assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
 
         let index = storage
-            .fetch_segment(&s3_config, ns.clone(), 63, tmp.path())
+            .fetch_segment(&s3_config, &ns, 63, tmp.path())
             .await
             .unwrap();
         assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
 
         let index = storage
-            .fetch_segment(&s3_config, ns.clone(), 64, tmp.path())
+            .fetch_segment(&s3_config, &ns, 64, tmp.path())
             .await
             .unwrap();
         assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
 
         let index = storage
-            .fetch_segment(&s3_config, ns.clone(), 65, tmp.path())
+            .fetch_segment(&s3_config, &ns, 65, tmp.path())
             .await
             .unwrap();
         assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
