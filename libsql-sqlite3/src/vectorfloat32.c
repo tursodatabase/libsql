@@ -209,7 +209,7 @@ float vectorF32DistanceL2(const Vector *v1, const Vector *v2){
   assert( v2->type == VECTOR_TYPE_FLOAT32 );
 
   for(i = 0; i < v1->dims; i++){
-    float d = (e1[i]-e2[i]);
+    float d = e1[i]-e2[i];
     sum += d*d;
   }
   return sqrt(sum);
