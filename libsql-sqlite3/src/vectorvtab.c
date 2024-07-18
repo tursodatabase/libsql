@@ -57,12 +57,15 @@ static int vectorVtabConnect(
 ){
   vectorVtab *pVtab;
   int rc;
+  /* 
+   * hidden column are parameters of table-valued function (see https://www.sqlite.org/vtab.html#table_valued_functions)
+  */
   rc = sqlite3_declare_vtab(db, "CREATE TABLE x(idx hidden, vector hidden, k hidden, id);");
-  if( rc!=SQLITE_OK ){
+  if( rc != SQLITE_OK ){
     return rc;
   }
   pVtab = sqlite3_malloc( sizeof(*pVtab) );
-  if( pVtab==0 ){
+  if( pVtab == NULL ){
     return SQLITE_NOMEM;
   }
   memset(pVtab, 0, sizeof(*pVtab));
@@ -80,7 +83,9 @@ static int vectorVtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   vectorVtab *pVTab = (vectorVtab*)p;
   vectorVtab_cursor *pCur;
   pCur = sqlite3_malloc( sizeof(*pCur) );
-  if( pCur==0 ) return SQLITE_NOMEM;
+  if( pCur == NULL ){
+    return SQLITE_NOMEM;
+  }
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
   return SQLITE_OK;
@@ -117,6 +122,7 @@ static int vectorVtabColumn(
 
 static int vectorVtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   vectorVtab_cursor *pCur = (vectorVtab_cursor*)cur;
+  // rowid used for internal SQLite needs - so we take it if output has single integer column but in other case just return current row index
   if( pCur->rows.aIntValues != NULL ){
     *pRowid = pCur->rows.aIntValues[pCur->iRow];
   }else{
@@ -158,8 +164,8 @@ static int vectorVtabBestIndex(
 
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->usable==0 ) continue;
-    if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
+    if( pConstraint->usable == 0 ) continue;
+    if( pConstraint->op != SQLITE_INDEX_CONSTRAINT_EQ ) continue;
     switch( pConstraint->iColumn ){
       case VECTOR_COLUMN_IDX:
         pIdxInfo->aConstraintUsage[i].argvIndex = 1;
