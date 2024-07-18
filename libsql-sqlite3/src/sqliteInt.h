@@ -2797,7 +2797,7 @@ struct Index {
 #define SQLITE_IDXTYPE_UNIQUE      1   /* Implements a UNIQUE constraint */
 #define SQLITE_IDXTYPE_PRIMARYKEY  2   /* Is the PRIMARY KEY for the table */
 #define SQLITE_IDXTYPE_IPK         3   /* INTEGER PRIMARY KEY index */
-#define SQLITE_IDXTYPE_VECTOR      4   /* Vector index */
+#define SQLITE_IDXTYPE_VECTOR      4   /* libSQL vector index */
 
 /* Return true if index X is a PRIMARY KEY index */
 #define IsPrimaryKeyIndex(X)  ((X)->idxType==SQLITE_IDXTYPE_PRIMARYKEY)
