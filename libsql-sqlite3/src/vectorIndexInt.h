@@ -222,9 +222,9 @@ typedef struct VectorIdxCursor VectorIdxCursor;
 #define VECTOR_INDEX_GLOBAL_META_TABLE "libsql_vector_meta_shadow"
 #define VECTOR_INDEX_MARKER_FUNCTION   "libsql_vector_idx"
 
-int vectorIdxParseColumnType(const char *, int *, int *, char **);
+int vectorIdxParseColumnType(const char *, int *, int *, const char **);
 
-int vectorIndexCreate(Parse*, Index*, IdList*);
+int vectorIndexCreate(Parse*, Index*, const IdList*);
 int vectorIndexClear(sqlite3 *, const char *);
 int vectorIndexDrop(sqlite3 *, const char *);
 int vectorIndexCursorInit(sqlite3 *, VectorIdxCursor **, const char *);

@@ -486,7 +486,7 @@ void skipSpaces(const char **pzStr) {
 ** Returns  0 if succeed and set correct values in both pDims and pType pointers
 ** Returns -1 if the type string is not a valid vector type for index and set pErrMsg to static string with error description in this case
 **/
-int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, char **pErrMsg){
+int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, const char **pErrMsg){
   assert( zType != NULL );
 
   int dimensions = 0;
@@ -505,7 +505,7 @@ int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, char **p
     zTypePtr++;
     skipSpaces(&zTypePtr);
 
-    while( *zTypePtr && *zTypePtr != ')' && !sqlite3Isspace(*zTypePtr) ){
+    while( *zTypePtr != '\0' && *zTypePtr != ')' && !sqlite3Isspace(*zTypePtr) ){
       if( !sqlite3Isdigit(*zTypePtr) ){
         *pErrMsg = "non digit symbol in vector column parameter";
         return -1;
@@ -524,9 +524,8 @@ int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, char **p
     }
     zTypePtr++;
     skipSpaces(&zTypePtr);
-    
 
-    if( *zTypePtr ) {
+    if( *zTypePtr != '\0' ) {
       *pErrMsg = "extra data after dimension parameter for vector column type";
       return -1;
     }
@@ -556,9 +555,9 @@ int initVectorIndexMetaTable(sqlite3* db) {
   return sqlite3_exec(db, zSql, 0, 0, 0);
 }
 
-int insertIndexParameters(sqlite3* db, const char *zName, VectorIdxParams *pParameters) {
+int insertIndexParameters(sqlite3* db, const char *zName, const VectorIdxParams *pParameters) {
   static const char *zSql = "INSERT INTO " VECTOR_INDEX_GLOBAL_META_TABLE " VALUES (?, ?)";
-  sqlite3_stmt* pStatement = 0;
+  sqlite3_stmt* pStatement = NULL;
   int rc = SQLITE_ERROR;
 
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStatement, 0);
@@ -569,7 +568,7 @@ int insertIndexParameters(sqlite3* db, const char *zName, VectorIdxParams *pPara
   if( rc != SQLITE_OK ){
     goto clear_and_exit;
   }
-  rc = sqlite3_bind_blob(pStatement, 2, pParameters->pBinBuf, pParameters->nBinSize, SQLITE_TRANSIENT);
+  rc = sqlite3_bind_blob(pStatement, 2, pParameters->pBinBuf, pParameters->nBinSize, SQLITE_STATIC);
   if( rc != SQLITE_OK ){
     goto clear_and_exit;
   }
@@ -580,7 +579,7 @@ int insertIndexParameters(sqlite3* db, const char *zName, VectorIdxParams *pPara
     rc = SQLITE_OK;
   }
 clear_and_exit:
-  if( pStatement ){
+  if( pStatement != NULL ){
     sqlite3_finalize(pStatement);
   }
   return rc;
@@ -588,7 +587,7 @@ clear_and_exit:
 
 int removeIndexParameters(sqlite3* db, const char *zName) {
   static const char *zSql = "DELETE FROM " VECTOR_INDEX_GLOBAL_META_TABLE " WHERE name = ?";
-  sqlite3_stmt* pStatement = 0;
+  sqlite3_stmt* pStatement = NULL;
   int rc = SQLITE_ERROR;
 
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStatement, 0);
@@ -606,7 +605,7 @@ int removeIndexParameters(sqlite3* db, const char *zName) {
     rc = SQLITE_OK;
   }
 clear_and_exit:
-  if( pStatement ){
+  if( pStatement != NULL ){
     sqlite3_finalize(pStatement);
   }
   return rc;
@@ -622,11 +621,16 @@ int vectorIndexGetParameters(
   int nBinSize;
 
   static const char* zSelectSql = "SELECT metadata FROM " VECTOR_INDEX_GLOBAL_META_TABLE " WHERE name = ?";
-  static const char* zSelectSqlOld = "SELECT vector_type, block_size, dims, distance_ops FROM libsql_vector_index WHERE type = ? AND name = ?";
+  static const char* zSelectSqlPekkaLegacy = "SELECT vector_type, block_size, dims, distance_ops FROM libsql_vector_index WHERE type = ? AND name = ?";
   rc = sqlite3_prepare_v2(db, zSelectSql, -1, &pStmt, 0);
   if( rc == SQLITE_OK ) {
-    sqlite3_bind_text(pStmt, 1, zIndexName, -1, SQLITE_STATIC);
-    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    rc = sqlite3_bind_text(pStmt, 1, zIndexName, -1, SQLITE_STATIC);
+    if( rc != SQLITE_OK ){
+      goto out_free;
+    }
+
+    if( sqlite3_step(pStmt) == SQLITE_ROW ){
+      assert( sqlite3_column_type(pStmt, 0) == SQLITE_BLOB );
       nBinSize = sqlite3_column_bytes(pStmt, 0);
       if( nBinSize > VECTOR_INDEX_PARAMS_BUF_SIZE ){
         rc = SQLITE_ERROR;
@@ -641,13 +645,13 @@ int vectorIndexGetParameters(
     pStmt = NULL;
   }
 
-  rc = sqlite3_prepare_v2(db, zSelectSqlOld, -1, &pStmt, 0);
-  if( rc!=SQLITE_OK ){
+  rc = sqlite3_prepare_v2(db, zSelectSqlPekkaLegacy, -1, &pStmt, 0);
+  if( rc != SQLITE_OK ){
     goto out_free;
   }
   sqlite3_bind_text(pStmt, 1, "diskann", -1, SQLITE_STATIC);
   sqlite3_bind_text(pStmt, 2, zIndexName, -1, SQLITE_STATIC);
-  if( sqlite3_step(pStmt)!=SQLITE_ROW ){
+  if( sqlite3_step(pStmt) != SQLITE_ROW ){
     rc = SQLITE_ERROR;
     goto out_free;
   }
@@ -669,58 +673,55 @@ out_free:
 
 
 int vectorIndexDrop(sqlite3 *db, const char *zIdxName) {
-  int rc;
-  rc = diskAnnDropIndex(db, zIdxName);
-  if( rc != SQLITE_OK ){
-    return rc;
-  }
-  return removeIndexParameters(db, zIdxName);
+  // we want to try delete all traces of index on every attempt
+  // this is done to prevent unrecoverable situations where index were dropped but index parameters deletion failed and second attempt will fail on first step
+  int rcIdx = diskAnnDropIndex(db, zIdxName);
+  int rcParams = removeIndexParameters(db, zIdxName);
+  return rcIdx != SQLITE_OK ? rcIdx : rcParams;
 }
 
 int vectorIndexClear(sqlite3 *db, const char *zIdxName) {
   return diskAnnClearIndex(db, zIdxName);
 }
 
-int vectorIndexCreate(Parse *pParse, Index *pIdx, IdList *pUsing) {
-  int rc, i;
+int vectorIndexCreate(Parse *pParse, Index *pIdx, const IdList *pUsing) {
+  int i, rc = SQLITE_OK;
+  int dims, type;
+  int hasLibsqlVectorIdxFn = 0, hasCollation = 0;
+  const char *pzErrMsg;
+
   sqlite3 *db = pParse->db;
   Table *pTable = pIdx->pTable;
   struct ExprList_item *pListItem;
   ExprList *pArgsList;
   int iEmbeddingColumn;
   char* zEmbeddingColumnTypeName;
-  int dims;
-  int type;
-  char *pErrMsg;
-  int hasLibsqlVectorIdxFn = 0;
-  int hasCollation = 0;
   VectorIdxKey idxKey;
   VectorIdxParams idxParams;
-  u8 paramsBuf[VECTOR_INDEX_PARAMS_BUF_SIZE];
   vectorIdxParamsInit(&idxParams, NULL, 0);
 
   // backward compatibility: preserve old indices with deprecated syntax but forbid creation of new indices with this syntax
-  if( pParse->db->init.busy == 0 && pUsing != 0 ){
-    if( pIdx->zName != 0 && pTable->zName != 0 && pIdx->nKeyCol == 1 && pIdx->aiColumn != 0 && pIdx->aiColumn[0] < pTable->nCol ){
+  if( pParse->db->init.busy == 0 && pUsing != NULL ){
+    if( pIdx->zName != NULL && pTable->zName != NULL && pIdx->nKeyCol == 1 && pIdx->aiColumn != NULL && pIdx->aiColumn[0] < pTable->nCol ){
       sqlite3ErrorMsg(pParse, "USING syntax is deprecated, please use plain CREATE INDEX: CREATE INDEX %s ON %s ( " VECTOR_INDEX_MARKER_FUNCTION "(%s) )", pIdx->zName, pTable->zName, pTable->aCol[pIdx->aiColumn[0]].zCnName);
     } else {
       sqlite3ErrorMsg(pParse, "USING syntax is deprecated, please use plain CREATE INDEX: CREATE INDEX xxx ON yyy ( " VECTOR_INDEX_MARKER_FUNCTION "(zzz) )");
     }
-    goto failed;
+    return SQLITE_ERROR;
   }
-  if( pParse->db->init.busy == 1 && pUsing != 0 ){
+  if( pParse->db->init.busy == 1 && pUsing != NULL ){
     goto succeed;
   }
 
   // vector index must have expressions over column
-  if( pIdx->aColExpr == 0 ) {
+  if( pIdx->aColExpr == NULL ) {
     goto ignored;
   }
 
   pListItem = pIdx->aColExpr->a;
   for(i=0; i<pIdx->aColExpr->nExpr; i++, pListItem++){
     Expr* pExpr = pListItem->pExpr;
-    while( pExpr->op==TK_COLLATE ){
+    while( pExpr->op == TK_COLLATE ){
       pExpr = pExpr->pLeft;
       hasCollation = 1;
     }
@@ -733,15 +734,16 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, IdList *pUsing) {
   }
   if( hasCollation ){
     sqlite3ErrorMsg(pParse, "vector index can't have collation");
-    goto failed;
+    return SQLITE_ERROR;
   }
   if( pIdx->aColExpr->nExpr != 1 ) {
     sqlite3ErrorMsg(pParse, "vector index must contain exactly one column wrapped into the " VECTOR_INDEX_MARKER_FUNCTION " function");
-    goto failed;
+    return SQLITE_ERROR;
   }
-  if( pIdx->pPartIdxWhere != 0 ) {
+  // we are able to support this but I doubt this works for now - more polishing required to make this work
+  if( pIdx->pPartIdxWhere != NULL ) {
     sqlite3ErrorMsg(pParse, "partial vector index is not supported");
-    goto failed;
+    return SQLITE_ERROR;
   }
 
   pArgsList = pIdx->aColExpr->a[0].pExpr->x.pList;
@@ -749,138 +751,155 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, IdList *pUsing) {
 
   if( pArgsList->nExpr < 1 ){
     sqlite3ErrorMsg(pParse, VECTOR_INDEX_MARKER_FUNCTION " must contain at least one argument");
-    goto failed;
+    return SQLITE_ERROR;
   }
   if( pListItem[0].pExpr->op != TK_COLUMN ) {
     sqlite3ErrorMsg(pParse, VECTOR_INDEX_MARKER_FUNCTION " first argument must be a column token");
-    goto failed;
+    return SQLITE_ERROR;
   }
   iEmbeddingColumn = pListItem[0].pExpr->iColumn;
   if( iEmbeddingColumn < 0 ) {
     sqlite3ErrorMsg(pParse, VECTOR_INDEX_MARKER_FUNCTION " first argument must be column with vector type");
-    goto failed;
+    return SQLITE_ERROR;
   }
   assert( iEmbeddingColumn >= 0 && iEmbeddingColumn < pTable->nCol );
 
   zEmbeddingColumnTypeName = sqlite3ColumnType(&pTable->aCol[iEmbeddingColumn], "");
-  if( vectorIdxParseColumnType(zEmbeddingColumnTypeName, &type, &dims, &pErrMsg) != 0 ){
-    sqlite3ErrorMsg(pParse, "%s: %s", pErrMsg, zEmbeddingColumnTypeName);
-    goto failed;
+  if( vectorIdxParseColumnType(zEmbeddingColumnTypeName, &type, &dims, &pzErrMsg) != 0 ){
+    sqlite3ErrorMsg(pParse, "%s: %s", pzErrMsg, zEmbeddingColumnTypeName);
+    return SQLITE_ERROR;
   }
 
-  if( vectorIdxKeyGet(pTable, &idxKey, &pErrMsg) != 0 ){
-    sqlite3ErrorMsg(pParse, "failed to detect underlying table key: %s", pErrMsg);
-    goto failed;
+  if( vectorIdxKeyGet(pTable, &idxKey, &pzErrMsg) != 0 ){
+    sqlite3ErrorMsg(pParse, "failed to detect underlying table key: %s", pzErrMsg);
+    return SQLITE_ERROR;
   }
   if( idxKey.nKeyColumns != 1 ){
     sqlite3ErrorMsg(pParse, "vector index for tables without ROWID and composite primary key are not supported");
-    goto failed;
+    return SQLITE_ERROR;
   }
 
   // we deliberately ignore return code as SQLite will execute CREATE INDEX command twice and exec will fail on second attempt
   // todo: actually, it looks pretty fragile - maybe we should avoid sqlite3_exec calls from the inside of SQLite internals...
-  if( initVectorIndexMetaTable(db) != 0 ){
+  rc = initVectorIndexMetaTable(db);
+  if( rc != SQLITE_OK ){
     goto succeed;
   }
-  if( parseVectorIdxParams(pParse, &idxParams, type, dims, pListItem + 1, pArgsList->nExpr - 1) != 0 ){
-    goto failed;
+  rc = parseVectorIdxParams(pParse, &idxParams, type, dims, pListItem + 1, pArgsList->nExpr - 1);
+  if( rc != SQLITE_OK ){
+    return rc;
   }
-  if( diskAnnCreateIndex(db, pIdx->zName, &idxKey, &idxParams) != 0 ){
+  rc = diskAnnCreateIndex(db, pIdx->zName, &idxKey, &idxParams);
+  if( rc != SQLITE_OK ){
     sqlite3ErrorMsg(pParse, "unable to initialize diskann vector index");
-    goto failed;
+    return rc;
   }
-  if( insertIndexParameters(db, pIdx->zName, &idxParams) != 0 ){
+  rc = insertIndexParameters(db, pIdx->zName, &idxParams);
+  if( rc != SQLITE_OK ){
     sqlite3ErrorMsg(pParse, "unable to update global metadata table");
-    goto failed;
+    return rc;
   }
 succeed:
   pIdx->idxType = SQLITE_IDXTYPE_VECTOR;
   return SQLITE_OK;
 ignored:
   return SQLITE_OK;
-failed:
-  return SQLITE_ERROR;
 }
 
 int vectorIndexSearch(sqlite3 *db, int argc, sqlite3_value **argv, VectorOutRows *pRows, char **pzErrMsg) {
-  const char *zIdxName;
-  Vector *pVector;
-  Index *pIndex;
   int type, dims, k, rc;
-  DiskAnnIndex *pDiskAnn;
+  const char *zIdxName;
+  const char *zErrMsg;
+  Vector *pVector = NULL;
+  DiskAnnIndex *pDiskAnn = NULL;
+  Index *pIndex;
   VectorIdxKey pKey;
   VectorIdxParams idxParams;
   vectorIdxParamsInit(&idxParams, NULL, 0);
 
   if( argc != 3 ){
     *pzErrMsg = sqlite3_mprintf("vector search must have exactly 3 parameters");
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
   if( detectVectorParameters(argv[1], VECTOR_TYPE_FLOAT32, &type, &dims, pzErrMsg) != 0 ){
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
   if( type != VECTOR_TYPE_FLOAT32 ){
     *pzErrMsg = sqlite3_mprintf("only f32 vectors are supported");
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
   pVector = vectorAlloc(type, dims);
   if( pVector == NULL ){
-    return SQLITE_NOMEM_BKPT;
+    rc = SQLITE_NOMEM_BKPT;
+    goto out;
   }
-  // TODO: free resources!
   if( vectorParse(argv[1], pVector, pzErrMsg) != 0 ){
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
   if( sqlite3_value_type(argv[2]) != SQLITE_INTEGER ){
     *pzErrMsg = sqlite3_mprintf("vector search third parameter (k) must be an integer");
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
   k = sqlite3_value_int(argv[2]);
   if( k < 0 ){
     *pzErrMsg = sqlite3_mprintf("k must be a non-negative integer");
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
   if( sqlite3_value_type(argv[0]) != SQLITE_TEXT ){
     *pzErrMsg = sqlite3_mprintf("vector search first parameter (index) must be a string");
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
   zIdxName = (const char*)sqlite3_value_text(argv[0]);
   if( vectorIndexGetParameters(db, zIdxName, &idxParams) != 0 ){
     *pzErrMsg = sqlite3_mprintf("failed to parse vector index parameters");
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
   pIndex = sqlite3FindIndex(db, zIdxName, db->aDb[0].zDbSName);
   if( pIndex == NULL ){
     *pzErrMsg = sqlite3_mprintf("vector index not found");
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto out;
   }
-  if( vectorIdxKeyGet(pIndex->pTable, &pKey, pzErrMsg) != 0 ){
-    // TODO: pzErrMsg will be static here!
-    return SQLITE_ERROR;
+  if( vectorIdxKeyGet(pIndex->pTable, &pKey, &zErrMsg) != 0 ){
+    *pzErrMsg = sqlite3_mprintf("failed to extract table key: %s", zErrMsg);
+    rc = SQLITE_ERROR;
+    goto out;
   }
-  if( diskAnnOpenIndex(db, zIdxName, &idxParams, &pDiskAnn) != 0 ){
+  rc = diskAnnOpenIndex(db, zIdxName, &idxParams, &pDiskAnn);
+  if( rc != SQLITE_OK ){
     *pzErrMsg = sqlite3_mprintf("failed to open diskann index");
-    return SQLITE_ERROR;
+    goto out;
   }
   rc = diskAnnSearch(pDiskAnn, pVector, k, &pKey, pRows, pzErrMsg);
-  diskAnnCloseIndex(pDiskAnn);
-  vectorFree(pVector);
-  if( rc != 0 ){
-    return SQLITE_ERROR;
+out:
+  if( pDiskAnn != NULL ){
+    diskAnnCloseIndex(pDiskAnn);
   }
-  return SQLITE_OK;
+  if( pVector != NULL ){
+    vectorFree(pVector);
+  }
+  return rc;
 }
 
 int vectorIndexInsert(
   VectorIdxCursor *pCur,
-  const UnpackedRecord *pX,
+  const UnpackedRecord *pRecord,
   char **pzErrMsg
 ){
-  VectorInRow vectorInRow;
   int rc;
+  VectorInRow vectorInRow;
 
-  if( vectorInRowAlloc(pCur->db, pX, &vectorInRow, pzErrMsg) != 0 ){
-    return SQLITE_ERROR;
+  rc = vectorInRowAlloc(pCur->db, pRecord, &vectorInRow, pzErrMsg);
+  if( rc != SQLITE_OK ){
+    return rc;
   }
   if( vectorInRow.pVector == NULL ){
     return SQLITE_OK;
@@ -907,7 +926,7 @@ int vectorIndexCursorInit(
   VectorIdxCursor **ppCursor,
   const char *zIndexName
 ){
-  const char *zDbPath;
+  int rc;
   VectorIdxCursor* pCursor;
   VectorIdxParams params;
   vectorIdxParamsInit(&params, NULL, 0);
@@ -919,9 +938,10 @@ int vectorIndexCursorInit(
   if( pCursor == 0 ){
     return SQLITE_NOMEM_BKPT;
   }
-  if( diskAnnOpenIndex(db, zIndexName, &params, &pCursor->pIndex) != 0 ){
+  rc = diskAnnOpenIndex(db, zIndexName, &params, &pCursor->pIndex);
+  if( rc != SQLITE_OK ){
     sqlite3DbFree(db, pCursor);
-    return SQLITE_ERROR;
+    return rc;
   }
   pCursor->db = db;
   *ppCursor = pCursor;

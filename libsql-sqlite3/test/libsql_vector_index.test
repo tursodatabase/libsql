@@ -213,6 +213,8 @@ do_test vector-errors {
   sqlite3_exec db { CREATE TABLE t_mixed_t( v FLOAT32(3)); }
   sqlite3_exec db { INSERT INTO t_mixed_t VALUES('[1]'); }
   lappend ret [error_messages {CREATE INDEX t_mixed_t_idx ON t_mixed_t( libsql_vector_idx(v) )}]
+  sqlite3_exec db { CREATE TABLE t_partial( name TEXT, type INT, v FLOAT32(3)); }
+  lappend ret [error_messages {CREATE INDEX t_partial_idx ON t_partial( libsql_vector_idx(v) ) WHERE type = 0}]
 } [list {*}{
   {no such table: main.t_no}
   {no such column: v}
@@ -226,4 +228,5 @@ do_test vector-errors {
   {dimensions are different: 5 != 4}
   {only f32 vectors are supported}
   {dimensions are different: 1 != 3}
+  {partial vector index is not supported}
 }]
