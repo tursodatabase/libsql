@@ -9,7 +9,7 @@ use clap::{Parser, ValueEnum};
 use tokio::task::{block_in_place, JoinSet};
 
 use libsql_sys::name::NamespaceName;
-use libsql_sys::rusqlite::{OpenFlags, OptionalExtension};
+use libsql_sys::rusqlite::OpenFlags;
 use libsql_wal::io::StdIO;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::segment::sealed::SealedSegment;
@@ -140,6 +140,8 @@ async fn run_shell<S>(registry: WalRegistry<StdIO, S>, db_path: &Path, namespace
 where
     S: Storage<Segment = SealedSegment<std::fs::File>>,
 {
+    let db_path = db_path.join("dbs").join(namespace.as_str());
+    tokio::fs::create_dir_all(&db_path).await.unwrap();
     let registry = Arc::new(registry);
     let resolver = move |path: &Path| {
         NamespaceName::from_string(
@@ -176,14 +178,27 @@ where
                     continue;
                 }
 
-                if let Err(e) = block_in_place(|| {
-                    conn.query_row(&q, (), |row| {
-                        println!("{row:?}");
-                        Ok(())
-                    })
-                    .optional()
-                }) {
-                    println!("error: {e}");
+                match block_in_place(|| conn.prepare(&q)) {
+                    Ok(mut stmt) => {
+                        match block_in_place(|| stmt.query_map((), |row| {
+                            println!("{row:?}");
+                            Ok(())
+                        })) {
+                            Ok(rows) => {
+                                block_in_place(|| {
+                                    rows.for_each(|_| ());
+                                })
+                            }
+                            Err(e) => {
+                                println!("error: {e}");
+                                continue;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("error: {e}");
+                        continue;
+                    }
                 }
             }
             Err(_) => {
