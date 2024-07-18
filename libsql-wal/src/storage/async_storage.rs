@@ -193,7 +193,9 @@ where
         config_override: Option<Arc<Self::Config>>,
     ) -> super::Result<()> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
-        self.backend.restore(&config, &namespace, restore_options, file).await
+        self.backend
+            .restore(&config, &namespace, restore_options, file)
+            .await
     }
 }
 

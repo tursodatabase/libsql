@@ -112,6 +112,8 @@ impl<T: Backend> Backend for Arc<T> {
         restore_options: RestoreOptions,
         dest: impl FileExt,
     ) -> Result<()> {
-        self.as_ref().restore(config, namespace, restore_options, dest).await
+        self.as_ref()
+            .restore(config, namespace, restore_options, dest)
+            .await
     }
 }

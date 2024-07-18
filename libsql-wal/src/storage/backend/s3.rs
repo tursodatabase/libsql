@@ -130,8 +130,20 @@ impl<IO: Io> S3Backend<IO> {
             .key(key)
             .send()
             .await
-            .unwrap()
+            .map_err(|e| Error::unhandled(e, "error sending s3 GET request"))?
             .body)
+    }
+
+    async fn s3_put(&self, config: &S3Config, key: String, body: ByteStream) -> Result<()> {
+        self.client
+            .put_object()
+            .bucket(&config.bucket)
+            .body(body)
+            .key(key)
+            .send()
+            .await
+            .map_err(|e| Error::unhandled(e, "error sending s3 PUT request"))?;
+        Ok(())
     }
 
     async fn fetch_segment_index(
@@ -143,8 +155,12 @@ impl<IO: Io> S3Backend<IO> {
         let s3_index_key = s3_segment_index_key(folder_key, segment_key);
         let stream = self.s3_get(config, s3_index_key).await?;
         // TODO: parse header, check if too large to fit memory
-        let bytes = stream.collect().await.unwrap().to_vec();
-        let index = fst::Map::new(bytes).unwrap();
+        let bytes = stream
+            .collect()
+            .await
+            .map_err(|e| Error::unhandled(e, ""))?
+            .to_vec();
+        let index = fst::Map::new(bytes).map_err(|_| Error::InvalidIndex)?;
         Ok(index)
     }
 
@@ -164,20 +180,20 @@ impl<IO: Io> S3Backend<IO> {
             .start_after(lookup_key)
             .send()
             .await
-            .unwrap();
+            .map_err(|e| Error::unhandled(e, "failed to list bucket"))?;
 
         let Some(contents) = objects.contents().first() else {
             return Ok(None);
         };
-        let key = contents.key().unwrap();
+        let key = contents.key().expect("misssing key?");
         let key_path: &Path = key.as_ref();
         let segment_key: SegmentKey = key_path
             .file_stem()
-            .unwrap()
+            .expect("invalid key")
             .to_str()
-            .unwrap()
+            .expect("invalid key")
             .parse()
-            .unwrap();
+            .expect("invalid key");
 
         Ok(Some(segment_key))
     }
@@ -215,11 +231,8 @@ impl<IO: Io> S3Backend<IO> {
                 if !seen.contains(page_no) {
                     seen.insert(page_no);
                     let offset = (page_no as u64 - 1) * 4096;
-                    let buf = ZeroCopyBuf::new_init(frame)
-                        .map_slice(|f| f.get_ref().data());
-                    let (buf, ret) = dest
-                        .write_all_at_async(buf, offset)
-                        .await;
+                    let buf = ZeroCopyBuf::new_init(frame).map_slice(|f| f.get_ref().data());
+                    let (buf, ret) = dest.write_all_at_async(buf, offset).await;
                     ret?;
                     frame = buf.into_inner().into_inner();
                 }
@@ -391,28 +404,14 @@ where
 
         let body = FileStreamBody::new(segment_data).into_byte_stream();
 
-        self.client
-            .put_object()
-            .bucket(&self.default_config.bucket)
-            .body(body)
-            .key(s3_data_key)
-            .send()
-            .await
-            .unwrap();
+        self.s3_put(config, s3_data_key, body).await?;
 
         let s3_index_key = s3_segment_index_key(&folder_key, &segment_key);
 
         // TODO: store meta about the index?
         let body = ByteStream::from(segment_index);
 
-        self.client
-            .put_object()
-            .bucket(&self.default_config.bucket)
-            .body(body)
-            .key(s3_index_key)
-            .send()
-            .await
-            .unwrap();
+        self.s3_put(config, s3_index_key, body).await?;
 
         Ok(())
     }
@@ -432,13 +431,14 @@ where
         let Some(segment_key) = self.find_segment(config, &folder_key, frame_no).await? else {
             return Err(Error::FrameNotFound(frame_no));
         };
+
         if segment_key.includes(frame_no) {
             // TODO: make open async
             let file = self.io.open(false, false, true, dest_path)?;
             self.fetch_segment_from_key(config, &folder_key, &segment_key, &file)
                 .await
         } else {
-            todo!("not found");
+            return Err(Error::FrameNotFound(frame_no));
         }
     }
 

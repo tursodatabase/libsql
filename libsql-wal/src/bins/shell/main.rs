@@ -91,7 +91,7 @@ async fn main() {
     while join_set.join_next().await.is_some() {}
 }
 
-async fn handle<S>(cli: &Cli, storage: S) 
+async fn handle<S>(cli: &Cli, storage: S)
 where
     S: Storage<Segment = SealedSegment<std::fs::File>>,
 {
@@ -103,7 +103,7 @@ where
                 &db_path,
                 NamespaceName::from_string(cli.namespace.clone()),
             )
-                .await;
+            .await;
         }
         Subcommand::Infos => handle_infos(&cli.namespace, storage).await,
         Subcommand::Restore { from, path } => {
@@ -113,8 +113,12 @@ where
     }
 }
 
-async fn handle_restore<S>(namespace: &NamespaceName, storage: S, _from: RestoreOptions, db_path: &Path)
-where
+async fn handle_restore<S>(
+    namespace: &NamespaceName,
+    storage: S,
+    _from: RestoreOptions,
+    db_path: &Path,
+) where
     S: Storage,
 {
     let options = libsql_wal::storage::RestoreOptions::Latest;
@@ -123,7 +127,10 @@ where
         .write(true)
         .open(db_path)
         .unwrap();
-    storage.restore(file, &namespace, options, None).await.unwrap();
+    storage
+        .restore(file, &namespace, options, None)
+        .await
+        .unwrap();
 }
 
 async fn handle_infos<S>(namespace: &str, storage: S)
@@ -180,15 +187,15 @@ where
 
                 match block_in_place(|| conn.prepare(&q)) {
                     Ok(mut stmt) => {
-                        match block_in_place(|| stmt.query_map((), |row| {
-                            println!("{row:?}");
-                            Ok(())
-                        })) {
-                            Ok(rows) => {
-                                block_in_place(|| {
-                                    rows.for_each(|_| ());
-                                })
-                            }
+                        match block_in_place(|| {
+                            stmt.query_map((), |row| {
+                                println!("{row:?}");
+                                Ok(())
+                            })
+                        }) {
+                            Ok(rows) => block_in_place(|| {
+                                rows.for_each(|_| ());
+                            }),
                             Err(e) => {
                                 println!("error: {e}");
                                 continue;

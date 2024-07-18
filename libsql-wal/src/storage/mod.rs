@@ -63,7 +63,8 @@ impl Storage for NoStorage {
         _namespace: &NamespaceName,
         _seg: Self::Segment,
         _config: Option<Arc<Self::Config>>,
-    ) { }
+    ) {
+    }
 
     async fn durable_frame_no(
         &self,
