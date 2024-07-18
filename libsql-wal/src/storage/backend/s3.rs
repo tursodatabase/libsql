@@ -152,7 +152,6 @@ impl<IO: Io> S3Backend<IO> {
             .await
             .unwrap();
 
-        dbg!(frame_no);
         let Some(contents) = objects.contents().first() else {
             return Ok(None);
         };
