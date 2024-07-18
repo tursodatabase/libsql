@@ -581,15 +581,7 @@ impl Proxy for ProxyService {
             .namespaces
             .with(ctx.namespace().clone(), |ns| {
                 let connection_maker = ns.db.connection_maker();
-                let notifier = ns
-                    .db
-                    .as_primary()
-                    .expect("invalid call to stream_exec: not a primary")
-                    .wal_wrapper
-                    .wrapper()
-                    .logger()
-                    .new_frame_notifier
-                    .subscribe();
+                let notifier = ns.db.notifier();
                 (connection_maker, notifier)
             })
             .await
