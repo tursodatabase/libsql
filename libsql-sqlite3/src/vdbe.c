@@ -243,7 +243,7 @@ static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
 #define isSorter(x) ((x)->eCurType==CURTYPE_SORTER)
 
 /* Return true if the cursor is of type CURYTPE_VECTOR_IDX. */
-#define isVectorIdx(x) ((x)->eCurType==CURTYPE_VECTOR_IDX)
+#define isVectorCursor(x) ((x)->eCurType==CURTYPE_VECTOR_IDX)
 
 /*
 ** Allocate VdbeCursor number iCur.  Return a pointer to it.  Return NULL
@@ -6566,7 +6566,7 @@ case OP_IdxInsert: {        /* in2 */
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   if (!pC->isEphemeral) inc_row_written(p, 1);
 #ifndef SQLITE_OMIT_VECTOR
-  if( isVectorIdx(pC) ) {
+  if( isVectorCursor(pC) ) {
     UnpackedRecord idxKeyStatic;
     UnpackedRecord *pIdxKey = NULL;
     int i;
@@ -6673,7 +6673,7 @@ case OP_IdxDelete: {
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
 #ifndef SQLITE_OMIT_VECTOR
-  if( isVectorIdx(pC) ) {
+  if( isVectorCursor(pC) ) {
     sqlite3VdbeIncrWriteCounter(p, pC);
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p3;
