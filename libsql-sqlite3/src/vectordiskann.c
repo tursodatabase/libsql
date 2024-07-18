@@ -943,7 +943,8 @@ static int diskAnnReplaceEdgeIdx(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob
     if( nodeToNew > pIndex->pruningAlpha * edgeToNew ){
       return -1;
     }
-    if( nodeToNew < nodeToEdge ){
+    if( nodeToNew < nodeToEdge && (iReplace == -1 || nodeToReplace < nodeToEdge) ){
+      nodeToReplace = nodeToEdge;
       iReplace = i;
     }
   }
