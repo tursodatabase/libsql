@@ -10,6 +10,8 @@
 #include "stdlib.h"
 #include "stddef.h"
 #include "vectorIndexInt.h"
+#include "vectorInt.h"
+#include "vdbeInt.h"
 
 #define eprintf(...) fprintf(stderr, __VA_ARGS__)
 #define ensure(condition, ...) { if (!(condition)) { eprintf(__VA_ARGS__); exit(1); } }
@@ -81,14 +83,14 @@ int main() {
   Vector vector1 = { .type = VECTOR_TYPE_FLOAT32, .dims = 1, .flags = 0, .data = vectorData + 1 };
   Vector vector2 = { .type = VECTOR_TYPE_FLOAT32, .dims = 1, .flags = 0, .data = vectorData + 2 };
   Vector vector3 = { .type = VECTOR_TYPE_FLOAT32, .dims = 1, .flags = 0, .data = vectorData + 3 };
-  nodeBinInsertEdge(&index, pBlobSpot, 0, 111, &vector1);
-  nodeBinInsertEdge(&index, pBlobSpot, 0, 112, &vector2);
-  nodeBinInsertEdge(&index, pBlobSpot, 2, 113, &vector3);
+  nodeBinReplaceEdge(&index, pBlobSpot, 0, 111, &vector1);
+  nodeBinReplaceEdge(&index, pBlobSpot, 1, 112, &vector2);
+  nodeBinReplaceEdge(&index, pBlobSpot, 2, 113, &vector3);
   ensure(nodeBinEdges(&index, pBlobSpot) == 3, "unexpected edges count\n");
   nodeBinDebug(&index, pBlobSpot);
   nodeBinPruneEdges(&index, pBlobSpot, 2);
   nodeBinDebug(&index, pBlobSpot);
-  nodeBinInsertEdge(&index, pBlobSpot, 1, 113, &vector3);
+  nodeBinReplaceEdge(&index, pBlobSpot, 1, 113, &vector3);
   nodeBinDebug(&index, pBlobSpot);
   nodeBinDeleteEdge(&index, pBlobSpot, 0);
   nodeBinDebug(&index, pBlobSpot);
@@ -96,7 +98,6 @@ int main() {
   ensure(blobSpotFlush(pBlobSpot) == SQLITE_OK, "unexpected error: %s\n", sqlite3_errmsg(db));
   blobSpotFree(pBlobSpot);
 
-  ensure(sqlite3_close(db) == 0, "unable to close memory db: %s\n", sqlite3_errmsg(db));
 
   VectorIdxParams params;
   vectorIdxParamsInit(&params, NULL, 0);
@@ -108,4 +109,71 @@ int main() {
   ensure(vectorIdxParamsGetU64(&params, 1) == 103, "invalid parameter\n");
   ensure(vectorIdxParamsGetU64(&params, 2) == 102, "invalid parameter\n");
   ensure(vectorIdxParamsGetF64(&params, 3) == 1.4, "invalid parameter\n");
+
+
+  ensure(sqlite3_exec(db, "CREATE TABLE vectors ( emb FLOAT32(2) )", 0, 0, 0) == 0, "unable to create table: %s\n", sqlite3_errmsg(db));
+  VectorIdxKey idxKey;
+  idxKey.nKeyColumns = 1;
+  idxKey.aKeyAffinity[0] = SQLITE_AFF_INTEGER;
+  idxKey.azKeyCollation[0] = "BINARY";
+
+  VectorIdxParams idxParams;
+  vectorIdxParamsInit(&idxParams, NULL, 0);
+  vectorIdxParamsPutU64(&idxParams, VECTOR_TYPE_PARAM_ID, VECTOR_TYPE_FLOAT32);
+  vectorIdxParamsPutU64(&idxParams, VECTOR_DIM_PARAM_ID, 2);
+
+  // this is hack for test - we are not in the context of query execution - so some invariants are violated and without this lock assertions failing
+  sqlite3_mutex_enter(db->mutex);
+  ensure(diskAnnCreateIndex(db, "vectors_idx", &idxKey, &idxParams) == 0, "unable to create diskann index: %s\n", sqlite3_errmsg(db));
+
+  DiskAnnIndex *pIndex;
+  int rc = diskAnnOpenIndex(db, "vectors_idx", &idxParams, &pIndex);
+  ensure(rc == 0, "unable to open diskann index: %d\n", rc);
+
+  sqlite3_value key;
+  Vector vVector;
+  VectorInRow inRow;
+  key.db = db;
+  key.flags = 0x04;
+  inRow.nKeys = 1;
+  inRow.pKeyValues = &key;
+  inRow.pVector = &vVector;
+
+  char* pzErrMsg;
+  int deleted = 11, inserted = 11;
+  // inserts:delete proportion is 3:1
+  for(int i = 0; i < 100; i++){
+    float vIndex[2] = { 1 + i, 1 - i };
+    if( i % 4 != 3 ){
+      key.u.i = inserted++;
+      vectorInitStatic(inRow.pVector, VECTOR_TYPE_FLOAT32, (void*)vIndex, 4 * 2);
+      ensure(diskAnnInsert(pIndex, &inRow, &pzErrMsg) == 0, "unable to insert vector: %s %s\n", pzErrMsg, sqlite3_errmsg(db));
+    }else{
+      key.u.i = deleted++;
+      ensure(diskAnnDelete(pIndex, &inRow, &pzErrMsg) == 0, "unable to delete vector: %s %s\n", pzErrMsg, sqlite3_errmsg(db));
+    }
+  }
+
+  float vIndex[2] = { 1, 1 };
+  VectorOutRows rows;
+  vectorInitStatic(inRow.pVector, VECTOR_TYPE_FLOAT32, (void*)vIndex, 4 * 2);
+  ensure(diskAnnSearch(pIndex, inRow.pVector, 10, &idxKey, &rows, &pzErrMsg) == 0, "unable to search vector: %s\n", pzErrMsg);
+  ensure(rows.nRows == 10, "unexpected rows count: %d != 10\n", rows.nRows);
+  ensure(rows.nCols == 1, "unexpected cols count\n");
+  vectorOutRowsFree(db, &rows);
+
+  ensure(diskAnnSearch(pIndex, inRow.pVector, 60, &idxKey, &rows, &pzErrMsg) == 0, "unable to search vector: %s\n", pzErrMsg);
+  ensure(rows.nRows == 50, "unexpected rows count: %d != 50\n", rows.nRows);
+  ensure(rows.nCols == 1, "unexpected cols count\n");
+  vectorOutRowsFree(db, &rows);
+
+  ensure(diskAnnClearIndex(db, "vectors_idx") == 0, "unable to clear index\n");
+  ensure(diskAnnSearch(pIndex, inRow.pVector, 60, &idxKey, &rows, &pzErrMsg) == 0, "unable to search vector: %s\n", pzErrMsg);
+  ensure(rows.nRows == 0, "unexpected rows count: %d != 0\n", rows.nRows);
+  ensure(rows.nCols == 1, "unexpected cols count\n");
+
+  sqlite3_mutex_leave(db->mutex);
+  // since we are manually holding locks - explicit close of db connection also triggers some assertion; so we don't close it here
+
+  printf("all tests are passed!\n");
 }

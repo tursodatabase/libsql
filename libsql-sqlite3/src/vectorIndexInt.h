@@ -44,6 +44,7 @@ struct BlobSpot {
   int nBufferSize;      /* buffer size */
   u8 isWritable;        /* blob open mode (readonly or read/write) */
   u8 isInitialized;     /* was blob read after creation or not */
+  u8 isAborted;         /* set to true if last operation with blob failed with non-zero code */
 };
 
 /* Special error code for blobSpotCreate/blobSpotReload functions which will fire where rowid doesn't exists in the table */
@@ -72,7 +73,7 @@ u16 nodeBinEdges(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot);
 void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, Vector *pVector);
 int nodeBinEdgeFindIdx(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, u64 nRowid);
 void nodeBinPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int nPruned);
-void nodeBinInsertEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iInsert, u64 nRowid, Vector *pVector);
+void nodeBinReplaceEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iReplace, u64 nRowid, Vector *pVector);
 void nodeBinDeleteEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDelete);
 void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot);
 
@@ -204,6 +205,15 @@ int vectorOutRowsAlloc(sqlite3 *, VectorOutRows *, int, int, char);
 int vectorOutRowsPut(VectorOutRows *, int, int, const u64 *, sqlite3_value *);
 void vectorOutRowsGet(sqlite3_context *, const VectorOutRows *, int, int);
 void vectorOutRowsFree(sqlite3 *, VectorOutRows *);
+
+int diskAnnCreateIndex(sqlite3 *, const char *, const VectorIdxKey *, VectorIdxParams *);
+int diskAnnClearIndex(sqlite3 *, const char *);
+int diskAnnDropIndex(sqlite3 *, const char *);
+int diskAnnOpenIndex(sqlite3 *, const char *, const VectorIdxParams *, DiskAnnIndex **);
+void diskAnnCloseIndex(DiskAnnIndex *);
+int diskAnnInsert(const DiskAnnIndex *, const VectorInRow *, char **);
+int diskAnnDelete(const DiskAnnIndex *, const VectorInRow *, char **);
+int diskAnnSearch(const DiskAnnIndex *, const Vector *, int, const VectorIdxKey *, VectorOutRows *, char **);
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */
