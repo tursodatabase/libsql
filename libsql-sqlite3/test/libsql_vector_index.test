@@ -37,6 +37,12 @@ do_execsql_test vector-integrity {
   PRAGMA integrity_check;
 } {{row 1 missing from index t_integrity_idx} {wrong # of entries in index t_integrity_idx}}
 
+do_execsql_test vector-typename {
+  CREATE TABLE t_type_spaces( v FLOAT32  (   3   ) );
+  CREATE INDEX t_type_spaces_idx ON t_type_spaces( libsql_vector_idx(v) );
+  INSERT INTO t_type_spaces VALUES (vector('[1,2,3]'));
+} {}
+
 do_execsql_test vector-backfill {
   CREATE TABLE t_backfill( v FLOAT32(3) );
   INSERT INTO t_backfill VALUES (vector('[1,2,3]'));

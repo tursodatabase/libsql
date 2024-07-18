@@ -463,38 +463,49 @@ int parseVectorIdxParams(Parse *pParse, VectorIdxParams *pParams, int type, int 
 }
 
 /**************************************************************************
-** Vector index cursor implementations
+** Vector index cursor implementation
 ****************************************************************************/
 
 /*
 ** A VectorIdxCursor is a special cursor to perform vector index lookups.
  */
 struct VectorIdxCursor {
-  sqlite3 *db;          /* Database connection */
-  DiskAnnIndex *index;   /* DiskANN index on disk */
+  sqlite3 *db;            /* Database connection */
+  DiskAnnIndex *pIndex;   /* DiskANN index */
 };
 
+
+void skipSpaces(const char **pzStr) {
+  while( **pzStr != '\0' && sqlite3Isspace(**pzStr) ){
+    (*pzStr)++;
+  }
+}
 /**
 ** Parses a type string such as `FLOAT32(3)` and set number of dimensions and bits
 **
-** Returns  0 if suceed and set correct values in both pDims and pType pointers
+** Returns  0 if succeed and set correct values in both pDims and pType pointers
 ** Returns -1 if the type string is not a valid vector type for index and set pErrMsg to static string with error description in this case
 **/
 int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, char **pErrMsg){
+  assert( zType != NULL );
+
   int dimensions = 0;
   int i;
+  skipSpaces(&zType);
   for(i = 0; i < ArraySize(VECTOR_COLUMN_TYPES); i++){
     const char* name = VECTOR_COLUMN_TYPES[i].zName;
     const char* zTypePtr = zType + strlen(name);
     if( sqlite3_strnicmp(zType, name, strlen(name)) != 0 ){
       continue;
     }
+    skipSpaces(&zTypePtr);
     if( *zTypePtr != '(' ) {
       break;
     }
     zTypePtr++;
+    skipSpaces(&zTypePtr);
 
-    while( *zTypePtr && *zTypePtr != ')' ){
+    while( *zTypePtr && *zTypePtr != ')' && !sqlite3Isspace(*zTypePtr) ){
       if( !sqlite3Isdigit(*zTypePtr) ){
         *pErrMsg = "non digit symbol in vector column parameter";
         return -1;
@@ -506,11 +517,14 @@ int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, char **p
       }
       zTypePtr++;
     }
+    skipSpaces(&zTypePtr);
     if( *zTypePtr != ')' ){
       *pErrMsg = "missed closing brace for vector column type";
       return -1;
     }
     zTypePtr++;
+    skipSpaces(&zTypePtr);
+    
 
     if( *zTypePtr ) {
       *pErrMsg = "extra data after dimension parameter for vector column type";
@@ -871,7 +885,7 @@ int vectorIndexInsert(
   if( vectorInRow.pVector == NULL ){
     return SQLITE_OK;
   }
-  rc = diskAnnInsert(pCur->index, &vectorInRow, pzErrMsg);
+  rc = diskAnnInsert(pCur->pIndex, &vectorInRow, pzErrMsg);
   vectorInRowFree(pCur->db, &vectorInRow);
   return rc;
 }
@@ -885,7 +899,7 @@ int vectorIndexDelete(
   payload.pVector = NULL;
   payload.nKeys = r->nField - 1;
   payload.pKeyValues = r->aMem + 1;
-  return diskAnnDelete(pCur->index, &payload, pzErrMsg);
+  return diskAnnDelete(pCur->pIndex, &payload, pzErrMsg);
 }
 
 int vectorIndexCursorInit(
@@ -905,7 +919,7 @@ int vectorIndexCursorInit(
   if( pCursor == 0 ){
     return SQLITE_NOMEM_BKPT;
   }
-  if( diskAnnOpenIndex(db, zIndexName, &params, &pCursor->index) != 0 ){
+  if( diskAnnOpenIndex(db, zIndexName, &params, &pCursor->pIndex) != 0 ){
     sqlite3DbFree(db, pCursor);
     return SQLITE_ERROR;
   }
@@ -915,7 +929,7 @@ int vectorIndexCursorInit(
 }
 
 void vectorIndexCursorClose(sqlite3 *db, VectorIdxCursor *pCursor){
-  diskAnnCloseIndex(pCursor->index);
+  diskAnnCloseIndex(pCursor->pIndex);
   sqlite3DbFree(db, pCursor);
 }
 
