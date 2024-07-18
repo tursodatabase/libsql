@@ -183,6 +183,20 @@ do_execsql_test vector-alter-column {
   SELECT * FROM vector_top_k('t_vec_alter_idx', vector('[1,2,3]'), 1);
 } {1 3 1}
 
+do_execsql_test vector-create-as {
+  CREATE TABLE t_text_origin( v TEXT );
+  INSERT INTO t_text_origin VALUES('[1,2,3]');
+  INSERT INTO t_text_origin VALUES('[2,3,4]');
+  INSERT INTO t_text_origin VALUES('[5,6,7]');
+  CREATE TABLE t_blob_dup AS SELECT vector(v) as v FROM t_text_origin;
+  ALTER TABLE t_blob_dup ALTER COLUMN v TO v FLOAT32(3); 
+  CREATE INDEX t_blob_dup_idx ON t_blob_dup( libsql_vector_idx(v) );
+
+  SELECT * FROM vector_top_k('t_blob_dup_idx', vector('[1,2,3]'), 1);
+  SELECT * FROM vector_top_k('t_blob_dup_idx', vector('[5,6,7]'), 1);
+  SELECT * FROM vector_top_k('t_blob_dup_idx', vector('[1,2,3]'), 1);
+} {1 3 1}
+
 proc error_messages {sql} {
   set ret ""
   catch {
