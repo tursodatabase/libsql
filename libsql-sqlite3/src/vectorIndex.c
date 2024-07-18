@@ -709,7 +709,7 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, const IdList *pUsing) {
     }
     return SQLITE_ERROR;
   }
-  if( pParse->db->init.busy == 1 && pUsing != NULL ){
+  if( db->init.busy == 1 && pUsing != NULL ){
     goto succeed;
   }
 
@@ -779,11 +779,14 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, const IdList *pUsing) {
     return SQLITE_ERROR;
   }
 
-  // we deliberately ignore return code as SQLite will execute CREATE INDEX command twice and exec will fail on second attempt
-  // todo: actually, it looks pretty fragile - maybe we should avoid sqlite3_exec calls from the inside of SQLite internals...
+  // schema is locked while db is initializing and we need to just proceed here
+  if( db->init.busy == 1 ){
+    goto succeed;
+  }
+
   rc = initVectorIndexMetaTable(db);
   if( rc != SQLITE_OK ){
-    goto succeed;
+    return rc;
   }
   rc = parseVectorIdxParams(pParse, &idxParams, type, dims, pListItem + 1, pArgsList->nExpr - 1);
   if( rc != SQLITE_OK ){
