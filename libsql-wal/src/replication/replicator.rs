@@ -106,10 +106,7 @@ impl<IO: Io> Replicator<IO> {
 
 #[cfg(test)]
 mod test {
-    use std::time::Duration;
-
     use tempfile::NamedTempFile;
-    use tokio::time::timeout;
     use tokio_stream::StreamExt;
 
     use crate::io::FileExt;
@@ -136,11 +133,9 @@ mod test {
         let stream = replicator.frame_stream();
         tokio::pin!(stream);
         let mut last_frame_no = 0;
-        let mut size_after = 0;
+        let mut size_after;
         loop {
-            let fut = timeout(Duration::from_millis(15), stream.next());
-            let Ok(Some(frame)) = fut.await else { break };
-            let frame = frame.unwrap();
+            let frame = stream.next().await.unwrap().unwrap();
             // the last frame should commit
             size_after = frame.header().size_after();
             last_frame_no = last_frame_no.max(frame.header().frame_no());
@@ -148,6 +143,9 @@ mod test {
             tmp.as_file()
                 .write_all_at(frame.data(), offset as _)
                 .unwrap();
+            if size_after != 0 {
+                break;
+            }
         }
 
         assert_eq!(size_after, 4);
@@ -170,11 +168,9 @@ mod test {
                 .unwrap();
         }
 
-        let mut size_after = 0;
+        let mut size_after;
         loop {
-            let fut = timeout(Duration::from_millis(15), stream.next());
-            let Ok(Some(frame)) = fut.await else { break };
-            let frame = frame.unwrap();
+            let frame = stream.next().await.unwrap().unwrap();
             assert!(frame.header().frame_no() > last_frame_no);
             size_after = frame.header().size_after();
             // the last frame should commit
@@ -182,6 +178,9 @@ mod test {
             tmp.as_file()
                 .write_all_at(frame.data(), offset as _)
                 .unwrap();
+            if size_after != 0 {
+                break;
+            }
         }
 
         assert_eq!(size_after, 6);
@@ -205,14 +204,15 @@ mod test {
             tokio::pin!(stream);
 
             loop {
-                let fut = timeout(Duration::from_millis(15), stream.next());
-                let Ok(Some(frame)) = fut.await else { break };
-                let frame = frame.unwrap();
+                let frame = stream.next().await.unwrap().unwrap();
                 // the last frame should commit
                 let offset = (frame.header().page_no() - 1) * 4096;
                 tmp.as_file()
                     .write_all_at(frame.data(), offset as _)
                     .unwrap();
+                if frame.header().size_after() != 0 {
+                    break;
+                }
             }
 
             let conn = libsql_sys::rusqlite::Connection::open(tmp.path()).unwrap();
