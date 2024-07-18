@@ -4218,9 +4218,7 @@ case OP_SetCookie: {
 ** Synopsis: root=P2 iDb=P3
 */
 case OP_OpenVectorIdx: {
-  // TODO: can we implement this right inside OP_OpenIdx?
-  // TODO: Can we simplify this similar to OP_SorterOpen?
-  KeyInfo *pKeyInfo = 0;
+  KeyInfo *pKeyInfo = NULL;
   VectorIdxCursor* cursor;
   int nField = 0;
   if( pOp->p4type==P4_KEYINFO ){
@@ -4232,7 +4230,10 @@ case OP_OpenVectorIdx: {
     nField = pOp->p4.i;
   }
   if( pOp->p5 == OPFLAG_FORDELETE ){
-    vectorIndexClear(db, pKeyInfo->zIndexName);
+    rc = vectorIndexClear(db, pKeyInfo->zIndexName);
+    if( rc ){
+      goto abort_due_to_error;
+    }
   }
   rc = vectorIndexCursorInit(db, &cursor, pKeyInfo->zIndexName);
   if( rc ) {
@@ -6586,7 +6587,7 @@ case OP_IdxInsert: {        /* in2 */
       sqlite3VdbeRecordUnpack(pC->pKeyInfo, x.nKey, x.pKey, pIdxKey);
       rc = vectorIndexInsert(pC->uc.pVecIdx, pIdxKey, &p->zErrMsg);
       /* 
-       * vectorIndexInsert can allocate additiona memory for sqlite3_value (usually during sqlite3_value_text/sqlite3_value_blob calls)
+       * vectorIndexInsert can allocate additional memory for sqlite3_value (usually during sqlite3_value_text/sqlite3_value_blob calls)
        * so, we need to explicitly clear it before freeing whole UnpackedRecord with single free(...) call
       */
       for(i = 0; i < pIdxKey->nField; i++){

@@ -1529,7 +1529,9 @@ void sqlite3KeyInfoUnref(KeyInfo *p){
     assert( p->nRef>0 );
     p->nRef--;
     if( p->nRef==0 ){
-      sqlite3DbFree(p->db, p->zIndexName); // LibSQL patch: necessary fix for vector search to make it work
+      if( p->zIndexName != NULL ){
+        sqlite3DbFree(p->db, p->zIndexName); // LibSQL patch: necessary fix for vector search to make it work
+      }
       sqlite3DbNNFreeNN(p->db, p);
     }
   }

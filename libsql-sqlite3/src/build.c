@@ -3327,9 +3327,9 @@ static void destroyTable(Parse *pParse, Table *pTab){
 #ifndef SQLITE_OMIT_VECTOR
   /*
    * There are several places to delete vector index:
-   * 1. We can add this capability in the OP_Destroy op code. The problem is that it operates with root pages and since we are not maintain them properly - there is a small risk that we can delete something unrelated to vector index
+   * 1. We can add this capability in the OP_Destroy op code. The problem is that it operates with root pages and we will need to do additional lookups to resolve page number to index name
    * 2. We can add this capability in the OP_DropIndex op code. The problem is that db schema is locked at this moment and we will not be able to execute sqlite3_exec required for vectorIndexDrop
-   * 3. Delete index during the parsing stage (implemented variant) - it's hacky and dirty but seems to me as more safe way to delete only something that we really want
+   * 3. Delete index during the parsing stage (implemented variant) - it's hacky and bit dirty but seems to me as pretty safe and easy way to delete index
   */
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( IsVectorIndex(pIdx) ){
@@ -3339,6 +3339,7 @@ static void destroyTable(Parse *pParse, Table *pTab){
 #endif
 
   while( 1 ){
+    Index *pIdx;
     Pgno iLargest = 0;
 
     if( iDestroyed==0 || iTab<iDestroyed ){
@@ -3970,7 +3971,7 @@ void sqlite3CreateIndex(
   int sortOrder,     /* Sort order of primary key when pList==NULL */
   int ifNotExist,    /* Omit error if index already exists */
   u8 idxType,        /* The index type */
-  IdList *pUsing     /* Using */
+  IdList *pUsing     /* Using clause (DEPRECATED, preserved for backward compatibility only) */
 ){
   Table *pTab = 0;     /* Table to be indexed */
   Index *pIndex = 0;   /* The index to be created */
@@ -4370,7 +4371,7 @@ void sqlite3CreateIndex(
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       int k;
       assert( IsUniqueIndex(pIdx) );
-      assert( pIdx->idxType!=SQLITE_IDXTYPE_APPDEF );
+      assert( (pIdx->idxType&3)!=SQLITE_IDXTYPE_APPDEF ); // '&3' is the LibSQL fix to treat VECTOR index as APPDEF
       assert( IsUniqueIndex(pIndex) );
 
       if( pIdx->nKeyCol!=pIndex->nKeyCol ) continue;
@@ -4657,9 +4658,9 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
 #ifndef SQLITE_OMIT_VECTOR
   /*
    * There are several places to delete vector index:
-   * 1. We can add this capability in the OP_Destroy op code. The problem is that it operates with root pages and since we are not maintain them properly - there is a small risk that we can delete something unrelated to vector index
+   * 1. We can add this capability in the OP_Destroy op code. The problem is that it operates with root pages and we will need to do additional lookups to resolve page number to index name
    * 2. We can add this capability in the OP_DropIndex op code. The problem is that db schema is locked at this moment and we will not be able to execute sqlite3_exec required for vectorIndexDrop
-   * 3. Delete index during the parsing stage (implemented variant) - it's hacky and dirty but seems to me as more safe way to delete only something that we really want
+   * 3. Delete index during the parsing stage (implemented variant) - it's hacky and bit dirty but seems to me as pretty safe and easy way to delete index
   */
   if( IsVectorIndex(pIndex) ){
     vectorIndexDrop(pParse->db, pIndex->zName);
