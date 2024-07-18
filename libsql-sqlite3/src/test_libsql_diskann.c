@@ -83,14 +83,14 @@ int main() {
   Vector vector1 = { .type = VECTOR_TYPE_FLOAT32, .dims = 1, .flags = 0, .data = vectorData + 1 };
   Vector vector2 = { .type = VECTOR_TYPE_FLOAT32, .dims = 1, .flags = 0, .data = vectorData + 2 };
   Vector vector3 = { .type = VECTOR_TYPE_FLOAT32, .dims = 1, .flags = 0, .data = vectorData + 3 };
-  nodeBinInsertEdge(&index, pBlobSpot, 0, 111, &vector1);
-  nodeBinInsertEdge(&index, pBlobSpot, 0, 112, &vector2);
-  nodeBinInsertEdge(&index, pBlobSpot, 2, 113, &vector3);
+  nodeBinReplaceEdge(&index, pBlobSpot, 0, 111, &vector1);
+  nodeBinReplaceEdge(&index, pBlobSpot, 1, 112, &vector2);
+  nodeBinReplaceEdge(&index, pBlobSpot, 2, 113, &vector3);
   ensure(nodeBinEdges(&index, pBlobSpot) == 3, "unexpected edges count\n");
   nodeBinDebug(&index, pBlobSpot);
   nodeBinPruneEdges(&index, pBlobSpot, 2);
   nodeBinDebug(&index, pBlobSpot);
-  nodeBinInsertEdge(&index, pBlobSpot, 1, 113, &vector3);
+  nodeBinReplaceEdge(&index, pBlobSpot, 1, 113, &vector3);
   nodeBinDebug(&index, pBlobSpot);
   nodeBinDeleteEdge(&index, pBlobSpot, 0);
   nodeBinDebug(&index, pBlobSpot);
@@ -158,18 +158,18 @@ int main() {
   VectorOutRows rows;
   vectorInitStatic(inRow.pVector, VECTOR_TYPE_FLOAT32, (void*)vIndex, 4 * 2);
   ensure(diskAnnSearch(pIndex, inRow.pVector, 10, &idxKey, &rows, &pzErrMsg) == 0, "unable to search vector: %s\n", pzErrMsg);
-  ensure(rows.nRows == 10, "unexpected rows count\n");
+  ensure(rows.nRows == 10, "unexpected rows count: %d != 10\n", rows.nRows);
   ensure(rows.nCols == 1, "unexpected cols count\n");
   vectorOutRowsFree(db, &rows);
 
   ensure(diskAnnSearch(pIndex, inRow.pVector, 60, &idxKey, &rows, &pzErrMsg) == 0, "unable to search vector: %s\n", pzErrMsg);
-  ensure(rows.nRows == 50, "unexpected rows count\n");
+  ensure(rows.nRows == 50, "unexpected rows count: %d != 50\n", rows.nRows);
   ensure(rows.nCols == 1, "unexpected cols count\n");
   vectorOutRowsFree(db, &rows);
 
   ensure(diskAnnClearIndex(db, "vectors_idx") == 0, "unable to clear index\n");
   ensure(diskAnnSearch(pIndex, inRow.pVector, 60, &idxKey, &rows, &pzErrMsg) == 0, "unable to search vector: %s\n", pzErrMsg);
-  ensure(rows.nRows == 0, "unexpected rows count\n");
+  ensure(rows.nRows == 0, "unexpected rows count: %d != 0\n", rows.nRows);
   ensure(rows.nCols == 1, "unexpected cols count\n");
 
   sqlite3_mutex_leave(db->mutex);
