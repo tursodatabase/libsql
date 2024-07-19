@@ -1258,10 +1258,12 @@ int diskAnnInsert(
     rc = SQLITE_ERROR;
     goto out;
   }
-
-  rc = diskAnnSearchInternal(pIndex, &ctx, nStartRowid, pzErrMsg);
-  if( rc != SQLITE_OK ){
-    goto out;
+  if( !first ){
+    // search is made before insetion in order to simplify life with "zombie" edges which can have same IDs as new inserted row
+    rc = diskAnnSearchInternal(pIndex, &ctx, nStartRowid, pzErrMsg);
+    if( rc != SQLITE_OK ){
+      goto out;
+    }
   }
 
   rc = diskAnnInsertShadowRow(pIndex, pVectorInRow, &nNewRowid);
