@@ -23,6 +23,9 @@
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
 #include "ext/udf/wasm_bindings.h"
 #endif
+#ifndef SQLITE_OMIT_VECTOR
+#include "vectorIndexInt.h"
+#endif
 
 /*
 ** Invoke this macro on memory cells just prior to changing the
@@ -238,6 +241,9 @@ static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
 
 /* Return true if the cursor was opened using the OP_OpenSorter opcode. */
 #define isSorter(x) ((x)->eCurType==CURTYPE_SORTER)
+
+/* Return true if the cursor is of type CURYTPE_VECTOR_IDX. */
+#define isVectorCursor(x) ((x)->eCurType==CURTYPE_VECTOR_IDX)
 
 /*
 ** Allocate VdbeCursor number iCur.  Return a pointer to it.  Return NULL
@@ -4207,6 +4213,47 @@ case OP_SetCookie: {
   break;
 }
 
+#ifndef SQLITE_OMIT_VECTOR
+/* Opcode: OpenVectorIdx
+** Synopsis: root=P2 iDb=P3
+*/
+case OP_OpenVectorIdx: {
+  KeyInfo *pKeyInfo = NULL;
+  VectorIdxCursor* cursor;
+  int nField = 0;
+  if( pOp->p4type==P4_KEYINFO ){
+    pKeyInfo = pOp->p4.pKeyInfo;
+    assert( pKeyInfo->enc==ENC(db) );
+    assert( pKeyInfo->db==db );
+    nField = pKeyInfo->nAllField;
+  }else if( pOp->p4type==P4_INT32 ){
+    nField = pOp->p4.i;
+  }
+  if( pOp->p5 == OPFLAG_FORDELETE ){
+    rc = vectorIndexClear(db, pKeyInfo->zIndexName);
+    if( rc ){
+      goto abort_due_to_error;
+    }
+  }
+  rc = vectorIndexCursorInit(db, &cursor, pKeyInfo->zIndexName);
+  if( rc ) {
+    goto abort_due_to_error;
+  }
+  // After we will allocate cursor Vdbe will record it and will try to close it at the disposal
+  // So, we need to ensure that no errors will occurred after successful cursor allocation
+  VdbeCursor *pCur = allocateCursor(p, pOp->p1, nField, CURTYPE_VECTOR_IDX);
+  if( pCur==0 ) goto no_mem;
+  pCur->iDb = pOp->p3;
+  pCur->nullRow = 1;
+  pCur->isOrdered = 1;
+  pCur->pgnoRoot = pOp->p2;
+  pCur->pKeyInfo = pKeyInfo;
+  pCur->isTable = 0;
+  pCur->uc.pVecIdx = cursor;
+  break;
+}
+#endif
+
 /* Opcode: OpenRead P1 P2 P3 P4 P5
 ** Synopsis: root=P2 iDb=P3
 **
@@ -6518,6 +6565,45 @@ case OP_IdxInsert: {        /* in2 */
   assert( (pIn2->flags & MEM_Blob) || (pOp->p5 & OPFLAG_PREFORMAT) );
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   if (!pC->isEphemeral) inc_row_written(p, 1);
+#ifndef SQLITE_OMIT_VECTOR
+  if( isVectorCursor(pC) ) {
+    UnpackedRecord idxKeyStatic;
+    UnpackedRecord *pIdxKey = NULL;
+    int i;
+    rc = ExpandBlob(pIn2);
+    if( rc ) goto abort_due_to_error;
+    x.nKey = pIn2->n;
+    x.pKey = pIn2->z;
+    x.aMem = aMem + pOp->p3;
+    x.nMem = (u16)pOp->p4.i;
+    /*
+     * Key can be provided in packed format (only pKey and nKey are set) to the
+     * btree (for example, during the REINDEX) So we need to unpack it in some
+     * cases (x.nMem == 0 condition branch)
+     */
+    assert( x.nMem > 0 || x.nKey > 0 );
+    if( x.nMem == 0 ){
+      pIdxKey = sqlite3VdbeAllocUnpackedRecord(pC->pKeyInfo);
+      if( pIdxKey==0 ) goto no_mem;
+      sqlite3VdbeRecordUnpack(pC->pKeyInfo, x.nKey, x.pKey, pIdxKey);
+      rc = vectorIndexInsert(pC->uc.pVecIdx, pIdxKey, &p->zErrMsg);
+      /* 
+       * vectorIndexInsert can allocate additional memory for sqlite3_value (usually during sqlite3_value_text/sqlite3_value_blob calls)
+       * so, we need to explicitly clear it before freeing whole UnpackedRecord with single free(...) call
+      */
+      for(i = 0; i < pIdxKey->nField; i++){
+        sqlite3VdbeMemRelease(pIdxKey->aMem + i);
+      }
+      sqlite3DbFreeNN(db, pIdxKey);
+    }else {
+      idxKeyStatic.nField = x.nMem;
+      idxKeyStatic.aMem = x.aMem;
+      rc = vectorIndexInsert(pC->uc.pVecIdx, &idxKeyStatic, &p->zErrMsg);
+    }
+    if( rc ) goto abort_due_to_error;
+    break;
+  }
+#endif
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->isTable==0 );
   rc = ExpandBlob(pIn2);
@@ -6587,6 +6673,18 @@ case OP_IdxDelete: {
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+#ifndef SQLITE_OMIT_VECTOR
+  if( isVectorCursor(pC) ) {
+    sqlite3VdbeIncrWriteCounter(p, pC);
+    r.pKeyInfo = pC->pKeyInfo;
+    r.nField = (u16)pOp->p3;
+    r.default_rc = 0;
+    r.aMem = &aMem[pOp->p2];
+    rc = vectorIndexDelete(pC->uc.pVecIdx, &r, &p->zErrMsg);
+    if( rc ) goto abort_due_to_error;
+    break;
+  }
+#endif
   assert( pC->eCurType==CURTYPE_BTREE );
   sqlite3VdbeIncrWriteCounter(p, pC);
   pCrsr = pC->uc.pCursor;

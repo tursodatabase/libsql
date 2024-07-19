@@ -401,7 +401,7 @@ void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
   vectorDump(&vector);
   for(i = 0; i < nEdges; i++){
     nodeBinEdge(pIndex, pBlobSpot, i, &nRowid, &vector);
-    DiskAnnTrace(("  to=%d, vector=", i, nRowid));
+    DiskAnnTrace(("  to=%lld, vector=", nRowid, nRowid));
     vectorDump(&vector);
   }
 #endif
@@ -726,6 +726,8 @@ static float diskAnnVectorDistance(const DiskAnnIndex *pIndex, const Vector *pVe
   switch( pIndex->nDistanceFunc ){
     case VECTOR_METRIC_TYPE_COS:
       return vectorDistanceCos(pVec1, pVec2);
+    case VECTOR_METRIC_TYPE_L2:
+      return vectorDistanceL2(pVec1, pVec2);
     default:
       assert(0);
     break;
@@ -924,7 +926,7 @@ static int diskAnnSearchCtxFindClosestCandidateIdx(const DiskAnnSearchCtx *pCtx)
 // return position for new edge(C) which will replace previous edge on that position or -1 if we should ignore it
 // we also check that no current edge(B) will "prune" new vertex: i.e. dist(B, C) >= (means worse than) alpha * dist(node, C) for all current edges
 // if any edge(B) will "prune" new edge(C) we will ignore it (return -1)
-static int diskAnnReplaceEdgeIdx(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob, const Vector *pNewVector) {
+static int diskAnnReplaceEdgeIdx(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob, u64 newRowid, const Vector *pNewVector) {
   int i, nEdges, nMaxEdges, iReplace = -1;
   Vector nodeVector, edgeVector;
   float nodeToNew, nodeToReplace;
@@ -935,9 +937,15 @@ static int diskAnnReplaceEdgeIdx(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob
   nodeToNew = diskAnnVectorDistance(pIndex, &nodeVector, pNewVector);
 
   for(i = nEdges - 1; i >= 0; i--){
+    u64 edgeRowid;
     float edgeToNew, nodeToEdge;
     
-    nodeBinEdge(pIndex, pNodeBlob, i, NULL, &edgeVector);
+    nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, &edgeVector);
+    if( edgeRowid == newRowid ){
+      // deletes can leave "zombie" edges in the graph and we must override them and not store duplicate edges in the node
+      return i;
+    }
+
     edgeToNew = diskAnnVectorDistance(pIndex, &edgeVector, pNewVector);
     nodeToEdge = diskAnnVectorDistance(pIndex, &nodeVector, &edgeVector);
     if( nodeToNew > pIndex->pruningAlpha * edgeToNew ){
@@ -1250,6 +1258,13 @@ int diskAnnInsert(
     rc = SQLITE_ERROR;
     goto out;
   }
+  if( !first ){
+    // search is made before insetion in order to simplify life with "zombie" edges which can have same IDs as new inserted row
+    rc = diskAnnSearchInternal(pIndex, &ctx, nStartRowid, pzErrMsg);
+    if( rc != SQLITE_OK ){
+      goto out;
+    }
+  }
 
   rc = diskAnnInsertShadowRow(pIndex, pVectorInRow, &nNewRowid);
   if( rc != SQLITE_OK ){
@@ -1269,19 +1284,13 @@ int diskAnnInsert(
     rc = SQLITE_OK;
     goto out;
   }
-
-  rc = diskAnnSearchInternal(pIndex, &ctx, nStartRowid, pzErrMsg);
-  if( rc != SQLITE_OK ){
-    goto out;
-  }
-
   // first pass - add all visited nodes as a potential neighbours of new node
   for(pVisited = ctx.visitedList; pVisited != NULL; pVisited = pVisited->pNext){
     Vector vector;
     int iReplace;
 
     nodeBinVector(pIndex, pVisited->pBlobSpot, &vector);
-    iReplace = diskAnnReplaceEdgeIdx(pIndex, pBlobSpot, &vector);
+    iReplace = diskAnnReplaceEdgeIdx(pIndex, pBlobSpot, pVisited->nRowid, &vector);
     if( iReplace == -1 ){
       continue;
     }
@@ -1293,7 +1302,7 @@ int diskAnnInsert(
   for(pVisited = ctx.visitedList; pVisited != NULL; pVisited = pVisited->pNext){
     int iReplace;
 
-    iReplace = diskAnnReplaceEdgeIdx(pIndex, pVisited->pBlobSpot, pVectorInRow->pVector);
+    iReplace = diskAnnReplaceEdgeIdx(pIndex, pVisited->pBlobSpot, nNewRowid, pVectorInRow->pVector);
     if( iReplace == -1 ){
       continue;
     }
