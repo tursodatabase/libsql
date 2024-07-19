@@ -6576,10 +6576,11 @@ case OP_IdxInsert: {        /* in2 */
     x.pKey = pIn2->z;
     x.aMem = aMem + pOp->p3;
     x.nMem = (u16)pOp->p4.i;
-    /* 
-     * Key can be provided in packed format (only pKey and nKey are set) to the btree (for example, during the REINDEX)
-     * So we need to unpack it in some cases (x.nMem == 0 condition branch)
-    */
+    /*
+     * Key can be provided in packed format (only pKey and nKey are set) to the
+     * btree (for example, during the REINDEX) So we need to unpack it in some
+     * cases (x.nMem == 0 condition branch)
+     */
     assert( x.nMem > 0 || x.nKey > 0 );
     if( x.nMem == 0 ){
       pIdxKey = sqlite3VdbeAllocUnpackedRecord(pC->pKeyInfo);

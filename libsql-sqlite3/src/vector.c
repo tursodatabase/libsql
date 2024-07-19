@@ -143,7 +143,8 @@ static int vectorParseSqliteText(
   float *elemsFloat;
   double *elemsDouble;
   int iElem = 0;
-  // one more extra character in order to safely print data from elBuf with printf-like method; will be set to zero later
+  // one more extra character in order to safely print data from elBuf with
+  // printf-like method; will be set to zero later
   char valueBuf[MAX_FLOAT_CHAR_SZ + 1];
   int iBuf = 0;
 

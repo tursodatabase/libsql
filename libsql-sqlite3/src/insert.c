@@ -2693,11 +2693,17 @@ int sqlite3OpenTableAndIndices(
     }
     if( aToOpen==0 || aToOpen[i+1] ){
       /*
-       ** sqlite3OpenTableAndIndices is called for 'PRAGMA integrity_check' and we can't emit OP_OpenVectorIdx command for this operation;
-       ** As vector index creates empty B-tree index - it's safe to issue OP_OpenRead command for it
-       ** TODO: with current implementation, integrity_check will output error for vector index as rows will be missed in it
-       ** It's better to remove this error in future - but for now it's unclear how to do that with minimal code changes
-      */
+       * sqlite3OpenTableAndIndices is called for 'PRAGMA integrity_check' and
+       * we can't emit OP_OpenVectorIdx command for this operation;
+       *
+       * As vector index creates empty B-tree index - it's safe to issue
+       * OP_OpenRead command for it
+       *
+       * TODO: with current implementation, integrity_check will output error
+       * for vector index as rows will be missed in it
+       * It's better to remove this error in future - but for now it's unclear
+       * how to do that with minimal code changes
+       */
 #ifndef SQLITE_OMIT_VECTOR
       if( IsVectorIndex(pIdx) && op == OP_OpenWrite ){
         sqlite3VdbeAddOp3(v, OP_OpenVectorIdx, iIdxCur, pIdx->tnum, iDb);

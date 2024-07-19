@@ -2636,7 +2636,11 @@ struct FKey {
 ** for the rowid at the end.
 */
 struct KeyInfo {
-  char *zIndexName;   /* Name of the index.  Might be NULL */
+  /*
+   * zIndexName is used in OP_OpenVectorIdx op-code and required for libSQL
+   * vector indices as they operate with names rather than with page numbers
+  */
+  char *zIndexName;   /* Name of the index (might be NULL) */
   u32 nRef;           /* Number of references to this KeyInfo object */
   u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
   u16 nKeyField;      /* Number of key columns in the index */
@@ -2702,6 +2706,7 @@ struct UnpackedRecord {
   i8 r2;              /* Value to return if (lhs > rhs) */
   u8 eqSeen;          /* True if an equality comparison has been seen */
 };
+
 
 /*
 ** Each SQL index is represented in memory by an
@@ -2807,6 +2812,9 @@ struct Index {
 
 /* Return true if index X is a vector index */
 #define IsVectorIndex(X)  ((X)->idxType==SQLITE_IDXTYPE_VECTOR)
+
+/* Return true if index X is an user defined index (APPDEF or VECTOR) */
+#define IsAppDefIndex(X)  ((X)->idxType==SQLITE_IDXTYPE_APPDEF||(X)->idxType==SQLITE_IDXTYPE_VECTOR)
 
 /* The Index.aiColumn[] values are normally positive integer.  But
 ** there are some negative values that have special meaning:

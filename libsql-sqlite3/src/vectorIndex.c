@@ -551,7 +551,7 @@ int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, const ch
 }
 
 int initVectorIndexMetaTable(sqlite3* db) {
-  static const char *zSql = "CREATE TABLE IF NOT EXISTS " VECTOR_INDEX_GLOBAL_META_TABLE " ( name TEXT, metadata BLOB );";
+  static const char *zSql = "CREATE TABLE IF NOT EXISTS " VECTOR_INDEX_GLOBAL_META_TABLE " ( name TEXT PRIMARY KEY, metadata BLOB ) WITHOUT ROWID;";
   return sqlite3_exec(db, zSql, 0, 0, 0);
 }
 
