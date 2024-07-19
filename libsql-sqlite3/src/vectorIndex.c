@@ -700,6 +700,12 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, const IdList *pUsing) {
   VectorIdxParams idxParams;
   vectorIdxParamsInit(&idxParams, NULL, 0);
 
+  if( pParse->eParseMode ){
+    // scheme can be re-parsed by SQLite for different reasons (for example, to check schema after
+    // ALTER COLUMN statements) - so we must skip creation in such cases
+    goto ignored;
+  }
+
   // backward compatibility: preserve old indices with deprecated syntax but forbid creation of new indices with this syntax
   if( pParse->db->init.busy == 0 && pUsing != NULL ){
     if( pIdx->zName != NULL && pTable->zName != NULL && pIdx->nKeyCol == 1 && pIdx->aiColumn != NULL && pIdx->aiColumn[0] < pTable->nCol ){
