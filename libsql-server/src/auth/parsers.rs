@@ -49,6 +49,10 @@ pub(crate) fn parse_grpc_auth_header(
 
     let mut auth_header_seen = false;
 
+    if required_fields.is_empty() {
+        return Ok(context);
+    }
+
     for field in required_fields.iter() {
         if let Some(h) = metadata.get(*field) {
             let v = h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii)?;
