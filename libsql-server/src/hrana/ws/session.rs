@@ -104,8 +104,10 @@ pub(super) async fn handle_hello(
         .map(Auth::new)
         .unwrap_or_else(|| server.user_auth_strategy.clone());
 
+    let token = jwt.map(|t| format!("Bearer {}", t));
+
     let context: UserAuthContext =
-        build_context(jwt, &auth_strategy.user_strategy.required_fields());
+        build_context(token, &auth_strategy.user_strategy.required_fields());
 
     auth_strategy
         .authenticate(context)

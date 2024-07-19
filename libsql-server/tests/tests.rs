@@ -3,6 +3,7 @@
 #[macro_use]
 mod common;
 
+mod auth;
 mod cluster;
 mod embedded_replica;
 mod hrana;

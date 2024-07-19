@@ -62,7 +62,6 @@ pub trait UserAuthStrategy: Sync + Send {
     ///
     /// The caller is responsible for providing at least one of these fields in UserAuthContext.
     /// The caller should assume the strategy will not work if none of the required fields is provided.
-    ///
     fn required_fields(&self) -> Vec<&'static str> {
         vec![]
     }
