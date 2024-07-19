@@ -34,13 +34,15 @@ impl MigrationTask {
     }
 }
 
+pub(crate) type MigrationProgress = [usize; MigrationTaskStatus::num_variants()];
+
 #[derive(Debug, Clone)]
 pub struct MigrationJob {
     pub(super) schema: NamespaceName,
     pub(super) status: MigrationJobStatus,
     pub(super) job_id: i64,
     pub(super) migration: Arc<Program>,
-    pub(super) progress: [usize; MigrationTaskStatus::num_variants()],
+    pub(super) progress: MigrationProgress,
     /// error info for the task that failed the job
     pub(super) task_error: Option<(i64, String, NamespaceName)>,
 }
