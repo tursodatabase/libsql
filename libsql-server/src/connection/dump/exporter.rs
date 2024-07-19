@@ -39,7 +39,7 @@ impl<W: Write> DumpState<W> {
             } else if table.starts_with(b"sqlite_stat") {
                 writeln!(self.writer, "ANALYZE sqlite_schema;")?;
             } else if table.starts_with(b"sqlite_") {
-                return Ok(());
+                continue;
             } else if sql.starts_with(b"CREATE VIRTUAL TABLE") {
                 if !self.writable_schema {
                     writeln!(self.writer, "PRAGMA writable_schema=ON;")?;
@@ -54,7 +54,7 @@ impl<W: Write> DumpState<W> {
                     table_str,
                     std::str::from_utf8(sql)?
                 )?;
-                return Ok(());
+                continue;
             } else {
                 if sql.starts_with(b"CREATE TABLE") {
                     self.writer.write_all(b"CREATE TABLE IF NOT EXISTS ")?;
@@ -106,12 +106,12 @@ impl<W: Write> DumpState<W> {
                         write_value_ref(&mut self.writer, row.get_ref(0)?)?;
                     }
 
-                    let start_index = row_id_col.is_some() as usize;
-                    for i in start_index..colss.len() {
+                    let offset = row_id_col.is_some() as usize;
+                    for i in 0..colss.len() {
                         if i != 0 || row_id_col.is_some() {
                             write!(self.writer, ",")?;
                         }
-                        write_value_ref(&mut self.writer, row.get_ref(i)?)?;
+                        write_value_ref(&mut self.writer, row.get_ref(i + offset)?)?;
                     }
                     writeln!(self.writer, ");")?;
                 }
