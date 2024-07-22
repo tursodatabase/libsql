@@ -19,8 +19,8 @@ use libsql_sys::name::NamespaceName;
 use roaring::RoaringBitmap;
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
 use tokio_util::sync::ReusableBoxFuture;
+use zerocopy::byteorder::little_endian::{U16 as lu16, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
-use zerocopy::byteorder::little_endian::{U64 as lu64, U16 as lu16, U32 as lu32};
 
 use super::{Backend, SegmentMeta};
 use crate::io::buf::ZeroCopyBuf;
@@ -46,7 +46,6 @@ impl S3Backend<StdIO> {
         Self::from_sdk_config_with_io(aws_config, bucket, cluster_id, StdIO(())).await
     }
 }
-
 
 /// Header for segment index stored into s3
 #[repr(C)]
@@ -174,7 +173,7 @@ impl<IO: Io> S3Backend<IO> {
             return Err(Error::InvalidIndex("index header magic or version invalid"));
         }
         let mut data = Vec::with_capacity(header.len.get() as _);
-        while stream.read_buf(&mut data).await? != 0 { }
+        while stream.read_buf(&mut data).await? != 0 {}
         let checksum = crc32fast::hash(&data);
         if checksum != header.checksum.get() {
             return Err(Error::InvalidIndex("invalid index data checksum"));
@@ -435,7 +434,8 @@ where
             magic: LIBSQL_MAGIC.into(),
         };
 
-        let mut bytes = BytesMut::with_capacity(size_of::<SegmentIndexHeader>() + segment_index.len());
+        let mut bytes =
+            BytesMut::with_capacity(size_of::<SegmentIndexHeader>() + segment_index.len());
         bytes.extend_from_slice(header.as_bytes());
         bytes.extend_from_slice(&segment_index);
 
