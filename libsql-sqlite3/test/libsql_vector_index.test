@@ -210,6 +210,24 @@ do_execsql_test vector-index-dont-affect-sql {
   SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[7,8]');
 } {4 1 1 2 3 4}
 
+do_execsql_test vector-attach {
+  CREATE TABLE t_attach ( emb FLOAT32(2) );
+  INSERT INTO t_attach VALUES (vector('[1,2]')), (vector('[3,4]'));
+  CREATE INDEX t_attach_idx ON t_attach(libsql_vector_idx(emb));
+  ATTACH ':memory:' as "q u o t e "" h e r e ";
+  CREATE TABLE "q u o t e "" h e r e ".t_attach ( emb FLOAT32(2) );
+  INSERT INTO "q u o t e "" h e r e ".t_attach VALUES (vector('[5,6]')), (vector('[7,8]'));
+  CREATE INDEX "q u o t e "" h e r e ".t_attach_idx ON t_attach(libsql_vector_idx(emb));
+  SELECT rowid FROM vector_top_k('t_attach_idx', vector('[5,6]'), 4);
+} {2 1}
+
+do_execsql_test vector-vacuum {
+  CREATE TABLE t_vacuum ( emb FLOAT32(2) );
+  INSERT INTO t_vacuum VALUES (vector('[1,2]')), (vector('[3,4]'));
+  CREATE INDEX t_vacuum_idx ON t_vacuum(libsql_vector_idx(emb));
+  VACUUM INTO 't_vacuum.db';
+} {}
+
 proc error_messages {sql} {
   set ret ""
   catch {
