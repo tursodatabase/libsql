@@ -1,6 +1,7 @@
 //! S3 implementation of storage backend
 
 use std::fmt;
+use std::mem::size_of;
 use std::path::Path;
 use std::pin::Pin;
 use std::str::FromStr;
@@ -13,14 +14,22 @@ use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::Client;
 use bytes::{Bytes, BytesMut};
-use http_body::{Frame, SizeHint};
+use http_body::{Frame as HttpFrame, SizeHint};
 use libsql_sys::name::NamespaceName;
+use roaring::RoaringBitmap;
+use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
 use tokio_util::sync::ReusableBoxFuture;
+use zerocopy::byteorder::little_endian::{U16 as lu16, U32 as lu32, U64 as lu64};
+use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
 use super::{Backend, SegmentMeta};
+use crate::io::buf::ZeroCopyBuf;
 use crate::io::compat::copy_to_file;
 use crate::io::{FileExt, Io, StdIO};
-use crate::storage::{Error, Result};
+use crate::segment::compacted::CompactedSegmentDataHeader;
+use crate::segment::Frame;
+use crate::storage::{Error, RestoreOptions, Result};
+use crate::LIBSQL_MAGIC;
 
 pub struct S3Backend<IO> {
     client: Client,
@@ -36,6 +45,16 @@ impl S3Backend<StdIO> {
     ) -> Result<S3Backend<StdIO>> {
         Self::from_sdk_config_with_io(aws_config, bucket, cluster_id, StdIO(())).await
     }
+}
+
+/// Header for segment index stored into s3
+#[repr(C)]
+#[derive(Copy, Clone, Debug, AsBytes, FromZeroes, FromBytes)]
+struct SegmentIndexHeader {
+    magic: lu64,
+    version: lu16,
+    len: lu64,
+    checksum: lu32,
 }
 
 impl<IO: Io> S3Backend<IO> {
@@ -91,20 +110,28 @@ impl<IO: Io> S3Backend<IO> {
         })
     }
 
+    async fn fetch_segment_data_reader(
+        &self,
+        config: &S3Config,
+        folder_key: &FolderKey<'_>,
+        segment_key: &SegmentKey,
+    ) -> Result<impl AsyncRead> {
+        let key = s3_segment_data_key(folder_key, segment_key);
+        let stream = self.s3_get(config, key).await?;
+        Ok(stream.into_async_read())
+    }
+
     async fn fetch_segment_data(
         &self,
         config: &S3Config,
         folder_key: &FolderKey<'_>,
         segment_key: &SegmentKey,
-        dest_path: &Path,
+        file: &impl FileExt,
     ) -> Result<()> {
-        let key = s3_segment_data_key(folder_key, segment_key);
-        let stream = self.s3_get(config, key).await?;
-        let reader = stream.into_async_read();
-        // TODO: make open async
-        let file = self.io.open(false, false, true, dest_path)?;
+        let reader = self
+            .fetch_segment_data_reader(config, folder_key, segment_key)
+            .await?;
         copy_to_file(reader, file).await?;
-
         Ok(())
     }
 
@@ -116,8 +143,20 @@ impl<IO: Io> S3Backend<IO> {
             .key(key)
             .send()
             .await
-            .unwrap()
+            .map_err(|e| Error::unhandled(e, "error sending s3 GET request"))?
             .body)
+    }
+
+    async fn s3_put(&self, config: &S3Config, key: String, body: ByteStream) -> Result<()> {
+        self.client
+            .put_object()
+            .bucket(&config.bucket)
+            .body(body)
+            .key(key)
+            .send()
+            .await
+            .map_err(|e| Error::unhandled(e, "error sending s3 PUT request"))?;
+        Ok(())
     }
 
     async fn fetch_segment_index(
@@ -127,10 +166,19 @@ impl<IO: Io> S3Backend<IO> {
         segment_key: &SegmentKey,
     ) -> Result<fst::Map<Vec<u8>>> {
         let s3_index_key = s3_segment_index_key(folder_key, segment_key);
-        let stream = self.s3_get(config, s3_index_key).await?;
-        // TODO: parse header, check if too large to fit memory
-        let bytes = stream.collect().await.unwrap().to_vec();
-        let index = fst::Map::new(bytes).unwrap();
+        let mut stream = self.s3_get(config, s3_index_key).await?.into_async_read();
+        let mut header: SegmentIndexHeader = SegmentIndexHeader::new_zeroed();
+        stream.read_exact(header.as_bytes_mut()).await?;
+        if header.magic.get() != LIBSQL_MAGIC && header.version.get() != 1 {
+            return Err(Error::InvalidIndex("index header magic or version invalid"));
+        }
+        let mut data = Vec::with_capacity(header.len.get() as _);
+        while stream.read_buf(&mut data).await? != 0 {}
+        let checksum = crc32fast::hash(&data);
+        if checksum != header.checksum.get() {
+            return Err(Error::InvalidIndex("invalid index data checksum"));
+        }
+        let index = fst::Map::new(data).map_err(|_| Error::InvalidIndex("invalid index bytes"))?;
         Ok(index)
     }
 
@@ -150,22 +198,99 @@ impl<IO: Io> S3Backend<IO> {
             .start_after(lookup_key)
             .send()
             .await
-            .unwrap();
+            .map_err(|e| Error::unhandled(e, "failed to list bucket"))?;
 
         let Some(contents) = objects.contents().first() else {
             return Ok(None);
         };
-        let key = contents.key().unwrap();
+        let key = contents.key().expect("misssing key?");
         let key_path: &Path = key.as_ref();
         let segment_key: SegmentKey = key_path
             .file_stem()
-            .unwrap()
+            .expect("invalid key")
             .to_str()
-            .unwrap()
+            .expect("invalid key")
             .parse()
-            .unwrap();
+            .expect("invalid key");
 
         Ok(Some(segment_key))
+    }
+
+    // This method could probably be optimized a lot by using indexes and only downloading useful
+    // segments
+    async fn restore_latest(
+        &self,
+        config: &S3Config,
+        namespace: &NamespaceName,
+        dest: impl FileExt,
+    ) -> Result<()> {
+        let folder_key = FolderKey {
+            cluster_id: &config.cluster_id,
+            namespace,
+        };
+        let Some(latest_key) = self.find_segment(config, &folder_key, u64::MAX).await? else {
+            tracing::info!("nothing to restore for {namespace}");
+            return Ok(());
+        };
+
+        let reader = self
+            .fetch_segment_data_reader(config, &folder_key, &latest_key)
+            .await?;
+        let mut reader = BufReader::new(reader);
+        let mut header: CompactedSegmentDataHeader = CompactedSegmentDataHeader::new_zeroed();
+        reader.read_exact(header.as_bytes_mut()).await?;
+        let db_size = header.size_after.get();
+        let mut seen = RoaringBitmap::new();
+        let mut frame: Frame = Frame::new_zeroed();
+        loop {
+            for _ in 0..header.frame_count.get() {
+                reader.read_exact(frame.as_bytes_mut()).await?;
+                let page_no = frame.header().page_no();
+                if !seen.contains(page_no) {
+                    seen.insert(page_no);
+                    let offset = (page_no as u64 - 1) * 4096;
+                    let buf = ZeroCopyBuf::new_init(frame).map_slice(|f| f.get_ref().data());
+                    let (buf, ret) = dest.write_all_at_async(buf, offset).await;
+                    ret?;
+                    frame = buf.into_inner().into_inner();
+                }
+            }
+
+            // db is restored
+            if seen.len() == db_size as u64 {
+                break;
+            }
+
+            let next_frame_no = header.start_frame_no.get() - 1;
+            let Some(key) = self
+                .find_segment(config, &folder_key, next_frame_no)
+                .await?
+            else {
+                todo!("there should be a segment!");
+            };
+            let r = self
+                .fetch_segment_data_reader(config, &folder_key, &key)
+                .await?;
+            reader = BufReader::new(r);
+            reader.read_exact(header.as_bytes_mut()).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn fetch_segment_from_key(
+        &self,
+        config: &S3Config,
+        folder_key: &FolderKey<'_>,
+        segment_key: &SegmentKey,
+        dest_file: &impl FileExt,
+    ) -> Result<fst::Map<Vec<u8>>> {
+        let (_, index) = tokio::try_join!(
+            self.fetch_segment_data(config, &folder_key, &segment_key, dest_file),
+            self.fetch_segment_index(config, &folder_key, &segment_key),
+        )?;
+
+        Ok(index)
     }
 }
 
@@ -194,12 +319,12 @@ pub struct S3Config {
 /// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 1000 };
 /// map.insert(SegmentKey(&meta).to_string(), meta);
 ///
-/// dbg!(map.range(format!("{:019}", u64::MAX - 50)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 0)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 1)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 100)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 101)..).next());
-/// dbg!(map.range(format!("{:019}", u64::MAX - 5000)..).next());
+/// map.range(format!("{:019}", u64::MAX - 50)..).next();
+/// map.range(format!("{:019}", u64::MAX - 0)..).next();
+/// map.range(format!("{:019}", u64::MAX - 1)..).next();
+/// map.range(format!("{:019}", u64::MAX - 100)..).next();
+/// map.range(format!("{:019}", u64::MAX - 101)..).next();
+/// map.range(format!("{:019}", u64::MAX - 5000)..).next();
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct SegmentKey {
@@ -297,28 +422,26 @@ where
 
         let body = FileStreamBody::new(segment_data).into_byte_stream();
 
-        self.client
-            .put_object()
-            .bucket(&self.default_config.bucket)
-            .body(body)
-            .key(s3_data_key)
-            .send()
-            .await
-            .unwrap();
+        self.s3_put(config, s3_data_key, body).await?;
 
         let s3_index_key = s3_segment_index_key(&folder_key, &segment_key);
 
-        // TODO: store meta about the index?
-        let body = ByteStream::from(segment_index);
+        let checksum = crc32fast::hash(&segment_index);
+        let header = SegmentIndexHeader {
+            version: 1.into(),
+            len: (segment_index.len() as u64).into(),
+            checksum: checksum.into(),
+            magic: LIBSQL_MAGIC.into(),
+        };
 
-        self.client
-            .put_object()
-            .bucket(&self.default_config.bucket)
-            .body(body)
-            .key(s3_index_key)
-            .send()
-            .await
-            .unwrap();
+        let mut bytes =
+            BytesMut::with_capacity(size_of::<SegmentIndexHeader>() + segment_index.len());
+        bytes.extend_from_slice(header.as_bytes());
+        bytes.extend_from_slice(&segment_index);
+
+        let body = ByteStream::from(bytes.freeze());
+
+        self.s3_put(config, s3_index_key, body).await?;
 
         Ok(())
     }
@@ -326,7 +449,7 @@ where
     async fn fetch_segment(
         &self,
         config: &Self::Config,
-        namespace: NamespaceName,
+        namespace: &NamespaceName,
         frame_no: u64,
         dest_path: &Path,
     ) -> Result<fst::Map<Vec<u8>>> {
@@ -338,19 +461,22 @@ where
         let Some(segment_key) = self.find_segment(config, &folder_key, frame_no).await? else {
             return Err(Error::FrameNotFound(frame_no));
         };
-        if segment_key.includes(frame_no) {
-            let (_, index) = tokio::try_join!(
-                self.fetch_segment_data(config, &folder_key, &segment_key, dest_path),
-                self.fetch_segment_index(config, &folder_key, &segment_key),
-            )?;
 
-            Ok(index)
+        if segment_key.includes(frame_no) {
+            // TODO: make open async
+            let file = self.io.open(false, false, true, dest_path)?;
+            self.fetch_segment_from_key(config, &folder_key, &segment_key, &file)
+                .await
         } else {
-            todo!("not found");
+            return Err(Error::FrameNotFound(frame_no));
         }
     }
 
-    async fn meta(&self, config: &Self::Config, namespace: NamespaceName) -> Result<super::DbMeta> {
+    async fn meta(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+    ) -> Result<super::DbMeta> {
         // request a key bigger than any other to get the last segment
         let folder_key = FolderKey {
             cluster_id: &config.cluster_id,
@@ -366,6 +492,19 @@ where
 
     fn default_config(&self) -> Arc<Self::Config> {
         self.default_config.clone()
+    }
+
+    async fn restore(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        restore_options: RestoreOptions,
+        dest: impl FileExt,
+    ) -> Result<()> {
+        match restore_options {
+            RestoreOptions::Latest => self.restore_latest(config, &namespace, dest).await,
+            RestoreOptions::Timestamp(_) => todo!(),
+        }
     }
 }
 
@@ -422,7 +561,7 @@ where
     fn poll_frame(
         mut self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
-    ) -> Poll<Option<Result<Frame<Self::Data>, Self::Error>>> {
+    ) -> Poll<Option<Result<HttpFrame<Self::Data>, Self::Error>>> {
         loop {
             match self.state {
                 StreamState::Init => {
@@ -446,7 +585,7 @@ where
                         } else {
                             self.state = StreamState::Init;
                             self.current_offset += buf.len() as u64;
-                            return Poll::Ready(Some(Ok(Frame::data(buf))));
+                            return Poll::Ready(Some(Ok(HttpFrame::data(buf))));
                         }
                     }
                     Poll::Ready(Err(e)) => {
@@ -558,7 +697,7 @@ mod tests {
             .await
             .unwrap();
 
-        let db_meta = storage.meta(&s3_config, ns.clone()).await.unwrap();
+        let db_meta = storage.meta(&s3_config, &ns).await.unwrap();
         assert_eq!(db_meta.max_frame_no, 64);
 
         let mut builder = MapBuilder::memory();
@@ -580,31 +719,31 @@ mod tests {
             .await
             .unwrap();
 
-        let db_meta = storage.meta(&s3_config, ns.clone()).await.unwrap();
+        let db_meta = storage.meta(&s3_config, &ns).await.unwrap();
         assert_eq!(db_meta.max_frame_no, 128);
 
         let tmp = NamedTempFile::new().unwrap();
 
         let index = storage
-            .fetch_segment(&s3_config, ns.clone(), 1, tmp.path())
+            .fetch_segment(&s3_config, &ns, 1, tmp.path())
             .await
             .unwrap();
         assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
 
         let index = storage
-            .fetch_segment(&s3_config, ns.clone(), 63, tmp.path())
+            .fetch_segment(&s3_config, &ns, 63, tmp.path())
             .await
             .unwrap();
         assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
 
         let index = storage
-            .fetch_segment(&s3_config, ns.clone(), 64, tmp.path())
+            .fetch_segment(&s3_config, &ns, 64, tmp.path())
             .await
             .unwrap();
         assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
 
         let index = storage
-            .fetch_segment(&s3_config, ns.clone(), 65, tmp.path())
+            .fetch_segment(&s3_config, &ns, 65, tmp.path())
             .await
             .unwrap();
         assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);

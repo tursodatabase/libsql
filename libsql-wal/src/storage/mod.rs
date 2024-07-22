@@ -18,6 +18,11 @@ mod scheduler;
 
 pub type Result<T, E = self::error::Error> = std::result::Result<T, E>;
 
+pub enum RestoreOptions {
+    Latest,
+    Timestamp(DateTime<Utc>),
+}
+
 pub trait Storage: Send + Sync + 'static {
     type Segment: Segment;
     type Config;
@@ -30,11 +35,25 @@ pub trait Storage: Send + Sync + 'static {
         config_override: Option<Arc<Self::Config>>,
     );
 
-    fn durable_frame_no(
+    fn durable_frame_no_sync(
         &self,
         namespace: &NamespaceName,
         config_override: Option<Arc<Self::Config>>,
     ) -> u64;
+
+    async fn durable_frame_no(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> u64;
+
+    async fn restore(
+        &self,
+        file: impl FileExt,
+        namespace: &NamespaceName,
+        restore_options: RestoreOptions,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> Result<()>;
 }
 
 /// a placeholder storage that doesn't store segment
@@ -53,10 +72,28 @@ impl Storage for NoStorage {
     ) {
     }
 
-    fn durable_frame_no(
+    async fn durable_frame_no(
+        &self,
+        namespace: &NamespaceName,
+        config: Option<Arc<Self::Config>>,
+    ) -> u64 {
+        self.durable_frame_no_sync(namespace, config)
+    }
+
+    async fn restore(
+        &self,
+        _file: impl FileExt,
+        _namespace: &NamespaceName,
+        _restore_options: RestoreOptions,
+        _config_override: Option<Arc<Self::Config>>,
+    ) -> Result<()> {
+        panic!("can restore from no storage")
+    }
+
+    fn durable_frame_no_sync(
         &self,
         _namespace: &NamespaceName,
-        _config: Option<Arc<Self::Config>>,
+        _config_override: Option<Arc<Self::Config>>,
     ) -> u64 {
         u64::MAX
     }
@@ -90,10 +127,28 @@ impl<F: FileExt + Send + Sync + 'static> Storage for TestStorage<F> {
     ) {
     }
 
-    fn durable_frame_no(
+    async fn durable_frame_no(
         &self,
         _namespace: &NamespaceName,
         _config: Option<Arc<Self::Config>>,
+    ) -> u64 {
+        u64::MAX
+    }
+
+    async fn restore(
+        &self,
+        _file: impl FileExt,
+        _namespace: &NamespaceName,
+        _restore_options: RestoreOptions,
+        _config_override: Option<Arc<Self::Config>>,
+    ) -> Result<()> {
+        todo!();
+    }
+
+    fn durable_frame_no_sync(
+        &self,
+        _namespace: &NamespaceName,
+        _config_override: Option<Arc<Self::Config>>,
     ) -> u64 {
         u64::MAX
     }

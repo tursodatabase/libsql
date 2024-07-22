@@ -11,6 +11,8 @@ pub mod storage;
 pub mod transaction;
 pub mod wal;
 
+const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
+
 #[cfg(any(debug_assertions, test))]
 pub mod test {
     use std::fs::OpenOptions;
@@ -56,23 +58,26 @@ pub mod test {
 
         pub fn shared(&self, namespace: &str) -> Arc<SharedWal<StdIO>> {
             let path = self.tmp.path().join(namespace).join("data");
-            self.registry
-                .clone()
-                .open(path.as_ref(), &NamespaceName::from_string(namespace.into()))
-                .unwrap()
+            let registry = self.registry.clone();
+            let namespace = NamespaceName::from_string(namespace.into());
+            registry.clone().open(path.as_ref(), &namespace).unwrap()
         }
 
         pub fn db_path(&self, namespace: &str) -> PathBuf {
             self.tmp.path().join(namespace)
         }
 
-        pub fn open_conn(&self, namespace: &str) -> libsql_sys::Connection<LibsqlWal<StdIO>> {
+        pub fn open_conn(
+            &self,
+            namespace: &'static str,
+        ) -> libsql_sys::Connection<LibsqlWal<StdIO>> {
             let path = self.db_path(namespace);
+            let wal = self.wal.clone();
             std::fs::create_dir_all(&path).unwrap();
             libsql_sys::Connection::open(
                 path.join("data"),
                 OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-                self.wal.clone(),
+                wal,
                 100000,
                 None,
             )
