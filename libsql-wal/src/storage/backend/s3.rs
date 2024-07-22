@@ -44,6 +44,17 @@ impl S3Backend<StdIO> {
     }
 }
 
+
+/// Header for segment index stored into s3
+#[repr(C)]
+#[derive(Copy, Clone, Debug, AsBytes, FromZeroes, FromBytes)]
+struct SegmentIndexHeader {
+    magic: lu64,
+    version: lu16,
+    len: lu64,
+    checksum: lu32,
+}
+
 impl<IO: Io> S3Backend<IO> {
     #[doc(hidden)]
     pub async fn from_sdk_config_with_io(
