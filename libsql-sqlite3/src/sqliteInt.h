@@ -2641,6 +2641,7 @@ struct KeyInfo {
    * vector indices as they operate with names rather than with page numbers
   */
   char *zIndexName;   /* Name of the index (might be NULL) */
+  char *zDbSName;     /* Name of the database schema (might be NULL) */
   u32 nRef;           /* Number of references to this KeyInfo object */
   u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
   u16 nKeyField;      /* Number of key columns in the index */

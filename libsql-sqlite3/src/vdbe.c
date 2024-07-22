@@ -4229,13 +4229,14 @@ case OP_OpenVectorIdx: {
   }else if( pOp->p4type==P4_INT32 ){
     nField = pOp->p4.i;
   }
+  assert( pKeyInfo->zDbSName != NULL );
   if( pOp->p5 == OPFLAG_FORDELETE ){
-    rc = vectorIndexClear(db, pKeyInfo->zIndexName);
+    rc = vectorIndexClear(db, pKeyInfo->zDbSName, pKeyInfo->zIndexName);
     if( rc ){
       goto abort_due_to_error;
     }
   }
-  rc = vectorIndexCursorInit(db, &cursor, pKeyInfo->zIndexName);
+  rc = vectorIndexCursorInit(db, pKeyInfo->zDbSName, pKeyInfo->zIndexName, &cursor);
   if( rc ) {
     goto abort_due_to_error;
   }

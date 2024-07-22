@@ -3323,6 +3323,7 @@ static void destroyTable(Parse *pParse, Table *pTab){
   Pgno iTab = pTab->tnum;
   Pgno iDestroyed = 0;
   Index *pIdx;
+  int iDb;
 
 #ifndef SQLITE_OMIT_VECTOR
   /*
@@ -3336,9 +3337,12 @@ static void destroyTable(Parse *pParse, Table *pTab){
    * 3. Delete index during the parsing stage (implemented variant) - it's hacky
    * and bit dirty but seems to me as pretty safe and easy way to delete index
    */
+  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( IsVectorIndex(pIdx) ){
-      vectorIndexDrop(pParse->db, pIdx->zName);
+      assert( 0 <= iDb && iDb < pParse->db->nDb );
+      vectorIndexDrop(pParse->db, pParse->db->aDb[iDb].zDbSName, pIdx->zName);
     }
   }
 #endif
@@ -4305,7 +4309,7 @@ void sqlite3CreateIndex(
 
 
 #ifndef SQLITE_OMIT_VECTOR
-  if( vectorIndexCreate(pParse, pIndex, pUsing) != SQLITE_OK ) {
+  if( vectorIndexCreate(pParse, pIndex, db->aDb[iDb].zDbSName, pUsing) != SQLITE_OK ) {
     goto exit_create_index;
   }
   idxType = pIndex->idxType; // vectorIndexCreate can update idxType to 4 (VECTOR INDEX)
@@ -4662,6 +4666,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
       "or PRIMARY KEY constraint cannot be dropped", 0);
     goto exit_drop_index;
   }
+  iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
 #ifndef SQLITE_OMIT_VECTOR
   /*
    * There are several places to delete vector index:
@@ -4675,10 +4680,9 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
    * and bit dirty but seems to me as pretty safe and easy way to delete index
    */
   if( IsVectorIndex(pIndex) ){
-    vectorIndexDrop(pParse->db, pIndex->zName);
+    vectorIndexDrop(pParse->db, pParse->db->aDb[iDb].zDbSName, pIndex->zName);
   }
 #endif
-  iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_INDEX;
@@ -5620,7 +5624,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 ** when it has finished using it.
 */
 KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
-  int i;
+  int i, iDb;
   int nCol = pIdx->nColumn;
   int nKey = pIdx->nKeyCol;
   KeyInfo *pKey;
@@ -5631,8 +5635,12 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     pKey = sqlite3KeyInfoAlloc(pParse->db, nCol, 0);
   }
   if( pKey ){
+    iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
     assert( sqlite3KeyInfoIsWriteable(pKey) );
     pKey->zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
+    if( 0 <= iDb && iDb < pParse->db->nDb ){
+      pKey->zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
+    }
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
