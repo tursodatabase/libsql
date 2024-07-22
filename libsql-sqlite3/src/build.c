@@ -3338,10 +3338,10 @@ static void destroyTable(Parse *pParse, Table *pTab){
    * and bit dirty but seems to me as pretty safe and easy way to delete index
    */
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-  assert( 0 <= iDb && iDb < pParse->db->nDb );
 
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( IsVectorIndex(pIdx) ){
+      assert( 0 <= iDb && iDb < pParse->db->nDb );
       vectorIndexDrop(pParse->db, pParse->db->aDb[iDb].zDbSName, pIdx->zName);
     }
   }
@@ -5636,10 +5636,11 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   }
   if( pKey ){
     iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
-    assert( 0 <= iDb && iDb < pParse->db->nDb );
     assert( sqlite3KeyInfoIsWriteable(pKey) );
     pKey->zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
-    pKey->zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
+    if( 0 <= iDb && iDb < pParse->db->nDb ){
+      pKey->zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
+    }
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :

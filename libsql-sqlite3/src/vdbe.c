@@ -4229,6 +4229,7 @@ case OP_OpenVectorIdx: {
   }else if( pOp->p4type==P4_INT32 ){
     nField = pOp->p4.i;
   }
+  assert( pKeyInfo->zDbSName != NULL );
   if( pOp->p5 == OPFLAG_FORDELETE ){
     rc = vectorIndexClear(db, pKeyInfo->zDbSName, pKeyInfo->zIndexName);
     if( rc ){

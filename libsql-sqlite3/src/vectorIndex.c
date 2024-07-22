@@ -553,7 +553,11 @@ int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, const ch
 int initVectorIndexMetaTable(sqlite3* db, const char *zDbSName) {
   int rc;
   static const char *zSqlTemplate = "CREATE TABLE IF NOT EXISTS \"%w\"." VECTOR_INDEX_GLOBAL_META_TABLE " ( name TEXT PRIMARY KEY, metadata BLOB ) WITHOUT ROWID;";
-  char* zSql = sqlite3_mprintf(zSqlTemplate, zDbSName);
+  char* zSql;
+
+  assert( zDbSName != NULL );
+
+  zSql = sqlite3_mprintf(zSqlTemplate, zDbSName);
   if( zSql == NULL ){
     return SQLITE_NOMEM_BKPT;
   }
@@ -566,7 +570,11 @@ int insertIndexParameters(sqlite3* db, const char *zDbSName, const char *zName, 
   int rc = SQLITE_ERROR;
   static const char *zSqlTemplate = "INSERT INTO \"%w\"." VECTOR_INDEX_GLOBAL_META_TABLE " VALUES (?, ?)";
   sqlite3_stmt* pStatement = NULL;
-  char *zSql = sqlite3_mprintf(zSqlTemplate, zDbSName);
+  char *zSql;
+
+  assert( zDbSName != NULL );
+
+  zSql = sqlite3_mprintf(zSqlTemplate, zDbSName);
   if( zSql == NULL ){
     return SQLITE_NOMEM_BKPT;
   }
@@ -689,12 +697,17 @@ out_free:
 int vectorIndexDrop(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
   // we want to try delete all traces of index on every attempt
   // this is done to prevent unrecoverable situations where index were dropped but index parameters deletion failed and second attempt will fail on first step
-  int rcIdx = diskAnnDropIndex(db, zDbSName, zIdxName);
-  int rcParams = removeIndexParameters(db, zIdxName);
+  int rcIdx, rcParams;
+
+  assert( zDbSName != NULL );
+
+  rcIdx = diskAnnDropIndex(db, zDbSName, zIdxName);
+  rcParams = removeIndexParameters(db, zIdxName);
   return rcIdx != SQLITE_OK ? rcIdx : rcParams;
 }
 
 int vectorIndexClear(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
+  assert( zDbSName != NULL );
   return diskAnnClearIndex(db, zDbSName, zIdxName);
 }
 
@@ -703,6 +716,8 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, const char *zDbSName, const Id
   int dims, type;
   int hasLibsqlVectorIdxFn = 0, hasCollation = 0;
   const char *pzErrMsg;
+
+  assert( zDbSName != NULL );
 
   sqlite3 *db = pParse->db;
   Table *pTable = pIdx->pTable;
@@ -839,6 +854,8 @@ int vectorIndexSearch(sqlite3 *db, const char* zDbSName, int argc, sqlite3_value
   VectorIdxParams idxParams;
   vectorIdxParamsInit(&idxParams, NULL, 0);
 
+  assert( zDbSName != NULL );
+
   if( argc != 3 ){
     *pzErrMsg = sqlite3_mprintf("vector search must have exactly 3 parameters");
     rc = SQLITE_ERROR;
@@ -953,6 +970,8 @@ int vectorIndexCursorInit(
   VectorIdxCursor* pCursor;
   VectorIdxParams params;
   vectorIdxParamsInit(&params, NULL, 0);
+
+  assert( zDbSName != NULL );
 
   if( vectorIndexGetParameters(db, zIndexName, &params) != 0 ){
     return SQLITE_ERROR;
