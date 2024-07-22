@@ -1513,6 +1513,7 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
     p->db = db;
     p->nRef = 1;
     p->zIndexName = NULL;
+    p->zDbSName = NULL;
     memset(&p[1], 0, nExtra);
   }else{
     return (KeyInfo*)sqlite3OomFault(db);
@@ -1531,6 +1532,9 @@ void sqlite3KeyInfoUnref(KeyInfo *p){
     if( p->nRef==0 ){
       if( p->zIndexName != NULL ){
         sqlite3DbFree(p->db, p->zIndexName);
+      }
+      if( p->zDbSName != NULL ){
+        sqlite3DbFree(p->db, p->zDbSName);
       }
       sqlite3DbNNFreeNN(p->db, p);
     }

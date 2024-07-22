@@ -31,8 +31,9 @@
 
 typedef struct vectorVtab vectorVtab;
 struct vectorVtab {
-  sqlite3_vtab base;     /* Base class - must be first */
-  sqlite3 *db;           /* Database connection */
+  sqlite3_vtab base;       /* Base class - must be first */
+  sqlite3 *db;             /* Database connection */
+  char* zDbSName;          /* Database schema name */
 };
 
 typedef struct vectorVtab_cursor vectorVtab_cursor;
@@ -55,26 +56,36 @@ static int vectorVtabConnect(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  vectorVtab *pVtab;
+  char *zDbSName = NULL;
+  vectorVtab *pVtab = NULL;
   int rc;
-  /* 
+  /*
+   * name of the database ignored by SQLite - so we don't need to provide any schema prefix here
    * hidden column are parameters of table-valued function (see https://www.sqlite.org/vtab.html#table_valued_functions)
   */
   rc = sqlite3_declare_vtab(db, "CREATE TABLE x(idx hidden, vector hidden, k hidden, id);");
   if( rc != SQLITE_OK ){
     return rc;
   }
-  pVtab = sqlite3_malloc( sizeof(*pVtab) );
+  pVtab = sqlite3_malloc( sizeof(vectorVtab) );
   if( pVtab == NULL ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
+  }
+  zDbSName = sqlite3DbStrDup(db, argv[1]); // argv[1] is the database schema name by spec (see https://www.sqlite.org/vtab.html#the_xcreate_method)
+  if( zDbSName == NULL ){
+    sqlite3_free(pVtab);
+    return SQLITE_NOMEM_BKPT;
   }
   memset(pVtab, 0, sizeof(*pVtab));
   pVtab->db = db;
+  pVtab->zDbSName = zDbSName;
   *ppVtab = (sqlite3_vtab*)pVtab;
   return SQLITE_OK;
 }
 
 static int vectorVtabDisconnect(sqlite3_vtab *pVtab){
+  vectorVtab *pVTab = (vectorVtab*)pVtab;
+  sqlite3DbFree(pVTab->db, pVTab->zDbSName);
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
@@ -132,7 +143,7 @@ static int vectorVtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 }
 
 static int vectorVtabFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
+  sqlite3_vtab_cursor *pVtabCursor,
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
@@ -141,7 +152,7 @@ static int vectorVtabFilter(
   pCur->rows.aIntValues = NULL;
   pCur->rows.ppValues = NULL;
 
-  if( vectorIndexSearch(pVTab->db, argc, argv, &pCur->rows, &pVTab->base.zErrMsg) != 0 ){
+  if( vectorIndexSearch(pVTab->db, pVTab->zDbSName, argc, argv, &pCur->rows, &pVTab->base.zErrMsg) != 0 ){
     return SQLITE_ERROR;
   }
 

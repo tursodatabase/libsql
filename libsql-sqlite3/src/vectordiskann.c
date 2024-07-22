@@ -169,7 +169,7 @@ int blobSpotCreate(const DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid
   }
 
   // open blob in the end so we don't need to close it in error case
-  rc = sqlite3_blob_open(pIndex->db, pIndex->zDb, pIndex->zShadow, "data", nRowid, isWritable, &pBlobSpot->pBlob);
+  rc = sqlite3_blob_open(pIndex->db, pIndex->zDbSName, pIndex->zShadow, "data", nRowid, isWritable, &pBlobSpot->pBlob);
   rc = blobSpotConvertRc(pIndex, rc);
   if( rc != SQLITE_OK ){
     goto out;
@@ -205,7 +205,7 @@ int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, 
     return SQLITE_OK;
   }
 
-  // if last blob open/reopen operation aborted - we need to close current blob and open new one 
+  // if last blob open/reopen operation aborted - we need to close current blob and open new one
   // (as all operations over aborted blob will return SQLITE_ABORT error)
   if( pBlobSpot->isAborted ){
     if( pBlobSpot->pBlob != NULL ){
@@ -216,7 +216,7 @@ int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, 
     pBlobSpot->isAborted = 0;
     pBlobSpot->nRowid = nRowid;
 
-    rc = sqlite3_blob_open(pIndex->db, pIndex->zDb, pIndex->zShadow, "data", nRowid, pBlobSpot->isWritable, &pBlobSpot->pBlob);
+    rc = sqlite3_blob_open(pIndex->db, pIndex->zDbSName, pIndex->zShadow, "data", nRowid, pBlobSpot->isWritable, &pBlobSpot->pBlob);
     rc = blobSpotConvertRc(pIndex, rc);
     if( rc != SQLITE_OK ){
       goto abort;
@@ -413,6 +413,7 @@ void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
 
 int diskAnnCreateIndex(
   sqlite3 *db,
+  const char *zDbSName,
   const char *zIdxName,
   const VectorIdxKey *pKey,
   VectorIdxParams *pParams
@@ -457,7 +458,8 @@ int diskAnnCreateIndex(
   }
   zSql = sqlite3MPrintf(
       db,
-      "CREATE TABLE IF NOT EXISTS %s_shadow (%s, data BLOB, PRIMARY KEY (%s))",
+      "CREATE TABLE IF NOT EXISTS \"%w\".%s_shadow (%s, data BLOB, PRIMARY KEY (%s))",
+      zDbSName,
       zIdxName,
       columnSqlDefs,
       columnSqlNames
@@ -467,15 +469,15 @@ int diskAnnCreateIndex(
   return rc;
 }
 
-int diskAnnClearIndex(sqlite3 *db, const char *zIdxName) {
-  char *zSql = sqlite3MPrintf(db, "DELETE FROM %s_shadow", zIdxName);
+int diskAnnClearIndex(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
+  char *zSql = sqlite3MPrintf(db, "DELETE FROM \"%w\".%s_shadow", zDbSName, zIdxName);
   int rc = sqlite3_exec(db, zSql, 0, 0, 0);
   sqlite3DbFree(db, zSql);
   return rc;
 }
 
-int diskAnnDropIndex(sqlite3 *db, const char *zIdxName){
-  char *zSql = sqlite3MPrintf(db, "DROP TABLE %s_shadow", zIdxName);
+int diskAnnDropIndex(sqlite3 *db, const char *zDbSName, const char *zIdxName){
+  char *zSql = sqlite3MPrintf(db, "DROP TABLE \"%w\".%s_shadow", zDbSName, zIdxName);
   int rc = sqlite3_exec(db, zSql, 0, 0, 0);
   sqlite3DbFree(db, zSql);
   return rc;
@@ -492,9 +494,9 @@ static int diskAnnSelectRandomShadowRow(const DiskAnnIndex *pIndex, u64 *pRowid)
   char *zSql = NULL;
 
   zSql = sqlite3MPrintf(
-    pIndex->db, 
-    "SELECT rowid FROM %s LIMIT 1 OFFSET ABS(RANDOM()) %% MAX((SELECT COUNT(*) FROM %s), 1)", 
-    pIndex->zShadow, pIndex->zShadow
+    pIndex->db,
+    "SELECT rowid FROM \"%w\".%s LIMIT 1 OFFSET ABS(RANDOM()) %% MAX((SELECT COUNT(*) FROM %s), 1)",
+    pIndex->zDbSName, pIndex->zShadow, pIndex->zShadow
   );
   if( zSql == NULL ){
     rc = SQLITE_NOMEM_BKPT;
@@ -544,7 +546,11 @@ static int diskAnnGetShadowRowid(const DiskAnnIndex *pIndex, const VectorInRow *
     rc = SQLITE_ERROR;
     goto out;
   }
-  zSql = sqlite3MPrintf(pIndex->db, "SELECT rowid FROM %s WHERE (%s) = (%s)", pIndex->zShadow, columnSqlNames, columnSqlPlaceholders);
+  zSql = sqlite3MPrintf(
+      pIndex->db,
+      "SELECT rowid FROM \"%w\".%s WHERE (%s) = (%s)",
+      pIndex->zDbSName, pIndex->zShadow, columnSqlNames, columnSqlPlaceholders
+  );
   if( zSql == NULL ){
     rc = SQLITE_NOMEM;
     goto out;
@@ -563,7 +569,7 @@ static int diskAnnGetShadowRowid(const DiskAnnIndex *pIndex, const VectorInRow *
   if( rc != SQLITE_ROW ){
     goto out;
   }
-  
+
   assert( sqlite3_column_type(pStmt, 0) == SQLITE_INTEGER );
   *pRowid = sqlite3_column_int64(pStmt, 0);
 
@@ -593,7 +599,11 @@ static int diskAnnGetShadowRowKeys(const DiskAnnIndex *pIndex, u64 nRowid, const
     rc = SQLITE_ERROR;
     goto out;
   }
-  zSql = sqlite3MPrintf(pIndex->db, "SELECT %s FROM %s WHERE rowid = ?", columnSqlNames, pIndex->zShadow);
+  zSql = sqlite3MPrintf(
+      pIndex->db,
+      "SELECT %s FROM \"%w\".%s WHERE rowid = ?",
+      columnSqlNames, pIndex->zDbSName, pIndex->zShadow
+  );
   if( zSql == NULL ){
     rc = SQLITE_NOMEM;
     goto out;
@@ -643,7 +653,11 @@ static int diskAnnInsertShadowRow(const DiskAnnIndex *pIndex, const VectorInRow 
     rc = SQLITE_ERROR;
     goto out;
   }
-  zSql = sqlite3MPrintf(pIndex->db, "INSERT INTO %s VALUES (%s, ?) RETURNING rowid", pIndex->zShadow, columnSqlPlaceholders);
+  zSql = sqlite3MPrintf(
+      pIndex->db,
+      "INSERT INTO \"%w\".%s VALUES (%s, ?) RETURNING rowid",
+      pIndex->zDbSName, pIndex->zShadow, columnSqlPlaceholders
+  );
   if( zSql == NULL ){
     rc = SQLITE_NOMEM_BKPT;
     goto out;
@@ -690,7 +704,11 @@ out:
 static int diskAnnDeleteShadowRow(const DiskAnnIndex *pIndex, i64 nRowid){
   int rc;
   sqlite3_stmt *pStmt = NULL;
-  char *zSql = sqlite3MPrintf(pIndex->db, "DELETE FROM %s WHERE rowid = ?", pIndex->zShadow);
+  char *zSql = sqlite3MPrintf(
+      pIndex->db,
+      "DELETE FROM \"%w\".%s WHERE rowid = ?",
+      pIndex->zDbSName, pIndex->zShadow
+  );
   if( zSql == NULL ){
     rc = SQLITE_NOMEM_BKPT;
     goto out;
@@ -939,7 +957,7 @@ static int diskAnnReplaceEdgeIdx(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob
   for(i = nEdges - 1; i >= 0; i--){
     u64 edgeRowid;
     float edgeToNew, nodeToEdge;
-    
+
     nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, &edgeVector);
     if( edgeRowid == newRowid ){
       // deletes can leave "zombie" edges in the graph and we must override them and not store duplicate edges in the node
@@ -1213,9 +1231,6 @@ int diskAnnSearch(
   }
   rc = SQLITE_OK;
 out:
-  if( rc != SQLITE_OK ){
-    vectorOutRowsFree(pIndex->db, pRows);
-  }
   diskAnnSearchCtxDeinit(&ctx);
   return rc;
 }
@@ -1409,6 +1424,7 @@ out:
 // open index with zIdxName and pParams serialized binary parameters and set result to the ppIndex
 int diskAnnOpenIndex(
   sqlite3 *db,                       /* Database connection */
+  const char *zDbSName,              /* Database schema name */
   const char *zIdxName,              /* Index name */
   const VectorIdxParams *pParams,    /* Index parameters */
   DiskAnnIndex **ppIndex             /* OUT: Index */
@@ -1419,9 +1435,13 @@ int diskAnnOpenIndex(
     return SQLITE_NOMEM;
   }
   pIndex->db = db;
-  pIndex->zDb = sqlite3DbStrDup(db, db->aDb[0].zDbSName);
+  pIndex->zDbSName = sqlite3DbStrDup(db, zDbSName);
   pIndex->zName = sqlite3DbStrDup(db, zIdxName);
   pIndex->zShadow = sqlite3MPrintf(db, "%s_shadow", zIdxName);
+  if( pIndex->zShadow == NULL ){
+    diskAnnCloseIndex(pIndex);
+    return SQLITE_NOMEM_BKPT;
+  }
   pIndex->nFormatVersion = vectorIdxParamsGetU64(pParams, VECTOR_FORMAT_PARAM_ID);
   pIndex->nDistanceFunc = vectorIdxParamsGetU64(pParams, VECTOR_METRIC_TYPE_PARAM_ID);
   pIndex->nBlockSize = vectorIdxParamsGetU64(pParams, VECTOR_BLOCK_SIZE_PARAM_ID) << DISKANN_BLOCK_SIZE_SHIFT;
@@ -1430,14 +1450,13 @@ int diskAnnOpenIndex(
   pIndex->pruningAlpha = vectorIdxParamsGetF64(pParams, VECTOR_PRUNING_ALPHA_PARAM_ID);
   pIndex->insertL = vectorIdxParamsGetU64(pParams, VECTOR_INSERT_L_PARAM_ID);
   pIndex->searchL = vectorIdxParamsGetU64(pParams, VECTOR_SEARCH_L_PARAM_ID);
-  if( pIndex->zShadow == NULL ||
-      pIndex->nDistanceFunc == 0 || 
-      pIndex->nBlockSize == 0 || 
-      pIndex->nNodeVectorType == 0 || 
-      pIndex->nVectorDims == 0 
+  if( pIndex->nDistanceFunc == 0 ||
+      pIndex->nBlockSize == 0 ||
+      pIndex->nNodeVectorType == 0 ||
+      pIndex->nVectorDims == 0
     ){
     diskAnnCloseIndex(pIndex);
-    return SQLITE_NOMEM;
+    return SQLITE_ERROR;
   }
   if( pIndex->pruningAlpha == 0 ){
     pIndex->pruningAlpha = VECTOR_PRUNING_ALPHA_DEFAULT;
@@ -1458,8 +1477,8 @@ int diskAnnOpenIndex(
 }
 
 void diskAnnCloseIndex(DiskAnnIndex *pIndex){
-  if( pIndex->zDb ){
-    sqlite3DbFree(pIndex->db, pIndex->zDb);
+  if( pIndex->zDbSName ){
+    sqlite3DbFree(pIndex->db, pIndex->zDbSName);
   }
   if( pIndex->zName ){
     sqlite3DbFree(pIndex->db, pIndex->zName);
