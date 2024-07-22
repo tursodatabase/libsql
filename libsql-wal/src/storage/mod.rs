@@ -35,6 +35,12 @@ pub trait Storage: Send + Sync + 'static {
         config_override: Option<Arc<Self::Config>>,
     );
 
+    fn durable_frame_no_sync(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> u64;
+
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
@@ -68,10 +74,10 @@ impl Storage for NoStorage {
 
     async fn durable_frame_no(
         &self,
-        _namespace: &NamespaceName,
-        _config: Option<Arc<Self::Config>>,
+        namespace: &NamespaceName,
+        config: Option<Arc<Self::Config>>,
     ) -> u64 {
-        u64::MAX
+        self.durable_frame_no_sync(namespace, config)
     }
 
     async fn restore(
@@ -82,6 +88,14 @@ impl Storage for NoStorage {
         _config_override: Option<Arc<Self::Config>>,
     ) -> Result<()> {
         panic!("can restore from no storage")
+    }
+
+    fn durable_frame_no_sync(
+        &self,
+        _namespace: &NamespaceName,
+        _config_override: Option<Arc<Self::Config>>,
+    ) -> u64 {
+        u64::MAX
     }
 }
 
@@ -129,6 +143,14 @@ impl<F: FileExt + Send + Sync + 'static> Storage for TestStorage<F> {
         _config_override: Option<Arc<Self::Config>>,
     ) -> Result<()> {
         todo!();
+    }
+
+    fn durable_frame_no_sync(
+        &self,
+        _namespace: &NamespaceName,
+        _config_override: Option<Arc<Self::Config>>,
+    ) -> u64 {
+        u64::MAX
     }
 }
 

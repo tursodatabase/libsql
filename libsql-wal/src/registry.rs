@@ -245,8 +245,7 @@ where
         let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
 
         // TODO: pass config override here
-        let max_frame_no = tokio::runtime::Handle::current()
-            .block_on(self.storage.durable_frame_no(&namespace, None));
+        let max_frame_no = self.storage.durable_frame_no_sync(&namespace, None);
         let durable_frame_no = max_frame_no.into();
 
         let shared = Arc::new(SharedWal {

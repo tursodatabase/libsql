@@ -197,6 +197,15 @@ where
             .restore(&config, &namespace, restore_options, file)
             .await
     }
+
+    fn durable_frame_no_sync(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> u64 {
+        tokio::runtime::Handle::current()
+            .block_on(self.durable_frame_no(namespace, config_override))
+    }
 }
 
 pub struct AsyncStorageInitConfig<B> {
