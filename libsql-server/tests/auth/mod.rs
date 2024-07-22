@@ -2,7 +2,6 @@
 #![allow(deprecated)]
 
 use futures::SinkExt as _;
-use jsonwebtoken::{DecodingKey, EncodingKey};
 use libsql::Database;
 use libsql_server::{
     auth::{
@@ -11,7 +10,6 @@ use libsql_server::{
     },
     config::UserApiConfig,
 };
-use ring::signature::{Ed25519KeyPair, KeyPair};
 use tempfile::tempdir;
 use tokio_stream::StreamExt;
 use tokio_tungstenite::{
@@ -20,7 +18,10 @@ use tokio_tungstenite::{
 };
 use turmoil::net::TcpStream;
 
-use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilConnector};
+use crate::common::{
+    auth::{encode, key_pair},
+    net::{init_tracing, SimServer, TestServer, TurmoilConnector},
+};
 
 async fn make_standalone_server(auth_strategy: Auth) -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
@@ -41,20 +42,14 @@ async fn make_standalone_server(auth_strategy: Auth) -> Result<(), Box<dyn std::
 }
 
 fn gen_test_jwt_auth() -> (Auth, String) {
-    let doc = Ed25519KeyPair::generate_pkcs8(&ring::rand::SystemRandom::new()).unwrap();
-    let encoding_key = EncodingKey::from_ed_der(doc.as_ref());
+    let (encoding_key, decoding_key) = key_pair();
+    let jwt_keys = vec![jsonwebtoken::DecodingKey::from_ed_components(&decoding_key).unwrap()];
 
-    let pair = Ed25519KeyPair::from_pkcs8(doc.as_ref()).unwrap();
-    let decoding_key = DecodingKey::from_ed_der(pair.public_key().as_ref());
+    let auth = Auth::new(user_auth_strategies::Jwt::new(jwt_keys));
 
     let claims = Token::default();
 
-    let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::EdDSA);
-    let token = jsonwebtoken::encode(&header, &claims, &encoding_key).unwrap();
-
-    let jwt_keys = vec![decoding_key];
-
-    let auth = Auth::new(user_auth_strategies::Jwt::new(jwt_keys));
+    let token = encode(&claims, &encoding_key);
 
     (auth, token)
 }
