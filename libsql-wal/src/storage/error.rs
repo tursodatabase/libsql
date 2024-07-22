@@ -17,8 +17,8 @@ pub enum Error {
         loc: String,
     },
     // We may recover from this error, and rebuild the index from the data file.
-    #[error("invalid index")]
-    InvalidIndex,
+    #[error("invalid index: {0}")]
+    InvalidIndex(&'static str),
 }
 
 impl Error {

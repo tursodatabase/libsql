@@ -1,6 +1,7 @@
 //! S3 implementation of storage backend
 
 use std::fmt;
+use std::mem::size_of;
 use std::path::Path;
 use std::pin::Pin;
 use std::str::FromStr;
@@ -18,7 +19,8 @@ use libsql_sys::name::NamespaceName;
 use roaring::RoaringBitmap;
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
 use tokio_util::sync::ReusableBoxFuture;
-use zerocopy::{AsBytes, FromZeroes};
+use zerocopy::byteorder::little_endian::{U16 as lu16, U32 as lu32, U64 as lu64};
+use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
 use super::{Backend, SegmentMeta};
 use crate::io::buf::ZeroCopyBuf;
@@ -27,6 +29,7 @@ use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegmentDataHeader;
 use crate::segment::Frame;
 use crate::storage::{Error, RestoreOptions, Result};
+use crate::LIBSQL_MAGIC;
 
 pub struct S3Backend<IO> {
     client: Client,
@@ -42,6 +45,16 @@ impl S3Backend<StdIO> {
     ) -> Result<S3Backend<StdIO>> {
         Self::from_sdk_config_with_io(aws_config, bucket, cluster_id, StdIO(())).await
     }
+}
+
+/// Header for segment index stored into s3
+#[repr(C)]
+#[derive(Copy, Clone, Debug, AsBytes, FromZeroes, FromBytes)]
+struct SegmentIndexHeader {
+    magic: lu64,
+    version: lu16,
+    len: lu64,
+    checksum: lu32,
 }
 
 impl<IO: Io> S3Backend<IO> {
@@ -153,14 +166,19 @@ impl<IO: Io> S3Backend<IO> {
         segment_key: &SegmentKey,
     ) -> Result<fst::Map<Vec<u8>>> {
         let s3_index_key = s3_segment_index_key(folder_key, segment_key);
-        let stream = self.s3_get(config, s3_index_key).await?;
-        // TODO: parse header, check if too large to fit memory
-        let bytes = stream
-            .collect()
-            .await
-            .map_err(|e| Error::unhandled(e, ""))?
-            .to_vec();
-        let index = fst::Map::new(bytes).map_err(|_| Error::InvalidIndex)?;
+        let mut stream = self.s3_get(config, s3_index_key).await?.into_async_read();
+        let mut header: SegmentIndexHeader = SegmentIndexHeader::new_zeroed();
+        stream.read_exact(header.as_bytes_mut()).await?;
+        if header.magic.get() != LIBSQL_MAGIC && header.version.get() != 1 {
+            return Err(Error::InvalidIndex("index header magic or version invalid"));
+        }
+        let mut data = Vec::with_capacity(header.len.get() as _);
+        while stream.read_buf(&mut data).await? != 0 {}
+        let checksum = crc32fast::hash(&data);
+        if checksum != header.checksum.get() {
+            return Err(Error::InvalidIndex("invalid index data checksum"));
+        }
+        let index = fst::Map::new(data).map_err(|_| Error::InvalidIndex("invalid index bytes"))?;
         Ok(index)
     }
 
@@ -408,8 +426,20 @@ where
 
         let s3_index_key = s3_segment_index_key(&folder_key, &segment_key);
 
-        // TODO: store meta about the index?
-        let body = ByteStream::from(segment_index);
+        let checksum = crc32fast::hash(&segment_index);
+        let header = SegmentIndexHeader {
+            version: 1.into(),
+            len: (segment_index.len() as u64).into(),
+            checksum: checksum.into(),
+            magic: LIBSQL_MAGIC.into(),
+        };
+
+        let mut bytes =
+            BytesMut::with_capacity(size_of::<SegmentIndexHeader>() + segment_index.len());
+        bytes.extend_from_slice(header.as_bytes());
+        bytes.extend_from_slice(&segment_index);
+
+        let body = ByteStream::from(bytes.freeze());
 
         self.s3_put(config, s3_index_key, body).await?;
 
