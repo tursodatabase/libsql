@@ -1,7 +1,7 @@
 use libsql_wal::test::TestEnv;
 
-#[test]
-fn transaction_rollback() {
+#[tokio::test]
+async fn transaction_rollback() {
     let env = TestEnv::new();
     let mut conn1 = env.open_conn("test");
     let conn2 = env.open_conn("test");
@@ -50,8 +50,8 @@ fn transaction_rollback() {
         .unwrap();
 }
 
-#[test]
-fn transaction_savepoints() {
+#[tokio::test]
+async fn transaction_savepoints() {
     let env = TestEnv::new();
     let mut conn = env.open_conn("test");
 

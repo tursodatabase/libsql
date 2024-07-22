@@ -13,7 +13,7 @@ use crate::segment::Segment;
 
 use super::backend::Backend;
 use super::scheduler::Scheduler;
-use super::{Storage, StoreSegmentRequest};
+use super::{RestoreOptions, Storage, StoreSegmentRequest};
 
 /// Background loop task state.
 ///
@@ -117,7 +117,7 @@ where
         let backend = self.backend.clone();
         let config = config_override.unwrap_or_else(|| backend.default_config());
         tokio::spawn(async move {
-            let meta = backend.meta(&config, namespace).await.unwrap();
+            let meta = backend.meta(&config, &namespace).await.unwrap();
             let _ = ret.send(meta.max_frame_no);
         });
     }
@@ -140,21 +140,22 @@ enum StorageLoopMessage<C, S> {
     },
 }
 
-pub struct AsyncStorage<C, S> {
+pub struct AsyncStorage<B: Backend, S> {
     /// send request to the main loop
-    job_sender: mpsc::UnboundedSender<StorageLoopMessage<C, S>>,
+    job_sender: mpsc::UnboundedSender<StorageLoopMessage<B::Config, S>>,
     /// receiver for the current max durable index
     durable_notifier: mpsc::Receiver<(NamespaceName, u64)>,
     force_shutdown: oneshot::Sender<()>,
+    backend: Arc<B>,
 }
 
-impl<C, S> Storage for AsyncStorage<C, S>
+impl<B, S> Storage for AsyncStorage<B, S>
 where
-    C: Send + Sync + 'static,
+    B: Backend,
     S: Segment,
 {
     type Segment = S;
-    type Config = C;
+    type Config = B::Config;
 
     fn store(
         &self,
@@ -174,21 +175,36 @@ where
             .expect("bottomless loop was closed before the handle was dropped");
     }
 
-    fn durable_frame_no(
+    async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
         config_override: Option<Arc<Self::Config>>,
     ) -> u64 {
-        let (ret, rcv) = oneshot::channel();
-        self.job_sender
-            .send(StorageLoopMessage::DurableFrameNoReq {
-                namespace: namespace.clone(),
-                ret,
-                config_override,
-            })
-            .expect("bottomless loop was closed before the handle was dropped");
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        let meta = self.backend.meta(&config, namespace).await.unwrap();
+        meta.max_frame_no
+    }
 
-        rcv.blocking_recv().unwrap()
+    async fn restore(
+        &self,
+        file: impl crate::io::FileExt,
+        namespace: &NamespaceName,
+        restore_options: RestoreOptions,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> super::Result<()> {
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        self.backend
+            .restore(&config, &namespace, restore_options, file)
+            .await
+    }
+
+    fn durable_frame_no_sync(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> u64 {
+        tokio::runtime::Handle::current()
+            .block_on(self.durable_frame_no(namespace, config_override))
     }
 }
 
@@ -197,27 +213,25 @@ pub struct AsyncStorageInitConfig<B> {
     pub max_in_flight_jobs: usize,
 }
 
-impl<C, S> AsyncStorage<C, S> {
-    pub async fn new<B>(
+impl<B: Backend, S> AsyncStorage<B, S> {
+    pub async fn new(
         config: AsyncStorageInitConfig<B>,
-    ) -> (AsyncStorage<C, S>, AsyncStorageLoop<B, StdIO, S>)
+    ) -> (AsyncStorage<B, S>, AsyncStorageLoop<B, StdIO, S>)
     where
-        B: Backend<Config = C>,
+        B: Backend,
         S: Segment,
-        C: Send + Sync + 'static,
     {
         Self::new_with_io(config, Arc::new(StdIO(()))).await
     }
 
-    pub async fn new_with_io<B, IO>(
+    pub async fn new_with_io<IO>(
         config: AsyncStorageInitConfig<B>,
         io: Arc<IO>,
-    ) -> (AsyncStorage<C, S>, AsyncStorageLoop<B, IO, S>)
+    ) -> (AsyncStorage<B, S>, AsyncStorageLoop<B, IO, S>)
     where
-        B: Backend<Config = C>,
+        B: Backend,
         IO: Io,
         S: Segment,
-        C: Send + Sync + 'static,
     {
         let (job_snd, job_rcv) = tokio::sync::mpsc::unbounded_channel();
         let (durable_notifier_snd, durable_notifier_rcv) = tokio::sync::mpsc::channel(16);
@@ -226,7 +240,7 @@ impl<C, S> AsyncStorage<C, S> {
         let storage_loop = AsyncStorageLoop {
             receiver: job_rcv,
             scheduler,
-            backend: config.backend,
+            backend: config.backend.clone(),
             io,
             max_in_flight: config.max_in_flight_jobs,
             force_shutdown: shutdown_rcv,
@@ -236,6 +250,7 @@ impl<C, S> AsyncStorage<C, S> {
             job_sender: job_snd,
             durable_notifier: durable_notifier_rcv,
             force_shutdown: shutdown_snd,
+            backend: config.backend,
         };
 
         (this, storage_loop)
