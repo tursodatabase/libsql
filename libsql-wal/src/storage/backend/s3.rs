@@ -27,6 +27,7 @@ use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegmentDataHeader;
 use crate::segment::Frame;
 use crate::storage::{Error, RestoreOptions, Result};
+use crate::LIBSQL_MAGIC;
 
 pub struct S3Backend<IO> {
     client: Client,
@@ -419,8 +420,19 @@ where
 
         let s3_index_key = s3_segment_index_key(&folder_key, &segment_key);
 
-        // TODO: store meta about the index?
-        let body = ByteStream::from(segment_index);
+        let checksum = crc32fast::hash(&segment_index);
+        let header = SegmentIndexHeader {
+            version: 1.into(),
+            len: (segment_index.len() as u64).into(),
+            checksum: checksum.into(),
+            magic: LIBSQL_MAGIC.into(),
+        };
+
+        let mut bytes = BytesMut::with_capacity(size_of::<SegmentIndexHeader>() + segment_index.len());
+        bytes.extend_from_slice(header.as_bytes());
+        bytes.extend_from_slice(&segment_index);
+
+        let body = ByteStream::from(bytes.freeze());
 
         self.s3_put(config, s3_index_key, body).await?;
 
