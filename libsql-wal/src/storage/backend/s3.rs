@@ -160,7 +160,7 @@ impl<IO: Io> S3Backend<IO> {
             .await
             .map_err(|e| Error::unhandled(e, ""))?
             .to_vec();
-        let index = fst::Map::new(bytes).map_err(|_| Error::InvalidIndex)?;
+        let index = fst::Map::new(data).map_err(|_| Error::InvalidIndex("invalid index bytes"))?;
         Ok(index)
     }
 
