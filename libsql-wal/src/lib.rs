@@ -11,6 +11,8 @@ pub mod storage;
 pub mod transaction;
 pub mod wal;
 
+const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
+
 #[cfg(any(debug_assertions, test))]
 pub mod test {
     use std::fs::OpenOptions;
