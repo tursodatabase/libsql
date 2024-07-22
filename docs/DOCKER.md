@@ -44,8 +44,19 @@ mount on your local disk.
 
 ```
 docker run --name some-sqld -ti \
-    -v ./.data/libsql \
+    -v $(pwd)/sqld-data:/var/lib/sqld \ # you can mount local path
     -e SQLD_NODE=primary \
+    ghcr.io/tursodatabase/libsql-server:latest
+
+docker run --name some-sqld -ti \
+    -v sqld-data:/var/lib/sqld \ # or create named volume
+    -e SQLD_NODE=primary \
+    ghcr.io/tursodatabase/libsql-server:latest
+
+docker run --name some-sqld -ti \
+    -v sqld-data:/data/sqld \ # to mount data in different directory set SQLD_DB_PATH env var
+    -e SQLD_NODE=primary \
+    -e SQLD_DB_PATH=/data/sqld \
     ghcr.io/tursodatabase/libsql-server:latest
 ```
 
