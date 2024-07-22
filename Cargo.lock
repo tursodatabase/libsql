@@ -3650,7 +3650,6 @@ dependencies = [
  "phf",
  "phf_codegen",
  "phf_shared",
- "smallvec",
  "uncased",
 ]
 
