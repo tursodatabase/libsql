@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use futures::StreamExt;
 use insta::assert_json_snapshot;
 use libsql::{params, Database};
 use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
@@ -310,6 +311,44 @@ fn stats_legacy() {
         }
 
         assert_json_snapshot!(json);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn stream() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table t(x text)", ()).await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        let rows = conn
+            .query("select * from t where x = ?", params!["hello"])
+            .await?
+            .into_stream();
+
+        let rows = rows.collect::<Vec<_>>().await;
+
+        assert_eq!(rows.len(), 4);
 
         Ok(())
     });
