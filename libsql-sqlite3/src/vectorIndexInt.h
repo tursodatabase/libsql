@@ -187,13 +187,19 @@ struct VectorOutRows {
   sqlite3_value **ppValues;
 };
 
+// limit to the sql part which we render in order to perform operations with shadow tables
+// we render this parts of SQL on stack - thats why we have hard limit on this
+// stack simplify memory managment code and also doesn't impose very strict limits here since 128 bytes for column names should be enough for almost all use cases
+#define VECTOR_INDEX_SQL_RENDER_LIMIT 128
+
 void vectorIdxParamsInit(VectorIdxParams *, u8 *, int);
 u64 vectorIdxParamsGetU64(const VectorIdxParams *, char);
 double vectorIdxParamsGetF64(const VectorIdxParams *, char);
 int vectorIdxParamsPutU64(VectorIdxParams *, char, u64);
 int vectorIdxParamsPutF64(VectorIdxParams *, char, double);
 
-int vectorIdxKeyGet(Table*, VectorIdxKey *, const char **);
+int vectorIdxKeyGet(const Index *, VectorIdxKey *, const char **);
+int vectorIdxKeyRowidLike(const VectorIdxKey *);
 int vectorIdxKeyDefsRender(const VectorIdxKey *, const char *, char *, int);
 int vectorIdxKeyNamesRender(int, const char *, char *, int);
 
@@ -204,7 +210,7 @@ i64 vectorInRowLegacyId(const VectorInRow *);
 int vectorInRowPlaceholderRender(const VectorInRow *, char *, int);
 void vectorInRowFree(sqlite3 *, VectorInRow *);
 
-int vectorOutRowsAlloc(sqlite3 *, VectorOutRows *, int, int, char);
+int vectorOutRowsAlloc(sqlite3 *, VectorOutRows *, int, int, int);
 int vectorOutRowsPut(VectorOutRows *, int, int, const u64 *, sqlite3_value *);
 void vectorOutRowsGet(sqlite3_context *, const VectorOutRows *, int, int);
 void vectorOutRowsFree(sqlite3 *, VectorOutRows *);
