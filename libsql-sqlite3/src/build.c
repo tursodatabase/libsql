@@ -4000,6 +4000,7 @@ void sqlite3CreateIndex(
   int nExtraCol;                   /* Number of extra columns needed */
   char *zExtra = 0;                /* Extra space after the Index object */
   Index *pPk = 0;      /* PRIMARY KEY index for WITHOUT ROWID tables */
+  int vectorIdxRc = 0, skipRefill = 0;
 
   assert( db->pParse==pParse );
   if( pParse->nErr ){
@@ -4309,8 +4310,12 @@ void sqlite3CreateIndex(
 
 
 #ifndef SQLITE_OMIT_VECTOR
-  if( vectorIndexCreate(pParse, pIndex, db->aDb[iDb].zDbSName, pUsing) != SQLITE_OK ) {
+  vectorIdxRc = vectorIndexCreate(pParse, pIndex, db->aDb[iDb].zDbSName, pUsing);
+  if( vectorIdxRc < 0 ){
     goto exit_create_index;
+  }
+  if( vectorIdxRc == 1 ){
+    skipRefill = 1;
   }
   idxType = pIndex->idxType; // vectorIndexCreate can update idxType to 4 (VECTOR INDEX)
 #endif
@@ -4515,7 +4520,9 @@ void sqlite3CreateIndex(
       ** to invalidate all pre-compiled statements.
       */
       if( pTblName ){
-        sqlite3RefillIndex(pParse, pIndex, iMem);
+        if( !skipRefill ){
+          sqlite3RefillIndex(pParse, pIndex, iMem);
+        }
         sqlite3ChangeCookie(pParse, iDb);
         sqlite3VdbeAddParseSchemaOp(v, iDb,
             sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName), 0);
