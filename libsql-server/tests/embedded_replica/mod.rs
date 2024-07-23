@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
 use crate::common::snapshot_metrics;
-use libsql::Database;
+use libsql::{params, Database};
 use libsql_server::config::{AdminApiConfig, DbConfig, RpcServerConfig, UserApiConfig};
 use serde_json::json;
 use tempfile::tempdir;
