@@ -5628,6 +5628,19 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   int nCol = pIdx->nColumn;
   int nKey = pIdx->nKeyCol;
   KeyInfo *pKey;
+  char* zIndexName = NULL, *zDbSName = NULL;
+  iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
+  if( 0 <= iDb && iDb < pParse->db->nDb ){
+    zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
+    if( zDbSName == NULL ){
+      goto out_nomem;
+    }
+  }
+  zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
+  if( zIndexName == NULL ){
+    goto out_nomem;
+  }
+
   if( pParse->nErr ) return 0;
   if( pIdx->uniqNotNull ){
     pKey = sqlite3KeyInfoAlloc(pParse->db, nKey, nCol-nKey);
@@ -5635,12 +5648,9 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     pKey = sqlite3KeyInfoAlloc(pParse->db, nCol, 0);
   }
   if( pKey ){
-    iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
     assert( sqlite3KeyInfoIsWriteable(pKey) );
-    pKey->zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
-    if( 0 <= iDb && iDb < pParse->db->nDb ){
-      pKey->zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
-    }
+    pKey->zIndexName = zIndexName;
+    pKey->zDbSName = zDbSName;
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
@@ -5666,6 +5676,14 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     }
   }
   return pKey;
+out_nomem:
+  if( zIndexName != NULL ){
+    sqlite3DbFree(pParse->db, zIndexName);
+  }
+  if( zDbSName != NULL ){
+    sqlite3DbFree(pParse->db, zDbSName);
+  }
+  return sqlite3OomFault(pParse->db);
 }
 
 #ifndef SQLITE_OMIT_CTE
