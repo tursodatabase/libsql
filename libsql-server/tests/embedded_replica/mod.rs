@@ -98,7 +98,7 @@ fn embedded_replica() {
         )
         .await?;
 
-        let n = db.sync().await?;
+        let n = db.sync().await?.frame_no();
         assert_eq!(n, None);
 
         let conn = db.connect()?;
@@ -106,7 +106,7 @@ fn embedded_replica() {
         conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
             .await?;
 
-        let n = db.sync().await?;
+        let n = db.sync().await?.frame_no();
         assert_eq!(n, Some(1));
 
         let err = conn
@@ -171,7 +171,7 @@ fn execute_batch() {
         )
         .await?;
 
-        let n = db.sync().await?;
+        let n = db.sync().await?.frame_no();
         assert_eq!(n, None);
 
         let conn = db.connect()?;
@@ -179,7 +179,7 @@ fn execute_batch() {
         conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
             .await?;
 
-        let n = db.sync().await?;
+        let n = db.sync().await?.frame_no();
         assert_eq!(n, Some(1));
 
         conn.execute_batch(
@@ -224,7 +224,7 @@ fn stream() {
         )
         .await?;
 
-        let n = db.sync().await?;
+        let n = db.sync().await?.frame_no();
         assert_eq!(n, None);
 
         let conn = db.connect()?;
@@ -232,7 +232,7 @@ fn stream() {
         conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
             .await?;
 
-        let n = db.sync().await?;
+        let n = db.sync().await?.frame_no();
         assert_eq!(n, Some(1));
 
         conn.execute_batch(
@@ -299,7 +299,7 @@ fn embedded_replica_with_encryption() {
         )
         .await?;
 
-        let n = db.sync().await?;
+        let n = db.sync().await?.frame_no();
         assert_eq!(n, None);
 
         let conn = db.connect()?;
@@ -307,7 +307,7 @@ fn embedded_replica_with_encryption() {
         conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
             .await?;
 
-        let n = db.sync().await?;
+        let n = db.sync().await?.frame_no();
         assert_eq!(n, Some(1));
 
         let err = conn
@@ -461,7 +461,7 @@ fn replica_primary_reset() {
         )
         .await
         .unwrap();
-        let replica_index = replica.sync().await.unwrap().unwrap();
+        let replica_index = replica.sync().await.unwrap().frame_no().unwrap();
         let primary_index = Client::new()
             .get("http://primary:9090/v1/namespaces/default/stats")
             .await
@@ -520,7 +520,7 @@ fn replica_primary_reset() {
         )
         .await
         .unwrap();
-        let replica_index = replica.sync().await.unwrap().unwrap();
+        let replica_index = replica.sync().await.unwrap().frame_no().unwrap();
         let primary_index = Client::new()
             .get("http://primary:9090/v1/namespaces/default/stats")
             .await
@@ -625,7 +625,7 @@ fn replica_no_resync_on_restart() {
             )
             .await
             .unwrap();
-            db.sync().await.unwrap().unwrap()
+            db.sync().await.unwrap().frame_no().unwrap()
         };
         let first_sync = before.elapsed();
 
@@ -641,7 +641,7 @@ fn replica_no_resync_on_restart() {
             )
             .await
             .unwrap();
-            db.sync().await.unwrap().unwrap()
+            db.sync().await.unwrap().frame_no().unwrap()
         };
         let second_sync = before.elapsed();
 
@@ -1223,6 +1223,83 @@ fn txn_bug_issue_1283() {
         tx.commit().await?;
         Ok(())
     }
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn replicated_return() {
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+            false,
+            None,
+        )
+        .await?;
+
+        let rep = db.sync().await.unwrap();
+        assert_eq!(rep.frame_no(), None);
+        assert_eq!(rep.start_frame_no(), None);
+
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
+            .await
+            .unwrap();
+
+        let rep = db.sync().await.unwrap();
+        assert_eq!(rep.frame_no(), Some(1));
+        assert_eq!(rep.start_frame_no(), None);
+
+        conn.execute_batch("INSERT into user(id) values (1); INSERT into user(id) values (2); INSERT into user(id) values (3)")
+            .await
+            .unwrap();
+
+        let rep = db.sync().await.unwrap();
+        assert_eq!(rep.frame_no(), Some(4));
+        assert_eq!(rep.start_frame_no(), Some(1));
+
+        let wal_index_file = format!("{}-client_wal_index", path.to_str().unwrap());
+
+        std::fs::remove_file(wal_index_file).unwrap();
+
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+            false,
+            None,
+        )
+        .await?;
+
+        let rep = db.sync().await.unwrap();
+        assert_eq!(rep.frame_no(), Some(4));
+        assert_eq!(rep.start_frame_no(), Some(1));
+
+
+        Ok(())
+    });
 
     sim.run().unwrap();
 }

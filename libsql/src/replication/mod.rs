@@ -32,6 +32,22 @@ mod connection;
 pub(crate) mod local_client;
 pub(crate) mod remote_client;
 
+#[derive(Debug)]
+pub struct Replicated {
+    frame_no: Option<FrameNo>,
+    start_frame_no: Option<FrameNo>,
+}
+
+impl Replicated {
+    pub fn frame_no(&self) -> Option<FrameNo> {
+        self.frame_no
+    }
+
+    pub fn start_frame_no(&self) -> Option<FrameNo> {
+        self.start_frame_no
+    }
+}
+
 /// A set of rames to be injected via `sync_frames`.
 pub enum Frames {
     /// A set of frames, in increasing frame_no.
@@ -75,10 +91,7 @@ impl Writer {
         self.execute_steps(steps).await
     }
 
-    pub(crate) async fn execute_steps(
-        &self,
-        steps: Vec<Step>,
-    ) -> anyhow::Result<ExecuteResults> {
+    pub(crate) async fn execute_steps(&self, steps: Vec<Step>) -> anyhow::Result<ExecuteResults> {
         self.client
             .execute_program(ProgramReq {
                 client_id: self.client.client_id(),
@@ -186,7 +199,7 @@ impl EmbeddedReplicator {
         })
     }
 
-    pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {
+    pub async fn sync_oneshot(&self) -> Result<Replicated> {
         use libsql_replication::replicator::ReplicatorClient;
 
         let mut replicator = self.replicator.lock().await;
@@ -195,6 +208,8 @@ impl EmbeddedReplicator {
                 "Trying to replicate from HTTP, but this is a local replicator".into(),
             ));
         }
+
+        let start_frame_no = replicator.client_mut().committed_frame_no();
 
         // we force a handshake to get the most up to date replication index from the primary.
         replicator.force_handshake();
@@ -218,7 +233,10 @@ impl EmbeddedReplicator {
                         unreachable!()
                     };
                     let Some(primary_index) = client.last_handshake_replication_index() else {
-                        return Ok(None);
+                        return Ok(Replicated {
+                            frame_no: None,
+                            start_frame_no: None,
+                        });
                     };
                     if let Some(replica_index) = replicator.client_mut().committed_frame_no() {
                         if replica_index >= primary_index {
@@ -229,7 +247,12 @@ impl EmbeddedReplicator {
             }
         }
 
-        Ok(replicator.client_mut().committed_frame_no())
+        let replicated = Replicated {
+            frame_no: replicator.client_mut().committed_frame_no(),
+            start_frame_no,
+        };
+
+        Ok(replicated)
     }
 
     pub async fn sync_frames(&self, frames: Frames) -> Result<Option<FrameNo>> {

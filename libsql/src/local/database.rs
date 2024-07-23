@@ -83,7 +83,7 @@ impl Database {
         encryption_config: Option<EncryptionConfig>,
         sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
-        namespace: Option<String>
+        namespace: Option<String>,
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -260,7 +260,7 @@ impl Database {
     #[cfg(feature = "replication")]
     /// Perform a sync step, returning the new replication index, or None, if the nothing was
     /// replicated yet
-    pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {
+    pub async fn sync_oneshot(&self) -> Result<crate::replication::Replicated> {
         if let Some(ref ctx) = self.replication_ctx {
             ctx.replicator.sync_oneshot().await
         } else {
@@ -273,7 +273,7 @@ impl Database {
 
     #[cfg(feature = "replication")]
     /// Sync with primary
-    pub async fn sync(&self) -> Result<Option<FrameNo>> {
+    pub async fn sync(&self) -> Result<crate::replication::Replicated> {
         Ok(self.sync_oneshot().await?)
     }
 
