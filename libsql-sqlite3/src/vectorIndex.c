@@ -774,7 +774,17 @@ int vectorIndexClear(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
 }
 
 /*
+ * vectorIndexCreate analyzes any index creation expression and create vector index if needed
+ * it tolerates the situation when insert into VECTOR_INDEX_GLOBAL_META_TABLE failed with conflict
+ * this made intentionally in order to natively support upload of SQLite dumps
  *
+ * dump populates tables first and create indices after
+ * so we must omit them because shadow tables already filled
+ *
+ * 1. if vector index must not be created                         : 0 returned and pIdx is unchanged
+ * 2. if vector index must be created and refilled from base table: 0 returned and pIdx->idxType set to SQLITE_IDXTYPE_VECTOR
+ * 3. if vector index must be created but refill must be skipped  : 1 returned and pIdx->idxType set to SQLITE_IDXTYPE_VECTOR
+ * 4. in case of any error                                        :-1 returned (and pParse errMsg is populated with some error message)
 */
 int vectorIndexCreate(Parse *pParse, Index *pIdx, const char *zDbSName, const IdList *pUsing) {
   int i, rc = SQLITE_OK;
