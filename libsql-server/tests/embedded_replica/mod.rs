@@ -1238,7 +1238,71 @@ fn replicated_return() {
         .simulation_duration(Duration::from_secs(1000))
         .build();
 
-    make_primary(&mut sim, tmp_host_path.clone());
+    // make_primary(&mut sim, tmp_host_path.clone());
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    let tmp = tempdir().unwrap();
+
+    let notify = Arc::new(Notify::new());
+    let notify_clone = notify.clone();
+
+    init_tracing();
+    sim.host("primary", move || {
+        let notify = notify_clone.clone();
+        let path = tmp.path().to_path_buf();
+        async move {
+            let make_server = || async {
+                TestServer {
+                    path: path.clone().into(),
+                    user_api_config: UserApiConfig {
+                        ..Default::default()
+                    },
+                    admin_api_config: Some(AdminApiConfig {
+                        acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
+                        connector: TurmoilConnector,
+                        disable_metrics: true,
+                    }),
+                    rpc_server_config: Some(RpcServerConfig {
+                        acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await.unwrap(),
+                        tls_config: None,
+                    }),
+                    ..Default::default()
+                }
+            };
+            let server = make_server().await;
+            let shutdown = server.shutdown.clone();
+
+            let fut = async move { server.start_sim(8080).await };
+
+            tokio::pin!(fut);
+
+            loop {
+                tokio::select! {
+                    res =  &mut fut => {
+                        res.unwrap();
+                        break
+                    }
+                    _ = notify.notified() => {
+                        shutdown.notify_waiters();
+                    },
+                }
+            }
+
+            drop(fut);
+
+            tokio::fs::File::create(path.join(".sentinel"))
+                .await
+                .unwrap();
+
+            notify.notify_waiters();
+            let server = make_server().await;
+            server.start_sim(8080).await.unwrap();
+
+            Ok(())
+        }
+    });
 
     sim.client("client", async move {
         let client = Client::new();
@@ -1279,24 +1343,14 @@ fn replicated_return() {
         assert_eq!(rep.frame_no(), Some(4));
         assert_eq!(rep.start_frame_no(), Some(1));
 
-        let wal_index_file = format!("{}-client_wal_index", path.to_str().unwrap());
+        notify.notify_waiters();
+        notify.notified().await;
 
-        std::fs::remove_file(wal_index_file).unwrap();
-
-        let db = Database::open_with_remote_sync_connector(
-            path.to_str().unwrap(),
-            "http://foo.primary:8080",
-            "",
-            TurmoilConnector,
-            false,
-            None,
-        )
-        .await?;
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), Some(4));
-        assert_eq!(rep.start_frame_no(), Some(1));
-
+        assert_eq!(rep.start_frame_no(), Some(4));
 
         Ok(())
     });
