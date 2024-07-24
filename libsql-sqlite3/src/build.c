@@ -5684,6 +5684,9 @@ out_nomem:
   if( zDbSName != NULL ){
     sqlite3DbFree(pParse->db, zDbSName);
   }
+  if( pKey != NULL ){
+    sqlite3KeyInfoUnref(pKey);
+  }
   return sqlite3OomFault(pParse->db);
 }
 
