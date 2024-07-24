@@ -1,18 +1,26 @@
-use std::marker::PhantomData;
+use std::collections::BTreeMap;
+use std::future::Future;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
+use fst::Map;
+use hashbrown::HashMap;
 use libsql_sys::name::NamespaceName;
+use parking_lot::Mutex;
+use tempfile::{tempdir, TempDir};
 
-use crate::io::FileExt;
+use crate::io::{FileExt, Io, StdIO};
+use crate::segment::compacted::CompactedSegment;
 use crate::segment::{sealed::SealedSegment, Segment};
 
+use self::backend::s3::SegmentKey;
 pub use self::error::Error;
 
-mod job;
 pub mod async_storage;
 pub mod backend;
 pub(crate) mod error;
+mod job;
 mod scheduler;
 
 pub type Result<T, E = self::error::Error> = std::result::Result<T, E>;
@@ -27,12 +35,14 @@ pub trait Storage: Send + Sync + 'static {
     type Config;
     /// store the passed segment for `namespace`. This function is called in a context where
     /// blocking is acceptable.
+    /// returns a future that resolves when the segment is stored
+    /// The segment should be stored whether or not the future is polled.
     fn store(
         &self,
         namespace: &NamespaceName,
         seg: Self::Segment,
         config_override: Option<Arc<Self::Config>>,
-    );
+    ) -> impl Future<Output = u64> + Send + Sync + 'static;
 
     fn durable_frame_no_sync(
         &self,
@@ -89,7 +99,8 @@ impl Storage for NoStorage {
         _namespace: &NamespaceName,
         _seg: Self::Segment,
         _config: Option<Arc<Self::Config>>,
-    ) {
+    ) -> impl Future<Output = u64>  + Send + Sync + 'static{
+        std::future::ready(u64::MAX)
     }
 
     async fn durable_frame_no(
