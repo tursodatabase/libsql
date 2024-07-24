@@ -326,15 +326,31 @@ pub struct S3Config {
 /// map.range(format!("{:019}", u64::MAX - 101)..).next();
 /// map.range(format!("{:019}", u64::MAX - 5000)..).next();
 /// ```
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SegmentKey {
-    start_frame_no: u64,
-    end_frame_no: u64,
+    pub start_frame_no: u64,
+    pub end_frame_no: u64,
+}
+
+impl PartialOrd for SegmentKey {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match self.start_frame_no.partial_cmp(&other.start_frame_no) {
+            Some(core::cmp::Ordering::Equal) => {}
+            ord => return ord,
+        }
+        self.end_frame_no.partial_cmp(&other.end_frame_no)
+    }
+}
+
+impl Ord for SegmentKey {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
 }
 
 impl SegmentKey {
-    fn includes(&self, frame_no: u64) -> bool {
-        (self.start_frame_no..self.end_frame_no).contains(&frame_no)
+    pub(crate) fn includes(&self, frame_no: u64) -> bool {
+        (self.start_frame_no..=self.end_frame_no).contains(&frame_no)
     }
 }
 
