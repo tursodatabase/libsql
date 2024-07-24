@@ -1292,7 +1292,7 @@ fn replicated_return() {
 
             drop(fut);
 
-            tokio::fs::File::create(path.join(".sentinel"))
+            tokio::fs::File::create(path.join("dbs").join("default").join(".sentinel"))
                 .await
                 .unwrap();
 
@@ -1305,15 +1305,10 @@ fn replicated_return() {
     });
 
     sim.client("client", async move {
-        let client = Client::new();
-        client
-            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
-            .await?;
-
         let path = tmp_embedded_path.join("embedded");
         let db = Database::open_with_remote_sync_connector(
             path.to_str().unwrap(),
-            "http://foo.primary:8080",
+            "http://primary:8080",
             "",
             TurmoilConnector,
             false,
@@ -1350,7 +1345,7 @@ fn replicated_return() {
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), Some(4));
-        assert_eq!(rep.start_frame_no(), Some(4));
+        assert_eq!(rep.start_frame_no(), Some(1));
 
         Ok(())
     });
