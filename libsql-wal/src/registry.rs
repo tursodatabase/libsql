@@ -294,6 +294,10 @@ where
             checkpointed_frame_no: header.replication_index.get().into(),
             new_frame_notifier,
             durable_frame_no,
+            stored_segments: Box::new(StorageReplicator::new(
+                self.storage.clone(),
+                namespace.clone(),
+            )),
         });
 
         opened.with_upgraded(|opened| {
