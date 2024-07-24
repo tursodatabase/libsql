@@ -104,12 +104,26 @@ impl<IO: Io> Replicator<IO> {
                             should_replicate_from_storage.then_some(replicated_until)
                         };
 
+                        if let Some(replicated_until) = replicated_until {
+                            let stream = self
+                                .shared
+                                .stored_segments
+                                .stream(&mut seen, replicated_until, self.next_frame_no)
+                                .peekable();
 
-                            yield frame
-                        }
+                            tokio::pin!(stream);
 
-                        if should_replicate_from_durable {
-                            todo!("we need to fetch new segments from durable storage");
+                            loop {
+                                let Some(frame) = stream.next().await else { break };
+                                let mut frame = frame?;
+                                commit_frame_no = frame.header().frame_no().max(commit_frame_no);
+                                if stream.peek().await.is_none() {
+                                    frame.header_mut().set_size_after(size_after);
+                                    self.next_frame_no = commit_frame_no + 1;
+                                }
+
+                                yield frame
+                            }
                         }
                     }
                 }
