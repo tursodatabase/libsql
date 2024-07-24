@@ -4,10 +4,12 @@ use roaring::RoaringBitmap;
 use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
 
-use crate::error::Result;
 use crate::io::Io;
+use crate::replication::Error;
 use crate::segment::Frame;
 use crate::shared_wal::SharedWal;
+
+use super::Result;
 
 pub struct Replicator<IO: Io> {
     shared: Arc<SharedWal<IO>>,
@@ -38,7 +40,7 @@ impl<IO: Io> Replicator<IO> {
     ///
     /// In a single replication step, the replicator guarantees that a minimal set of frames is
     /// sent to the replica.
-    pub fn frame_stream(&mut self) -> impl Stream<Item = Result<Frame>> + '_ {
+    pub fn frame_stream(&mut self) -> impl Stream<Item = Result<Box<Frame>>> + '_ {
         async_stream::try_stream! {
             loop {
                 let most_recent_frame_no = *self
@@ -54,6 +56,7 @@ impl<IO: Io> Replicator<IO> {
                     let (stream, replicated_until, size_after) = current.frame_stream_from(self.next_frame_no, &mut seen);
                     let should_replicate_from_tail = replicated_until != self.next_frame_no;
 
+
                     // replicate from current
                     {
                         tokio::pin!(stream);
@@ -62,7 +65,7 @@ impl<IO: Io> Replicator<IO> {
 
                         loop {
                             let Some(frame) = stream.next().await else { break };
-                            let mut frame = frame?;
+                            let mut frame = frame.map_err(|e| Error::CurrentSegment(e.into()))?;
                             commit_frame_no = frame.header().frame_no().max(commit_frame_no);
                             if stream.peek().await.is_none() && !should_replicate_from_tail {
                                 frame.header_mut().set_size_after(size_after);

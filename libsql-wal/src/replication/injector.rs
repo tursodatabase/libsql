@@ -97,7 +97,7 @@ mod test {
         primary_shared.last_committed_frame_no();
         for _ in 0..2 {
             let frame = stream.next().await.unwrap().unwrap();
-            injector.insert_frame(Box::new(frame)).await.unwrap();
+            injector.insert_frame(frame).await.unwrap();
         }
 
         replica_conn
@@ -118,7 +118,7 @@ mod test {
             .unwrap();
 
         let frame = stream.next().await.unwrap().unwrap();
-        injector.insert_frame(Box::new(frame)).await.unwrap();
+        injector.insert_frame(frame).await.unwrap();
 
         replica_conn
             .query_row("select count(*) from test", (), |r| {
