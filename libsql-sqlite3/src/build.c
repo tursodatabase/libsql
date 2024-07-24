@@ -5628,7 +5628,6 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   int nCol = pIdx->nColumn;
   int nKey = pIdx->nKeyCol;
   KeyInfo *pKey;
-  char* zIndexName = NULL, *zDbSName = NULL;
   if( pParse->nErr ) return 0;
   if( pIdx->uniqNotNull ){
     pKey = sqlite3KeyInfoAlloc(pParse->db, nKey, nCol-nKey);
@@ -5640,18 +5639,16 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
 
     iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
     if( 0 <= iDb && iDb < pParse->db->nDb ){
-      zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
-      if( zDbSName == NULL ){
+      pKey->zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
+      if( pKey->zDbSName == NULL ){
         goto out_nomem;
       }
     }
-    zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
-    if( zIndexName == NULL ){
+    pKey->zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
+    if( pKey->zIndexName == NULL ){
       goto out_nomem;
     }
 
-    pKey->zIndexName = zIndexName;
-    pKey->zDbSName = zDbSName;
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
@@ -5678,12 +5675,6 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   }
   return pKey;
 out_nomem:
-  if( zIndexName != NULL ){
-    sqlite3DbFree(pParse->db, zIndexName);
-  }
-  if( zDbSName != NULL ){
-    sqlite3DbFree(pParse->db, zDbSName);
-  }
   if( pKey != NULL ){
     sqlite3KeyInfoUnref(pKey);
   }
