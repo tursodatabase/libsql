@@ -4314,10 +4314,13 @@ void sqlite3CreateIndex(
   if( vectorIdxRc < 0 ){
     goto exit_create_index;
   }
+  if( vectorIdxRc >= 1 ){
+    idxType = SQLITE_IDXTYPE_VECTOR;
+    pIndex->idxType = idxType;
+  }
   if( vectorIdxRc == 1 ){
     skipRefill = 1;
   }
-  idxType = pIndex->idxType; // vectorIndexCreate can update idxType to 4 (VECTOR INDEX)
 #endif
 
   /* Append the table key to the end of the index.  For WITHOUT ROWID

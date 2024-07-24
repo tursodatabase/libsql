@@ -735,6 +735,9 @@ int vectorIndexGetParameters(
   int rc = SQLITE_OK;
 
   static const char* zSelectSql = "SELECT metadata FROM " VECTOR_INDEX_GLOBAL_META_TABLE " WHERE name = ?";
+  // zSelectSqlPekkaLegacy handles the case when user created DB before 04 July 2024 (https://discord.com/channels/933071162680958986/1225560924526477322/1258367912402489397)
+  // when instead of table with binary parameters rigid schema was used for index settings
+  // we should drop this eventually - but for now we postponed this decision
   static const char* zSelectSqlPekkaLegacy = "SELECT vector_type, block_size, dims, distance_ops FROM libsql_vector_index WHERE name = ?";
   rc = vectorIndexTryGetParametersFromBinFormat(db, zSelectSql, zIdxName, pParams);
   if( rc == SQLITE_OK ){
@@ -781,19 +784,24 @@ int vectorIndexClear(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
  * dump populates tables first and create indices after
  * so we must omit them because shadow tables already filled
  *
- * 1. if vector index must not be created                         : 0 returned and pIdx is unchanged
- * 2. if vector index must be created and refilled from base table: 0 returned and pIdx->idxType set to SQLITE_IDXTYPE_VECTOR
- * 3. if vector index must be created but refill must be skipped  : 1 returned and pIdx->idxType set to SQLITE_IDXTYPE_VECTOR
- * 4. in case of any error                                        :-1 returned (and pParse errMsg is populated with some error message)
+ * 1. in case of any error                                        :-1 returned (and pParse errMsg is populated with some error message)
+ * 2. if vector index must not be created                         : 0 returned
+ * 3. if vector index must be created but refill must be skipped  : 1 returned
+ * 4. if vector index must be created and refilled from base table: 2 returned
 */
-int vectorIndexCreate(Parse *pParse, Index *pIdx, const char *zDbSName, const IdList *pUsing) {
+int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, const IdList *pUsing) {
+  static const int CREATE_FAIL = -1;
+  static const int CREATE_IGNORE = 0;
+  static const int CREATE_OK_SKIP_REFILL = 1;
+  static const int CREATE_OK = 2;
+
   int i, rc = SQLITE_OK;
   int dims, type;
   int hasLibsqlVectorIdxFn = 0, hasCollation = 0;
   const char *pzErrMsg;
 
   if( IsVacuum(pParse->db) ){
-    return SQLITE_OK;
+    return CREATE_IGNORE;
   }
 
   assert( zDbSName != NULL );
@@ -811,7 +819,7 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, const char *zDbSName, const Id
   if( pParse->eParseMode ){
     // scheme can be re-parsed by SQLite for different reasons (for example, to check schema after
     // ALTER COLUMN statements) - so we must skip creation in such cases
-    goto ignore;
+    return CREATE_IGNORE;
   }
 
   // backward compatibility: preserve old indices with deprecated syntax but forbid creation of new indices with this syntax
@@ -821,15 +829,15 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, const char *zDbSName, const Id
     } else {
       sqlite3ErrorMsg(pParse, "USING syntax is deprecated, please use plain CREATE INDEX: CREATE INDEX xxx ON yyy ( " VECTOR_INDEX_MARKER_FUNCTION "(zzz) )");
     }
-    goto fail;
+    return CREATE_FAIL;
   }
   if( db->init.busy == 1 && pUsing != NULL ){
-    goto ok;
+    return CREATE_OK;
   }
 
   // vector index must have expressions over column
   if( pIdx->aColExpr == NULL ) {
-    goto ignore;
+    return CREATE_IGNORE;
   }
 
   pListItem = pIdx->aColExpr->a;
@@ -844,20 +852,20 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, const char *zDbSName, const Id
     }
   }
   if( !hasLibsqlVectorIdxFn ) {
-    goto ignore;
+    return CREATE_IGNORE;
   }
   if( hasCollation ){
     sqlite3ErrorMsg(pParse, "vector index can't have collation");
-    goto fail;
+    return CREATE_FAIL;
   }
   if( pIdx->aColExpr->nExpr != 1 ) {
     sqlite3ErrorMsg(pParse, "vector index must contain exactly one column wrapped into the " VECTOR_INDEX_MARKER_FUNCTION " function");
-    goto fail;
+    return CREATE_FAIL;
   }
   // we are able to support this but I doubt this works for now - more polishing required to make this work
   if( pIdx->pPartIdxWhere != NULL ) {
     sqlite3ErrorMsg(pParse, "partial vector index is not supported");
-    goto fail;
+    return CREATE_FAIL;
   }
 
   pArgsList = pIdx->aColExpr->a[0].pExpr->x.pList;
@@ -865,73 +873,65 @@ int vectorIndexCreate(Parse *pParse, Index *pIdx, const char *zDbSName, const Id
 
   if( pArgsList->nExpr < 1 ){
     sqlite3ErrorMsg(pParse, VECTOR_INDEX_MARKER_FUNCTION " must contain at least one argument");
-    goto fail;
+    return CREATE_FAIL;
   }
   if( pListItem[0].pExpr->op != TK_COLUMN ) {
     sqlite3ErrorMsg(pParse, VECTOR_INDEX_MARKER_FUNCTION " first argument must be a column token");
-    goto fail;
+    return CREATE_FAIL;
   }
   iEmbeddingColumn = pListItem[0].pExpr->iColumn;
   if( iEmbeddingColumn < 0 ) {
     sqlite3ErrorMsg(pParse, VECTOR_INDEX_MARKER_FUNCTION " first argument must be column with vector type");
-    goto fail;
+    return CREATE_FAIL;
   }
   assert( iEmbeddingColumn >= 0 && iEmbeddingColumn < pTable->nCol );
 
   zEmbeddingColumnTypeName = sqlite3ColumnType(&pTable->aCol[iEmbeddingColumn], "");
   if( vectorIdxParseColumnType(zEmbeddingColumnTypeName, &type, &dims, &pzErrMsg) != 0 ){
     sqlite3ErrorMsg(pParse, "%s: %s", pzErrMsg, zEmbeddingColumnTypeName);
-    goto fail;
+    return CREATE_FAIL;
   }
 
   // schema is locked while db is initializing and we need to just proceed here
   if( db->init.busy == 1 ){
-    goto ok;
+    return CREATE_OK;
   }
 
   rc = initVectorIndexMetaTable(db, zDbSName);
   if( rc != SQLITE_OK ){
     sqlite3ErrorMsg(pParse, "failed to init vector index meta table: %s", sqlite3_errmsg(db));
-    goto fail;
+    return CREATE_FAIL;
   }
   rc = parseVectorIdxParams(pParse, &idxParams, type, dims, pListItem + 1, pArgsList->nExpr - 1);
   if( rc != SQLITE_OK ){
     sqlite3ErrorMsg(pParse, "failed to parse vector idx params");
-    goto fail;
+    return CREATE_FAIL;
   }
   if( vectorIdxKeyGet(pTable, &idxKey, &pzErrMsg) != 0 ){
     sqlite3ErrorMsg(pParse, "failed to detect underlying table key: %s", pzErrMsg);
-    goto fail;
+    return CREATE_FAIL;
   }
   if( idxKey.nKeyColumns != 1 ){
     sqlite3ErrorMsg(pParse, "vector index for tables without ROWID and composite primary key are not supported");
-    goto fail;
+    return CREATE_FAIL;
   }
   rc = diskAnnCreateIndex(db, zDbSName, pIdx->zName, &idxKey, &idxParams);
   if( rc != SQLITE_OK ){
     sqlite3ErrorMsg(pParse, "unable to initialize diskann vector index");
-    goto fail;
+    return CREATE_FAIL;
   }
   rc = insertIndexParameters(db, zDbSName, pIdx->zName, &idxParams);
   if( rc == SQLITE_CONSTRAINT ){
     // we are violating unique constraint here which means that someone inserted parameters in the table before us
-    // taking aside corruption scenarios, this can be in case of loading dump (because tables are loaded before indices) or vacuum-ing DB
-    // both these cases are valid and we must proceed with index creating but avoid index-refill step as it is already filled
-    goto skip_refill;
+    // taking aside corruption scenarios, this can be in case of loading dump (because tables and data are loaded before indices)
+    // this case is valid and we must proceed with index creating but avoid index-refill step as it is already filled
+    return CREATE_OK_SKIP_REFILL;
   }
   if( rc != SQLITE_OK ){
     sqlite3ErrorMsg(pParse, "unable to update global metadata table");
-    goto fail;
+    return CREATE_FAIL;
   }
-ok:
-  pIdx->idxType = SQLITE_IDXTYPE_VECTOR;
-ignore:
-  return 0;
-skip_refill:
-  pIdx->idxType = SQLITE_IDXTYPE_VECTOR;
-  return 1;
-fail:
-  return -1;
+  return CREATE_OK;
 }
 
 int vectorIndexSearch(sqlite3 *db, const char* zDbSName, int argc, sqlite3_value **argv, VectorOutRows *pRows, char **pzErrMsg) {
