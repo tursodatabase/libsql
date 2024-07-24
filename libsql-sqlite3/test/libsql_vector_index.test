@@ -225,8 +225,10 @@ do_execsql_test vector-vacuum {
   CREATE TABLE t_vacuum ( emb FLOAT32(2) );
   INSERT INTO t_vacuum VALUES (vector('[1,2]')), (vector('[3,4]'));
   CREATE INDEX t_vacuum_idx ON t_vacuum(libsql_vector_idx(emb));
-  VACUUM INTO ':memory:';
-} {}
+  VACUUM;
+  SELECT COUNT(*) FROM t_vacuum;
+  SELECT COUNT(*) FROM t_vacuum_idx_shadow;
+} {2 2}
 
 proc error_messages {sql} {
   set ret ""
