@@ -76,20 +76,31 @@ impl<IO: Io> Replicator<IO> {
 
                     // replicate from tail
                     if should_replicate_from_tail {
-                        let (stream, replicated_until) = current.tail().stream_pages_from(self.next_frame_no, &mut seen).await;
-                        tokio::pin!(stream);
-                        let mut stream = stream.peekable();
+                        let replicated_until = {
+                            let (stream, replicated_until) = current
+                                .tail()
+                                .stream_pages_from( replicated_until, self.next_frame_no, &mut seen).await;
+                            tokio::pin!(stream);
 
-                        let should_replicate_from_durable = replicated_until != self.next_frame_no;
+                            let mut stream = stream.peekable();
 
-                        loop {
-                            let Some(frame) = stream.next().await else { break };
-                            let mut frame = frame?;
-                            commit_frame_no = frame.header().frame_no().max(commit_frame_no);
-                            if stream.peek().await.is_none() && !should_replicate_from_durable {
-                                frame.header_mut().set_size_after(size_after);
-                                self.next_frame_no = commit_frame_no + 1;
+                            let should_replicate_from_storage = replicated_until != self.next_frame_no;
+
+                            loop {
+                                let Some(frame) = stream.next().await else { break };
+                                let mut frame = frame.map_err(|e| Error::SealedSegment(e.into()))?;
+                                commit_frame_no = frame.header().frame_no().max(commit_frame_no);
+                                if stream.peek().await.is_none() && !should_replicate_from_storage {
+                                    frame.header_mut().set_size_after(size_after);
+                                    self.next_frame_no = commit_frame_no + 1;
+                                }
+
+                                yield frame
                             }
+
+                            should_replicate_from_storage.then_some(replicated_until)
+                        };
+
 
                             yield frame
                         }
