@@ -5635,12 +5635,20 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     pKey = sqlite3KeyInfoAlloc(pParse->db, nCol, 0);
   }
   if( pKey ){
-    iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
     assert( sqlite3KeyInfoIsWriteable(pKey) );
-    pKey->zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
+
+    iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
     if( 0 <= iDb && iDb < pParse->db->nDb ){
       pKey->zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
+      if( pKey->zDbSName == NULL ){
+        goto out_nomem;
+      }
     }
+    pKey->zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
+    if( pKey->zIndexName == NULL ){
+      goto out_nomem;
+    }
+
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
@@ -5666,6 +5674,11 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     }
   }
   return pKey;
+out_nomem:
+  if( pKey != NULL ){
+    sqlite3KeyInfoUnref(pKey);
+  }
+  return sqlite3OomFault(pParse->db);
 }
 
 #ifndef SQLITE_OMIT_CTE
