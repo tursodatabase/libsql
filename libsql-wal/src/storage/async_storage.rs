@@ -206,6 +206,35 @@ where
         tokio::runtime::Handle::current()
             .block_on(self.durable_frame_no(namespace, config_override))
     }
+
+    async fn find_segment(
+        &self,
+        _namespace: &NamespaceName,
+        _frame_no: u64,
+        _config_override: Option<Arc<Self::Config>>,
+    ) -> super::Result<super::backend::s3::SegmentKey> {
+        todo!()
+    }
+
+    async fn fetch_segment_index(
+        &self,
+        _namespace: &NamespaceName,
+        _key: super::backend::s3::SegmentKey,
+        _config_override: Option<Arc<Self::Config>>,
+    ) -> super::Result<fst::Map<Arc<[u8]>>> {
+        todo!()
+    }
+
+    async fn fetch_segment_data(
+        &self,
+        _namespace: &NamespaceName,
+        _key: super::backend::s3::SegmentKey,
+        _config_override: Option<Arc<Self::Config>>,
+    ) -> super::Result<CompactedSegment<impl FileExt>> {
+        todo!();
+        #[allow(unreachable_code)]
+        super::Result::<CompactedSegment<std::fs::File>>::Err(super::Error::InvalidIndex(""))
+    }
 }
 
 pub struct AsyncStorageInitConfig<B> {
