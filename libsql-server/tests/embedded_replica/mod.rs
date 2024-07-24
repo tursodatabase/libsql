@@ -1322,7 +1322,7 @@ fn replicated_return() {
 
         let conn = db.connect()?;
 
-        conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
+        conn.execute("CREATE TABLE user (id INTEGER)", ())
             .await
             .unwrap();
 
@@ -1330,12 +1330,18 @@ fn replicated_return() {
         assert_eq!(rep.frame_no(), Some(1));
         assert_eq!(rep.start_frame_no(), None);
 
-        conn.execute_batch("INSERT into user(id) values (1); INSERT into user(id) values (2); INSERT into user(id) values (3)")
-            .await
-            .unwrap();
+        conn.execute_batch(
+            "
+            INSERT into user(id) values (randomblob(4096));
+            INSERT into user(id) values (randomblob(4096));
+            INSERT into user(id) values (randomblob(4096));
+            ",
+        )
+        .await
+        .unwrap();
 
         let rep = db.sync().await.unwrap();
-        assert_eq!(rep.frame_no(), Some(4));
+        assert_eq!(rep.frame_no(), Some(10));
         assert_eq!(rep.start_frame_no(), Some(1));
 
         notify.notify_waiters();
@@ -1345,7 +1351,11 @@ fn replicated_return() {
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), Some(4));
-        assert_eq!(rep.start_frame_no(), Some(1));
+        assert_eq!(rep.start_frame_no(), Some(10));
+
+        let mut row = conn.query("select count(*) from user", ()).await.unwrap();
+        let count = row.next().await.unwrap().unwrap().get::<u64>(0).unwrap();
+        assert_eq!(count, 3);
 
         Ok(())
     });
