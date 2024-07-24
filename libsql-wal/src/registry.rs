@@ -1,3 +1,4 @@
+use std::future::Future;
 use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -7,12 +8,13 @@ use hashbrown::hash_map::Entry;
 use hashbrown::HashMap;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::{Condvar, Mutex, RwLock, RwLockUpgradableReadGuard};
-use tokio::sync::Notify;
+use tokio::sync::{mpsc, Notify};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
 use crate::io::file::FileExt;
 use crate::io::{Io, StdIO};
+use crate::replication::storage::StorageReplicator;
 use crate::segment::list::SegmentList;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::{SharedWal, SwapLog};
@@ -34,24 +36,35 @@ pub struct WalRegistry<IO: Io, S> {
     path: PathBuf,
     shutdown: AtomicBool,
     opened: RwLock<HashMap<NamespaceName, Slot<IO>>>,
-    storage: S,
+    storage: Arc<S>,
+    checkpoint_notifier: mpsc::Sender<NamespaceName>,
 }
 
 impl<S> WalRegistry<StdIO, S> {
-    pub fn new(path: PathBuf, storage: S) -> Result<Self> {
-        Self::new_with_io(StdIO(()), path, storage)
+    pub fn new(
+        path: PathBuf,
+        storage: S,
+        checkpoint_notifier: mpsc::Sender<NamespaceName>,
+    ) -> Result<Self> {
+        Self::new_with_io(StdIO(()), path, storage, checkpoint_notifier)
     }
 }
 
 impl<IO: Io, S> WalRegistry<IO, S> {
-    pub fn new_with_io(io: IO, path: PathBuf, storage: S) -> Result<Self> {
+    pub fn new_with_io(
+        io: IO,
+        path: PathBuf,
+        storage: S,
+        checkpoint_notifier: mpsc::Sender<NamespaceName>,
+    ) -> Result<Self> {
         io.create_dir_all(&path)?;
         let registry = Self {
             fs: io,
             path,
             opened: Default::default(),
             shutdown: Default::default(),
-            storage,
+            storage: storage.into(),
+            checkpoint_notifier,
         };
 
         Ok(registry)
@@ -106,7 +119,11 @@ where
         // where the current log is sealed and it wasn't swapped.
         if let Some(sealed) = current.seal()? {
             // todo: pass config override here
-            self.storage.store(&shared.namespace, sealed.clone(), None);
+            let notify = self.storage.store(&shared.namespace, sealed.clone(), None);
+            let notifier = self.checkpoint_notifier.clone();
+            let namespace = shared.namespace().clone();
+            let durable_frame_no = shared.durable_frame_no.clone();
+            tokio::spawn(update_durable(notify, notifier, durable_frame_no, namespace));
             new.tail().push(sealed);
         }
 
@@ -115,6 +132,22 @@ where
 
         Ok(())
     }
+}
+
+async fn update_durable(
+    notify: impl Future<Output = u64>,
+    notifier: mpsc::Sender<NamespaceName>,
+    durable_frame_no: Arc<Mutex<u64>>,
+    namespace: NamespaceName,
+    ) {
+    let new_durable = notify.await;
+    {
+        let mut g = durable_frame_no.lock();
+        if *g < new_durable {
+            *g = new_durable;
+        }
+    }
+    let _ = notifier.send(namespace).await;
 }
 
 impl<IO, S> WalRegistry<IO, S>
@@ -191,6 +224,10 @@ where
         // TODO: handle that with abstract io
         let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
 
+        // TODO: pass config override here
+        let max_frame_no = self.storage.durable_frame_no_sync(&namespace, None);
+        let durable_frame_no = Arc::new(Mutex::new(max_frame_no));
+
         let tail = SegmentList::default();
         for entry in dir {
             let entry = entry.map_err(|e| e.into_io_error().unwrap())?;
@@ -209,7 +246,11 @@ where
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
                 // TODO: pass config override here
-                self.storage.store(&namespace, sealed.clone(), None);
+                let notify = self.storage.store(&namespace, sealed.clone(), None);
+                let notifier = self.checkpoint_notifier.clone();
+                let namespace = namespace.clone(); 
+                let durable_frame_no = durable_frame_no.clone();
+                tokio::spawn(update_durable(notify, notifier, durable_frame_no, namespace));
                 tail.push(sealed);
             }
         }
@@ -243,10 +284,6 @@ where
         )?));
 
         let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
-
-        // TODO: pass config override here
-        let max_frame_no = self.storage.durable_frame_no_sync(&namespace, None);
-        let durable_frame_no = max_frame_no.into();
 
         let shared = Arc::new(SharedWal {
             current,

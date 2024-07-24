@@ -41,6 +41,7 @@ use libsql_sys::wal::either::Either as EitherWAL;
 #[cfg(feature = "durable-wal")]
 use libsql_sys::wal::either::Either3 as EitherWAL;
 use libsql_sys::wal::Sqlite3WalManager;
+use libsql_wal::checkpointer::LibsqlCheckpointer;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::storage::NoStorage;
 use libsql_wal::wal::LibsqlWalManager;
@@ -456,7 +457,7 @@ where
         let (stats_sender, stats_receiver) = mpsc::channel(1024);
 
         // chose the wal backend
-        let (make_wal_manager, registry_shutdown) = self.configure_wal_manager()?;
+        let (make_wal_manager, registry_shutdown) = self.configure_wal_manager(&mut join_set)?;
 
         let ns_config = NamespaceConfig {
             db_kind,
@@ -660,6 +661,7 @@ where
 
     fn configure_wal_manager(
         &self,
+        join_set: &mut JoinSet<anyhow::Result<()>>,
     ) -> anyhow::Result<(
         Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
         Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + Sync + 'static>>,
@@ -703,7 +705,10 @@ where
 
         match self.use_custom_wal {
             Some(CustomWAL::LibsqlWal) => {
-                let registry = Arc::new(WalRegistry::new(wal_path, NoStorage)?);
+                let (sender, receiver) = tokio::sync::mpsc::channel(64);
+                let registry = Arc::new(WalRegistry::new(wal_path, NoStorage, sender)?);
+                let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
+                join_set.spawn(async move { checkpointer.run().await; Ok(()) });
 
                 let wal = LibsqlWalManager::new(registry.clone(), Arc::new(namespace_resolver));
                 let shutdown_notify = self.shutdown.clone();

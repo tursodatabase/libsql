@@ -92,8 +92,9 @@ fn run_test_sample(path: &Path) -> Result {
         NamespaceName::from_string(name.to_string())
     };
 
+    let (sender, _receiver) = tokio::sync::mpsc::channel(64);
     let registry =
-        Arc::new(WalRegistry::new(tmp.path().join("test/wals"), TestStorage::new()).unwrap());
+        Arc::new(WalRegistry::new(tmp.path().join("test/wals"), TestStorage::new(), sender).unwrap());
     let wal_manager = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
     let db_path = tmp.path().join("test/data").clone();
     let libsql_conn = libsql_sys::Connection::open(

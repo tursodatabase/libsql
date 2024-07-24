@@ -21,7 +21,9 @@ pub mod test {
 
     use libsql_sys::{name::NamespaceName, rusqlite::OpenFlags};
     use tempfile::{tempdir, TempDir};
+    use tokio::sync::mpsc;
 
+    use crate::checkpointer::LibsqlCheckpointer;
     use crate::io::StdIO;
     use crate::registry::WalRegistry;
     use crate::shared_wal::SharedWal;
@@ -36,6 +38,10 @@ pub mod test {
 
     impl TestEnv {
         pub fn new() -> Self {
+            Self::new_store(false)
+        }
+
+        pub fn new_store(store: bool) -> Self {
             let tmp = tempdir().unwrap();
             let resolver = |path: &Path| {
                 let name = path
@@ -48,9 +54,14 @@ pub mod test {
                 NamespaceName::from_string(name.to_string())
             };
 
+            let (sender, receiver) = mpsc::channel(128);
             let registry = Arc::new(
-                WalRegistry::new(tmp.path().join("test/wals"), TestStorage::new()).unwrap(),
+                WalRegistry::new(tmp.path().join("test/wals"), TestStorage::new_io(store, StdIO(())), sender).unwrap(),
             );
+            if store {
+                let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 5);
+                tokio::spawn(checkpointer.run());
+            }
             let wal = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
 
             Self { tmp, registry, wal }
