@@ -5636,6 +5636,8 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     pKey = sqlite3KeyInfoAlloc(pParse->db, nCol, 0);
   }
   if( pKey ){
+    assert( sqlite3KeyInfoIsWriteable(pKey) );
+
     iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
     if( 0 <= iDb && iDb < pParse->db->nDb ){
       zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
@@ -5647,9 +5649,7 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     if( zIndexName == NULL ){
       goto out_nomem;
     }
-  }
-  if( pKey ){
-    assert( sqlite3KeyInfoIsWriteable(pKey) );
+
     pKey->zIndexName = zIndexName;
     pKey->zDbSName = zDbSName;
     for(i=0; i<nCol; i++){
