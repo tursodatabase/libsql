@@ -10,7 +10,6 @@ use crate::segment::{sealed::SealedSegment, Segment};
 pub use self::error::Error;
 
 mod job;
-// mod restore;
 pub mod async_storage;
 pub mod backend;
 pub(crate) mod error;
