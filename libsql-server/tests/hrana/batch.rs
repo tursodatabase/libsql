@@ -355,3 +355,27 @@ fn stream() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn reindex_statement() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table t(x text)", ()).await?;
+        conn.execute("create index t_idx on t(x)", ()).await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+        conn.execute("reindex t_idx", ()).await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
