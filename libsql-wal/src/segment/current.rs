@@ -121,7 +121,7 @@ impl<F> CurrentSegment<F> {
             let mut frames = frame_list_to_option(frames);
             for i in 0..frames.len() {
                 let offset = tx.next_offset;
-                let buf = ZeroCopyBoxIoBuf(frames[i].take().unwrap());
+                let buf = ZeroCopyBoxIoBuf::new(frames[i].take().unwrap());
                 let (buf, ret) = self
                     .file
                     .write_all_at_async(buf, frame_offset(offset))
@@ -129,7 +129,7 @@ impl<F> CurrentSegment<F> {
 
                 ret?;
 
-                let frame = buf.0;
+                let frame = buf.into_inner();
 
                 current_savepoint
                     .index
@@ -379,7 +379,7 @@ impl<F> CurrentSegment<F> {
             if !self.is_empty() {
                 let mut frame_offset = (last_committed - seg_start_frame_no) as u32;
                 loop {
-                    let buf = ZeroCopyBuf::<Frame>::new_uninit();
+                    let buf = ZeroCopyBoxIoBuf::new(Frame::new_box_zeroed());
                     let (buf, res) = self.read_frame_offset_async(frame_offset, buf).await;
                     res?;
 
