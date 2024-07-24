@@ -89,10 +89,6 @@ where
         }
         let mut segs = Vec::new();
         let mut current = self.head.load();
-        // This is the last element in the list that is not part of the segments to be
-        // checkpointed. All the folowing segments will be checkpointed. After checkpoint, we set
-        // this link's next to None.
-        let mut last_untaken = None;
         // find the longest chain of segments that can be checkpointed, iow, segments that do not have
         // readers pointing to them
         while let Some(segment) = &*current {
@@ -100,7 +96,6 @@ where
             if segment.last_committed() <= until_frame_no {
                 if !segment.is_checkpointable() {
                     segs.clear();
-                    last_untaken = current.clone();
                 } else {
                     segs.push(segment.clone());
                 }
@@ -154,18 +149,20 @@ where
         //// todo: make async
         db_file.sync_all()?;
 
-        match last_untaken {
-            Some(link) => {
-                assert!(Arc::ptr_eq(&link.next.load().as_ref().unwrap(), &segs[0]));
-                link.next.swap(None);
-            }
-            // everything up to head was checkpointed
-            None => {
-                assert!(Arc::ptr_eq(&*self.head.load().as_ref().unwrap(), &segs[0]));
-                self.head.swap(None);
+        let mut current = self.head.compare_and_swap(&segs[0], None);
+        if Arc::ptr_eq(&segs[0], current.as_ref().unwrap()) {
+            // nothing to do
+        } else {
+            loop {
+                let next = current.as_ref().unwrap().next.compare_and_swap(&segs[0], None);
+                if Arc::ptr_eq(&segs[0], next.as_ref().unwrap()) {
+                    break
+                } else {
+                    current = next;
+                }
             }
         }
-
+        
         self.len.fetch_sub(segs.len(), Ordering::Relaxed);
 
         db_file.set_len(size_after as u64 * 4096)?;
