@@ -120,6 +120,7 @@ impl StmtKind {
             }) => Some(Self::Release),
             Cmd::Stmt(Stmt::Attach { .. }) => Some(Self::Attach),
             Cmd::Stmt(Stmt::Detach(_)) => Some(Self::Detach),
+            Cmd::Stmt(Stmt::Reindex { .. }) => Some(Self::Write),
             _ => None,
         }
     }
