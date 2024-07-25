@@ -717,7 +717,7 @@ static int nodeAcquire(
   ** increase its reference count and return it.
   */
   if( (pNode = nodeHashLookup(pRtree, iNode))!=0 ){
-    if( pParent && pParent!=pNode->pParent ){
+    if( pParent && ALWAYS(pParent!=pNode->pParent) ){
       RTREE_IS_CORRUPT(pRtree);
       return SQLITE_CORRUPT_VTAB;
     }
@@ -3452,7 +3452,7 @@ static int rtreeSqlInit(
     }
     sqlite3_free(zSql);
   }
-  if( pRtree->nAux ){
+  if( pRtree->nAux && rc!=SQLITE_NOMEM ){
     pRtree->zReadAuxSql = sqlite3_mprintf(
        "SELECT * FROM \"%w\".\"%w_rowid\" WHERE rowid=?1",
        zDb, zPrefix);
@@ -4141,15 +4141,13 @@ static int rtreeCheckTable(
   check.zTab = zTab;
 
   /* Find the number of auxiliary columns */
-  if( check.rc==SQLITE_OK ){
-    pStmt = rtreeCheckPrepare(&check, "SELECT * FROM %Q.'%q_rowid'", zDb, zTab);
-    if( pStmt ){
-      nAux = sqlite3_column_count(pStmt) - 2;
-      sqlite3_finalize(pStmt);
-    }else 
-    if( check.rc!=SQLITE_NOMEM ){
-      check.rc = SQLITE_OK;
-    }
+  pStmt = rtreeCheckPrepare(&check, "SELECT * FROM %Q.'%q_rowid'", zDb, zTab);
+  if( pStmt ){
+    nAux = sqlite3_column_count(pStmt) - 2;
+    sqlite3_finalize(pStmt);
+  }else 
+  if( check.rc!=SQLITE_NOMEM ){
+    check.rc = SQLITE_OK;
   }
 
   /* Find number of dimensions in the rtree table. */
@@ -4204,6 +4202,7 @@ static int rtreeIntegrity(
   if( rc==SQLITE_OK && *pzErr ){
     *pzErr = sqlite3_mprintf("In RTree %s.%s:\n%z",
                  pRtree->zDb, pRtree->zName, *pzErr);
+    if( (*pzErr)==0 ) rc = SQLITE_NOMEM;
   }
   return rc;
 }

@@ -36,5 +36,32 @@ do_catchsql_test 2.3 {
   SELECT '{a:null,{"h":[1,[1,2,3]],"j":"abc"}:true}'->'$h[#-1]';
 } {1 {malformed JSON}}
 
+# Verify that escaped label names are compared correctly.
+# 
+do_execsql_test 3.1 {
+  SELECT '{"a\x62c":123}' ->> 'abc';
+} 123
+do_execsql_test 3.2 {
+  SELECT '{"abc":123}' ->> 'a\x62c';
+} 123
+
+db null null
+do_execsql_test 3.3 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(json_insert('{}','$.a\',111,'$."b\\"',222));
+  INSERT INTO t1 VALUES(jsonb_insert('{}','$.a\',111,'$."b\\"',222));
+  SELECT x->'$.a\', x->'$.a\\', x->'$."a\\"', x->'$."b\\"' FROM t1;
+} {111 null 111 222 111 null 111 222}
+
+do_execsql_test 3.4 {
+  SELECT json_patch('{"a\x62c":123}','{"ab\x63":456}') ->> 'abc';
+} 456
+
+ifcapable vtab {
+  do_execsql_test 4.1 {
+    SELECT * FROM json_tree('{"\u0017":1}','$."\x17"');
+  } {{\x17} 1 integer 1 1 null {$."\x17"} {$}}
+}
 
 finish_test

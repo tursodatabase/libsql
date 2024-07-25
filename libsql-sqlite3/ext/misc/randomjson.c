@@ -26,9 +26,14 @@
 **
 **     .load ./randomjson
 **     SELECT random_json(1);
+**     SELECT random_json5(1);
 */
-#include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
+#ifdef SQLITE_STATIC_RANDOMJSON
+#  include "sqlite3.h"
+#else
+#  include "sqlite3ext.h"
+   SQLITE_EXTENSION_INIT1
+#endif
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -51,17 +56,18 @@ static unsigned int prngInt(Prng *p){
   return p->x ^ p->y;
 }
 
-static const char *azJsonAtoms[] = {
-  /* JSON                    /* JSON-5 */
+static char *azJsonAtoms[] = {
+  /* JSON                    JSON-5 */
   "0",                       "0",
   "1",                       "1",
   "-1",                      "-1",
   "2",                       "+2",
-  "3",                       "3",
-  "2.5",                     "2.5",
+  "3DDDD",                   "3DDDD",
+  "2.5DD",                   "2.5DD",
   "0.75",                    ".75",
   "-4.0e2",                  "-4.e2",
   "5.0e-3",                  "+5e-3",
+  "6.DDe+0DD",                "6.DDe+0DD",
   "0",                       "0x0",
   "512",                     "0x200",
   "256",                     "+0x100",
@@ -73,12 +79,14 @@ static const char *azJsonAtoms[] = {
   "-9.0e999",                "-Infinity",
   "9.0e999",                 "+Infinity",
   "null",                    "NaN",
-  "-0.0005123",              "-0.0005123",
+  "-0.0005DD",              "-0.0005DD",
   "4.35e-3",                 "+4.35e-3",
   "\"gem\\\"hay\"",          "\"gem\\\"hay\"",
   "\"icy'joy\"",             "'icy\\'joy\'",
   "\"keylog\"",              "\"key\\\nlog\"",
   "\"mix\\\\\\tnet\"",       "\"mix\\\\\\tnet\"",
+  "\"oat\\r\\n\"",           "\"oat\\r\\n\"",
+  "\"\\fpan\\b\"",           "\"\\fpan\\b\"",
   "{}",                      "{}",
   "[]",                      "[]",
   "[]",                      "[/*empty*/]",
@@ -89,19 +97,20 @@ static const char *azJsonAtoms[] = {
   "\"day\"",                 "\"day\"",
   "\"end\"",                 "'end'",
   "\"fly\"",                 "\"fly\"",
+  "\"\\u00XX\\u00XX\"",      "\"\\xXX\\xXX\"",
+  "\"y\\uXXXXz\"",           "\"y\\uXXXXz\"",
   "\"\"",                    "\"\"",
 };
-static const char *azJsonTemplate[] = {
+static char *azJsonTemplate[] = {
   /* JSON                                      JSON-5 */
-  "{\"a\":%,\"b\":%,\"c\":%}",                 "{a:%,b:%,c:%}",
+  "{\"a\":%,\"b\":%,\"cDD\":%}",               "{a:%,b:%,cDD:%}",
   "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"e\":%}", "{a:%,b:%,c:%,d:%,e:%}",
-  "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"\":%}",  "{a:%,b:%,c:%,d:%,\"\":%}",
+  "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"\":%}",  "{a:%,b:%,c:%,d:%,'':%}",
   "{\"d\":%}",                                 "{d:%}",
   "{\"eeee\":%, \"ffff\":%}",                  "{eeee:% /*and*/, ffff:%}",
-  "{\"$g\":%,\"_h_\":%}",                      "{$g:%,_h_:%,}",
+  "{\"$g\":%,\"_h_\":%,\"a b c d\":%}",        "{$g:%,_h_:%,\"a b c d\":%}",
   "{\"x\":%,\n  \"y\":%}",                     "{\"x\":%,\n  \"y\":%}",
-  "{\"a b c d\":%,\"e\":%,\"f\":%,\"x\":%,\"y\":%}",
-                                           "{\"a b c d\":%,e:%,f:%,x:%,y:%}",
+  "{\"\\u00XX\":%,\"\\uXXXX\":%}",             "{\"\\xXX\":%,\"\\uXXXX\":%}",
   "{\"Z\":%}",                                 "{Z:%,}",
   "[%]",                                       "[%,]",
   "[%,%]",                                     "[%,%]",
@@ -122,15 +131,13 @@ static void jsonExpand(
   unsigned int r        /* Growth probability 0..1000.  0 means no growth */
 ){
   unsigned int i, j, k;
-  const char *z;
+  char *z;
+  char *zX;
   size_t n;
+  char zBuf[200];
 
   j = 0;
-  if( zSrc==0 ){
-    k = prngInt(p)%(count(azJsonTemplate)/2);
-    k = k*2 + eType;
-    zSrc = azJsonTemplate[k];
-  }
+  if( zSrc==0 ) zSrc = "%";
   if( strlen(zSrc)>=STRSZ/10 ) r = 0;
   for(i=0; zSrc[i]; i++){
     if( zSrc[i]!='%' ){
@@ -149,9 +156,36 @@ static void jsonExpand(
       z = azJsonTemplate[k];
     }
     n = strlen(z);
+    if( (zX = strstr(z,"XX"))!=0 ){
+      unsigned int y = prngInt(p);
+      if( (y&0xff)==((y>>8)&0xff) ) y += 0x100;
+      while( (y&0xff)==((y>>16)&0xff) || ((y>>8)&0xff)==((y>>16)&0xff) ){
+        y += 0x10000;
+      }
+      memcpy(zBuf, z, n+1);
+      z = zBuf;
+      zX = strstr(z,"XX");
+      while( zX!=0 ){
+        zX[0] = "0123456789abcdef"[y%16];  y /= 16;
+        zX[1] = "0123456789abcdef"[y%16];  y /= 16;
+        zX = strstr(zX, "XX");
+      }
+    }else if( (zX = strstr(z,"DD"))!=0 ){
+      unsigned int y = prngInt(p);
+      memcpy(zBuf, z, n+1);
+      z = zBuf;
+      zX = strstr(z,"DD");
+      while( zX!=0 ){
+        zX[0] = "0123456789"[y%10];  y /= 10;
+        zX[1] = "0123456789"[y%10];  y /= 10;
+        zX = strstr(zX, "DD");
+      }
+    }
+    assert( strstr(z, "XX")==0 );
+    assert( strstr(z, "DD")==0 );
     if( j+n<STRSZ ){
       memcpy(&zDest[j], z, n);
-      j += n;
+      j += (int)n;
     }
   }
   zDest[STRSZ-1] = 0;
@@ -178,7 +212,7 @@ static void randJsonFunc(
 }
 
 #ifdef _WIN32
-__declspec(dllexport)
+  __declspec(dllexport)
 #endif
 int sqlite3_randomjson_init(
   sqlite3 *db, 
@@ -188,7 +222,11 @@ int sqlite3_randomjson_init(
   static int cOne = 1;
   static int cZero = 0;
   int rc = SQLITE_OK;
+#ifdef SQLITE_STATIC_RANDOMJSON
+  (void)pApi;      /* Unused parameter */
+#else
   SQLITE_EXTENSION_INIT2(pApi);
+#endif
   (void)pzErrMsg;  /* Unused parameter */
   rc = sqlite3_create_function(db, "random_json", 1,
                    SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,

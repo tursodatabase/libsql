@@ -502,7 +502,7 @@ Bitmask sqlite3WhereGetMask(WhereMaskSet*,int);
 #ifdef WHERETRACE_ENABLED
 void sqlite3WhereClausePrint(WhereClause *pWC);
 void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm);
-void sqlite3WhereLoopPrint(WhereLoop *p, WhereClause *pWC);
+void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC);
 #endif
 WhereTerm *sqlite3WhereFindTerm(
   WhereClause *pWC,     /* The WHERE clause to be searched */

@@ -629,7 +629,7 @@ static int fts5VocabFilterMethod(
   if( pEq ){
     zTerm = (const char *)sqlite3_value_text(pEq);
     nTerm = sqlite3_value_bytes(pEq);
-    f = 0;
+    f = FTS5INDEX_QUERY_NOTOKENDATA;
   }else{
     if( pGe ){
       zTerm = (const char *)sqlite3_value_text(pGe);

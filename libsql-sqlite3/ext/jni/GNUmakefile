@@ -35,6 +35,8 @@ $(dir.bld.c):
 
 javac.flags ?= -Xlint:unchecked -Xlint:deprecation
 java.flags ?=
+javac.flags += -encoding utf8
+# -------------^^^^^^^^^^^^^^ required for Windows builds
 jnicheck ?= 1
 ifeq (1,$(jnicheck))
   java.flags += -Xcheck:jni
@@ -79,6 +81,7 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
+  Experimental.java \
   NotNull.java \
   Nullable.java \
 ) $(patsubst %,$(dir.src.capi)/%,\
@@ -91,7 +94,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   CollationNeededCallback.java \
   CommitHookCallback.java \
   ConfigLogCallback.java \
-  ConfigSqllogCallback.java \
+  ConfigSqlLogCallback.java \
   NativePointerHolder.java \
   OutputPointer.java \
   PrepareMultiCallback.java \
@@ -110,6 +113,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   WindowFunction.java \
   XDestroyCallback.java \
   sqlite3.java \
+  sqlite3_blob.java \
   sqlite3_context.java \
   sqlite3_stmt.java \
   sqlite3_value.java \
@@ -120,6 +124,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   Sqlite.java \
   SqliteException.java \
   ValueHolder.java \
+  WindowFunction.java \
 )
 
 JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
@@ -159,12 +164,13 @@ endif
 CLASS_FILES :=
 define CLASSFILE_DEPS
 all: $(1).class
+$(1).class: $(1).java
 CLASS_FILES += $(1).class
 endef
 $(foreach B,$(basename \
   $(JAVA_FILES.main) $(JAVA_FILES.unittest) $(JAVA_FILES.tester)),\
   $(eval $(call CLASSFILE_DEPS,$(B))))
-$(CLASS_FILES): $(JAVA_FILES) $(MAKEFILE)
+$(CLASS_FILES): $(MAKEFILE)
 	$(bin.javac) $(javac.flags) -h $(dir.bld.c) -cp $(classpath) $(JAVA_FILES)
 
 #.PHONY: classfiles
@@ -226,7 +232,8 @@ SQLITE_OPT += -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
   -DSQLITE_ENABLE_PREUPDATE_HOOK \
   -DSQLITE_ENABLE_NORMALIZE \
-  -DSQLITE_ENABLE_SQLLOG
+  -DSQLITE_ENABLE_SQLLOG \
+  -DSQLITE_ENABLE_COLUMN_METADATA
 endif
 
 ifeq (1,$(opt.debug))
@@ -316,7 +323,7 @@ test-one: $(test.deps)
 	$(bin.java) $(test.flags.jvm) org.sqlite.jni.wrapper1.Tester2 $(Tester2.flags)
 test-sqllog: $(test.deps)
 	@echo "Testing with -sqllog..."
-	$(bin.java) $(test.flags.jvm) -sqllog
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.capi.Tester1 $(Tester1.flags) -sqllog
 test-mt: $(test.deps)
 	@echo "Testing in multi-threaded mode:";
 	$(bin.java) $(test.flags.jvm) org.sqlite.jni.capi.Tester1 \
