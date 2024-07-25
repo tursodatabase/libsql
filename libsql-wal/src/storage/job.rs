@@ -1,7 +1,5 @@
 use std::ops::Deref;
 
-use tokio::sync::oneshot;
-
 use super::backend::Backend;
 use super::backend::SegmentMeta;
 use super::Result;
@@ -14,7 +12,6 @@ use crate::segment::Segment;
 pub(crate) struct IndexedRequest<C, T> {
     pub(crate) request: StoreSegmentRequest<C, T>,
     pub(crate) id: u64,
-    pub(crate) ret: oneshot::Sender<u64>,
 }
 
 impl<C, T> Deref for IndexedRequest<C, T> {
@@ -102,6 +99,7 @@ pub(crate) struct JobResult<C, S> {
 
 #[cfg(test)]
 mod test {
+    use std::future::ready;
     // use std::fs::File;
     // use std::io::Write;
     // use std::mem::size_of;
@@ -489,7 +487,7 @@ mod test {
                 _config: &Self::Config,
                 _namespace: &NamespaceName,
                 _key: &SegmentKey,
-                _file: &impl FileExt
+                _file: &impl FileExt,
             ) -> Result<()> {
                 todo!()
             }
@@ -521,9 +519,9 @@ mod test {
                     segment: TestSegment,
                     created_at: Utc::now(),
                     storage_config_override: None,
+                    on_store_callback: Box::new(|_| Box::pin(ready(()))),
                 },
                 id: 0,
-                ret: oneshot::channel().0,
             },
         };
 

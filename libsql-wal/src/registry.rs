@@ -1,4 +1,3 @@
-use std::future::Future;
 use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -19,7 +18,7 @@ use crate::replication::storage::StorageReplicator;
 use crate::segment::list::SegmentList;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::{SharedWal, SwapLog};
-use crate::storage::Storage;
+use crate::storage::{OnStoreCallback, Storage};
 use crate::transaction::TxGuard;
 use libsql_sys::name::NamespaceName;
 
@@ -119,11 +118,13 @@ where
         // where the current log is sealed and it wasn't swapped.
         if let Some(sealed) = current.seal()? {
             // todo: pass config override here
-            let notify = self.storage.store(&shared.namespace, sealed.clone(), None);
             let notifier = self.checkpoint_notifier.clone();
             let namespace = shared.namespace().clone();
             let durable_frame_no = shared.durable_frame_no.clone();
-            tokio::spawn(update_durable(notify, notifier, durable_frame_no, namespace));
+            let cb: OnStoreCallback = Box::new(move |fno| Box::pin(async move {
+                update_durable(fno, notifier, durable_frame_no, namespace).await;
+            }));
+            self.storage.store(&shared.namespace, sealed.clone(), None, cb);
             new.tail().push(sealed);
         }
 
@@ -135,14 +136,13 @@ where
 }
 
 async fn update_durable(
-    notify: impl Future<Output = u64>,
+    new_durable: u64,
     notifier: mpsc::Sender<CheckpointMessage>,
-    durable_frame_no: Arc<Mutex<u64>>,
+    durable_frame_no_slot: Arc<Mutex<u64>>,
     namespace: NamespaceName,
     ) {
-    let new_durable = notify.await;
     {
-        let mut g = durable_frame_no.lock();
+        let mut g = durable_frame_no_slot.lock();
         if *g < new_durable {
             *g = new_durable;
         }
@@ -253,12 +253,14 @@ where
             if let Some(sealed) =
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
-                // TODO: pass config override here
-                let notify = self.storage.store(&namespace, sealed.clone(), None);
                 let notifier = self.checkpoint_notifier.clone();
-                let namespace = namespace.clone(); 
+                let ns = namespace.clone(); 
                 let durable_frame_no = durable_frame_no.clone();
-                tokio::spawn(update_durable(notify, notifier, durable_frame_no, namespace));
+                let cb: OnStoreCallback = Box::new(move |fno| Box::pin(async move {
+                    update_durable(fno, notifier, durable_frame_no, ns).await;
+                }));
+                // TODO: pass config override here
+                self.storage.store(&namespace, sealed.clone(), None, cb);
                 tail.push(sealed);
             }
         }

@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::future::Future;
 use std::path::PathBuf;
+use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -121,6 +122,14 @@ impl fmt::Display for SegmentKey {
     }
 }
 
+/// takes the new durable frame_no and returns a future
+pub type OnStoreCallback = Box<
+    dyn FnOnce(u64) -> Pin<Box<dyn Future<Output = ()> + Send + Sync + 'static>>
+        + Send
+        + Sync
+        + 'static,
+>;
+
 pub trait Storage: Send + Sync + 'static {
     type Segment: Segment;
     type Config;
@@ -133,7 +142,8 @@ pub trait Storage: Send + Sync + 'static {
         namespace: &NamespaceName,
         seg: Self::Segment,
         config_override: Option<Arc<Self::Config>>,
-    ) -> impl Future<Output = u64> + Send + Sync + 'static;
+        on_store: OnStoreCallback,
+    );
 
     fn durable_frame_no_sync(
         &self,
@@ -190,8 +200,8 @@ impl Storage for NoStorage {
         _namespace: &NamespaceName,
         _seg: Self::Segment,
         _config: Option<Arc<Self::Config>>,
-    ) -> impl Future<Output = u64>  + Send + Sync + 'static{
-        std::future::ready(u64::MAX)
+        _on_store: OnStoreCallback,
+    ) {
     }
 
     async fn durable_frame_no(
@@ -286,12 +296,15 @@ impl<IO: Io> TestStorage<IO> {
     pub fn new_io(store: bool, io: IO) -> Self {
         let dir = tempdir().unwrap();
         Self {
-            inner: Arc::new(TestStorageInner {
-                dir,
-                stored: Default::default(),
-                io,
-                store,
-            }.into()),
+            inner: Arc::new(
+                TestStorageInner {
+                    dir,
+                    stored: Default::default(),
+                    io,
+                    store,
+                }
+                .into(),
+            ),
         }
     }
 }
@@ -305,14 +318,17 @@ impl<IO: Io> Storage for TestStorage<IO> {
         namespace: &NamespaceName,
         seg: Self::Segment,
         _config: Option<Arc<Self::Config>>,
-    ) -> impl Future<Output = u64>  + Send + Sync + 'static{
+        on_store: OnStoreCallback,
+    ) {
         let mut inner = self.inner.lock();
         if inner.store {
             let id = uuid::Uuid::new_v4();
             let out_path = inner.dir.path().join(id.to_string());
             let out_file = inner.io.open(true, true, true, &out_path).unwrap();
-            let index = tokio::runtime::Handle::current().block_on(seg.compact(&out_file, id)).unwrap();
-            let end_frame_no =  seg.header().last_committed();
+            let index = tokio::runtime::Handle::current()
+                .block_on(seg.compact(&out_file, id))
+                .unwrap();
+            let end_frame_no = seg.header().last_committed();
             let key = SegmentKey {
                 start_frame_no: seg.header().start_frame_no.get(),
                 end_frame_no,
@@ -323,9 +339,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
                 .entry(namespace.clone())
                 .or_default()
                 .insert(key, (out_path, index));
-            std::future::ready(end_frame_no)
-        } else {
-            std::future::ready(u64::MAX)
+            tokio::runtime::Handle::current().block_on(on_store(end_frame_no))
         }
     }
 
@@ -354,12 +368,10 @@ impl<IO: Io> Storage for TestStorage<IO> {
     ) -> u64 {
         let inner = self.inner.lock();
         if inner.store {
-            let Some(segs) = inner.stored.get(namespace) else { return 0 };
-            segs
-                .keys()
-                .map(|k| k.end_frame_no)
-                .max()
-                .unwrap_or(0)
+            let Some(segs) = inner.stored.get(namespace) else {
+                return 0;
+            };
+            segs.keys().map(|k| k.end_frame_no).max().unwrap_or(0)
         } else {
             u64::MAX
         }
@@ -374,9 +386,10 @@ impl<IO: Io> Storage for TestStorage<IO> {
         let inner = self.inner.lock();
         if inner.store {
             if let Some(segs) = inner.stored.get(namespace) {
-                let Some((key, _path)) = segs.iter().find(|(k, _)| k.includes(frame_no))
-                    else { return Err(Error::FrameNotFound(frame_no)) };
-                    return Ok(*key)
+                let Some((key, _path)) = segs.iter().find(|(k, _)| k.includes(frame_no)) else {
+                    return Err(Error::FrameNotFound(frame_no));
+                };
+                return Ok(*key);
             } else {
                 panic!("namespace not found");
             }
@@ -394,12 +407,9 @@ impl<IO: Io> Storage for TestStorage<IO> {
         let inner = self.inner.lock();
         if inner.store {
             match inner.stored.get(namespace) {
-                Some(segs) => {
-                    Ok(segs.get(&key).unwrap().1.clone())
-                }
+                Some(segs) => Ok(segs.get(&key).unwrap().1.clone()),
                 None => panic!("unknown namespace"),
             }
-
         } else {
             panic!("not storing")
         }
@@ -421,14 +431,12 @@ impl<IO: Io> Storage for TestStorage<IO> {
                 }
                 None => panic!("unknown namespace"),
             }
-
         } else {
             panic!("not storing")
         }
     }
 }
 
-#[derive(Debug)]
 pub struct StoreSegmentRequest<C, S> {
     namespace: NamespaceName,
     /// Path to the segment. Read-only for bottomless
@@ -439,4 +447,21 @@ pub struct StoreSegmentRequest<C, S> {
     /// alternative configuration to use with the storage layer.
     /// e.g: S3 overrides
     storage_config_override: Option<Arc<C>>,
+    /// Called after the segment was stored, with the new durable index
+    on_store_callback: OnStoreCallback,
+}
+
+impl<C, S> fmt::Debug for StoreSegmentRequest<C, S>
+where
+    C: fmt::Debug,
+    S: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("StoreSegmentRequest")
+            .field("namespace", &self.namespace)
+            .field("segment", &self.segment)
+            .field("created_at", &self.created_at)
+            .field("storage_config_override", &self.storage_config_override)
+            .finish()
+    }
 }

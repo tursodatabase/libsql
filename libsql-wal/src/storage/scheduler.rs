@@ -1,7 +1,7 @@
 use std::cmp::Reverse;
 use std::collections::{HashMap, VecDeque};
 
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::mpsc;
 
 use super::job::{IndexedRequest, Job, JobResult};
 use super::StoreSegmentRequest;
@@ -50,14 +50,14 @@ impl<C, T> Scheduler<C, T> {
 
     /// Register a new request with the scheduler
     #[tracing::instrument(skip_all)]
-    pub fn register(&mut self, request: StoreSegmentRequest<C, T>, ret: oneshot::Sender<u64>) {
+    pub fn register(&mut self, request: StoreSegmentRequest<C, T>) {
         // invariant: new segment comes immediately after the latest segment for that namespace. This means:
         // - immediately after the last registered segment, if there is any
         // - immediately after the last durable index
         let id = self.next_request_id;
         self.next_request_id += 1;
         let name = request.namespace.clone();
-        let slot = IndexedRequest { request, id, ret };
+        let slot = IndexedRequest { request, id };
         let requests = self.requests.entry(name.clone()).or_default();
         requests.requests.push_back(slot);
 
@@ -107,7 +107,7 @@ impl<C, T> Scheduler<C, T> {
         match result.result {
             Ok(durable_index) => {
                 tracing::debug!("job success registered");
-                let _ = result.job.request.ret.send(durable_index);
+                (result.job.request.request.on_store_callback)(durable_index).await;
                 if self
                     .durable_notifier
                     .send((name.clone(), durable_index))
@@ -151,6 +151,8 @@ impl<C, T> Scheduler<C, T> {
 
 #[cfg(test)]
 mod test {
+    use std::future::ready;
+
     use chrono::Utc;
 
     use crate::storage::Error;
@@ -172,8 +174,8 @@ mod test {
                 segment: (),
                 created_at: Utc::now(),
                 storage_config_override: None,
+                on_store_callback: Box::new(|_| Box::pin(ready(()))),
             },
-            oneshot::channel().0,
         );
 
         scheduler.register(
@@ -182,8 +184,8 @@ mod test {
                 segment: (),
                 created_at: Utc::now(),
                 storage_config_override: None,
+                on_store_callback: Box::new(|_| Box::pin(ready(()))),
             },
-            oneshot::channel().0,
         );
 
         scheduler.register(
@@ -192,8 +194,8 @@ mod test {
                 segment: (),
                 created_at: Utc::now(),
                 storage_config_override: None,
+                on_store_callback: Box::new(|_| Box::pin(ready(()))),
             },
-            oneshot::channel().0,
         );
 
         let job1 = scheduler.schedule().unwrap();
@@ -241,8 +243,8 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(|_| Box::pin(ready(()))),
         },
-        oneshot::channel().0,
         );
 
         scheduler.register(StoreSegmentRequest {
@@ -250,8 +252,8 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(|_| Box::pin(ready(()))),
         },
-        oneshot::channel().0,
         );
 
         let job1 = scheduler.schedule().unwrap();
@@ -283,8 +285,8 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(|_| Box::pin(ready(()))),
         }, 
-        oneshot::channel().0,
         );
 
         let job = scheduler.schedule().unwrap();
@@ -296,7 +298,8 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
-        },        oneshot::channel().0,
+            on_store_callback: Box::new(|_| Box::pin(ready(()))),
+        }, 
  );
 
         assert!(scheduler.schedule().is_none());

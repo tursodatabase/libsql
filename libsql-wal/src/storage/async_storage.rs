@@ -1,7 +1,6 @@
 //! `AsyncStorage` is a `Storage` implementation that defer storage to a background thread. The
 //! durable frame_no is notified asynchronously.
 
-use std::future::Future;
 use std::sync::Arc;
 
 use chrono::Utc;
@@ -15,7 +14,7 @@ use crate::segment::Segment;
 
 use super::backend::Backend;
 use super::scheduler::Scheduler;
-use super::{RestoreOptions, Storage, StoreSegmentRequest};
+use super::{OnStoreCallback, RestoreOptions, Storage, StoreSegmentRequest};
 
 /// Background loop task state.
 ///
@@ -86,8 +85,8 @@ where
                 }
                 msg = self.receiver.recv(), if !shutting_down => {
                     match msg {
-                        Some(StorageLoopMessage::StoreReq(req, ret)) => {
-                            self.scheduler.register(req, ret);
+                        Some(StorageLoopMessage::StoreReq(req)) => {
+                            self.scheduler.register(req);
                         }
                         Some(StorageLoopMessage::DurableFrameNoReq { namespace, ret, config_override }) => {
                             self.fetch_durable_frame_no_async(namespace, ret, config_override);
@@ -134,7 +133,7 @@ pub struct BottomlessConfig<C> {
 }
 
 enum StorageLoopMessage<C, S> {
-    StoreReq(StoreSegmentRequest<C, S>, oneshot::Sender<u64>),
+    StoreReq(StoreSegmentRequest<C, S>),
     DurableFrameNoReq {
         namespace: NamespaceName,
         config_override: Option<Arc<C>>,
@@ -164,22 +163,19 @@ where
         namespace: &NamespaceName,
         segment: Self::Segment,
         config_override: Option<Arc<Self::Config>>,
-    ) -> impl Future<Output = u64>  + Send + Sync + 'static{
+        on_store_callback: OnStoreCallback,
+    ){
         let req = StoreSegmentRequest {
             namespace: namespace.clone(),
             segment,
             created_at: Utc::now(),
             storage_config_override: config_override,
+            on_store_callback,
         };
 
-        let (sender, receiver) = oneshot::channel();
         self.job_sender
-            .send(StorageLoopMessage::StoreReq(req, sender))
+            .send(StorageLoopMessage::StoreReq(req))
             .expect("bottomless loop was closed before the handle was dropped");
-
-        async move {
-            receiver.await.unwrap()
-        }
     }
 
     async fn durable_frame_no(
