@@ -5161,7 +5161,6 @@ static int accessPayload(
           assert( aWrite>=pBufStart );                         /* due to (6) */
           memcpy(aSave, aWrite, 4);
           rc = sqlite3OsRead(fd, aWrite, a+4, (i64)pBt->pageSize*(nextPage-1));
-          if( rc && nextPage>pBt->nPage ) rc = SQLITE_CORRUPT_BKPT;
           nextPage = get4byte(aWrite);
           memcpy(aWrite, aSave, 4);
         }else
@@ -6281,7 +6280,10 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur){
   }
 
   pPage = pCur->pPage;
-  assert( pPage->isInit );
+  if( sqlite3FaultSim(412) ) pPage->isInit = 0;
+  if( !pPage->isInit ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   if( !pPage->leaf ){
     int idx = pCur->ix;
     rc = moveToChild(pCur, get4byte(findCell(pPage, idx)));

@@ -687,7 +687,7 @@ struct Pager {
   char *zJournal;             /* Name of the journal file */
   int (*xBusyHandler)(void*); /* Function to call when busy */
   void *pBusyHandlerArg;      /* Context argument for xBusyHandler */
-  int aStat[4];               /* Total cache hits, misses, writes, spills */
+  u32 aStat[4];               /* Total cache hits, misses, writes, spills */
 #ifdef SQLITE_TEST
   int nRead;                  /* Database pages read */
 #endif
@@ -836,6 +836,16 @@ static const unsigned char aJournalMagic[] = {
 */
 #define isOpen(pFd) ((pFd)->pMethods!=0)
 
+#ifndef SQLITE_OMIT_WAL
+# define pagerUseWal(x) ((x)->wal!=0) // check that methods have been initialized
+#else
+# define pagerUseWal(x) 0
+# define pagerRollbackWal(x) 0
+# define pagerWalFrames(v,w,x,y) 0
+# define pagerOpenWalIfPresent(z) SQLITE_OK
+# define pagerBeginReadTransaction(z) SQLITE_OK
+#endif
+
 #ifdef SQLITE_DIRECT_OVERFLOW_READ
 /*
 ** Return true if page pgno can be read directly from the database file
@@ -852,23 +862,12 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
 #ifndef SQLITE_OMIT_WAL
   if( pagerUseWal(pPager) ){
     u32 iRead = 0;
-    int rc;
-    rc = pPager->wal.xFindFrame(pPager->wal.pData, pgno, &iRead);
-    return (rc==SQLITE_OK && iRead==0);
+    (void)pPager->wal->methods.xFindFrame(pPager->wal->pData, pgno, &iRead);
+    return iRead==0;
   }
 #endif
   return 1;
 }
-#endif
-
-#ifndef SQLITE_OMIT_WAL
-# define pagerUseWal(x) ((x)->wal!=0) // check that methods have been initialized
-#else
-# define pagerUseWal(x) 0
-# define pagerRollbackWal(x) 0
-# define pagerWalFrames(v,w,x,y) 0
-# define pagerOpenWalIfPresent(z) SQLITE_OK
-# define pagerBeginReadTransaction(z) SQLITE_OK
 #endif
 
 #ifndef NDEBUG
@@ -5119,10 +5118,13 @@ act_like_temp_file:
 */
 sqlite3_file *sqlite3_database_file_object(const char *zName){
   Pager *pPager;
+  const char *p;
   while( zName[-1]!=0 || zName[-2]!=0 || zName[-3]!=0 || zName[-4]!=0 ){
     zName--;
   }
-  pPager = *(Pager**)(zName - 4 - sizeof(Pager*));
+  p = zName - 4 - sizeof(Pager*);
+  assert( EIGHT_BYTE_ALIGNMENT(p) );
+  pPager = *(Pager**)p;
   return pPager->fd;
 }
 
@@ -6890,11 +6892,11 @@ int *sqlite3PagerStats(Pager *pPager){
   a[3] = pPager->eState==PAGER_OPEN ? -1 : (int) pPager->dbSize;
   a[4] = pPager->eState;
   a[5] = pPager->errCode;
-  a[6] = pPager->aStat[PAGER_STAT_HIT];
-  a[7] = pPager->aStat[PAGER_STAT_MISS];
+  a[6] = (int)pPager->aStat[PAGER_STAT_HIT] & 0x7fffffff;
+  a[7] = (int)pPager->aStat[PAGER_STAT_MISS] & 0x7fffffff;
   a[8] = 0;  /* Used to be pPager->nOvfl */
   a[9] = pPager->nRead;
-  a[10] = pPager->aStat[PAGER_STAT_WRITE];
+  a[10] = (int)pPager->aStat[PAGER_STAT_WRITE] & 0x7fffffff;
   return a;
 }
 #endif
@@ -6910,7 +6912,7 @@ int *sqlite3PagerStats(Pager *pPager){
 ** reset parameter is non-zero, the cache hit or miss count is zeroed before
 ** returning.
 */
-void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, int *pnVal){
+void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, u64 *pnVal){
 
   assert( eStat==SQLITE_DBSTATUS_CACHE_HIT
        || eStat==SQLITE_DBSTATUS_CACHE_MISS
@@ -7888,7 +7890,7 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 }
 #endif
 
-#ifdef SQLITE_USE_SEH
+#if defined(SQLITE_USE_SEH) && !defined(SQLITE_OMIT_WAL)
 int sqlite3PagerWalSystemErrno(Pager *pPager){
   return sqlite3WalSystemErrno(pPager->pWal);
 }

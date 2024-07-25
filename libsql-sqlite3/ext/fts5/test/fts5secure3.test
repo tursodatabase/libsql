@@ -86,71 +86,76 @@ do_execsql_test 2.8 {
 # Tests with large/small rowid values.
 #
 
-reset_db
-
-expr srand(0)
-
-set vocab {
-  Popper Poppins Popsicle Porfirio Porrima Porsche
-  Porter Portia Portland Portsmouth Portugal Portuguese
-  Poseidon Post PostgreSQL Potemkin Potomac Potsdam
-  Pottawatomie Potter Potts Pound Poussin Powell
-  PowerPC PowerPoint Powers Powhatan Poznan Prada
-  Prado Praetorian Prague Praia Prakrit Pratchett
-  Pratt Pravda Praxiteles Preakness Precambrian Preminger
-  Premyslid Prensa Prentice Pres Presbyterian Presbyterianism
-}
-proc newdoc {} {
-  for {set i 0} {$i<8} {incr i} {
-    lappend ret [lindex $::vocab [expr int(abs(rand()) * [llength $::vocab])]]
+foreach {tn cfg} {
+  1 ""
+  2 "INSERT INTO fff(fff, rank) VALUES('secure-delete', 1)"
+} {
+  reset_db
+  
+  expr srand(0)
+  
+  set vocab {
+    Popper Poppins Popsicle Porfirio Porrima Porsche
+    Porter Portia Portland Portsmouth Portugal Portuguese
+    Poseidon Post PostgreSQL Potemkin Potomac Potsdam
+    Pottawatomie Potter Potts Pound Poussin Powell
+    PowerPC PowerPoint Powers Powhatan Poznan Prada
+    Prado Praetorian Prague Praia Prakrit Pratchett
+    Pratt Pravda Praxiteles Preakness Precambrian Preminger
+    Premyslid Prensa Prentice Pres Presbyterian Presbyterianism
   }
-  set ret
-}
-db func newdoc newdoc
-
-do_execsql_test 3.0 {
-  CREATE VIRTUAL TABLE fff USING fts5(y);
-  INSERT INTO fff(fff, rank) VALUES('pgsz', 64);
-
-  WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
-  INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
-
-  WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
-  INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
-
-  WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
-  INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
-
-  INSERT INTO fff(fff, rank) VALUES('secure-delete', 1);
-}
-
-proc lshuffle {in} {
-  set out [list]
-  while {[llength $in]>0} {
-    set idx [expr int(abs(rand()) * [llength $in])]
-    lappend out [lindex $in $idx]
-    set in [lreplace $in $idx $idx]
-  }
-  set out
-}
-
-#dump fff
-
-set iTest 1
-foreach ii [lshuffle [db eval {SELECT rowid FROM fff}]] {
-  #if {$iTest==1} { dump fff }
-  #if {$iTest==1} { breakpoint }
-  do_execsql_test 3.1.$iTest.$ii {
-    DELETE FROM fff WHERE rowid=$ii;
-  }
-  #if {$iTest==1} { dump fff }
-  if {($iTest % 20)==0} {
-    do_execsql_test 3.1.$iTest.$ii.ic {
-      INSERT INTO fff(fff) VALUES('integrity-check');
+  proc newdoc {} {
+    for {set i 0} {$i<8} {incr i} {
+      lappend ret [lindex $::vocab [expr int(abs(rand()) * [llength $::vocab])]]
     }
+    set ret
   }
-  #if {$iTest==1} { break }
-  incr iTest
+  db func newdoc newdoc
+  
+  do_execsql_test 3.$tn.0 {
+    CREATE VIRTUAL TABLE fff USING fts5(y);
+    INSERT INTO fff(fff, rank) VALUES('pgsz', 64);
+  
+    WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
+    INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
+  
+    WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
+    INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
+  
+    WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
+    INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
+  }
+
+  execsql $cfg
+  
+  proc lshuffle {in} {
+    set out [list]
+    while {[llength $in]>0} {
+      set idx [expr int(abs(rand()) * [llength $in])]
+      lappend out [lindex $in $idx]
+      set in [lreplace $in $idx $idx]
+    }
+    set out
+  }
+  
+  #dump fff
+  
+  set iTest 1
+  foreach ii [lshuffle [db eval {SELECT rowid FROM fff}]] {
+    #if {$iTest==1} { dump fff }
+    #if {$iTest==1} { breakpoint }
+    do_execsql_test 3.$tn.1.$iTest.$ii {
+      DELETE FROM fff WHERE rowid=$ii;
+    }
+    #if {$iTest==1} { dump fff }
+    if {($iTest % 20)==0} {
+      do_execsql_test 3.$tn.1.$iTest.$ii.ic {
+        INSERT INTO fff(fff) VALUES('integrity-check');
+      }
+    }
+    #if {$iTest==1} { break }
+    incr iTest
+  }
 }
 
 #execsql_pp { SELECT rowid FROM fff('post') ORDER BY rowid ASC }

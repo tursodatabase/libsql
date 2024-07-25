@@ -1043,6 +1043,12 @@ static int isDate(
   }
   computeJD(p);
   if( p->isError || !validJulianDay(p->iJD) ) return 1;
+  if( argc==1 && p->validYMD && p->D>28 ){
+    /* Make sure a YYYY-MM-DD is normalized.
+    ** Example: 2023-02-31 -> 2023-03-03 */
+    assert( p->validJD );
+    p->validYMD = 0;  
+  }
   return 0;
 }
 

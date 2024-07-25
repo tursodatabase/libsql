@@ -311,6 +311,20 @@ do_execsql_test 8.9 {
 do_execsql_test 8.10 {
   SELECT * FROM t0 WHERE likelihood(t0.rowid <= '0', 0.5);
 } {}
+# Forum https://sqlite.org/forum/forumpost/45ec3d9788
+reset_db
+do_execsql_test 8.11 {
+  CREATE TABLE t1(c0 INT);
+  INSERT INTO t1(c0) VALUES (NULL);
+  CREATE INDEX i46 ON t1(CAST( (c0 IS TRUE) AS TEXT));
+  CREATE VIEW v0(c2) AS SELECT CAST( (c0 IS TRUE) AS TEXT ) FROM t1;
+}
+do_execsql_test 8.12 {
+  SELECT quote(c0), quote(c2) FROM t1, v0 WHERE  (0 < LIKELY(v0.c2));
+} {NULL '0'} 
+do_execsql_test 8.13 {
+  SELECT quote(c0), quote(c2) FROM t1, v0 WHERE  (0 < LIKELY(v0.c2)) IS TRUE;
+} {NULL '0'}
 
 # 2019-12-31: assertion fault discovered by Yongheng's fuzzer.
 # Harmless memIsValid() due to the code generators failure to

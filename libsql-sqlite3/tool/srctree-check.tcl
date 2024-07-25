@@ -27,11 +27,25 @@ proc readfile {filename} {
 # Find the root of the tree.
 #
 set ROOT [file dir [file dir [file normalize $argv0]]]
-cd $ROOT
 
 # Name of the TCL interpreter
 #
 set TCLSH [info nameofexe]
+
+# Number of errors seen.
+#
+set NERR 0
+
+######################### configure ###########################################
+
+set conf [readfile $ROOT/configure]
+set vers [readfile $ROOT/VERSION]
+if {[string first $vers $conf]<=0} {
+  puts "ERROR: ./configure does not agree with ./VERSION"
+  puts "...... Fix: run autoconf"
+  incr NERR
+}
+unset conf
 
 ######################### autoconf/tea/configure.ac ###########################
 
@@ -42,38 +56,48 @@ append pattern [string trim $vers]
 append pattern {])}
 if {[string first $pattern $confac]<=0} {
   puts "ERROR: ./autoconf/tea/configure.ac does not agree with ./VERSION"
-  exit 1
+  puts "...... Fix: manually edit ./autoconf/tea/configure.ac and put the"
+  puts "......      correct version number in AC_INIT()"
+  incr NERR
 }
+unset confac
 
 ######################### autoconf/Makefile.msc ###############################
 
 set f1 [readfile $ROOT/autoconf/Makefile.msc]
-exec mv $ROOT/autoconf/Makefile.msc $ROOT/autoconf/Makefile.msc.tmp
-exec $TCLSH $ROOT/tool/mkmsvcmin.tcl
-set f2 [readfile $ROOT/autoconf/Makefile.msc]
-exec mv $ROOT/autoconf/Makefile.msc.tmp $ROOT/autoconf/Makefile.msc
+exec $TCLSH $ROOT/tool/mkmsvcmin.tcl $ROOT/Makefile.msc tmp1.txt
+set f2 [readfile tmp1.txt]
+file delete tmp1.txt
 if {$f1 != $f2} {
   puts "ERROR: ./autoconf/Makefile.msc does not agree with ./Makefile.msc"
+  puts "...... Fix: tclsh tool/mkmsvcmin.tcl"
+  incr NERR
 }
 
 ######################### src/pragma.h ########################################
 
 set f1 [readfile $ROOT/src/pragma.h]
-exec mv $ROOT/src/pragma.h $ROOT/src/pragma.h.tmp
-exec $TCLSH $ROOT/tool/mkpragmatab.tcl
-set f2 [readfile $ROOT/src/pragma.h]
-exec mv $ROOT/src/pragma.h.tmp $ROOT/src/pragma.h
+exec $TCLSH $ROOT/tool/mkpragmatab.tcl tmp2.txt
+set f2 [readfile tmp2.txt]
+file delete tmp2.txt
 if {$f1 != $f2} {
   puts "ERROR: ./src/pragma.h does not agree with ./tool/mkpragmatab.tcl"
+  puts "...... Fix: tclsh tool/mkpragmatab.tcl"
+  incr NERR
 }
 
 ######################### src/ctime.c ########################################
 
 set f1 [readfile $ROOT/src/ctime.c]
-exec mv $ROOT/src/ctime.c $ROOT/src/ctime.c.tmp
-exec $TCLSH $ROOT/tool/mkctimec.tcl
-set f2 [readfile $ROOT/src/ctime.c]
-exec mv $ROOT/src/ctime.c.tmp $ROOT/src/ctime.c
+exec $TCLSH $ROOT/tool/mkctimec.tcl tmp3.txt
+set f2 [readfile tmp3.txt]
+file delete tmp3.txt
 if {$f1 != $f2} {
   puts "ERROR: ./src/ctime.c does not agree with ./tool/mkctimec.tcl"
+  puts ".....  Fix: tclsh tool/mkctimec.tcl"
+  incr NERR
 }
+
+# If any errors are seen, exit 1 so that the build will fail.
+#
+if {$NERR>0} {exit 1}

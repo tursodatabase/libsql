@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>sqlite3-api batch SQL runner for the SAHPool VFS</title>
+  </head>
+  <body>
+    <header id='titlebar'><span>sqlite3-api batch SQL runner for the SAHPool VFS</span></header>
+    <div>
+      <span class='input-wrapper'>
+        <input type='checkbox' class='disable-during-eval' id='cb-reverse-log-order' checked></input>
+        <label for='cb-reverse-log-order' id='lbl-reverse-log-order'>Reverse log order</label>
+      </span>
+    </div>
+    <div id='test-output' class='reverse'></div>
+    <script>
+      (function(){
+        const E = (sel)=>document.querySelector(sel);
+
+        const eOut = E('#test-output');
+        const log2 = function(cssClass,...args){
+          let ln;
+          if(1 || cssClass){
+            ln = document.createElement('div');
+            if(cssClass) ln.classList.add(cssClass);
+            ln.append(document.createTextNode(args.join(' ')));
+          }else{
+            // This doesn't work with the "reverse order" option!
+            ln = document.createTextNode(args.join(' ')+'\n');
+          }
+          eOut.append(ln);
+        };
+        const log = (...args)=>{
+          //console.log(...args);
+          log2('', ...args);
+        };
+        const logErr = function(...args){
+          console.error(...args);
+          log2('error', ...args);
+        };
+        const logWarn = function(...args){
+          console.warn(...args);
+          log2('warning', ...args);
+        };
+
+        const cbReverseLog = E('#cb-reverse-log-order');
+        const lblReverseLog = E('#lbl-reverse-log-order');
+        if(cbReverseLog.checked){
+            lblReverseLog.classList.add('warning');
+            eOut.classList.add('reverse');
+        }
+        cbReverseLog.addEventListener('change', function(){
+            if(this.checked){
+                eOut.classList.add('reverse');
+                lblReverseLog.classList.add('warning');
+            }else{
+                eOut.classList.remove('reverse');
+                lblReverseLog.classList.remove('warning');
+            }
+        }, false);
+
+        const w = new Worker('batch-runner-sahpool.js?sqlite3.dir=jswasm');
+        w.onmessage = function(msg){
+          msg = msg.data;
+          switch(msg.type){
+            case 'stdout': log(...msg.data); break;
+            case 'warn': logWarn(...msg.data); break;
+            case 'error': logErr(...msg.data); break;
+            default:
+              logErr("Unhandled worker message type:",msg);
+              break;
+          }
+        };
+      })();
+    </script>
+    <style>
+      #test-output {
+          white-space: break-spaces;
+          overflow: auto;
+      }
+    </style>
+  </body>
+</html>

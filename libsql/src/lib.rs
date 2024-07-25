@@ -42,14 +42,14 @@
 //!
 //! ## Remote database
 //!
-//! It is also possible to create a libsql connection that does not open a local datatbase but
+//! It is also possible to create a libsql connection that does not open a local database but
 //! instead sends queries to a remote database.
 //!
 //! ```rust,no_run
 //! # async fn run() {
 //! use libsql::Builder;
 //!
-//! let db = Builder::new_remote("libsql://my-remote-db.com", "my-auth-token").build().await.unwrap();
+//! let db = Builder::new_remote("libsql://my-remote-db.com".to_string(), "my-auth-token".to_string()).build().await.unwrap();
 //! let conn = db.connect().unwrap();
 //! conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ()).await.unwrap();
 //! conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ()).await.unwrap();

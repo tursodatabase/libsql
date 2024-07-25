@@ -206,9 +206,8 @@ const MyBinder = StructBinderFactory({
 It also offers a number of other settings, but all are optional except
 for the ones shown above. Those three config options abstract away
 details which are specific to a given WASM environment. They provide
-the WASM "heap" memory (a byte array), the memory allocator, and the
-deallocator. In a conventional Emscripten setup, that config might
-simply look like:
+the WASM "heap" memory, the memory allocator, and the deallocator. In
+a conventional Emscripten setup, that config might simply look like:
 
 >  
 ```javascript

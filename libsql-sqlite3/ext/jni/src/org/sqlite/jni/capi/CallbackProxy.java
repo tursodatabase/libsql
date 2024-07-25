@@ -24,8 +24,9 @@ package org.sqlite.jni.capi;
    propagated.  For callback interfaces which support returning error
    info to the core, the JNI binding will convert any exceptions to
    C-level error information. For callback interfaces which do not
-   support, all exceptions will necessarily be suppressed in order to
-   retain the C-style no-throw semantics.
+   support returning error information, all exceptions will
+   necessarily be suppressed in order to retain the C-style no-throw
+   semantics and avoid invoking undefined behavior in the C layer.
 
    <p>Callbacks of this style follow a common naming convention:
 

@@ -1,0 +1,273 @@
+# 2023 Dec 04
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for tables that use both tokendata=1 and contentless_delete=1.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5origintext
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+# Return a random integer between 0 and n-1.
+#
+proc random {n} { expr {abs(int(rand()*$n))} }
+
+# Select an element of the list passed as the only argument at random and
+# return it. 
+#
+proc select_one {list} {
+  set n [llength $list]
+  lindex $list [random $n]
+}
+
+# Given a term that consists entirely of alphabet characters, return all
+# permutations of the term using upper and lower case characters. e.g.
+#
+#    "abc" -> {CBA cBA CbA cbA CBa cBa Cba cba}
+#
+proc casify {term {lRet {{}}}} {
+  if {$term==""} { return $lRet }
+  set t [string range $term 1 end]
+  set f1 [string toupper [string range $term 0 0]]
+  set f2 [string tolower [string range $term 0 0]]
+  set ret [list]
+  foreach x $lRet {
+    lappend ret "$x$f1"
+    lappend ret "$x$f2"
+  }
+  return [casify $t $ret]
+}
+
+proc vocab {} {
+  list abc def ghi jkl mno pqr stu vwx yza
+}
+
+# Return a random 3 letter term.
+#
+proc term {} {
+  if {[info exists ::expanded_vocab]==0} {
+    foreach v [vocab] { lappend ::expanded_vocab {*}[casify $v] }
+  }
+
+  select_one $::expanded_vocab
+}
+
+# Return a document - between 3 and 10 terms.
+#
+proc document {} {
+  set nTerm [expr [random 3] + 7]
+  set doc ""
+  for {set ii 0} {$ii < $nTerm} {incr ii} {
+    lappend doc [term]
+  }
+  set doc
+}
+db func document document
+
+#-------------------------------------------------------------------------
+
+expr srand(6)
+
+set NDOC  200
+set NLOOP 50
+
+sqlite3_fts5_register_origintext db
+
+proc tokens {cmd} { 
+  set ret [list]
+  for {set iTok 0} {$iTok < [$cmd xInstCount]} {incr iTok} {
+    set txt [$cmd xInstToken $iTok 0]
+    set txt [string map [list "\0" "."] $txt]
+    lappend ret $txt
+  }
+  set ret
+}
+sqlite3_fts5_create_function db tokens tokens
+
+proc rankfunc {cmd} { 
+  $cmd xRowid
+}
+sqlite3_fts5_create_function db rankfunc rankfunc
+
+proc ctrl_tokens {term args} {
+  set ret [list]
+  set term [string tolower $term]
+  foreach doc $args {
+    foreach a $doc {
+      if {[string tolower $a]==$term} {
+        if {$a==$term} {
+          lappend ret $a
+        } else {
+          lappend ret [string tolower $a].$a
+        }
+      }
+    }
+  }
+  set ret
+}
+db func ctrl_tokens ctrl_tokens
+
+proc do_all_vocab_test {tn} {
+  foreach ::v [concat [vocab] nnn] {
+    set answer [execsql {
+      SELECT id, ctrl_tokens($::v, x) FROM ctrl WHERE x LIKE '%' || $::v || '%'
+    }]
+    do_execsql_test $tn.$::v.1 {
+      SELECT rowid, tokens(ft) FROM ft($::v)
+    } $answer
+    do_execsql_test $tn.$::v.2 {
+      SELECT rowid, tokens(ft) FROM ft($::v) ORDER BY rank
+    } $answer
+  }
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize="origintext unicode61", content=, contentless_delete=1,
+      tokendata=1
+  );
+
+  CREATE TABLE ctrl(id INTEGER PRIMARY KEY, x TEXT);
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 64);
+  INSERT INTO ft(ft, rank) VALUES('rank', 'rankfunc()');
+}
+do_test 1.1 {
+  for {set ii 0} {$ii < $NDOC} {incr ii} {
+    set doc [document]
+    execsql {
+      INSERT INTO ft(rowid, x) VALUES($ii, $doc);
+      INSERT INTO ctrl(id, x) VALUES($ii, $doc);
+    }
+  }
+} {}
+
+#execsql_pp { SELECT * FROM ctrl }
+#execsql_pp { SELECT * FROM ft }
+#fts5_aux_test_functions db
+#execsql_pp { SELECT rowid, tokens(ft), fts5_test_poslist(ft) FROM ft('ghi'); }
+
+do_all_vocab_test 1.2
+
+for {set ii 0} {$ii < $NLOOP} {incr ii} {
+  set lRowid [execsql { SELECT id FROM ctrl WHERE random() % 2 }]
+  foreach r $lRowid {
+    execsql { DELETE FROM ft WHERE rowid = $r }
+    execsql { DELETE FROM ctrl WHERE rowid = $r }
+
+    set doc [document]
+    execsql { INSERT INTO ft(rowid, x) VALUES($r, $doc) }
+    execsql { INSERT INTO ctrl(id, x) VALUES($r, $doc) }
+  }
+  do_all_vocab_test 1.3.$ii
+}
+
+#-------------------------------------------------------------------------
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(
+      x, y, tokenize="origintext unicode61", content=, contentless_delete=1,
+      tokendata=1
+  );
+
+  CREATE TABLE ctrl2(id INTEGER PRIMARY KEY, x TEXT, y TEXT);
+  INSERT INTO ft2(ft2, rank) VALUES('pgsz', 64);
+  INSERT INTO ft2(ft2, rank) VALUES('rank', 'rankfunc()');
+}
+do_test 2.1 {
+  for {set ii 0} {$ii < $NDOC} {incr ii} {
+    set doc1 [document]
+    set doc2 [document]
+    execsql {
+      INSERT INTO ft2(rowid, x, y) VALUES($ii, $doc, $doc2);
+      INSERT INTO ctrl2(id, x, y) VALUES($ii, $doc, $doc2);
+    }
+  }
+} {}
+
+proc do_all_vocab_test2 {tn} {
+  foreach ::v [vocab] {
+    set answer [execsql {
+      SELECT id, ctrl_tokens($::v, x, y) FROM ctrl2
+      WHERE x LIKE '%' || $::v || '%' OR y LIKE '%' || $::v || '%';
+    }]
+    do_execsql_test $tn.$::v.1 {
+      SELECT rowid, tokens(ft2) FROM ft2($::v)
+    } $answer
+    do_execsql_test $tn.$::v.2 {
+      SELECT rowid, tokens(ft2) FROM ft2($::v) ORDER BY rank
+    } $answer
+  }
+}
+
+do_all_vocab_test2 2.2
+
+for {set ii 0} {$ii < $NLOOP} {incr ii} {
+  set lRowid [execsql { SELECT id FROM ctrl2 WHERE random() % 2 }]
+  foreach r $lRowid {
+    execsql { DELETE FROM ft2 WHERE rowid = $r }
+    execsql { DELETE FROM ctrl2 WHERE rowid = $r }
+
+    set doc1 [document]
+    set doc2 [document]
+    execsql { INSERT INTO ft2(rowid, x, y) VALUES($r, $doc, $doc1) }
+    execsql { INSERT INTO ctrl2(id, x, y) VALUES($r, $doc, $doc2) }
+  }
+  do_all_vocab_test 2.3.$ii
+}
+
+#-------------------------------------------------------------------------
+
+unset -nocomplain ::expanded_vocab
+proc vocab {} {
+  list abcde fghij klmno
+}
+
+proc do_all_vocab_test3 {tn} {
+  foreach ::v [concat [vocab] nnn] {
+    set answer [execsql {
+      SELECT rowid, ctrl_tokens($::v, w) FROM ctrl3 WHERE w LIKE '%' || $::v || '%'
+    }]
+    do_execsql_test $tn.$::v.1 {
+      SELECT rowid, tokens(ft3) FROM ft3($::v)
+    } $answer
+    do_execsql_test $tn.$::v.2 {
+      SELECT rowid, tokens(ft3) FROM ft3($::v) ORDER BY rank
+    } $answer
+  }
+}
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE ft3 USING fts5(
+      w, tokenize="origintext unicode61", content=, contentless_delete=1,
+      tokendata=1
+  );
+  INSERT INTO ft3(ft3, rank) VALUES('rank', 'rankfunc()');
+  CREATE TABLE ctrl3(w);
+}
+
+do_execsql_test 3.1 {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<2
+  )
+  INSERT INTO ctrl3 SELECT document() FROM s;
+  INSERT INTO ft3(rowid, w) SELECT rowid, w FROM ctrl3;
+}
+
+do_all_vocab_test3 3.2
+
+
+finish_test
+

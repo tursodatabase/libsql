@@ -350,6 +350,20 @@ totype_atof_calc:
   return z>=zEnd && nDigits>0 && eValid && nonNum==0;
 }
 
+/* 
+** Convert a floating point value to an integer. Or, if this cannot be
+** done in a way that avoids 'outside the range of representable values' 
+** warnings from UBSAN, return 0.
+**
+** This function is a modified copy of internal SQLite function
+** sqlite3RealToI64().
+*/
+static sqlite3_int64 totypeDoubleToInt(double r){
+  if( r<-9223372036854774784.0 ) return 0;
+  if( r>+9223372036854774784.0 ) return 0;
+  return (sqlite3_int64)r;
+}
+
 /*
 ** tointeger(X):  If X is any value (integer, double, blob, or string) that
 ** can be losslessly converted into an integer, then make the conversion and
@@ -365,7 +379,7 @@ static void tointegerFunc(
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE_FLOAT: {
       double rVal = sqlite3_value_double(argv[0]);
-      sqlite3_int64 iVal = (sqlite3_int64)rVal;
+      sqlite3_int64 iVal = totypeDoubleToInt(rVal);
       if( rVal==(double)iVal ){
         sqlite3_result_int64(context, iVal);
       }
@@ -440,7 +454,7 @@ static void torealFunc(
     case SQLITE_INTEGER: {
       sqlite3_int64 iVal = sqlite3_value_int64(argv[0]);
       double rVal = (double)iVal;
-      if( iVal==(sqlite3_int64)rVal ){
+      if( iVal==totypeDoubleToInt(rVal) ){
         sqlite3_result_double(context, rVal);
       }
       break;
