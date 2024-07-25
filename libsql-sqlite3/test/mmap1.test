@@ -45,18 +45,18 @@ proc register_rblob_code {dbname seed} {
 }
 
 
-# For cases 1.1 and 1.4, the number of pages read using xRead() is 4 on
-# unix and 9 on windows. The difference is that windows only ever maps
+# For cases 1.1 and 1.4, the number of pages read using xRead() is 8 on
+# unix and 12 on windows. The difference is that windows only ever maps
 # an integer number of OS pages (i.e. creates mappings that are a multiple
 # of 4KB in size). Whereas on unix any sized mapping may be created.
 #
 foreach {t mmap_size nRead c2init} {
-  1.1 { PRAGMA mmap_size = 67108864 } /[49]/ {PRAGMA mmap_size = 0}
-  1.2 { PRAGMA mmap_size =    53248 } 150    {PRAGMA mmap_size = 0}
-  1.3 { PRAGMA mmap_size =        0 } 344    {PRAGMA mmap_size = 0}
-  1.4 { PRAGMA mmap_size = 67108864 } /[49]/ {PRAGMA mmap_size = 67108864 }
-  1.5 { PRAGMA mmap_size =    53248 } 150    {PRAGMA mmap_size = 67108864 }
-  1.6 { PRAGMA mmap_size =        0 } 344    {PRAGMA mmap_size = 67108864 }
+  1.1 { PRAGMA mmap_size = 67108864 } /8|12/   {PRAGMA mmap_size = 0}
+  1.2 { PRAGMA mmap_size =    53248 } /15[34]/ {PRAGMA mmap_size = 0}
+  1.3 { PRAGMA mmap_size =        0 } 344      {PRAGMA mmap_size = 0}
+  1.4 { PRAGMA mmap_size = 67108864 } /12|8/   {PRAGMA mmap_size = 67108864 }
+  1.5 { PRAGMA mmap_size =    53248 } /15[34]/ {PRAGMA mmap_size = 67108864 }
+  1.6 { PRAGMA mmap_size =        0 } 344      {PRAGMA mmap_size = 67108864 }
 } {
 
   do_multiclient_test tn {

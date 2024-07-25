@@ -54,5 +54,22 @@ do_execsql_test 2.3 {
   PRAGMA integrity_check(t2);
 } {{malformed inverted index for FTS4 table main.t2}}
 
+#-------------------------------------------------------------------------
+# Test that integrity-check works on a read-only database.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x1 USING fts4(a, b);
+  INSERT INTO x1 VALUES('one', 'two');
+  INSERT INTO x1 VALUES('three', 'four');
+}
+db close
+sqlite3 db test.db -readonly 1
+
+do_execsql_test 3.1 {
+  PRAGMA integrity_check;
+} {ok}
+
+
 
 finish_test

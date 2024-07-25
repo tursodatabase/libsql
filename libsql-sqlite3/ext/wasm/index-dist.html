@@ -46,18 +46,15 @@
           file:// URLs.</li>
         <li>Any OPFS-related pages or tests require:
           <ul>
+            <li>An OPFS-capable browser released after February
+              2023. Some tests will work with Chromium-based browsers
+              going back to around v102.</li>
             <li>That the web server emit the so-called
               <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy'>COOP</a>
               and
               <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy'>COEP</a>
               headers. <a href='https://sqlite.org/althttpd'>althttpd</a> requires the
               <code>-enable-sab</code> flag for that.
-            </li>
-            <li>A very recent version of a Chromium-based browser
-              (v102 at least, possibly newer). OPFS support in the
-              other major browsers is pending. Development and testing
-              is currently done against a dev-channel release of
-              Chrome (v111 as of 2023-02-10).
             </li>
           </ul>
         </li>

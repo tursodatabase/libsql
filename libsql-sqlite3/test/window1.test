@@ -1881,7 +1881,7 @@ do_catchsql_test 57.3 {
     SELECT max(y) OVER( ORDER BY (SELECT x FROM (SELECT sum(y) AS x FROM t1)))
   )
   FROM t3;
-} {1 {misuse of aggregate: sum()}}
+} {0 5}
 
 # 2020-06-06 ticket 1f6f353b684fc708
 reset_db

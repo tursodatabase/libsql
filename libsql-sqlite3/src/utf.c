@@ -164,7 +164,38 @@ u32 sqlite3Utf8Read(
   return c;
 }
 
-
+/*
+** Read a single UTF8 character out of buffer z[], but reading no
+** more than n characters from the buffer.  z[] is not zero-terminated.
+**
+** Return the number of bytes used to construct the character.
+**
+** Invalid UTF8 might generate a strange result.  No effort is made
+** to detect invalid UTF8.
+**
+** At most 4 bytes will be read out of z[].  The return value will always
+** be between 1 and 4.
+*/
+int sqlite3Utf8ReadLimited(
+  const u8 *z,
+  int n,
+  u32 *piOut
+){
+  u32 c;
+  int i = 1;
+  assert( n>0 );
+  c = z[0];
+  if( c>=0xc0 ){
+    c = sqlite3Utf8Trans1[c-0xc0];
+    if( n>4 ) n = 4;
+    while( i<n && (z[i] & 0xc0)==0x80 ){
+      c = (c<<6) + (0x3f & z[i]);
+      i++;
+    }
+  }
+  *piOut = c;
+  return i;
+}
 
 
 /*

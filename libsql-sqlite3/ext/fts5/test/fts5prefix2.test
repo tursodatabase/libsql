@@ -52,6 +52,36 @@ do_execsql_test 2.1 {
   SELECT * FROM t2('to*');
 } {top to tommy}
 
+#-------------------------------------------------------------------------
+
+foreach {tn newrowid} {
+  1   122
+  2   123
+  3   124
+} {
+  reset_db
+  do_execsql_test 3.$tn.0 {
+    CREATE VIRTUAL TABLE t12 USING fts5(x);
+    INSERT INTO t12(rowid, x) VALUES(123, 'wwww');
+  }
+  do_execsql_test 3.$tn.1 {
+    BEGIN;
+    DELETE FROM t12 WHERE rowid=123;
+    SELECT * FROM t12('wwww*');
+    INSERT INTO t12(rowid, x) VALUES($newrowid, 'wwww');
+    SELECT * FROM t12('wwww*');
+    END;
+  } {wwww}
+  do_execsql_test 3.$tn.2 {
+    INSERT INTO t12(t12) VALUES('integrity-check');
+  }
+  do_execsql_test 3.$tn.3 {
+    SELECT rowid FROM t12('wwww*');
+  } $newrowid
+}
+
+finish_test
+
 
 
 finish_test

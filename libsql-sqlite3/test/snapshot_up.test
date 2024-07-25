@@ -27,6 +27,8 @@ if {[permutation]=="inmemory_journal"} {
   return
 }
 
+db timeout 1000
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b, c);
   PRAGMA journal_mode = wal;

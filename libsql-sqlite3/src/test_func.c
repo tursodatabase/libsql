@@ -694,7 +694,8 @@ static int registerTestFunctions(
     { "test_extract",          2, SQLITE_UTF8, test_extract},
     { "test_zeroblob",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC, test_zeroblob},
     { "test_getsubtype",       1, SQLITE_UTF8, test_getsubtype},
-    { "test_setsubtype",       2, SQLITE_UTF8, test_setsubtype},
+    { "test_setsubtype",       2, SQLITE_UTF8|SQLITE_RESULT_SUBTYPE,
+                                               test_setsubtype},
     { "test_frombind",        -1, SQLITE_UTF8, test_frombind},
   };
   int i;
