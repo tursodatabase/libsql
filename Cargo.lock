@@ -3459,6 +3459,7 @@ dependencies = [
  "libsql_replication",
  "parking_lot",
  "pprof",
+ "rand",
  "serde",
  "serde_json",
  "tempfile",
