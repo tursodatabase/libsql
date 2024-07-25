@@ -1,0 +1,44 @@
+
+  CREATE TABLE t0(c0 TEXT);
+  CREATE VIEW v0(c0, c1) 
+    AS SELECT CUME_DIST() OVER (PARTITION BY t0.c0), TRUE FROM t0;
+  INSERT INTO t0 VALUES ('x');
+
+
+  SELECT ('500') IS (v0.c1) FROM v0;
+
+
+  SELECT (('500') IS (v0.c1)) FROM v0, t0;
+
+
+  SELECT (('500') IS (v0.c1)) IS FALSE FROM v0;
+
+
+  SELECT * FROM v0;
+
+
+  SELECT * FROM v0 WHERE ('500' IS v0.c1) IS FALSE;
+
+
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES('value');
+  CREATE VIEW v1(a, b, c, d) AS SELECT 1, 2, TRUE, FALSE FROM t1;
+
+
+  SELECT 500 IS a, 500 IS b, 500 IS c, 500 IS d FROM v1
+
+
+  SELECT * FROM v1 WHERE 500 IS c;
+
+
+  SELECT * FROM v1 WHERE 500 IS d;
+
+
+  CREATE VIEW v2 AS SELECT max(x) OVER () AS a, TRUE AS c FROM t1;
+
+
+  SELECT 500 IS c FROM v2;
+
+
+  SELECT * FROM v2 WHERE 500 IS c;
+

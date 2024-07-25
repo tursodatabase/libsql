@@ -1437,6 +1437,8 @@ SRC05 = \
   $(TOP)\src\sqliteLimit.h \
   $(TOP)\src\vdbe.h \
   $(TOP)\src\vdbeInt.h \
+  $(TOP)\src\vectorIndexInt.h \
+  $(TOP)\src\vectorInt.h \
   $(TOP)\src\vxworks.h \
   $(TOP)\src\wal.h \
   $(TOP)\src\whereInt.h
@@ -1584,6 +1586,7 @@ TESTEXT = \
   $(TOP)\ext\misc\percentile.c \
   $(TOP)\ext\misc\prefixes.c \
   $(TOP)\ext\misc\qpvtab.c \
+  $(TOP)\ext\misc\randomjson.c \
   $(TOP)\ext\misc\regexp.c \
   $(TOP)\ext\misc\remember.c \
   $(TOP)\ext\misc\series.c \
@@ -1692,6 +1695,7 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_STMT_SCANSTATUS=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_STRICT_SUBTYPE=1
 !ENDIF
 
 # <<mark>>
@@ -1728,6 +1732,8 @@ FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_MAX_MMAP_SIZE=0
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_OMIT_LOAD_EXTENSION
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_PRINTF_PRECISION_LIMIT=1000
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_PRIVATE=""
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_STRICT_SUBTYPE=1
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_STATIC_RANDOMJSON
 
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_PRINTF_PRECISION_LIMIT=1000
@@ -1744,6 +1750,7 @@ FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\fuzzinvariants.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\vt02.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\dbdata.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\sqlite3recover.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\randomjson.c
 
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
 DBFUZZ_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
@@ -1823,8 +1830,8 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\consio $(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2261,6 +2268,8 @@ keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 # Source files that go into making shell.c
 SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
+	$(TOP)\ext\consio\console_io.c \
+	$(TOP)\ext\consio\console_io.h \
 	$(TOP)\ext\misc\appendvfs.c \
 	$(TOP)\ext\misc\completion.c \
 	$(TOP)\ext\misc\base64.c \
@@ -2431,6 +2440,8 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CKSUMVFS_STATIC=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) $(TEST_CCONV_OPTS)
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_STATIC_RANDOMJSON
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_STRICT_SUBTYPE=1
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
 TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)
@@ -2541,7 +2552,7 @@ smoketest:	$(TESTPROGS)
 shelltest: $(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\permutations.test shell
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(SQLITE_TCL_DEP)
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in > $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)

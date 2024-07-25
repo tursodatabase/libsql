@@ -1,0 +1,146 @@
+# 2014 Jan 08
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focused on phrase queries.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5origintext2
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+sqlite3_fts5_register_origintext db
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize="origintext unicode61", tokendata=1
+  );
+}
+
+do_execsql_test 1.1 {
+  BEGIN;
+  INSERT INTO ft VALUES('Hello');
+  INSERT INTO ft VALUES('hello');
+  INSERT INTO ft VALUES('HELLO');
+  INSERT INTO ft VALUES('today');
+  INSERT INTO ft VALUES('today');
+  INSERT INTO ft VALUES('today');
+  INSERT INTO ft VALUES('World');
+  INSERT INTO ft VALUES('world');
+  INSERT INTO ft VALUES('WORLD');
+  COMMIT;
+}
+
+do_execsql_test 1.2 { SELECT rowid FROM ft('hello'); } {1 2 3}
+do_execsql_test 1.3 { SELECT rowid FROM ft('today'); } {4 5 6}
+do_execsql_test 1.4 { SELECT rowid FROM ft('world'); } {7 8 9}
+
+do_execsql_test 1.5 {
+  SELECT count(*) FROM ft_data
+} 3
+
+do_execsql_test 1.6 {
+  DELETE FROM ft;
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 64);
+  BEGIN;
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+    )
+    INSERT INTO ft SELECT 'Hello Hello Hello Hello Hello Hello Hello' FROM s;
+    INSERT INTO ft VALUES ('hELLO hELLO hELLO');
+    INSERT INTO ft VALUES('today today today today today today today');
+    INSERT INTO ft VALUES('today today today today today today today');
+    INSERT INTO ft VALUES('today today today today today today today');
+    INSERT INTO ft VALUES('today today today today today today today');
+    INSERT INTO ft VALUES('today today today today today today today');
+    INSERT INTO ft VALUES('today today today today today today today');
+    INSERT INTO ft VALUES('World World World World World World World');
+    INSERT INTO ft VALUES('world world world world world world world');
+    INSERT INTO ft VALUES('WORLD WORLD WORLD WORLD WORLD WORLD WORLD');
+    INSERT INTO ft VALUES('World World World World World World World');
+    INSERT INTO ft VALUES('world world world world world world world');
+    INSERT INTO ft VALUES('WORLD WORLD WORLD WORLD WORLD WORLD WORLD');
+  COMMIT;
+}
+
+do_execsql_test 1.7 {
+  SELECT count(*) FROM ft_data;
+} 23
+
+do_execsql_test 1.8 { SELECT rowid FROM ft('hello') WHERE rowid>100; } {101}
+
+do_execsql_test 1.9 {
+  DELETE FROM ft;
+  INSERT INTO ft(ft) VALUES('optimize');
+  SELECT count(*) FROM ft_data;
+} {2}
+do_execsql_test 1.10 {
+  BEGIN;
+    INSERT INTO ft VALUES('Hello');
+    INSERT INTO ft VALUES('hello');
+    INSERT INTO ft VALUES('HELLO');
+    INSERT INTO ft VALUES('today');
+    INSERT INTO ft VALUES('today');
+    INSERT INTO ft VALUES('today');
+    INSERT INTO ft VALUES('World');
+    INSERT INTO ft VALUES('world');
+    INSERT INTO ft VALUES('WORLD');
+}
+
+do_execsql_test 1.11 { SELECT rowid FROM ft('hello'); } {1 2 3}
+do_execsql_test 1.12 { SELECT rowid FROM ft('today'); } {4 5 6}
+do_execsql_test 1.13 { SELECT rowid FROM ft('world'); } {7 8 9}
+do_execsql_test 1.14 { SELECT rowid FROM ft('hello') ORDER BY rank; } {1 2 3}
+
+#------------------------------------------------------------------------
+reset_db
+sqlite3_fts5_register_origintext db
+proc tokens {cmd} { 
+  set ret [list]
+  for {set iTok 0} {$iTok < [$cmd xInstCount]} {incr iTok} {
+    set txt [$cmd xInstToken $iTok 0]
+    set txt [string map [list "\0" "."] $txt]
+    lappend ret $txt
+  }
+  set ret
+}
+sqlite3_fts5_create_function db tokens tokens
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(
+    v, tokenize="origintext unicode61", tokendata=1, detail=none
+  );
+
+  INSERT INTO x1 VALUES('xxx Xxx XXX yyy YYY yyy');
+  INSERT INTO x1 VALUES('xxx yyy xxx yyy yyy yyy');
+}
+
+do_execsql_test 2.1 {
+  SELECT tokens(x1) FROM x1('xxx');
+} {
+  {xxx xxx.Xxx xxx.XXX} {xxx xxx}
+}
+
+do_execsql_test 2.2 {
+  UPDATE x1_content SET c0 = 'xxx xxX xxx yyy yyy yyy' WHERE id=1;
+}
+
+do_execsql_test 2.3 {
+  SELECT tokens(x1) FROM x1('xxx');
+} {
+  {xxx {} xxx} {xxx xxx}
+}
+
+finish_test
+

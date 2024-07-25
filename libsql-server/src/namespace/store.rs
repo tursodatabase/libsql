@@ -8,14 +8,17 @@ use moka::future::Cache;
 use once_cell::sync::OnceCell;
 use tokio::task::JoinSet;
 use tokio::time::{Duration, Instant};
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::auth::Authenticated;
+use crate::broadcaster::BroadcastMsg;
 use crate::connection::config::DatabaseConfig;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
 use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName};
 use crate::stats::Stats;
 
+use super::broadcasters::{BroadcasterHandle, BroadcasterRegistry};
 use super::meta_store::{MetaStore, MetaStoreHandle};
 use super::schema_lock::SchemaLocksRegistry;
 use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, ResolveNamespacePathFn, RestoreOption};
@@ -43,6 +46,7 @@ pub struct NamespaceStoreInner {
     snapshot_at_shutdown: bool,
     pub config: NamespaceConfig,
     schema_locks: SchemaLocksRegistry,
+    broadcasters: BroadcasterRegistry,
 }
 
 impl NamespaceStore {
@@ -85,6 +89,7 @@ impl NamespaceStore {
                 snapshot_at_shutdown,
                 config,
                 schema_locks: Default::default(),
+                broadcasters: Default::default(),
             }),
         })
     }
@@ -99,12 +104,17 @@ impl NamespaceStore {
         }
 
         // destroy on-disk database and backups
-        // FIXME: this is blocking
-        let db_config = self
-            .inner
-            .metadata
-            .remove(namespace.clone())?
-            .ok_or_else(|| crate::Error::NamespaceDoesntExist(namespace.to_string()))?;
+        let db_config = tokio::task::spawn_blocking({
+            let inner = self.inner.clone();
+            let namespace = namespace.clone();
+            move || {
+                inner
+                    .metadata
+                    .remove(namespace.clone())?
+                    .ok_or_else(|| crate::Error::NamespaceDoesntExist(namespace.to_string()))
+            }
+        })
+        .await??;
 
         let mut bottomless_db_id_init = NamespaceBottomlessDbIdInit::FetchFromConfig;
         if let Some(ns) = self.inner.store.remove(&namespace).await {
@@ -128,6 +138,19 @@ impl NamespaceStore {
 
         tracing::info!("destroyed namespace: {namespace}");
 
+        Ok(())
+    }
+
+    pub async fn checkpoint(&self, namespace: NamespaceName) -> crate::Result<()> {
+        let entry = self
+            .inner
+            .store
+            .get_with(namespace.clone(), async { Default::default() })
+            .await;
+        let lock = entry.read().await;
+        if let Some(ns) = &*lock {
+            ns.checkpoint().await?;
+        }
         Ok(())
     }
 
@@ -168,6 +191,8 @@ impl NamespaceStore {
             &namespace,
             self.make_reset_cb(),
             self.resolve_attach_fn(),
+            self.clone(),
+            self.broadcaster(namespace.clone()),
         )
         .await?;
 
@@ -248,7 +273,11 @@ impl NamespaceStore {
         impl Drop for Bomb {
             fn drop(&mut self) {
                 if self.should_delete {
-                    if let Err(e) = self.store.remove(self.ns.clone()) {
+                    // we need to block in place because the inner connection may blocking, or
+                    // unsing tokio's blocking methods (bottomless), which would cause a panic.
+                    if let Err(e) =
+                        tokio::task::block_in_place(|| self.store.remove(self.ns.clone()))
+                    {
                         tracing::error!("failed to clean handle while forking: {e}");
                     }
                 }
@@ -273,6 +302,8 @@ impl NamespaceStore {
             handle.clone(),
             timestamp,
             self.resolve_attach_fn(),
+            self.clone(),
+            self.broadcaster(to),
         )
         .await?;
 
@@ -305,7 +336,7 @@ impl NamespaceStore {
 
     pub async fn with<Fun, R>(&self, namespace: NamespaceName, f: Fun) -> crate::Result<R>
     where
-        Fun: FnOnce(&Namespace) -> R + 'static,
+        Fun: FnOnce(&Namespace) -> R,
     {
         if namespace != NamespaceName::default()
             && !self.inner.metadata.exists(&namespace)
@@ -363,6 +394,8 @@ impl NamespaceStore {
                     &namespace,
                     self.make_reset_cb(),
                     self.resolve_attach_fn(),
+                    self.clone(),
+                    self.broadcaster(namespace.clone()),
                 )
                 .await?;
                 tracing::info!("loaded namespace: `{namespace}`");
@@ -385,6 +418,7 @@ impl NamespaceStore {
         Ok(ns)
     }
 
+    #[tracing::instrument(skip_all, fields(namespace))]
     pub async fn create(
         &self,
         namespace: NamespaceName,
@@ -414,9 +448,13 @@ impl NamespaceStore {
 
         let db_config = Arc::new(db_config);
         let handle = self.inner.metadata.handle(namespace.clone());
+        tracing::debug!("storing db config");
         handle.store(db_config).await?;
+        tracing::debug!("completed storing db config, loading namespace");
         self.load_namespace(&namespace, handle, restore_option)
             .await?;
+
+        tracing::debug!("completed loading namespace");
 
         Ok(())
     }
@@ -446,6 +484,22 @@ impl NamespaceStore {
 
     pub(crate) async fn stats(&self, namespace: NamespaceName) -> crate::Result<Arc<Stats>> {
         self.with(namespace, |ns| ns.stats.clone()).await
+    }
+
+    pub(crate) fn broadcaster(&self, namespace: NamespaceName) -> BroadcasterHandle {
+        self.inner.broadcasters.handle(namespace)
+    }
+
+    pub(crate) fn subscribe(
+        &self,
+        namespace: NamespaceName,
+        table: String,
+    ) -> BroadcastStream<BroadcastMsg> {
+        self.inner.broadcasters.subscribe(namespace, table)
+    }
+
+    pub(crate) fn unsubscribe(&self, namespace: NamespaceName, table: &String) {
+        self.inner.broadcasters.unsubscribe(namespace, table);
     }
 
     pub(crate) async fn config_store(

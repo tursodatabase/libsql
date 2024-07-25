@@ -9,6 +9,7 @@ use pin_project_lite::pin_project;
 
 use crate::auth::Authenticated;
 use crate::connection::dump::exporter::export_dump;
+use crate::connection::MakeConnection;
 use crate::error::Error;
 use crate::BLOCKING_RT;
 
@@ -87,23 +88,21 @@ pub(super) async fn handle_dump(
         return Err(Error::NamespaceDoesntExist(namespace.to_string()));
     }
 
-    let db_path = state.path.join("dbs").join(namespace.as_str()).join("data");
+    let conn_maker = state
+        .namespaces
+        .with(namespace, |ns| {
+            ns.db.as_primary().unwrap().connection_maker()
+        })
+        .await
+        .unwrap();
 
-    let connection = if cfg!(feature = "unix-excl-vfs") {
-        rusqlite::Connection::open_with_flags_and_vfs(
-            db_path,
-            rusqlite::OpenFlags::default(),
-            "unix-excl",
-        )
-    } else {
-        rusqlite::Connection::open(db_path)
-    }?;
+    let conn = conn_maker.create().await.unwrap();
 
     let (reader, writer) = tokio::io::duplex(8 * 1024);
 
     let join_handle = BLOCKING_RT.spawn_blocking(move || {
         let writer = tokio_util::io::SyncIoBridge::new(writer);
-        export_dump(connection, writer).map_err(Into::into)
+        conn.with_raw(|conn| export_dump(conn, writer).map_err(Into::into))
     });
 
     let stream = tokio_util::io::ReaderStream::new(reader);

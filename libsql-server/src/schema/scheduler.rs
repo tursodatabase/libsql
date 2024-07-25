@@ -9,7 +9,7 @@ use tokio::task;
 use tokio::task::JoinSet;
 
 use crate::connection::program::Program;
-use crate::connection::MakeConnection;
+use crate::connection::{Connection, MakeConnection};
 use crate::database::PrimaryConnectionMaker;
 use crate::namespace::meta_store::{MetaStore, MetaStoreConnection};
 use crate::namespace::{NamespaceName, NamespaceStore};
@@ -46,11 +46,17 @@ pub struct Scheduler {
 }
 
 impl Scheduler {
-    pub(crate) fn new(
+    pub(crate) async fn new(
         namespace_store: NamespaceStore,
         mut conn: MetaStoreConnection,
     ) -> crate::Result<Self> {
-        setup_schema(&mut conn)?;
+        let conn = tokio::task::spawn_blocking(move || -> crate::Result<_> {
+            setup_schema(&mut conn)?;
+            Ok(conn)
+        })
+        .await
+        .unwrap()?;
+
         Ok(Self {
             namespace_store,
             workers: Default::default(),
@@ -451,13 +457,16 @@ async fn try_step_task(
         }
     };
 
-    {
+    let (task, error) = tokio::task::spawn_blocking(move || {
         let mut conn = migration_db.lock();
         if let Err(e) = update_meta_task_status(&mut conn, &task, error.as_deref()) {
             tracing::error!("failed to update task status, retryng later: {e}");
             *task.status_mut() = old_status;
         }
-    }
+        (task, error)
+    })
+    .await
+    .unwrap();
 
     WorkResult::Task {
         old_status,
@@ -554,8 +563,16 @@ enum WorkResult {
     },
 }
 
-async fn backup_meta_store(meta: &MetaStore) -> Result<(), Error> {
-    if let Some(mut savepoint) = meta.backup_savepoint() {
+async fn backup_meta_store(
+    meta: &MetaStore,
+    migration_db: Arc<Mutex<MetaStoreConnection>>,
+) -> Result<(), Error> {
+    with_conn_async(migration_db, |conn| {
+        Ok(conn.query_row("PRAGMA wal_checkpoint(truncate)", (), |_| Ok(()))?)
+    })
+    .await?;
+
+    if let Some(mut savepoint) = meta.backup_savepoint().await {
         if let Err(e) = savepoint.confirmed().await {
             tracing::error!("failed to backup meta store: {e}");
             // do not step the job, and schedule for retry.
@@ -572,10 +589,33 @@ async fn backup_meta_store(meta: &MetaStore) -> Result<(), Error> {
 }
 
 async fn backup_namespace(store: &NamespaceStore, ns: NamespaceName) -> Result<(), Error> {
-    let savepoint = store
-        .with(ns.clone(), |ns| ns.db.backup_savepoint())
+    let (replicator, conn_maker) = store
+        .with(ns.clone(), |ns| {
+            let replicator = ns.db.replicator();
+            let conn_maker = ns.db.connection_maker();
+            (replicator, conn_maker)
+        })
         .await
         .map_err(|e| Error::NamespaceLoad(Box::new(e)))?;
+
+    let savepoint = match replicator {
+        Some(replicator) => {
+            let lock = replicator.lock().await;
+            match &*lock {
+                Some(replicator) => Some(replicator.savepoint()),
+                None => None,
+            }
+        }
+        None => None,
+    };
+
+    conn_maker
+        .create()
+        .await
+        .map_err(|e| Error::NamespaceBackupFailure(ns.clone(), e.into()))?
+        .checkpoint()
+        .await
+        .map_err(|e| Error::NamespaceBackupFailure(ns.clone(), e.into()))?;
 
     if let Some(mut savepoint) = savepoint {
         if let Err(e) = savepoint.confirmed().await {
@@ -608,14 +648,14 @@ async fn step_job_failure(
     namespace_store: NamespaceStore,
 ) -> WorkResult {
     try_step_job(MigrationJobStatus::DryRunFailure, async move {
-        with_conn_async(migration_db, move |conn| {
+        with_conn_async(migration_db.clone(), move |conn| {
             // TODO ensure here that this transition is valid
             // the error must already be there from when we stepped to DryRunFailure
             update_job_status(conn, job_id, MigrationJobStatus::RunFailure, None)
         })
         .await?;
 
-        backup_meta_store(namespace_store.meta_store()).await?;
+        backup_meta_store(namespace_store.meta_store(), migration_db).await?;
 
         Ok(MigrationJobStatus::RunFailure)
     })
@@ -629,13 +669,13 @@ async fn step_job_waiting_run(
     namespace_store: NamespaceStore,
 ) -> WorkResult {
     try_step_job(MigrationJobStatus::DryRunSuccess, async move {
-        with_conn_async(migration_db, move |conn| {
+        with_conn_async(migration_db.clone(), move |conn| {
             // TODO ensure here that this transition is valid
             update_job_status(conn, job_id, MigrationJobStatus::WaitingRun, None)
         })
         .await?;
 
-        backup_meta_store(namespace_store.meta_store()).await?;
+        backup_meta_store(namespace_store.meta_store(), migration_db).await?;
 
         Ok(MigrationJobStatus::WaitingRun)
     })
@@ -651,7 +691,7 @@ async fn step_job_dry_run_failure(
     (task_id, error, ns): (i64, String, NamespaceName),
 ) -> WorkResult {
     try_step_job(status, async move {
-        with_conn_async(migration_db, move |conn| {
+        with_conn_async(migration_db.clone(), move |conn| {
             let error = format!("task {task_id} for namespace `{ns}` failed with error: {error}");
             update_job_status(
                 conn,
@@ -662,7 +702,7 @@ async fn step_job_dry_run_failure(
         })
         .await?;
 
-        backup_meta_store(namespace_store.meta_store()).await?;
+        backup_meta_store(namespace_store.meta_store(), migration_db).await?;
         Ok(MigrationJobStatus::DryRunFailure)
     })
     .await
@@ -675,12 +715,12 @@ async fn step_job_dry_run_success(
     namespace_store: NamespaceStore,
 ) -> WorkResult {
     try_step_job(MigrationJobStatus::WaitingDryRun, async move {
-        with_conn_async(migration_db, move |conn| {
+        with_conn_async(migration_db.clone(), move |conn| {
             job_step_dry_run_success(conn, job_id)
         })
         .await?;
 
-        backup_meta_store(namespace_store.meta_store()).await?;
+        backup_meta_store(namespace_store.meta_store(), migration_db).await?;
 
         Ok(MigrationJobStatus::DryRunSuccess)
     })
@@ -744,14 +784,12 @@ async fn step_job_run_success(
         // backup the schema
         backup_namespace(&namespace_store, schema).await?;
 
-        tokio::task::spawn_blocking(move || {
-            let mut conn = migration_db.lock();
-            update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess, None)
+        with_conn_async(migration_db.clone(), move |conn| {
+            update_job_status(conn, job_id, MigrationJobStatus::RunSuccess, None)
         })
-        .await
-        .expect("task panicked")?;
+        .await?;
 
-        backup_meta_store(namespace_store.meta_store()).await?;
+        backup_meta_store(namespace_store.meta_store(), migration_db).await?;
         Ok(MigrationJobStatus::RunSuccess)
     })
     .await
@@ -760,6 +798,11 @@ async fn step_job_run_success(
 #[cfg(test)]
 mod test {
     use insta::assert_debug_snapshot;
+    #[cfg(not(feature = "durable-wal"))]
+    use libsql_sys::wal::either::Either as EitherWAL;
+    #[cfg(feature = "durable-wal")]
+    use libsql_sys::wal::either::Either3 as EitherWAL;
+    use libsql_sys::wal::Sqlite3WalManager;
     use std::path::Path;
     use tempfile::tempdir;
 
@@ -786,7 +829,9 @@ mod test {
         let store = NamespaceStore::new(false, false, 10, config, meta_store)
             .await
             .unwrap();
-        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
+            .await
+            .unwrap();
 
         store
             .create(
@@ -876,6 +921,7 @@ mod test {
             bottomless_replication: None,
             scripted_backup: None,
             migration_scheduler,
+            make_wal_manager: Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
         }
     }
 
@@ -893,7 +939,9 @@ mod test {
             let store = NamespaceStore::new(false, false, 10, config, meta_store)
                 .await
                 .unwrap();
-            let mut scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+            let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
+                .await
+                .unwrap();
 
             store
                 .create(
@@ -994,7 +1042,9 @@ mod test {
         let store = NamespaceStore::new(false, false, 10, config, meta_store)
             .await
             .unwrap();
-        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
+            .await
+            .unwrap();
 
         store
             .create(
@@ -1065,7 +1115,9 @@ mod test {
         let store = NamespaceStore::new(false, false, 10, config, meta_store)
             .await
             .unwrap();
-        let scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+        let scheduler = Scheduler::new(store.clone(), maker().unwrap())
+            .await
+            .unwrap();
 
         store
             .create(

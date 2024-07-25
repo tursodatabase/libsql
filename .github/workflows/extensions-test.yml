@@ -11,6 +11,10 @@ env:
   CARGO_TERM_COLOR: always
   PROTOC_VERSION: 3.23.4
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   c-tests:
     runs-on: ubuntu-latest
@@ -20,7 +24,7 @@ jobs:
     name: CR SQLite C Tests
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: build libsql
@@ -44,7 +48,7 @@ jobs:
     name: CR SQLite Rust Tests
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: build libsql
@@ -61,7 +65,7 @@ jobs:
     name: Extensions Tests
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: build libsql and ffi bindings

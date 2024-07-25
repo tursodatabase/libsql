@@ -28,7 +28,7 @@ fn main() {
 
     if std::env::var("LIBSQL_DEV").is_ok() {
         make_amalgamation();
-        build_multiple_ciphers(&out_path);
+        build_multiple_ciphers(&target, &out_path);
     }
 
     let bindgen_rs_path = if cfg!(feature = "session") {
@@ -38,7 +38,14 @@ fn main() {
     };
 
     let dir = env!("CARGO_MANIFEST_DIR");
-    std::fs::copy(format!("{dir}/{bindgen_rs_path}"), &out_path).unwrap();
+
+    Command::new("cp")
+        .arg("--no-preserve=mode,ownership")
+        .arg("-R")
+        .arg(format!("{dir}/{bindgen_rs_path}"))
+        .arg(&out_path)
+        .output()
+        .unwrap();
 
     println!("cargo:lib_dir={out_dir}");
 
@@ -47,7 +54,7 @@ fn main() {
     }
 
     if cfg!(feature = "multiple-ciphers") {
-        copy_multiple_ciphers(&out_dir, &out_path);
+        copy_multiple_ciphers(&target, &out_dir, &out_path);
         return;
     }
 
@@ -252,10 +259,10 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     println!("cargo:lib_dir={out_dir}");
 }
 
-fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
+fn copy_multiple_ciphers(target: &str, out_dir: &str, out_path: &Path) {
     let dylib = format!("{out_dir}/sqlite3mc/libsqlite3mc_static.a");
     if !Path::new(&dylib).exists() {
-        build_multiple_ciphers(out_path);
+        build_multiple_ciphers(target, out_path);
     }
 
     std::fs::copy(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
@@ -263,8 +270,7 @@ fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
     println!("cargo:rustc-link-search={out_dir}");
 }
 
-fn build_multiple_ciphers(out_path: &Path) {
-    let target = env::var("TARGET").unwrap();
+fn build_multiple_ciphers(target: &str, out_path: &Path) {
     let bindgen_rs_path = if cfg!(feature = "session") {
         "bundled/bindings/session_bindgen.rs"
     } else {
@@ -288,22 +294,27 @@ fn build_multiple_ciphers(out_path: &Path) {
     )
     .unwrap();
 
-    let bundled_dir = fs::canonicalize(BUNDLED_DIR)
+    let bundled_dir = env::current_dir()
         .unwrap()
+        .join(BUNDLED_DIR)
         .join("SQLite3MultipleCiphers");
-
     let out_dir = env::var("OUT_DIR").unwrap();
-    let sqlite3mc_build_dir = fs::canonicalize(out_dir.clone()).unwrap().join("sqlite3mc");
+    let sqlite3mc_build_dir = env::current_dir().unwrap().join(out_dir).join("sqlite3mc");
     let _ = fs::remove_dir_all(sqlite3mc_build_dir.clone());
     fs::create_dir_all(sqlite3mc_build_dir.clone()).unwrap();
 
     let mut cmake_opts: Vec<&str> = vec![];
 
-    let cc = env("CC");
-    let cxx = env("CXX");
+    let target_postfix = target.to_string().replace("-", "_");
+    let cross_cc_var_name = format!("CC_{}", target_postfix);
+    println!("cargo:warning=CC_var_name={}", cross_cc_var_name);
+    let cross_cc = env::var(&cross_cc_var_name).ok();
+
+    let cross_cxx_var_name = format!("CXX_{}", target_postfix);
+    let cross_cxx = env::var(&cross_cxx_var_name).ok();
 
     let toolchain_path = sqlite3mc_build_dir.join("toolchain.cmake");
-    let cmake_toolchain_opt = format!("-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake");
+    let cmake_toolchain_opt = "-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake".to_string();
 
     let mut toolchain_file = OpenOptions::new()
         .create(true)
@@ -312,22 +323,20 @@ fn build_multiple_ciphers(out_path: &Path) {
         .open(toolchain_path.clone())
         .unwrap();
 
-    if let Some(ref cc) = cc {
-        let cc = cc.clone().into_string().unwrap();
+    if let Some(ref cc) = cross_cc {
         if cc.contains("aarch64") && cc.contains("linux") {
             cmake_opts.push(&cmake_toolchain_opt);
             writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"Linux\")").unwrap();
             writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"arm64\")").unwrap();
         }
     }
-    if let Some(cc) = cc {
-        let cc = cc.into_string().unwrap();
+    if let Some(cc) = cross_cc {
         writeln!(toolchain_file, "set(CMAKE_C_COMPILER {})", cc).unwrap();
     }
-    if let Some(cxx) = cxx {
-        let cxx = cxx.into_string().unwrap();
+    if let Some(cxx) = cross_cxx {
         writeln!(toolchain_file, "set(CMAKE_CXX_COMPILER {})", cxx).unwrap();
     }
+
     cmake_opts.push("-DCMAKE_BUILD_TYPE=Release");
     cmake_opts.push("-DSQLITE3MC_STATIC=ON");
     cmake_opts.push("-DCODEC_TYPE=AES256");
@@ -363,8 +372,8 @@ fn build_multiple_ciphers(out_path: &Path) {
 
     let mut make = Command::new("cmake");
     make.current_dir(sqlite3mc_build_dir.clone());
-    make.args(&["--build", "."]);
-    make.args(&["--config", "Release"]);
+    make.args(["--build", "."]);
+    make.args(["--config", "Release"]);
     if !make.status().unwrap().success() {
         panic!("Failed to run make");
     }

@@ -2,6 +2,7 @@ pub mod db_factory;
 mod dump;
 mod extract;
 mod hrana_over_http_1;
+mod listen;
 mod result_builder;
 mod trace;
 mod types;
@@ -27,6 +28,8 @@ use tokio::sync::{mpsc, oneshot, Notify};
 use tokio::task::JoinSet;
 use tonic::transport::Server;
 
+use tower_http::compression::predicate::NotForContentType;
+use tower_http::compression::{DefaultPredicate, Predicate};
 use tower_http::{compression::CompressionLayer, cors};
 
 use crate::auth::{Auth, AuthError, Authenticated, Jwt, Permission, UserAuthContext};
@@ -78,6 +81,7 @@ impl TryFrom<query::Value> for serde_json::Value {
 
 /// Encodes a query response rows into json
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 struct RowsResponse {
     columns: Vec<String>,
     rows: Vec<Vec<serde_json::Value>>,
@@ -233,7 +237,7 @@ pub(crate) struct AppState {
     enable_console: bool,
     disable_default_namespace: bool,
     disable_namespaces: bool,
-    path: Arc<Path>,
+    primary_url: Option<String>,
 }
 
 pub struct UserApi<A, P, S> {
@@ -249,6 +253,7 @@ pub struct UserApi<A, P, S> {
     pub max_response_size: u64,
     pub enable_console: bool,
     pub self_url: Option<String>,
+    pub primary_url: Option<String>,
     pub path: Arc<Path>,
     pub shutdown: Arc<Notify>,
 }
@@ -314,7 +319,7 @@ where
                 namespaces: self.namespaces,
                 disable_default_namespace: self.disable_default_namespace,
                 disable_namespaces: self.disable_namespaces,
-                path: self.path,
+                primary_url: self.primary_url.clone(),
             };
 
             macro_rules! handle_hrana {
@@ -348,6 +353,7 @@ where
                 .route("/console", get(show_console))
                 .route("/health", get(handle_health))
                 .route("/dump", get(dump::handle_dump))
+                .route("/beta/listen", get(listen::handle_listen))
                 .route("/v1", get(hrana_over_http_1::handle_index))
                 .route("/v1/execute", post(hrana_over_http_1::handle_execute))
                 .route("/v1/batch", post(hrana_over_http_1::handle_batch))
@@ -424,7 +430,10 @@ where
                         .on_response(trace::response)
                         .on_failure(trace::failure),
                 )
-                .layer(CompressionLayer::new())
+                .layer(CompressionLayer::new().compress_when(
+                    // TODO: remove this when we upgrade tower-http to 0.5.3
+                    DefaultPredicate::new().and(NotForContentType::new("text/event-stream")),
+                ))
                 .layer(
                     cors::CorsLayer::new()
                         .allow_methods(cors::AllowMethods::any())
@@ -463,25 +472,41 @@ impl FromRequestParts<AppState> for Authenticated {
             state.disable_namespaces,
         )?;
         // todo dupe #auth
-        let namespace_jwt_key = state
+        let namespace_jwt_keys = state
             .namespaces
-            .with(ns.clone(), |ns| ns.jwt_key())
+            .with(ns.clone(), |ns| ns.jwt_keys())
             .await??;
 
-        let context = parts
-            .headers
-            .get(hyper::header::AUTHORIZATION)
-            .ok_or(AuthError::AuthHeaderNotFound)
-            .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
-            .and_then(|t| UserAuthContext::from_auth_str(t));
-
-        let authenticated = namespace_jwt_key
+        let auth = namespace_jwt_keys
             .map(Jwt::new)
             .map(Auth::new)
-            .unwrap_or_else(|| state.user_auth_strategy.clone())
-            .authenticate(context)?;
-        Ok(authenticated)
+            .unwrap_or_else(|| state.user_auth_strategy.clone());
+
+        let context = build_context(&parts.headers, &auth.user_strategy.required_fields());
+
+        Ok(auth.authenticate(context)?)
     }
+}
+
+fn build_context(
+    headers: &hyper::HeaderMap<HeaderValue>,
+    required_fields: &Vec<&'static str>,
+) -> UserAuthContext {
+    let mut ctx = headers
+        .get(hyper::header::AUTHORIZATION)
+        .ok_or(AuthError::AuthHeaderNotFound)
+        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
+        .and_then(|t| UserAuthContext::from_auth_str(t))
+        .unwrap_or(UserAuthContext::empty());
+
+    for field in required_fields.iter() {
+        headers
+            .get(field.to_string())
+            .map(|h| h.to_str().ok())
+            .and_then(|t| t.map(|s| ctx.add_field(field, s.into())));
+    }
+
+    ctx
 }
 
 impl FromRef<AppState> for Auth {

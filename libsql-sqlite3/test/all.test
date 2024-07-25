@@ -41,6 +41,9 @@ run_test_suite pcache90
 run_test_suite pcache100
 run_test_suite prepare
 run_test_suite mmap
+run_test suite libsql_alter
+run_test suite libsql_vector
+run_test suite libsql_vector_index
 
 if {$::tcl_platform(platform)=="unix"} {
   ifcapable !default_autovacuum {

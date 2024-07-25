@@ -3,7 +3,10 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use libsql_replication::rpc::proxy::{describe_result, query_result::RowResult, DescribeResult, ExecuteResults, ResultRows, State as RemoteState, Step, Query, Cond, OkCond, NotCond, Positional};
+use libsql_replication::rpc::proxy::{
+    describe_result, query_result::RowResult, Cond, DescribeResult, ExecuteResults, NotCond,
+    OkCond, Positional, Query, ResultRows, State as RemoteState, Step,
+};
 use parking_lot::Mutex;
 
 use crate::parser;
@@ -17,7 +20,7 @@ use crate::{
 };
 use crate::{Column, Row, Rows, Value};
 
-use crate::connection::Conn;
+use crate::connection::{BatchRows, Conn};
 use crate::local::impls::LibsqlConnection;
 
 #[derive(Clone)]
@@ -31,6 +34,7 @@ pub struct RemoteConnection {
 struct Inner {
     state: State,
     changes: u64,
+    total_changes: u64,
     last_insert_rowid: i64,
 }
 
@@ -204,10 +208,7 @@ impl RemoteConnection {
         Ok(res)
     }
 
-    pub(self) async fn execute_steps_remote(
-        &self,
-        steps: Vec<Step>,
-    ) -> Result<ExecuteResults> {
+    pub(self) async fn execute_steps_remote(&self, steps: Vec<Step>) -> Result<ExecuteResults> {
         let Some(ref writer) = self.writer else {
             return Err(Error::Misuse(
                 "Cannot delegate write in local replica mode.".into(),
@@ -253,6 +254,7 @@ impl RemoteConnection {
             state.last_insert_rowid = *rowid;
         }
 
+        state.total_changes += row.affected_row_count;
         state.changes = row.affected_row_count;
     }
 
@@ -316,14 +318,14 @@ impl Conn for RemoteConnection {
         Ok(affected_row_count)
     }
 
-    async fn execute_batch(&self, sql: &str) -> Result<()> {
+    async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
 
         if self.should_execute_local(&stmts[..])? {
             self.local.execute_batch(sql).await?;
 
             if !self.maybe_execute_rollback().await? {
-                return Ok(());
+                return Ok(BatchRows::empty());
             }
         }
 
@@ -343,16 +345,21 @@ impl Conn for RemoteConnection {
             };
         }
 
-        Ok(())
+        Ok(BatchRows::empty())
     }
 
-    async fn execute_transactional_batch(&self, sql: &str) -> Result<()> {
+    async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows> {
         let mut stmts = Vec::new();
         let parse = crate::parser::Statement::parse(sql);
         for s in parse {
             let s = s?;
-            if s.kind == StmtKind::TxnBegin || s.kind == StmtKind::TxnBeginReadOnly || s.kind == StmtKind::TxnEnd {
-                    return Err(Error::TransactionalBatchError("Transactions forbidden inside transactional batch".to_string()));
+            if s.kind == StmtKind::TxnBegin
+                || s.kind == StmtKind::TxnBeginReadOnly
+                || s.kind == StmtKind::TxnEnd
+            {
+                return Err(Error::TransactionalBatchError(
+                    "Transactions forbidden inside transactional batch".to_string(),
+                ));
             }
             stmts.push(s);
         }
@@ -361,7 +368,7 @@ impl Conn for RemoteConnection {
             self.local.execute_transactional_batch(sql).await?;
 
             if !self.maybe_execute_rollback().await? {
-                return Ok(());
+                return Ok(BatchRows::empty());
             }
         }
 
@@ -369,7 +376,9 @@ impl Conn for RemoteConnection {
         steps.push(Step {
             query: Some(Query {
                 stmt: "BEGIN TRANSACTION".to_string(),
-                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(Positional::default())),
+                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(
+                    Positional::default(),
+                )),
                 ..Default::default()
             }),
             ..Default::default()
@@ -385,7 +394,9 @@ impl Conn for RemoteConnection {
                 }),
                 query: Some(Query {
                     stmt: stmt.stmt,
-                    params: Some(libsql_replication::rpc::proxy::query::Params::Positional(Positional::default())),
+                    params: Some(libsql_replication::rpc::proxy::query::Params::Positional(
+                        Positional::default(),
+                    )),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -402,28 +413,34 @@ impl Conn for RemoteConnection {
             }),
             query: Some(Query {
                 stmt: "COMMIT".to_string(),
-                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(Positional::default())),
+                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(
+                    Positional::default(),
+                )),
                 ..Default::default()
             }),
             ..Default::default()
         });
         steps.push(Step {
             cond: Some(Cond {
-                cond: Some(libsql_replication::rpc::proxy::cond::Cond::Not(Box::new(NotCond {
-                    cond: Some(Box::new(Cond{
-                        cond: Some(libsql_replication::rpc::proxy::cond::Cond::Ok(OkCond {
-                            step: count + 1,
+                cond: Some(libsql_replication::rpc::proxy::cond::Cond::Not(Box::new(
+                    NotCond {
+                        cond: Some(Box::new(Cond {
+                            cond: Some(libsql_replication::rpc::proxy::cond::Cond::Ok(OkCond {
+                                step: count + 1,
+                                ..Default::default()
+                            })),
                             ..Default::default()
                         })),
                         ..Default::default()
-                    })),
-                    ..Default::default()
-                }))),
+                    },
+                ))),
                 ..Default::default()
             }),
             query: Some(Query {
                 stmt: "ROLLBACK".to_string(),
-                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(Positional::default())),
+                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(
+                    Positional::default(),
+                )),
                 ..Default::default()
             }),
             ..Default::default()
@@ -445,7 +462,7 @@ impl Conn for RemoteConnection {
             };
         }
 
-        Ok(())
+        Ok(BatchRows::empty())
     }
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {
@@ -474,6 +491,10 @@ impl Conn for RemoteConnection {
 
     fn changes(&self) -> u64 {
         self.inner.lock().changes
+    }
+
+    fn total_changes(&self) -> u64 {
+        self.inner.lock().total_changes
     }
 
     fn last_insert_rowid(&self) -> i64 {
@@ -658,9 +679,34 @@ impl Stmt for RemoteStatement {
             None => panic!("unexpected empty result row"),
         };
 
-        Ok(Rows {
-            inner: Box::new(RemoteRows(rows, 0)),
-        })
+        Ok(Rows::new(RemoteRows(rows, 0)))
+    }
+
+    async fn run(&mut self, params: &Params) -> Result<()> {
+        if let Some(stmt) = &mut self.local_statement {
+            return stmt.run(params.clone()).await;
+        }
+
+        let res = self
+            .conn
+            .execute_remote(self.stmts.clone(), params.clone())
+            .await?;
+
+        for result in res.results {
+            match result.row_result {
+                Some(RowResult::Row(row)) => self.conn.update_state(&row),
+                Some(RowResult::Error(e)) => {
+                    return Err(Error::RemoteSqliteFailure(
+                        e.code,
+                        e.extended_code,
+                        e.message,
+                    ))
+                }
+                None => panic!("unexpected empty result row"),
+            };
+        }
+
+        Ok(())
     }
 
     fn reset(&mut self) {}

@@ -30,8 +30,6 @@ use crate::replication::FrameNo;
 use crate::rpc::streaming_exec::make_proxy_stream;
 
 pub mod rpc {
-    use std::sync::Arc;
-
     use anyhow::Context;
     pub use libsql_replication::rpc::proxy::*;
 
@@ -223,14 +221,8 @@ pub mod rpc {
 
     impl From<connection::program::Program> for Program {
         fn from(pgm: connection::program::Program) -> Self {
-            // TODO: use unwrap_or_clone when stable
-            let steps = match Arc::try_unwrap(pgm.steps) {
-                Ok(steps) => steps,
-                Err(arc) => (*arc).clone(),
-            };
-
             Self {
-                steps: steps.into_iter().map(|s| s.into()).collect(),
+                steps: pgm.steps.into_iter().map(|s| s.into()).collect(),
             }
         }
     }
@@ -313,12 +305,12 @@ impl ProxyService {
     ) -> Result<RequestContext, tonic::Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, req)?;
         // todo dupe #auth
-        let namespace_jwt_key = self
+        let namespace_jwt_keys = self
             .namespaces
-            .with(namespace.clone(), |ns| ns.jwt_key())
+            .with(namespace.clone(), |ns| ns.jwt_keys())
             .await;
 
-        let auth = match namespace_jwt_key {
+        let auth = match namespace_jwt_keys {
             Ok(Ok(Some(key))) => Some(Auth::new(Jwt::new(key))),
             Ok(Ok(None)) => self.user_auth_strategy.clone(),
             Err(e) => match e.as_ref() {
@@ -335,7 +327,11 @@ impl ProxyService {
         };
 
         let auth = if let Some(auth) = auth {
-            let context = parse_grpc_auth_header(req.metadata());
+            let context =
+                parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields())
+                    .map_err(|e| {
+                        tonic::Status::internal(format!("Error parsing auth header: {}", e))
+                    })?;
             auth.authenticate(context)?
         } else {
             Authenticated::from_proxy_grpc_request(req)?
@@ -585,15 +581,7 @@ impl Proxy for ProxyService {
             .namespaces
             .with(ctx.namespace().clone(), |ns| {
                 let connection_maker = ns.db.connection_maker();
-                let notifier = ns
-                    .db
-                    .as_primary()
-                    .expect("invalid call to stream_exec: not a primary")
-                    .wal_wrapper
-                    .wrapper()
-                    .logger()
-                    .new_frame_notifier
-                    .subscribe();
+                let notifier = ns.db.notifier();
                 (connection_maker, notifier)
             })
             .await
@@ -694,21 +682,9 @@ impl Proxy for ProxyService {
 
         // FIXME: copypasta from execute(), creatively extract to a helper function
         let lock = self.clients.upgradable_read().await;
-        let (connection_maker, _new_frame_notifier) = self
+        let connection_maker = self
             .namespaces
-            .with(ctx.namespace().clone(), |ns| {
-                let connection_maker = ns.db.connection_maker();
-                let notifier = ns
-                    .db
-                    .as_primary()
-                    .unwrap()
-                    .wal_wrapper
-                    .wrapper()
-                    .logger()
-                    .new_frame_notifier
-                    .subscribe();
-                (connection_maker, notifier)
-            })
+            .with(ctx.namespace().clone(), |ns| ns.db.connection_maker())
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e {

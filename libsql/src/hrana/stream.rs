@@ -58,6 +58,7 @@ where
         HranaStream {
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
+                total_changes: AtomicU64::new(0),
                 last_insert_rowid: AtomicI64::new(0),
                 is_autocommit: AtomicBool::new(true),
                 stream: Mutex::new(RawStream {
@@ -93,6 +94,7 @@ where
             (0, 0)
         };
 
+        self.inner.total_changes.fetch_add(affected_row_count, Ordering::SeqCst);
         self.inner
             .affected_row_count
             .store(affected_row_count, Ordering::SeqCst);
@@ -259,6 +261,10 @@ where
         self.inner.affected_row_count.load(Ordering::SeqCst)
     }
 
+    pub fn total_changes(&self) -> u64 {
+        self.inner.total_changes.load(Ordering::SeqCst)
+    }
+
     pub fn last_insert_rowid(&self) -> i64 {
         self.inner.last_insert_rowid.load(Ordering::SeqCst)
     }
@@ -278,6 +284,7 @@ where
     T: HttpSend,
 {
     affected_row_count: AtomicU64,
+    total_changes: AtomicU64,
     last_insert_rowid: AtomicI64,
     is_autocommit: AtomicBool,
     stream: Mutex<RawStream<T>>,

@@ -7,6 +7,7 @@ use tokio::sync::{mpsc, oneshot};
 
 use super::super::{batch, cursor, stmt, ProtocolError, Version};
 use super::{proto, Server};
+use crate::auth::constants::AUTH_HEADER;
 use crate::auth::user_auth_strategies::UserAuthContext;
 use crate::auth::{Auth, AuthError, Authenticated, Jwt};
 use crate::connection::{Connection as _, RequestContext};
@@ -93,17 +94,32 @@ pub(super) async fn handle_hello(
     jwt: Option<String>,
     namespace: NamespaceName,
 ) -> Result<Authenticated> {
-    let namespace_jwt_key = server
+    let namespace_jwt_keys = server
         .namespaces
-        .with(namespace.clone(), |ns| ns.jwt_key())
+        .with(namespace.clone(), |ns| ns.jwt_keys())
         .await??;
 
-    namespace_jwt_key
+    let auth_strategy = namespace_jwt_keys
         .map(Jwt::new)
         .map(Auth::new)
-        .unwrap_or_else(|| server.user_auth_strategy.clone())
-        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
+        .unwrap_or_else(|| server.user_auth_strategy.clone());
+
+    let token = jwt.map(|t| format!("Bearer {}", t));
+
+    let context: UserAuthContext =
+        build_context(token, &auth_strategy.user_strategy.required_fields());
+
+    auth_strategy
+        .authenticate(context)
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))
+}
+
+fn build_context(jwt: Option<String>, required_fields: &Vec<&'static str>) -> UserAuthContext {
+    let mut ctx = UserAuthContext::empty();
+    if required_fields.contains(&AUTH_HEADER) && jwt.is_some() {
+        ctx.add_field(AUTH_HEADER, jwt.unwrap());
+    }
+    ctx
 }
 
 pub(super) async fn handle_request(
@@ -464,13 +480,13 @@ fn catch_stmt_error(err: anyhow::Error) -> anyhow::Error {
     match err.downcast::<stmt::StmtError>() {
         Ok(stmt_err) => anyhow!(ResponseError::Stmt(stmt_err)),
         Err(err) => match err.downcast::<crate::Error>() {
-            Ok(crate::Error::Migration(crate::schema::Error::MigrationError(_step, message))) => {
+            Ok(crate::Error::Migration(e)) => {
                 anyhow!(ResponseError::Stmt(stmt::StmtError::SqliteError {
                     source: rusqlite::ffi::Error {
                         code: rusqlite::ffi::ErrorCode::Unknown,
                         extended_code: 4242
                     },
-                    message
+                    message: e.to_string()
                 }))
             }
             Ok(err) => anyhow!(err),
@@ -482,7 +498,15 @@ fn catch_stmt_error(err: anyhow::Error) -> anyhow::Error {
 fn catch_batch_error(err: anyhow::Error) -> anyhow::Error {
     match err.downcast::<batch::BatchError>() {
         Ok(batch_err) => anyhow!(ResponseError::Batch(batch_err)),
-        Err(err) => err,
+        Err(err) => match err.downcast::<crate::Error>() {
+            Ok(crate::Error::Migration(e)) => {
+                anyhow!(ResponseError::Batch(batch::BatchError::SchemaError {
+                    message: e.to_string()
+                }))
+            }
+            Ok(err) => anyhow!(err),
+            Err(err) => err,
+        },
     }
 }
 

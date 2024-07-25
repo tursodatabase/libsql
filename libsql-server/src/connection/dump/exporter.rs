@@ -39,7 +39,7 @@ impl<W: Write> DumpState<W> {
             } else if table.starts_with(b"sqlite_stat") {
                 writeln!(self.writer, "ANALYZE sqlite_schema;")?;
             } else if table.starts_with(b"sqlite_") {
-                return Ok(());
+                continue;
             } else if sql.starts_with(b"CREATE VIRTUAL TABLE") {
                 if !self.writable_schema {
                     writeln!(self.writer, "PRAGMA writable_schema=ON;")?;
@@ -54,7 +54,7 @@ impl<W: Write> DumpState<W> {
                     table_str,
                     std::str::from_utf8(sql)?
                 )?;
-                return Ok(());
+                continue;
             } else {
                 if sql.starts_with(b"CREATE TABLE") {
                     self.writer.write_all(b"CREATE TABLE IF NOT EXISTS ")?;
@@ -106,12 +106,12 @@ impl<W: Write> DumpState<W> {
                         write_value_ref(&mut self.writer, row.get_ref(0)?)?;
                     }
 
-                    let start_index = row_id_col.is_some() as usize;
-                    for i in start_index..colss.len() {
+                    let offset = row_id_col.is_some() as usize;
+                    for i in 0..colss.len() {
                         if i != 0 || row_id_col.is_some() {
                             write!(self.writer, ",")?;
                         }
-                        write_value_ref(&mut self.writer, row.get_ref(i)?)?;
+                        write_value_ref(&mut self.writer, row.get_ref(i + offset)?)?;
                     }
                     writeln!(self.writer, ");")?;
                 }
@@ -430,7 +430,7 @@ fn find_unused_str(haystack: &str, needle1: &str, needle2: &str) -> String {
     }
 }
 
-pub fn export_dump(mut db: rusqlite::Connection, writer: impl Write) -> anyhow::Result<()> {
+pub fn export_dump(db: &mut rusqlite::Connection, writer: impl Write) -> anyhow::Result<()> {
     let mut txn = db.transaction()?;
     txn.execute("PRAGMA writable_schema=ON", ())?;
     let savepoint = txn.savepoint_with_name("dump")?;
@@ -504,11 +504,11 @@ mod test {
     #[test]
     fn table_col_is_keyword() {
         let tmp = tempdir().unwrap();
-        let conn = Connection::open(tmp.path().join("data")).unwrap();
+        let mut conn = Connection::open(tmp.path().join("data")).unwrap();
         conn.execute(r#"create table test ("limit")"#, ()).unwrap();
 
         let mut out = Vec::new();
-        export_dump(conn, &mut out).unwrap();
+        export_dump(&mut conn, &mut out).unwrap();
 
         insta::assert_snapshot!(std::str::from_utf8(&out).unwrap());
     }

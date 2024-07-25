@@ -5,6 +5,7 @@ extern crate lazy_static;
 
 mod types;
 
+use crate::types::libsql_config;
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
@@ -54,7 +55,47 @@ pub unsafe extern "C" fn libsql_open_sync(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    let db_path = unsafe { std::ffi::CStr::from_ptr(db_path) };
+    let config = libsql_config {
+        db_path,
+        primary_url,
+        auth_token,
+        read_your_writes,
+        encryption_key,
+        sync_interval: 0,
+        with_webpki: 0,
+    };
+    libsql_open_sync_with_config(config, out_db, out_err_msg)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_sync_with_webpki(
+    db_path: *const std::ffi::c_char,
+    primary_url: *const std::ffi::c_char,
+    auth_token: *const std::ffi::c_char,
+    read_your_writes: std::ffi::c_char,
+    encryption_key: *const std::ffi::c_char,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let config = libsql_config {
+        db_path,
+        primary_url,
+        auth_token,
+        read_your_writes,
+        encryption_key,
+        sync_interval: 0,
+        with_webpki: 1,
+    };
+    libsql_open_sync_with_config(config, out_db, out_err_msg)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_sync_with_config(
+    config: libsql_config,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let db_path = unsafe { std::ffi::CStr::from_ptr(config.db_path) };
     let db_path = match db_path.to_str() {
         Ok(url) => url,
         Err(e) => {
@@ -62,7 +103,7 @@ pub unsafe extern "C" fn libsql_open_sync(
             return 1;
         }
     };
-    let primary_url = unsafe { std::ffi::CStr::from_ptr(primary_url) };
+    let primary_url = unsafe { std::ffi::CStr::from_ptr(config.primary_url) };
     let primary_url = match primary_url.to_str() {
         Ok(url) => url,
         Err(e) => {
@@ -70,7 +111,7 @@ pub unsafe extern "C" fn libsql_open_sync(
             return 2;
         }
     };
-    let auth_token = unsafe { std::ffi::CStr::from_ptr(auth_token) };
+    let auth_token = unsafe { std::ffi::CStr::from_ptr(config.auth_token) };
     let auth_token = match auth_token.to_str() {
         Ok(token) => token,
         Err(e) => {
@@ -78,26 +119,42 @@ pub unsafe extern "C" fn libsql_open_sync(
             return 3;
         }
     };
-    let builder = libsql::Builder::new_remote_replica(
+    let mut builder = libsql::Builder::new_remote_replica(
         db_path,
         primary_url.to_string(),
         auth_token.to_string(),
     );
-    let builder = builder.read_your_writes(read_your_writes != 0);
-    let builder = if encryption_key.is_null() {
-        builder
-    } else {
-        let key = unsafe { std::ffi::CStr::from_ptr(encryption_key) };
+    if config.with_webpki != 0 {
+        let https = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_webpki_roots()
+            .https_or_http()
+            .enable_http1()
+            .build();
+        builder = builder.connector(https);
+    }
+    if config.sync_interval > 0 {
+        let interval = match config.sync_interval.try_into() {
+            Ok(d) => d,
+            Err(e) => {
+                set_err_msg(format!("Wrong periodic sync interval: {e}"), out_err_msg);
+                return 4;
+            }
+        };
+        builder = builder.sync_interval(std::time::Duration::from_secs(interval));
+    }
+    builder = builder.read_your_writes(config.read_your_writes != 0);
+    if !config.encryption_key.is_null() {
+        let key = unsafe { std::ffi::CStr::from_ptr(config.encryption_key) };
         let key = match key.to_str() {
             Ok(k) => k,
             Err(e) => {
                 set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
-                return 4;
+                return 5;
             }
         };
         let key = bytes::Bytes::copy_from_slice(key.as_bytes());
         let config = libsql::EncryptionConfig::new(libsql::Cipher::Aes256Cbc, key);
-        builder.encryption_config(config)
+        builder = builder.encryption_config(config)
     };
     match RT.block_on(builder.build()) {
         Ok(db) => {
@@ -110,7 +167,7 @@ pub unsafe extern "C" fn libsql_open_sync(
                 format!("Error opening db path {db_path}, primary url {primary_url}: {e}"),
                 out_err_msg,
             );
-            5
+            6
         }
     }
 }
@@ -158,6 +215,26 @@ pub unsafe extern "C" fn libsql_open_remote(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
+    libsql_open_remote_internal(url, auth_token, false, out_db, out_err_msg)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_remote_with_webpki(
+    url: *const std::ffi::c_char,
+    auth_token: *const std::ffi::c_char,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    libsql_open_remote_internal(url, auth_token, true, out_db, out_err_msg)
+}
+
+unsafe fn libsql_open_remote_internal(
+    url: *const std::ffi::c_char,
+    auth_token: *const std::ffi::c_char,
+    with_webpki: bool,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     let url = unsafe { std::ffi::CStr::from_ptr(url) };
     let url = match url.to_str() {
         Ok(url) => url,
@@ -174,8 +251,16 @@ pub unsafe extern "C" fn libsql_open_remote(
             return 2;
         }
     };
-    match RT.block_on(libsql::Builder::new_remote(url.to_string(), auth_token.to_string()).build())
-    {
+    let mut builder = libsql::Builder::new_remote(url.to_string(), auth_token.to_string());
+    if with_webpki {
+        let https = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_webpki_roots()
+            .https_or_http()
+            .enable_http1()
+            .build();
+        builder = builder.connector(https);
+    }
+    match RT.block_on(builder.build()) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
             *out_db = libsql_database_t::from(db);
@@ -450,6 +535,20 @@ pub unsafe extern "C" fn libsql_execute_stmt(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_reset_stmt(
+    stmt: libsql_stmt_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    stmt.params.clear();
+    0
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_free_stmt(stmt: libsql_stmt_t) {
     if stmt.is_null() {
         return;
@@ -596,19 +695,19 @@ pub unsafe extern "C" fn libsql_column_type(
     let row = row.get_ref();
     match row.get_value(col) {
         Ok(libsql::Value::Null) => {
-            *out_type = 5 as i32;
+            *out_type = types::LIBSQL_NULL as i32;
         }
         Ok(libsql::Value::Text(_)) => {
-            *out_type = 3 as i32;
+            *out_type = types::LIBSQL_TEXT as i32;
         }
         Ok(libsql::Value::Integer(_)) => {
-            *out_type = 1 as i32;
+            *out_type = types::LIBSQL_INT as i32;
         }
         Ok(libsql::Value::Real(_)) => {
-            *out_type = 2 as i32;
+            *out_type = types::LIBSQL_FLOAT as i32;
         }
         Ok(libsql::Value::Blob(_)) => {
-            *out_type = 4 as i32;
+            *out_type = types::LIBSQL_BLOB as i32;
         }
         Err(e) => {
             set_err_msg(format!("Error fetching value: {e}"), out_err_msg);

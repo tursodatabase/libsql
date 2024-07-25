@@ -42,7 +42,7 @@ pub type MetaStoreConnection =
 #[derive(Clone)]
 pub struct MetaStore {
     changes_tx: mpsc::Sender<ChangeMsg>,
-    inner: Arc<Mutex<MetaStoreInner>>,
+    inner: Arc<MetaStoreInner>,
 }
 
 #[derive(Clone, Debug)]
@@ -70,8 +70,8 @@ struct MetaStoreInner {
     // TODO(lucio): Use a concurrent hashmap so we don't block connection creation
     // when we are updating the config. The config si already synced via the watch
     // channel.
-    configs: HashMap<NamespaceName, Sender<InnerConfig>>,
-    conn: MetaStoreConnection,
+    configs: Mutex<HashMap<NamespaceName, Sender<InnerConfig>>>,
+    conn: Mutex<MetaStoreConnection>,
     wal_manager: MetaStoreWalManager,
 }
 
@@ -119,6 +119,7 @@ pub async fn metastore_connection_maker(
                 aws_endpoint: Some(config.bucket_endpoint),
                 access_key_id: Some(config.access_key_id),
                 secret_access_key: Some(config.secret_access_key),
+                session_token: config.session_token,
                 region: Some(config.region),
                 db_id: Some(config.backup_id),
                 bucket_name: config.bucket_name,
@@ -158,7 +159,7 @@ pub async fn metastore_connection_maker(
     };
 
     let wal_manager = WalWrapper::new(
-        replicator.map(|b| BottomlessWalWrapper::new(Arc::new(std::sync::Mutex::new(Some(b))))),
+        replicator.map(|b| BottomlessWalWrapper::new(Arc::new(tokio::sync::Mutex::new(Some(b))))),
         Sqlite3WalManager::default(),
     );
 
@@ -181,10 +182,16 @@ impl MetaStoreInner {
         wal_manager: MetaStoreWalManager,
         config: MetaStoreConfig,
     ) -> Result<Self> {
-        setup_connection(&conn)?;
+        let conn = tokio::task::spawn_blocking(move || -> Result<_> {
+            setup_connection(&conn)?;
+            Ok(conn)
+        })
+        .await
+        .unwrap()?;
+
         let mut this = MetaStoreInner {
             configs: Default::default(),
-            conn,
+            conn: conn.into(),
             wal_manager,
         };
 
@@ -198,13 +205,14 @@ impl MetaStoreInner {
     }
 
     fn maybe_recover_from_fs(&mut self, base_path: &Path) -> Result<()> {
-        let count = self
-            .conn
-            .query_row("SELECT count(*) FROM namespace_configs", (), |row| {
-                row.get::<_, u64>(0)
-            })?;
+        let count =
+            self.conn
+                .get_mut()
+                .query_row("SELECT count(*) FROM namespace_configs", (), |row| {
+                    row.get::<_, u64>(0)
+                })?;
 
-        let txn = self.conn.transaction()?;
+        let txn = self.conn.get_mut().transaction()?;
         // nothing in the meta store, check fs
         let dbs_dir_path = base_path.join("dbs");
         if count == 0 && dbs_dir_path.try_exists()? {
@@ -244,6 +252,7 @@ impl MetaStoreInner {
 
         let mut stmt = self
             .conn
+            .get_mut()
             .prepare("SELECT namespace, config FROM namespace_configs")?;
 
         let rows = stmt.query(())?.mapped(|r| {
@@ -277,7 +286,7 @@ impl MetaStoreInner {
                     // handshake again and get the latest config.
                     let (tx, _) = watch::channel(InnerConfig { version: 0, config });
 
-                    self.configs.insert(ns, tx);
+                    self.configs.get_mut().insert(ns, tx);
                 }
 
                 Err(e) => {
@@ -295,16 +304,15 @@ impl MetaStoreInner {
 
 /// Handles config change updates by inserting them into the database and in-memory
 /// cache of configs.
-fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) {
+fn process(msg: ChangeMsg, inner: Arc<MetaStoreInner>) {
     let (namespace, config, ret_chan, flush) = msg;
-    let mut inner = inner.lock();
     if let Some(config) = config {
         let ret = if flush {
-            try_process(&mut *inner, &namespace, &config)
+            try_process(&inner, &namespace, &config)
         } else {
             Ok(())
         };
-        let configs = &mut inner.configs;
+        let mut configs = inner.configs.lock();
         if let Some(config_watch) = configs.get_mut(&namespace) {
             let new_version = config_watch.borrow().version.wrapping_add(1);
 
@@ -321,10 +329,10 @@ fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) {
         let _ = ret_chan.send(ret);
     } else {
         let ret = if flush {
-            let configs = &mut inner.configs;
+            let mut configs = inner.configs.lock();
             if let Some(config_watch) = configs.get_mut(&namespace) {
                 let config = config_watch.subscribe().borrow().clone();
-                try_process(&mut *inner, &namespace, &config.config)
+                try_process(&inner, &namespace, &config.config)
             } else {
                 Ok(())
             }
@@ -336,14 +344,15 @@ fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) {
 }
 
 fn try_process(
-    inner: &mut MetaStoreInner,
+    inner: &MetaStoreInner,
     namespace: &NamespaceName,
     config: &DatabaseConfig,
 ) -> Result<()> {
     let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
 
+    let mut conn = inner.conn.lock();
     if let Some(schema) = config.shared_schema_name.as_ref() {
-        let tx = inner.conn.transaction()?;
+        let tx = conn.transaction()?;
         if let Some(ref schema) = config.shared_schema_name {
             if crate::schema::db::has_pending_migration_jobs(&tx, schema)? {
                 return Err(crate::Error::PendingMigrationOnSchema(schema.clone()));
@@ -363,12 +372,21 @@ fn try_process(
         )?;
         tx.commit()?;
     } else {
-        inner.conn.execute(
+        conn.execute(
             "INSERT INTO namespace_configs (namespace, config) VALUES (?1, ?2) ON CONFLICT(namespace) DO UPDATE SET config=excluded.config",
             rusqlite::params![namespace.as_str(), config_encoded],
         )?;
     }
 
+    if let Err(e) = checkpoint(&conn) {
+        tracing::warn!("failed to checkpoint metastore: {e}");
+    }
+
+    Ok(())
+}
+
+fn checkpoint(conn: &rusqlite::Connection) -> Result<()> {
+    conn.query_row("PRAGMA wal_checkpoint(TRUNCATE)", (), |_| Ok(()))?;
     Ok(())
 }
 
@@ -381,9 +399,7 @@ impl MetaStore {
         wal_manager: MetaStoreWalManager,
     ) -> Result<Self> {
         let (changes_tx, mut changes_rx) = mpsc::channel(256);
-        let inner = Arc::new(Mutex::new(
-            MetaStoreInner::new(base_path, conn, wal_manager, config).await?,
-        ));
+        let inner = Arc::new(MetaStoreInner::new(base_path, conn, wal_manager, config).await?);
 
         tokio::spawn({
             let inner = inner.clone();
@@ -406,8 +422,8 @@ impl MetaStore {
         tracing::debug!("getting meta store handle");
         let change_tx = self.changes_tx.clone();
 
-        let lock = &mut self.inner.lock().configs;
-        let sender = lock.entry(namespace.clone()).or_insert_with(|| {
+        let mut configs = self.inner.configs.lock();
+        let sender = configs.entry(namespace.clone()).or_insert_with(|| {
             // TODO(lucio): if no entry exists we need to ensure we send the update to
             // the bg channel.
             let (tx, _) = watch::channel(InnerConfig::default());
@@ -427,11 +443,12 @@ impl MetaStore {
     pub fn remove(&self, namespace: NamespaceName) -> Result<Option<Arc<DatabaseConfig>>> {
         tracing::debug!("removing namespace `{}` from meta store", namespace);
 
-        let mut guard = self.inner.lock();
-        let r = if let Some(sender) = guard.configs.get(&namespace) {
+        let mut configs = self.inner.configs.lock();
+        let r = if let Some(sender) = configs.get(&namespace) {
             tracing::debug!("removed namespace `{}` from meta store", namespace);
             let config = sender.borrow().clone();
-            let tx = guard.conn.transaction()?;
+            let mut conn = self.inner.conn.lock();
+            let tx = conn.transaction()?;
             if config.config.is_shared_schema {
                 if crate::schema::db::schema_has_linked_dbs(&tx, &namespace)? {
                     return Err(crate::Error::HasLinkedDbs(namespace.clone()));
@@ -459,7 +476,7 @@ impl MetaStore {
             tracing::trace!("namespace `{}` not found in meta store", namespace);
             Ok(None)
         };
-        guard.configs.remove(&namespace);
+        configs.remove(&namespace);
         r
     }
 
@@ -467,22 +484,18 @@ impl MetaStore {
     // before we start accepting connections or we need to contact bottomless
     // here to check if a namespace exists. Preferably the former.
     pub fn exists(&self, namespace: &NamespaceName) -> bool {
-        self.inner.lock().configs.contains_key(namespace)
+        self.inner.configs.lock().contains_key(namespace)
     }
 
     pub(crate) async fn shutdown(&self) -> crate::Result<()> {
-        let replicator = self
-            .inner
-            .lock()
-            .wal_manager
-            .wrapper()
-            .as_ref()
-            .and_then(|b| b.shutdown());
+        let replicator = self.inner.wal_manager.wrapper().as_ref();
 
-        if let Some(mut replicator) = replicator {
-            tracing::info!("Started meta store backup");
-            replicator.shutdown_gracefully().await?;
-            tracing::info!("meta store backed up");
+        if let Some(maybe_replicator) = replicator {
+            if let Some(mut replicator) = maybe_replicator.shutdown().await {
+                tracing::info!("Started meta store backup");
+                replicator.shutdown_gracefully().await?;
+                tracing::info!("meta store backed up");
+            }
         }
 
         Ok(())
@@ -494,8 +507,8 @@ impl MetaStore {
     ) -> crate::Result<MigrationSummary> {
         let inner = self.inner.clone();
         let summary = tokio::task::spawn_blocking(move || {
-            let mut lock = inner.lock();
-            crate::schema::get_migrations_summary(&mut lock.conn, schema)
+            let mut conn = inner.conn.lock();
+            crate::schema::get_migrations_summary(&mut conn, schema)
         })
         .await
         .unwrap()?;
@@ -509,18 +522,22 @@ impl MetaStore {
     ) -> crate::Result<Option<MigrationDetails>> {
         let inner = self.inner.clone();
         let details = tokio::task::spawn_blocking(move || {
-            let mut lock = inner.lock();
-            crate::schema::get_migration_details(&mut lock.conn, schema, job_id)
+            let mut conn = inner.conn.lock();
+            crate::schema::get_migration_details(&mut conn, schema, job_id)
         })
         .await
         .unwrap()?;
         Ok(details)
     }
 
-    pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
-        let lock = self.inner.lock();
-        if let Some(wal) = lock.wal_manager.wrapper() {
-            return wal.backup_savepoint();
+    pub async fn backup_savepoint(&self) -> Option<SavepointTracker> {
+        if let Some(wal) = self.inner.wal_manager.wrapper() {
+            let replicator = wal.replicator();
+            let lock = replicator.lock().await;
+            return match &*lock {
+                Some(replicator) => Some(replicator.savepoint()),
+                None => None,
+            };
         }
         None
     }

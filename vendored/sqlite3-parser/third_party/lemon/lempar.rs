@@ -174,8 +174,6 @@ pub struct yyStackEntry {
                          ** is the value of the token  */
 }
 
-use smallvec::SmallVec;
-
 /* The state of the parser is completely contained in an instance of
 ** the following structure */
 #[allow(non_camel_case_types)]
@@ -186,7 +184,7 @@ pub struct yyParser<'input> {
     //#[cfg(not(feature = "YYNOERRORRECOVERY"))]
     yyerrcnt: i32, /* Shifts left before out of the error */
 %%                               /* A place to hold %extra_context */
-    yystack: SmallVec<[yyStackEntry; YYSTACKDEPTH]>, /* The parser's stack */
+    yystack: Vec<yyStackEntry>, /* The parser's stack */
 }
 
 use std::cmp::Ordering;
@@ -324,7 +322,7 @@ impl yyParser<'_> {
             yyidx: 0,
             #[cfg(feature = "YYTRACKMAXSTACKDEPTH")]
             yyhwm: 0,
-            yystack: SmallVec::new(),
+            yystack: Vec::with_capacity(YYSTACKDEPTH),
             //#[cfg(not(feature = "YYNOERRORRECOVERY"))]
             yyerrcnt: -1,
 %%               /* Optional %extra_context store */

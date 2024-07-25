@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use futures::StreamExt;
 use insta::assert_json_snapshot;
 use libsql::{params, Database};
 use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
@@ -105,6 +106,68 @@ fn execute_batch() {
         let mut rows = conn
             .query("select * from t where x = ?", params!["hello; world"])
             .await?;
+
+        assert_eq!(rows.column_count(), 1);
+        assert_eq!(rows.column_name(0), Some("x"));
+        assert_eq!(
+            rows.next().await?.unwrap().get::<String>(0)?,
+            "hello; world"
+        );
+        assert!(rows.next().await?.is_none());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn execute_batch_returning() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        let mut batch_rows = conn
+            .execute_transactional_batch(
+                r#"
+        create table t(x text);
+        insert into t(x) values('hello; world') RETURNING *;
+        "#,
+            )
+            .await?;
+
+        batch_rows.next_stmt_row();
+
+        let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+
+        assert!(batch_rows.next_stmt_row().is_none());
+
+        assert_eq!(rows.column_count(), 1);
+        assert_eq!(rows.column_name(0), Some("x"));
+        assert_eq!(
+            rows.next().await?.unwrap().get::<String>(0)?,
+            "hello; world"
+        );
+        assert!(rows.next().await?.is_none());
+
+        let mut batch_rows = conn
+            .execute_batch(
+                r#"
+        create table t2(x text);
+        insert into t2(x) values('hello; world') RETURNING *;
+        "#,
+            )
+            .await?;
+
+        batch_rows.next_stmt_row();
+
+        let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+
+        assert!(batch_rows.next_stmt_row().is_none());
 
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
@@ -248,6 +311,68 @@ fn stats_legacy() {
         }
 
         assert_json_snapshot!(json);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn stream() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table t(x text)", ()).await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        let rows = conn
+            .query("select * from t where x = ?", params!["hello"])
+            .await?
+            .into_stream();
+
+        let rows = rows.collect::<Vec<_>>().await;
+
+        assert_eq!(rows.len(), 4);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn reindex_statement() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table t(x text)", ()).await?;
+        conn.execute("create index t_idx on t(x)", ()).await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+        conn.execute("reindex t_idx", ()).await?;
 
         Ok(())
     });

@@ -1,6 +1,6 @@
 [package]
 name = "libsql-server"
-version = "0.24.7"
+version = "0.24.18"
 edition = "2021"
 default-run = "sqld"
 
@@ -15,7 +15,7 @@ async-stream = "0.3.5"
 async-tempfile = "0.4.0"
 async-trait = "0.1.58"
 axum = { version = "0.6.18", features = ["headers"] }
-axum-extra = "0.7"
+axum-extra = { version = "0.7", features = ["json-lines", "query"] }
 base64 = "0.21.0"
 bincode = "1.3.3"
 bottomless = { version = "0", path = "../bottomless", features = ["libsql_linked_statically"] }
@@ -30,13 +30,15 @@ fallible-iterator = "0.3.0"
 futures = "0.3.25"
 futures-core = "0.3"
 hmac = "0.12"
-hyper = { version = "0.14.23", features = ["http2"] }
+hyper = { workspace = true, features = ["http2"] }
 hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", rev = "163b3f5" }
 hyper-tungstenite = "0.11"
 itertools = "0.10.5"
 jsonwebtoken = "9"
 libsql = { path = "../libsql/", optional = true }
 libsql_replication = { path = "../libsql-replication" }
+libsql-wal = { path = "../libsql-wal/" }
+libsql-storage = { path = "../libsql-storage", optional = true }
 metrics = "0.21.1"
 metrics-util = "0.15"
 metrics-exporter-prometheus = "0.12.2"
@@ -45,6 +47,7 @@ moka = { version = "0.12.1", features = ["future", "sync"] }
 nix = { version = "0.26.2", features = ["fs"] }
 once_cell = "1.17.0"
 parking_lot = "0.12.1"
+pem = "3.0.4"
 pin-project-lite = "0.2.13"
 priority-queue = "1.3"
 prost = "0.12"
@@ -62,16 +65,16 @@ sha2 = "0.10"
 sha256 = "1.1.3"
 libsql-sys = { path = "../libsql-sys", features = ["wal"], default-features = false }
 libsql-hrana = { path = "../libsql-hrana" }
-sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", version = "0.11.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
+sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 tempfile = "3.7.0"
 thiserror = "1.0.38"
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
-tokio-stream = "0.1.11"
+tokio-stream = { version = "0.1.11", features = ["sync"] }
 tokio-tungstenite = "0.20"
 tokio-util = { version = "0.7.8", features = ["io", "io-util"] }
 tonic = { version = "0.11", features = ["tls"] }
 tonic-web = "0.11"
-tower = { version = "0.4.13", features = ["make"] }
+tower = { workspace = true, features = ["make"] }
 tower-http = { version = "0.3.5", features = ["compression-full", "cors", "trace"] }
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
@@ -85,13 +88,16 @@ hashbrown = { version = "0.14.3", features = ["serde"] }
 hdrhistogram = "7.5.4"
 crossbeam = "0.8.4"
 async-recursion = "1"
+mimalloc = "0.1.42"
+rheaper = { git = "https://github.com/MarinPostma/rheaper.git", tag = "v0.2.0", default-features = false, features = ["allocator"] }
+tar = "0.4.41"
 
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
 aws-config = "0.55"
 aws-sdk-s3 = "0.28"
 env_logger = "0.10"
-hyper = { version = "0.14", features = ["client"] }
+hyper = { workspace = true, features = ["client"] }
 insta = { version = "1.26.0", features = ["json"] }
 libsql = { path = "../libsql/"}
 libsql-client = { version = "0.6.5", default-features = false, features = ["reqwest_backend"] }
@@ -115,3 +121,4 @@ wasm-udfs = ["rusqlite/libsql-wasm-experimental"]
 unix-excl-vfs = ["libsql-sys/unix-excl-vfs"]
 encryption = ["dep:aes", "dep:cbc", "libsql-sys/encryption", "libsql_replication/encryption", "bottomless/encryption"]
 test-encryption = ["libsql/encryption"]
+durable-wal = ["libsql-storage"]

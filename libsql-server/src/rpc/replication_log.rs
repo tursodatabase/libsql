@@ -72,12 +72,12 @@ impl ReplicationLogService {
         namespace: NamespaceName,
     ) -> Result<(), Status> {
         // todo dupe #auth
-        let namespace_jwt_key = self
+        let namespace_jwt_keys = self
             .namespaces
-            .with(namespace.clone(), |ns| ns.jwt_key())
+            .with(namespace.clone(), |ns| ns.jwt_keys())
             .await;
 
-        let auth = match namespace_jwt_key {
+        let auth = match namespace_jwt_keys {
             Ok(Ok(Some(key))) => Some(Auth::new(Jwt::new(key))),
             Ok(Ok(None)) => self.user_auth_strategy.clone(),
             Err(e) => match e.as_ref() {
@@ -94,8 +94,12 @@ impl ReplicationLogService {
         };
 
         if let Some(auth) = auth {
-            let user_credential = parse_grpc_auth_header(req.metadata());
-            auth.authenticate(user_credential)?;
+            let context =
+                parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields())
+                    .map_err(|e| {
+                        tonic::Status::internal(format!("Error parsing auth header: {}", e))
+                    })?;
+            auth.authenticate(context)?;
         }
 
         Ok(())
@@ -153,12 +157,8 @@ impl ReplicationLogService {
             .with(namespace, |ns| -> Result<_, Status> {
                 let logger = ns
                     .db
-                    .as_primary()
-                    .ok_or_else(|| Status::invalid_argument("not a primary"))?
-                    .wal_wrapper
-                    .wrapper()
                     .logger()
-                    .clone();
+                    .ok_or_else(|| Status::invalid_argument("not a primary"))?;
                 let config_changed = ns.config_changed();
                 let config = ns.config();
                 let version = ns.config_version();

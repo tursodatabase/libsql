@@ -72,6 +72,8 @@ foreach hdr {
    sqliteLimit.h
    vdbe.h
    vdbeInt.h
+   vectorIndexInt.h
+   vectorInt.h
 } {
   set available_hdr($hdr) 1
 }

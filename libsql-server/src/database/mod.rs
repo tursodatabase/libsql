@@ -1,9 +1,11 @@
 use std::fmt;
 use std::sync::Arc;
 
-use bottomless::SavepointTracker;
+use bottomless::replicator::Replicator;
+use tokio::sync::watch;
 
 use crate::connection::{MakeConnection, RequestContext};
+use crate::replication::{FrameNo, ReplicationLogger};
 
 pub use self::primary::{PrimaryConnection, PrimaryConnectionMaker, PrimaryDatabase};
 pub use self::replica::{ReplicaConnection, ReplicaDatabase};
@@ -73,7 +75,7 @@ impl crate::connection::Connection for Connection {
         pgm: crate::connection::program::Program,
         ctx: RequestContext,
         response_builder: B,
-        replication_index: Option<crate::replication::FrameNo>,
+        replication_index: Option<FrameNo>,
     ) -> crate::Result<B> {
         match self {
             Connection::Primary(conn) => {
@@ -95,7 +97,7 @@ impl crate::connection::Connection for Connection {
         &self,
         sql: String,
         ctx: RequestContext,
-        replication_index: Option<crate::replication::FrameNo>,
+        replication_index: Option<FrameNo>,
     ) -> crate::Result<crate::Result<crate::connection::program::DescribeResponse>> {
         match self {
             Connection::Primary(conn) => conn.describe(sql, ctx, replication_index).await,
@@ -178,6 +180,34 @@ impl Database {
         }
     }
 
+    pub fn logger(&self) -> Option<Arc<ReplicationLogger>> {
+        match self {
+            Database::Primary(p) => Some(p.wal_wrapper.wrapper().logger()),
+            Database::Replica(_) => None,
+            Database::Schema(s) => Some(s.wal_wrapper.wrapper().logger()),
+        }
+    }
+
+    pub fn notifier(&self) -> Option<watch::Receiver<Option<FrameNo>>> {
+        match self {
+            Database::Primary(p) => Some(
+                p.wal_wrapper
+                    .wrapper()
+                    .logger()
+                    .new_frame_notifier
+                    .subscribe(),
+            ),
+            Database::Replica(_) => None,
+            Database::Schema(s) => Some(
+                s.wal_wrapper
+                    .wrapper()
+                    .logger()
+                    .new_frame_notifier
+                    .subscribe(),
+            ),
+        }
+    }
+
     pub fn as_primary(&self) -> Option<&PrimaryDatabase> {
         if let Self::Primary(v) = self {
             Some(v)
@@ -194,11 +224,11 @@ impl Database {
         }
     }
 
-    pub(crate) fn backup_savepoint(&self) -> Option<SavepointTracker> {
+    pub(crate) fn replicator(&self) -> Option<Arc<tokio::sync::Mutex<Option<Replicator>>>> {
         match self {
-            Database::Primary(db) => db.backup_savepoint(),
+            Database::Primary(db) => db.replicator(),
             Database::Replica(_) => None,
-            Database::Schema(db) => db.backup_savepoint(),
+            Database::Schema(db) => db.replicator(),
         }
     }
 }

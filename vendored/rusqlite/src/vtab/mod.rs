@@ -758,7 +758,7 @@ impl Values<'_> {
             Some(unsafe {
                 let rc = array::Array::from_raw(ptr as *const Vec<Value>);
                 let array = rc.clone();
-                array::Array::into_raw(rc); // don't consume it
+                let _ = array::Array::into_raw(rc); // don't consume it
                 array
             })
         }

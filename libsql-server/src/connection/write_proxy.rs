@@ -19,6 +19,7 @@ use tonic::{Request, Streaming};
 use crate::connection::program::{DescribeCol, DescribeParam};
 use crate::error::Error;
 use crate::metrics::{REPLICA_LOCAL_EXEC_MISPREDICT, REPLICA_LOCAL_PROGRAM_EXEC};
+use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::ResolveNamespacePathFn;
 use crate::query_analysis::TxnStatus;
@@ -27,6 +28,7 @@ use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
+use super::connection_manager::InnerWalManager;
 use super::libsql::{LibSqlConnection, MakeLibSqlConn};
 use super::program::DescribeResponse;
 use super::{Connection, RequestContext};
@@ -53,6 +55,7 @@ impl MakeWriteProxyConn {
         channel: Channel,
         uri: tonic::transport::Uri,
         stats: Arc<Stats>,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         max_response_size: u64,
@@ -60,12 +63,14 @@ impl MakeWriteProxyConn {
         primary_replication_index: Option<FrameNo>,
         encryption_config: Option<EncryptionConfig>,
         resolve_attach_path: ResolveNamespacePathFn,
+        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Send + Sync + 'static>,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
             db_path.clone(),
             PassthroughWalWrapper,
             stats.clone(),
+            broadcaster,
             config_store.clone(),
             extensions.clone(),
             max_response_size,
@@ -75,6 +80,7 @@ impl MakeWriteProxyConn {
             encryption_config.clone(),
             Arc::new(AtomicBool::new(false)), // this is always false for write proxy
             resolve_attach_path,
+            make_wal_manager,
         )
         .await?;
 
@@ -364,27 +370,30 @@ where
         program: Program,
         builder: B,
     ) -> crate::Result<(B, TxnStatus, Option<FrameNo>)> {
-        let mut txn_status = TxnStatus::Invalid;
+        let txn_status = Arc::new(parking_lot::Mutex::new(TxnStatus::Invalid));
         let mut new_frame_no = None;
         let builder_config = self.builder_config.clone();
-        let cb = move |response: exec_resp::Response, builder: &mut B| match response {
-            exec_resp::Response::ProgramResp(resp) => {
-                crate::rpc::streaming_exec::apply_program_resp_to_builder(
-                    &builder_config,
-                    builder,
-                    resp,
-                    |last_frame_no, is_autocommit| {
-                        txn_status = if is_autocommit {
-                            TxnStatus::Init
-                        } else {
-                            TxnStatus::Txn
-                        };
-                        new_frame_no = last_frame_no;
-                    },
-                )
+        let cb = {
+            let txn_status = txn_status.clone();
+            move |response: exec_resp::Response, builder: &mut B| match response {
+                exec_resp::Response::ProgramResp(resp) => {
+                    crate::rpc::streaming_exec::apply_program_resp_to_builder(
+                        &builder_config,
+                        builder,
+                        resp,
+                        |last_frame_no, is_autocommit| {
+                            *txn_status.lock() = if is_autocommit {
+                                TxnStatus::Init
+                            } else {
+                                TxnStatus::Txn
+                            };
+                            new_frame_no = last_frame_no;
+                        },
+                    )
+                }
+                exec_resp::Response::DescribeResp(_) => Err(Error::PrimaryStreamMisuse),
+                exec_resp::Response::Error(e) => Err(Error::RpcQueryError(e)),
             }
-            exec_resp::Response::DescribeResp(_) => Err(Error::PrimaryStreamMisuse),
-            exec_resp::Response::Error(e) => Err(Error::RpcQueryError(e)),
         };
 
         let builder = self
@@ -397,6 +406,7 @@ where
             )
             .await?;
 
+        let txn_status = *txn_status.lock();
         Ok((builder, txn_status, new_frame_no))
     }
 
@@ -461,10 +471,7 @@ impl Connection for WriteProxyConnection<RpcStream> {
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.
-            let builder = self
-                .read_conn
-                .execute_program(pgm.clone(), ctx.clone(), builder, replication_index)
-                .await?;
+            let (builder, pgm) = self.read_conn.execute(pgm, ctx.clone(), builder).await?;
             if !self.read_conn.is_autocommit().await? {
                 REPLICA_LOCAL_EXEC_MISPREDICT.increment(1);
                 self.read_conn.rollback(ctx.clone()).await?;

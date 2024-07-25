@@ -139,6 +139,7 @@ impl StmtKind {
                 ))
             }
             Cmd::Stmt(Stmt::Detach(_)) => Some(Self::Detach),
+            Cmd::Stmt(Stmt::Reindex { .. }) => Some(Self::Write),
             _ => None,
         }
     }

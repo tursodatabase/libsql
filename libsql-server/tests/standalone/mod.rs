@@ -212,6 +212,7 @@ fn begin_commit() {
             rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
             Value::Integer(1)
         );
+        assert!(rows.next().await.unwrap().is_none());
 
         conn.execute("commit;", ()).await?;
 

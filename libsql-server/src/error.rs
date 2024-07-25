@@ -1,5 +1,5 @@
 use axum::response::IntoResponse;
-use hyper::{header::ToStrError, StatusCode};
+use hyper::StatusCode;
 use tonic::metadata::errors::InvalidMetadataValueBytes;
 
 use crate::{
@@ -69,7 +69,7 @@ pub enum Error {
     #[error("Invalid namespace")]
     InvalidNamespace,
     #[error("Invalid namespace bytes: `{0}`")]
-    InvalidNamespaceBytes(#[from] ToStrError),
+    InvalidNamespaceBytes(Box<dyn std::error::Error + Sync + Send + 'static>),
     #[error("Replica meta error: {0}")]
     ReplicaMetaError(#[from] libsql_replication::meta::Error),
     #[error("Replicator error: {0}")]
@@ -158,7 +158,10 @@ impl IntoResponse for &Error {
         match self {
             FailedToParse(_) => self.format_err(StatusCode::BAD_REQUEST),
             AuthError(_) => self.format_err(StatusCode::UNAUTHORIZED),
-            Anyhow(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Anyhow(e) => match e.downcast_ref::<Error>() {
+                Some(err) => err.into_response(),
+                None => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            },
             LibSqlInvalidQueryParams(_) => self.format_err(StatusCode::BAD_REQUEST),
             LibSqlTxTimeout => self.format_err(StatusCode::BAD_REQUEST),
             LibSqlTxBusy => self.format_err(StatusCode::TOO_MANY_REQUESTS),
@@ -172,7 +175,7 @@ impl IntoResponse for &Error {
             InvalidBatchStep(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NotAuthorized(_) => self.format_err(StatusCode::UNAUTHORIZED),
             ReplicatorExited => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
-            DbCreateTimeout => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
+            DbCreateTimeout => self.format_err(StatusCode::TOO_MANY_REQUESTS),
             BuilderError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Blocked(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Json(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -192,7 +195,12 @@ impl IntoResponse for &Error {
             ConflictingRestoreParameters => self.format_err(StatusCode::BAD_REQUEST),
             Fork(e) => e.into_response(),
             FatalReplicationError => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
-            ReplicatorError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicatorError(e) => match e {
+                libsql_replication::replicator::Error::NamespaceDoesntExist => {
+                    self.format_err(StatusCode::NOT_FOUND)
+                }
+                _ => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            },
             ReplicaMetaError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryStreamDisconnect => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryStreamMisuse => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -278,6 +286,8 @@ pub enum LoadDumpError {
     NoTxn,
     #[error("The dump should commit the transaction.")]
     NoCommit,
+    #[error("Path is not a file")]
+    NotAFile,
 }
 
 impl ResponseError for LoadDumpError {}
@@ -295,6 +305,7 @@ impl IntoResponse for &LoadDumpError {
             | UnsupportedUrlScheme(_)
             | NoTxn
             | NoCommit
+            | NotAFile
             | DumpFilePathNotAbsolute => self.format_err(StatusCode::BAD_REQUEST),
         }
     }

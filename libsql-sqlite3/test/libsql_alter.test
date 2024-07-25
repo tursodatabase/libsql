@@ -1,0 +1,61 @@
+set testdir [file dirname $argv0]
+
+source $testdir/tester.tcl
+
+# Test Organisation:
+# ------------------
+#
+# libsql_alter-ok.*: Test that ALTER COLUMN correctly modifies the CREATE TABLE sql.
+# libsql_alter-err.*: Test error messages.
+#
+
+do_test libsql_alter-ok.1 {
+  execsql {CREATE TABLE t1(x);}
+  execsql {ALTER TABLE t1 ALTER COLUMN x TO x;}
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't1';}
+} {{CREATE TABLE t1(x)}}
+
+do_test libsql_alter-ok.2 {
+  execsql {CREATE TABLE t2(x);}
+  execsql {ALTER TABLE t2 ALTER COLUMN x TO x INTEGER DEFAULT(-1);}
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't2';}
+} {{CREATE TABLE t2(x INTEGER DEFAULT(-1))}}
+
+do_test libsql_alter-ok.3 {
+  execsql {CREATE TABLE t3(x);}
+  # NOTE: extra spaces in the end of ALTER COLUMN command
+  execsql { ALTER TABLE t3 ALTER COLUMN x TO x INTEGER DEFAULT(-1);   }
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't3';}
+} {{CREATE TABLE t3(x INTEGER DEFAULT(-1))}}
+
+do_test libsql_alter-ok.4 {
+  execsql {CREATE TABLE t4(x);}
+  execsql { ALTER TABLE t4 ALTER COLUMN x TO x INTEGER DEFAULT(-1); -- explain alter command }
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't4';}
+} {{CREATE TABLE t4(x INTEGER DEFAULT(-1))}}
+
+do_test libsql_alter-ok.5 {
+  execsql {CREATE TABLE t5(x);}
+  execsql {CREATE INDEX t5_idx ON t5(x);}
+  execsql {ALTER TABLE t5 ALTER COLUMN x TO x TEXT}
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't5';}
+} {{CREATE TABLE t5(x TEXT)}}
+
+reset_db
+do_test libsql_alter-err.1 {
+  execsql { CREATE TABLE t1(x); }
+  catchsql { ALTER TABLE t1 ALTER COLUMN x TO x PRIMARY KEY; }
+} {1 {error in adding x PRIMARY KEY to t1: PRIMARY KEY constraint cannot be altered}}
+
+do_test libsql_alter-err.2 {
+  execsql { CREATE TABLE t2(x); }
+  catchsql { ALTER TABLE t2 ALTER COLUMN x TO x INTEGER UNIQUE; }
+} {1 {error in adding x INTEGER UNIQUE to t2: UNIQUE constraint cannot be altered}}
+
+do_test libsql_alter-err.3 {
+  execsql { CREATE TABLE t3(x, y); }
+  catchsql { ALTER TABLE t3 ALTER COLUMN y TO y GENERATED ALWAYS AS (2 * x) VIRTUAL; }
+} {1 {error in adding y GENERATED ALWAYS AS (2 * x) VIRTUAL to t3: GENERATED constraint cannot be altered}}
+
+finish_test
+

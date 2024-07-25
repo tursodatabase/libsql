@@ -135,10 +135,6 @@ impl PageHeaders {
         // TODO: move LIBSQL_PAGE_SIZE
         PageHdrIter::new(self.as_ptr(), 4096)
     }
-
-    pub unsafe fn iter_mut(&mut self) -> PageHdrIterMut {
-        PageHdrIterMut::new(self.as_mut_ptr(), 4096)
-    }
 }
 
 pub trait BusyHandler {

@@ -1,16 +1,13 @@
 use std::env;
-use std::fs::OpenOptions;
-use std::io::{stdout, Write};
 use std::net::SocketAddr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
-use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_key, user_auth_strategies, Auth};
-// use mimalloc::MiMalloc;
+use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_keys, user_auth_strategies, Auth};
 use tokio::sync::Notify;
 use tokio::time::Duration;
 use tracing_subscriber::prelude::*;
@@ -22,13 +19,10 @@ use libsql_server::config::{
     RpcServerConfig, TlsConfig, UserApiConfig,
 };
 use libsql_server::net::AddrIncoming;
+use libsql_server::version::Version;
+use libsql_server::CustomWAL;
 use libsql_server::Server;
-use libsql_server::{connection::dump::exporter::export_dump, version::Version};
 use libsql_sys::{Cipher, EncryptionConfig};
-
-// Use system allocator for now, seems like we are getting too much fragmentation.
-// #[global_allocator]
-// static GLOBAL: MiMalloc = MiMalloc;
 
 /// SQL daemon
 #[derive(Debug, Parser)]
@@ -63,6 +57,9 @@ struct Cli {
     /// APIs. The key is either a PKCS#8-encoded Ed25519 public key in PEM, or just plain bytes of
     /// the Ed25519 public key in URL-safe base64.
     ///
+    /// It is possible to provide multiple JWT decoding keys in a single file by concatenating them
+    /// together. All decoding keys will be tried when parsing incoming JWT's.
+    ///
     /// You can also pass the key directly in the env variable SQLD_AUTH_JWT_KEY.
     #[clap(long, env = "SQLD_AUTH_JWT_KEY_FILE")]
     auth_jwt_key_file: Option<PathBuf>,
@@ -74,6 +71,8 @@ struct Cli {
     /// sessions" in Hrana over HTTP.
     #[clap(long, env = "SQLD_HTTP_SELF_URL")]
     http_self_url: Option<String>,
+    #[clap(long, env = "SQLD_HTTP_PRIMARY_URL")]
+    http_primary_url: Option<String>,
 
     /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
     #[clap(
@@ -139,9 +138,6 @@ struct Cli {
     /// `--max-log-size`.
     #[clap(long, env = "SQLD_MAX_LOG_DURATION")]
     max_log_duration: Option<f32>,
-
-    #[clap(subcommand)]
-    utils: Option<UtilsSubcommands>,
 
     /// The URL to send a server heartbeat `POST` request to.
     /// By default, the server doesn't send a heartbeat.
@@ -212,6 +208,9 @@ struct Cli {
     /// S3 secret access key for the meta store backup
     #[clap(long, env = "SQLD_META_STORE_SECRET_ACCESS")]
     meta_store_secret_access_key: Option<String>,
+    /// S3 session token for the meta store backup
+    #[clap(long, env = "SQLD_META_STORE_SESSION_TOKEN")]
+    meta_store_session_token: Option<String>,
     /// S3 region for the metastore backup
     #[clap(long, env = "SQLD_META_STORE_REGION")]
     meta_store_region: Option<String>,
@@ -246,6 +245,16 @@ struct Cli {
     /// Shutdown timeout duration in seconds, defaults to 30 seconds.
     #[clap(long, env = "SQLD_SHUTDOWN_TIMEOUT")]
     shutdown_timeout: Option<u64>,
+
+    #[clap(value_enum, long)]
+    use_custom_wal: Option<CustomWAL>,
+
+    #[clap(
+        long,
+        env = "LIBSQL_STORAGE_SERVER_ADDR",
+        default_value = "http://0.0.0.0:5002"
+    )]
+    storage_server_address: String,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -302,33 +311,6 @@ impl Cli {
         #[cfg(feature = "encryption")]
         eprintln!("\t- encryption at rest: {}", if self.encryption_key.is_some() { "enabled" } else { "disabled" });
     }
-}
-
-fn perform_dump(dump_path: Option<&Path>, db_path: &Path) -> anyhow::Result<()> {
-    let out: Box<dyn Write> = match dump_path {
-        Some(path) => {
-            let f = OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(path)
-                .with_context(|| format!("file `{}` already exists", path.display()))?;
-            Box::new(f)
-        }
-        None => Box::new(stdout()),
-    };
-    let conn = if cfg!(feature = "unix-excl-vfs") {
-        rusqlite::Connection::open_with_flags_and_vfs(
-            db_path.join("data"),
-            rusqlite::OpenFlags::default(),
-            "unix-excl",
-        )
-    } else {
-        rusqlite::Connection::open(db_path.join("data"))
-    }?;
-
-    export_dump(conn, out)?;
-
-    Ok(())
 }
 
 #[cfg(feature = "debug-tools")]
@@ -390,14 +372,14 @@ async fn make_user_auth_strategy(config: &Cli) -> anyhow::Result<Auth> {
         )));
     }
 
-    let auth_jwt_key = if let Some(ref file_path) = config.auth_jwt_key_file {
+    let auth_jwt_keys = if let Some(ref file_path) = config.auth_jwt_key_file {
         let data = tokio::fs::read_to_string(file_path)
             .await
-            .context("Could not read file with JWT key")?;
+            .context("Could not read file with JWT key(s)")?;
         Some(data)
     } else {
         match env::var("SQLD_AUTH_JWT_KEY") {
-            Ok(key) => Some(key),
+            Ok(keys) => Some(keys),
             Err(env::VarError::NotPresent) => None,
             Err(env::VarError::NotUnicode(_)) => {
                 bail!("Env variable SQLD_AUTH_JWT_KEY does not contain a valid Unicode value")
@@ -405,11 +387,11 @@ async fn make_user_auth_strategy(config: &Cli) -> anyhow::Result<Auth> {
         }
     };
 
-    if let Some(jwt_key) = auth_jwt_key.as_deref() {
-        let jwt_key: jsonwebtoken::DecodingKey =
-            parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
+    if let Some(jwt_keys) = auth_jwt_keys.as_deref() {
+        let jwt_keys: Vec<jsonwebtoken::DecodingKey> =
+            parse_jwt_keys(jwt_keys).context("Could not parse JWT decoding key(s)")?;
         tracing::info!("Using JWT-based authentication");
-        return Ok(Auth::new(user_auth_strategies::Jwt::new(jwt_key)));
+        return Ok(Auth::new(user_auth_strategies::Jwt::new(jwt_keys)));
     }
 
     Ok(Auth::new(user_auth_strategies::Disabled::new()))
@@ -444,6 +426,7 @@ async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {
         hrana_ws_acceptor,
         enable_http_console: config.enable_http_console,
         self_url: config.http_self_url.clone(),
+        primary_url: config.http_primary_url.clone(),
         auth_strategy,
     })
 }
@@ -573,6 +556,7 @@ fn make_meta_store_config(config: &Cli) -> anyhow::Result<MetaStoreConfig> {
                 .meta_store_secret_access_key
                 .clone()
                 .context("missing meta store bucket secret access key")?,
+            session_token: config.meta_store_session_token.clone(),
             region: config
                 .meta_store_region
                 .clone()
@@ -655,6 +639,8 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
             .shutdown_timeout
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(30)),
+        use_custom_wal: config.use_custom_wal,
+        storage_server_address: config.storage_server_address.clone(),
     })
 }
 
@@ -682,28 +668,9 @@ async fn main() -> Result<()> {
 
     let args = Cli::parse();
 
-    match args.utils {
-        Some(UtilsSubcommands::Dump { path, namespace }) => {
-            if let Some(ref path) = path {
-                eprintln!(
-                    "Dumping database {} to {}",
-                    args.db_path.display(),
-                    path.display()
-                );
-            }
-            let db_path = args.db_path.join("dbs").join(&namespace);
-            if !db_path.exists() {
-                bail!("no database for namespace `{namespace}`");
-            }
+    args.print_welcome_message();
+    let server = build_server(&args).await?;
+    server.start().await?;
 
-            perform_dump(path.as_deref(), &db_path)
-        }
-        None => {
-            args.print_welcome_message();
-            let server = build_server(&args).await?;
-            server.start().await?;
-
-            Ok(())
-        }
-    }
+    Ok(())
 }

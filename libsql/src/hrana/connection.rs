@@ -54,6 +54,10 @@ where
         self.current_stream().affected_row_count()
     }
 
+    pub fn total_changes(&self) -> u64 {
+        self.current_stream().total_changes()
+    }
+
     pub fn last_insert_rowid(&self) -> i64 {
         self.current_stream().last_insert_rowid()
     }

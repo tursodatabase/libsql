@@ -95,7 +95,7 @@ where
             .batch_inner(Batch::from_iter(stmts), close)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
-        unwrap_err(res)
+        unwrap_err(&res)
     }
 
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {

@@ -4006,7 +4006,7 @@ static int fts3ShadowName(const char *zName){
 ** Implementation of the xIntegrity() method on the FTS3/FTS4 virtual
 ** table.
 */
-static int fts3Integrity(
+static int fts3IntegrityMethod(
   sqlite3_vtab *pVtab,      /* The virtual table to be checked */
   const char *zSchema,      /* Name of schema in which pVtab lives */
   const char *zTabname,     /* Name of the pVTab table */
@@ -4014,30 +4014,21 @@ static int fts3Integrity(
   char **pzErr              /* Write error message here */
 ){
   Fts3Table *p = (Fts3Table*)pVtab;
-  char *zSql;
   int rc;
-  char *zErr = 0;
+  int bOk = 0;
 
-  assert( pzErr!=0 );
-  assert( *pzErr==0 );
   UNUSED_PARAMETER(isQuick);
-  zSql = sqlite3_mprintf(
-            "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
-            zSchema, zTabname, zTabname);
-  if( zSql==0 ){
-    return SQLITE_NOMEM;
-  }
-  rc = sqlite3_exec(p->db, zSql, 0, 0, &zErr);
-  sqlite3_free(zSql);
-  if( (rc&0xff)==SQLITE_CORRUPT ){
-    *pzErr = sqlite3_mprintf("malformed inverted index for FTS%d table %s.%s",
-                p->bFts4 ? 4 : 3, zSchema, zTabname);
-  }else if( rc!=SQLITE_OK ){
+  rc = sqlite3Fts3IntegrityCheck(p, &bOk);
+  assert( rc!=SQLITE_CORRUPT_VTAB || bOk==0 );
+  if( rc!=SQLITE_OK && rc!=SQLITE_CORRUPT_VTAB ){
     *pzErr = sqlite3_mprintf("unable to validate the inverted index for"
                              " FTS%d table %s.%s: %s",
-                p->bFts4 ? 4 : 3, zSchema, zTabname, zErr);
+                p->bFts4 ? 4 : 3, zSchema, zTabname, sqlite3_errstr(rc));
+  }else if( bOk==0 ){
+    *pzErr = sqlite3_mprintf("malformed inverted index for FTS%d table %s.%s",
+                p->bFts4 ? 4 : 3, zSchema, zTabname);
   }
-  sqlite3_free(zErr);
+  sqlite3Fts3SegmentsClose(p);
   return SQLITE_OK;
 }
 
@@ -4068,7 +4059,7 @@ static const sqlite3_module fts3Module = {
   /* xRelease      */ fts3ReleaseMethod,
   /* xRollbackTo   */ fts3RollbackToMethod,
   /* xShadowName   */ fts3ShadowName,
-  /* xIntegrity    */ fts3Integrity,
+  /* xIntegrity    */ fts3IntegrityMethod,
 };
 
 /*

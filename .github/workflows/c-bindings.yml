@@ -7,7 +7,36 @@ on:
   merge_group:
     branches: [ "main" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  c-bundle-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      continue-on-error: false
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-
+
+    - name: Generate C bundle
+      run: cargo xtask build-bundled
+
+    - name: Check that C bundle is up to date
+      run: git diff --quiet || (echo "found uncommited changes in the bundle; please run 'cargo xtask build-bundled' and commit the result" && exit 1)
+
   c-bindings:
 
     runs-on: ubuntu-latest

@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use metrics::{histogram, increment_counter};
@@ -15,16 +14,14 @@ use crate::query_result_builder::QueryResultBuilder;
 use super::config::DatabaseConfig;
 use super::RequestContext;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Program {
-    pub steps: Arc<Vec<Step>>,
+    pub steps: Vec<Step>,
 }
 
 impl Program {
     pub fn new(steps: Vec<Step>) -> Self {
-        Self {
-            steps: Arc::new(steps),
-        }
+        Self { steps }
     }
 
     pub fn is_read_only(&self) -> bool {
@@ -277,8 +274,8 @@ where
 
         let query_duration = start.elapsed();
 
-        let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
-        let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
+        let rows_read = stmt.get_status(StatementStatus::RowsRead) as u32 as u64;
+        let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u32 as u64;
         let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
 
         (self.update_stats)(

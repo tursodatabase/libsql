@@ -42,7 +42,7 @@ proc fts5_test_bothlist {cmd} {
 }
 sqlite3_fts5_create_function db fts5_test_bothlist fts5_test_bothlist
 
-proc fts5_rowid {cmd} { expr [$cmd xColumnText -1] }
+proc fts5_rowid {cmd} { expr [$cmd xRowid] }
 sqlite3_fts5_create_function db fts5_rowid fts5_rowid
 
 do_execsql_test 1.$tok.0.1 "

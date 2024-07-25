@@ -175,7 +175,7 @@ impl Authorized {
     }
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Default)]
+#[derive(Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, Default)]
 pub struct Scopes {
     #[serde(rename = "ns", default)]
     pub namespaces: Option<HashSet<NamespaceName>>,

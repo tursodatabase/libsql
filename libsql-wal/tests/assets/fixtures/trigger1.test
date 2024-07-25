@@ -1,0 +1,81 @@
+
+  CREATE TABLE t17a(ii INT);
+  CREATE TABLE t17b(tt TEXT PRIMARY KEY, ss);
+  CREATE TRIGGER t17a_ai AFTER INSERT ON t17a BEGIN
+    INSERT INTO t17b(tt) VALUES(new.ii);
+  END;
+  CREATE TRIGGER t17b_ai AFTER INSERT ON t17b BEGIN
+    UPDATE t17b SET ss = 4;
+  END;
+  INSERT INTO t17a(ii) VALUES('1');
+  PRAGMA integrity_check;
+
+
+  CREATE TABLE t18(a PRIMARY KEY,b,c);
+  INSERT INTO t18(a,b,c) VALUES(1,2,3);
+  CREATE TRIGGER t18r1 BEFORE UPDATE ON t18 BEGIN
+    UPDATE t18 SET b=1000 WHERE a=old.a;
+  END;
+  UPDATE t18 SET c=b WHERE a=1;
+  SELECT * FROM t18;
+
+
+  DELETE FROM t18;
+  INSERT INTO t18(a,b,c) VALUES(1,2,3);
+  UPDATE t18 SET c=b, b=b+1 WHERE a=1;
+  SELECT * FROM t18;
+
+
+  CREATE TABLE t19(a INT PRIMARY KEY, b, c)WITHOUT ROWID;
+  INSERT INTO t19(a,b,c) VALUES(1,2,3);
+  CREATE TRIGGER t19r3 BEFORE UPDATE ON t19 BEGIN SELECT new.b; END;
+  UPDATE t19 SET c=b WHERE a=1;
+  SELECT * FROM t19;
+
+
+  DELETE FROM t19;
+  INSERT INTO t19(a,b,c) VALUES(1,2,3);
+  UPDATE t19 SET c=CASE WHEN b=2 THEN b ELSE b+99 END WHERE a=1;
+  SELECT * FROM t19;
+
+
+  CREATE TABLE t20_1(x);
+  ATTACH ':memory:' AS aux;
+  CREATE TABLE aux.t20_2(y);
+  CREATE TABLE aux.t20_3(z);
+  CREATE TEMP TRIGGER r20_3 AFTER INSERT ON t20_2 BEGIN UPDATE t20_3 SET z=z+1; END;
+  DETACH aux;
+  DROP TRIGGER r20_3;
+
+
+  PRAGMA recursive_triggers = true;
+  CREATE TABLE t0(a, b, c UNIQUE);
+  CREATE UNIQUE INDEX i0 ON t0(b) WHERE a;
+  CREATE TRIGGER tr0 AFTER DELETE ON t0 BEGIN
+    DELETE FROM t0;
+  END;
+  INSERT INTO t0(a,b,c) VALUES(0,0,9),(1,1,1);
+  REPLACE INTO t0(a,b,c) VALUES(2,0,9);
+  SELECT * FROM t0;
+
+
+  CREATE TABLE t1(
+    a INTEGER PRIMARY KEY,
+    b DOUBLE
+  );
+  CREATE TRIGGER x AFTER UPDATE ON t1 BEGIN
+   SELECT sum(b)OVER(ORDER BY (SELECT b FROM t1 AS x 
+                               WHERE b IN (t1.a,127,t1.b)
+                               GROUP BY b))
+     FROM t1
+     GROUP BY a;
+  END;
+  CREATE TEMP TRIGGER x BEFORE INSERT ON t1 BEGIN
+    UPDATE t1
+       SET b=randomblob(10)
+     WHERE b >= 'E'
+       AND a < (SELECT a FROM t1 WHERE a<22 GROUP BY b);
+  END;
+  INSERT INTO t1(b) VALUES('Y'),('X'),('Z');
+  SELECT a, CASE WHEN typeof(b)='text' THEN quote(b) ELSE '<blob>' END, '|' FROM t1;
+

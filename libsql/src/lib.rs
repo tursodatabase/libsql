@@ -126,6 +126,7 @@ pub use params::params_from_iter;
 
 mod connection;
 mod database;
+mod load_extension_guard;
 
 cfg_parser! {
     mod parser;
@@ -148,6 +149,7 @@ cfg_hrana! {
 pub use self::{
     connection::Connection,
     database::{Builder, Database},
+    load_extension_guard::LoadExtensionGuard,
     rows::{Column, Row, Rows},
     statement::Statement,
     transaction::{Transaction, TransactionBehavior},

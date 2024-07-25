@@ -19,16 +19,11 @@ type Error = rusqlite::Error;
 #[cfg(not(feature = "rusqlite"))]
 type Error = crate::Error;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum Cipher {
     // AES 256 Bit CBC - No HMAC (wxSQLite3)
+    #[default]
     Aes256Cbc,
-}
-
-impl Default for Cipher {
-    fn default() -> Self {
-        Cipher::Aes256Cbc
-    }
 }
 
 impl FromStr for Cipher {

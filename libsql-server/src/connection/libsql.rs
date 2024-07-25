@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
-use libsql_sys::wal::{BusyHandler, CheckpointCallback, Sqlite3WalManager, Wal, WalManager};
+use libsql_sys::wal::{BusyHandler, CheckpointCallback, Wal, WalManager};
 use libsql_sys::EncryptionConfig;
 use metrics::histogram;
 use parking_lot::Mutex;
@@ -16,6 +16,7 @@ use tokio::time::{Duration, Instant};
 
 use crate::error::Error;
 use crate::metrics::{DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT};
+use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::ResolveNamespacePathFn;
 use crate::query_analysis::StmtKind;
@@ -25,7 +26,7 @@ use crate::stats::{Stats, StatsUpdateMessage};
 use crate::{Result, BLOCKING_RT};
 
 use super::connection_manager::{
-    ConnectionManager, ManagedConnectionWal, ManagedConnectionWalWrapper,
+    ConnectionManager, InnerWalManager, ManagedConnectionWal, ManagedConnectionWalWrapper,
 };
 use super::program::{
     check_describe_auth, check_program_auth, DescribeCol, DescribeParam, DescribeResponse, Vm,
@@ -36,6 +37,7 @@ pub struct MakeLibSqlConn<W> {
     db_path: PathBuf,
     wal_wrapper: W,
     stats: Arc<Stats>,
+    broadcaster: BroadcasterHandle,
     config_store: MetaStoreHandle,
     extensions: Arc<[PathBuf]>,
     max_response_size: u64,
@@ -48,6 +50,7 @@ pub struct MakeLibSqlConn<W> {
     encryption_config: Option<EncryptionConfig>,
     block_writes: Arc<AtomicBool>,
     resolve_attach_path: ResolveNamespacePathFn,
+    make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
 }
 
 impl<W> MakeLibSqlConn<W>
@@ -59,6 +62,7 @@ where
         db_path: PathBuf,
         wal_wrapper: W,
         stats: Arc<Stats>,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         extensions: Arc<[PathBuf]>,
         max_response_size: u64,
@@ -68,12 +72,14 @@ where
         encryption_config: Option<EncryptionConfig>,
         block_writes: Arc<AtomicBool>,
         resolve_attach_path: ResolveNamespacePathFn,
+        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
     ) -> Result<Self> {
         let txn_timeout = config_store.get().txn_timeout.unwrap_or(TXN_TIMEOUT);
 
         let mut this = Self {
             db_path,
             stats,
+            broadcaster,
             config_store,
             extensions,
             max_response_size,
@@ -86,6 +92,7 @@ where
             block_writes,
             resolve_attach_path,
             connection_manager: ConnectionManager::new(txn_timeout),
+            make_wal_manager,
         };
 
         let db = this.try_create_db().await?;
@@ -123,12 +130,14 @@ where
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn make_connection(&self) -> Result<LibSqlConnection<W>> {
         LibSqlConnection::new(
             self.db_path.clone(),
             self.extensions.clone(),
             self.wal_wrapper.clone(),
             self.stats.clone(),
+            self.broadcaster.clone(),
             self.config_store.clone(),
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
@@ -140,6 +149,7 @@ where
             self.block_writes.clone(),
             self.resolve_attach_path.clone(),
             self.connection_manager.clone(),
+            self.make_wal_manager.clone(),
         )
         .await
     }
@@ -164,10 +174,17 @@ pub struct LibSqlConnection<T> {
 #[cfg(test)]
 impl LibSqlConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
     pub async fn new_test(path: &Path) -> Self {
+        #[cfg(not(feature = "durable-wal"))]
+        use libsql_sys::wal::either::Either as EitherWAL;
+        #[cfg(feature = "durable-wal")]
+        use libsql_sys::wal::either::Either3 as EitherWAL;
+        use libsql_sys::wal::Sqlite3WalManager;
+
         Self::new(
             path.to_owned(),
             Arc::new([]),
             libsql_sys::wal::wrapper::PassthroughWalWrapper,
+            Default::default(),
             Default::default(),
             MetaStoreHandle::new_test(),
             QueryBuilderConfig::default(),
@@ -175,6 +192,7 @@ impl LibSqlConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
             Default::default(),
             Arc::new(|_| unreachable!()),
             ConnectionManager::new(TXN_TIMEOUT),
+            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
         )
         .await
         .unwrap()
@@ -303,25 +321,28 @@ where
         extensions: Arc<[PathBuf]>,
         wal_wrapper: W,
         stats: Arc<Stats>,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         block_writes: Arc<AtomicBool>,
         resolve_attach_path: ResolveNamespacePathFn,
         connection_manager: ConnectionManager,
+        make_wal: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
     ) -> crate::Result<Self> {
         let (conn, id) = tokio::task::spawn_blocking({
             let connection_manager = connection_manager.clone();
             move || -> crate::Result<_> {
                 let manager = ManagedConnectionWalWrapper::new(connection_manager);
                 let id = manager.id();
-                let wal = Sqlite3WalManager::default().wrap(manager).wrap(wal_wrapper);
+                let wal = make_wal().wrap(manager).wrap(wal_wrapper);
 
                 let conn = Connection::new(
                     path.as_ref(),
                     extensions,
                     wal,
                     stats,
+                    broadcaster,
                     config_store,
                     builder_config,
                     current_frame_no_receiver,
@@ -363,6 +384,22 @@ where
         let mut inner = self.inner.lock();
         f(&mut inner.conn)
     }
+
+    pub async fn execute<B: QueryResultBuilder>(
+        &self,
+        pgm: Program,
+        ctx: RequestContext,
+        builder: B,
+    ) -> Result<(B, Program)> {
+        PROGRAM_EXEC_COUNT.increment(1);
+
+        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
+        let conn = self.inner.clone();
+        BLOCKING_RT
+            .spawn_blocking(move || Connection::run(conn, pgm, builder))
+            .await
+            .unwrap()
+    }
 }
 
 pub(super) struct Connection<W> {
@@ -374,6 +411,8 @@ pub(super) struct Connection<W> {
     block_writes: Arc<AtomicBool>,
     resolve_attach_path: ResolveNamespacePathFn,
     forced_rollback: bool,
+    broadcaster: BroadcasterHandle,
+    hooked: bool,
 }
 
 fn update_stats(
@@ -399,6 +438,7 @@ impl<W: Wal> Connection<W> {
         extensions: Arc<[PathBuf]>,
         wal_manager: T,
         stats: Arc<Stats>,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
@@ -415,6 +455,9 @@ impl<W: Wal> Connection<W> {
 
         let config = config_store.get();
         conn.pragma_update(None, "max_page_count", config.max_db_pages)?;
+        tracing::debug!("setting PRAGMA synchronous to {}", config.durability_mode);
+        conn.pragma_update(None, "synchronous", config.durability_mode)?;
+
         conn.set_limit(
             rusqlite::limits::Limit::SQLITE_LIMIT_LENGTH,
             config.max_row_size as i32,
@@ -441,6 +484,8 @@ impl<W: Wal> Connection<W> {
             block_writes,
             resolve_attach_path,
             forced_rollback: false,
+            broadcaster,
+            hooked: false,
         };
 
         for ext in extensions.iter() {
@@ -461,13 +506,15 @@ impl<W: Wal> Connection<W> {
         this: Arc<Mutex<Self>>,
         pgm: Program,
         mut builder: B,
-    ) -> Result<B> {
+    ) -> Result<(B, Program)> {
         let (config, stats, block_writes, resolve_attach_path) = {
-            let lock = this.lock();
+            let mut lock = this.lock();
             let config = lock.config_store.get();
             let stats = lock.stats.clone();
             let block_writes = lock.block_writes.clone();
             let resolve_attach_path = lock.resolve_attach_path.clone();
+
+            lock.update_hooks();
 
             (config, stats, block_writes, resolve_attach_path)
         };
@@ -532,7 +579,7 @@ impl<W: Wal> Connection<W> {
             vm.builder().finish(current_fno, is_autocommit)?;
         }
 
-        Ok(vm.into_builder())
+        Ok((vm.into_builder(), pgm))
     }
 
     fn rollback(&self) {
@@ -551,7 +598,18 @@ impl<W: Wal> Connection<W> {
     fn checkpoint(&self) -> Result<()> {
         let start = Instant::now();
         self.conn
-            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", (), |_| Ok(()))?;
+            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", (), |row| {
+                let status: i32 = row.get(0)?;
+                let wal_frames: i32 = row.get(1)?;
+                let moved_frames: i32 = row.get(2)?;
+                tracing::info!(
+                    "WAL checkpoint successful, status: {}, WAL frames: {}, moved frames: {}",
+                    status,
+                    wal_frames,
+                    moved_frames
+                );
+                Ok(())
+            })?;
         WAL_CHECKPOINT_COUNT.increment(1);
         histogram!("libsql_server_wal_checkpoint_time", start.elapsed());
         Ok(())
@@ -608,6 +666,39 @@ impl<W: Wal> Connection<W> {
     fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }
+
+    fn update_hooks(&mut self) {
+        let (update_fn, commit_fn, rollback_fn) = if self.hooked {
+            if self.broadcaster.active() {
+                return;
+            }
+            self.hooked = false;
+            (None, None, None)
+        } else {
+            let Some(broadcaster) = self.broadcaster.get() else {
+                return;
+            };
+
+            let update = broadcaster.clone();
+            let update_fn = Some(move |action: _, _: &_, table: &_, _| {
+                update.notify(table, action);
+            });
+
+            let commit = broadcaster.clone();
+            let commit_fn = Some(move || {
+                commit.commit();
+                false // allow commit to go through
+            });
+
+            let rollback = broadcaster;
+            let rollback_fn = Some(move || rollback.rollback());
+            (update_fn, commit_fn, rollback_fn)
+        };
+
+        self.conn.update_hook(update_fn);
+        self.conn.commit_hook(commit_fn);
+        self.conn.rollback_hook(rollback_fn);
+    }
 }
 
 #[async_trait::async_trait]
@@ -622,14 +713,7 @@ where
         builder: B,
         _replication_index: Option<FrameNo>,
     ) -> Result<B> {
-        PROGRAM_EXEC_COUNT.increment(1);
-
-        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
-        let conn = self.inner.clone();
-        BLOCKING_RT
-            .spawn_blocking(move || Connection::run(conn, pgm, builder))
-            .await
-            .unwrap()
+        self.execute(pgm, ctx, builder).await.map(|(b, _)| b)
     }
 
     async fn describe(
@@ -676,8 +760,12 @@ where
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
+    #[cfg(not(feature = "durable-wal"))]
+    use libsql_sys::wal::either::Either as EitherWAL;
+    #[cfg(feature = "durable-wal")]
+    use libsql_sys::wal::either::Either3 as EitherWAL;
     use libsql_sys::wal::wrapper::PassthroughWalWrapper;
-    use libsql_sys::wal::Sqlite3Wal;
+    use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
     use rand::Rng;
     use tempfile::tempdir;
     use tokio::task::JoinSet;
@@ -702,6 +790,8 @@ mod test {
             block_writes: Default::default(),
             resolve_attach_path: Arc::new(|_| unreachable!()),
             forced_rollback: false,
+            broadcaster: Default::default(),
+            hooked: false,
         };
 
         let conn = Arc::new(Mutex::new(conn));
@@ -730,6 +820,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -739,6 +830,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
+            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
         )
         .await
         .unwrap();
@@ -750,7 +842,8 @@ mod test {
             Program::seq(&["BEGIN IMMEDIATE"]),
             TestBuilder::default(),
         )
-        .unwrap();
+        .unwrap()
+        .0;
         assert!(!conn.inner.lock().conn.is_autocommit());
 
         tokio::time::sleep(Duration::from_secs(1)).await;
@@ -760,7 +853,8 @@ mod test {
             Program::seq(&["create table test (c)"]),
             TestBuilder::default(),
         )
-        .unwrap();
+        .unwrap()
+        .0;
         assert!(!conn.is_autocommit().await.unwrap());
         assert!(matches!(builder.into_ret()[0], Err(Error::LibSqlTxTimeout)));
     }
@@ -774,6 +868,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -783,6 +878,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
+            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
         )
         .await
         .unwrap();
@@ -796,7 +892,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 let ret = &builder.into_ret()[0];
                 assert!(
                     (ret.is_ok() && !conn.inner.lock().conn.is_autocommit())
@@ -823,6 +920,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -832,6 +930,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
+            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
         )
         .await
         .unwrap();
@@ -845,7 +944,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(!conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
             }
@@ -863,7 +963,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(!conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
                 before.elapsed()
@@ -881,7 +982,8 @@ mod test {
                     Program::seq(&["COMMIT"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
             }
@@ -904,6 +1006,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -913,6 +1016,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
+            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
         )
         .await
         .unwrap();
@@ -989,6 +1093,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -998,6 +1103,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
+            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
         )
         .await
         .unwrap();
@@ -1011,7 +1117,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(!conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
             }
@@ -1029,7 +1136,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(!conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
                 before.elapsed()
@@ -1048,7 +1156,8 @@ mod test {
                     Program::seq(&["SELECT 1;"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(conn.inner.lock().is_autocommit());
                 // timeout
                 assert!(builder.into_ret()[0].is_err());
@@ -1058,7 +1167,8 @@ mod test {
                     Program::seq(&["SELECT 1;"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(conn.inner.lock().is_autocommit());
                 // state reset
                 assert!(builder.into_ret()[0].is_ok());

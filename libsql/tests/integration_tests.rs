@@ -17,6 +17,14 @@ async fn setup() -> Connection {
 }
 
 #[tokio::test]
+async fn enable_disable_extension() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.load_extension_enable().unwrap();
+    conn.load_extension_disable().unwrap();
+}
+
+#[tokio::test]
 async fn connection_drops_before_statements() {
     let db = Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();
@@ -253,6 +261,48 @@ async fn connection_execute_batch_inserts() {
 }
 
 #[tokio::test]
+async fn connection_execute_batch_inserts_returning() {
+    let conn = setup().await;
+
+    conn.execute("CREATE TABLE foo(x INTEGER)", ())
+        .await
+        .unwrap();
+
+    let mut batch_rows = conn
+        .execute_batch(
+            "BEGIN;
+            INSERT INTO foo VALUES (1) RETURNING *;
+            INSERT INTO foo VALUES (2) RETURNING *;
+            INSERT INTO foo VALUES (3) RETURNING *;
+            COMMIT;
+            ",
+        )
+        .await
+        .unwrap();
+
+    assert!(batch_rows.next_stmt_row().unwrap().is_none());
+
+    let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<u64>(0).unwrap(),
+        1
+    );
+    let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<u64>(0).unwrap(),
+        2
+    );
+
+    let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<u64>(0).unwrap(),
+        3
+    );
+
+    assert!(batch_rows.next_stmt_row().unwrap().is_none());
+}
+
+#[tokio::test]
 async fn connection_execute_batch_newline() {
     // This test checks that we handle a null raw
     // stament in execute_batch. What happens when there
@@ -268,7 +318,7 @@ async fn connection_execute_batch_newline() {
         ",
     )
     .await
-    .unwrap()
+    .unwrap();
 }
 
 #[tokio::test]
@@ -550,11 +600,11 @@ async fn deserialize_row() {
     let conn = db.connect().unwrap();
     let _ = conn
         .execute(
-            "CREATE TABLE users (id INTEGER, name TEXT, score REAL, data BLOB, age INTEGER)",
+            "CREATE TABLE users (id INTEGER, name TEXT, score REAL, data BLOB, age INTEGER, status TEXT, wrapper TEXT)",
             (),
         )
         .await;
-    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, 'potato', 42.0, X'deadbeef', NULL)", ())
+    conn.execute("INSERT INTO users (id, name, score, data, age, status, wrapper) VALUES (123, 'potato', 42.0, X'deadbeef', NULL, 'Draft', 'Published')", ())
     .await
     .unwrap();
 
@@ -568,7 +618,19 @@ async fn deserialize_row() {
         data: Vec<u8>,
         age: Option<i64>,
         none: Option<()>,
+        status: Status,
+        wrapper: Wrapper,
     }
+
+    #[derive(Deserialize, Debug, PartialEq)]
+    enum Status {
+        Draft,
+        Published,
+    }
+
+    #[derive(Deserialize, Debug, PartialEq)]
+    #[serde(transparent)]
+    struct Wrapper(Status);
 
     let row = conn
         .query("SELECT * FROM users", ())
@@ -584,5 +646,7 @@ async fn deserialize_row() {
     assert_eq!(data.score, 42.0);
     assert_eq!(data.data, vec![0xde, 0xad, 0xbe, 0xef]);
     assert_eq!(data.age, None);
-    assert_eq!(data.none, None)
+    assert_eq!(data.none, None);
+    assert_eq!(data.status, Status::Draft);
+    assert_eq!(data.wrapper, Wrapper(Status::Published));
 }

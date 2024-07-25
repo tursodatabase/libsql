@@ -10,6 +10,7 @@ pub struct SchemaLocksRegistry {
     locks: Arc<Mutex<HashMap<NamespaceName, Arc<tokio::sync::RwLock<()>>>>>,
 }
 
+#[allow(dead_code)]
 enum SchemaLockKind {
     Shared(tokio::sync::OwnedRwLockReadGuard<()>),
     Exclusive(tokio::sync::OwnedRwLockWriteGuard<()>),

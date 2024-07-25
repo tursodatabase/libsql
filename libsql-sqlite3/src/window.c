@@ -1038,7 +1038,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       assert( ExprUseXList(pWin->pOwner) );
       assert( pWin->pWFunc!=0 );
       pArgs = pWin->pOwner->x.pList;
-      if( pWin->pWFunc->funcFlags & SQLITE_FUNC_SUBTYPE ){
+      if( pWin->pWFunc->funcFlags & SQLITE_SUBTYPE ){
         selectWindowRewriteEList(pParse, pMWin, pSrc, pArgs, pTab, &pSublist);
         pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
         pWin->bExprArgs = 1;

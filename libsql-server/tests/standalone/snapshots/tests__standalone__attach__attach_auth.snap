@@ -4,6 +4,6 @@ expression: "bar_conn.execute(\"ATTACH foo as foo\", ()).await.unwrap_err()"
 ---
 Hrana(
     Api(
-        "{\"error\":\"Internal Error: `Not authorized to execute query: Current session doesn't not have AttachRead permission to namespace foo`\"}",
+        "{\"error\":\"Not authorized to execute query: Current session doesn't not have AttachRead permission to namespace foo\"}",
     ),
 )

@@ -74,7 +74,7 @@
 # you don't need (for example BLT) by erasing or commenting out
 # the corresponding code.
 #
-AC_INIT([sqlite],[m4_esyscmd(cat VERSION | tr -d '\n')])
+AC_INIT([sqlite],m4_esyscmd(cat VERSION | tr -d '\n'))
 
 dnl Make sure the local VERSION file matches this configure script
 sqlite_version_sanity_check=`cat $srcdir/VERSION | tr -d '\n'`
@@ -693,6 +693,19 @@ AC_MSG_CHECKING([whether to support JSON functions])
 if test "$enable_json" = "no"; then
   AC_MSG_RESULT([no])
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_OMIT_JSON"
+else
+  AC_MSG_RESULT([yes])
+fi
+
+##########
+# Do we want to support vector functions
+#
+AC_ARG_ENABLE(vector, 
+AS_HELP_STRING([--disable-vector],[Disable vector functions]))
+AC_MSG_CHECKING([whether to support vector functions])
+if test "$enable_vector" = "no"; then
+  AC_MSG_RESULT([no])
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_OMIT_VECTOR"
 else
   AC_MSG_RESULT([yes])
 fi

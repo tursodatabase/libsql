@@ -3,28 +3,54 @@ use std::os::unix::prelude::OsStrExt;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
+use libsql_sys::name::NamespaceResolver;
 use libsql_sys::wal::{Wal, WalManager};
 
-use crate::fs::FileSystem;
+use crate::io::Io;
 use crate::registry::WalRegistry;
+use crate::segment::sealed::SealedSegment;
 use crate::shared_wal::SharedWal;
+use crate::storage::Storage;
 use crate::transaction::Transaction;
 
-#[derive(Clone)]
-pub struct LibsqlWalManager<FS: FileSystem> {
-    pub registry: Arc<WalRegistry<FS>>,
-    pub next_conn_id: Arc<AtomicU64>,
+pub struct LibsqlWalManager<FS: Io, S> {
+    registry: Arc<WalRegistry<FS, S>>,
+    next_conn_id: Arc<AtomicU64>,
+    namespace_resolver: Arc<dyn NamespaceResolver>,
 }
 
-pub struct LibsqlWal<FS: FileSystem> {
+impl<FS: Io, S> Clone for LibsqlWalManager<FS, S> {
+    fn clone(&self) -> Self {
+        Self {
+            registry: self.registry.clone(),
+            next_conn_id: self.next_conn_id.clone(),
+            namespace_resolver: self.namespace_resolver.clone(),
+        }
+    }
+}
+
+impl<FS: Io, S> LibsqlWalManager<FS, S> {
+    pub fn new(
+        registry: Arc<WalRegistry<FS, S>>,
+        namespace_resolver: Arc<dyn NamespaceResolver>,
+    ) -> Self {
+        Self {
+            registry,
+            next_conn_id: Default::default(),
+            namespace_resolver,
+        }
+    }
+}
+
+pub struct LibsqlWal<FS: Io> {
     last_read_frame_no: Option<u64>,
     tx: Option<Transaction<FS::File>>,
     shared: Arc<SharedWal<FS>>,
     conn_id: u64,
 }
 
-impl<FS: FileSystem> WalManager for LibsqlWalManager<FS> {
-    type Wal = LibsqlWal<FS>;
+impl<IO: Io, S: Storage<Segment = SealedSegment<IO::File>>> WalManager for LibsqlWalManager<IO, S> {
+    type Wal = LibsqlWal<IO>;
 
     fn use_shared_memory(&self) -> bool {
         false
@@ -39,11 +65,12 @@ impl<FS: FileSystem> WalManager for LibsqlWalManager<FS> {
         db_path: &std::ffi::CStr,
     ) -> libsql_sys::wal::Result<Self::Wal> {
         let db_path = OsStr::from_bytes(&db_path.to_bytes());
+        let namespace = self.namespace_resolver.resolve(db_path.as_ref());
         let shared = self
             .registry
             .clone()
-            .open(db_path.as_ref())
-            .map_err(Into::into)?;
+            .open(db_path.as_ref(), &namespace)
+            .map_err(|e| e.into())?;
         let conn_id = self
             .next_conn_id
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -89,7 +116,7 @@ impl<FS: FileSystem> WalManager for LibsqlWalManager<FS> {
     }
 }
 
-impl<FS: FileSystem> Wal for LibsqlWal<FS> {
+impl<FS: Io> Wal for LibsqlWal<FS> {
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn limit(&mut self, _size: i64) {}
 
@@ -110,12 +137,7 @@ impl<FS: FileSystem> Wal for LibsqlWal<FS> {
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn end_read_txn(&mut self) {
-        match self.tx.take() {
-            Some(Transaction::Read(tx)) => tx,
-            Some(Transaction::Write(tx)) => tx.downgrade(),
-            None => return,
-        };
-
+        self.tx.take().map(|tx| tx.end());
         tracing::trace!("end read tx");
     }
 
@@ -139,7 +161,7 @@ impl<FS: FileSystem> Wal for LibsqlWal<FS> {
         tracing::trace!(page_no, "reading frame");
         let tx = self.tx.as_mut().unwrap();
         self.shared
-            .read_frame(tx, page_no.get(), buffer)
+            .read_page(tx, page_no.get(), buffer)
             .map_err(Into::into)?;
         Ok(())
     }
@@ -253,7 +275,11 @@ impl<FS: FileSystem> Wal for LibsqlWal<FS> {
         match self.tx.as_mut() {
             Some(Transaction::Write(ref mut tx)) => {
                 self.shared
-                    .insert_frames(tx, page_headers, size_after)
+                    .insert_frames(
+                        tx,
+                        page_headers.iter(),
+                        (size_after != 0).then_some(size_after),
+                    )
                     .map_err(Into::into)?;
             }
             _ => todo!("no write transaction"),

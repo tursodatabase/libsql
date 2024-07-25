@@ -104,6 +104,7 @@ async fn configure_server(
             http_acceptor: Some(http_acceptor),
             enable_http_console: false,
             self_url: None,
+            primary_url: None,
             auth_strategy: Auth::new(Disabled::new()),
         },
         path: path.into().into(),
@@ -530,6 +531,7 @@ impl Drop for DbFileCleaner {
 
 /// Guardian struct used for cleaning up the test data from
 /// S3 bucket dir at the beginning and end of a test.
+#[allow(dead_code)]
 struct S3BucketCleaner(&'static str);
 
 impl S3BucketCleaner {

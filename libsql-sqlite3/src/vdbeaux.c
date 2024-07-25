@@ -15,6 +15,10 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
+#ifndef SQLITE_OMIT_VECTOR
+#include "vectorIndexInt.h"
+#endif
+
 /* Forward references */
 static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef);
 static void vdbeFreeOpArray(sqlite3 *, Op *, int);
@@ -211,10 +215,11 @@ static int growOpArray(Vdbe *v, int nOp){
 **   sqlite3CantopenError(lineno)
 */
 static void test_addop_breakpoint(int pc, Op *pOp){
-  static int n = 0;
+  static u64 n = 0;
   (void)pc;
   (void)pOp;
   n++;
+  if( n==LARGEST_UINT64 ) abort(); /* so that n is used, preventing a warning */
 }
 #endif
 
@@ -1399,6 +1404,10 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       if( db->pnBytesFreed==0 ) sqlite3VtabUnlock((VTable *)p4);
       break;
     }
+    case P4_TABLEREF: {
+      if( db->pnBytesFreed==0 ) sqlite3DeleteTable(db, (Table*)p4);
+      break;
+    }
   }
 }
 
@@ -1526,7 +1535,7 @@ static void SQLITE_NOINLINE vdbeChangeP4Full(
   int n
 ){
   if( pOp->p4type ){
-    freeP4(p->db, pOp->p4type, pOp->p4.p);
+    assert( pOp->p4type > P4_FREE_IF_LE );
     pOp->p4type = 0;
     pOp->p4.p = 0;
   }
@@ -2743,6 +2752,12 @@ void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
       assert( pVCur->pVtab->nRef>0 );
       pVCur->pVtab->nRef--;
       pModule->xClose(pVCur);
+      break;
+    }
+#endif
+#ifndef SQLITE_OMIT_VECTOR
+    case CURTYPE_VECTOR_IDX: {
+      vectorIndexCursorClose(p->db, pCx->uc.pVecIdx);
       break;
     }
 #endif

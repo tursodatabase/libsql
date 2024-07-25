@@ -2,6 +2,13 @@ syntax = "proto3";
 
 package metadata;
 
+enum DurabilityMode {
+    RELAXED = 0;
+    STRONG = 1;
+    EXTRA = 2;
+    OFF = 3;
+}
+
 // Database config used to send db configs over the wire and stored
 // in the meta store.
 message DatabaseConfig {
@@ -12,11 +19,12 @@ message DatabaseConfig {
     // maximum db size (in pages)
     uint64 max_db_pages = 4;
     optional string heartbeat_url = 5;
-    optional string bottomless_db_id = 6; 
+    optional string bottomless_db_id = 6;
     optional string jwt_key = 7;
     optional uint64 txn_timeout_s = 8;
     bool allow_attach = 9;
     optional uint64 max_row_size = 10;
     optional bool shared_schema = 11;
     optional string shared_schema_name = 12;
+    optional DurabilityMode durability_mode = 13;
 }

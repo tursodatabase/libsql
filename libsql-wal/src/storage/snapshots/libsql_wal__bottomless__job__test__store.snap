@@ -1,0 +1,11 @@
+---
+source: libsql-wal/src/bottomless/job.rs
+expression: meta
+---
+SegmentMeta {
+    namespace: db,
+    segment_id: 00000000-0000-0000-0000-000000000000,
+    start_frame_no: 1,
+    end_frame_no: 102,
+    created_at: 1970-01-01T00:00:00Z,
+}

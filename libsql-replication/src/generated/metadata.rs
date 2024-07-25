@@ -30,4 +30,38 @@ pub struct DatabaseConfig {
     pub shared_schema: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "12")]
     pub shared_schema_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(enumeration = "DurabilityMode", optional, tag = "13")]
+    pub durability_mode: ::core::option::Option<i32>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum DurabilityMode {
+    Relaxed = 0,
+    Strong = 1,
+    Extra = 2,
+    Off = 3,
+}
+impl DurabilityMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            DurabilityMode::Relaxed => "RELAXED",
+            DurabilityMode::Strong => "STRONG",
+            DurabilityMode::Extra => "EXTRA",
+            DurabilityMode::Off => "OFF",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "RELAXED" => Some(Self::Relaxed),
+            "STRONG" => Some(Self::Strong),
+            "EXTRA" => Some(Self::Extra),
+            "OFF" => Some(Self::Off),
+            _ => None,
+        }
+    }
 }

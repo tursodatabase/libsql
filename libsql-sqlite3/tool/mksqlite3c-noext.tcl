@@ -116,6 +116,8 @@ foreach hdr {
    sqliteLimit.h
    vdbe.h
    vdbeInt.h
+   vectorIndexInt.h
+   vectorInt.h
    vxworks.h
    wal.h
    whereInt.h

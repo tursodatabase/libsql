@@ -1,6 +1,7 @@
-use std::fmt;
 use std::sync::Arc;
+use std::{fmt, path::Path};
 
+use crate::connection::BatchRows;
 use crate::{
     connection::Conn,
     params::Params,
@@ -22,12 +23,13 @@ impl Conn for LibsqlConnection {
         self.conn.execute(sql, params)
     }
 
-    async fn execute_batch(&self, sql: &str) -> Result<()> {
+    async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         self.conn.execute_batch(sql)
     }
 
-    async fn execute_transactional_batch(&self, sql: &str) -> Result<()> {
-        self.conn.execute_transactional_batch(sql)
+    async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows> {
+        self.conn.execute_transactional_batch(sql)?;
+        Ok(BatchRows::empty())
     }
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {
@@ -60,11 +62,23 @@ impl Conn for LibsqlConnection {
         self.conn.changes()
     }
 
+    fn total_changes(&self) -> u64 {
+        self.conn.total_changes()
+    }
+
     fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
     }
 
     async fn reset(&self) {}
+
+    fn enable_load_extension(&self, onoff: bool) -> Result<()> {
+        self.conn.enable_load_extension(onoff)
+    }
+
+    fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
+        self.conn.load_extension(dylib_path, entry_point)
+    }
 }
 
 impl Drop for LibsqlConnection {
@@ -92,9 +106,14 @@ impl Stmt for LibsqlStmt {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.query(&params)
-            .map(LibsqlRows)
-            .map(|r| Rows { inner: Box::new(r) })
+        stmt.query(&params).map(LibsqlRows).map(Rows::new)
+    }
+
+    async fn run(&mut self, params: &Params) -> Result<()> {
+        let params = params.clone();
+        let stmt = self.0.clone();
+
+        stmt.run(&params)
     }
 
     fn reset(&mut self) {

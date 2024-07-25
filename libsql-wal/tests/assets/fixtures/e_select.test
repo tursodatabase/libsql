@@ -1,0 +1,379 @@
+
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES('a', 'one');
+  INSERT INTO t1 VALUES('b', 'two');
+  INSERT INTO t1 VALUES('c', 'three');
+
+  CREATE TABLE t2(a, b);
+  INSERT INTO t2 VALUES('a', 'I');
+  INSERT INTO t2 VALUES('b', 'II');
+  INSERT INTO t2 VALUES('c', 'III');
+
+  CREATE TABLE t3(a, c);
+  INSERT INTO t3 VALUES('a', 1);
+  INSERT INTO t3 VALUES('b', 2);
+
+  CREATE TABLE t4(a, c);
+  INSERT INTO t4 VALUES('a', NULL);
+  INSERT INTO t4 VALUES('b', 2);
+
+
+  CREATE TABLE xx(x, y);
+  INSERT INTO xx VALUES('IiJlsIPepMuAhU', X'10B00B897A15BAA02E3F98DCE8F2');
+  INSERT INTO xx VALUES(NULL, -16.87);
+  INSERT INTO xx VALUES(-17.89, 'linguistically');
+
+
+  CREATE TABLE x1(a, b);
+  CREATE TABLE x2(c, d, e);
+  CREATE TABLE x3(f, g, h, i);
+
+  -- x1: 3 rows, 2 columns
+  INSERT INTO x1 VALUES(24, 'converging');
+  INSERT INTO x1 VALUES(NULL, X'CB71');
+  INSERT INTO x1 VALUES('blonds', 'proprietary');
+
+  -- x2: 2 rows, 3 columns
+  INSERT INTO x2 VALUES(-60.06, NULL, NULL);
+  INSERT INTO x2 VALUES(-58, NULL, 1.21);
+
+  -- x3: 5 rows, 4 columns
+  INSERT INTO x3 VALUES(-39.24, NULL, 'encompass', -1);
+  INSERT INTO x3 VALUES('presenting', 51, 'reformation', 'dignified');
+  INSERT INTO x3 VALUES('conducting', -87.24, 37.56, NULL);
+  INSERT INTO x3 VALUES('coldest', -96, 'dramatists', 82.3);
+  INSERT INTO x3 VALUES('alerting', NULL, -93.79, NULL);
+
+ SELECT * FROM t1, t2 
+ SELECT * FROM t1 AS x, t1 AS y
+
+  CREATE TABLE t5(a COLLATE nocase, b COLLATE binary);
+  INSERT INTO t5 VALUES('AA', 'cc');
+  INSERT INTO t5 VALUES('BB', 'dd');
+  INSERT INTO t5 VALUES(NULL, NULL);
+  CREATE TABLE t6(a COLLATE binary, b COLLATE nocase);
+  INSERT INTO t6 VALUES('aa', 'cc');
+  INSERT INTO t6 VALUES('bb', 'DD');
+  INSERT INTO t6 VALUES(NULL, NULL);
+
+
+  CREATE TABLE t7(a, b, c);
+  CREATE TABLE t8(a, d, e);
+
+  INSERT INTO t7 VALUES('x', 'ex',  24);
+  INSERT INTO t7 VALUES('y', 'why', 25);
+
+  INSERT INTO t8 VALUES('x', 'abc', 24);
+  INSERT INTO t8 VALUES('z', 'ghi', 26);
+
+
+  CREATE TABLE t10(x, y);
+  INSERT INTO t10 VALUES(1, 'true');
+  INSERT INTO t10 VALUES(0, 'false');
+
+
+  CREATE TABLE x1(k, x, y, z);
+  INSERT INTO x1 VALUES(1, 'relinquished', 'aphasia', 78.43);
+  INSERT INTO x1 VALUES(2, X'A8E8D66F',    X'07CF',   -81);
+  INSERT INTO x1 VALUES(3, -22,            -27.57,    NULL);
+  INSERT INTO x1 VALUES(4, NULL,           'bygone',  'picky');
+  INSERT INTO x1 VALUES(5, NULL,           96.28,     NULL);
+  INSERT INTO x1 VALUES(6, 0,              1,         2);
+
+  CREATE TABLE x2(k, x, y2);
+  INSERT INTO x2 VALUES(1, 50, X'B82838');
+  INSERT INTO x2 VALUES(5, 84.79, 65.88);
+  INSERT INTO x2 VALUES(3, -22, X'0E1BE452A393');
+  INSERT INTO x2 VALUES(7, 'mistrusted', 'standardized');
+
+ SELECT k FROM x1 WHERE x 
+ SELECT k FROM x1 WHERE y 
+ SELECT k FROM x1 WHERE z 
+ SELECT k FROM x1 WHERE '1'||z    
+ SELECT k FROM x1 WHERE x IS NULL 
+ SELECT k FROM x1 WHERE z - 78.43 
+
+  SELECT k FROM x1 LEFT JOIN x2 USING(k)
+
+
+  SELECT k FROM x1 LEFT JOIN x2 USING(k) WHERE x2.k ORDER BY +k
+
+
+  SELECT k FROM x1 LEFT JOIN x2 USING(k) WHERE x2.k IS NULL
+
+
+  SELECT k FROM x1 NATURAL JOIN x2 WHERE x2.k
+
+
+  SELECT k FROM x1 NATURAL JOIN x2 WHERE x2.k-3
+
+
+  CREATE TABLE z1(a, b, c);
+  CREATE TABLE z2(d, e);
+  CREATE TABLE z3(a, b);
+
+  INSERT INTO z1 VALUES(51.65, -59.58, 'belfries');
+  INSERT INTO z1 VALUES(-5, NULL, 75);
+  INSERT INTO z1 VALUES(-2.2, -23.18, 'suiters');
+  INSERT INTO z1 VALUES(NULL, 67, 'quartets');
+  INSERT INTO z1 VALUES(-1.04, -32.3, 'aspen');
+  INSERT INTO z1 VALUES(63, 'born', -26);
+
+  INSERT INTO z2 VALUES(NULL, 21);
+  INSERT INTO z2 VALUES(36, 6);
+
+  INSERT INTO z3 VALUES('subsistence', 'gauze');
+  INSERT INTO z3 VALUES(49.17, -67);
+
+
+  CREATE TABLE a1(one PRIMARY KEY, two);
+  INSERT INTO a1 VALUES(1, 1);
+  INSERT INTO a1 VALUES(2, 3);
+  INSERT INTO a1 VALUES(3, 6);
+  INSERT INTO a1 VALUES(4, 10);
+
+  CREATE TABLE a2(one PRIMARY KEY, three);
+  INSERT INTO a2 VALUES(1, 1);
+  INSERT INTO a2 VALUES(3, 2);
+  INSERT INTO a2 VALUES(6, 3);
+  INSERT INTO a2 VALUES(10, 4);
+
+
+  CREATE TABLE b1(one PRIMARY KEY, two);
+  INSERT INTO b1 VALUES(1, 'o');
+  INSERT INTO b1 VALUES(4, 'f');
+  INSERT INTO b1 VALUES(3, 't');
+  INSERT INTO b1 VALUES(2, 't');
+  INSERT INTO b1 VALUES(5, 'f');
+  INSERT INTO b1 VALUES(7, 's');
+  INSERT INTO b1 VALUES(6, 's');
+
+  CREATE TABLE b2(x, y);
+  INSERT INTO b2 VALUES(NULL, 0);
+  INSERT INTO b2 VALUES(NULL, 1);
+  INSERT INTO b2 VALUES('xyz', 2);
+  INSERT INTO b2 VALUES('abc', 3);
+  INSERT INTO b2 VALUES('xyz', 4);
+
+  CREATE TABLE b3(a COLLATE nocase, b COLLATE binary);
+  INSERT INTO b3 VALUES('abc', 'abc');
+  INSERT INTO b3 VALUES('aBC', 'aBC');
+  INSERT INTO b3 VALUES('Def', 'Def');
+  INSERT INTO b3 VALUES('dEF', 'dEF');
+
+
+  CREATE TABLE c1(up, down);
+  INSERT INTO c1 VALUES('x', 1);
+  INSERT INTO c1 VALUES('x', 2);
+  INSERT INTO c1 VALUES('x', 4);
+  INSERT INTO c1 VALUES('x', 8);
+  INSERT INTO c1 VALUES('y', 16);
+  INSERT INTO c1 VALUES('y', 32);
+
+  CREATE TABLE c2(i, j);
+  INSERT INTO c2 VALUES(1, 0);
+  INSERT INTO c2 VALUES(2, 1);
+  INSERT INTO c2 VALUES(3, 3);
+  INSERT INTO c2 VALUES(4, 6);
+  INSERT INTO c2 VALUES(5, 10);
+  INSERT INTO c2 VALUES(6, 15);
+  INSERT INTO c2 VALUES(7, 21);
+  INSERT INTO c2 VALUES(8, 28);
+  INSERT INTO c2 VALUES(9, 36);
+
+  CREATE TABLE c3(i PRIMARY KEY, k TEXT);
+  INSERT INTO c3 VALUES(1,  'hydrogen');
+  INSERT INTO c3 VALUES(2,  'helium');
+  INSERT INTO c3 VALUES(3,  'lithium');
+  INSERT INTO c3 VALUES(4,  'beryllium');
+  INSERT INTO c3 VALUES(5,  'boron');
+  INSERT INTO c3 VALUES(94, 'plutonium');
+
+
+  CREATE TABLE h1(a, b);
+  INSERT INTO h1 VALUES(1, 'one');
+  INSERT INTO h1 VALUES(1, 'I');
+  INSERT INTO h1 VALUES(1, 'i');
+  INSERT INTO h1 VALUES(4, 'four');
+  INSERT INTO h1 VALUES(4, 'IV');
+  INSERT INTO h1 VALUES(4, 'iv');
+
+  CREATE TABLE h2(x COLLATE nocase);
+  INSERT INTO h2 VALUES('One');
+  INSERT INTO h2 VALUES('Two');
+  INSERT INTO h2 VALUES('Three');
+  INSERT INTO h2 VALUES('Four');
+  INSERT INTO h2 VALUES('one');
+  INSERT INTO h2 VALUES('two');
+  INSERT INTO h2 VALUES('three');
+  INSERT INTO h2 VALUES('four');
+
+  CREATE TABLE h3(c, d);
+  INSERT INTO h3 VALUES(1, NULL);
+  INSERT INTO h3 VALUES(2, NULL);
+  INSERT INTO h3 VALUES(3, NULL);
+  INSERT INTO h3 VALUES(4, '2');
+  INSERT INTO h3 VALUES(5, NULL);
+  INSERT INTO h3 VALUES(6, '2,3');
+  INSERT INTO h3 VALUES(7, NULL);
+  INSERT INTO h3 VALUES(8, '2,4');
+  INSERT INTO h3 VALUES(9, '3');
+
+
+  CREATE TABLE j1(a, b, c);
+  CREATE TABLE j2(e, f);
+  CREATE TABLE j3(g);
+
+
+  CREATE TABLE q1(a TEXT, b INTEGER, c);
+  CREATE TABLE q2(d NUMBER, e BLOB);
+  CREATE TABLE q3(f REAL, g);
+
+  INSERT INTO q1 VALUES(16, -87.66, NULL);
+  INSERT INTO q1 VALUES('legible', 94, -42.47);
+  INSERT INTO q1 VALUES('beauty', 36, NULL);
+
+  INSERT INTO q2 VALUES('legible', 1);
+  INSERT INTO q2 VALUES('beauty', 2);
+  INSERT INTO q2 VALUES(-65.91, 4);
+  INSERT INTO q2 VALUES('emanating', -16.56);
+
+  INSERT INTO q3 VALUES('beauty', 2);
+  INSERT INTO q3 VALUES('beauty', 2);
+
+
+  CREATE TABLE y1(a COLLATE nocase, b COLLATE binary, c);
+  INSERT INTO y1 VALUES('Abc', 'abc', 'aBC');
+
+
+  CREATE TABLE w1(a TEXT, b NUMBER);
+  CREATE TABLE w2(a, b TEXT);
+
+  INSERT INTO w1 VALUES('1', 4.1);
+  INSERT INTO w2 VALUES(1, 4.1);
+
+
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(3);
+
+
+  CREATE TABLE d1(x, y, z);
+
+  INSERT INTO d1 VALUES(1, 2, 3);
+  INSERT INTO d1 VALUES(2, 5, -1);
+  INSERT INTO d1 VALUES(1, 2, 8);
+  INSERT INTO d1 VALUES(1, 2, 7);
+  INSERT INTO d1 VALUES(2, 4, 93);
+  INSERT INTO d1 VALUES(1, 2, -20);
+  INSERT INTO d1 VALUES(1, 4, 93);
+  INSERT INTO d1 VALUES(1, 5, -1);
+
+  CREATE TABLE d2(a, b);
+  INSERT INTO d2 VALUES('gently', 'failings');
+  INSERT INTO d2 VALUES('commercials', 'bathrobe');
+  INSERT INTO d2 VALUES('iterate', 'sexton');
+  INSERT INTO d2 VALUES('babied', 'charitableness');
+  INSERT INTO d2 VALUES('solemnness', 'annexed');
+  INSERT INTO d2 VALUES('rejoicing', 'liabilities');
+  INSERT INTO d2 VALUES('pragmatist', 'guarded');
+  INSERT INTO d2 VALUES('barked', 'interrupted');
+  INSERT INTO d2 VALUES('reemphasizes', 'reply');
+  INSERT INTO d2 VALUES('lad', 'relenting');
+
+
+  CREATE TABLE d3(a);
+  INSERT INTO d3 VALUES('text');
+  INSERT INTO d3 VALUES(14.1);
+  INSERT INTO d3 VALUES(13);
+  INSERT INTO d3 VALUES(X'78787878');
+  INSERT INTO d3 VALUES(15);
+  INSERT INTO d3 VALUES(12.9);
+  INSERT INTO d3 VALUES(null);
+
+  CREATE TABLE d4(x COLLATE nocase);
+  INSERT INTO d4 VALUES('abc');
+  INSERT INTO d4 VALUES('ghi');
+  INSERT INTO d4 VALUES('DEF');
+  INSERT INTO d4 VALUES('JKL');
+
+
+  SELECT a FROM d3 ORDER BY a
+
+
+  SELECT a FROM d3 ORDER BY a DESC
+
+
+  SELECT x FROM d4 ORDER BY 1 COLLATE binary
+
+
+  SELECT x COLLATE binary FROM d4 ORDER BY 1 COLLATE nocase
+
+
+  SELECT x COLLATE binary FROM d4 ORDER BY 1
+
+
+  SELECT x COLLATE binary FROM d4 ORDER BY x
+
+
+  SELECT x COLLATE binary AS x FROM d4 ORDER BY x
+
+
+  SELECT x AS y FROM d4 ORDER BY y
+
+
+  SELECT x||'' FROM d4 ORDER BY x
+
+
+  SELECT x FROM d4 ORDER BY x||''
+
+
+  CREATE TABLE d5(a, b);
+  CREATE TABLE d6(c, d);
+  CREATE TABLE d7(e, f);
+ 
+  INSERT INTO d5 VALUES(1, 'f');
+  INSERT INTO d6 VALUES(2, 'e');
+  INSERT INTO d7 VALUES(3, 'd');
+  INSERT INTO d5 VALUES(4, 'c');
+  INSERT INTO d6 VALUES(5, 'b');
+  INSERT INTO d7 VALUES(6, 'a');
+
+  CREATE TABLE d8(x COLLATE nocase);
+  CREATE TABLE d9(y COLLATE nocase);
+
+  INSERT INTO d8 VALUES('a');
+  INSERT INTO d9 VALUES('B');
+  INSERT INTO d8 VALUES('c');
+  INSERT INTO d9 VALUES('D');
+
+
+  CREATE TABLE f1(a, b);
+  INSERT INTO f1 VALUES(26, 'z');
+  INSERT INTO f1 VALUES(25, 'y');
+  INSERT INTO f1 VALUES(24, 'x');
+  INSERT INTO f1 VALUES(23, 'w');
+  INSERT INTO f1 VALUES(22, 'v');
+  INSERT INTO f1 VALUES(21, 'u');
+  INSERT INTO f1 VALUES(20, 't');
+  INSERT INTO f1 VALUES(19, 's');
+  INSERT INTO f1 VALUES(18, 'r');
+  INSERT INTO f1 VALUES(17, 'q');
+  INSERT INTO f1 VALUES(16, 'p');
+  INSERT INTO f1 VALUES(15, 'o');
+  INSERT INTO f1 VALUES(14, 'n');
+  INSERT INTO f1 VALUES(13, 'm');
+  INSERT INTO f1 VALUES(12, 'l');
+  INSERT INTO f1 VALUES(11, 'k');
+  INSERT INTO f1 VALUES(10, 'j');
+  INSERT INTO f1 VALUES(9, 'i');
+  INSERT INTO f1 VALUES(8, 'h');
+  INSERT INTO f1 VALUES(7, 'g');
+  INSERT INTO f1 VALUES(6, 'f');
+  INSERT INTO f1 VALUES(5, 'e');
+  INSERT INTO f1 VALUES(4, 'd');
+  INSERT INTO f1 VALUES(3, 'c');
+  INSERT INTO f1 VALUES(2, 'b');
+  INSERT INTO f1 VALUES(1, 'a');
+

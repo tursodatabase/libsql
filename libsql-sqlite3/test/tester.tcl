@@ -554,7 +554,7 @@ if {[info exists cmdlinearg]==0} {
   }
   unset -nocomplain a
   set testdir [file normalize $testdir]
-  set cmdlinearg(TESTFIXTURE_HOME) [pwd]
+  set cmdlinearg(TESTFIXTURE_HOME) [file dirname [info nameofexec]]
   set cmdlinearg(INFO_SCRIPT) [file normalize [info script]]
   set argv0 [file normalize $argv0]
   if {$cmdlinearg(testdir)!=""} {
@@ -881,6 +881,15 @@ proc catchcmd {db {cmd ""}} {
   puts $out $cmd
   close $out
   set line "exec $CLI $db < cmds.txt"
+  set rc [catch { eval $line } msg]
+  list $rc $msg
+}
+proc catchsafecmd {db {cmd ""}} {
+  global CLI
+  set out [open cmds.txt w]
+  puts $out $cmd
+  close $out
+  set line "exec $CLI -safe $db < cmds.txt"
   set rc [catch { eval $line } msg]
   list $rc $msg
 }
