@@ -950,7 +950,16 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
   return CREATE_OK;
 }
 
-int vectorIndexSearch(sqlite3 *db, const char* zDbSName, int argc, sqlite3_value **argv, VectorOutRows *pRows, char **pzErrMsg) {
+int vectorIndexSearch(
+  sqlite3 *db,
+  const char* zDbSName,
+  int argc,
+  sqlite3_value **argv,
+  VectorOutRows *pRows,
+  int *nReads,
+  int *nWrites,
+  char **pzErrMsg
+) {
   int type, dims, k, rc;
   const char *zIdxName;
   const char *zErrMsg;
@@ -1028,6 +1037,8 @@ int vectorIndexSearch(sqlite3 *db, const char* zDbSName, int argc, sqlite3_value
   rc = diskAnnSearch(pDiskAnn, pVector, k, &pKey, pRows, pzErrMsg);
 out:
   if( pDiskAnn != NULL ){
+    *nReads += pDiskAnn->nReads;
+    *nWrites += pDiskAnn->nWrites;
     diskAnnCloseIndex(pDiskAnn);
   }
   if( pVector != NULL ){
@@ -1107,7 +1118,10 @@ int vectorIndexCursorInit(
   return SQLITE_OK;
 }
 
-void vectorIndexCursorClose(sqlite3 *db, VectorIdxCursor *pCursor){
+void vectorIndexCursorClose(sqlite3 *db, VectorIdxCursor *pCursor, int *nReads, int *nWrites){
+  *nReads = pCursor->pIndex->nReads;
+  *nWrites = pCursor->pIndex->nWrites;
+
   diskAnnCloseIndex(pCursor->pIndex);
   sqlite3DbFree(db, pCursor);
 }

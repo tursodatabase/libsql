@@ -2713,6 +2713,13 @@ void sqlite3VdbeMakeReady(
 void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx ) sqlite3VdbeFreeCursorNN(p,pCx);
 }
+
+struct sqlite3_vtab_cursor_tracked {
+  sqlite3_vtab_cursor base;  /* Base class - must be first */
+  int nReads;                /* Number of row read from the storage backing virtual table */
+  int nWrites;               /* Number of row written to the storage backing virtual table */
+};
+
 static SQLITE_NOINLINE void freeCursorWithCache(Vdbe *p, VdbeCursor *pCx){
   VdbeTxtBlbCache *pCache = pCx->pCache;
   assert( pCx->colCache );
@@ -2742,9 +2749,15 @@ void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     case CURTYPE_VTAB: {
+      struct sqlite3_vtab_cursor_tracked *pTracked;
       sqlite3_vtab_cursor *pVCur = pCx->uc.pVCur;
       const sqlite3_module *pModule = pVCur->pVtab->pModule;
       assert( pVCur->pVtab->nRef>0 );
+      if( pCx->isTracked ){
+        pTracked = (struct sqlite3_vtab_cursor_tracked*)pVCur;
+        libsql_inc_row_read(p, pTracked->nReads);
+        libsql_inc_row_written(p, pTracked->nWrites);
+      }
       pVCur->pVtab->nRef--;
       pModule->xClose(pVCur);
       break;
@@ -2752,7 +2765,10 @@ void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
 #endif
 #ifndef SQLITE_OMIT_VECTOR
     case CURTYPE_VECTOR_IDX: {
-      vectorIndexCursorClose(p->db, pCx->uc.pVecIdx);
+      int nReads, nWrites;
+      vectorIndexCursorClose(p->db, pCx->uc.pVecIdx, &nReads, &nWrites);
+      libsql_inc_row_read(p, nReads);
+      libsql_inc_row_written(p, nWrites);
       break;
     }
 #endif

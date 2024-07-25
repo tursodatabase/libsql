@@ -98,6 +98,7 @@ struct VdbeCursor {
   Bool isEphemeral:1;     /* True for an ephemeral table */
   Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
   Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
+  Bool isTracked:1;       /* True if cursor created for virtual table which track reads/writes */
   Bool noReuse:1;         /* OpenEphemeral may not reuse this cursor */
   Bool colCache:1;        /* pCache pointer is initialized and non-NULL */
   u16 seekHit;            /* See the OP_SeekHit and OP_IfNoHope opcodes */
@@ -529,6 +530,8 @@ struct Vdbe {
 #endif
 };
 
+void libsql_inc_row_read(Vdbe *p, int count);
+void libsql_inc_row_written(Vdbe *p, int count);
 /*
 ** The following are allowed values for Vdbe.eVdbeState
 */

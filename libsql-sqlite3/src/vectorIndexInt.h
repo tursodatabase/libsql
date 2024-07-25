@@ -30,6 +30,9 @@ struct DiskAnnIndex {
   float pruningAlpha;  /* Alpha parameter for edge pruning during INSERT operation */
   int insertL;         /* Max size of candidate set (L) visited during INSERT operation */
   int searchL;         /* Max size of candidate set (L) visited during SEARCH operation (can be overriden from query in future) */
+
+  int nReads;
+  int nWrites;
 };
 
 /*
@@ -55,8 +58,8 @@ struct BlobSpot {
 
 /* BlobSpot operations */
 int blobSpotCreate(const DiskAnnIndex *pIndex, BlobSpot **ppBlobSpot, u64 nRowid, int nBufferSize, int isWritable);
-int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize);
-int blobSpotFlush(BlobSpot *pBlobSpot);
+int blobSpotReload(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize);
+int blobSpotFlush(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot);
 void blobSpotFree(BlobSpot *pBlobSpot);
 
 /*
@@ -220,9 +223,9 @@ int diskAnnClearIndex(sqlite3 *, const char *, const char *);
 int diskAnnDropIndex(sqlite3 *, const char *, const char *);
 int diskAnnOpenIndex(sqlite3 *, const char *, const char *, const VectorIdxParams *, DiskAnnIndex **);
 void diskAnnCloseIndex(DiskAnnIndex *);
-int diskAnnInsert(const DiskAnnIndex *, const VectorInRow *, char **);
-int diskAnnDelete(const DiskAnnIndex *, const VectorInRow *, char **);
-int diskAnnSearch(const DiskAnnIndex *, const Vector *, int, const VectorIdxKey *, VectorOutRows *, char **);
+int diskAnnInsert(DiskAnnIndex *, const VectorInRow *, char **);
+int diskAnnDelete(DiskAnnIndex *, const VectorInRow *, char **);
+int diskAnnSearch(DiskAnnIndex *, const Vector *, int, const VectorIdxKey *, VectorOutRows *, char **);
 
 typedef struct VectorIdxCursor VectorIdxCursor;
 
@@ -235,9 +238,9 @@ int vectorIdxParseColumnType(const char *, int *, int *, const char **);
 int vectorIndexCreate(Parse*, const Index*, const char *, const IdList*);
 int vectorIndexClear(sqlite3 *, const char *, const char *);
 int vectorIndexDrop(sqlite3 *, const char *, const char *);
-int vectorIndexSearch(sqlite3 *, const char *, int, sqlite3_value **, VectorOutRows *, char **);
+int vectorIndexSearch(sqlite3 *, const char *, int, sqlite3_value **, VectorOutRows *, int *, int *, char **);
 int vectorIndexCursorInit(sqlite3 *, const char *, const char *, VectorIdxCursor **);
-void vectorIndexCursorClose(sqlite3 *, VectorIdxCursor *);
+void vectorIndexCursorClose(sqlite3 *, VectorIdxCursor *, int *, int *);
 int vectorIndexInsert(VectorIdxCursor *, const UnpackedRecord *, char **);
 int vectorIndexDelete(VectorIdxCursor *, const UnpackedRecord *, char **);
 
