@@ -389,13 +389,13 @@ struct VectorParamName {
 };
 
 static struct VectorParamName VECTOR_PARAM_NAMES[] = {
-  { "type",      VECTOR_INDEX_TYPE_PARAM_ID,    0, "diskann", VECTOR_INDEX_TYPE_DISKANN },
-  { "metric",    VECTOR_METRIC_TYPE_PARAM_ID,   0, "cosine", VECTOR_METRIC_TYPE_COS },
-  { "metric",    VECTOR_METRIC_TYPE_PARAM_ID,   0, "l2",     VECTOR_METRIC_TYPE_L2 },
-  { "alpha",     VECTOR_PRUNING_ALPHA_PARAM_ID, 2, 0, 0 },
-  { "search_l",  VECTOR_SEARCH_L_PARAM_ID,      1, 0, 0 },
-  { "insert_l",  VECTOR_INSERT_L_PARAM_ID,      1, 0, 0 },
-  { "max_edges", VECTOR_MAX_EDGES_PARAM_ID,     1, 0, 0 },
+  { "type",          VECTOR_INDEX_TYPE_PARAM_ID,    0, "diskann", VECTOR_INDEX_TYPE_DISKANN },
+  { "metric",        VECTOR_METRIC_TYPE_PARAM_ID,   0, "cosine", VECTOR_METRIC_TYPE_COS },
+  { "metric",        VECTOR_METRIC_TYPE_PARAM_ID,   0, "l2",     VECTOR_METRIC_TYPE_L2 },
+  { "alpha",         VECTOR_PRUNING_ALPHA_PARAM_ID, 2, 0, 0 },
+  { "search_l",      VECTOR_SEARCH_L_PARAM_ID,      1, 0, 0 },
+  { "insert_l",      VECTOR_INSERT_L_PARAM_ID,      1, 0, 0 },
+  { "max_neighbors", VECTOR_MAX_NEIGHBORS_PARAM_ID, 1, 0, 0 },
 };
 
 static int parseVectorIdxParam(const char *zParam, VectorIdxParams *pParams, const char **pErrMsg) {

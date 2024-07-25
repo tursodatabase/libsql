@@ -434,7 +434,7 @@ int diskAnnCreateIndex(
 ){
   int rc;
   int type, dims;
-  u64 maxEdgesParam, blockSizeBytes;
+  u64 maxNeighborsParam, blockSizeBytes;
   char *zSql;
   char columnSqlDefs[DISKANN_SQL_RENDER_LIMIT]; // definition of columns (e.g. index_key INTEGER BINARY, index_key1 TEXT, ...)
   char columnSqlNames[DISKANN_SQL_RENDER_LIMIT]; // just column names (e.g. index_key, index_key1, index_key2, ...)
@@ -457,13 +457,13 @@ int diskAnnCreateIndex(
   }
   assert( 0 < dims && dims <= MAX_VECTOR_SZ );
 
-  maxEdgesParam = vectorIdxParamsGetU64(pParams, VECTOR_MAX_EDGES_PARAM_ID);
-  if( maxEdgesParam == 0 ){
+  maxNeighborsParam = vectorIdxParamsGetU64(pParams, VECTOR_MAX_NEIGHBORS_PARAM_ID);
+  if( maxNeighborsParam == 0 ){
     // 3 D**(1/2) gives good recall values (90%+)
     // we also want to keep disk overhead at moderate level - 50x of the disk size increase is the current upper bound
-    maxEdgesParam = MIN(3 * ((int)(sqrt(dims)) + 1), (50 * nodeOverhead(vectorDataSize(type, dims))) / nodeEdgeOverhead(vectorDataSize(type, dims)) + 1);
+    maxNeighborsParam = MIN(3 * ((int)(sqrt(dims)) + 1), (50 * nodeOverhead(vectorDataSize(type, dims))) / nodeEdgeOverhead(vectorDataSize(type, dims)) + 1);
   }
-  blockSizeBytes = nodeOverhead(vectorDataSize(type, dims)) + maxEdgesParam * (u64)nodeEdgeOverhead(vectorDataSize(type, dims));
+  blockSizeBytes = nodeOverhead(vectorDataSize(type, dims)) + maxNeighborsParam * (u64)nodeEdgeOverhead(vectorDataSize(type, dims));
   if( blockSizeBytes > DISKANN_MAX_BLOCK_SZ ){
     return SQLITE_ERROR;
   }
