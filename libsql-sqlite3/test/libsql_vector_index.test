@@ -230,6 +230,26 @@ do_execsql_test vector-vacuum {
   SELECT COUNT(*) FROM t_vacuum_idx_shadow;
 } {2 2}
 
+do_execsql_test vector-many-columns {
+  CREATE TABLE t_many ( i INTEGER PRIMARY KEY, e1 FLOAT32(2), e2 FLOAT32(2) );
+  CREATE INDEX t_many_1_idx ON t_many(libsql_vector_idx(e1));
+  CREATE INDEX t_many_2_idx ON t_many(libsql_vector_idx(e2));
+  INSERT INTO t_many VALUES (1, vector('[1,1]'), vector('[-1,-1]')), (2, vector('[-1,-1]'), vector('[1,1]'));
+  SELECT * FROM vector_top_k('t_many_1_idx', vector('[1,1]'), 2);
+  SELECT * FROM vector_top_k('t_many_2_idx', vector('[1,1]'), 2);
+} {1 2 2 1}
+
+do_execsql_test vector-transaction {
+  CREATE TABLE t_transaction ( i INTEGER PRIMARY KEY, e FLOAT32(2) );
+  CREATE INDEX t_transaction_idx ON t_transaction(libsql_vector_idx(e));
+  INSERT INTO t_transaction VALUES (1, vector('[1,2]')), (2, vector('[3,4]'));
+  BEGIN;
+  INSERT INTO t_transaction VALUES (3, vector('[4,5]')), (4, vector('[5,6]'));
+  SELECT * FROM vector_top_k('t_transaction_idx', vector('[4,5]'), 2);
+  ROLLBACK;
+  SELECT * FROM vector_top_k('t_transaction_idx', vector('[1,2]'), 2);
+} {3 4 1 2}
+
 proc error_messages {sql} {
   set ret ""
   catch {

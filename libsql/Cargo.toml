@@ -50,6 +50,7 @@ tokio = { version = "1.29.1", features = ["full"] }
 tokio-test = "0.4"
 tracing-subscriber = "0.3"
 tempfile = { version = "3.7.0" }
+rand = "0.8.5"
 
 [features]
 default = ["core", "replication", "remote"]
