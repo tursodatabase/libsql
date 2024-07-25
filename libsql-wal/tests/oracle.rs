@@ -26,8 +26,8 @@ use tempfile::tempdir;
 
 type Result = std::result::Result<(), Box<dyn std::error::Error>>;
 
-#[test]
-fn test_oracle() {
+#[tokio::test]
+async fn test_oracle() {
     let manifest_path: &Path = env!("CARGO_MANIFEST_DIR").as_ref();
     let test_samples_path = manifest_path.join("tests/assets/fixtures");
 
@@ -41,12 +41,12 @@ fn test_oracle() {
             }
         }
         if entry.file_type().is_file() {
-            run_test_sample(entry.path()).unwrap();
+            run_test_sample(entry.path()).await.unwrap();
         }
     }
 }
 
-fn run_test_sample(path: &Path) -> Result {
+async fn run_test_sample(path: &Path) -> Result {
     println!("test: {:?}", path.file_name().unwrap());
     let curdir = std::env::current_dir().unwrap();
     let tmp = tempdir()?;
@@ -123,14 +123,8 @@ fn run_test_sample(path: &Path) -> Result {
     drop(libsql_conn);
 
     let shared = registry.clone().open(&db_path, &"test".into()).unwrap();
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
     seal_current_segment(&shared);
-    rt.block_on(async {
-        shared.checkpoint().await.unwrap();
-    });
+    shared.checkpoint().await.unwrap();
 
     std::env::set_current_dir(curdir).unwrap();
     match std::panic::catch_unwind(|| {
@@ -168,9 +162,9 @@ impl Display for PrintScript {
     }
 }
 
-fn compare_db_files(db1: &Path, db2: &Path) {
-    let db1 = std::fs::File::open(db1).unwrap();
-    let db2 = std::fs::File::open(db2).unwrap();
+fn compare_db_files(sqlite: &Path, libsql: &Path) {
+    let db1 = std::fs::File::open(sqlite).unwrap();
+    let db2 = std::fs::File::open(libsql).unwrap();
 
     let len1 = db1.metadata().unwrap().len();
     let len2 = db2.metadata().unwrap().len();

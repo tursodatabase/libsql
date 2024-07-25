@@ -181,8 +181,8 @@ fn enable_libsql_logging() {
     });
 }
 
-#[test]
-fn flaky_fs() {
+#[tokio::test]
+async fn flaky_fs() {
     enable_libsql_logging();
     let seed = rand::thread_rng().gen();
     println!("seed: {seed}");
