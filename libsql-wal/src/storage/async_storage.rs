@@ -144,8 +144,6 @@ enum StorageLoopMessage<C, S> {
 pub struct AsyncStorage<B: Backend, S> {
     /// send request to the main loop
     job_sender: mpsc::UnboundedSender<StorageLoopMessage<B::Config, S>>,
-    /// receiver for the current max durable index
-    durable_notifier: mpsc::Receiver<(NamespaceName, u64)>,
     force_shutdown: oneshot::Sender<()>,
     backend: Arc<B>,
 }
@@ -273,9 +271,8 @@ impl<B: Backend, S> AsyncStorage<B, S> {
         S: Segment,
     {
         let (job_snd, job_rcv) = tokio::sync::mpsc::unbounded_channel();
-        let (durable_notifier_snd, durable_notifier_rcv) = tokio::sync::mpsc::channel(16);
         let (shutdown_snd, shutdown_rcv) = tokio::sync::oneshot::channel();
-        let scheduler = Scheduler::new(durable_notifier_snd);
+        let scheduler = Scheduler::new();
         let storage_loop = AsyncStorageLoop {
             receiver: job_rcv,
             scheduler,
@@ -287,7 +284,6 @@ impl<B: Backend, S> AsyncStorage<B, S> {
 
         let this = Self {
             job_sender: job_snd,
-            durable_notifier: durable_notifier_rcv,
             force_shutdown: shutdown_snd,
             backend: config.backend,
         };
