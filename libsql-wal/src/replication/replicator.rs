@@ -269,7 +269,9 @@ mod test {
         tokio::task::spawn_blocking({
             let shared = shared.clone();
             move || seal_current_segment(&shared)
-        }).await.unwrap();
+        })
+        .await
+        .unwrap();
 
         conn.execute("create table test2 (x)", ()).unwrap();
         conn.execute("insert into test2 values (randomblob(128))", ())
@@ -278,7 +280,9 @@ mod test {
         tokio::task::spawn_blocking({
             let shared = shared.clone();
             move || seal_current_segment(&shared)
-        }).await.unwrap();
+        })
+        .await
+        .unwrap();
 
         while !shared.current.load().tail().is_empty() {
             tokio::time::sleep(Duration::from_millis(50)).await;
@@ -293,12 +297,14 @@ mod test {
 
         let tmp = NamedTempFile::new().unwrap();
         let mut replica_content = vec![0u8; db_content.len()];
-        while let Some(f) = stream.next().await { 
+        while let Some(f) = stream.next().await {
             let frame = f.unwrap();
             dbg!(frame.header().page_no());
             let offset = (frame.header().page_no() as usize - 1) * 4096;
-            tmp.as_file().write_all_at(frame.data(), offset as u64).unwrap();
-            replica_content[offset..offset+4096].copy_from_slice(frame.data());
+            tmp.as_file()
+                .write_all_at(frame.data(), offset as u64)
+                .unwrap();
+            replica_content[offset..offset + 4096].copy_from_slice(frame.data());
         }
 
         assert_eq!(replica_content, db_content);

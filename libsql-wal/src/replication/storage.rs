@@ -27,10 +27,7 @@ pub struct StorageReplicator<S> {
 }
 
 impl<S> StorageReplicator<S> {
-    pub fn new(
-        storage: Arc<S>,
-        namespace: NamespaceName,
-        ) -> Self {
+    pub fn new(storage: Arc<S>, namespace: NamespaceName) -> Self {
         Self { storage, namespace }
     }
 }

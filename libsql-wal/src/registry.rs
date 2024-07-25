@@ -121,10 +121,13 @@ where
             let notifier = self.checkpoint_notifier.clone();
             let namespace = shared.namespace().clone();
             let durable_frame_no = shared.durable_frame_no.clone();
-            let cb: OnStoreCallback = Box::new(move |fno| Box::pin(async move {
-                update_durable(fno, notifier, durable_frame_no, namespace).await;
-            }));
-            self.storage.store(&shared.namespace, sealed.clone(), None, cb);
+            let cb: OnStoreCallback = Box::new(move |fno| {
+                Box::pin(async move {
+                    update_durable(fno, notifier, durable_frame_no, namespace).await;
+                })
+            });
+            self.storage
+                .store(&shared.namespace, sealed.clone(), None, cb);
             new.tail().push(sealed);
         }
 
@@ -140,7 +143,7 @@ async fn update_durable(
     notifier: mpsc::Sender<CheckpointMessage>,
     durable_frame_no_slot: Arc<Mutex<u64>>,
     namespace: NamespaceName,
-    ) {
+) {
     {
         let mut g = durable_frame_no_slot.lock();
         if *g < new_durable {
@@ -180,22 +183,17 @@ where
             }
 
             let action = match self.opened.entry(namespace.clone()) {
-                dashmap::Entry::Occupied(e) => {
-                    match e.get() {
-                        Slot::Wal(shared) => return Ok(shared.clone()),
-                        Slot::Building(wait, _) => {
-                            Err(wait.clone())
-                        },
-                    }
+                dashmap::Entry::Occupied(e) => match e.get() {
+                    Slot::Wal(shared) => return Ok(shared.clone()),
+                    Slot::Building(wait, _) => Err(wait.clone()),
                 },
                 dashmap::Entry::Vacant(e) => {
                     let notifier = Arc::new((Condvar::new(), Mutex::new(false)));
                     let async_notifier = Arc::new(Notify::new());
                     e.insert(Slot::Building(notifier.clone(), async_notifier.clone()));
                     Ok((notifier, async_notifier))
-                },
+                }
             };
-
 
             match action {
                 Ok((notifier, async_notifier)) => {
@@ -216,8 +214,8 @@ where
                     cond.0
                         .wait_while(&mut cond.1.lock(), |ready: &mut bool| !*ready);
                     // the slot was updated: try again
-                    continue
-                },
+                    continue;
+                }
             }
         }
     }
@@ -254,11 +252,13 @@ where
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
                 let notifier = self.checkpoint_notifier.clone();
-                let ns = namespace.clone(); 
+                let ns = namespace.clone();
                 let durable_frame_no = durable_frame_no.clone();
-                let cb: OnStoreCallback = Box::new(move |fno| Box::pin(async move {
-                    update_durable(fno, notifier, durable_frame_no, ns).await;
-                }));
+                let cb: OnStoreCallback = Box::new(move |fno| {
+                    Box::pin(async move {
+                        update_durable(fno, notifier, durable_frame_no, ns).await;
+                    })
+                });
                 // TODO: pass config override here
                 self.storage.store(&namespace, sealed.clone(), None, cb);
                 tail.push(sealed);
@@ -311,7 +311,8 @@ where
             shutdown: false.into(),
         });
 
-        self.opened.insert(namespace.clone(), Slot::Wal(shared.clone()));
+        self.opened
+            .insert(namespace.clone(), Slot::Wal(shared.clone()));
 
         return Ok(shared);
     }
@@ -320,7 +321,6 @@ where
     // checkpointing all the segments
     pub async fn shutdown(self: Arc<Self>) -> Result<()> {
         self.shutdown.store(true, Ordering::SeqCst);
-
 
         let mut join_set = JoinSet::<Result<()>>::new();
         let semaphore = Arc::new(Semaphore::new(8));
@@ -347,12 +347,12 @@ where
 
                             Ok(())
                         });
-                        break
-                    },
+                        break;
+                    }
                     Slot::Building(_, notify) => {
                         // wait for shared to finish building
                         notify.notified().await;
-                    },
+                    }
                 }
             }
         }
@@ -360,7 +360,10 @@ where
         while join_set.join_next().await.is_some() {}
 
         // wait for checkpointer to exit
-        let _ = self.checkpoint_notifier.send(CheckpointMessage::Shutdown).await;
+        let _ = self
+            .checkpoint_notifier
+            .send(CheckpointMessage::Shutdown)
+            .await;
         self.checkpoint_notifier.closed().await;
 
         Ok(())

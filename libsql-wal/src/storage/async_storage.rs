@@ -162,7 +162,7 @@ where
         segment: Self::Segment,
         config_override: Option<Arc<Self::Config>>,
         on_store_callback: OnStoreCallback,
-    ){
+    ) {
         let req = StoreSegmentRequest {
             namespace: namespace.clone(),
             segment,
@@ -215,7 +215,10 @@ where
         config_override: Option<Arc<Self::Config>>,
     ) -> super::Result<super::SegmentKey> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
-        let key = self.backend.find_segment(&config, namespace, frame_no).await?;
+        let key = self
+            .backend
+            .find_segment(&config, namespace, frame_no)
+            .await?;
         Ok(key)
     }
 
@@ -226,7 +229,10 @@ where
         config_override: Option<Arc<Self::Config>>,
     ) -> super::Result<fst::Map<Arc<[u8]>>> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
-        let index = self.backend.fetch_segment_index(&config, namespace, key).await?;
+        let index = self
+            .backend
+            .fetch_segment_index(&config, namespace, key)
+            .await?;
         Ok(index)
     }
 
@@ -239,7 +245,9 @@ where
         // TODO: make async
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
         let backend = self.backend.clone();
-        let file = backend.fetch_segment_data(config, namespace.clone(), *key).await?;
+        let file = backend
+            .fetch_segment_data(config, namespace.clone(), *key)
+            .await?;
         let segment = CompactedSegment::open(file).await?;
         Ok(segment)
     }

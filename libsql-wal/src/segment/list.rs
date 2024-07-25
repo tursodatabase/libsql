@@ -155,15 +155,19 @@ where
             // nothing to do
         } else {
             loop {
-                let next = current.as_ref().unwrap().next.compare_and_swap(&segs[0], None);
+                let next = current
+                    .as_ref()
+                    .unwrap()
+                    .next
+                    .compare_and_swap(&segs[0], None);
                 if Arc::ptr_eq(&segs[0], next.as_ref().unwrap()) {
-                    break
+                    break;
                 } else {
                     current = next;
                 }
             }
         }
-        
+
         self.len.fetch_sub(segs.len(), Ordering::Relaxed);
 
         db_file.set_len(size_after as u64 * 4096)?;
@@ -181,7 +185,10 @@ where
         current_fno: u64,
         until_fno: u64,
         seen: &'a mut RoaringBitmap,
-    ) -> (impl Stream<Item = crate::error::Result<Box<Frame>>> + 'a, u64) {
+    ) -> (
+        impl Stream<Item = crate::error::Result<Box<Frame>>> + 'a,
+        u64,
+    ) {
         // collect all the segments we need to read from to be up to date.
         // We keep a reference to them so that they are not discarded while we read them.
         let mut segments = Vec::new();
@@ -197,7 +204,10 @@ where
         }
 
         if segments.is_empty() {
-            return (tokio_util::either::Either::Left(tokio_stream::empty()), current_fno)
+            return (
+                tokio_util::either::Either::Left(tokio_stream::empty()),
+                current_fno,
+            );
         }
 
         let new_current = segments
@@ -468,8 +478,9 @@ mod test {
         seal_current_segment(&shared);
 
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) =
-            segment_list.stream_pages_from(0, last_offset, &mut seen).await;
+        let (stream, replicated_until) = segment_list
+            .stream_pages_from(0, last_offset, &mut seen)
+            .await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, last_offset);

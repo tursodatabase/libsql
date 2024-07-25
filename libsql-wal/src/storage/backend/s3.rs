@@ -387,14 +387,14 @@ where
             cluster_id: &config.cluster_id,
             namespace: &namespace,
         };
-    
+
         let Some(segment_key) = self
             .find_segment_inner(config, &folder_key, frame_no)
             .await?
         else {
             return Err(Error::FrameNotFound(frame_no));
         };
-    
+
         if segment_key.includes(frame_no) {
             // TODO: make open async
             let file = self.io.open(false, false, true, dest_path)?;
@@ -467,7 +467,8 @@ where
             cluster_id: &config.cluster_id,
             namespace: &namespace,
         };
-        self.fetch_segment_index_inner(config, &folder_key, key).await
+        self.fetch_segment_index_inner(config, &folder_key, key)
+            .await
     }
 
     async fn fetch_segment_data_to_file(
@@ -481,7 +482,8 @@ where
             cluster_id: &config.cluster_id,
             namespace: &namespace,
         };
-        self.fetch_segment_data_inner(config, &folder_key, key, file).await?;
+        self.fetch_segment_data_inner(config, &folder_key, key, file)
+            .await?;
         Ok(())
     }
 
@@ -492,7 +494,8 @@ where
         key: SegmentKey,
     ) -> Result<impl FileExt> {
         let file = self.io.tempfile()?;
-        self.fetch_segment_data_to_file(&config, &namespace, &key, &file).await?;
+        self.fetch_segment_data_to_file(&config, &namespace, &key, &file)
+            .await?;
         Ok(file)
     }
 }

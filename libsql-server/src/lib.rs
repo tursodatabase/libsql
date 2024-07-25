@@ -708,7 +708,10 @@ where
                 let (sender, receiver) = tokio::sync::mpsc::channel(64);
                 let registry = Arc::new(WalRegistry::new(wal_path, NoStorage, sender)?);
                 let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
-                join_set.spawn(async move { checkpointer.run().await; Ok(()) });
+                join_set.spawn(async move {
+                    checkpointer.run().await;
+                    Ok(())
+                });
 
                 let wal = LibsqlWalManager::new(registry.clone(), Arc::new(namespace_resolver));
                 let shutdown_notify = self.shutdown.clone();

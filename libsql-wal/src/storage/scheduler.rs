@@ -157,40 +157,38 @@ mod test {
         let ns2 = NamespaceName::from("test2");
 
         let (job_1_snd, job_1_rcv) = oneshot::channel();
-        scheduler.register(
-            StoreSegmentRequest {
-                namespace: ns1.clone(),
-                segment: (),
-                created_at: Utc::now(),
-                storage_config_override: None,
-                on_store_callback: Box::new(move |n| Box::pin( async move {
+        scheduler.register(StoreSegmentRequest {
+            namespace: ns1.clone(),
+            segment: (),
+            created_at: Utc::now(),
+            storage_config_override: None,
+            on_store_callback: Box::new(move |n| {
+                Box::pin(async move {
                     let _ = job_1_snd.send(n);
-                })),
-            },
-        );
+                })
+            }),
+        });
 
         let (job_2_snd, job_2_rcv) = oneshot::channel();
-        scheduler.register(
-            StoreSegmentRequest {
-                namespace: ns2.clone(),
-                segment: (),
-                created_at: Utc::now(),
-                storage_config_override: None,
-                on_store_callback: Box::new(move |n| Box::pin( async move {
+        scheduler.register(StoreSegmentRequest {
+            namespace: ns2.clone(),
+            segment: (),
+            created_at: Utc::now(),
+            storage_config_override: None,
+            on_store_callback: Box::new(move |n| {
+                Box::pin(async move {
                     let _ = job_2_snd.send(n);
-                })),
-            },
-        );
+                })
+            }),
+        });
 
-        scheduler.register(
-            StoreSegmentRequest {
-                namespace: ns1.clone(),
-                segment: (),
-                created_at: Utc::now(),
-                storage_config_override: None,
-                on_store_callback: Box::new(move |_| Box::pin(ready(()))),
-            },
-        );
+        scheduler.register(StoreSegmentRequest {
+            namespace: ns1.clone(),
+            segment: (),
+            created_at: Utc::now(),
+            storage_config_override: None,
+            on_store_callback: Box::new(move |_| Box::pin(ready(()))),
+        });
 
         let job1 = scheduler.schedule().unwrap();
         assert_eq!(job1.request.request.namespace, ns1);
@@ -237,8 +235,7 @@ mod test {
             created_at: Utc::now(),
             storage_config_override: None,
             on_store_callback: Box::new(|_| Box::pin(ready(()))),
-        },
-        );
+        });
 
         scheduler.register(StoreSegmentRequest {
             namespace: ns2.clone(),
@@ -246,8 +243,7 @@ mod test {
             created_at: Utc::now(),
             storage_config_override: None,
             on_store_callback: Box::new(|_| Box::pin(ready(()))),
-        },
-        );
+        });
 
         let job1 = scheduler.schedule().unwrap();
         assert_eq!(job1.request.request.namespace, ns1);
@@ -278,8 +274,7 @@ mod test {
             created_at: Utc::now(),
             storage_config_override: None,
             on_store_callback: Box::new(|_| Box::pin(ready(()))),
-        }, 
-        );
+        });
 
         let job = scheduler.schedule().unwrap();
         assert_eq!(job.request.request.namespace, ns1);
@@ -291,8 +286,7 @@ mod test {
             created_at: Utc::now(),
             storage_config_override: None,
             on_store_callback: Box::new(|_| Box::pin(ready(()))),
-        }, 
- );
+        });
 
         assert!(scheduler.schedule().is_none());
 

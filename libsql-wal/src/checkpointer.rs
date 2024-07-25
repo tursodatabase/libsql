@@ -214,7 +214,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
         let ns = NamespaceName::from("test");
 
         sender.send(ns.clone().into()).await.unwrap();
@@ -246,7 +247,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
         let ns = NamespaceName::from("test");
 
         sender.send(ns.clone().into()).await.unwrap();
@@ -277,7 +279,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
 
         drop(sender);
 
@@ -303,7 +306,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
 
         drop(sender);
 
@@ -336,7 +340,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
 
         let ns: NamespaceName = "test".into();
 
@@ -368,7 +373,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
 
         let ns1: NamespaceName = "test1".into();
         let ns2: NamespaceName = "test2".into();
@@ -403,7 +409,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 2);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 2);
 
         let ns1: NamespaceName = "test1".into();
         let ns2: NamespaceName = "test2".into();

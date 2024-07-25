@@ -147,8 +147,11 @@ where
     println!("max durable frame: {durable}");
 }
 
-async fn run_shell<S>(registry: Arc<WalRegistry<StdIO, S>>, db_path: &Path, namespace: NamespaceName)
-where
+async fn run_shell<S>(
+    registry: Arc<WalRegistry<StdIO, S>>,
+    db_path: &Path,
+    namespace: NamespaceName,
+) where
     S: Storage<Segment = SealedSegment<std::fs::File>>,
 {
     let db_path = db_path.join("dbs").join(namespace.as_str());

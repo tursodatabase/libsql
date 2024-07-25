@@ -56,7 +56,12 @@ pub mod test {
 
             let (sender, receiver) = mpsc::channel(128);
             let registry = Arc::new(
-                WalRegistry::new(tmp.path().join("test/wals"), TestStorage::new_io(store, StdIO(())), sender).unwrap(),
+                WalRegistry::new(
+                    tmp.path().join("test/wals"),
+                    TestStorage::new_io(store, StdIO(())),
+                    sender,
+                )
+                .unwrap(),
             );
             if store {
                 let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 5);

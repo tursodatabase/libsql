@@ -1,6 +1,6 @@
 #![allow(dead_code)]
-use std::{future::Future, path::Path};
 use std::sync::Arc;
+use std::{future::Future, path::Path};
 
 use chrono::{DateTime, Utc};
 use fst::Map;
@@ -62,7 +62,7 @@ pub trait Backend: Send + Sync + 'static {
         config: &Self::Config,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        file: &impl FileExt
+        file: &impl FileExt,
     ) -> Result<()>;
 
     // this method taking self: Arc<Self> is an infortunate consequence of rust type system making
@@ -154,7 +154,9 @@ impl<T: Backend> Backend for Arc<T> {
         namespace: &NamespaceName,
         frame_no: u64,
     ) -> Result<SegmentKey> {
-        self.as_ref().find_segment(config, namespace, frame_no).await
+        self.as_ref()
+            .find_segment(config, namespace, frame_no)
+            .await
     }
 
     async fn fetch_segment_index(
@@ -163,7 +165,9 @@ impl<T: Backend> Backend for Arc<T> {
         namespace: &NamespaceName,
         key: &SegmentKey,
     ) -> Result<Map<Arc<[u8]>>> {
-        self.as_ref().fetch_segment_index(config, namespace, key).await
+        self.as_ref()
+            .fetch_segment_index(config, namespace, key)
+            .await
     }
 
     async fn fetch_segment_data_to_file(
@@ -173,7 +177,9 @@ impl<T: Backend> Backend for Arc<T> {
         key: &SegmentKey,
         file: &impl FileExt,
     ) -> Result<()> {
-        self.as_ref().fetch_segment_data_to_file(config, namespace, key, file).await
+        self.as_ref()
+            .fetch_segment_data_to_file(config, namespace, key, file)
+            .await
     }
 
     async fn fetch_segment_data(
@@ -183,6 +189,9 @@ impl<T: Backend> Backend for Arc<T> {
         key: SegmentKey,
     ) -> Result<impl FileExt> {
         // this implementation makes no sense (Arc<Arc<T>>)
-        self.as_ref().clone().fetch_segment_data(config, namespace, key).await
+        self.as_ref()
+            .clone()
+            .fetch_segment_data(config, namespace, key)
+            .await
     }
 }

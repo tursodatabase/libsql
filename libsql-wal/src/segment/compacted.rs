@@ -1,7 +1,7 @@
-use std::mem::size_of;
 use std::io;
+use std::mem::size_of;
 
-use zerocopy::little_endian::{U128 as lu128, U32 as lu32, U64 as lu64, U16 as lu16};
+use zerocopy::little_endian::{U128 as lu128, U16 as lu16, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
 use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
@@ -39,10 +39,13 @@ impl<F: FileExt> CompactedSegment<F> {
         ret?;
         let header = buf.into_inner();
         Ok(Self { file, header })
-
     }
 
-    pub(crate) async fn read_frame(&self, frame: Box<Frame>, offset: u32) -> (Box<Frame>, io::Result<()>) {
+    pub(crate) async fn read_frame(
+        &self,
+        frame: Box<Frame>,
+        offset: u32,
+    ) -> (Box<Frame>, io::Result<()>) {
         let offset = size_of::<CompactedSegmentDataHeader>() + size_of::<Frame>() * offset as usize;
         let buf = ZeroCopyBoxIoBuf::new(frame);
         let (buf, ret) = self.file.read_exact_at_async(buf, offset as u64).await;
