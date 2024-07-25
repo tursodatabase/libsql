@@ -8,6 +8,7 @@ use fst::Map;
 use uuid::Uuid;
 
 use super::{RestoreOptions, Result};
+use super::{RestoreOptions, Result, SegmentKey};
 use crate::io::file::FileExt;
 use libsql_sys::name::NamespaceName;
 

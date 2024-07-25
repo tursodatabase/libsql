@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
+use std::fmt;
 use std::future::Future;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
@@ -14,7 +16,7 @@ use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegment;
 use crate::segment::{sealed::SealedSegment, Segment};
 
-use self::backend::s3::SegmentKey;
+use self::backend::SegmentMeta;
 pub use self::error::Error;
 
 pub mod async_storage;
@@ -28,6 +30,95 @@ pub type Result<T, E = self::error::Error> = std::result::Result<T, E>;
 pub enum RestoreOptions {
     Latest,
     Timestamp(DateTime<Utc>),
+}
+
+/// SegmentKey is used to index segment data, where keys a lexicographically ordered.
+/// The scheme is `{u64::MAX - start_frame_no}-{u64::MAX - end_frame_no}`. With that naming convention, when looking for
+/// the segment containing 'n', we can perform a prefix search with "{u64::MAX - n}". The first
+/// element of the range will be the biggest segment that contains n if it exists.
+/// Beware that if no segments contain n, either the smallest segment not containing n, if n < argmin
+/// {start_frame_no}, or the largest segment if n > argmax {end_frame_no} will be returned.
+/// e.g:
+/// ```ignore
+/// let mut map = BTreeMap::new();
+///
+/// let meta = SegmentMeta { start_frame_no: 1, end_frame_no: 100 };
+/// map.insert(SegmentKey(&meta).to_string(), meta);
+///
+/// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 500 };
+/// map.insert(SegmentKey(&meta).to_string(), meta);
+///
+/// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 1000 };
+/// map.insert(SegmentKey(&meta).to_string(), meta);
+///
+/// map.range(format!("{:019}", u64::MAX - 50)..).next();
+/// map.range(format!("{:019}", u64::MAX - 0)..).next();
+/// map.range(format!("{:019}", u64::MAX - 1)..).next();
+/// map.range(format!("{:019}", u64::MAX - 100)..).next();
+/// map.range(format!("{:019}", u64::MAX - 101)..).next();
+/// map.range(format!("{:019}", u64::MAX - 5000)..).next();
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SegmentKey {
+    pub start_frame_no: u64,
+    pub end_frame_no: u64,
+}
+
+impl PartialOrd for SegmentKey {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match self.start_frame_no.partial_cmp(&other.start_frame_no) {
+            Some(core::cmp::Ordering::Equal) => {}
+            ord => return ord,
+        }
+        self.end_frame_no.partial_cmp(&other.end_frame_no)
+    }
+}
+
+impl Ord for SegmentKey {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
+impl SegmentKey {
+    pub(crate) fn includes(&self, frame_no: u64) -> bool {
+        (self.start_frame_no..=self.end_frame_no).contains(&frame_no)
+    }
+}
+
+impl From<&SegmentMeta> for SegmentKey {
+    fn from(value: &SegmentMeta) -> Self {
+        Self {
+            start_frame_no: value.start_frame_no,
+            end_frame_no: value.end_frame_no,
+        }
+    }
+}
+
+impl FromStr for SegmentKey {
+    type Err = ();
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let (rev_start_fno, s) = s.split_at(20);
+        let start_frame_no = u64::MAX - rev_start_fno.parse::<u64>().map_err(|_| ())?;
+        let (_, rev_end_fno) = s.split_at(1);
+        let end_frame_no = u64::MAX - rev_end_fno.parse::<u64>().map_err(|_| ())?;
+        Ok(Self {
+            start_frame_no,
+            end_frame_no,
+        })
+    }
+}
+
+impl fmt::Display for SegmentKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{:019}-{:019}",
+            u64::MAX - self.start_frame_no,
+            u64::MAX - self.end_frame_no,
+        )
+    }
 }
 
 pub trait Storage: Send + Sync + 'static {
