@@ -23,7 +23,7 @@ libraries](../libsql-server#client-libraries).
 
 You can also use the [turso cli](https://docs.turso.tech/reference/turso-cli) to connect to the sqld instance:
 ```
-turso db shell http://127.0.0.1:8000    
+turso db shell http://127.0.0.1:8080    
 ```
 
 ## Download a prebuilt binary
