@@ -227,6 +227,13 @@ struct Cli {
     #[clap(long, env = "SQLD_META_STORE_BUCKET_ENDPOINT")]
     meta_store_bucket_endpoint: Option<String>,
 
+    #[clap(
+        long,
+        env = "SQLD_META_STORE_DESTROY_ON_ERROR",
+        default_value = "false"
+    )]
+    meta_store_destroy_on_error: bool,
+
     /// encryption_key for encryption at rest
     #[clap(long, env = "SQLD_ENCRYPTION_KEY")]
     encryption_key: Option<bytes::Bytes>,
@@ -586,6 +593,7 @@ fn make_meta_store_config(config: &Cli) -> anyhow::Result<MetaStoreConfig> {
     Ok(MetaStoreConfig {
         bottomless,
         allow_recover_from_fs: config.allow_metastore_recovery,
+        destroy_on_error: config.meta_store_destroy_on_error,
     })
 }
 
