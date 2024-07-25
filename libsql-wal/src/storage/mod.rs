@@ -165,14 +165,14 @@ pub trait Storage: Send + Sync + 'static {
     async fn fetch_segment_index(
         &self,
         namespace: &NamespaceName,
-        key: SegmentKey,
+        key: &SegmentKey,
         config_override: Option<Arc<Self::Config>>,
     ) -> Result<Map<Arc<[u8]>>>;
 
     async fn fetch_segment_data(
         &self,
         namespace: &NamespaceName,
-        key: SegmentKey,
+        key: &SegmentKey,
         config_override: Option<Arc<Self::Config>>,
     ) -> Result<CompactedSegment<impl FileExt>>;
 }
@@ -232,7 +232,7 @@ impl Storage for NoStorage {
     async fn fetch_segment_index(
         &self,
         _namespace: &NamespaceName,
-        _key: SegmentKey,
+        _key: &SegmentKey,
         _config_override: Option<Arc<Self::Config>>,
     ) -> Result<Map<Arc<[u8]>>> {
         unimplemented!()
@@ -241,7 +241,7 @@ impl Storage for NoStorage {
     async fn fetch_segment_data(
         &self,
         _namespace: &NamespaceName,
-        _key: SegmentKey,
+        _key: &SegmentKey,
         _config_override: Option<Arc<Self::Config>>,
     ) -> Result<CompactedSegment<impl FileExt>> {
         unimplemented!();
@@ -388,7 +388,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     async fn fetch_segment_index(
         &self,
         namespace: &NamespaceName,
-        key: SegmentKey,
+        key: &SegmentKey,
         _config_override: Option<Arc<Self::Config>>,
     ) -> Result<Map<Arc<[u8]>>> {
         let inner = self.inner.lock();
@@ -408,7 +408,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     async fn fetch_segment_data(
         &self,
         namespace: &NamespaceName,
-        key: SegmentKey,
+        key: &SegmentKey,
         _config_override: Option<Arc<Self::Config>>,
     ) -> Result<CompactedSegment<impl FileExt>> {
         let inner = self.inner.lock();

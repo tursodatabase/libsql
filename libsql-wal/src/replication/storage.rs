@@ -48,7 +48,7 @@ where
         Box::pin(async_stream::try_stream! {
             loop {
                 let key = self.storage.find_segment(&self.namespace, current, None).await?;
-                let index = self.storage.fetch_segment_index(&self.namespace, key, None).await?;
+                let index = self.storage.fetch_segment_index(&self.namespace, &key, None).await?;
                 let mut pages = index.into_stream();
                 let mut maybe_seg = None;
                 while let Some((page, offset)) = pages.next() {
@@ -59,7 +59,7 @@ where
                         let segment = match maybe_seg {
                             Some(ref seg) => seg,
                             None => {
-                                maybe_seg = Some(self.storage.fetch_segment_data(&self.namespace, key, None).await?);
+                                maybe_seg = Some(self.storage.fetch_segment_data(&self.namespace, &key, None).await?);
                                 maybe_seg.as_ref().unwrap()
                             },
                         };
