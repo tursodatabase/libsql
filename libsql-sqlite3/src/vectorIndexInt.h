@@ -130,6 +130,8 @@ typedef u8 MetricType;
 #define VECTOR_SEARCH_L_PARAM_ID       9
 #define VECTOR_SEARCH_L_DEFAULT        200
 
+#define VECTOR_MAX_NEIGHBORS_PARAM_ID  10
+
 /* total amount of vector index parameters */
 #define VECTOR_PARAM_IDS_COUNT         9
 

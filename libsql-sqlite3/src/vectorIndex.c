@@ -383,18 +383,19 @@ static struct VectorColumnType VECTOR_COLUMN_TYPES[] = {
 struct VectorParamName {
   const char *zName;
   int tag;
-  int type; // 0 - enum, 1 - integer, 2 - float
+  int type; // 0 - string enum, 1 - integer, 2 - float
   const char *zValueStr;
   u64 value;
 };
 
 static struct VectorParamName VECTOR_PARAM_NAMES[] = {
-  { "type",     VECTOR_INDEX_TYPE_PARAM_ID, 0, "diskann", VECTOR_INDEX_TYPE_DISKANN },
-  { "metric",   VECTOR_METRIC_TYPE_PARAM_ID, 0, "cosine", VECTOR_METRIC_TYPE_COS },
-  { "metric",   VECTOR_METRIC_TYPE_PARAM_ID, 0, "l2",     VECTOR_METRIC_TYPE_L2 },
-  { "alpha",    VECTOR_PRUNING_ALPHA_PARAM_ID, 2, 0, 0 },
-  { "search_l", VECTOR_SEARCH_L_PARAM_ID, 1, 0, 0 },
-  { "insert_l", VECTOR_INSERT_L_PARAM_ID, 2, 0, 0 },
+  { "type",          VECTOR_INDEX_TYPE_PARAM_ID,    0, "diskann", VECTOR_INDEX_TYPE_DISKANN },
+  { "metric",        VECTOR_METRIC_TYPE_PARAM_ID,   0, "cosine", VECTOR_METRIC_TYPE_COS },
+  { "metric",        VECTOR_METRIC_TYPE_PARAM_ID,   0, "l2",     VECTOR_METRIC_TYPE_L2 },
+  { "alpha",         VECTOR_PRUNING_ALPHA_PARAM_ID, 2, 0, 0 },
+  { "search_l",      VECTOR_SEARCH_L_PARAM_ID,      1, 0, 0 },
+  { "insert_l",      VECTOR_INSERT_L_PARAM_ID,      1, 0, 0 },
+  { "max_neighbors", VECTOR_MAX_NEIGHBORS_PARAM_ID, 1, 0, 0 },
 };
 
 static int parseVectorIdxParam(const char *zParam, VectorIdxParams *pParams, const char **pErrMsg) {
@@ -414,9 +415,13 @@ static int parseVectorIdxParam(const char *zParam, VectorIdxParams *pParams, con
       continue;
     }
     if( VECTOR_PARAM_NAMES[i].type == 1 ){
-      u64 value = sqlite3Atoi(zValue);
+      int value = sqlite3Atoi(zValue);
       if( value == 0 ){
         *pErrMsg = "invalid representation of integer vector index parameter";
+        return -1;
+      }
+      if( value < 0 ){
+        *pErrMsg = "integer vector index parameter must be positive";
         return -1;
       }
       if( vectorIdxParamsPutU64(pParams, VECTOR_PARAM_NAMES[i].tag, value) != 0 ){
