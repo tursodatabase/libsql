@@ -219,7 +219,7 @@ where
 
     drop(conn);
 
-    registry.shutdown().unwrap();
+    registry.shutdown().await.unwrap();
 }
 
 async fn handle_builtin<S>(

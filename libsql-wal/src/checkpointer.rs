@@ -11,6 +11,19 @@ use crate::registry::WalRegistry;
 
 pub(crate) type NotifyCheckpointer = mpsc::Sender<NamespaceName>;
 
+pub enum CheckpointMessage {
+    /// notify that a namespace may be checkpointable
+    Namespace(NamespaceName),
+    /// shutdown initiated
+    Shutdown,
+}
+
+impl From<NamespaceName> for CheckpointMessage {
+    fn from(value: NamespaceName) -> Self {
+        Self::Namespace(value)
+    }
+}
+
 pub type LibsqlCheckpointer<IO, S> = Checkpointer<WalRegistry<IO, S>>;
 
 impl<IO, S> LibsqlCheckpointer<IO, S>
@@ -20,7 +33,7 @@ where
 {
     pub fn new(
         registry: Arc<WalRegistry<IO, S>>,
-        notifier: mpsc::Receiver<NamespaceName>,
+        notifier: mpsc::Receiver<CheckpointMessage>,
         max_checkpointing_conccurency: usize,
     ) -> Self {
         Self::new_with_performer(registry, notifier, max_checkpointing_conccurency)
@@ -70,7 +83,7 @@ pub struct Checkpointer<P> {
     checkpointing: HashSet<NamespaceName>,
     /// the checkpointer is notifier whenever there is a change to a namespage that could trigger a
     /// checkpoint
-    recv: mpsc::Receiver<NamespaceName>,
+    recv: mpsc::Receiver<CheckpointMessage>,
     max_checkpointing_conccurency: usize,
     shutting_down: bool,
     join_set: JoinSet<(NamespaceName, crate::error::Result<()>)>,
@@ -85,7 +98,7 @@ where
 {
     fn new_with_performer(
         perform_checkpoint: Arc<P>,
-        notifier: mpsc::Receiver<NamespaceName>,
+        notifier: mpsc::Receiver<CheckpointMessage>,
         max_checkpointing_conccurency: usize,
     ) -> Self {
         Self {
@@ -141,10 +154,10 @@ where
             }
             notified = self.recv.recv(), if !self.shutting_down => {
                 match notified {
-                    Some(namespace) => {
+                    Some(CheckpointMessage::Namespace(namespace)) => {
                         self.scheduled.insert(namespace);
                     }
-                    None => {
+                    None | Some(CheckpointMessage::Shutdown) => {
                         self.shutting_down = true;
                     }
                 }
@@ -204,7 +217,7 @@ mod test {
         let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
         let ns = NamespaceName::from("test");
 
-        sender.send(ns.clone()).await.unwrap();
+        sender.send(ns.clone().into()).await.unwrap();
 
         checkpointer.step().await;
 
@@ -236,7 +249,7 @@ mod test {
         let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
         let ns = NamespaceName::from("test");
 
-        sender.send(ns.clone()).await.unwrap();
+        sender.send(ns.clone().into()).await.unwrap();
 
         checkpointer.step().await;
         assert_eq!(checkpointer.errors, 0);
@@ -327,8 +340,8 @@ mod test {
 
         let ns: NamespaceName = "test".into();
 
-        sender.send(ns.clone()).await.unwrap();
-        sender.send(ns.clone()).await.unwrap();
+        sender.send(ns.clone().into()).await.unwrap();
+        sender.send(ns.clone().into()).await.unwrap();
 
         checkpointer.step().await;
 
@@ -360,8 +373,8 @@ mod test {
         let ns1: NamespaceName = "test1".into();
         let ns2: NamespaceName = "test2".into();
 
-        sender.send(ns1.clone()).await.unwrap();
-        sender.send(ns2.clone()).await.unwrap();
+        sender.send(ns1.clone().into()).await.unwrap();
+        sender.send(ns2.clone().into()).await.unwrap();
 
         checkpointer.step().await;
 
@@ -396,9 +409,9 @@ mod test {
         let ns2: NamespaceName = "test2".into();
         let ns3: NamespaceName = "test3".into();
 
-        sender.send(ns1.clone()).await.unwrap();
-        sender.send(ns2.clone()).await.unwrap();
-        sender.send(ns3.clone()).await.unwrap();
+        sender.send(ns1.clone().into()).await.unwrap();
+        sender.send(ns2.clone().into()).await.unwrap();
+        sender.send(ns3.clone().into()).await.unwrap();
 
         checkpointer.step().await;
         checkpointer.step().await;

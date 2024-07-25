@@ -714,9 +714,7 @@ where
                 let shutdown_notify = self.shutdown.clone();
                 let shutdown_fut = Box::pin(async move {
                     shutdown_notify.notified().await;
-                    tokio::task::spawn_blocking(move || registry.shutdown())
-                        .await
-                        .unwrap()?;
+                    registry.shutdown().await?;
                     Ok(())
                 });
 

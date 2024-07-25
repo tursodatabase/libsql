@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -47,9 +47,25 @@ pub struct SharedWal<IO: Io> {
     pub(crate) durable_frame_no: Arc<Mutex<u64>>,
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
     pub(crate) stored_segments: Box<dyn ReplicateFromStorage>,
+    pub(crate) shutdown: AtomicBool,
 }
 
 impl<IO: Io> SharedWal<IO> {
+    pub fn shutdown(&self) -> Result<()> {
+        self.shutdown.store(true, Ordering::SeqCst);
+        let mut tx = Transaction::Read(self.begin_read(u64::MAX));
+        self.upgrade(&mut tx)?;
+        {
+            let mut tx = tx.as_write_mut().unwrap().lock();
+            tx.commit();
+            self.registry.swap_current(self, &tx)?;
+        }
+        // The current segment will not be used anymore. It's empty, but we still seal it so that
+        // the next startup doesn't find an unsealed segment.
+        self.current.load().seal()?;
+        Ok(())
+    }
+
     pub fn db_size(&self) -> u32 {
         self.current.load().db_size()
     }

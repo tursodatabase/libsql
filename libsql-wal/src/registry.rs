@@ -4,13 +4,14 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use hashbrown::hash_map::Entry;
-use hashbrown::HashMap;
+use dashmap::DashMap;
 use libsql_sys::ffi::Sqlite3DbHeader;
-use parking_lot::{Condvar, Mutex, RwLock, RwLockUpgradableReadGuard};
-use tokio::sync::{mpsc, Notify};
+use parking_lot::{Condvar, Mutex};
+use tokio::sync::{mpsc, Notify, Semaphore};
+use tokio::task::JoinSet;
 use zerocopy::{AsBytes, FromZeroes};
 
+use crate::checkpointer::CheckpointMessage;
 use crate::error::Result;
 use crate::io::file::FileExt;
 use crate::io::{Io, StdIO};
@@ -19,7 +20,7 @@ use crate::segment::list::SegmentList;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::{SharedWal, SwapLog};
 use crate::storage::Storage;
-use crate::transaction::{Transaction, TxGuard};
+use crate::transaction::TxGuard;
 use libsql_sys::name::NamespaceName;
 
 enum Slot<IO: Io> {
@@ -35,16 +36,16 @@ pub struct WalRegistry<IO: Io, S> {
     fs: IO,
     path: PathBuf,
     shutdown: AtomicBool,
-    opened: RwLock<HashMap<NamespaceName, Slot<IO>>>,
+    opened: DashMap<NamespaceName, Slot<IO>>,
     storage: Arc<S>,
-    checkpoint_notifier: mpsc::Sender<NamespaceName>,
+    checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
 }
 
 impl<S> WalRegistry<StdIO, S> {
     pub fn new(
         path: PathBuf,
         storage: S,
-        checkpoint_notifier: mpsc::Sender<NamespaceName>,
+        checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     ) -> Result<Self> {
         Self::new_with_io(StdIO(()), path, storage, checkpoint_notifier)
     }
@@ -55,7 +56,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
         io: IO,
         path: PathBuf,
         storage: S,
-        checkpoint_notifier: mpsc::Sender<NamespaceName>,
+        checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     ) -> Result<Self> {
         io.create_dir_all(&path)?;
         let registry = Self {
@@ -73,8 +74,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
     pub async fn get_async(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO>>> {
         loop {
             let notify = {
-                let lock = self.opened.read();
-                match lock.get(namespace) {
+                match self.opened.get(namespace).as_deref() {
                     Some(Slot::Wal(wal)) => return Some(wal.clone()),
                     Some(Slot::Building(_, notify)) => notify.clone(),
                     None => return None,
@@ -136,7 +136,7 @@ where
 
 async fn update_durable(
     notify: impl Future<Output = u64>,
-    notifier: mpsc::Sender<NamespaceName>,
+    notifier: mpsc::Sender<CheckpointMessage>,
     durable_frame_no: Arc<Mutex<u64>>,
     namespace: NamespaceName,
     ) {
@@ -147,7 +147,7 @@ async fn update_durable(
             *g = new_durable;
         }
     }
-    let _ = notifier.send(namespace).await;
+    let _ = notifier.send(CheckpointMessage::Namespace(namespace)).await;
 }
 
 impl<IO, S> WalRegistry<IO, S>
@@ -166,13 +166,11 @@ where
         }
 
         loop {
-            let mut opened = self.opened.upgradable_read();
-            if let Some(entry) = opened.get(namespace) {
-                match entry {
+            if let Some(entry) = self.opened.get(namespace) {
+                match &*entry {
                     Slot::Wal(wal) => return Ok(wal.clone()),
                     Slot::Building(cond, _) => {
                         let cond = cond.clone();
-                        drop(opened);
                         cond.0
                             .wait_while(&mut cond.1.lock(), |ready: &mut bool| !*ready);
                         // the slot was updated: try again
@@ -181,35 +179,46 @@ where
                 }
             }
 
-            // another thread may have got the slot first, just retry if that's the case
-            let Ok((notifier, async_notifier)) =
-                opened.with_upgraded(|map| match map.entry(namespace.clone()) {
-                    Entry::Occupied(_) => Err(()),
-                    Entry::Vacant(entry) => {
-                        let notifier = Arc::new((Condvar::new(), Mutex::new(false)));
-                        let async_notifier = Arc::new(Notify::new());
-                        entry.insert(Slot::Building(notifier.clone(), async_notifier.clone()));
-                        Ok((notifier, async_notifier))
+            let action = match self.opened.entry(namespace.clone()) {
+                dashmap::Entry::Occupied(e) => {
+                    match e.get() {
+                        Slot::Wal(shared) => return Ok(shared.clone()),
+                        Slot::Building(wait, _) => {
+                            Err(wait.clone())
+                        },
                     }
-                })
-            else {
-                continue;
+                },
+                dashmap::Entry::Vacant(e) => {
+                    let notifier = Arc::new((Condvar::new(), Mutex::new(false)));
+                    let async_notifier = Arc::new(Notify::new());
+                    e.insert(Slot::Building(notifier.clone(), async_notifier.clone()));
+                    Ok((notifier, async_notifier))
+                },
             };
 
-            // if try_open succedded, then the slot was updated and contains the shared wal, if it
-            // failed we need to remove the slot. Either way, notify all waiters
-            let ret = self.clone().try_open(&namespace, db_path, &mut opened);
-            if ret.is_err() {
-                opened.with_upgraded(|map| {
-                    map.remove(namespace);
-                })
+
+            match action {
+                Ok((notifier, async_notifier)) => {
+                    // if try_open succedded, then the slot was updated and contains the shared wal, if it
+                    // failed we need to remove the slot. Either way, notify all waiters
+                    let ret = self.clone().try_open(&namespace, db_path);
+                    if ret.is_err() {
+                        self.opened.remove(namespace);
+                    }
+
+                    *notifier.1.lock() = true;
+                    notifier.0.notify_all();
+                    async_notifier.notify_waiters();
+
+                    return ret;
+                }
+                Err(cond) => {
+                    cond.0
+                        .wait_while(&mut cond.1.lock(), |ready: &mut bool| !*ready);
+                    // the slot was updated: try again
+                    continue
+                },
             }
-
-            *notifier.1.lock() = true;
-            notifier.0.notify_all();
-            async_notifier.notify_waiters();
-
-            return ret;
         }
     }
 
@@ -217,7 +226,6 @@ where
         self: Arc<Self>,
         namespace: &NamespaceName,
         db_path: &Path,
-        opened: &mut RwLockUpgradableReadGuard<HashMap<NamespaceName, Slot<IO>>>,
     ) -> Result<Arc<SharedWal<IO>>> {
         let path = self.path.join(namespace.as_str());
         self.fs.create_dir_all(&path)?;
@@ -298,37 +306,60 @@ where
                 self.storage.clone(),
                 namespace.clone(),
             )),
+            shutdown: false.into(),
         });
 
-        opened.with_upgraded(|opened| {
-            opened.insert(namespace.clone(), Slot::Wal(shared.clone()));
-        });
+        self.opened.insert(namespace.clone(), Slot::Wal(shared.clone()));
 
         return Ok(shared);
     }
 
     // On shutdown, we checkpoint all the WALs. This require sealing the current segment, and when
     // checkpointing all the segments
-    pub fn shutdown(&self) -> Result<()> {
+    pub async fn shutdown(self: Arc<Self>) -> Result<()> {
         self.shutdown.store(true, Ordering::SeqCst);
-        let mut opened = self.opened.write();
-        for (_, shared) in opened.drain() {
-            let Slot::Wal(shared) = shared else {
-                // TODO: figure out what to do when the wal is being opened
-                continue;
-            };
-            let mut tx = Transaction::Read(shared.begin_read(u64::MAX));
-            shared.upgrade(&mut tx)?;
-            {
-                let mut tx = tx.as_write_mut().unwrap().lock();
-                tx.commit();
-                self.swap_current(&shared, &tx)?;
+
+
+        let mut join_set = JoinSet::<Result<()>>::new();
+        let semaphore = Arc::new(Semaphore::new(8));
+        for item in self.opened.iter() {
+            let (name, slot) = item.pair();
+            loop {
+                match slot {
+                    Slot::Wal(shared) => {
+                        // acquire a permit or drain the join set
+                        let permit = loop {
+                            tokio::select! {
+                                permit = semaphore.clone().acquire_owned() => break permit,
+                                _ = join_set.join_next() => (),
+                            }
+                        };
+                        let shared = shared.clone();
+                        let name = name.clone();
+
+                        join_set.spawn_blocking(move || {
+                            let _permit = permit;
+                            if let Err(e) = shared.shutdown() {
+                                tracing::error!("error shutting down `{name}`: {e}");
+                            }
+
+                            Ok(())
+                        });
+                        break
+                    },
+                    Slot::Building(_, notify) => {
+                        // wait for shared to finish building
+                        notify.notified().await;
+                    },
+                }
             }
-            // The current segment will not be used anymore. It's empty, but we still seal it so that
-            // the next startup doesn't find an unsealed segment.
-            shared.current.load().seal()?;
-            drop(tx);
         }
+
+        while join_set.join_next().await.is_some() {}
+
+        // wait for checkpointer to exit
+        let _ = self.checkpoint_notifier.send(CheckpointMessage::Shutdown).await;
+        self.checkpoint_notifier.closed().await;
 
         Ok(())
     }
