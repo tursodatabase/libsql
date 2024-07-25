@@ -42,7 +42,7 @@
 //!
 //! ## Remote database
 //!
-//! It is also possible to create a libsql connection that does not open a local datatbase but
+//! It is also possible to create a libsql connection that does not open a local database but
 //! instead sends queries to a remote database.
 //!
 //! ```rust,no_run
