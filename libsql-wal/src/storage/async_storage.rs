@@ -216,31 +216,38 @@ where
 
     async fn find_segment(
         &self,
-        _namespace: &NamespaceName,
-        _frame_no: u64,
-        _config_override: Option<Arc<Self::Config>>,
-    ) -> super::Result<super::backend::s3::SegmentKey> {
-        todo!()
+        namespace: &NamespaceName,
+        frame_no: u64,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> super::Result<super::SegmentKey> {
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        let key = self.backend.find_segment(&config, namespace, frame_no).await?;
+        Ok(key)
     }
 
     async fn fetch_segment_index(
         &self,
-        _namespace: &NamespaceName,
-        _key: super::backend::s3::SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        namespace: &NamespaceName,
+        key: &super::SegmentKey,
+        config_override: Option<Arc<Self::Config>>,
     ) -> super::Result<fst::Map<Arc<[u8]>>> {
-        todo!()
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        let index = self.backend.fetch_segment_index(&config, namespace, key).await?;
+        Ok(index)
     }
 
     async fn fetch_segment_data(
         &self,
-        _namespace: &NamespaceName,
-        _key: super::backend::s3::SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        namespace: &NamespaceName,
+        key: &super::SegmentKey,
+        config_override: Option<Arc<Self::Config>>,
     ) -> super::Result<CompactedSegment<impl FileExt>> {
-        todo!();
-        #[allow(unreachable_code)]
-        super::Result::<CompactedSegment<std::fs::File>>::Err(super::Error::InvalidIndex(""))
+        // TODO: make async
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        let backend = self.backend.clone();
+        let file = backend.fetch_segment_data(config, namespace.clone(), *key).await?;
+        let segment = CompactedSegment::open(file).await?;
+        Ok(segment)
     }
 }
 
