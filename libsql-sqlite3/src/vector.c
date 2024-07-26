@@ -130,6 +130,22 @@ float vectorDistanceL2(const Vector *pVector1, const Vector *pVector2){
   return 0;
 }
 
+const char *sqlite3_type_repr(int type){
+  switch( type ){
+    case SQLITE_NULL:
+      return "NULL";
+    case SQLITE_INTEGER:
+      return "INTEGER";
+    case SQLITE_FLOAT:
+      return "FLOAT";
+    case SQLITE_BLOB:
+      return "BLOB";
+    case SQLITE_TEXT:
+      return "TEXT";
+    default:
+      return "UNKNOWN";
+  }
+}
 /*
  * Parses vector from text representation (e.g. '[1,2,3]'); vector type must be set
 */
@@ -149,16 +165,12 @@ static int vectorParseSqliteText(
   int iBuf = 0;
 
   assert( pVector->type == VECTOR_TYPE_FLOAT32 || pVector->type == VECTOR_TYPE_FLOAT64 );
+  assert( sqlite3_value_type(arg) == SQLITE_TEXT );
 
   if( pVector->type == VECTOR_TYPE_FLOAT32 ){
     elemsFloat = pVector->data;
   } else if( pVector->type == VECTOR_TYPE_FLOAT64 ){
     elemsDouble = pVector->data;
-  }
-
-  if( sqlite3_value_type(arg) != SQLITE_TEXT ){
-    *pzErrMsg = sqlite3_mprintf("invalid vector: not a text type");
-    goto error;
   }
 
   pzText = sqlite3_value_text(arg);
@@ -168,7 +180,7 @@ static int vectorParseSqliteText(
     pzText++;
 
   if( *pzText != '[' ){
-    *pzErrMsg = sqlite3_mprintf("invalid vector: doesn't start with '['");
+    *pzErrMsg = sqlite3_mprintf("invalid vector: must start with '['");
     goto error;
   }
   pzText++;
@@ -183,7 +195,7 @@ static int vectorParseSqliteText(
     }
     if( this != ',' && this != ']' ){
       if( iBuf > MAX_FLOAT_CHAR_SZ ){
-        *pzErrMsg = sqlite3_mprintf("float too big while parsing vector: '%s'", valueBuf);
+        *pzErrMsg = sqlite3_mprintf("invalid vector: float string length exceeded %d characters: '%s'", MAX_FLOAT_CHAR_SZ, valueBuf);
         goto error;
       }
       valueBuf[iBuf++] = this;
@@ -194,11 +206,11 @@ static int vectorParseSqliteText(
       break;
     }
     if( sqlite3AtoF(valueBuf, &elem, iBuf, SQLITE_UTF8) <= 0 ){
-      *pzErrMsg = sqlite3_mprintf("invalid number: '%s'", valueBuf);
+      *pzErrMsg = sqlite3_mprintf("invalid vector: invalid float at position %d: '%s'", iElem, valueBuf);
       goto error;
     }
     if( iElem >= MAX_VECTOR_SZ ){
-      *pzErrMsg = sqlite3_mprintf("vector is larger than the maximum: (%d)", MAX_VECTOR_SZ);
+      *pzErrMsg = sqlite3_mprintf("invalid vector: max size exceeded %d", MAX_VECTOR_SZ);
       goto error;
     }
     // clear only first bufidx positions - all other are zero
@@ -217,7 +229,7 @@ static int vectorParseSqliteText(
     pzText++;
 
   if( *pzText != ']' ){
-    *pzErrMsg = sqlite3_mprintf("malformed vector, doesn't end with ']'");
+    *pzErrMsg = sqlite3_mprintf("invalid vector: must end with ']'");
     goto error;
   }
   pzText++;
@@ -226,7 +238,7 @@ static int vectorParseSqliteText(
     pzText++;
   
   if( *pzText != '\0' ){
-    *pzErrMsg = sqlite3_mprintf("malformed vector, extra data after closing ']'");
+    *pzErrMsg = sqlite3_mprintf("invalid vector: non-space symbols after closing ']' are forbidden");
     goto error;
   }
   pVector->dims = iElem;
@@ -271,11 +283,11 @@ int detectBlobVectorParameters(sqlite3_value *arg, int *pType, int *pDims, char 
   } else if( *pType == VECTOR_TYPE_FLOAT64 ){
     *pDims = nBlobSize / sizeof(double);
   } else{
-    *pzErrMsg = sqlite3_mprintf("invalid binary vector: unexpected type: %d", *pType);
+    *pzErrMsg = sqlite3_mprintf("invalid vector: unexpected binary type: got %d, expected %d or %d", *pType, VECTOR_TYPE_FLOAT32, VECTOR_TYPE_FLOAT64);
     return -1;
   }
   if( *pDims > MAX_VECTOR_SZ ){
-    *pzErrMsg = sqlite3_mprintf("invalid binary vector: max size exceeded: %d > %d", *pDims, MAX_VECTOR_SZ);
+    *pzErrMsg = sqlite3_mprintf("invalid vector: max size exceeded: %d > %d", *pDims, MAX_VECTOR_SZ);
     return -1;
   }
   return 0;
@@ -317,15 +329,12 @@ int detectTextVectorParameters(sqlite3_value *arg, int typeHint, int *pType, int
 
 int detectVectorParameters(sqlite3_value *arg, int typeHint, int *pType, int *pDims, char **pzErrMsg) {
   switch( sqlite3_value_type(arg) ){
-    case SQLITE_NULL:
-      *pzErrMsg = sqlite3_mprintf("invalid vector: NULL");
-      return -1;
     case SQLITE_BLOB:
       return detectBlobVectorParameters(arg, pType, pDims, pzErrMsg);
     case SQLITE_TEXT:
       return detectTextVectorParameters(arg, typeHint, pType, pDims, pzErrMsg);
     default:
-      *pzErrMsg = sqlite3_mprintf("invalid vector: not a text or blob type");
+      *pzErrMsg = sqlite3_mprintf("invalid vector: unexpected value type: got %s, expected TEXT or BLOB", sqlite3_type_repr(sqlite3_value_type(arg)));
       return -1;
   }
 }
@@ -336,15 +345,12 @@ int vectorParse(
   char **pzErrMsg
 ){
   switch( sqlite3_value_type(arg) ){
-    case SQLITE_NULL:
-      *pzErrMsg = sqlite3_mprintf("invalid vector: NULL");
-      return -1;
     case SQLITE_BLOB:
       return vectorParseSqliteBlob(arg, pVector, pzErrMsg);
     case SQLITE_TEXT:
       return vectorParseSqliteText(arg, pVector, pzErrMsg);
     default:
-      *pzErrMsg = sqlite3_mprintf("invalid vector: not a text or blob type");
+      *pzErrMsg = sqlite3_mprintf("invalid vector: unexpected value type: got %s, expected TEXT or BLOB", sqlite3_type_repr(sqlite3_value_type(arg)));
       return -1;
   }
 }
@@ -545,11 +551,15 @@ static void vectorDistanceCosFunc(
     goto out_free;
   }
   if( type1 != type2 ){
-    sqlite3_result_error(context, "vectors must have the same type", -1);
+    pzErrMsg = sqlite3_mprintf("vector_distance_cos: vectors must have the same type: %d != %d", type1, type2);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
     goto out_free;
   }
   if( dims1 != dims2 ){
-    sqlite3_result_error(context, "vectors must have the same length", -1);
+    pzErrMsg = sqlite3_mprintf("vector_distance_cos: vectors must have the same length: %d != %d", dims1, dims2);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
     goto out_free;
   }
   pVector1 = vectorContextAlloc(context, type1, dims1);

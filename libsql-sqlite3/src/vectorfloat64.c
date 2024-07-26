@@ -238,11 +238,7 @@ int vectorF64ParseSqliteBlob(
 
   assert( pVector->type == VECTOR_TYPE_FLOAT64 );
   assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
-
-  if( sqlite3_value_type(arg) != SQLITE_BLOB ){
-    *pzErr = sqlite3_mprintf("invalid f64 vector: not a blob type");
-    goto error;
-  }
+  assert( sqlite3_value_type(arg) == SQLITE_BLOB );
 
   pBlob = sqlite3_value_blob(arg);
   if( sqlite3_value_bytes(arg) < sizeof(double) * pVector->dims ){
