@@ -77,23 +77,29 @@ proc error_messages {sql} {
 
 do_test vector-1-func-errors {
   set ret [list]
+  lappend ret [error_messages {SELECT vector(1.2)}]
+  lappend ret [error_messages {SELECT vector(10)}]
+  lappend ret [error_messages {SELECT vector(NULL)}]
   lappend ret [error_messages {SELECT vector('')}]
   lappend ret [error_messages {SELECT vector('test')}]
   lappend ret [error_messages {SELECT vector('[1]]')}]
   lappend ret [error_messages {SELECT vector('[[1]')}]
-  lappend ret [error_messages {SELECT vector('[1.1.1]')}]
+  lappend ret [error_messages {SELECT vector('[1, 2, 1.1.1, 4]')}]
   lappend ret [error_messages {SELECT vector('[1.2')}]
   lappend ret [error_messages {SELECT vector(x'0000000000')}]
   lappend ret [error_messages {SELECT vector_distance_cos('[1,2,3]', '[1,2]')}]
   lappend ret [error_messages {SELECT vector_distance_cos(vector32('[1,2,3]'), vector64('[1,2,3]'))}]
 } [list {*}{
-  {invalid vector: doesn't start with '['}
-  {invalid vector: doesn't start with '['}
-  {malformed vector, extra data after closing ']'}
-  {invalid number: '[1'}
-  {invalid number: '1.1.1'}
-  {malformed vector, doesn't end with ']'}
-  {invalid binary vector: unexpected type: 0}
-  {vectors must have the same length}
-  {vectors must have the same type}
+  {vector: unexpected value type: got FLOAT, expected TEXT or BLOB}
+  {vector: unexpected value type: got INTEGER, expected TEXT or BLOB}
+  {vector: unexpected value type: got NULL, expected TEXT or BLOB}
+  {vector: must start with '['}
+  {vector: must start with '['}
+  {vector: non-space symbols after closing ']' are forbidden}
+  {vector: invalid float at position 0: '[1'}
+  {vector: invalid float at position 2: '1.1.1'}
+  {vector: must end with ']'}
+  {vector: unexpected binary type: got 0, expected 1 or 2}
+  {vector_distance_cos: vectors must have the same length: 3 != 2}
+  {vector_distance_cos: vectors must have the same type: 1 != 2}
 }]

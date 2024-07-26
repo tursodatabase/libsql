@@ -1078,20 +1078,20 @@ static int diskAnnSearchInternal(const DiskAnnIndex *pIndex, DiskAnnSearchCtx *p
 
   start = diskAnnNodeAlloc(pIndex, nStartRowid);
   if( start == NULL ){
-    *pzErrMsg = sqlite3_mprintf("failed to allocate new node");
+    *pzErrMsg = sqlite3_mprintf("vector index(search): failed to allocate new node");
     rc = SQLITE_NOMEM_BKPT;
     goto out;
   }
 
   rc = blobSpotCreate(pIndex, &start->pBlobSpot, nStartRowid, pIndex->nBlockSize, pCtx->blobMode);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to create new blob");
+    *pzErrMsg = sqlite3_mprintf("vector index(search): failed to create new blob");
     goto out;
   }
 
   rc = blobSpotReload(pIndex, start->pBlobSpot, nStartRowid, pIndex->nBlockSize);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to load new blob");
+    *pzErrMsg = sqlite3_mprintf("vector index(search): failed to load new blob");
     goto out;
   }
 
@@ -1138,7 +1138,7 @@ static int diskAnnSearchInternal(const DiskAnnIndex *pIndex, DiskAnnSearchCtx *p
       diskAnnSearchCtxDeleteCandidate(pCtx, iCandidate);
       continue;
     }else if( rc != SQLITE_OK ){
-      *pzErrMsg = sqlite3_mprintf("failed to create new blob for candidate");
+      *pzErrMsg = sqlite3_mprintf("vector index(search): failed to create new blob for candidate");
       goto out;
     }
 
@@ -1215,15 +1215,15 @@ int diskAnnSearch(
   DiskAnnTrace(("diskAnnSearch started\n"));
 
   if( k < 0 ){
-    *pzErrMsg = sqlite3_mprintf("k must be a non-negative integer");
+    *pzErrMsg = sqlite3_mprintf("vector index(search): k must be a non-negative integer");
     return SQLITE_ERROR;
   }
   if( pIndex->nVectorDims != pVector->dims ){
-    *pzErrMsg = sqlite3_mprintf("dimensions are different: %d != %d", pVector->dims, pIndex->nVectorDims);
+    *pzErrMsg = sqlite3_mprintf("vector index(search): dimensions are different: %d != %d", pVector->dims, pIndex->nVectorDims);
     return SQLITE_ERROR;
   }
   if( pVector->type != VECTOR_TYPE_FLOAT32 ){
-    *pzErrMsg = sqlite3_mprintf("only f32 vectors are supported");
+    *pzErrMsg = sqlite3_mprintf("vector index(search): only f32 vectors are supported");
     return SQLITE_ERROR;
   }
 
@@ -1234,12 +1234,12 @@ int diskAnnSearch(
     pRows->nCols = pKey->nKeyColumns;
     return SQLITE_OK;
   }else if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to select start node for search");
+    *pzErrMsg = sqlite3_mprintf("vector index(search): failed to select start node for search");
     return rc;
   }
   rc = diskAnnSearchCtxInit(&ctx, pVector, pIndex->searchL, DISKANN_BLOB_READONLY);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to initialize search context");
+    *pzErrMsg = sqlite3_mprintf("vector index(search): failed to initialize search context");
     goto out;
   }
   rc = diskAnnSearchInternal(pIndex, &ctx, nStartRowid, pzErrMsg);
@@ -1249,7 +1249,7 @@ int diskAnnSearch(
   nOutRows = MIN(k, ctx.nCandidates);
   rc = vectorOutRowsAlloc(pIndex->db, pRows, nOutRows, pKey->nKeyColumns, pKey->aKeyAffinity[0]);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to allocate output rows");
+    *pzErrMsg = sqlite3_mprintf("vector index(search): failed to allocate output rows");
     goto out;
   }
   for(i = 0; i < nOutRows; i++){
@@ -1259,7 +1259,7 @@ int diskAnnSearch(
       rc = diskAnnGetShadowRowKeys(pIndex, ctx.aCandidates[i]->nRowid, pKey, pRows, i);
     }
     if( rc != SQLITE_OK ){
-      *pzErrMsg = sqlite3_mprintf("failed to put result in the output row");
+      *pzErrMsg = sqlite3_mprintf("vector index(search): failed to put result in the output row");
       goto out;
     }
   }
@@ -1282,11 +1282,11 @@ int diskAnnInsert(
   DiskAnnSearchCtx ctx;
 
   if( pVectorInRow->pVector->dims != pIndex->nVectorDims ){
-    *pzErrMsg = sqlite3_mprintf("dimensions are different: %d != %d", pVectorInRow->pVector->dims, pIndex->nVectorDims);
+    *pzErrMsg = sqlite3_mprintf("vector index(insert): dimensions are different: %d != %d", pVectorInRow->pVector->dims, pIndex->nVectorDims);
     return SQLITE_ERROR;
   }
   if( pVectorInRow->pVector->type != VECTOR_TYPE_FLOAT32 ){
-    *pzErrMsg = sqlite3_mprintf("only f32 vectors are supported");
+    *pzErrMsg = sqlite3_mprintf("vector index(insert): only f32 vectors are supported");
     return SQLITE_ERROR;
   }
 
@@ -1294,7 +1294,7 @@ int diskAnnInsert(
 
   rc = diskAnnSearchCtxInit(&ctx, pVectorInRow->pVector, pIndex->insertL, DISKANN_BLOB_WRITABLE);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to initialize search context");
+    *pzErrMsg = sqlite3_mprintf("vector index(insert): failed to initialize search context");
     return rc;
   }
 
@@ -1303,7 +1303,7 @@ int diskAnnInsert(
   if( rc == SQLITE_DONE ){
     first = 1;
   }else if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to select start node for search");
+    *pzErrMsg = sqlite3_mprintf("vector index(insert): failed to select start node for search");
     rc = SQLITE_ERROR;
     goto out;
   }
@@ -1317,13 +1317,13 @@ int diskAnnInsert(
 
   rc = diskAnnInsertShadowRow(pIndex, pVectorInRow, &nNewRowid);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to insert shadow row");
+    *pzErrMsg = sqlite3_mprintf("vector index(insert): failed to insert shadow row");
     goto out;
   }
 
   rc = blobSpotCreate(pIndex, &pBlobSpot, nNewRowid, pIndex->nBlockSize, 1);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to read blob for shadow row");
+    *pzErrMsg = sqlite3_mprintf("vector index(insert): failed to read blob for shadow row");
     goto out;
   }
   nodeBinInit(pIndex, pBlobSpot, nNewRowid, pVectorInRow->pVector);
@@ -1360,7 +1360,7 @@ int diskAnnInsert(
 
     rc = blobSpotFlush(pVisited->pBlobSpot);
     if( rc != SQLITE_OK ){
-      *pzErrMsg = sqlite3_mprintf("failed to flush blob");
+      *pzErrMsg = sqlite3_mprintf("vector index(insert): failed to flush blob");
       goto out;
     }
   }
@@ -1370,7 +1370,7 @@ out:
   if( rc == SQLITE_OK ){
     rc = blobSpotFlush(pBlobSpot);
     if( rc != SQLITE_OK ){
-      *pzErrMsg = sqlite3_mprintf("failed to flush blob");
+      *pzErrMsg = sqlite3_mprintf("vector index(insert): failed to flush blob");
     }
   }
   if( pBlobSpot != NULL ){
@@ -1393,7 +1393,7 @@ int diskAnnDelete(
   if( vectorInRowTryGetRowid(pInRow, &nodeRowid) != 0 ){
     rc = diskAnnGetShadowRowid(pIndex, pInRow, &nodeRowid);
     if( rc != SQLITE_OK ){
-      *pzErrMsg = sqlite3_mprintf("failed to determined node id for deletion");
+      *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to determined node id for deletion");
       goto out;
     }
   }
@@ -1402,17 +1402,17 @@ int diskAnnDelete(
 
   rc = blobSpotCreate(pIndex, &pNodeBlob, nodeRowid, pIndex->nBlockSize, DISKANN_BLOB_WRITABLE);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to create blob for node row");
+    *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to create blob for node row");
     goto out;
   }
   rc = blobSpotReload(pIndex, pNodeBlob, nodeRowid, pIndex->nBlockSize);
   if( rc != 0 ){
-    *pzErrMsg = sqlite3_mprintf("failed to reload blob for node row");
+    *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to reload blob for node row");
     goto out;
   }
   rc = blobSpotCreate(pIndex, &pEdgeBlob, nodeRowid, pIndex->nBlockSize, DISKANN_BLOB_WRITABLE);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to create blob for edge rows");
+    *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to create blob for edge rows");
     goto out;
   }
   nNeighbours = nodeBinEdges(pIndex, pNodeBlob);
@@ -1423,7 +1423,7 @@ int diskAnnDelete(
     if( rc == DISKANN_ROW_NOT_FOUND ){
       continue;
     }else if( rc != SQLITE_OK ){
-      *pzErrMsg = sqlite3_mprintf("failed to reload blob for edge row: %d", rc);
+      *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to reload blob for edge row: %d", rc);
       goto out;
     }
     iDelete = nodeBinEdgeFindIdx(pIndex, pEdgeBlob, edgeRowid);
@@ -1433,14 +1433,14 @@ int diskAnnDelete(
     nodeBinDeleteEdge(pIndex, pEdgeBlob, iDelete);
     rc = blobSpotFlush(pEdgeBlob);
     if( rc != SQLITE_OK ){
-      *pzErrMsg = sqlite3_mprintf("failed to flush blob for edge row");
+      *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to flush blob for edge row");
       goto out;
     }
   }
 
   rc = diskAnnDeleteShadowRow(pIndex, nodeRowid);
   if( rc != SQLITE_OK ){
-    *pzErrMsg = sqlite3_mprintf("failed to remove shadow row");
+    *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to remove shadow row");
     goto out;
   }
 
