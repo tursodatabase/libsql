@@ -68,7 +68,8 @@ impl<W: Write> DumpState<W> {
 
             if ty == b"table" {
                 let table_str = std::str::from_utf8(table)?;
-                let (row_id_col, colss) = self.list_table_columns(txn, table_str, preserve_rowids)?;
+                let (row_id_col, colss) =
+                    self.list_table_columns(txn, table_str, preserve_rowids)?;
                 let mut insert = String::new();
                 write!(&mut insert, "INSERT INTO {}", Quoted(table_str))?;
 
@@ -432,7 +433,11 @@ fn find_unused_str(haystack: &str, needle1: &str, needle2: &str) -> String {
     }
 }
 
-pub fn export_dump(db: &mut rusqlite::Connection, writer: impl Write, preserve_rowids: bool) -> anyhow::Result<()> {
+pub fn export_dump(
+    db: &mut rusqlite::Connection,
+    writer: impl Write,
+    preserve_rowids: bool,
+) -> anyhow::Result<()> {
     let mut txn = db.transaction()?;
     txn.execute("PRAGMA writable_schema=ON", ())?;
     let savepoint = txn.savepoint_with_name("dump")?;
@@ -519,9 +524,12 @@ mod test {
     fn table_preserve_rowids() {
         let tmp = tempdir().unwrap();
         let mut conn = Connection::open(tmp.path().join("data")).unwrap();
-        conn.execute(r#"create table test ( id TEXT PRIMARY KEY )"#, ()).unwrap();
-        conn.execute(r#"insert into test values ( 'a' ), ( 'b' ), ( 'c' )"#, ()).unwrap();
-        conn.execute(r#"delete from test where id = 'a'"#, ()).unwrap();
+        conn.execute(r#"create table test ( id TEXT PRIMARY KEY )"#, ())
+            .unwrap();
+        conn.execute(r#"insert into test values ( 'a' ), ( 'b' ), ( 'c' )"#, ())
+            .unwrap();
+        conn.execute(r#"delete from test where id = 'a'"#, ())
+            .unwrap();
 
         let mut out = Vec::new();
         export_dump(&mut conn, &mut out, true).unwrap();

@@ -2,11 +2,11 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task;
 
-use serde::Deserialize;
 use axum::extract::{Query, State as AxumState};
 use futures::StreamExt;
 use hyper::HeaderMap;
 use pin_project_lite::pin_project;
+use serde::Deserialize;
 
 use crate::auth::Authenticated;
 use crate::connection::dump::exporter::export_dump;
@@ -109,7 +109,9 @@ pub(super) async fn handle_dump(
 
     let join_handle = BLOCKING_RT.spawn_blocking(move || {
         let writer = tokio_util::io::SyncIoBridge::new(writer);
-        conn.with_raw(|conn| export_dump(conn, writer, query.preserve_row_ids.unwrap_or(false)).map_err(Into::into))
+        conn.with_raw(|conn| {
+            export_dump(conn, writer, query.preserve_row_ids.unwrap_or(false)).map_err(Into::into)
+        })
     });
 
     let stream = tokio_util::io::ReaderStream::new(reader);
