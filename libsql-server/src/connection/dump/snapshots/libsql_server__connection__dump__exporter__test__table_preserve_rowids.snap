@@ -1,0 +1,10 @@
+---
+source: libsql-server/src/connection/dump/exporter.rs
+expression: "std::str::from_utf8(&out).unwrap()"
+---
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS test ( id TEXT PRIMARY KEY );
+INSERT INTO test(rowid,id) VALUES(2,'b');
+INSERT INTO test(rowid,id) VALUES(3,'c');
+COMMIT;

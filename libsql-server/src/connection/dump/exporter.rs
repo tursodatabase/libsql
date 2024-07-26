@@ -20,6 +20,7 @@ impl<W: Write> DumpState<W> {
         &mut self,
         txn: &rusqlite::Connection,
         stmt: &str,
+        preserve_rowids: bool,
     ) -> anyhow::Result<()> {
         let mut stmt = txn.prepare(stmt)?;
         let mut rows = stmt.query(())?;
@@ -67,7 +68,7 @@ impl<W: Write> DumpState<W> {
 
             if ty == b"table" {
                 let table_str = std::str::from_utf8(table)?;
-                let (row_id_col, colss) = self.list_table_columns(txn, table_str)?;
+                let (row_id_col, colss) = self.list_table_columns(txn, table_str, preserve_rowids)?;
                 let mut insert = String::new();
                 write!(&mut insert, "INSERT INTO {}", Quoted(table_str))?;
 
@@ -146,11 +147,12 @@ impl<W: Write> DumpState<W> {
         &self,
         txn: &rusqlite::Connection,
         table: &str,
+        preserve_rowids: bool,
     ) -> anyhow::Result<(Option<String>, Vec<String>)> {
         let mut cols = Vec::new();
         let mut num_primary_keys = 0;
         let mut is_integer_primary_key = false;
-        let mut preserve_row_id = false;
+        let mut preserve_rowids = preserve_rowids;
         let mut row_id_col = None;
 
         txn.pragma(None, "table_info", table, |row| {
@@ -186,14 +188,14 @@ impl<W: Write> DumpState<W> {
                 [table],
                 |_| {
                     // re-set preserve_row_id if there is a row
-                    preserve_row_id = true;
+                    preserve_rowids = true;
                     Ok(())
                 },
             )
             .optional()?;
         }
 
-        if preserve_row_id {
+        if preserve_rowids {
             const ROW_ID_NAMES: [&str; 3] = ["rowid", "_row_id_", "oid"];
 
             for row_id_name in ROW_ID_NAMES {
@@ -430,7 +432,7 @@ fn find_unused_str(haystack: &str, needle1: &str, needle2: &str) -> String {
     }
 }
 
-pub fn export_dump(db: &mut rusqlite::Connection, writer: impl Write) -> anyhow::Result<()> {
+pub fn export_dump(db: &mut rusqlite::Connection, writer: impl Write, preserve_rowids: bool) -> anyhow::Result<()> {
     let mut txn = db.transaction()?;
     txn.execute("PRAGMA writable_schema=ON", ())?;
     let savepoint = txn.savepoint_with_name("dump")?;
@@ -451,7 +453,7 @@ pub fn export_dump(db: &mut rusqlite::Connection, writer: impl Write) -> anyhow:
 WHERE type=='table' 
 AND sql NOT NULL 
 ORDER BY tbl_name='sqlite_sequence', rowid";
-    state.run_schema_dump_query(&savepoint, q)?;
+    state.run_schema_dump_query(&savepoint, q, preserve_rowids)?;
 
     let q = "SELECT sql FROM sqlite_schema AS o 
 WHERE sql NOT NULL 
@@ -508,7 +510,21 @@ mod test {
         conn.execute(r#"create table test ("limit")"#, ()).unwrap();
 
         let mut out = Vec::new();
-        export_dump(&mut conn, &mut out).unwrap();
+        export_dump(&mut conn, &mut out, false).unwrap();
+
+        insta::assert_snapshot!(std::str::from_utf8(&out).unwrap());
+    }
+
+    #[test]
+    fn table_preserve_rowids() {
+        let tmp = tempdir().unwrap();
+        let mut conn = Connection::open(tmp.path().join("data")).unwrap();
+        conn.execute(r#"create table test ( id TEXT PRIMARY KEY )"#, ()).unwrap();
+        conn.execute(r#"insert into test values ( 'a' ), ( 'b' ), ( 'c' )"#, ()).unwrap();
+        conn.execute(r#"delete from test where id = 'a'"#, ()).unwrap();
+
+        let mut out = Vec::new();
+        export_dump(&mut conn, &mut out, true).unwrap();
 
         insta::assert_snapshot!(std::str::from_utf8(&out).unwrap());
     }
