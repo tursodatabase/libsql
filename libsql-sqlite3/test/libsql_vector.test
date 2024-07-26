@@ -90,16 +90,16 @@ do_test vector-1-func-errors {
   lappend ret [error_messages {SELECT vector_distance_cos('[1,2,3]', '[1,2]')}]
   lappend ret [error_messages {SELECT vector_distance_cos(vector32('[1,2,3]'), vector64('[1,2,3]'))}]
 } [list {*}{
-  {invalid vector: unexpected value type: got FLOAT, expected TEXT or BLOB}
-  {invalid vector: unexpected value type: got INTEGER, expected TEXT or BLOB}
-  {invalid vector: unexpected value type: got NULL, expected TEXT or BLOB}
-  {invalid vector: must start with '['}
-  {invalid vector: must start with '['}
-  {invalid vector: non-space symbols after closing ']' are forbidden}
-  {invalid vector: invalid float at position 0: '[1'}
-  {invalid vector: invalid float at position 2: '1.1.1'}
-  {invalid vector: must end with ']'}
-  {invalid vector: unexpected binary type: got 0, expected 1 or 2}
+  {vector: unexpected value type: got FLOAT, expected TEXT or BLOB}
+  {vector: unexpected value type: got INTEGER, expected TEXT or BLOB}
+  {vector: unexpected value type: got NULL, expected TEXT or BLOB}
+  {vector: must start with '['}
+  {vector: must start with '['}
+  {vector: non-space symbols after closing ']' are forbidden}
+  {vector: invalid float at position 0: '[1'}
+  {vector: invalid float at position 2: '1.1.1'}
+  {vector: must end with ']'}
+  {vector: unexpected binary type: got 0, expected 1 or 2}
   {vector_distance_cos: vectors must have the same length: 3 != 2}
   {vector_distance_cos: vectors must have the same type: 1 != 2}
 }]

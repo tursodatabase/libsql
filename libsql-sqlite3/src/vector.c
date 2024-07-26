@@ -180,7 +180,7 @@ static int vectorParseSqliteText(
     pzText++;
 
   if( *pzText != '[' ){
-    *pzErrMsg = sqlite3_mprintf("invalid vector: must start with '['");
+    *pzErrMsg = sqlite3_mprintf("vector: must start with '['");
     goto error;
   }
   pzText++;
@@ -195,7 +195,7 @@ static int vectorParseSqliteText(
     }
     if( this != ',' && this != ']' ){
       if( iBuf > MAX_FLOAT_CHAR_SZ ){
-        *pzErrMsg = sqlite3_mprintf("invalid vector: float string length exceeded %d characters: '%s'", MAX_FLOAT_CHAR_SZ, valueBuf);
+        *pzErrMsg = sqlite3_mprintf("vector: float string length exceeded %d characters: '%s'", MAX_FLOAT_CHAR_SZ, valueBuf);
         goto error;
       }
       valueBuf[iBuf++] = this;
@@ -206,11 +206,11 @@ static int vectorParseSqliteText(
       break;
     }
     if( sqlite3AtoF(valueBuf, &elem, iBuf, SQLITE_UTF8) <= 0 ){
-      *pzErrMsg = sqlite3_mprintf("invalid vector: invalid float at position %d: '%s'", iElem, valueBuf);
+      *pzErrMsg = sqlite3_mprintf("vector: invalid float at position %d: '%s'", iElem, valueBuf);
       goto error;
     }
     if( iElem >= MAX_VECTOR_SZ ){
-      *pzErrMsg = sqlite3_mprintf("invalid vector: max size exceeded %d", MAX_VECTOR_SZ);
+      *pzErrMsg = sqlite3_mprintf("vector: max size exceeded %d", MAX_VECTOR_SZ);
       goto error;
     }
     // clear only first bufidx positions - all other are zero
@@ -229,7 +229,7 @@ static int vectorParseSqliteText(
     pzText++;
 
   if( *pzText != ']' ){
-    *pzErrMsg = sqlite3_mprintf("invalid vector: must end with ']'");
+    *pzErrMsg = sqlite3_mprintf("vector: must end with ']'");
     goto error;
   }
   pzText++;
@@ -238,7 +238,7 @@ static int vectorParseSqliteText(
     pzText++;
   
   if( *pzText != '\0' ){
-    *pzErrMsg = sqlite3_mprintf("invalid vector: non-space symbols after closing ']' are forbidden");
+    *pzErrMsg = sqlite3_mprintf("vector: non-space symbols after closing ']' are forbidden");
     goto error;
   }
   pVector->dims = iElem;
@@ -283,11 +283,11 @@ int detectBlobVectorParameters(sqlite3_value *arg, int *pType, int *pDims, char 
   } else if( *pType == VECTOR_TYPE_FLOAT64 ){
     *pDims = nBlobSize / sizeof(double);
   } else{
-    *pzErrMsg = sqlite3_mprintf("invalid vector: unexpected binary type: got %d, expected %d or %d", *pType, VECTOR_TYPE_FLOAT32, VECTOR_TYPE_FLOAT64);
+    *pzErrMsg = sqlite3_mprintf("vector: unexpected binary type: got %d, expected %d or %d", *pType, VECTOR_TYPE_FLOAT32, VECTOR_TYPE_FLOAT64);
     return -1;
   }
   if( *pDims > MAX_VECTOR_SZ ){
-    *pzErrMsg = sqlite3_mprintf("invalid vector: max size exceeded: %d > %d", *pDims, MAX_VECTOR_SZ);
+    *pzErrMsg = sqlite3_mprintf("vector: max size exceeded: %d > %d", *pDims, MAX_VECTOR_SZ);
     return -1;
   }
   return 0;
@@ -334,7 +334,7 @@ int detectVectorParameters(sqlite3_value *arg, int typeHint, int *pType, int *pD
     case SQLITE_TEXT:
       return detectTextVectorParameters(arg, typeHint, pType, pDims, pzErrMsg);
     default:
-      *pzErrMsg = sqlite3_mprintf("invalid vector: unexpected value type: got %s, expected TEXT or BLOB", sqlite3_type_repr(sqlite3_value_type(arg)));
+      *pzErrMsg = sqlite3_mprintf("vector: unexpected value type: got %s, expected TEXT or BLOB", sqlite3_type_repr(sqlite3_value_type(arg)));
       return -1;
   }
 }
@@ -350,7 +350,7 @@ int vectorParse(
     case SQLITE_TEXT:
       return vectorParseSqliteText(arg, pVector, pzErrMsg);
     default:
-      *pzErrMsg = sqlite3_mprintf("invalid vector: unexpected value type: got %s, expected TEXT or BLOB", sqlite3_type_repr(sqlite3_value_type(arg)));
+      *pzErrMsg = sqlite3_mprintf("vector: unexpected value type: got %s, expected TEXT or BLOB", sqlite3_type_repr(sqlite3_value_type(arg)));
       return -1;
   }
 }

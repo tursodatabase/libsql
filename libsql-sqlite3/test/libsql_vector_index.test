@@ -278,6 +278,9 @@ do_test vector-errors {
   lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(b) )}]
   lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(c) )}]
   lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(d) )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(e, 'a=1') )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(e, 'metric=unknown') )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(e, 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine') )}]
   lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err2( libsql_vector_idx(v) )}]
   sqlite3_exec db { CREATE TABLE t_err3 ( e FLOAT32(4) ) }
   sqlite3_exec db { CREATE INDEX t_err3_idx ON t_err3 (libsql_vector_idx(e)) }
@@ -298,6 +301,9 @@ do_test vector-errors {
   {vector index: unexpected vector column type: BLOB}
   {vector index: non digit symbol in vector column parameter: FLOAT32(-1)}
   {vector index: vector column must have non-zero dimension for index: FLOAT32(0)}
+  {vector index: invalid vector index parameter 'a=1': invalid parameter}
+  {vector index: invalid vector index parameter 'metric=unknown': invalid parameter}
+  {vector index: invalid vector index parameter 'metric=cosine': unable to serialize vector index parameter}
   {vector index: unsupported for tables without ROWID and composite primary key}
   {vector index(insert): dimensions are different: 1 != 4}
   {vector index(insert): dimensions are different: 5 != 4}

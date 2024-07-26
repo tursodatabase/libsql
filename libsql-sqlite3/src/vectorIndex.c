@@ -411,7 +411,7 @@ static int parseVectorIdxParam(const char *zParam, VectorIdxParams *pParams, con
   zValue = zParam + iDelimiter + 1;
   nValueLen = sqlite3Strlen30(zValue);
   for(i = 0; i < ArraySize(VECTOR_PARAM_NAMES); i++){
-    if( sqlite3_strnicmp(VECTOR_PARAM_NAMES[i].zName, zParam, iDelimiter) != 0 ){
+    if( iDelimiter != strlen(VECTOR_PARAM_NAMES[i].zName) || sqlite3_strnicmp(VECTOR_PARAM_NAMES[i].zName, zParam, iDelimiter) != 0 ){
       continue;
     }
     if( VECTOR_PARAM_NAMES[i].type == 1 ){
@@ -454,7 +454,7 @@ static int parseVectorIdxParam(const char *zParam, VectorIdxParams *pParams, con
       return -1;
     }
   }
-  *pErrMsg = "unexpected parameter key";
+  *pErrMsg = "invalid parameter";
   return -1;
 }
 
@@ -462,25 +462,25 @@ int parseVectorIdxParams(Parse *pParse, VectorIdxParams *pParams, int type, int 
   int i;
   const char *pErrMsg;
   if( vectorIdxParamsPutU64(pParams, VECTOR_FORMAT_PARAM_ID, VECTOR_FORMAT_DEFAULT) != 0 ){
-    sqlite3ErrorMsg(pParse, "unable to serialize vector index parameter: format");
+    sqlite3ErrorMsg(pParse, "vector index: unable to serialize vector index parameter: format");
     return SQLITE_ERROR;
   }
   if( vectorIdxParamsPutU64(pParams, VECTOR_TYPE_PARAM_ID, type) != 0 ){
-    sqlite3ErrorMsg(pParse, "unable to serialize vector index parameter: type");
+    sqlite3ErrorMsg(pParse, "vector index: unable to serialize vector index parameter: type");
     return SQLITE_ERROR;
   }
   if( vectorIdxParamsPutU64(pParams, VECTOR_DIM_PARAM_ID, dims) != 0 ){
-    sqlite3ErrorMsg(pParse, "unable to serialize vector index parameter: dim");
+    sqlite3ErrorMsg(pParse, "vector index: unable to serialize vector index parameter: dim");
     return SQLITE_ERROR;
   }
   for(i = 0; i < nArgs; i++){
     Expr *pArgExpr = pArgList[i].pExpr;
     if( pArgExpr->op != TK_STRING ){
-      sqlite3ErrorMsg(pParse, "all arguments after first must be strings");
+      sqlite3ErrorMsg(pParse, "vector index: all arguments after first must be strings");
       return SQLITE_ERROR;
     }
     if( parseVectorIdxParam(pArgExpr->u.zToken, pParams, &pErrMsg) != 0 ){
-      sqlite3ErrorMsg(pParse, "invalid vector index parameter '%s': %s", pArgExpr->u.zToken, pErrMsg);
+      sqlite3ErrorMsg(pParse, "vector index: invalid vector index parameter '%s': %s", pArgExpr->u.zToken, pErrMsg);
       return SQLITE_ERROR;
     }
   }
@@ -909,7 +909,6 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
   }
   rc = parseVectorIdxParams(pParse, &idxParams, type, dims, pListItem + 1, pArgsList->nExpr - 1);
   if( rc != SQLITE_OK ){
-    sqlite3ErrorMsg(pParse, "vector index: failed to parse binary parameters");
     return CREATE_FAIL;
   }
   if( vectorIdxKeyGet(pTable, &idxKey, &pzErrMsg) != 0 ){
