@@ -130,6 +130,33 @@ float vectorDistanceL2(const Vector *pVector1, const Vector *pVector2){
   return 0;
 }
 
+void vectorMult(Vector *pVector, double k){
+  switch (pVector->type) {
+    case VECTOR_TYPE_FLOAT32:
+      vectorF32Mult(pVector, k);
+      break;
+    case VECTOR_TYPE_FLOAT64:
+      vectorF64Mult(pVector, k);
+      break;
+    default:
+      assert(0);
+  }
+}
+
+void vectorAdd(Vector *v1, const Vector *v2){
+  assert( pVector1->type == pVector2->type );
+  assert( pVector1->dims == pVector2->dims );
+  switch (v1->type) {
+    case VECTOR_TYPE_FLOAT32:
+      vectorF32Add(v1, v2);
+      break;
+    case VECTOR_TYPE_FLOAT64:
+      vectorF64Add(v1, v2);
+      break;
+    default:
+      assert(0);
+  }
+}
 const char *sqlite3_type_repr(int type){
   switch( type ){
     case SQLITE_NULL:
@@ -591,6 +618,250 @@ out_free:
 }
 
 /*
+** Implementation of vector_sum(V...) scalar function.
+*/
+static void vectorSumFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  char *pzErrMsg = NULL;
+  Vector *pSum = NULL, *pVector = NULL;
+  int i;
+  int typeSum, dimsSum, typeVector, dimsVector;
+
+  if( argc < 1 ){
+    return;
+  }
+  if( detectVectorParameters(argv[0], 0, &typeSum, &dimsSum, &pzErrMsg) != 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  pSum = vectorContextAlloc(context, typeSum, dimsSum);
+  if( pSum == NULL ){
+    goto out_free;
+  }
+  if( vectorParse(argv[0], pSum, &pzErrMsg) < 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  pVector = vectorContextAlloc(context, typeSum, dimsSum);
+  if( pVector == NULL ){
+    goto out_free;
+  }
+  for(i = 1; i < argc; i++){
+    if( detectVectorParameters(argv[i], 0, &typeVector, &dimsVector, &pzErrMsg) != 0 ){
+      sqlite3_result_error(context, pzErrMsg, -1);
+      sqlite3_free(pzErrMsg);
+      goto out_free;
+    }
+    if( typeSum != typeVector ){
+      pzErrMsg = sqlite3_mprintf("vector_sum: vectors must have the same type: %d != %d", typeSum, typeVector);
+      sqlite3_result_error(context, pzErrMsg, -1);
+      sqlite3_free(pzErrMsg);
+      goto out_free;
+    }
+    if( dimsSum != dimsVector ){
+      pzErrMsg = sqlite3_mprintf("vector_sum: vectors must have the same length: %d != %d", dimsSum, dimsVector);
+      sqlite3_result_error(context, pzErrMsg, -1);
+      sqlite3_free(pzErrMsg);
+      goto out_free;
+    }
+    if( vectorParse(argv[i], pVector, &pzErrMsg) < 0 ){
+      sqlite3_result_error(context, pzErrMsg, -1);
+      sqlite3_free(pzErrMsg);
+      goto out_free;
+    }
+    vectorAdd(pSum, pVector);
+  }
+  vectorSerialize(context, pSum);
+out_free:
+  if( pSum != NULL ){
+    vectorFree(pSum);
+  }
+  if( pVector != NULL ){
+    vectorFree(pVector);
+  }
+}
+
+struct VectorSumCtx {
+  i64 count;
+  Vector *pSum;
+  Vector *pVector;
+};
+
+static void vectorSumAdd(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv,
+  double k
+){
+  char *pzErrMsg;
+  struct VectorSumCtx *p;
+  int type, dims;
+  assert( argc == 1 );
+  UNUSED_PARAMETER(argc);
+  p = sqlite3_aggregate_context(context, sizeof(*p));
+  if( detectVectorParameters(argv[0], 0, &type, &dims, &pzErrMsg) != 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    return;
+  }
+  if( p->count == 0 ){
+    p->pSum = vectorContextAlloc(context, type, dims);
+    if( p->pSum == NULL ){
+      return;
+    }
+  }
+  if( p->pSum->type != type ){
+    pzErrMsg = sqlite3_mprintf("vector_sum: vectors must have the same type: %d != %d", p->pSum->type, type);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    return;
+  }
+  if( p->pSum->dims != dims ){
+    pzErrMsg = sqlite3_mprintf("vector_sum: vectors must have the same length: %d != %d", p->pSum->dims, dims);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    return;
+  }
+  if( p->count == 0 ){
+    if( vectorParse(argv[0], p->pSum, &pzErrMsg) < 0 ){
+      sqlite3_result_error(context, pzErrMsg, -1);
+      sqlite3_free(pzErrMsg);
+    }else{
+      vectorMult(p->pSum, k);
+      p->count++;
+    }
+    return;
+  }
+  if( p->pVector == NULL ){
+    p->pVector = vectorContextAlloc(context, type, dims);
+    if( p->pVector == NULL ){
+      return;
+    }
+  }
+  if( vectorParse(argv[0], p->pVector, &pzErrMsg) < 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    return;
+  }
+  vectorMult(p->pVector, k);
+  vectorAdd(p->pSum, p->pVector);
+  p->count++;
+}
+
+static void vectorSumEnd(sqlite3_context *context, int freeMem){
+  struct VectorSumCtx *p;
+  p = sqlite3_aggregate_context(context, 0);
+  if( p && p->count>0 ){
+    vectorSerialize(context, p->pSum);
+  }
+  if( p && p->pSum != NULL && freeMem ){
+    vectorFree(p->pSum);
+  }
+  if( p && p->pVector != NULL && freeMem ){
+    vectorFree(p->pVector);
+  }
+}
+
+/*
+** Implementation of vector_sum aggregate function (step part)
+*/
+static void vectorSumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
+  vectorSumAdd(context, argc, argv, 1.0);
+}
+
+/*
+** Implementation of vector_sum aggregate function (inverse part)
+*/
+static void vectorSumInverse(sqlite3_context *context, int argc, sqlite3_value **argv){
+  vectorSumAdd(context, argc, argv, -1.0);
+}
+
+/*
+** Implementation of vector_sum aggregate function (finalize part)
+*/
+static void vectorSumFinalize(sqlite3_context *context){
+  vectorSumEnd(context, 1);
+}
+
+/*
+** Implementation of vector_sum aggregate function (value part)
+*/
+static void vectorSumValue(sqlite3_context *context){
+  vectorSumEnd(context, 0);
+}
+
+/*
+** Implementation of vector_mult(V, k) / vector_mult(k, V) function.
+*/
+static void vectorMultFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  char *pzErrMsg;
+  sqlite3_value *pMultValue = NULL, *pVectorValue = NULL;
+  int type, dims;
+  Vector *pVector;
+  double k;
+
+  assert( argc == 2 );
+
+  if( sqlite3_value_type(argv[0]) == SQLITE_INTEGER || sqlite3_value_type(argv[0]) == SQLITE_FLOAT ){
+    pMultValue = argv[0];
+  }
+  if( sqlite3_value_type(argv[1]) == SQLITE_INTEGER || sqlite3_value_type(argv[1]) == SQLITE_FLOAT ){
+    pMultValue = argv[1];
+  }
+  if( sqlite3_value_type(argv[0]) == SQLITE_BLOB || sqlite3_value_type(argv[0]) == SQLITE_TEXT ){
+    pVectorValue = argv[0];
+  }
+  if( sqlite3_value_type(argv[1]) == SQLITE_BLOB || sqlite3_value_type(argv[1]) == SQLITE_TEXT ){
+    pVectorValue = argv[1];
+  }
+  if( pMultValue == NULL || pVectorValue == NULL ){
+    pzErrMsg = sqlite3_mprintf(
+      "vector_mult: unexpected parameters: got %s and %s, but expected vector-compatible and float-compatible types",
+      sqlite3_type_repr(sqlite3_value_type(argv[0])),
+      sqlite3_type_repr(sqlite3_value_type(argv[1]))
+    );
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    return;
+  }
+
+  if( detectVectorParameters(pVectorValue, 0, &type, &dims, &pzErrMsg) != 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    return;
+  }
+  if( sqlite3_value_type(pMultValue) == SQLITE_INTEGER ){
+    k = sqlite3_value_int64(pMultValue);
+  }
+  if( sqlite3_value_type(pMultValue) == SQLITE_FLOAT ){
+    k = sqlite3_value_double(pMultValue);
+  }
+  pVector = vectorContextAlloc(context, type, dims);
+  if( pVector == NULL ){
+    return;
+  }
+  if( vectorParse(pVectorValue, pVector, &pzErrMsg)<0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+
+  vectorMult(pVector, k);
+  vectorSerialize(context, pVector);
+out_free:
+  vectorFree(pVector);
+}
+
+/*
  * Marker function which is used in index creation syntax: CREATE INDEX idx ON t(libsql_vector_idx(emb));
 */
 static void libsqlVectorIdx(sqlite3_context *context, int argc, sqlite3_value **argv){ 
@@ -607,7 +878,10 @@ void sqlite3RegisterVectorFunctions(void){
     FUNCTION(vector32,            1, 0, 0, vector32Func),
     FUNCTION(vector64,            1, 0, 0, vector64Func),
     FUNCTION(vector_extract,      1, 0, 0, vectorExtractFunc),
+    FUNCTION(vector_sum,         -1, 0, 0, vectorSumFunc),
+    FUNCTION(vector_mult,         2, 0, 0, vectorMultFunc),
     FUNCTION(vector_distance_cos, 2, 0, 0, vectorDistanceCosFunc),
+    WAGGREGATE(vector_sum,        1, 0, 0, vectorSumStep, vectorSumFinalize, vectorSumFinalize, vectorSumInverse, SQLITE_FUNC_ANYORDER),
 
     FUNCTION(libsql_vector_idx,  -1, 0, 0, libsqlVectorIdx),
   };

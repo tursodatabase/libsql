@@ -215,6 +215,31 @@ float vectorF32DistanceL2(const Vector *v1, const Vector *v2){
   return sqrt(sum);
 }
 
+void vectorF32Mult(Vector *v, double k){
+  float *e = v->data;
+  int i;
+
+  assert( v->type == VECTOR_TYPE_FLOAT32 );
+
+  for(i = 0; i < v->dims; i++){
+    e[i] *= k;
+  }
+}
+
+void vectorF32Add(Vector *v1, const Vector *v2){
+  float *e1 = v1->data;
+  float *e2 = v2->data;
+  int i;
+
+  assert( v1->type == VECTOR_TYPE_FLOAT32 );
+  assert( v1->type == v2->type );
+  assert( v1->dims == v2->dims );
+
+  for(i = 0; i < v1->dims; i++){
+    e1[i] += e2[i];
+  }
+}
+
 void vectorF32InitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlobSize){
   pVector->dims = nBlobSize / sizeof(float);
   pVector->data = (void*)pBlob;
