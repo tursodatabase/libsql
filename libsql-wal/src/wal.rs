@@ -13,13 +13,13 @@ use crate::shared_wal::SharedWal;
 use crate::storage::Storage;
 use crate::transaction::Transaction;
 
-pub struct LibsqlWalManager<FS: Io, S> {
-    registry: Arc<WalRegistry<FS, S>>,
+pub struct LibsqlWalManager<IO: Io, S> {
+    registry: Arc<WalRegistry<IO, S>>,
     next_conn_id: Arc<AtomicU64>,
     namespace_resolver: Arc<dyn NamespaceResolver>,
 }
 
-impl<FS: Io, S> Clone for LibsqlWalManager<FS, S> {
+impl<IO: Io, S> Clone for LibsqlWalManager<IO, S> {
     fn clone(&self) -> Self {
         Self {
             registry: self.registry.clone(),

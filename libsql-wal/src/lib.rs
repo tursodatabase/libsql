@@ -17,23 +17,26 @@ const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
 pub mod test {
     use std::fs::OpenOptions;
     use std::path::PathBuf;
-    use std::{path::Path, sync::Arc};
+    use std::path::Path;
+    use std::sync::Arc;
 
-    use libsql_sys::{name::NamespaceName, rusqlite::OpenFlags};
+    use libsql_sys::rusqlite::OpenFlags;
+    use libsql_sys::name::NamespaceName;
     use tempfile::{tempdir, TempDir};
     use tokio::sync::mpsc;
 
     use crate::checkpointer::LibsqlCheckpointer;
+    use crate::io::Io;
     use crate::io::StdIO;
     use crate::registry::WalRegistry;
     use crate::shared_wal::SharedWal;
     use crate::storage::TestStorage;
     use crate::wal::{LibsqlWal, LibsqlWalManager};
 
-    pub struct TestEnv {
+    pub struct TestEnv<IO: Io = StdIO> {
         pub tmp: TempDir,
-        pub registry: Arc<WalRegistry<StdIO, TestStorage>>,
-        pub wal: LibsqlWalManager<StdIO, TestStorage>,
+        pub registry: Arc<WalRegistry<IO, TestStorage<IO>>>,
+        pub wal: LibsqlWalManager<IO, TestStorage<IO>>,
     }
 
     impl TestEnv {
@@ -42,6 +45,12 @@ pub mod test {
         }
 
         pub fn new_store(store: bool) -> Self {
+            TestEnv::new_io(StdIO(()), store)
+        }
+    }
+
+    impl<IO: Io> TestEnv<IO> {
+        pub fn new_io(io: IO, store: bool) -> Self {
             let tmp = tempdir().unwrap();
             let resolver = |path: &Path| {
                 let name = path
@@ -72,7 +81,7 @@ pub mod test {
             Self { tmp, registry, wal }
         }
 
-        pub fn shared(&self, namespace: &str) -> Arc<SharedWal<StdIO>> {
+        pub fn shared(&self, namespace: &str) -> Arc<SharedWal<IO>> {
             let path = self.tmp.path().join(namespace).join("data");
             let registry = self.registry.clone();
             let namespace = NamespaceName::from_string(namespace.into());
@@ -86,7 +95,7 @@ pub mod test {
         pub fn open_conn(
             &self,
             namespace: &'static str,
-        ) -> libsql_sys::Connection<LibsqlWal<StdIO>> {
+        ) -> libsql_sys::Connection<LibsqlWal<IO>> {
             let path = self.db_path(namespace);
             let wal = self.wal.clone();
             std::fs::create_dir_all(&path).unwrap();
@@ -110,7 +119,7 @@ pub mod test {
         }
     }
 
-    pub fn seal_current_segment(shared: &SharedWal<StdIO>) {
+    pub fn seal_current_segment<IO: Io>(shared: &SharedWal<IO>) {
         let mut tx = shared.begin_read(99999).into();
         shared.upgrade(&mut tx).unwrap();
         {
