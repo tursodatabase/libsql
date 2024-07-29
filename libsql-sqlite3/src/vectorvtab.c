@@ -38,7 +38,10 @@ struct vectorVtab {
 
 typedef struct vectorVtab_cursor vectorVtab_cursor;
 struct vectorVtab_cursor {
+  // first fields must copy fields from the sqlite3_vtab_cursor_tracked struct
   sqlite3_vtab_cursor base;  /* Base class - must be first */
+  int nReads;                /* Number of row read from the storage backing virtual table */
+  int nWrites;               /* Number of row written to the storage backing virtual table */
   VectorOutRows rows;
   int iRow;
 };
@@ -93,7 +96,7 @@ static int vectorVtabDisconnect(sqlite3_vtab *pVtab){
 static int vectorVtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   vectorVtab *pVTab = (vectorVtab*)p;
   vectorVtab_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc( sizeof(vectorVtab_cursor) );
   if( pCur == NULL ){
     return SQLITE_NOMEM;
   }
@@ -152,7 +155,7 @@ static int vectorVtabFilter(
   pCur->rows.aIntValues = NULL;
   pCur->rows.ppValues = NULL;
 
-  if( vectorIndexSearch(pVTab->db, pVTab->zDbSName, argc, argv, &pCur->rows, &pVTab->base.zErrMsg) != 0 ){
+  if( vectorIndexSearch(pVTab->db, pVTab->zDbSName, argc, argv, &pCur->rows, &pCur->nReads, &pCur->nWrites, &pVTab->base.zErrMsg) != 0 ){
     return SQLITE_ERROR;
   }
 

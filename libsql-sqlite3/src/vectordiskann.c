@@ -200,7 +200,7 @@ out:
   return rc;
 }
 
-int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize) {
+int blobSpotReload(DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, int nBufferSize) {
   int rc;
 
   DiskAnnTrace(("blob spot reload: rowid=%lld\n", nRowid));
@@ -242,6 +242,7 @@ int blobSpotReload(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, 
   if( rc != SQLITE_OK ){
     goto abort;
   }
+  pIndex->nReads++;
   pBlobSpot->isInitialized = 1;
   return SQLITE_OK;
 
@@ -251,8 +252,13 @@ abort:
   return rc;
 }
 
-int blobSpotFlush(BlobSpot *pBlobSpot) {
-  return sqlite3_blob_write(pBlobSpot->pBlob, pBlobSpot->pBuffer, pBlobSpot->nBufferSize, 0);
+int blobSpotFlush(DiskAnnIndex* pIndex, BlobSpot *pBlobSpot) {
+  int rc = sqlite3_blob_write(pBlobSpot->pBlob, pBlobSpot->pBuffer, pBlobSpot->nBufferSize, 0);
+  if( rc != SQLITE_OK ){
+    return rc;
+  }
+  pIndex->nWrites++;
+  return rc;
 }
 
 void blobSpotFree(BlobSpot *pBlobSpot) {
@@ -1085,7 +1091,7 @@ static void diskAnnPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob, i
 }
 
 // main search routine - called from both SEARCH and INSERT operation
-static int diskAnnSearchInternal(const DiskAnnIndex *pIndex, DiskAnnSearchCtx *pCtx, u64 nStartRowid, char **pzErrMsg){
+static int diskAnnSearchInternal(DiskAnnIndex *pIndex, DiskAnnSearchCtx *pCtx, u64 nStartRowid, char **pzErrMsg){
   DiskAnnTrace(("diskAnnSearchInternal: ready to search: rootId=%lld\n", nStartRowid));
   DiskAnnNode *start = NULL;
   // in case of SEARCH operation (blobMode == DISKANN_BLOB_READONLY) we don't need to preserve all node blobs in the memory
@@ -1218,7 +1224,7 @@ out:
 
 // search k nearest neighbours for pVector in the pIndex (with pKey primary key structure) and put result in the pRows output
 int diskAnnSearch(
-  const DiskAnnIndex *pIndex,
+  DiskAnnIndex *pIndex,
   const Vector *pVector,
   int k,
   const VectorIdxKey *pKey,
@@ -1290,7 +1296,7 @@ out:
 
 // insert pVectorInRow in the pIndex
 int diskAnnInsert(
-  const DiskAnnIndex *pIndex,
+  DiskAnnIndex *pIndex,
   const VectorInRow *pVectorInRow,
   char **pzErrMsg
 ){
@@ -1377,7 +1383,7 @@ int diskAnnInsert(
     nodeBinReplaceEdge(pIndex, pVisited->pBlobSpot, iReplace, nNewRowid, pVectorInRow->pVector);
     diskAnnPruneEdges(pIndex, pVisited->pBlobSpot, iReplace);
 
-    rc = blobSpotFlush(pVisited->pBlobSpot);
+    rc = blobSpotFlush(pIndex, pVisited->pBlobSpot);
     if( rc != SQLITE_OK ){
       *pzErrMsg = sqlite3_mprintf("vector index(insert): failed to flush blob");
       goto out;
@@ -1387,7 +1393,7 @@ int diskAnnInsert(
   rc = SQLITE_OK;
 out:
   if( rc == SQLITE_OK ){
-    rc = blobSpotFlush(pBlobSpot);
+    rc = blobSpotFlush(pIndex, pBlobSpot);
     if( rc != SQLITE_OK ){
       *pzErrMsg = sqlite3_mprintf("vector index(insert): failed to flush blob");
     }
@@ -1401,7 +1407,7 @@ out:
 
 // delete pInRow from pIndex
 int diskAnnDelete(
-  const DiskAnnIndex *pIndex,
+  DiskAnnIndex *pIndex,
   const VectorInRow *pInRow,
   char **pzErrMsg
 ){
@@ -1450,7 +1456,7 @@ int diskAnnDelete(
       continue;
     }
     nodeBinDeleteEdge(pIndex, pEdgeBlob, iDelete);
-    rc = blobSpotFlush(pEdgeBlob);
+    rc = blobSpotFlush(pIndex, pEdgeBlob);
     if( rc != SQLITE_OK ){
       *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to flush blob for edge row");
       goto out;
@@ -1510,6 +1516,8 @@ int diskAnnOpenIndex(
   pIndex->pruningAlpha = vectorIdxParamsGetF64(pParams, VECTOR_PRUNING_ALPHA_PARAM_ID);
   pIndex->insertL = vectorIdxParamsGetU64(pParams, VECTOR_INSERT_L_PARAM_ID);
   pIndex->searchL = vectorIdxParamsGetU64(pParams, VECTOR_SEARCH_L_PARAM_ID);
+  pIndex->nReads = 0;
+  pIndex->nWrites = 0;
   if( pIndex->nDistanceFunc == 0 ||
       pIndex->nBlockSize == 0 ||
       pIndex->nNodeVectorType == 0 ||

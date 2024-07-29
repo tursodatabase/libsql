@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
         printf("  reads : %.2f (avg.), %lld (total)\n", total_reads * 1.0 / total_queries, total_reads);
       }
       if( total_writes > 0 ){
-        printf("  writes: %.2f (avg.), %lld (total)\n", total_writes * 1.0 / total_writes, total_reads);
+        printf("  writes: %.2f (avg.), %lld (total)\n", total_writes * 1.0 / total_queries, total_reads);
       }
       fflush(stdout);
 
