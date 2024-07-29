@@ -32,6 +32,7 @@ bitflags::bitflags! {
         /// This is true for a segment created by a primary, but a replica may insert frames in any
         /// order, as long as commit boundaries are preserved.
         const FRAME_UNORDERED = 1 << 0;
+        const SEALED          = 1 << 1;
     }
 }
 

@@ -17,7 +17,7 @@ use crate::io::file::{BufCopy, FileExt};
 use crate::LIBSQL_MAGIC;
 
 use super::compacted::{CompactedSegmentDataFooter, CompactedSegmentDataHeader};
-use super::{frame_offset, page_offset, Frame, FrameHeader, Segment, SegmentHeader};
+use super::{frame_offset, page_offset, Frame, FrameHeader, Segment, SegmentHeader, SegmentFlags};
 
 /// an immutable, wal segment
 #[derive(Debug)]
@@ -190,6 +190,10 @@ impl<F: FileExt> SealedSegment<F> {
 
         let index_offset = header.index_offset.get();
         let index_len = header.index_size.get();
+
+        if !header.flags().contains(SegmentFlags::SEALED) {
+            todo!("recover");
+        }
 
         if header.is_empty() {
             std::fs::remove_file(path)?;
