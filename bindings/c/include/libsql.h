@@ -91,6 +91,11 @@ void libsql_close(libsql_database_t db);
 
 int libsql_connect(libsql_database_t db, libsql_connection_t *out_conn, const char **out_err_msg);
 
+int libsql_load_extension(libsql_connection_t conn,
+                          const char *path,
+                          const char *entry_point,
+                          const char **out_err_msg);
+
 int libsql_reset(libsql_connection_t conn, const char **out_err_msg);
 
 void libsql_disconnect(libsql_connection_t conn);

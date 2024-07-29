@@ -6,6 +6,7 @@ extern crate lazy_static;
 mod types;
 
 use crate::types::libsql_config;
+use libsql::{errors, LoadExtensionGuard};
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
@@ -298,6 +299,55 @@ pub unsafe extern "C" fn libsql_connect(
     };
     let conn = Box::leak(Box::new(libsql_connection { conn }));
     *out_conn = libsql_connection_t::from(conn);
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_load_extension(
+    conn: libsql_connection_t,
+    path: *const std::ffi::c_char,
+    entry_point: *const std::ffi::c_char,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if path.is_null() {
+        set_err_msg("Null path".to_string(), out_err_msg);
+        return 1;
+    }
+    let path = unsafe { std::ffi::CStr::from_ptr(path) };
+    let path = match path.to_str() {
+        Ok(path) => path,
+        Err(e) => {
+            set_err_msg(format!("Wrong path: {}", e), out_err_msg);
+            return 2;
+        }
+    };
+    let mut entry_point_option = None;
+    if !entry_point.is_null() {
+        let entry_point = unsafe { std::ffi::CStr::from_ptr(entry_point) };
+        entry_point_option = match entry_point.to_str() {
+            Ok(entry_point) => Some(entry_point),
+            Err(e) => {
+                set_err_msg(format!("Wrong entry point: {}", e), out_err_msg);
+                return 4;
+            }
+        };
+    }
+    if conn.is_null() {
+        set_err_msg("Null connection".to_string(), out_err_msg);
+        return 5;
+    }
+    let conn = conn.get_ref();
+    match RT.block_on(async move {
+        let _guard = LoadExtensionGuard::new(conn)?;
+        conn.load_extension(path, entry_point_option)?;
+        Ok::<(), errors::Error>(())
+    }) {
+        Ok(()) => {}
+        Err(e) => {
+            set_err_msg(format!("Error loading extension: {}", e), out_err_msg);
+            return 6;
+        }
+    };
     0
 }
 
