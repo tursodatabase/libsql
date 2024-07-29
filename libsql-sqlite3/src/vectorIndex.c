@@ -105,28 +105,39 @@ int vectorIdxParamsPutF64(VectorIdxParams *pParams, char tag, double value) {
 ** VectorIdxKey utilities
 ****************************************************************************/
 
-int vectorIdxKeyGet(Table *pTable, VectorIdxKey *pKey, const char **pzErrMsg) {
-  int i;
-  Index *pPk;
-  // we actually need to change strategy here and use PK if it's available and fallback to ROWID only if there is no other choice
-  // will change this later as it must be done carefully in order to not brake behaviour of existing indices
-  if( !HasRowid(pTable) ){
-    pPk = sqlite3PrimaryKeyIndex(pTable);
-    if( pPk->nKeyCol > VECTOR_INDEX_MAX_KEY_COLUMNS ){
-      *pzErrMsg = "exceeded limit for composite columns in primary key index";
-      return -1;
-    }
-    pKey->nKeyColumns = pPk->nKeyCol;
-    for(i = 0; i < pPk->nKeyCol; i++){
-      pKey->aKeyAffinity[i] = pTable->aCol[pPk->aiColumn[i]].affinity;
-      pKey->azKeyCollation[i] = pPk->azColl[i];
-    }
-  } else{
+int vectorIdxKeyGet(const Index *pIndex, VectorIdxKey *pKey, const char **pzErrMsg) {
+  Table *pTable;
+  Index *pPkIndex;
+  int i, nKeyColumns;
+
+  assert( pIndex->nKeyCol == 1 );
+  assert( pIndex->nColumn > pIndex->nKeyCol );
+
+  pTable = pIndex->pTable;
+  nKeyColumns = pIndex->nColumn - pIndex->nKeyCol;
+  if( nKeyColumns == 1 && pIndex->aiColumn[pIndex->nKeyCol] == XN_ROWID ){
     pKey->nKeyColumns = 1;
     pKey->aKeyAffinity[0] = SQLITE_AFF_INTEGER;
     pKey->azKeyCollation[0] = "BINARY";
+    return 0;
+  }
+  if( nKeyColumns > VECTOR_INDEX_MAX_KEY_COLUMNS ){
+    *pzErrMsg = "exceeded limit for composite columns in primary key index";
+    return -1;
+  }
+  pPkIndex = sqlite3PrimaryKeyIndex(pIndex->pTable);
+  assert( pPkIndex->nKeyCol == nKeyColumns );
+
+  pKey->nKeyColumns = nKeyColumns;
+  for(i = 0; i < pPkIndex->nKeyCol; i++){
+    pKey->aKeyAffinity[i] = pTable->aCol[pPkIndex->aiColumn[i]].affinity;
+    pKey->azKeyCollation[i] = pPkIndex->azColl[i];
   }
   return 0;
+}
+
+int vectorIdxKeyRowidLike(const VectorIdxKey *pKey){
+  return pKey->nKeyColumns == 1 && pKey->aKeyAffinity[0] == SQLITE_AFF_INTEGER && sqlite3StrICmp(pKey->azKeyCollation[0], "BINARY") == 0;
 }
 
 int vectorIdxKeyDefsRender(const VectorIdxKey *pKey, const char *prefix, char *pBuf, int nBufSize) {
@@ -276,7 +287,7 @@ void vectorInRowFree(sqlite3 *db, VectorInRow *pVectorInRow) {
 ** VectorOutRows utilities
 ****************************************************************************/
 
-int vectorOutRowsAlloc(sqlite3 *db, VectorOutRows *pRows, int nRows, int nCols, char firstColumnAff){
+int vectorOutRowsAlloc(sqlite3 *db, VectorOutRows *pRows, int nRows, int nCols, int rowidLike){
   assert( nCols > 0 && nRows >= 0 );
   pRows->nRows = nRows;
   pRows->nCols = nCols;
@@ -287,7 +298,8 @@ int vectorOutRowsAlloc(sqlite3 *db, VectorOutRows *pRows, int nRows, int nCols, 
     return SQLITE_NOMEM_BKPT;
   }
 
-  if( nCols == 1 && firstColumnAff == SQLITE_AFF_INTEGER ){
+  if( rowidLike ){
+    assert( nCols == 1 );
     pRows->aIntValues = sqlite3DbMallocRaw(db, nRows * sizeof(i64));
     if( pRows->aIntValues == NULL ){
       return SQLITE_NOMEM_BKPT;
@@ -911,7 +923,7 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
   if( rc != SQLITE_OK ){
     return CREATE_FAIL;
   }
-  if( vectorIdxKeyGet(pTable, &idxKey, &pzErrMsg) != 0 ){
+  if( vectorIdxKeyGet(pIdx, &idxKey, &pzErrMsg) != 0 ){
     sqlite3ErrorMsg(pParse, "vector index: failed to detect underlying table key: %s", pzErrMsg);
     return CREATE_FAIL;
   }
@@ -1008,7 +1020,7 @@ int vectorIndexSearch(sqlite3 *db, const char* zDbSName, int argc, sqlite3_value
     *pzErrMsg = sqlite3_mprintf("vector index(search): failed to open diskann index");
     goto out;
   }
-  if( vectorIdxKeyGet(pIndex->pTable, &pKey, &zErrMsg) != 0 ){
+  if( vectorIdxKeyGet(pIndex, &pKey, &zErrMsg) != 0 ){
     *pzErrMsg = sqlite3_mprintf("vector index(search): failed to extract table key: %s", zErrMsg);
     rc = SQLITE_ERROR;
     goto out;

@@ -71,16 +71,16 @@ do_execsql_test vector-text-pk {
   INSERT INTO t_text_pk VALUES ('e-2', vector('[2,3,4]'));
   INSERT INTO t_text_pk VALUES ('e-3', vector('[3,4,5]'));
   INSERT INTO t_text_pk VALUES ('e-4', vector('[4,5,6]'));
-  SELECT rowid FROM vector_top_k('t_text_pk_idx', vector('[3,4,5]'), 4);
+  SELECT id FROM vector_top_k('t_text_pk_idx', vector('[3,4,5]'), 4);
 } {3 4 2 1}
 
 do_execsql_test vector-text-pk-norow {
-  CREATE TABLE t_text_pk_norow( email TEXT PRIMARY KEY, v FLOAT32(3) ) WITHOUT ROWID;
+  CREATE TABLE t_text_pk_norow( v1, v2, v3, email TEXT PRIMARY KEY, v FLOAT32(3) ) WITHOUT ROWID;
   CREATE INDEX t_text_pk_norow_idx ON t_text_pk_norow( libsql_vector_idx(v) );
-  INSERT INTO t_text_pk_norow VALUES ('e-1', vector('[1,2,3]'));
-  INSERT INTO t_text_pk_norow VALUES ('e-2', vector('[2,3,4]'));
-  INSERT INTO t_text_pk_norow VALUES ('e-3', vector('[3,4,5]'));
-  INSERT INTO t_text_pk_norow VALUES ('e-4', vector('[4,5,6]'));
+  INSERT INTO t_text_pk_norow VALUES (1, 1, 1, 'e-1', vector('[1,2,3]'));
+  INSERT INTO t_text_pk_norow VALUES (1, 1, 1, 'e-2', vector('[2,3,4]'));
+  INSERT INTO t_text_pk_norow VALUES (1, 1, 1, 'e-3', vector('[3,4,5]'));
+  INSERT INTO t_text_pk_norow VALUES (1, 1, 1, 'e-4', vector('[4,5,6]'));
   SELECT id FROM vector_top_k('t_text_pk_norow_idx', vector('[3,4,5]'), 4);
 } {e-3 e-4 e-2 e-1}
 
@@ -208,6 +208,19 @@ do_execsql_test vector-index-dont-affect-sql {
   SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[3,4]');
   SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[5,6]');
   SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[7,8]');
+} {4 1 1 2 3 4}
+
+do_execsql_test vector-index-dont-affect-sql-pk {
+  CREATE TABLE t_vector_other_sql_pk ( name TEXT PRIMARY KEY, emb FLOAT32(2) );
+  INSERT INTO t_vector_other_sql_pk VALUES ('a', vector('[1,2]')), ('b', vector('[3,4]'));
+  CREATE INDEX t_vector_other_sql_pk_idx ON t_vector_other_sql_pk(libsql_vector_idx(emb));
+  INSERT INTO t_vector_other_sql_pk VALUES ('c', vector('[5,6]')), ('d', vector('[7,8]'));
+  SELECT COUNT(*) FROM t_vector_other_sql_pk;
+  SELECT COUNT(*) FROM t_vector_other_sql_pk WHERE emb = vector('[1,2]');
+  SELECT rowid FROM t_vector_other_sql_pk WHERE emb = vector('[1,2]');
+  SELECT rowid FROM t_vector_other_sql_pk WHERE emb = vector('[3,4]');
+  SELECT rowid FROM t_vector_other_sql_pk WHERE emb = vector('[5,6]');
+  SELECT rowid FROM t_vector_other_sql_pk WHERE emb = vector('[7,8]');
 } {4 1 1 2 3 4}
 
 do_execsql_test vector-attach {

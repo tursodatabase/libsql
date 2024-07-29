@@ -4308,21 +4308,6 @@ void sqlite3CreateIndex(
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
   }
 
-
-#ifndef SQLITE_OMIT_VECTOR
-  vectorIdxRc = vectorIndexCreate(pParse, pIndex, db->aDb[iDb].zDbSName, pUsing);
-  if( vectorIdxRc < 0 ){
-    goto exit_create_index;
-  }
-  if( vectorIdxRc >= 1 ){
-    idxType = SQLITE_IDXTYPE_VECTOR;
-    pIndex->idxType = idxType;
-  }
-  if( vectorIdxRc == 1 ){
-    skipRefill = 1;
-  }
-#endif
-
   /* Append the table key to the end of the index.  For WITHOUT ROWID
   ** tables (when pPk!=0) this will be the declared PRIMARY KEY.  For
   ** normal tables (when pPk==0) this will be the rowid.
@@ -4348,6 +4333,26 @@ void sqlite3CreateIndex(
   }
   sqlite3DefaultRowEst(pIndex);
   if( pParse->pNewTable==0 ) estimateIndexWidth(pIndex);
+
+#ifndef SQLITE_OMIT_VECTOR
+  // we want to have complete information about index columns before invocation of vectorIndexCreate method
+  vectorIdxRc = vectorIndexCreate(pParse, pIndex, db->aDb[iDb].zDbSName, pUsing);
+  if( vectorIdxRc < 0 ){
+    goto exit_create_index;
+  }
+  if( vectorIdxRc >= 1 ){
+    idxType = SQLITE_IDXTYPE_VECTOR;
+    /*
+     * SQLite can use B-Tree indices in some optimizations (like SELECT COUNT(*) can use any full B-Tree index instead of PK index)
+     * But, SQLite pretty conservative about usage of unordered indices - that's what we need here
+    */
+    pIndex->bUnordered = 1;
+    pIndex->idxType = idxType;
+  }
+  if( vectorIdxRc == 1 ){
+    skipRefill = 1;
+  }
+#endif
 
   /* If this index contains every column of its table, then mark
   ** it as a covering index */
