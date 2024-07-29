@@ -539,13 +539,17 @@ impl SegmentIndex {
 
 #[cfg(test)]
 mod test {
-    use std::io::Read;
+    use std::env::temp_dir;
+    use std::io::{self, Read};
 
+    use chrono::{DateTime, Utc};
+    use hashbrown::HashMap;
     use insta::assert_debug_snapshot;
-    use tempfile::tempfile;
+    use tempfile::{tempdir, tempfile};
     use tokio_stream::StreamExt;
+    use uuid::Uuid;
 
-    use crate::io::FileExt;
+    use crate::io::{FileExt, Io};
     use crate::test::{seal_current_segment, TestEnv};
 
     use super::*;
@@ -693,5 +697,190 @@ mod test {
         assert_eq!(replicated_until, 2);
         assert_eq!(size_after, 2);
         assert_eq!(stream.fold(0, |count, _| count + 1).await, 0);
+    }
+
+    #[tokio::test]
+    async fn crash_on_flush() {
+
+        #[derive(Clone, Default)]
+        struct SyncFailBufferIo {
+            inner: Arc<Mutex<HashMap<PathBuf, Arc<Mutex<Vec<u8>>>>>>
+
+        }
+
+        struct File {
+            path: PathBuf,
+            io: SyncFailBufferIo,
+        }
+
+        impl File {
+            fn inner(&self) -> Arc<Mutex<Vec<u8>>> {
+                self.io.inner.lock().get(&self.path).cloned().unwrap()
+            }
+        }
+
+        impl FileExt for File {
+            fn len(&self) -> std::io::Result<u64> {
+                Ok(self.inner().lock().len() as u64)
+            }
+
+            fn write_at_vectored(&self, bufs: &[IoSlice], offset: u64) -> std::io::Result<usize> {
+                let mut written = 0;
+                for buf in bufs {
+                    self.write_at(buf.as_bytes(), written + offset)?;
+                    written += buf.len() as u64;
+                }
+                Ok(written as _)
+            }
+
+            fn write_at(&self, buf: &[u8], offset: u64) -> std::io::Result<usize> {
+                let data = self.inner();
+                let mut data = data.lock();
+                let new_len = offset as usize + buf.len();
+                let old_len = data.len();
+                if old_len < new_len {
+                    data.extend(std::iter::repeat(0).take(new_len - old_len));
+                }
+                data[offset as usize..offset as usize + buf.len()].copy_from_slice(buf);
+                Ok(buf.len())
+            }
+
+            fn read_at(&self, buf: &mut [u8], offset: u64) -> std::io::Result<usize> {
+                let inner = self.inner();
+                let inner = inner.lock();
+                if offset >= inner.len() as u64 {
+                    return Ok(0)
+                }
+                
+                let read_len = if offset as usize + buf.len() > inner.len() {
+                    offset as usize + buf.len() - inner.len()
+                } else {
+                    buf.len()
+                };
+                buf[..read_len].copy_from_slice(&inner[offset as usize..offset as usize + read_len]);
+                Ok(read_len)
+            }
+
+            fn sync_all(&self) -> std::io::Result<()> {
+                // simulate a flush that only flushes half the pages and then fail
+                let inner = self.inner();
+                let inner = inner.lock();
+                let npages = inner.len() / 4096;
+                std::fs::write(&self.path, &inner[..4096 * (npages / 2)])?;
+                Err(io::Error::new(io::ErrorKind::BrokenPipe, ""))
+            }
+
+            fn set_len(&self, _len: u64) -> std::io::Result<()> {
+                todo!()
+            }
+
+            async fn read_exact_at_async<B: IoBufMut + Send + 'static>(
+                &self,
+                mut buf: B,
+                offset: u64,
+            ) -> (B, std::io::Result<()>) {
+                let slice = unsafe { std::slice::from_raw_parts_mut(buf.stable_mut_ptr(), buf.bytes_total()) };
+                let ret = self.read_at(slice, offset);
+                (buf, ret.map(|_| ()))
+
+            }
+
+            async fn read_at_async<B: IoBufMut + Send + 'static>(
+                &self,
+                _buf: B,
+                _offset: u64,
+            ) -> (B, std::io::Result<usize>) {
+                todo!()
+            }
+
+            async fn write_all_at_async<B: crate::io::buf::IoBuf + Send + 'static>(
+                &self,
+                _buf: B,
+                _offset: u64,
+            ) -> (B, std::io::Result<()>) {
+                todo!()
+            }
+        }
+
+        impl Io for SyncFailBufferIo {
+            type File = File;
+
+            type TempFile = File;
+
+            fn create_dir_all(&self, path: &std::path::Path) -> std::io::Result<()> {
+                std::fs::create_dir_all(path)
+            }
+
+            fn open(
+                &self,
+                _create_new: bool,
+                _read: bool,
+                _write: bool,
+                path: &std::path::Path,
+            ) -> std::io::Result<Self::File> {
+                let mut inner = self.inner.lock();
+                if !inner.contains_key(path) {
+                    let data = if path.exists() {
+                        std::fs::read(path).map_err(|e| dbg!(e))?
+                    } else {
+                        vec![]
+                    };
+                    inner.insert(path.to_owned(), Arc::new(Mutex::new(data)));
+                }
+
+                Ok(File {
+                    path: path.into(),
+                    io: self.clone(),
+                })
+
+            }
+
+            fn tempfile(&self) -> std::io::Result<Self::TempFile> {
+                todo!()
+            }
+
+            fn now(&self) -> DateTime<Utc> {
+                Utc::now()
+            }
+
+            fn uuid(&self) -> uuid::Uuid {
+                Uuid::new_v4()
+            }
+
+            fn hard_link(&self, _src: &std::path::Path, _dst: &std::path::Path) -> std::io::Result<()> {
+                todo!()
+            }
+        }
+        
+        let tmp = Arc::new(tempdir().unwrap());
+        {
+            let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone());
+            let conn = env.open_conn("test");
+            let shared = env.shared("test");
+
+            conn.execute("create table test (x)", ()).unwrap();
+            conn.execute("insert into test values (1234)", ()).unwrap();
+            conn.execute("insert into test values (1234)", ()).unwrap();
+            conn.execute("insert into test values (1234)", ()).unwrap();
+
+            // trigger a flush, that will fail. When we reopen the db, the log should need recovery
+            // this simulates a crash before flush
+            {
+                let mut tx = shared.begin_read(99999).into();
+                shared.upgrade(&mut tx).unwrap();
+                let mut guard = tx.as_write_mut().unwrap().lock();
+                guard.commit();
+                let _ = shared.swap_current(&mut guard);
+            }
+        }
+
+        {
+            let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone());
+            let conn = env.open_conn("test");
+            conn.query_row("select count(*) from test", (), |row| {
+                dbg!(row);
+                Ok(())
+            }).unwrap();
+        }
     }
 }
