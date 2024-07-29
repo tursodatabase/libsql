@@ -62,3 +62,8 @@ libsql
 /crates/target/
 /has_tclsh*
 /libsql.wasm
+zig-out/
+.zig-cache
+testdir*/
+testrunner.db
+testrunner.log

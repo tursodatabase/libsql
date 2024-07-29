@@ -18,6 +18,7 @@ bindgen = "0.66.1"
 cc = "1.0"
 
 [features]
+zig-build = []
 session = []
 wasmtime-bindings = ["dep:libsql-wasmtime-bindings"]
 multiple-ciphers = []
