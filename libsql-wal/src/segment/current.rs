@@ -307,10 +307,24 @@ impl<F> CurrentSegment<F> {
         let mut writer = BufWriter::new(&mut cursor);
         self.index.merge_all(&mut writer)?;
         writer.into_inner().map_err(|e| e.into_parts().0)?;
+        // we perform a first sync to ensure that all the segment has been flushed to disk. We then
+        // write the header and flush again. We want to guarantee that if we find a segement marked
+        // as "SEALED", then there was no partial flush.
+        //
+        // If a segment is found that doesn't have the SEALED flag, then we enter crash recovery,
+        // and we need to check the segment.
+        self.file.sync_all()?;
+
         header.index_offset = index_byte_offset.into();
         header.index_size = cursor.count().into();
         header.recompute_checksum();
+        let flags = header.flags();
+        header.set_flags(flags | SegmentFlags::SEALED);
         self.file.write_all_at(header.as_bytes(), 0)?;
+
+        // flush the header.
+        self.file.sync_all()?;
+
         let sealed = SealedSegment::open(
             self.file.clone(),
             self.path.clone(),
