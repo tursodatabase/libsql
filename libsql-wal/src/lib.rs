@@ -34,7 +34,7 @@ pub mod test {
     use crate::wal::{LibsqlWal, LibsqlWalManager};
 
     pub struct TestEnv<IO: Io = StdIO> {
-        pub tmp: TempDir,
+        pub tmp: Arc<TempDir>,
         pub registry: Arc<WalRegistry<IO, TestStorage<IO>>>,
         pub wal: LibsqlWalManager<IO, TestStorage<IO>>,
     }
@@ -49,9 +49,13 @@ pub mod test {
         }
     }
 
-    impl<IO: Io> TestEnv<IO> {
+    impl<IO: Io + Clone> TestEnv<IO> {
         pub fn new_io(io: IO, store: bool) -> Self {
             let tmp = tempdir().unwrap();
+            Self::new_io_and_tmp(io, tmp.into(), store)
+        }
+
+        pub fn new_io_and_tmp(io: IO, tmp: Arc<TempDir>, store: bool) -> Self {
             let resolver = |path: &Path| {
                 let name = path
                     .parent()
@@ -65,9 +69,10 @@ pub mod test {
 
             let (sender, receiver) = mpsc::channel(128);
             let registry = Arc::new(
-                WalRegistry::new(
+                WalRegistry::new_with_io(
+                    io.clone(),
                     tmp.path().join("test/wals"),
-                    TestStorage::new_io(store, StdIO(())),
+                    TestStorage::new_io(store, io),
                     sender,
                 )
                 .unwrap(),
