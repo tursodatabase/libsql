@@ -82,7 +82,7 @@ impl<IO: Io> Replicator<IO> {
                         let replicated_until = {
                             let (stream, replicated_until) = current
                                 .tail()
-                                .stream_pages_from( replicated_until, self.next_frame_no, &mut seen).await;
+                                .stream_pages_from(replicated_until, self.next_frame_no, &mut seen).await;
                             tokio::pin!(stream);
 
                             let mut stream = stream.peekable();
