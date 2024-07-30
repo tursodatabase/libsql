@@ -129,6 +129,10 @@ cfg_core! {
 
 pub mod params;
 
+cfg_sync! {
+    mod sync;
+}
+
 cfg_replication! {
     pub mod replication;
 }

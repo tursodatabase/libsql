@@ -42,6 +42,7 @@ fallible-iterator = { version = "0.3", optional = true }
 
 libsql_replication = { version = "0.6", path = "../libsql-replication", optional = true }
 async-stream = { version = "0.3.5", optional = true }
+reqwest = { version = "0.12.9", default-features = false, features = [ "rustls-tls" ], optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports", "async", "async_futures", "async_tokio"] }
@@ -53,7 +54,7 @@ tempfile = { version = "3.7.0" }
 rand = "0.8.5"
 
 [features]
-default = ["core", "replication", "remote", "tls"]
+default = ["core", "replication", "remote", "sync", "tls"]
 core = [
   "libsql-sys",
   "dep:bitflags",
@@ -90,6 +91,21 @@ replication = [
   "dep:tower-http",
   "dep:futures",
   "dep:libsql_replication",
+]
+sync = [
+  "core",
+  "parser",
+  "serde",
+  "stream",
+  "dep:tower",
+  "dep:hyper",
+  "dep:http",
+  "dep:tokio",
+  "dep:zerocopy",
+  "dep:bytes",
+  "dep:tokio",
+  "dep:futures",
+  "dep:reqwest",
 ]
 hrana = [
   "parser",

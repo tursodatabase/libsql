@@ -12,6 +12,8 @@ use super::DbType;
 ///     it does no networking and does not connect to any remote database.
 /// - `new_remote_replica`/`RemoteReplica` creates an embedded replica database that will be able
 ///     to sync from the remote url and delegate writes to the remote primary.
+/// - `new_synced_database`/`SyncedDatabase` creates a database that can be written offline and
+///     synced to a remote server.
 /// - `new_local_replica`/`LocalReplica` creates an embedded replica similar to the remote version
 ///     except you must use `Database::sync_frames` to sync with the remote. This version also
 ///     includes the ability to delegate writes to a remote primary.
@@ -75,6 +77,28 @@ impl Builder<()> {
                     remote: None,
                     encryption_config: None,
                     http_request_callback: None
+                },
+            }
+        }
+    }
+
+    cfg_sync! {
+        /// Create a database that can be written offline and synced to a remote server.
+        pub fn new_synced_database(
+            path: impl AsRef<std::path::Path>,
+            url: String,
+            auth_token: String,
+        ) -> Builder<SyncedDatabase> {
+            Builder {
+                inner: SyncedDatabase {
+                    path: path.as_ref().to_path_buf(),
+                    flags: crate::OpenFlags::default(),
+                    remote: Remote {
+                        url,
+                        auth_token,
+                        connector: None,
+                        version: None,
+                    },
                 },
             }
         }
@@ -363,6 +387,53 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
+            })
+        }
+    }
+}
+
+cfg_sync! {
+    /// Remote replica configuration type in [`Builder`].
+    pub struct SyncedDatabase {
+        path: std::path::PathBuf,
+        flags: crate::OpenFlags,
+        remote: Remote,
+    }
+
+    impl Builder<SyncedDatabase> {
+        #[doc(hidden)]
+        pub fn version(mut self, version: String) -> Builder<SyncedDatabase> {
+            self.inner.remote = self.inner.remote.version(version);
+            self
+        }
+
+        /// Build a connection to a local database that can be synced to remote server.
+        pub async fn build(self) -> Result<Database> {
+            let SyncedDatabase {
+                path,
+                flags,
+                remote:
+                    Remote {
+                        url,
+                        auth_token,
+                        connector: _,
+                        version: _,
+                    },
+            } = self.inner;
+
+            let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
+
+            let db = crate::local::Database::open_local_with_offline_writes(
+                path,
+                flags,
+                url,
+                auth_token,
+            )
+            .await?;
+
+            Ok(Database {
+                db_type: DbType::Offline { db },
                 max_write_replication_index: Default::default(),
             })
         }

@@ -2,8 +2,7 @@ use std::sync::Once;
 
 cfg_replication!(
     use http::uri::InvalidUri;
-    use crate::database::EncryptionConfig;
-    use libsql_replication::frame::FrameNo;
+    use crate::database::{EncryptionConfig, FrameNo};
 
     use crate::replication::client::Client;
     use crate::replication::local_client::LocalClient;
@@ -19,6 +18,10 @@ cfg_replication!(
     }
 );
 
+cfg_sync! {
+    use crate::sync::SyncContext;
+}
+
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
 use libsql_sys::ffi;
@@ -29,6 +32,8 @@ pub struct Database {
     pub flags: OpenFlags,
     #[cfg(feature = "replication")]
     pub replication_ctx: Option<ReplicationContext>,
+    #[cfg(feature = "sync")]
+    pub sync_ctx: Option<SyncContext>,
 }
 
 impl Database {
@@ -120,6 +125,25 @@ impl Database {
             read_your_writes,
         });
 
+        Ok(db)
+    }
+
+    #[cfg(feature = "sync")]
+    #[doc(hidden)]
+    pub async fn open_local_with_offline_writes(
+        db_path: impl Into<String>,
+        flags: OpenFlags,
+        endpoint: String,
+        auth_token: String,
+    ) -> Result<Database> {
+        let db_path = db_path.into();
+        let endpoint = if endpoint.starts_with("libsql:") {
+            endpoint.replace("libsql:", "https:")
+        } else {
+            endpoint
+        };
+        let mut db = Database::open(&db_path, flags)?;
+        db.sync_ctx = Some(SyncContext::new(endpoint, Some(auth_token)));
         Ok(db)
     }
 
@@ -229,6 +253,8 @@ impl Database {
             flags,
             #[cfg(feature = "replication")]
             replication_ctx: None,
+            #[cfg(feature = "sync")]
+            sync_ctx: None,
         }
     }
 
@@ -261,7 +287,7 @@ impl Database {
     #[cfg(feature = "replication")]
     /// Perform a sync step, returning the new replication index, or None, if the nothing was
     /// replicated yet
-    pub async fn sync_oneshot(&self) -> Result<crate::replication::Replicated> {
+    pub async fn sync_oneshot(&self) -> Result<crate::database::Replicated> {
         if let Some(ctx) = &self.replication_ctx {
             ctx.replicator.sync_oneshot().await
         } else {
@@ -274,7 +300,7 @@ impl Database {
 
     #[cfg(feature = "replication")]
     /// Sync with primary
-    pub async fn sync(&self) -> Result<crate::replication::Replicated> {
+    pub async fn sync(&self) -> Result<crate::database::Replicated> {
         Ok(self.sync_oneshot().await?)
     }
 
@@ -294,7 +320,7 @@ impl Database {
 
     #[cfg(feature = "replication")]
     /// Sync with primary at least to a given replication index
-    pub async fn sync_until(&self, replication_index: FrameNo) -> Result<crate::replication::Replicated> {
+    pub async fn sync_until(&self, replication_index: FrameNo) -> Result<crate::database::Replicated> {
         if let Some(ctx) = &self.replication_ctx {
             let mut frame_no: Option<FrameNo> = ctx.replicator.committed_frame_no().await;
             let mut frames_synced: usize = 0;
@@ -303,7 +329,7 @@ impl Database {
                 frame_no = res.frame_no();
                 frames_synced += res.frames_synced();
             }
-            Ok(crate::replication::Replicated {
+            Ok(crate::database::Replicated {
                 frame_no,
                 frames_synced,
             })
@@ -348,6 +374,77 @@ impl Database {
                 "No replicator available. Use Database::with_replicator() to enable replication"
                     .to_string(),
             ))
+        }
+    }
+
+    #[cfg(feature = "sync")]
+    /// Push WAL frames to remote.
+    pub async fn push(&self) -> Result<crate::database::Replicated> {
+        let sync_ctx = self.sync_ctx.as_ref().unwrap();
+        let conn = self.connect()?;
+
+        let page_size = {
+            let rows = conn.query("PRAGMA page_size", crate::params::Params::None)?.unwrap();
+            let row = rows.next()?.unwrap();
+            let page_size = row.get::<u32>(0)?;
+            page_size
+        };
+
+        let mut max_frame_no: std::os::raw::c_uint = 0;
+        unsafe { libsql_sys::ffi::libsql_wal_frame_count(conn.handle(), &mut max_frame_no) };
+        
+        let generation = 1; // TODO: Probe from WAL.
+        let start_frame_no = sync_ctx.durable_frame_num + 1;
+        let end_frame_no = max_frame_no;
+
+        for frame_no in start_frame_no..end_frame_no+1 {
+            self.push_one_frame(&conn, &sync_ctx, generation, frame_no, page_size).await?;
+        }
+
+        let frame_count = end_frame_no - start_frame_no + 1;
+        Ok(crate::database::Replicated{
+            frame_no: None,
+            frames_synced: frame_count as usize,
+        })
+    }
+
+    #[cfg(feature = "sync")]
+    async fn push_one_frame(&self, conn: &Connection, sync_ctx: &SyncContext, generation: u32, frame_no: u32, page_size: u32) -> Result<()> {
+        let frame_size: usize = 24+page_size as usize;
+        let frame = vec![0; frame_size];
+        let rc = unsafe {
+            libsql_sys::ffi::libsql_wal_get_frame(conn.handle(), frame_no, frame.as_ptr() as *mut _, frame_size as u32)
+        };
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(rc as std::ffi::c_int, format!("Failed to get frame: {}", frame_no)));
+        }
+        let uri = format!("{}/sync/{}/{}/{}", sync_ctx.sync_url, generation, frame_no, frame_no+1);
+        self.push_with_retry(uri, &sync_ctx.auth_token, frame.to_vec(), sync_ctx.max_retries).await?;
+        Ok(())
+    }
+
+    #[cfg(feature = "sync")]
+    async fn push_with_retry(&self, uri: String, auth_token: &Option<String>, frame: Vec<u8>, max_retries: usize) -> Result<()> {
+        let mut nr_retries = 0;
+        loop {
+            let client = reqwest::Client::new();
+            let mut builder = client.post(uri.to_owned());
+            match auth_token {   
+                Some(ref auth_token) => {
+                    builder = builder.header("Authorization", format!("Bearer {}", auth_token.to_owned()));
+                }
+                None => {}
+            }
+            let res = builder.body(frame.to_vec()).send().await.unwrap();
+            if res.status().is_success() {
+                return Ok(());
+            }
+            if nr_retries > max_retries {
+                return Err(crate::errors::Error::ConnectionFailed(format!("Failed to push frame: {}", res.status())));
+            }
+            let delay = std::time::Duration::from_millis(100 * (1 << nr_retries));
+            tokio::time::sleep(delay).await;
+            nr_retries += 1;
         }
     }
 

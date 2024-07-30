@@ -34,27 +34,7 @@ mod connection;
 pub(crate) mod local_client;
 pub(crate) mod remote_client;
 
-#[derive(Debug)]
-pub struct Replicated {
-    pub(crate) frame_no: Option<FrameNo>,
-    pub(crate) frames_synced: usize,
-}
-
-impl Replicated {
-    /// The currently synced frame number. This can be used to track
-    /// where in the log you might be. Beware that this value can be reset to a lower value by the
-    /// server in certain situations. Please use `frames_synced` if you want to track the amount of
-    /// work a sync has done.
-    pub fn frame_no(&self) -> Option<FrameNo> {
-        self.frame_no
-    }
-
-    /// The count of frames synced during this call of `sync`. A frame is a 4kB frame from the
-    /// libsql write ahead log.
-    pub fn frames_synced(&self) -> usize {
-        self.frames_synced
-    }
-}
+pub use crate::database::Replicated;
 
 /// A set of rames to be injected via `sync_frames`.
 pub enum Frames {
