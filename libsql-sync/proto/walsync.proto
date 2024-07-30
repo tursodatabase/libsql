@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package walsync;
+
+service WALSync {
+  // Fetch the database file
+  rpc FetchDatabase (FetchDatabaseRequest) returns (stream DatabaseChunk) {}
+  
+  // Pull the WAL from the server
+  rpc PullWAL (PullWALRequest) returns (PullWALResponse) {}
+  
+  // Push local changes to the server and potentially trigger checkpointing
+  rpc PushWAL (PushWALRequest) returns (PushWALResponse) {}
+}
+
+message FetchDatabaseRequest {
+  string client_id = 1;
+}
+
+message DatabaseChunk {
+  bytes data = 1;
+  uint64 offset = 2;
+  bool is_last_chunk = 3;
+}
+
+message PullWALRequest {
+  string client_id = 1;
+  uint64 client_last_checkpoint_frame_id = 2;
+}
+
+message PullWALResponse {
+  repeated WALFrame wal = 1;
+  uint64 server_last_checkpoint_frame_id = 2;
+  bool need_full_db_sync = 3;
+}
+
+message WALFrame {
+  uint64 frame_id = 1;
+  bytes data = 2;
+}
+
+message PushWALRequest {
+  string client_id = 1;
+  uint64 base_frame_id = 2;
+  repeated WALFrame new_frames = 3;
+  uint64 last_checkpoint_frame_id = 4;
+  bool request_checkpoint = 5;
+}
+
+message PushWALResponse {
+  enum Status {
+    SUCCESS = 0;
+    CONFLICT = 1;
+    ERROR = 2;
+    NEED_FULL_SYNC = 3;
+  }
+  Status status = 1;
+  string message = 2;
+  repeated WALFrame server_wal = 3;
+  uint64 server_last_checkpoint_frame_id = 4;
+  bool perform_checkpoint = 5;
+  uint64 checkpoint_frame_id = 6;
+}
