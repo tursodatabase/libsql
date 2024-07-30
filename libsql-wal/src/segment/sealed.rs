@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
-use std::io::BufWriter;
+use std::hash::Hasher;
+use std::io::{BufWriter, ErrorKind, Write};
 use std::mem::size_of;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -15,6 +16,7 @@ use crate::error::Result;
 use crate::io::buf::{IoBufMut, ZeroCopyBuf};
 use crate::io::file::{BufCopy, FileExt};
 use crate::LIBSQL_MAGIC;
+use crate::io::Inspect;
 
 use super::compacted::{CompactedSegmentDataFooter, CompactedSegmentDataHeader};
 use super::{frame_offset, page_offset, Frame, FrameHeader, Segment, SegmentHeader, SegmentFlags};
@@ -198,7 +200,8 @@ impl<F: FileExt> SealedSegment<F> {
 
         // This happens in case of crash: the segment is not empty, but it wasn't sealed. We need to
         // recover the index, and seal the segment.
-        if index_offset == 0 {
+        if !header.flags().contains(SegmentFlags::SEALED) {
+            assert_eq!(header.index_offset.get(), 0);
             return Self::recover(file, path, header).map(Some);
         }
 
@@ -218,32 +221,79 @@ impl<F: FileExt> SealedSegment<F> {
     }
 
     fn recover(file: Arc<F>, path: PathBuf, mut header: SegmentHeader) -> Result<Self> {
+        assert!(!header.is_empty());
+        assert_eq!(header.index_size.get(), 0);
+        assert_eq!(header.index_offset.get(), 0);
+        assert!(!header.flags().contains(SegmentFlags::SEALED));
+        // recovery for replica log should take a different path (i.e: resync with primary)
+        assert!(!header.flags().contains(SegmentFlags::FRAME_UNORDERED));
+
+        let mut current_checksum = header.salt.get();
         tracing::trace!("recovering unsealed segment at {path:?}");
         let mut index = BTreeMap::new();
-        assert!(!header.is_empty());
-        let mut frame_header = FrameHeader::new_zeroed();
-        for i in 0..header.count_committed() {
-            let offset = frame_offset(i as u32);
-            file.read_exact_at(frame_header.as_bytes_mut(), offset)?;
-            index.insert(frame_header.page_no.get(), i as u32);
+        let mut frame: Box<CheckedFrame> = CheckedFrame::new_box_zeroed();
+        let mut current_tx = Vec::new();
+        let mut last_committed = 0;
+        let mut size_after = 0;
+        let mut frame_count = 0;
+        for i in 0.. {
+            let offset = checked_frame_offset(i as u32);
+            match file.read_exact_at(frame.as_bytes_mut(), offset) {
+                Ok(_) => {
+                    let new_checksum = frame.frame.checksum(current_checksum);
+                    // this is the first checksum that don't match the checksum chain, drop the
+                    // transaction and any frame after that.
+                    if new_checksum != frame.checksum.get() {
+                        tracing::warn!(
+                            "found invalid checksum in segment, dropping {} frames",
+                            header.last_committed() - last_committed
+                        );
+                        break;
+                    }
+                    current_checksum = new_checksum;
+                    frame_count += 1;
+
+                    current_tx.push(frame.frame.header().page_no());
+                    if frame.frame.header.is_commit() {
+                        last_committed = frame.frame.header().frame_no();
+                        size_after = frame.frame.header().size_after();
+                        let base_offset = (i + 1) - current_tx.len();
+                        for (frame_offset, page_no) in current_tx.drain(..).enumerate() {
+                            index.insert(page_no, (base_offset + frame_offset) as u32);
+                        }
+                    }
+                }
+                Err(e) if e.kind() == ErrorKind::UnexpectedEof => break,
+                Err(e) => return Err(e.into()),
+            }
         }
 
-        let index_offset = header.count_committed() as u32;
-        let index_byte_offset = frame_offset(index_offset);
+        let index_offset = frame_count as u32;
+        let index_byte_offset = checked_frame_offset(index_offset);
         let cursor = file.cursor(index_byte_offset);
         let writer = BufCopy::new(cursor);
-        let mut writer = BufWriter::new(writer);
+        let writer = BufWriter::new(writer);
+        let mut digest = crc32fast::Hasher::new_with_initial(current_checksum);
+        let mut writer = Inspect::new(writer, |data: &[u8]| {
+            digest.write(data);
+        });
         let mut builder = MapBuilder::new(&mut writer)?;
         for (k, v) in index.into_iter() {
             builder.insert(k.to_be_bytes(), v as u64).unwrap();
         }
         builder.finish().unwrap();
-        let (cursor, index_bytes) = writer
+        let mut writer = writer.into_inner();
+        let index_size = writer.get_ref().get_ref().count();
+        let index_checksum = digest.finalize();
+        writer.write_all(&index_checksum.to_le_bytes())?;
+        let (_, index_bytes) = writer
             .into_inner()
             .map_err(|e| e.into_parts().0)?
             .into_parts();
         header.index_offset = index_byte_offset.into();
-        header.index_size = cursor.count().into();
+        header.index_size = index_size.into();
+        header.last_commited_frame_no = last_committed.into();
+        header.size_after = size_after.into();
         header.recompute_checksum();
         file.write_all_at(header.as_bytes(), 0)?;
         let index = Map::new(index_bytes.into()).unwrap();
