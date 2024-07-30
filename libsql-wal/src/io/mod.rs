@@ -108,3 +108,33 @@ impl<T: Io> Io for Arc<T> {
         self.as_ref().hard_link(src, dst)
     }
 }
+
+pub struct Inspect<W, F> {
+    inner: W,
+    f: F,
+}
+
+impl<W, F> Inspect<W, F> {
+    pub fn new(inner: W, f: F) -> Self {
+        Self { inner, f }
+    }
+
+    pub(crate) fn into_inner(self) -> W {
+        self.inner
+    }
+}
+
+impl<W, F> io::Write for Inspect<W, F>
+where
+    W: io::Write,
+    for<'a> F: FnMut(&'a [u8]),
+    {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            (self.f)(buf);
+            self.inner.write(buf)
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            self.inner.flush()
+        }
+    }
