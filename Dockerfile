@@ -80,8 +80,7 @@ RUN adduser --system --home /var/lib/sqld --uid 666 --gid 666 sqld
 WORKDIR /var/lib/sqld
 USER sqld
 
-COPY docker-entrypoint.sh /usr/local/bin
-COPY docker-wrapper.sh /usr/local/bin
+COPY docker-entrypoint.sh docker-wrapper.sh docker-healthcheck.sh /usr/local/bin
 
 COPY --from=gosu /usr/local/bin/gosu /usr/local/bin/gosu
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
@@ -89,5 +88,6 @@ COPY --from=builder /target/release/sqld /bin/sqld
 
 USER root
 
+HEALTHCHECK --interval=2s CMD /usr/local/bin/docker-healthcheck.sh
 ENTRYPOINT ["/usr/local/bin/docker-wrapper.sh"]
 CMD ["/bin/sqld"]
