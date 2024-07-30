@@ -474,7 +474,6 @@ impl<F> CurrentSegment<F> {
                     let (buf, res) = self.read_frame_offset_async(frame_offset, buf).await;
                     res?;
 
-
                     let mut frame = buf.into_inner();
                     frame.header_mut().size_after = 0.into();
                     let page_no = frame.header().page_no();
@@ -613,12 +612,12 @@ impl SegmentIndex {
 
 #[cfg(test)]
 mod test {
-    use std::env::temp_dir;
     use std::io::{self, Read};
 
     use chrono::{DateTime, Utc};
     use hashbrown::HashMap;
     use insta::assert_debug_snapshot;
+    use rand::rngs::ThreadRng;
     use tempfile::{tempdir, tempfile};
     use tokio_stream::StreamExt;
     use uuid::Uuid;
@@ -775,11 +774,9 @@ mod test {
 
     #[tokio::test]
     async fn crash_on_flush() {
-
         #[derive(Clone, Default)]
         struct SyncFailBufferIo {
-            inner: Arc<Mutex<HashMap<PathBuf, Arc<Mutex<Vec<u8>>>>>>
-
+            inner: Arc<Mutex<HashMap<PathBuf, Arc<Mutex<Vec<u8>>>>>>,
         }
 
         struct File {
@@ -823,15 +820,16 @@ mod test {
                 let inner = self.inner();
                 let inner = inner.lock();
                 if offset >= inner.len() as u64 {
-                    return Ok(0)
+                    return Ok(0);
                 }
-                
+
                 let read_len = if offset as usize + buf.len() > inner.len() {
                     offset as usize + buf.len() - inner.len()
                 } else {
                     buf.len()
                 };
-                buf[..read_len].copy_from_slice(&inner[offset as usize..offset as usize + read_len]);
+                buf[..read_len]
+                    .copy_from_slice(&inner[offset as usize..offset as usize + read_len]);
                 Ok(read_len)
             }
 
@@ -853,10 +851,11 @@ mod test {
                 mut buf: B,
                 offset: u64,
             ) -> (B, std::io::Result<()>) {
-                let slice = unsafe { std::slice::from_raw_parts_mut(buf.stable_mut_ptr(), buf.bytes_total()) };
+                let slice = unsafe {
+                    std::slice::from_raw_parts_mut(buf.stable_mut_ptr(), buf.bytes_total())
+                };
                 let ret = self.read_at(slice, offset);
                 (buf, ret.map(|_| ()))
-
             }
 
             async fn read_at_async<B: IoBufMut + Send + 'static>(
@@ -878,7 +877,7 @@ mod test {
 
         impl Io for SyncFailBufferIo {
             type File = File;
-
+            type Rng = ThreadRng;
             type TempFile = File;
 
             fn create_dir_all(&self, path: &std::path::Path) -> std::io::Result<()> {
@@ -906,7 +905,6 @@ mod test {
                     path: path.into(),
                     io: self.clone(),
                 })
-
             }
 
             fn tempfile(&self) -> std::io::Result<Self::TempFile> {
@@ -921,11 +919,22 @@ mod test {
                 Uuid::new_v4()
             }
 
-            fn hard_link(&self, _src: &std::path::Path, _dst: &std::path::Path) -> std::io::Result<()> {
+            fn hard_link(
+                &self,
+                _src: &std::path::Path,
+                _dst: &std::path::Path,
+            ) -> std::io::Result<()> {
                 todo!()
             }
+
+            fn with_rng<F, R>(&self, f: F) -> R
+            where
+                F: FnOnce(&mut Self::Rng) -> R,
+            {
+                f(&mut rand::thread_rng())
+            }
         }
-        
+
         let tmp = Arc::new(tempdir().unwrap());
         {
             let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone());
@@ -933,6 +942,9 @@ mod test {
             let shared = env.shared("test");
 
             conn.execute("create table test (x)", ()).unwrap();
+            conn.execute("insert into test values (1234)", ()).unwrap();
+            conn.execute("insert into test values (1234)", ()).unwrap();
+            conn.execute("insert into test values (1234)", ()).unwrap();
             conn.execute("insert into test values (1234)", ()).unwrap();
             conn.execute("insert into test values (1234)", ()).unwrap();
             conn.execute("insert into test values (1234)", ()).unwrap();
@@ -954,7 +966,8 @@ mod test {
             conn.query_row("select count(*) from test", (), |row| {
                 dbg!(row);
                 Ok(())
-            }).unwrap();
+            })
+            .unwrap();
         }
     }
 }
