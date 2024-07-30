@@ -153,8 +153,10 @@ impl Io for FlakyIo {
     }
 
     fn with_rng<F, R>(&self, f: F) -> R
-        where F: FnOnce(&mut Self::Rng) -> R {
-            f(&mut self.rng.lock())
+    where
+        F: FnOnce(&mut Self::Rng) -> R,
+    {
+        f(&mut self.rng.lock())
     }
 }
 

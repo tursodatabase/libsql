@@ -33,7 +33,8 @@ pub trait Io: Send + Sync + 'static {
     fn uuid(&self) -> Uuid;
     fn hard_link(&self, src: &Path, dst: &Path) -> io::Result<()>;
     fn with_rng<F, R>(&self, f: F) -> R
-        where F: FnOnce(&mut Self::Rng) -> R;
+    where
+        F: FnOnce(&mut Self::Rng) -> R;
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -79,9 +80,10 @@ impl Io for StdIO {
     }
 
     fn with_rng<F, R>(&self, f: F) -> R
-        where F: FnOnce(&mut Self::Rng) -> R,
-        {
-                  f(&mut thread_rng())
+    where
+        F: FnOnce(&mut Self::Rng) -> R,
+    {
+        f(&mut thread_rng())
     }
 }
 
@@ -121,8 +123,10 @@ impl<T: Io> Io for Arc<T> {
     }
 
     fn with_rng<F, R>(&self, f: F) -> R
-        where F: FnOnce(&mut Self::Rng) -> R {
-            self.as_ref().with_rng(f)
+    where
+        F: FnOnce(&mut Self::Rng) -> R,
+    {
+        self.as_ref().with_rng(f)
     }
 }
 
@@ -145,13 +149,13 @@ impl<W, F> io::Write for Inspect<W, F>
 where
     W: io::Write,
     for<'a> F: FnMut(&'a [u8]),
-    {
-        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-            (self.f)(buf);
-            self.inner.write(buf)
-        }
-
-        fn flush(&mut self) -> io::Result<()> {
-            self.inner.flush()
-        }
+{
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        (self.f)(buf);
+        self.inner.write(buf)
     }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
+    }
+}

@@ -233,10 +233,11 @@ impl<F> CurrentSegment<F> {
                     tracing::trace!(page_no, "recycling frame");
                     self.file.write_all_at(page, page_offset(*offset))?;
                     // we overwrote a frame, record that for later rewrite
-                    tx.recompute_checksum = Some(tx
-                        .recompute_checksum
-                        .map(|old| old.min(*offset))
-                        .unwrap_or(*offset));
+                    tx.recompute_checksum = Some(
+                        tx.recompute_checksum
+                            .map(|old| old.min(*offset))
+                            .unwrap_or(*offset),
+                    );
                     continue;
                 }
 
@@ -272,7 +273,8 @@ impl<F> CurrentSegment<F> {
                     self.header.lock().start_frame_no.get() + offset as u64,
                     frame_no
                 );
-                self.file.write_at_vectored(slices, checked_frame_offset(offset))?;
+                self.file
+                    .write_at_vectored(slices, checked_frame_offset(offset))?;
                 assert!(
                     current_savepoint.index.insert(page_no, offset).is_none(),
                     "existing frames should be recycled"
@@ -290,7 +292,7 @@ impl<F> CurrentSegment<F> {
                 } else {
                     tx.current_checksum()
                 };
-                
+
                 #[cfg(debug_assertions)]
                 {
                     // ensure that file checksum for that transaction is valid
@@ -319,8 +321,7 @@ impl<F> CurrentSegment<F> {
                 // set the header last, so that a transaction does not witness a write before
                 // it's actually committed.
                 *self.header.lock() = header;
-                self.current_checksum
-                                    .store(new_checksum, Ordering::Relaxed);
+                self.current_checksum.store(new_checksum, Ordering::Relaxed);
 
                 tx.is_commited = true;
 
@@ -521,13 +522,14 @@ impl<F> CurrentSegment<F> {
     }
 
     fn recompute_checksum(&self, start_offset: u32, until_offset: u32) -> Result<u32>
-        where F: FileExt
+    where
+        F: FileExt,
     {
         let mut current_checksum = if start_offset == 0 {
             self.header.lock().salt.get()
         } else {
             // we get the checksum from the frame just before the the start offset
-            let frame_offset = checked_frame_offset((start_offset - 1));
+            let frame_offset = checked_frame_offset(start_offset - 1);
             let mut out = U32::new(0);
             self.file.read_exact_at(out.as_bytes_mut(), frame_offset)?;
             out.get()
@@ -536,9 +538,11 @@ impl<F> CurrentSegment<F> {
         let mut checked_frame: Box<CheckedFrame> = CheckedFrame::new_box_zeroed();
         for offset in start_offset..=until_offset {
             let frame_offset = checked_frame_offset(offset);
-            self.file.read_exact_at(checked_frame.as_bytes_mut(), frame_offset)?;
+            self.file
+                .read_exact_at(checked_frame.as_bytes_mut(), frame_offset)?;
             current_checksum = checked_frame.frame.checksum(current_checksum);
-            self.file.write_all_at(&current_checksum.to_le_bytes(), frame_offset)?;
+            self.file
+                .write_all_at(&current_checksum.to_le_bytes(), frame_offset)?;
         }
 
         Ok(current_checksum)
@@ -548,7 +552,8 @@ impl<F> CurrentSegment<F> {
     #[cfg(debug_assertions)]
     #[track_caller]
     fn assert_valid_checksum(&self, from: u32, until: u32) -> Result<()>
-        where F: FileExt
+    where
+        F: FileExt,
     {
         let mut frame: Box<CheckedFrame> = CheckedFrame::new_box_zeroed();
         let mut current_checksum = if from != 0 {
@@ -563,7 +568,11 @@ impl<F> CurrentSegment<F> {
             let offset = checked_frame_offset(i);
             self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
             current_checksum = frame.frame.checksum(current_checksum);
-            assert_eq!(current_checksum, frame.checksum.get(), "invalid checksum at offset {i}");
+            assert_eq!(
+                current_checksum,
+                frame.checksum.get(),
+                "invalid checksum at offset {i}"
+            );
         }
 
         Ok(())
@@ -902,8 +911,9 @@ mod test {
                 // simulate a flush that only flushes half the pages and then fail
                 let inner = self.inner();
                 let inner = inner.lock();
-                let npages = inner.len() / 4096;
-                std::fs::write(&self.path, &inner[..4096 * (npages / 2)])?;
+                // just keep 5 pages from the log. The log will be incomplete and frames will be
+                // broken.
+                std::fs::write(&self.path, &inner[..4096 * 5])?;
                 Err(io::Error::new(io::ErrorKind::BrokenPipe, ""))
             }
 
@@ -1007,12 +1017,9 @@ mod test {
             let shared = env.shared("test");
 
             conn.execute("create table test (x)", ()).unwrap();
-            conn.execute("insert into test values (1234)", ()).unwrap();
-            conn.execute("insert into test values (1234)", ()).unwrap();
-            conn.execute("insert into test values (1234)", ()).unwrap();
-            conn.execute("insert into test values (1234)", ()).unwrap();
-            conn.execute("insert into test values (1234)", ()).unwrap();
-            conn.execute("insert into test values (1234)", ()).unwrap();
+            for _ in 0..6 {
+                conn.execute("insert into test values (1234)", ()).unwrap();
+            }
 
             // trigger a flush, that will fail. When we reopen the db, the log should need recovery
             // this simulates a crash before flush
@@ -1028,8 +1035,9 @@ mod test {
         {
             let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone());
             let conn = env.open_conn("test");
+            // the db was recovered: we lost some rows, but it still works
             conn.query_row("select count(*) from test", (), |row| {
-                dbg!(row);
+                assert_eq!(row.get::<_, u32>(0).unwrap(), 2);
                 Ok(())
             })
             .unwrap();

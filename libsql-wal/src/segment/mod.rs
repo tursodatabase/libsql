@@ -255,7 +255,6 @@ impl CheckedFrame {
     pub(crate) const fn offset_of_frame() -> usize {
         offset_of!(Self, frame)
     }
-
 }
 
 #[repr(C)]

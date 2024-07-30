@@ -16,12 +16,12 @@ const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
 #[cfg(any(debug_assertions, test))]
 pub mod test {
     use std::fs::OpenOptions;
-    use std::path::PathBuf;
     use std::path::Path;
+    use std::path::PathBuf;
     use std::sync::Arc;
 
-    use libsql_sys::rusqlite::OpenFlags;
     use libsql_sys::name::NamespaceName;
+    use libsql_sys::rusqlite::OpenFlags;
     use tempfile::{tempdir, TempDir};
     use tokio::sync::mpsc;
 
@@ -77,10 +77,12 @@ pub mod test {
                 )
                 .unwrap(),
             );
+
             if store {
                 let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 5);
                 tokio::spawn(checkpointer.run());
             }
+
             let wal = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
 
             Self { tmp, registry, wal }
@@ -97,10 +99,7 @@ pub mod test {
             self.tmp.path().join(namespace)
         }
 
-        pub fn open_conn(
-            &self,
-            namespace: &'static str,
-        ) -> libsql_sys::Connection<LibsqlWal<IO>> {
+        pub fn open_conn(&self, namespace: &'static str) -> libsql_sys::Connection<LibsqlWal<IO>> {
             let path = self.db_path(namespace);
             let wal = self.wal.clone();
             std::fs::create_dir_all(&path).unwrap();
