@@ -79,8 +79,8 @@ impl SegmentHeader {
             return Err(Error::InvalidHeaderVersion);
         }
 
-        let computed = dbg!(self.checksum());
-        if computed == dbg!(self.header_cheksum.get()) {
+        let computed = self.checksum();
+        if computed == self.header_cheksum.get() {
             return Ok(());
         } else {
             return Err(Error::InvalidHeaderChecksum);

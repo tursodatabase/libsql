@@ -285,9 +285,27 @@ impl<F> CurrentSegment<F> {
 
         if let Some(size_after) = size_after {
             if tx.not_empty() {
-                if let Some(offset) = tx.recompute_checksum {
-                    self.recompute_checksum(offset, tx.next_offset - 1)?;
+                let new_checksum = if let Some(offset) = tx.recompute_checksum {
+                    self.recompute_checksum(offset, tx.next_offset - 1)?
+                } else {
+                    tx.current_checksum()
+                };
+                
+                #[cfg(debug_assertions)]
+                {
+                    // ensure that file checksum for that transaction is valid
+                    let from = {
+                        let header = self.header.lock();
+                        if header.last_commited_frame_no() == 0 {
+                            0
+                        } else {
+                            (header.last_commited_frame_no() - header.start_frame_no.get()) as u32
+                        }
+                    };
+
+                    self.assert_valid_checksum(from, tx.next_offset - 1)?;
                 }
+
                 let last_frame_no = tx.next_frame_no - 1;
                 let mut header = { *self.header.lock() };
                 header.last_commited_frame_no = last_frame_no.into();
@@ -295,13 +313,14 @@ impl<F> CurrentSegment<F> {
                 header.recompute_checksum();
 
                 self.file.write_all_at(header.as_bytes(), 0)?;
+                // todo: sync if sync mode is EXTRA
                 // self.file.sync_data().unwrap();
                 tx.merge_savepoints(&self.index);
                 // set the header last, so that a transaction does not witness a write before
                 // it's actually committed.
                 *self.header.lock() = header;
                 self.current_checksum
-                    .store(tx.current_checksum(), Ordering::Relaxed);
+                                    .store(new_checksum, Ordering::Relaxed);
 
                 tx.is_commited = true;
 
@@ -343,7 +362,7 @@ impl<F> CurrentSegment<F> {
         F: FileExt,
         B: IoBufMut + Send + 'static,
     {
-        let byte_offset = dbg!(frame_offset(dbg!(offset)));
+        let byte_offset = frame_offset(offset);
         self.file.read_exact_at_async(buf, byte_offset).await
     }
 
@@ -501,14 +520,14 @@ impl<F> CurrentSegment<F> {
         (stream, replicated_until, db_size)
     }
 
-    fn recompute_checksum(&self, start_offset: u32, until_offset: u32) -> Result<()>
+    fn recompute_checksum(&self, start_offset: u32, until_offset: u32) -> Result<u32>
         where F: FileExt
     {
         let mut current_checksum = if start_offset == 0 {
             self.header.lock().salt.get()
         } else {
             // we get the checksum from the frame just before the the start offset
-            let frame_offset = checked_frame_offset(start_offset - 1);
+            let frame_offset = checked_frame_offset((start_offset - 1));
             let mut out = U32::new(0);
             self.file.read_exact_at(out.as_bytes_mut(), frame_offset)?;
             out.get()
@@ -520,6 +539,31 @@ impl<F> CurrentSegment<F> {
             self.file.read_exact_at(checked_frame.as_bytes_mut(), frame_offset)?;
             current_checksum = checked_frame.frame.checksum(current_checksum);
             self.file.write_all_at(&current_checksum.to_le_bytes(), frame_offset)?;
+        }
+
+        Ok(current_checksum)
+    }
+
+    /// test fuction to ensure checksum integrity
+    #[cfg(debug_assertions)]
+    #[track_caller]
+    fn assert_valid_checksum(&self, from: u32, until: u32) -> Result<()>
+        where F: FileExt
+    {
+        let mut frame: Box<CheckedFrame> = CheckedFrame::new_box_zeroed();
+        let mut current_checksum = if from != 0 {
+            let offset = checked_frame_offset(from - 1);
+            self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
+            frame.checksum.get()
+        } else {
+            self.header.lock().salt.get()
+        };
+
+        for i in from..=until {
+            let offset = checked_frame_offset(i);
+            self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
+            current_checksum = frame.frame.checksum(current_checksum);
+            assert_eq!(current_checksum, frame.checksum.get(), "invalid checksum at offset {i}");
         }
 
         Ok(())
@@ -915,7 +959,7 @@ mod test {
                 let mut inner = self.inner.lock();
                 if !inner.contains_key(path) {
                     let data = if path.exists() {
-                        std::fs::read(path).map_err(|e| dbg!(e))?
+                        std::fs::read(path)?
                     } else {
                         vec![]
                     };
