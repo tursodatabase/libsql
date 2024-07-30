@@ -191,10 +191,6 @@ impl<F: FileExt> SealedSegment<F> {
         let index_offset = header.index_offset.get();
         let index_len = header.index_size.get();
 
-        if !header.flags().contains(SegmentFlags::SEALED) {
-            todo!("recover");
-        }
-
         if header.is_empty() {
             std::fs::remove_file(path)?;
             return Ok(None);

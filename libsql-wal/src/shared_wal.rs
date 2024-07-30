@@ -164,18 +164,22 @@ impl<IO: Io> SharedWal<IO> {
         let next_offset = current.count_committed() as u32;
         let next_frame_no = current.next_frame_no().get();
         *tx_id_lock = Some(read_tx.id);
+        let current_checksum = current.current_checksum();
 
         Ok(WriteTransaction {
             wal_lock: self.wal_lock.clone(),
             savepoints: vec![Savepoint {
+                current_checksum,
                 next_offset,
                 next_frame_no,
                 index: BTreeMap::new(),
             }],
             next_frame_no,
             next_offset,
+            current_checksum,
             is_commited: false,
             read_tx: read_tx.clone(),
+            recompute_checksum: None,
         })
     }
 

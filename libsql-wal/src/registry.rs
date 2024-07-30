@@ -8,6 +8,7 @@ use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::{Condvar, Mutex};
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
+use rand::Rng;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::checkpointer::CheckpointMessage;
@@ -32,7 +33,7 @@ enum Slot<IO: Io> {
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
 pub struct WalRegistry<IO: Io, S> {
-    fs: IO,
+    io: IO,
     path: PathBuf,
     shutdown: AtomicBool,
     opened: DashMap<NamespaceName, Slot<IO>>,
@@ -59,7 +60,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
     ) -> Result<Self> {
         io.create_dir_all(&path)?;
         let registry = Self {
-            fs: io,
+            io,
             path,
             opened: Default::default(),
             shutdown: Default::default(),
@@ -105,14 +106,15 @@ where
             .join(shared.namespace().as_str())
             .join(format!("{}:{start_frame_no:020}.seg", shared.namespace()));
 
-        let segment_file = self.fs.open(true, true, true, &path)?;
-
+        let segment_file = self.io.open(true, true, true, &path)?;
+        let salt = self.io.with_rng(|rng| rng.gen());
         let new = CurrentSegment::create(
             segment_file,
             path,
             start_frame_no,
             current.db_size(),
             current.tail().clone(),
+            salt,
         )?;
         // sealing must the last fallible operation, because we don't want to end up in a situation
         // where the current log is sealed and it wasn't swapped.
@@ -226,7 +228,7 @@ where
         db_path: &Path,
     ) -> Result<Arc<SharedWal<IO>>> {
         let path = self.path.join(namespace.as_str());
-        self.fs.create_dir_all(&path)?;
+        self.io.create_dir_all(&path)?;
         // TODO: handle that with abstract io
         let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
 
@@ -246,7 +248,7 @@ where
                 continue;
             }
 
-            let file = self.fs.open(false, true, true, entry.path())?;
+            let file = self.io.open(false, true, true, entry.path())?;
 
             if let Some(sealed) =
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
@@ -265,7 +267,7 @@ where
             }
         }
 
-        let db_file = self.fs.open(false, true, true, db_path)?;
+        let db_file = self.io.open(false, true, true, db_path)?;
 
         let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
         db_file.read_exact_at(header.as_bytes_mut(), 0)?;
@@ -283,7 +285,8 @@ where
 
         let current_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
 
-        let segment_file = self.fs.open(true, true, true, &current_path)?;
+        let segment_file = self.io.open(true, true, true, &current_path)?;
+        let salt = self.io.with_rng(|rng| rng.gen());
 
         let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
             segment_file,
@@ -291,6 +294,7 @@ where
             next_frame_no,
             db_size,
             tail.into(),
+            salt,
         )?));
 
         let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);

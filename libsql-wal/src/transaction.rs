@@ -104,6 +104,7 @@ impl<F> Drop for ReadTransaction<F> {
 pub struct Savepoint {
     pub next_offset: u32,
     pub next_frame_no: u64,
+    pub current_checksum: u32,
     pub index: BTreeMap<u32, u32>,
 }
 
@@ -125,8 +126,12 @@ pub struct WriteTransaction<F> {
     pub savepoints: Vec<Savepoint>,
     pub next_frame_no: u64,
     pub next_offset: u32,
+    pub current_checksum: u32,
     pub is_commited: bool,
     pub read_tx: ReadTransaction<F>,
+    /// if transaction overwrote frames, then the running checksum needs to be recomputed.
+    /// We store here the lowest segment offset at which a frame was overwritten
+    pub recompute_checksum: Option<u32>,
 }
 
 pub struct TxGuard<'a, F> {
@@ -160,6 +165,7 @@ impl<F> WriteTransaction<F> {
             next_offset: self.next_offset,
             next_frame_no: self.next_frame_no,
             index: BTreeMap::new(),
+            current_checksum: self.current_checksum,
         });
         savepoint_id
     }
@@ -263,6 +269,10 @@ impl<F> WriteTransaction<F> {
 
     pub(crate) fn commit(&mut self) {
         self.is_commited = true;
+    }
+
+    pub(crate) fn current_checksum(&self) -> u32 {
+        self.savepoints.last().unwrap().current_checksum
     }
 }
 

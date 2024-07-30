@@ -54,7 +54,7 @@ impl<'a, IO: Io> Injector<'a, IO> {
             self.max_tx_frame_no = 0;
         }
         let buffer = current
-            .insert_frames(buffer, commit_data, &mut self.tx)
+            .insert_frames_inject(buffer, commit_data, &mut self.tx)
             .await?;
         self.buffer = buffer;
 

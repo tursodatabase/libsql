@@ -1,7 +1,9 @@
+use std::hash::Hasher;
 use std::io::{BufWriter, IoSlice, Write};
 use std::num::NonZeroU64;
 use std::ops::DerefMut;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicU32;
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     Arc,
@@ -16,9 +18,11 @@ use zerocopy::{AsBytes, FromZeroes};
 
 use crate::io::buf::{IoBufMut, ZeroCopyBoxIoBuf, ZeroCopyBuf};
 use crate::io::file::FileExt;
-use crate::segment::SegmentFlags;
+use crate::io::Inspect;
+use crate::segment::{checked_frame_offset, SegmentFlags};
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
 use crate::transaction::{Transaction, TxGuard};
+use crate::LIBSQL_MAGIC;
 
 use super::list::SegmentList;
 use super::{Frame, FrameHeader, SegmentHeader};
@@ -34,6 +38,8 @@ pub struct CurrentSegment<F> {
     /// lock
     read_locks: Arc<AtomicU64>,
     sealed: AtomicBool,
+    /// current runnign checksum
+    current_checksum: AtomicU32,
     tail: Arc<SegmentList<SealedSegment<F>>>,
 }
 
@@ -46,6 +52,7 @@ impl<F> CurrentSegment<F> {
         start_frame_no: NonZeroU64,
         db_size: u32,
         tail: Arc<SegmentList<SealedSegment<F>>>,
+        salt: u32,
     ) -> Result<Self>
     where
         F: FileExt,
@@ -60,6 +67,7 @@ impl<F> CurrentSegment<F> {
             flags: 0.into(),
             magic: LIBSQL_MAGIC.into(),
             version: 1.into(),
+            salt: salt.into(),
         };
 
         header.recompute_checksum();
@@ -74,6 +82,7 @@ impl<F> CurrentSegment<F> {
             read_locks: Arc::new(AtomicU64::new(0)),
             sealed: AtomicBool::default(),
             tail,
+            current_checksum: salt.into(),
         })
     }
 
@@ -102,10 +111,14 @@ impl<F> CurrentSegment<F> {
         self.header.lock().size_after.get()
     }
 
+    pub fn current_checksum(&self) -> u32 {
+        self.current_checksum.load(Ordering::Relaxed)
+    }
+
     /// insert a bunch of frames in the Wal. The frames needn't be ordered, therefore, on commit
     /// the last frame no needs to be passed alongside the new size_after.
     #[tracing::instrument(skip_all)]
-    pub async fn insert_frames(
+    pub async fn insert_frames_inject(
         &self,
         frames: Vec<Box<Frame>>,
         // (size_after, last_frame_no)
@@ -116,19 +129,40 @@ impl<F> CurrentSegment<F> {
         F: FileExt,
     {
         assert!(!self.sealed.load(Ordering::SeqCst));
+        assert_eq!(
+            tx.savepoints.len(),
+            1,
+            "injecting wal should not use savepoints"
+        );
         {
             let tx = tx.deref_mut();
             // let mut commit_frame_written = false;
             let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
             let mut frames = frame_list_to_option(frames);
+            // For each frame, we compute and write the frame checksum, followed by the frame
+            // itself as an array of CheckedFrame
             for i in 0..frames.len() {
                 let offset = tx.next_offset;
+                let current_checksum = current_savepoint.current_checksum;
+                let mut digest = crc32fast::Hasher::new_with_initial(current_checksum);
+                digest.write(frames[i].as_ref().unwrap().as_bytes());
+                let new_checksum = digest.finalize();
+                let (_buf, ret) = self
+                    .file
+                    .write_all_at_async(
+                        ZeroCopyBuf::new_init(zerocopy::byteorder::little_endian::U32::new(
+                            new_checksum,
+                        )),
+                        checked_frame_offset(offset),
+                    )
+                    .await;
+                ret?;
+
                 let buf = ZeroCopyBoxIoBuf::new(frames[i].take().unwrap());
                 let (buf, ret) = self
                     .file
                     .write_all_at_async(buf, frame_offset(offset))
                     .await;
-
                 ret?;
 
                 let frame = buf.into_inner();
@@ -136,6 +170,7 @@ impl<F> CurrentSegment<F> {
                 current_savepoint
                     .index
                     .insert(frame.header().page_no(), offset);
+                current_savepoint.current_checksum = new_checksum;
                 tx.next_offset += 1;
                 frames[i] = Some(frame);
             }
@@ -161,6 +196,8 @@ impl<F> CurrentSegment<F> {
                     tx.merge_savepoints(&self.index);
                     // set the header last, so that a transaction does not witness a write before
                     // it's actually committed.
+                    self.current_checksum
+                        .store(tx.current_checksum(), Ordering::Relaxed);
                     *self.header.lock() = header.into_inner();
 
                     tx.is_commited = true;
@@ -194,6 +231,11 @@ impl<F> CurrentSegment<F> {
                 if let Some(offset) = current_savepoint.index.get(&page_no) {
                     tracing::trace!(page_no, "recycling frame");
                     self.file.write_all_at(page, page_offset(*offset))?;
+                    // we overwrote a frame, record that for later rewrite
+                    tx.recompute_checksum = Some(tx
+                        .recompute_checksum
+                        .map(|old| old.min(*offset))
+                        .unwrap_or(*offset));
                     continue;
                 }
 
@@ -210,17 +252,31 @@ impl<F> CurrentSegment<F> {
                     size_after: size_after.into(),
                     frame_no: frame_no.into(),
                 };
-                let slices = &[IoSlice::new(header.as_bytes()), IoSlice::new(&page)];
+
+                let mut digest =
+                    crc32fast::Hasher::new_with_initial(current_savepoint.current_checksum);
+                digest.write(header.as_bytes());
+                digest.write(page);
+
+                let checksum = digest.finalize();
+                let checksum_bytes = checksum.to_le_bytes();
+                // We write a instance of a ChecksummedFrame
+                let slices = &[
+                    IoSlice::new(&checksum_bytes),
+                    IoSlice::new(header.as_bytes()),
+                    IoSlice::new(&page),
+                ];
                 let offset = tx.next_offset;
                 debug_assert_eq!(
                     self.header.lock().start_frame_no.get() + offset as u64,
                     frame_no
                 );
-                self.file.write_at_vectored(slices, frame_offset(offset))?;
+                self.file.write_at_vectored(slices, checked_frame_offset(offset))?;
                 assert!(
                     current_savepoint.index.insert(page_no, offset).is_none(),
                     "existing frames should be recycled"
                 );
+                current_savepoint.current_checksum = checksum;
                 tx.next_frame_no += 1;
                 tx.next_offset += 1;
             }
@@ -228,6 +284,9 @@ impl<F> CurrentSegment<F> {
 
         if let Some(size_after) = size_after {
             if tx.not_empty() {
+                if let Some(_offset) = tx.recompute_checksum {
+                    todo!("recompute checksum");
+                }
                 let last_frame_no = tx.next_frame_no - 1;
                 let mut header = { *self.header.lock() };
                 header.last_commited_frame_no = last_frame_no.into();
@@ -240,6 +299,8 @@ impl<F> CurrentSegment<F> {
                 // set the header last, so that a transaction does not witness a write before
                 // it's actually committed.
                 *self.header.lock() = header;
+                self.current_checksum
+                    .store(tx.current_checksum(), Ordering::Relaxed);
 
                 tx.is_commited = true;
 
@@ -281,7 +342,7 @@ impl<F> CurrentSegment<F> {
         F: FileExt,
         B: IoBufMut + Send + 'static,
     {
-        let byte_offset = frame_offset(offset);
+        let byte_offset = dbg!(frame_offset(dbg!(offset)));
         self.file.read_exact_at_async(buf, byte_offset).await
     }
 
@@ -304,10 +365,21 @@ impl<F> CurrentSegment<F> {
     {
         let mut header = self.header.lock();
         let index_offset = header.count_committed() as u32;
-        let index_byte_offset = frame_offset(index_offset);
+        let index_byte_offset = checked_frame_offset(index_offset);
         let mut cursor = self.file.cursor(index_byte_offset);
-        let mut writer = BufWriter::new(&mut cursor);
+        let writer = BufWriter::new(&mut cursor);
+
+        let current = self.current_checksum();
+        let mut digest = crc32fast::Hasher::new_with_initial(current);
+        let mut writer = Inspect::new(writer, |data: &[u8]| {
+            digest.write(data);
+        });
         self.index.merge_all(&mut writer)?;
+        let mut writer = writer.into_inner();
+        let index_checksum = digest.finalize();
+        let index_size = writer.get_ref().count();
+        writer.write_all(&index_checksum.to_le_bytes())?;
+
         writer.into_inner().map_err(|e| e.into_parts().0)?;
         // we perform a first sync to ensure that all the segment has been flushed to disk. We then
         // write the header and flush again. We want to guarantee that if we find a segement marked
@@ -318,10 +390,10 @@ impl<F> CurrentSegment<F> {
         self.file.sync_all()?;
 
         header.index_offset = index_byte_offset.into();
-        header.index_size = cursor.count().into();
-        header.recompute_checksum();
+        header.index_size = index_size.into();
         let flags = header.flags();
         header.set_flags(flags | SegmentFlags::SEALED);
+        header.recompute_checksum();
         self.file.write_all_at(header.as_bytes(), 0)?;
 
         // flush the header.
