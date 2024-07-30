@@ -214,6 +214,10 @@ impl<W> BufCopy<W> {
         let Self { w, buf } = self;
         (w, buf)
     }
+
+    pub fn get_ref(&self) -> &W {
+        &self.w
+    }
 }
 
 impl<W: Write> Write for BufCopy<W> {
