@@ -39,6 +39,10 @@ bitflags::bitflags! {
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes, Clone, Copy)]
 pub struct SegmentHeader {
+    /// Set to LIBSQL_MAGIC
+    pub magic: U64,
+    /// header version
+    pub version: U16,
     pub start_frame_no: U64,
     pub last_commited_frame_no: U64,
     /// size of the database in pages, after applying the segment.
@@ -64,8 +68,16 @@ impl SegmentHeader {
     }
 
     fn check(&self) -> Result<()> {
-        let computed = self.checksum();
-        if computed == self.header_cheksum.get() {
+        if self.magic.get() != LIBSQL_MAGIC {
+            return Err(Error::InvalidHeaderChecksum);
+        }
+
+        if self.version.get() != 1 {
+            return Err(Error::InvalidHeaderVersion);
+        }
+
+        let computed = dbg!(self.checksum());
+        if computed == dbg!(self.header_cheksum.get()) {
             return Ok(());
         } else {
             return Err(Error::InvalidHeaderChecksum);

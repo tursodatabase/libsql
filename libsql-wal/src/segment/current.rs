@@ -58,6 +58,8 @@ impl<F> CurrentSegment<F> {
             index_size: 0.into(),
             header_cheksum: 0.into(),
             flags: 0.into(),
+            magic: LIBSQL_MAGIC.into(),
+            version: 1.into(),
         };
 
         header.recompute_checksum();
