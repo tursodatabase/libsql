@@ -823,11 +823,7 @@ mod test {
                     return Ok(0);
                 }
 
-                let read_len = if offset as usize + buf.len() > inner.len() {
-                    offset as usize + buf.len() - inner.len()
-                } else {
-                    buf.len()
-                };
+                let read_len = buf.len().min(inner.len() - offset as usize);
                 buf[..read_len]
                     .copy_from_slice(&inner[offset as usize..offset as usize + read_len]);
                 Ok(read_len)
@@ -960,9 +956,12 @@ mod test {
             }
         }
 
+        dbg!();
         {
             let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone());
+        dbg!();
             let conn = env.open_conn("test");
+        dbg!();
             conn.query_row("select count(*) from test", (), |row| {
                 dbg!(row);
                 Ok(())

@@ -282,14 +282,14 @@ impl<F: FileExt> SealedSegment<F> {
             builder.insert(k.to_be_bytes(), v as u64).unwrap();
         }
         builder.finish().unwrap();
-        let mut writer = writer.into_inner();
+        let writer = writer.into_inner();
         let index_size = writer.get_ref().get_ref().count();
         let index_checksum = digest.finalize();
-        writer.write_all(&index_checksum.to_le_bytes())?;
-        let (_, index_bytes) = writer
+        let (mut cursor, index_bytes) = writer
             .into_inner()
             .map_err(|e| e.into_parts().0)?
             .into_parts();
+        cursor.write_all(&index_checksum.to_le_bytes())?;
         header.index_offset = index_byte_offset.into();
         header.index_size = index_size.into();
         header.last_commited_frame_no = last_committed.into();
