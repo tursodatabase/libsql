@@ -119,7 +119,7 @@ impl<F> CurrentSegment<F> {
     /// insert a bunch of frames in the Wal. The frames needn't be ordered, therefore, on commit
     /// the last frame no needs to be passed alongside the new size_after.
     #[tracing::instrument(skip_all)]
-    pub async fn insert_frames_inject(
+    pub async fn inject_frames(
         &self,
         frames: Vec<Box<Frame>>,
         // (size_after, last_frame_no)
@@ -520,7 +520,6 @@ impl<F> CurrentSegment<F> {
             self.file.read_exact_at(checked_frame.as_bytes_mut(), frame_offset)?;
             current_checksum = checked_frame.frame.checksum(current_checksum);
             self.file.write_all_at(&current_checksum.to_le_bytes(), frame_offset)?;
-
         }
 
         Ok(())
