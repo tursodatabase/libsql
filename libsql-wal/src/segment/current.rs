@@ -14,6 +14,7 @@ use fst::MapBuilder;
 use parking_lot::{Mutex, RwLock};
 use roaring::RoaringBitmap;
 use tokio_stream::Stream;
+use zerocopy::little_endian::U32;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::io::buf::{IoBufMut, ZeroCopyBoxIoBuf, ZeroCopyBuf};
@@ -25,7 +26,7 @@ use crate::transaction::{Transaction, TxGuard};
 use crate::LIBSQL_MAGIC;
 
 use super::list::SegmentList;
-use super::{Frame, FrameHeader, SegmentHeader};
+use super::{CheckedFrame, Frame, FrameHeader, SegmentHeader};
 
 use crate::error::Result;
 
@@ -284,8 +285,8 @@ impl<F> CurrentSegment<F> {
 
         if let Some(size_after) = size_after {
             if tx.not_empty() {
-                if let Some(_offset) = tx.recompute_checksum {
-                    todo!("recompute checksum");
+                if let Some(offset) = tx.recompute_checksum {
+                    self.recompute_checksum(offset, tx.next_offset - 1)?;
                 }
                 let last_frame_no = tx.next_frame_no - 1;
                 let mut header = { *self.header.lock() };
@@ -498,6 +499,31 @@ impl<F> CurrentSegment<F> {
         };
 
         (stream, replicated_until, db_size)
+    }
+
+    fn recompute_checksum(&self, start_offset: u32, until_offset: u32) -> Result<()>
+        where F: FileExt
+    {
+        let mut current_checksum = if start_offset == 0 {
+            self.header.lock().salt.get()
+        } else {
+            // we get the checksum from the frame just before the the start offset
+            let frame_offset = checked_frame_offset(start_offset - 1);
+            let mut out = U32::new(0);
+            self.file.read_exact_at(out.as_bytes_mut(), frame_offset)?;
+            out.get()
+        };
+
+        let mut checked_frame: Box<CheckedFrame> = CheckedFrame::new_box_zeroed();
+        for offset in start_offset..=until_offset {
+            let frame_offset = checked_frame_offset(offset);
+            self.file.read_exact_at(checked_frame.as_bytes_mut(), frame_offset)?;
+            current_checksum = checked_frame.frame.checksum(current_checksum);
+            self.file.write_all_at(&current_checksum.to_le_bytes(), frame_offset)?;
+
+        }
+
+        Ok(())
     }
 }
 
@@ -956,12 +982,9 @@ mod test {
             }
         }
 
-        dbg!();
         {
             let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone());
-        dbg!();
             let conn = env.open_conn("test");
-        dbg!();
             conn.query_row("select count(*) from test", (), |row| {
                 dbg!(row);
                 Ok(())
