@@ -255,12 +255,17 @@ impl<F> CurrentSegment<F> {
                     frame_no: frame_no.into(),
                 };
 
-                let mut digest =
-                    crc32fast::Hasher::new_with_initial(current_savepoint.current_checksum);
-                digest.write(header.as_bytes());
-                digest.write(page);
+                // only compute checksum if we don't need to recompute it later
+                let checksum = if tx.recompute_checksum.is_none() {
+                    let mut digest =
+                        crc32fast::Hasher::new_with_initial(current_savepoint.current_checksum);
+                    digest.write(header.as_bytes());
+                    digest.write(page);
+                    digest.finalize()
+                } else {
+                    0
+                };
 
-                let checksum = digest.finalize();
                 let checksum_bytes = checksum.to_le_bytes();
                 // We write a instance of a ChecksummedFrame
                 let slices = &[
