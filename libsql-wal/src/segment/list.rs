@@ -9,9 +9,10 @@ use fst::raw::IndexedValue;
 use fst::Streamer;
 use roaring::RoaringBitmap;
 use tokio_stream::Stream;
+use zerocopy::FromZeroes;
 
 use crate::error::Result;
-use crate::io::buf::ZeroCopyBuf;
+use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
 use crate::io::FileExt;
 use crate::segment::Frame;
 
@@ -89,10 +90,6 @@ where
         }
         let mut segs = Vec::new();
         let mut current = self.head.load();
-        // This is the last element in the list that is not part of the segments to be
-        // checkpointed. All the folowing segments will be checkpointed. After checkpoint, we set
-        // this link's next to None.
-        let mut last_untaken = None;
         // find the longest chain of segments that can be checkpointed, iow, segments that do not have
         // readers pointing to them
         while let Some(segment) = &*current {
@@ -100,7 +97,6 @@ where
             if segment.last_committed() <= until_frame_no {
                 if !segment.is_checkpointable() {
                     segs.clear();
-                    last_untaken = current.clone();
                 } else {
                     segs.push(segment.clone());
                 }
@@ -154,15 +150,21 @@ where
         //// todo: make async
         db_file.sync_all()?;
 
-        match last_untaken {
-            Some(link) => {
-                assert!(Arc::ptr_eq(&link.next.load().as_ref().unwrap(), &segs[0]));
-                link.next.swap(None);
-            }
-            // everything up to head was checkpointed
-            None => {
-                assert!(Arc::ptr_eq(&*self.head.load().as_ref().unwrap(), &segs[0]));
-                self.head.swap(None);
+        let mut current = self.head.compare_and_swap(&segs[0], None);
+        if Arc::ptr_eq(&segs[0], current.as_ref().unwrap()) {
+            // nothing to do
+        } else {
+            loop {
+                let next = current
+                    .as_ref()
+                    .unwrap()
+                    .next
+                    .compare_and_swap(&segs[0], None);
+                if Arc::ptr_eq(&segs[0], next.as_ref().unwrap()) {
+                    break;
+                } else {
+                    current = next;
+                }
             }
         }
 
@@ -180,16 +182,20 @@ where
     /// must be read somewhere else.
     pub async fn stream_pages_from<'a>(
         &self,
-        start_frame_no: u64,
+        current_fno: u64,
+        until_fno: u64,
         seen: &'a mut RoaringBitmap,
-    ) -> (impl Stream<Item = crate::error::Result<Frame>> + 'a, u64) {
+    ) -> (
+        impl Stream<Item = crate::error::Result<Box<Frame>>> + 'a,
+        u64,
+    ) {
         // collect all the segments we need to read from to be up to date.
         // We keep a reference to them so that they are not discarded while we read them.
         let mut segments = Vec::new();
         let mut current = self.list.head.load();
         while current.is_some() {
             let current_ref = current.as_ref().unwrap();
-            if current_ref.item.last_committed() >= start_frame_no {
+            if current_ref.item.last_committed() >= until_fno {
                 segments.push(current_ref.clone());
                 current = current_ref.next.load();
             } else {
@@ -197,11 +203,18 @@ where
             }
         }
 
-        let new_start_frame_no = segments
+        if segments.is_empty() {
+            return (
+                tokio_util::either::Either::Left(tokio_stream::empty()),
+                current_fno,
+            );
+        }
+
+        let new_current = segments
             .last()
             .map(|s| s.start_frame_no())
-            .unwrap_or(start_frame_no)
-            .max(start_frame_no);
+            .unwrap()
+            .max(until_fno);
 
         let stream = async_stream::try_stream! {
             let mut union = fst::map::OpBuilder::from_iter(segments.iter().map(|s| s.index())).union();
@@ -215,11 +228,11 @@ where
                 let segment = &segments[*segment_offset];
 
                 // we can ignore any frame with a replication index less than start_frame_no
-                if segment.start_frame_no() + frame_offset < start_frame_no {
+                if segment.start_frame_no() + frame_offset < until_fno {
                     continue
                 }
 
-                let buf = ZeroCopyBuf::<Frame>::new_uninit();
+                let buf = ZeroCopyBoxIoBuf::new(Frame::new_box_zeroed());
                 let (buf, ret) = segment.read_frame_offset_async(*frame_offset as u32, buf).await;
                 ret?;
                 let mut frame = buf.into_inner();
@@ -229,7 +242,7 @@ where
             }
         };
 
-        (stream, new_start_frame_no)
+        (tokio_util::either::Either::Right(stream), new_current)
     }
 }
 
@@ -291,8 +304,12 @@ impl<T> List<T> {
         head.as_ref().map(|link| f(&link.item))
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.len.load(Ordering::Relaxed)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -332,7 +349,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, _) = segment_list.stream_pages_from(0, &mut seen).await;
+        let (stream, _) = segment_list.stream_pages_from(0, 0, &mut seen).await;
         tokio::pin!(stream);
 
         let mut file = NamedTempFile::new().unwrap();
@@ -349,7 +366,7 @@ mod test {
 
         drop(tx);
 
-        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
         shared.checkpoint().await.unwrap();
         file.seek(std::io::SeekFrom::Start(0)).unwrap();
         let mut copy_ytes = Vec::new();
@@ -383,7 +400,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list.stream_pages_from(10, &mut seen).await;
+        let (stream, replicated_until) = segment_list.stream_pages_from(0, 10, &mut seen).await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, 10);
@@ -411,7 +428,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::from_sorted_iter([1]).unwrap();
-        let (stream, replicated_until) = segment_list.stream_pages_from(1, &mut seen).await;
+        let (stream, replicated_until) = segment_list.stream_pages_from(0, 1, &mut seen).await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, 1);
@@ -439,7 +456,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list.stream_pages_from(1, &mut seen).await;
+        let (stream, replicated_until) = segment_list.stream_pages_from(0, 1, &mut seen).await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, 1);
@@ -461,8 +478,9 @@ mod test {
         seal_current_segment(&shared);
 
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) =
-            segment_list.stream_pages_from(last_offset, &mut seen).await;
+        let (stream, replicated_until) = segment_list
+            .stream_pages_from(0, last_offset, &mut seen)
+            .await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, last_offset);
@@ -473,7 +491,7 @@ mod test {
             tmp.write_all_at(frame.data(), offset as u64).unwrap();
         }
 
-        shared.durable_frame_no.store(99999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
 
         shared.checkpoint().await.unwrap();
         tmp.seek(std::io::SeekFrom::Start(0)).unwrap();
@@ -504,7 +522,7 @@ mod test {
         }
 
         seal_current_segment(&shared);
-        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
         shared.checkpoint().await.unwrap();
 
         for _ in 0..10 {
@@ -515,7 +533,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_from) = segment_list.stream_pages_from(0, &mut seen).await;
+        let (stream, replicated_from) = segment_list.stream_pages_from(0, 0, &mut seen).await;
         tokio::pin!(stream);
 
         let mut count = 0;

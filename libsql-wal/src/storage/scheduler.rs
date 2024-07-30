@@ -1,8 +1,6 @@
 use std::cmp::Reverse;
 use std::collections::{HashMap, VecDeque};
 
-use tokio::sync::mpsc;
-
 use super::job::{IndexedRequest, Job, JobResult};
 use super::StoreSegmentRequest;
 use libsql_sys::name::NamespaceName;
@@ -32,16 +30,14 @@ impl<C, F> Default for NamespaceRequests<C, F> {
 /// It is generic over C: the storage config type (for config overrides), and T, the segment type
 pub(crate) struct Scheduler<C, T> {
     /// notify new durability index for namespace
-    durable_notifier: mpsc::Sender<(NamespaceName, u64)>,
     requests: HashMap<NamespaceName, NamespaceRequests<C, T>>,
     queue: priority_queue::PriorityQueue<NamespaceName, Reverse<u64>>,
     next_request_id: u64,
 }
 
 impl<C, T> Scheduler<C, T> {
-    pub fn new(durable_notifier: mpsc::Sender<(NamespaceName, u64)>) -> Self {
+    pub fn new() -> Self {
         Self {
-            durable_notifier,
             requests: Default::default(),
             queue: Default::default(),
             next_request_id: Default::default(),
@@ -107,14 +103,7 @@ impl<C, T> Scheduler<C, T> {
         match result.result {
             Ok(durable_index) => {
                 tracing::debug!("job success registered");
-                if self
-                    .durable_notifier
-                    .send((name.clone(), durable_index))
-                    .await
-                    .is_err()
-                {
-                    tracing::warn!("durability notifier was closed, proceeding anyway");
-                }
+                (result.job.request.request.on_store_callback)(durable_index).await;
             }
             Err(e) => {
                 tracing::error!("error processing request, re-enqueuing: {e}");
@@ -150,7 +139,10 @@ impl<C, T> Scheduler<C, T> {
 
 #[cfg(test)]
 mod test {
+    use std::future::ready;
+
     use chrono::Utc;
+    use tokio::sync::oneshot;
 
     use crate::storage::Error;
     use libsql_sys::name::NamespaceName;
@@ -159,24 +151,35 @@ mod test {
 
     #[tokio::test]
     async fn schedule_simple() {
-        let (sender, mut receiver) = tokio::sync::mpsc::channel(10);
-        let mut scheduler = Scheduler::<(), ()>::new(sender);
+        let mut scheduler = Scheduler::<(), ()>::new();
 
         let ns1 = NamespaceName::from("test1");
         let ns2 = NamespaceName::from("test2");
 
+        let (job_1_snd, job_1_rcv) = oneshot::channel();
         scheduler.register(StoreSegmentRequest {
             namespace: ns1.clone(),
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(move |n| {
+                Box::pin(async move {
+                    let _ = job_1_snd.send(n);
+                })
+            }),
         });
 
+        let (job_2_snd, job_2_rcv) = oneshot::channel();
         scheduler.register(StoreSegmentRequest {
             namespace: ns2.clone(),
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(move |n| {
+                Box::pin(async move {
+                    let _ = job_2_snd.send(n);
+                })
+            }),
         });
 
         scheduler.register(StoreSegmentRequest {
@@ -184,6 +187,7 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(move |_| Box::pin(ready(()))),
         });
 
         let job1 = scheduler.schedule().unwrap();
@@ -203,7 +207,7 @@ mod test {
             .await;
 
         assert!(scheduler.schedule().is_none());
-        assert_eq!(receiver.recv().await.unwrap(), (ns2.clone(), 42));
+        assert_eq!(job_2_rcv.await.unwrap(), 42);
 
         scheduler
             .report(JobResult {
@@ -211,7 +215,7 @@ mod test {
                 result: Ok(10),
             })
             .await;
-        assert_eq!(receiver.recv().await.unwrap(), (ns1.clone(), 10));
+        assert_eq!(job_1_rcv.await.unwrap(), 10);
 
         let job1 = scheduler.schedule().unwrap();
         assert_eq!(job1.request.request.namespace, ns1);
@@ -220,8 +224,7 @@ mod test {
 
     #[tokio::test]
     async fn job_error_reschedule() {
-        let (sender, _) = tokio::sync::mpsc::channel(10);
-        let mut scheduler = Scheduler::<(), ()>::new(sender);
+        let mut scheduler = Scheduler::<(), ()>::new();
 
         let ns1 = NamespaceName::from("test1");
         let ns2 = NamespaceName::from("test2");
@@ -231,6 +234,7 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(|_| Box::pin(ready(()))),
         });
 
         scheduler.register(StoreSegmentRequest {
@@ -238,6 +242,7 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(|_| Box::pin(ready(()))),
         });
 
         let job1 = scheduler.schedule().unwrap();
@@ -259,8 +264,7 @@ mod test {
 
     #[tokio::test]
     async fn schedule_while_in_flight() {
-        let (sender, _) = tokio::sync::mpsc::channel(10);
-        let mut scheduler = Scheduler::<(), ()>::new(sender);
+        let mut scheduler = Scheduler::<(), ()>::new();
 
         let ns1 = NamespaceName::from("test1");
 
@@ -269,6 +273,7 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(|_| Box::pin(ready(()))),
         });
 
         let job = scheduler.schedule().unwrap();
@@ -280,6 +285,7 @@ mod test {
             segment: (),
             created_at: Utc::now(),
             storage_config_override: None,
+            on_store_callback: Box::new(|_| Box::pin(ready(()))),
         });
 
         assert!(scheduler.schedule().is_none());

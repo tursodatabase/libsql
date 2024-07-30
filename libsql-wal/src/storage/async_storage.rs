@@ -8,12 +8,13 @@ use libsql_sys::name::NamespaceName;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinSet;
 
-use crate::io::{Io, StdIO};
+use crate::io::{FileExt, Io, StdIO};
+use crate::segment::compacted::CompactedSegment;
 use crate::segment::Segment;
 
 use super::backend::Backend;
 use super::scheduler::Scheduler;
-use super::{RestoreOptions, Storage, StoreSegmentRequest};
+use super::{OnStoreCallback, RestoreOptions, Storage, StoreSegmentRequest};
 
 /// Background loop task state.
 ///
@@ -143,8 +144,6 @@ enum StorageLoopMessage<C, S> {
 pub struct AsyncStorage<B: Backend, S> {
     /// send request to the main loop
     job_sender: mpsc::UnboundedSender<StorageLoopMessage<B::Config, S>>,
-    /// receiver for the current max durable index
-    durable_notifier: mpsc::Receiver<(NamespaceName, u64)>,
     force_shutdown: oneshot::Sender<()>,
     backend: Arc<B>,
 }
@@ -162,12 +161,14 @@ where
         namespace: &NamespaceName,
         segment: Self::Segment,
         config_override: Option<Arc<Self::Config>>,
+        on_store_callback: OnStoreCallback,
     ) {
         let req = StoreSegmentRequest {
             namespace: namespace.clone(),
             segment,
             created_at: Utc::now(),
             storage_config_override: config_override,
+            on_store_callback,
         };
 
         self.job_sender
@@ -206,6 +207,50 @@ where
         tokio::runtime::Handle::current()
             .block_on(self.durable_frame_no(namespace, config_override))
     }
+
+    async fn find_segment(
+        &self,
+        namespace: &NamespaceName,
+        frame_no: u64,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> super::Result<super::SegmentKey> {
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        let key = self
+            .backend
+            .find_segment(&config, namespace, frame_no)
+            .await?;
+        Ok(key)
+    }
+
+    async fn fetch_segment_index(
+        &self,
+        namespace: &NamespaceName,
+        key: &super::SegmentKey,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> super::Result<fst::Map<Arc<[u8]>>> {
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        let index = self
+            .backend
+            .fetch_segment_index(&config, namespace, key)
+            .await?;
+        Ok(index)
+    }
+
+    async fn fetch_segment_data(
+        &self,
+        namespace: &NamespaceName,
+        key: &super::SegmentKey,
+        config_override: Option<Arc<Self::Config>>,
+    ) -> super::Result<CompactedSegment<impl FileExt>> {
+        // TODO: make async
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        let backend = self.backend.clone();
+        let file = backend
+            .fetch_segment_data(config, namespace.clone(), *key)
+            .await?;
+        let segment = CompactedSegment::open(file).await?;
+        Ok(segment)
+    }
 }
 
 pub struct AsyncStorageInitConfig<B> {
@@ -234,9 +279,8 @@ impl<B: Backend, S> AsyncStorage<B, S> {
         S: Segment,
     {
         let (job_snd, job_rcv) = tokio::sync::mpsc::unbounded_channel();
-        let (durable_notifier_snd, durable_notifier_rcv) = tokio::sync::mpsc::channel(16);
         let (shutdown_snd, shutdown_rcv) = tokio::sync::oneshot::channel();
-        let scheduler = Scheduler::new(durable_notifier_snd);
+        let scheduler = Scheduler::new();
         let storage_loop = AsyncStorageLoop {
             receiver: job_rcv,
             scheduler,
@@ -248,7 +292,6 @@ impl<B: Backend, S> AsyncStorage<B, S> {
 
         let this = Self {
             job_sender: job_snd,
-            durable_notifier: durable_notifier_rcv,
             force_shutdown: shutdown_snd,
             backend: config.backend,
         };

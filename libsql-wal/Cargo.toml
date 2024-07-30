@@ -41,6 +41,7 @@ clap = { version = "4.5.9", optional = true, features = ["derive"] }
 inquire = { version = "0.7.5", optional = true }
 tracing-subscriber = { version = "0.3.18", optional = true }
 aws-credential-types = { version = "1.2.0", optional = true }
+dashmap = "6.0.1"
 
 [dev-dependencies]
 criterion = "0.5.1"

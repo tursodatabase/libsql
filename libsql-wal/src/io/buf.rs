@@ -3,7 +3,7 @@
 use std::mem::{size_of, MaybeUninit};
 
 use bytes::BytesMut;
-use zerocopy::AsBytes;
+use zerocopy::{AsBytes, FromBytes};
 
 pub unsafe trait IoBuf: Unpin + 'static {
     /// Returns a raw pointer to the vector’s buffer.
@@ -119,20 +119,50 @@ pub struct ZeroCopyBuf<T> {
     inner: MaybeUninit<T>,
 }
 
-#[repr(transparent)]
-pub struct ZeroCopyBoxIoBuf<T>(pub Box<T>);
+pub struct ZeroCopyBoxIoBuf<T> {
+    inner: Box<T>,
+    init: usize,
+}
+
+impl<T> ZeroCopyBoxIoBuf<T> {
+    pub fn new(inner: Box<T>) -> Self {
+        Self {
+            init: size_of::<T>(),
+            inner,
+        }
+    }
+
+    fn is_init(&self) -> bool {
+        self.init == size_of::<T>()
+    }
+
+    pub fn into_inner(self) -> Box<T> {
+        assert!(self.is_init());
+        self.inner
+    }
+}
 
 unsafe impl<T: AsBytes + Unpin + 'static> IoBuf for ZeroCopyBoxIoBuf<T> {
     fn stable_ptr(&self) -> *const u8 {
-        T::as_bytes(&self.0).as_ptr()
+        T::as_bytes(&self.inner).as_ptr()
     }
 
     fn bytes_init(&self) -> usize {
-        self.bytes_total()
+        self.init
     }
 
     fn bytes_total(&self) -> usize {
         size_of::<T>()
+    }
+}
+
+unsafe impl<T: AsBytes + FromBytes + Unpin + 'static> IoBufMut for ZeroCopyBoxIoBuf<T> {
+    fn stable_mut_ptr(&mut self) -> *mut u8 {
+        T::as_bytes_mut(&mut self.inner).as_mut_ptr()
+    }
+
+    unsafe fn set_init(&mut self, pos: usize) {
+        self.init = pos;
     }
 }
 

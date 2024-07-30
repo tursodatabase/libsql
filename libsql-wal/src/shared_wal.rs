@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -11,6 +11,7 @@ use parking_lot::{Mutex, MutexGuard};
 use crate::error::{Error, Result};
 use crate::io::file::FileExt;
 use crate::io::Io;
+use crate::replication::storage::ReplicateFromStorage;
 use crate::segment::current::CurrentSegment;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 use libsql_sys::name::NamespaceName;
@@ -43,11 +44,28 @@ pub struct SharedWal<IO: Io> {
     #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
     /// max frame_no acknoledged by the durable storage
-    pub(crate) durable_frame_no: AtomicU64,
+    pub(crate) durable_frame_no: Arc<Mutex<u64>>,
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
+    pub(crate) stored_segments: Box<dyn ReplicateFromStorage>,
+    pub(crate) shutdown: AtomicBool,
 }
 
 impl<IO: Io> SharedWal<IO> {
+    pub fn shutdown(&self) -> Result<()> {
+        self.shutdown.store(true, Ordering::SeqCst);
+        let mut tx = Transaction::Read(self.begin_read(u64::MAX));
+        self.upgrade(&mut tx)?;
+        {
+            let mut tx = tx.as_write_mut().unwrap().lock();
+            tx.commit();
+            self.registry.swap_current(self, &tx)?;
+        }
+        // The current segment will not be used anymore. It's empty, but we still seal it so that
+        // the next startup doesn't find an unsealed segment.
+        self.current.load().seal()?;
+        Ok(())
+    }
+
     pub fn db_size(&self) -> u32 {
         self.current.load().db_size()
     }
@@ -265,7 +283,7 @@ impl<IO: Io> SharedWal<IO> {
     }
 
     pub async fn checkpoint(&self) -> Result<Option<u64>> {
-        let durable_frame_no = self.durable_frame_no.load(Ordering::SeqCst);
+        let durable_frame_no = *self.durable_frame_no.lock();
         let checkpointed_frame_no = self
             .current
             .load()
@@ -312,7 +330,7 @@ mod test {
 
         seal_current_segment(&shared);
 
-        shared.durable_frame_no.store(99999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
 
         let frame_no = shared.checkpoint().await.unwrap().unwrap();
         assert_eq!(frame_no, 4);

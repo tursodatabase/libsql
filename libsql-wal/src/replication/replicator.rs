@@ -4,10 +4,12 @@ use roaring::RoaringBitmap;
 use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
 
-use crate::error::Result;
 use crate::io::Io;
+use crate::replication::Error;
 use crate::segment::Frame;
 use crate::shared_wal::SharedWal;
+
+use super::Result;
 
 pub struct Replicator<IO: Io> {
     shared: Arc<SharedWal<IO>>,
@@ -38,7 +40,7 @@ impl<IO: Io> Replicator<IO> {
     ///
     /// In a single replication step, the replicator guarantees that a minimal set of frames is
     /// sent to the replica.
-    pub fn frame_stream(&mut self) -> impl Stream<Item = Result<Frame>> + '_ {
+    pub fn frame_stream(&mut self) -> impl Stream<Item = Result<Box<Frame>>> + '_ {
         async_stream::try_stream! {
             loop {
                 let most_recent_frame_no = *self
@@ -54,6 +56,7 @@ impl<IO: Io> Replicator<IO> {
                     let (stream, replicated_until, size_after) = current.frame_stream_from(self.next_frame_no, &mut seen);
                     let should_replicate_from_tail = replicated_until != self.next_frame_no;
 
+
                     // replicate from current
                     {
                         tokio::pin!(stream);
@@ -62,7 +65,7 @@ impl<IO: Io> Replicator<IO> {
 
                         loop {
                             let Some(frame) = stream.next().await else { break };
-                            let mut frame = frame?;
+                            let mut frame = frame.map_err(|e| Error::CurrentSegment(e.into()))?;
                             commit_frame_no = frame.header().frame_no().max(commit_frame_no);
                             if stream.peek().await.is_none() && !should_replicate_from_tail {
                                 frame.header_mut().set_size_after(size_after);
@@ -76,26 +79,51 @@ impl<IO: Io> Replicator<IO> {
 
                     // replicate from tail
                     if should_replicate_from_tail {
-                        let (stream, replicated_until) = current.tail().stream_pages_from(self.next_frame_no, &mut seen).await;
-                        tokio::pin!(stream);
-                        let mut stream = stream.peekable();
+                        let replicated_until = {
+                            let (stream, replicated_until) = current
+                                .tail()
+                                .stream_pages_from(replicated_until, self.next_frame_no, &mut seen).await;
+                            tokio::pin!(stream);
 
-                        let should_replicate_from_durable = replicated_until != self.next_frame_no;
+                            let mut stream = stream.peekable();
 
-                        loop {
-                            let Some(frame) = stream.next().await else { break };
-                            let mut frame = frame?;
-                            commit_frame_no = frame.header().frame_no().max(commit_frame_no);
-                            if stream.peek().await.is_none() && !should_replicate_from_durable {
-                                frame.header_mut().set_size_after(size_after);
-                                self.next_frame_no = commit_frame_no + 1;
+                            let should_replicate_from_storage = replicated_until != self.next_frame_no;
+
+                            loop {
+                                let Some(frame) = stream.next().await else { break };
+                                let mut frame = frame.map_err(|e| Error::SealedSegment(e.into()))?;
+                                commit_frame_no = frame.header().frame_no().max(commit_frame_no);
+                                if stream.peek().await.is_none() && !should_replicate_from_storage {
+                                    frame.header_mut().set_size_after(size_after);
+                                    self.next_frame_no = commit_frame_no + 1;
+                                }
+
+                                yield frame
                             }
 
-                            yield frame
-                        }
+                            should_replicate_from_storage.then_some(replicated_until)
+                        };
 
-                        if should_replicate_from_durable {
-                            todo!("we need to fetch new segments from durable storage");
+                        if let Some(replicated_until) = replicated_until {
+                            let stream = self
+                                .shared
+                                .stored_segments
+                                .stream(&mut seen, replicated_until, self.next_frame_no)
+                                .peekable();
+
+                            tokio::pin!(stream);
+
+                            loop {
+                                let Some(frame) = stream.next().await else { break };
+                                let mut frame = frame?;
+                                commit_frame_no = frame.header().frame_no().max(commit_frame_no);
+                                if stream.peek().await.is_none() {
+                                    frame.header_mut().set_size_after(size_after);
+                                    self.next_frame_no = commit_frame_no + 1;
+                                }
+
+                                yield frame
+                            }
                         }
                     }
                 }
@@ -106,6 +134,8 @@ impl<IO: Io> Replicator<IO> {
 
 #[cfg(test)]
 mod test {
+    use std::time::Duration;
+
     use tempfile::NamedTempFile;
     use tokio_stream::StreamExt;
 
@@ -223,5 +253,60 @@ mod test {
             })
             .unwrap();
         }
+    }
+
+    #[tokio::test]
+    async fn stream_from_storage() {
+        let env = TestEnv::new_store(true);
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("create table test (x)", ()).unwrap();
+
+        conn.execute("insert into test values (randomblob(128))", ())
+            .unwrap();
+
+        tokio::task::spawn_blocking({
+            let shared = shared.clone();
+            move || seal_current_segment(&shared)
+        })
+        .await
+        .unwrap();
+
+        conn.execute("create table test2 (x)", ()).unwrap();
+        conn.execute("insert into test2 values (randomblob(128))", ())
+            .unwrap();
+
+        tokio::task::spawn_blocking({
+            let shared = shared.clone();
+            move || seal_current_segment(&shared)
+        })
+        .await
+        .unwrap();
+
+        while !shared.current.load().tail().is_empty() {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+
+        let db_content = std::fs::read(&env.db_path("test").join("data")).unwrap();
+
+        let mut replicator = Replicator::new(shared, 1);
+        let stream = replicator.frame_stream().take(3);
+
+        tokio::pin!(stream);
+
+        let tmp = NamedTempFile::new().unwrap();
+        let mut replica_content = vec![0u8; db_content.len()];
+        while let Some(f) = stream.next().await {
+            let frame = f.unwrap();
+            dbg!(frame.header().page_no());
+            let offset = (frame.header().page_no() as usize - 1) * 4096;
+            tmp.as_file()
+                .write_all_at(frame.data(), offset as u64)
+                .unwrap();
+            replica_content[offset..offset + 4096].copy_from_slice(frame.data());
+        }
+
+        assert_eq!(replica_content, db_content);
     }
 }

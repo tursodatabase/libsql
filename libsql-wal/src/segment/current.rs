@@ -121,7 +121,7 @@ impl<F> CurrentSegment<F> {
             let mut frames = frame_list_to_option(frames);
             for i in 0..frames.len() {
                 let offset = tx.next_offset;
-                let buf = ZeroCopyBoxIoBuf(frames[i].take().unwrap());
+                let buf = ZeroCopyBoxIoBuf::new(frames[i].take().unwrap());
                 let (buf, ret) = self
                     .file
                     .write_all_at_async(buf, frame_offset(offset))
@@ -129,7 +129,7 @@ impl<F> CurrentSegment<F> {
 
                 ret?;
 
-                let frame = buf.0;
+                let frame = buf.into_inner();
 
                 current_savepoint
                     .index
@@ -365,13 +365,16 @@ impl<F> CurrentSegment<F> {
         &'a self,
         start_frame_no: u64,
         seen: &'a mut RoaringBitmap,
-    ) -> (impl Stream<Item = Result<Frame>> + 'a, u64, u32)
+    ) -> (impl Stream<Item = Result<Box<Frame>>> + 'a, u64, u32)
     where
         F: FileExt,
     {
         let (seg_start_frame_no, last_committed, db_size) =
             self.with_header(|h| (h.start_frame_no.get(), h.last_committed(), h.size_after()));
-        let replicated_until = seg_start_frame_no.max(start_frame_no);
+        let replicated_until = seg_start_frame_no
+            // if current is empty, start_frame_no doesn't exist
+            .min(last_committed)
+            .max(start_frame_no);
 
         // TODO: optim, we could read less frames if we had a mapping from frame_no to page_no in
         // the index
@@ -379,7 +382,7 @@ impl<F> CurrentSegment<F> {
             if !self.is_empty() {
                 let mut frame_offset = (last_committed - seg_start_frame_no) as u32;
                 loop {
-                    let buf = ZeroCopyBuf::<Frame>::new_uninit();
+                    let buf = ZeroCopyBoxIoBuf::new(Frame::new_box_zeroed());
                     let (buf, res) = self.read_frame_offset_async(frame_offset, buf).await;
                     res?;
 
@@ -594,7 +597,7 @@ mod test {
         }
 
         seal_current_segment(&shared);
-        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
         shared.checkpoint().await.unwrap();
 
         let mut orig = Vec::new();
@@ -673,7 +676,7 @@ mod test {
         let current = shared.current.load();
         let (stream, replicated_until, size_after) = current.frame_stream_from(1, &mut seen);
         tokio::pin!(stream);
-        assert_eq!(replicated_until, 3);
+        assert_eq!(replicated_until, 2);
         assert_eq!(size_after, 2);
         assert_eq!(stream.fold(0, |count, _| count + 1).await, 0);
     }

@@ -4,7 +4,6 @@ use std::fmt;
 use std::mem::size_of;
 use std::path::Path;
 use std::pin::Pin;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::task::Poll;
 
@@ -28,7 +27,7 @@ use crate::io::compat::copy_to_file;
 use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegmentDataHeader;
 use crate::segment::Frame;
-use crate::storage::{Error, RestoreOptions, Result};
+use crate::storage::{Error, RestoreOptions, Result, SegmentKey};
 use crate::LIBSQL_MAGIC;
 
 pub struct S3Backend<IO> {
@@ -121,7 +120,7 @@ impl<IO: Io> S3Backend<IO> {
         Ok(stream.into_async_read())
     }
 
-    async fn fetch_segment_data(
+    async fn fetch_segment_data_inner(
         &self,
         config: &S3Config,
         folder_key: &FolderKey<'_>,
@@ -159,12 +158,12 @@ impl<IO: Io> S3Backend<IO> {
         Ok(())
     }
 
-    async fn fetch_segment_index(
+    async fn fetch_segment_index_inner(
         &self,
         config: &S3Config,
         folder_key: &FolderKey<'_>,
         segment_key: &SegmentKey,
-    ) -> Result<fst::Map<Vec<u8>>> {
+    ) -> Result<fst::Map<Arc<[u8]>>> {
         let s3_index_key = s3_segment_index_key(folder_key, segment_key);
         let mut stream = self.s3_get(config, s3_index_key).await?.into_async_read();
         let mut header: SegmentIndexHeader = SegmentIndexHeader::new_zeroed();
@@ -178,12 +177,13 @@ impl<IO: Io> S3Backend<IO> {
         if checksum != header.checksum.get() {
             return Err(Error::InvalidIndex("invalid index data checksum"));
         }
-        let index = fst::Map::new(data).map_err(|_| Error::InvalidIndex("invalid index bytes"))?;
+        let index =
+            fst::Map::new(data.into()).map_err(|_| Error::InvalidIndex("invalid index bytes"))?;
         Ok(index)
     }
 
     /// Find the most recent, and biggest segment that may contain `frame_no`
-    async fn find_segment(
+    async fn find_segment_inner(
         &self,
         config: &S3Config,
         folder_key: &FolderKey<'_>,
@@ -228,7 +228,10 @@ impl<IO: Io> S3Backend<IO> {
             cluster_id: &config.cluster_id,
             namespace,
         };
-        let Some(latest_key) = self.find_segment(config, &folder_key, u64::MAX).await? else {
+        let Some(latest_key) = self
+            .find_segment_inner(config, &folder_key, u64::MAX)
+            .await?
+        else {
             tracing::info!("nothing to restore for {namespace}");
             return Ok(());
         };
@@ -263,7 +266,7 @@ impl<IO: Io> S3Backend<IO> {
 
             let next_frame_no = header.start_frame_no.get() - 1;
             let Some(key) = self
-                .find_segment(config, &folder_key, next_frame_no)
+                .find_segment_inner(config, &folder_key, next_frame_no)
                 .await?
             else {
                 todo!("there should be a segment!");
@@ -284,10 +287,10 @@ impl<IO: Io> S3Backend<IO> {
         folder_key: &FolderKey<'_>,
         segment_key: &SegmentKey,
         dest_file: &impl FileExt,
-    ) -> Result<fst::Map<Vec<u8>>> {
+    ) -> Result<fst::Map<Arc<[u8]>>> {
         let (_, index) = tokio::try_join!(
-            self.fetch_segment_data(config, &folder_key, &segment_key, dest_file),
-            self.fetch_segment_index(config, &folder_key, &segment_key),
+            self.fetch_segment_data_inner(config, &folder_key, &segment_key, dest_file),
+            self.fetch_segment_index_inner(config, &folder_key, &segment_key),
         )?;
 
         Ok(index)
@@ -298,79 +301,6 @@ pub struct S3Config {
     bucket: String,
     aws_config: SdkConfig,
     cluster_id: String,
-}
-
-/// SegmentKey is used to index segment data, where keys a lexicographically ordered.
-/// The scheme is `{u64::MAX - start_frame_no}-{u64::MAX - end_frame_no}`. With that naming convention, when looking for
-/// the segment containing 'n', we can perform a prefix search with "{u64::MAX - n}". The first
-/// element of the range will be the biggest segment that contains n if it exists.
-/// Beware that if no segments contain n, either the smallest segment not containing n, if n < argmin
-/// {start_frame_no}, or the largest segment if n > argmax {end_frame_no} will be returned.
-/// e.g:
-/// ```ignore
-/// let mut map = BTreeMap::new();
-///
-/// let meta = SegmentMeta { start_frame_no: 1, end_frame_no: 100 };
-/// map.insert(SegmentKey(&meta).to_string(), meta);
-///
-/// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 500 };
-/// map.insert(SegmentKey(&meta).to_string(), meta);
-///
-/// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 1000 };
-/// map.insert(SegmentKey(&meta).to_string(), meta);
-///
-/// map.range(format!("{:019}", u64::MAX - 50)..).next();
-/// map.range(format!("{:019}", u64::MAX - 0)..).next();
-/// map.range(format!("{:019}", u64::MAX - 1)..).next();
-/// map.range(format!("{:019}", u64::MAX - 100)..).next();
-/// map.range(format!("{:019}", u64::MAX - 101)..).next();
-/// map.range(format!("{:019}", u64::MAX - 5000)..).next();
-/// ```
-#[derive(Debug, Clone, Copy)]
-pub struct SegmentKey {
-    start_frame_no: u64,
-    end_frame_no: u64,
-}
-
-impl SegmentKey {
-    fn includes(&self, frame_no: u64) -> bool {
-        (self.start_frame_no..self.end_frame_no).contains(&frame_no)
-    }
-}
-
-impl From<&SegmentMeta> for SegmentKey {
-    fn from(value: &SegmentMeta) -> Self {
-        Self {
-            start_frame_no: value.start_frame_no,
-            end_frame_no: value.end_frame_no,
-        }
-    }
-}
-
-impl FromStr for SegmentKey {
-    type Err = ();
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        let (rev_start_fno, s) = s.split_at(20);
-        let start_frame_no = u64::MAX - rev_start_fno.parse::<u64>().map_err(|_| ())?;
-        let (_, rev_end_fno) = s.split_at(1);
-        let end_frame_no = u64::MAX - rev_end_fno.parse::<u64>().map_err(|_| ())?;
-        Ok(Self {
-            start_frame_no,
-            end_frame_no,
-        })
-    }
-}
-
-impl fmt::Display for SegmentKey {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{:019}-{:019}",
-            u64::MAX - self.start_frame_no,
-            u64::MAX - self.end_frame_no,
-        )
-    }
 }
 
 struct FolderKey<'a> {
@@ -452,13 +382,16 @@ where
         namespace: &NamespaceName,
         frame_no: u64,
         dest_path: &Path,
-    ) -> Result<fst::Map<Vec<u8>>> {
+    ) -> Result<fst::Map<Arc<[u8]>>> {
         let folder_key = FolderKey {
             cluster_id: &config.cluster_id,
             namespace: &namespace,
         };
 
-        let Some(segment_key) = self.find_segment(config, &folder_key, frame_no).await? else {
+        let Some(segment_key) = self
+            .find_segment_inner(config, &folder_key, frame_no)
+            .await?
+        else {
             return Err(Error::FrameNotFound(frame_no));
         };
 
@@ -477,13 +410,15 @@ where
         config: &Self::Config,
         namespace: &NamespaceName,
     ) -> Result<super::DbMeta> {
-        // request a key bigger than any other to get the last segment
         let folder_key = FolderKey {
             cluster_id: &config.cluster_id,
             namespace: &namespace,
         };
 
-        let max_segment_key = self.find_segment(config, &folder_key, u64::MAX).await?;
+        // request a key bigger than any other to get the last segment
+        let max_segment_key = self
+            .find_segment_inner(config, &folder_key, u64::MAX)
+            .await?;
 
         Ok(super::DbMeta {
             max_frame_no: max_segment_key.map(|s| s.end_frame_no).unwrap_or(0),
@@ -505,6 +440,63 @@ where
             RestoreOptions::Latest => self.restore_latest(config, &namespace, dest).await,
             RestoreOptions::Timestamp(_) => todo!(),
         }
+    }
+
+    async fn find_segment(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        frame_no: u64,
+    ) -> Result<SegmentKey> {
+        let folder_key = FolderKey {
+            cluster_id: &config.cluster_id,
+            namespace: &namespace,
+        };
+        self.find_segment_inner(config, &folder_key, frame_no)
+            .await?
+            .ok_or_else(|| Error::FrameNotFound(frame_no))
+    }
+
+    async fn fetch_segment_index(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+    ) -> Result<fst::Map<Arc<[u8]>>> {
+        let folder_key = FolderKey {
+            cluster_id: &config.cluster_id,
+            namespace: &namespace,
+        };
+        self.fetch_segment_index_inner(config, &folder_key, key)
+            .await
+    }
+
+    async fn fetch_segment_data_to_file(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        file: &impl FileExt,
+    ) -> Result<()> {
+        let folder_key = FolderKey {
+            cluster_id: &config.cluster_id,
+            namespace: &namespace,
+        };
+        self.fetch_segment_data_inner(config, &folder_key, key, file)
+            .await?;
+        Ok(())
+    }
+
+    async fn fetch_segment_data(
+        self: Arc<Self>,
+        config: Arc<Self::Config>,
+        namespace: NamespaceName,
+        key: SegmentKey,
+    ) -> Result<impl FileExt> {
+        let file = self.io.tempfile()?;
+        self.fetch_segment_data_to_file(&config, &namespace, &key, &file)
+            .await?;
+        Ok(file)
     }
 }
 

@@ -99,10 +99,10 @@ pub(crate) struct JobResult<C, S> {
 
 #[cfg(test)]
 mod test {
+    use std::future::ready;
     // use std::fs::File;
     // use std::io::Write;
     // use std::mem::size_of;
-    use std::path::Path;
     use std::str::FromStr;
     // use std::sync::atomic::AtomicBool;
     use std::sync::Arc;
@@ -115,7 +115,7 @@ mod test {
 
     use crate::io::file::FileExt;
     use crate::io::StdIO;
-    use crate::storage::RestoreOptions;
+    use crate::storage::{RestoreOptions, SegmentKey};
     // use crate::registry::WalRegistry;
     // use crate::segment::compacted::CompactedSegmentDataHeader;
     // use crate::segment::sealed::SealedSegment;
@@ -442,16 +442,6 @@ mod test {
                 Ok(())
             }
 
-            async fn fetch_segment(
-                &self,
-                _config: &Self::Config,
-                _namespace: &NamespaceName,
-                _frame_no: u64,
-                _dest_path: &Path,
-            ) -> Result<fst::Map<Vec<u8>>> {
-                todo!()
-            }
-
             async fn meta(
                 &self,
                 _config: &Self::Config,
@@ -473,6 +463,53 @@ mod test {
             ) -> Result<()> {
                 todo!()
             }
+
+            async fn find_segment(
+                &self,
+                _config: &Self::Config,
+                _namespace: &NamespaceName,
+                _frame_no: u64,
+            ) -> Result<SegmentKey> {
+                todo!()
+            }
+
+            async fn fetch_segment_index(
+                &self,
+                _config: &Self::Config,
+                _namespace: &NamespaceName,
+                _key: &SegmentKey,
+            ) -> Result<fst::Map<Arc<[u8]>>> {
+                todo!()
+            }
+
+            async fn fetch_segment_data_to_file(
+                &self,
+                _config: &Self::Config,
+                _namespace: &NamespaceName,
+                _key: &SegmentKey,
+                _file: &impl FileExt,
+            ) -> Result<()> {
+                todo!()
+            }
+
+            async fn fetch_segment_data(
+                self: Arc<Self>,
+                _config: Arc<Self::Config>,
+                _namespace: NamespaceName,
+                _key: SegmentKey,
+            ) -> Result<impl FileExt> {
+                Ok(std::fs::File::open("").unwrap())
+            }
+
+            async fn fetch_segment(
+                &self,
+                _config: &Self::Config,
+                _namespace: &NamespaceName,
+                _frame_no: u64,
+                _dest_path: &std::path::Path,
+            ) -> Result<fst::Map<Arc<[u8]>>> {
+                todo!()
+            }
         }
 
         let job = Job {
@@ -482,6 +519,7 @@ mod test {
                     segment: TestSegment,
                     created_at: Utc::now(),
                     storage_config_override: None,
+                    on_store_callback: Box::new(|_| Box::pin(ready(()))),
                 },
                 id: 0,
             },

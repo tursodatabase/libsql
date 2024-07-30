@@ -6,6 +6,7 @@ use aws_config::{BehaviorVersion, Region};
 use aws_credential_types::Credentials;
 use aws_sdk_s3::config::SharedCredentialsProvider;
 use clap::{Parser, ValueEnum};
+use libsql_wal::checkpointer::LibsqlCheckpointer;
 use tokio::task::{block_in_place, JoinSet};
 
 use libsql_sys::name::NamespaceName;
@@ -83,7 +84,7 @@ async fn main() {
 
     if cli.s3_args.enable_s3 {
         let storage = setup_s3_storage(&cli, &mut join_set).await;
-        handle(&cli, storage).await;
+        handle(&cli, storage, &mut join_set).await;
     } else {
         todo!()
     }
@@ -91,13 +92,16 @@ async fn main() {
     while join_set.join_next().await.is_some() {}
 }
 
-async fn handle<S>(cli: &Cli, storage: S)
+async fn handle<S>(cli: &Cli, storage: S, join_set: &mut JoinSet<()>)
 where
     S: Storage<Segment = SealedSegment<std::fs::File>>,
 {
     match &cli.subcommand {
         Subcommand::Shell { db_path } => {
-            let registry = WalRegistry::new(db_path.clone(), storage).unwrap();
+            let (sender, receiver) = tokio::sync::mpsc::channel(64);
+            let registry = Arc::new(WalRegistry::new(db_path.clone(), storage, sender).unwrap());
+            let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 64);
+            join_set.spawn(checkpointer.run());
             run_shell(
                 registry,
                 &db_path,
@@ -143,13 +147,15 @@ where
     println!("max durable frame: {durable}");
 }
 
-async fn run_shell<S>(registry: WalRegistry<StdIO, S>, db_path: &Path, namespace: NamespaceName)
-where
+async fn run_shell<S>(
+    registry: Arc<WalRegistry<StdIO, S>>,
+    db_path: &Path,
+    namespace: NamespaceName,
+) where
     S: Storage<Segment = SealedSegment<std::fs::File>>,
 {
     let db_path = db_path.join("dbs").join(namespace.as_str());
     tokio::fs::create_dir_all(&db_path).await.unwrap();
-    let registry = Arc::new(registry);
     let resolver = move |path: &Path| {
         NamespaceName::from_string(
             path.parent()
@@ -216,7 +222,7 @@ where
 
     drop(conn);
 
-    registry.shutdown().unwrap();
+    registry.shutdown().await.unwrap();
 }
 
 async fn handle_builtin<S>(
