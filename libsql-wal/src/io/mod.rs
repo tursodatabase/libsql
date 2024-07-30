@@ -3,6 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
+use rand::{rngs::ThreadRng, thread_rng, Rng};
 use uuid::Uuid;
 
 pub use self::file::FileExt;
@@ -14,6 +15,7 @@ pub mod file;
 pub trait Io: Send + Sync + 'static {
     type File: FileExt;
     type TempFile: FileExt;
+    type Rng: Rng;
 
     fn create_dir_all(&self, path: &Path) -> io::Result<()>;
     /// TODO: when adding an async variant make sure all places where async is needed are replaced
@@ -30,6 +32,8 @@ pub trait Io: Send + Sync + 'static {
     fn now(&self) -> DateTime<Utc>;
     fn uuid(&self) -> Uuid;
     fn hard_link(&self, src: &Path, dst: &Path) -> io::Result<()>;
+    fn with_rng<F, R>(&self, f: F) -> R
+        where F: FnOnce(&mut Self::Rng) -> R;
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -38,6 +42,7 @@ pub struct StdIO(pub(crate) ());
 impl Io for StdIO {
     type File = std::fs::File;
     type TempFile = std::fs::File;
+    type Rng = ThreadRng;
 
     fn create_dir_all(&self, path: &Path) -> io::Result<()> {
         std::fs::create_dir_all(path)
@@ -72,11 +77,18 @@ impl Io for StdIO {
     fn hard_link(&self, src: &Path, dst: &Path) -> io::Result<()> {
         std::fs::hard_link(src, dst)
     }
+
+    fn with_rng<F, R>(&self, f: F) -> R
+        where F: FnOnce(&mut Self::Rng) -> R,
+        {
+                  f(&mut thread_rng())
+    }
 }
 
 impl<T: Io> Io for Arc<T> {
     type File = T::File;
     type TempFile = T::TempFile;
+    type Rng = T::Rng;
 
     fn create_dir_all(&self, path: &Path) -> io::Result<()> {
         self.as_ref().create_dir_all(path)
@@ -106,6 +118,11 @@ impl<T: Io> Io for Arc<T> {
 
     fn hard_link(&self, src: &Path, dst: &Path) -> io::Result<()> {
         self.as_ref().hard_link(src, dst)
+    }
+
+    fn with_rng<F, R>(&self, f: F) -> R
+        where F: FnOnce(&mut Self::Rng) -> R {
+            self.as_ref().with_rng(f)
     }
 }
 

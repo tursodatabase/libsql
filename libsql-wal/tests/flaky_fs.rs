@@ -110,6 +110,7 @@ impl FlakyIo {
 impl Io for FlakyIo {
     type File = FlakyFile;
     type TempFile = FlakyFile;
+    type Rng = rand_chacha::ChaCha8Rng;
 
     fn create_dir_all(&self, path: &std::path::Path) -> std::io::Result<()> {
         self.with_random_failure(|| std::fs::create_dir_all(path))
@@ -149,6 +150,11 @@ impl Io for FlakyIo {
 
     fn hard_link(&self, _src: &Path, _dst: &Path) -> std::io::Result<()> {
         todo!()
+    }
+
+    fn with_rng<F, R>(&self, f: F) -> R
+        where F: FnOnce(&mut Self::Rng) -> R {
+            f(&mut self.rng.lock())
     }
 }
 
