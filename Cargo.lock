@@ -3581,6 +3581,7 @@ dependencies = [
  "libsql-sys",
  "libsql-wal",
  "libsql_replication",
+ "libsql_sync",
  "md-5",
  "metrics",
  "metrics-exporter-prometheus",
