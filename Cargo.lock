@@ -3796,6 +3796,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsql_sync"
+version = "0.4.0"
+dependencies = [
+ "libsql-sys",
+ "prost",
+ "prost-build",
+ "tonic 0.11.0",
+ "tonic-build 0.11.0",
+]
+
+[[package]]
 name = "linked-hash-map"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
