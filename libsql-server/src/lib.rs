@@ -180,7 +180,6 @@ struct Services<A, P, S, C> {
     disable_default_namespace: bool,
     db_config: DbConfig,
     user_auth_strategy: Auth,
-    path: Arc<Path>,
     shutdown: Arc<Notify>,
 }
 
@@ -206,7 +205,6 @@ where
             enable_console: self.user_api_config.enable_http_console,
             self_url: self.user_api_config.self_url,
             primary_url: self.user_api_config.primary_url,
-            path: self.path.clone(),
             shutdown: self.shutdown.clone(),
         };
 
@@ -388,7 +386,6 @@ where
             disable_default_namespace: self.disable_default_namespace,
             db_config: self.db_config,
             user_auth_strategy,
-            path: self.path.clone(),
             shutdown,
         }
     }
