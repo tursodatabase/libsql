@@ -6,9 +6,9 @@ use std::sync::Arc;
 use dashmap::DashMap;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::{Condvar, Mutex};
+use rand::Rng;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
-use rand::Rng;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::checkpointer::CheckpointMessage;
@@ -128,9 +128,8 @@ where
                     update_durable(fno, notifier, durable_frame_no, namespace).await;
                 })
             });
-            self.storage
-                .store(&shared.namespace, sealed.clone(), None, cb);
-            new.tail().push(sealed);
+            new.tail().push(sealed.clone());
+            self.storage.store(&shared.namespace, sealed, None, cb);
         }
 
         shared.current.swap(Arc::new(new));
@@ -313,6 +312,7 @@ where
                 namespace.clone(),
             )),
             shutdown: false.into(),
+            checkpoint_notifier: self.checkpoint_notifier.clone(),
         });
 
         self.opened

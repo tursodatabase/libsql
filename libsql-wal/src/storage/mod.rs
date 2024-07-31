@@ -339,7 +339,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
                 .entry(namespace.clone())
                 .or_default()
                 .insert(key, (out_path, index));
-            tokio::runtime::Handle::current().block_on(on_store(end_frame_no))
+            tokio::runtime::Handle::current().block_on(on_store(end_frame_no));
         }
     }
 

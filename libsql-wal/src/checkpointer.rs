@@ -89,6 +89,8 @@ pub struct Checkpointer<P> {
     join_set: JoinSet<(NamespaceName, crate::error::Result<()>)>,
     processing: Vec<NamespaceName>,
     errors: usize,
+    /// previous iteration of the loop resulted in no work being enqueued
+    no_work: bool,
 }
 
 #[allow(private_bounds)]
@@ -111,6 +113,7 @@ where
             join_set: JoinSet::new(),
             processing: Vec::new(),
             errors: 0,
+            no_work: false,
         }
     }
 
@@ -164,17 +167,19 @@ where
             }
             // don't wait if there is stuff to enqueue
             _ = std::future::ready(()), if !self.scheduled.is_empty()
-                && self.join_set.len() < self.max_checkpointing_conccurency => (),
+                && self.join_set.len() < self.max_checkpointing_conccurency && !self.no_work => (),
         }
 
         let n_available = self.max_checkpointing_conccurency - self.join_set.len();
         if n_available > 0 {
+            self.no_work = true;
             for namespace in self
                 .scheduled
                 .difference(&self.checkpointing)
                 .take(n_available)
                 .cloned()
             {
+                self.no_work = false;
                 self.processing.push(namespace.clone());
                 let perform_checkpoint = self.perform_checkpoint.clone();
                 self.join_set.spawn(async move {

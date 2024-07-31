@@ -81,6 +81,13 @@ where
     where
         F: FileExt,
     {
+        struct Guard<'a>(&'a AtomicBool);
+        impl<'a> Drop for Guard<'a> {
+            fn drop(&mut self) {
+                self.0.store(false, Ordering::SeqCst);
+            }
+        }
+
         if self
             .checkpointing
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
@@ -88,6 +95,9 @@ where
         {
             return Ok(None);
         }
+
+        let _g = Guard(&self.checkpointing);
+
         let mut segs = Vec::new();
         let mut current = self.head.load();
         // find the longest chain of segments that can be checkpointed, iow, segments that do not have
@@ -171,8 +181,6 @@ where
         self.len.fetch_sub(segs.len(), Ordering::Relaxed);
 
         db_file.set_len(size_after as u64 * 4096)?;
-
-        self.checkpointing.store(false, Ordering::SeqCst);
 
         Ok(Some(last_replication_index))
     }

@@ -15,11 +15,12 @@ use zerocopy::{AsBytes, FromZeroes};
 use crate::error::Result;
 use crate::io::buf::{IoBufMut, ZeroCopyBuf};
 use crate::io::file::{BufCopy, FileExt};
-use crate::LIBSQL_MAGIC;
 use crate::io::Inspect;
+use crate::segment::{checked_frame_offset, CheckedFrame};
+use crate::LIBSQL_MAGIC;
 
 use super::compacted::{CompactedSegmentDataFooter, CompactedSegmentDataHeader};
-use super::{frame_offset, page_offset, Frame, FrameHeader, Segment, SegmentHeader, SegmentFlags};
+use super::{frame_offset, page_offset, Frame, Segment, SegmentFlags, SegmentHeader};
 
 /// an immutable, wal segment
 #[derive(Debug)]

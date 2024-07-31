@@ -7,7 +7,9 @@ use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
 use parking_lot::{Mutex, MutexGuard};
+use tokio::sync::mpsc;
 
+use crate::checkpointer::CheckpointMessage;
 use crate::error::{Error, Result};
 use crate::io::file::FileExt;
 use crate::io::Io;
@@ -48,6 +50,7 @@ pub struct SharedWal<IO: Io> {
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
     pub(crate) stored_segments: Box<dyn ReplicateFromStorage>,
     pub(crate) shutdown: AtomicBool,
+    pub(crate) checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
 }
 
 impl<IO: Io> SharedWal<IO> {
@@ -87,6 +90,8 @@ impl<IO: Io> SharedWal<IO> {
             created_at: Instant::now(),
             conn_id,
             pages_read: 0,
+            namespace: self.namespace.clone(),
+            checkpoint_notifier: self.checkpoint_notifier.clone(),
         }
     }
 

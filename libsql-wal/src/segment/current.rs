@@ -39,7 +39,7 @@ pub struct CurrentSegment<F> {
     /// lock
     read_locks: Arc<AtomicU64>,
     sealed: AtomicBool,
-    /// current runnign checksum
+    /// current running checksum
     current_checksum: AtomicU32,
     tail: Arc<SegmentList<SealedSegment<F>>>,
 }
@@ -458,8 +458,9 @@ impl<F> CurrentSegment<F> {
         self.read_locks().fetch_add(1, Ordering::SeqCst);
     }
 
-    pub fn dec_reader_count(&self) {
-        self.read_locks().fetch_sub(1, Ordering::SeqCst);
+    /// return true if the reader count is 0
+    pub fn dec_reader_count(&self) -> bool {
+        self.read_locks().fetch_sub(1, Ordering::SeqCst) - 1 == 0
     }
 
     pub fn read_locks(&self) -> &AtomicU64 {
@@ -1017,7 +1018,7 @@ mod test {
 
         let tmp = Arc::new(tempdir().unwrap());
         {
-            let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone());
+            let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone(), false);
             let conn = env.open_conn("test");
             let shared = env.shared("test");
 
@@ -1038,7 +1039,7 @@ mod test {
         }
 
         {
-            let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone());
+            let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone(), false);
             let conn = env.open_conn("test");
             // the db was recovered: we lost some rows, but it still works
             conn.query_row("select count(*) from test", (), |row| {

@@ -3,8 +3,11 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::time::Instant;
 
+use libsql_sys::name::NamespaceName;
 use parking_lot::{ArcMutexGuard, RawMutex};
+use tokio::sync::mpsc;
 
+use crate::checkpointer::CheckpointMessage;
 use crate::segment::current::{CurrentSegment, SegmentIndex};
 use crate::shared_wal::WalLock;
 
@@ -77,8 +80,11 @@ pub struct ReadTransaction<F> {
     /// number of pages read by this transaction. This is used to determine whether a write lock
     /// will be re-acquired.
     pub pages_read: usize,
+    pub namespace: NamespaceName,
+    pub checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
 }
 
+// fixme: clone should probably not be implemented for this type, figure a way to do it
 impl<F> Clone for ReadTransaction<F> {
     fn clone(&self) -> Self {
         self.current.inc_reader_count();
@@ -90,14 +96,21 @@ impl<F> Clone for ReadTransaction<F> {
             created_at: self.created_at,
             conn_id: self.conn_id,
             pages_read: self.pages_read,
+            namespace: self.namespace.clone(),
+            checkpoint_notifier: self.checkpoint_notifier.clone(),
         }
     }
 }
 
 impl<F> Drop for ReadTransaction<F> {
     fn drop(&mut self) {
-        // FIXME: if the count drops to 0, register for compaction.
-        self.current.dec_reader_count();
+        // FIXME: it would be more approriate to wait till the segment is stored before notfying,
+        // because we are not waiting for read to be released before that
+        if self.current.dec_reader_count() && self.current.is_sealed() {
+            let _: Result<_, _> = self
+                .checkpoint_notifier
+                .try_send(self.namespace.clone().into());
+        }
     }
 }
 
