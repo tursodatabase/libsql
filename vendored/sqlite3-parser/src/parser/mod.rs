@@ -11,7 +11,7 @@ pub mod parse {
     #![allow(clippy::needless_return)]
     #![allow(clippy::upper_case_acronyms)]
     #![allow(clippy::manual_range_patterns)]
-
+    #![allow(unexpected_cfgs)]
     include!(concat!(env!("OUT_DIR"), "/parse.rs"));
 }
 

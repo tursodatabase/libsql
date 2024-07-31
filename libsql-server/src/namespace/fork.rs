@@ -19,10 +19,7 @@ use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
 use super::broadcasters::BroadcasterHandle;
 use super::meta_store::MetaStoreHandle;
-use super::{
-    Namespace, NamespaceBottomlessDbId, NamespaceConfig, NamespaceName, NamespaceStore,
-    RestoreOption,
-};
+use super::{Namespace, NamespaceConfig, NamespaceName, NamespaceStore, RestoreOption};
 
 type Result<T> = crate::Result<T, ForkError>;
 
@@ -63,7 +60,6 @@ pub struct ForkTask<'a> {
     pub to_namespace: NamespaceName,
     pub to_config: MetaStoreHandle,
     pub restore_to: Option<PointInTimeRestore>,
-    pub bottomless_db_id: NamespaceBottomlessDbId,
     pub ns_config: &'a NamespaceConfig,
     pub resolve_attach: ResolveNamespacePathFn,
     pub store: NamespaceStore,

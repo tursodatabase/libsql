@@ -1651,7 +1651,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         assert_eq!("memory", db.one_column::<String>("PRAGMA journal_mode")?);
         let mode = db.one_column::<String>("PRAGMA journal_mode=off")?;
-        if cfg!(features = "bundled") {
+        if cfg!(feature = "bundled") {
             assert_eq!(mode, "off");
         } else {
             // Note: system SQLite on macOS defaults to "off" rather than

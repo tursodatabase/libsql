@@ -9,7 +9,6 @@ mod types;
 #[macro_use]
 pub mod timing;
 
-use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -257,7 +256,6 @@ pub struct UserApi<A, P, S> {
     pub enable_console: bool,
     pub self_url: Option<String>,
     pub primary_url: Option<String>,
-    pub path: Arc<Path>,
     pub shutdown: Arc<Notify>,
 }
 

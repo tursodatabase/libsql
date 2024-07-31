@@ -65,6 +65,8 @@ extra_check = []
 modern_sqlite = []
 # Build bundled sqlite with -fsanitize=address
 column_decltype = []
+unlock_notify = []
+bundled = []
 
 # Helper feature for enabling most non-build-related optional features
 # or dependencies (except `session`). This is useful for running tests / clippy

@@ -694,7 +694,6 @@ impl Namespace {
                     to_namespace: to_ns.clone(),
                     logger,
                     restore_to,
-                    bottomless_db_id,
                     to_config,
                     ns_config,
                     resolve_attach,
