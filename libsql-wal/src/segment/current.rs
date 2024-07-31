@@ -23,7 +23,7 @@ use crate::io::Inspect;
 use crate::segment::{checked_frame_offset, SegmentFlags};
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
 use crate::transaction::{Transaction, TxGuard};
-use crate::LIBSQL_MAGIC;
+use crate::{LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::list::SegmentList;
 use super::{CheckedFrame, Frame, FrameHeader, SegmentHeader};
@@ -67,8 +67,9 @@ impl<F> CurrentSegment<F> {
             header_cheksum: 0.into(),
             flags: 0.into(),
             magic: LIBSQL_MAGIC.into(),
-            version: 1.into(),
+            version: LIBSQL_WAL_VERSION.into(),
             salt: salt.into(),
+            page_size: LIBSQL_PAGE_SIZE.into(),
         };
 
         header.recompute_checksum();

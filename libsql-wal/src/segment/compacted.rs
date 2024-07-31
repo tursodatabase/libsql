@@ -6,6 +6,7 @@ use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
 use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
 use crate::io::FileExt;
+use crate::{LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::{Frame, Result};
 
@@ -19,6 +20,25 @@ pub struct CompactedSegmentDataHeader {
     pub(crate) start_frame_no: lu64,
     pub(crate) end_frame_no: lu64,
     pub(crate) size_after: lu32,
+    /// for now, always 4096
+    pub(crate) page_size: lu16,
+}
+impl CompactedSegmentDataHeader {
+    fn check(&self) -> Result<()> {
+        if self.magic.get() != LIBSQL_MAGIC {
+            return Err(super::Error::InvalidHeaderMagic);
+        }
+
+        if self.page_size.get() != LIBSQL_PAGE_SIZE {
+            return Err(super::Error::InvalidPageSize);
+        }
+
+        if self.version.get() != LIBSQL_WAL_VERSION {
+            return Err(super::Error::InvalidPageSize);
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, AsBytes, FromZeroes, FromBytes)]
@@ -37,7 +57,8 @@ impl<F: FileExt> CompactedSegment<F> {
         let buf = ZeroCopyBuf::new_uninit();
         let (buf, ret) = file.read_exact_at_async(buf, 0).await;
         ret?;
-        let header = buf.into_inner();
+        let header: CompactedSegmentDataHeader = buf.into_inner();
+        header.check()?;
         Ok(Self { file, header })
     }
 

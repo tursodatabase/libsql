@@ -12,6 +12,8 @@ pub mod transaction;
 pub mod wal;
 
 const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
+const LIBSQL_PAGE_SIZE: u16 = 4096;
+const LIBSQL_WAL_VERSION: u16 = 1;
 
 #[cfg(any(debug_assertions, test))]
 pub mod test {
