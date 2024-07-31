@@ -43,6 +43,8 @@ impl<IO: Io> Replicator<IO> {
     pub fn frame_stream(&mut self) -> impl Stream<Item = Result<Box<Frame>>> + '_ {
         async_stream::try_stream! {
             loop {
+                // First we decide up to what frame_no we want to replicate in this step. If we are
+                // already up to date, wait for something to happen
                 let most_recent_frame_no = *self
                     .new_frame_notifier
                     .wait_for(|fno| *fno > self.next_frame_no)
@@ -50,14 +52,15 @@ impl<IO: Io> Replicator<IO> {
                     .expect("channel cannot be closed because we hold a ref to the sending end");
 
                 let mut commit_frame_no = 0;
+                // we have stuff to replicate
                 if most_recent_frame_no > self.next_frame_no {
+                    // first replicate the most recent version of each page from the current
+                    // segment. We also return how far we have replicated from the current log
                     let current = self.shared.current.load();
                     let mut seen = RoaringBitmap::new();
                     let (stream, replicated_until, size_after) = current.frame_stream_from(self.next_frame_no, &mut seen);
                     let should_replicate_from_tail = replicated_until != self.next_frame_no;
 
-
-                    // replicate from current
                     {
                         tokio::pin!(stream);
 
@@ -76,8 +79,8 @@ impl<IO: Io> Replicator<IO> {
                         }
                     }
 
-
-                    // replicate from tail
+                    // Replicating from the current segment wasn't enough to bring us up to date,
+                    // wee need to take frames from the sealed segments.
                     if should_replicate_from_tail {
                         let replicated_until = {
                             let (stream, replicated_until) = current
@@ -104,6 +107,8 @@ impl<IO: Io> Replicator<IO> {
                             should_replicate_from_storage.then_some(replicated_until)
                         };
 
+                        // Replicating from sealed segments was not enough, so we replicate from
+                        // durable storage
                         if let Some(replicated_until) = replicated_until {
                             let stream = self
                                 .shared
