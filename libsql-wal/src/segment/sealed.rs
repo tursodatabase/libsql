@@ -242,7 +242,7 @@ impl<F: FileExt> SealedSegment<F> {
             match file.read_exact_at(frame.as_bytes_mut(), offset) {
                 Ok(_) => {
                     let new_checksum = frame.frame.checksum(current_checksum);
-                    // this is the first checksum that don't match the checksum chain, drop the
+                    // this is the first checksum that doesn't match the checksum chain, drop the
                     // transaction and any frame after that.
                     if new_checksum != frame.checksum.get() {
                         tracing::warn!(
