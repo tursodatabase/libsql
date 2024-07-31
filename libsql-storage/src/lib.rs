@@ -6,11 +6,12 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use crate::local_cache::LocalCache;
-use crate::rpc::Frame;
+use crate::rpc::{ErrorCode, Frame};
 use libsql_sys::ffi::{SQLITE_ABORT, SQLITE_BUSY};
 use libsql_sys::name::{NamespaceName, NamespaceResolver};
 use libsql_sys::rusqlite;
 use libsql_sys::wal::{Result, Vfs, Wal, WalManager};
+use prost::Message;
 use rpc::storage_client::StorageClient;
 use tonic::transport::Channel;
 use tracing::{error, trace, warn};
@@ -365,10 +366,13 @@ impl Wal for DurableWal {
         let resp = binding.insert_frames(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp));
         if let Err(e) = resp {
-            if e.code() == tonic::Code::Aborted {
-                return Err(rusqlite::ffi::Error::new(SQLITE_BUSY));
-            }
-            return Err(rusqlite::ffi::Error::new(SQLITE_ABORT));
+            let error_code = rpc::ErrorDetails::decode(e.details())
+                .ok()
+                .and_then(|details| rpc::ErrorCode::try_from(details.code).ok());
+            return match error_code {
+                Some(ErrorCode::WriteConflict) => Err(rusqlite::ffi::Error::new(SQLITE_BUSY)),
+                _ => Err(rusqlite::ffi::Error::new(SQLITE_ABORT)),
+            };
         }
         // TODO: fix parity with storage server frame num with local cache
         self.local_cache
