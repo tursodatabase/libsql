@@ -23,7 +23,7 @@ use crate::query_analysis::StmtKind;
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
 use crate::stats::{Stats, StatsUpdateMessage};
-use crate::{Result, BLOCKING_RT};
+use crate::{record_time, Result, BLOCKING_RT};
 
 use super::connection_manager::{
     ConnectionManager, InnerWalManager, ManagedConnectionWal, ManagedConnectionWalWrapper,
@@ -713,7 +713,10 @@ where
         builder: B,
         _replication_index: Option<FrameNo>,
     ) -> Result<B> {
-        self.execute(pgm, ctx, builder).await.map(|(b, _)| b)
+        record_time! {
+            "libsql_query_exec";
+            self.execute(pgm, ctx, builder).await.map(|(b, _)| b)
+        }
     }
 
     async fn describe(

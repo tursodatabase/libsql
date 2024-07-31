@@ -6,6 +6,8 @@ mod listen;
 mod result_builder;
 mod trace;
 mod types;
+#[macro_use]
+pub mod timing;
 
 use std::path::Path;
 use std::sync::Arc;
@@ -16,7 +18,7 @@ use axum::http::request::Parts;
 use axum::http::HeaderValue;
 use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
-use axum::Router;
+use axum::{middleware, Router};
 use axum_extra::middleware::option_layer;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
@@ -37,6 +39,7 @@ use crate::connection::{Connection, RequestContext};
 use crate::error::Error;
 use crate::hrana;
 use crate::http::user::db_factory::MakeConnectionExtractorPath;
+use crate::http::user::timing::timings_middleware;
 use crate::http::user::types::HttpQuery;
 use crate::metrics::LEGACY_HTTP_CALL;
 use crate::namespace::NamespaceStore;
@@ -407,6 +410,7 @@ where
                 )
                 .route("/v1/jobs", get(handle_get_migrations))
                 .route("/v1/jobs/:job_id", get(handle_get_migration_details))
+                .layer(middleware::from_fn(timings_middleware))
                 .with_state(state);
 
             // Merge the grpc based axum router into our regular http router
