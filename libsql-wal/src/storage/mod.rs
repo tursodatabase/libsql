@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::future::Future;
@@ -437,7 +438,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     }
 }
 
-pub struct StoreSegmentRequest<C, S> {
+pub struct StoreSegmentRequest<S> {
     namespace: NamespaceName,
     /// Path to the segment. Read-only for bottomless
     segment: S,
@@ -446,14 +447,13 @@ pub struct StoreSegmentRequest<C, S> {
 
     /// alternative configuration to use with the storage layer.
     /// e.g: S3 overrides
-    storage_config_override: Option<Arc<C>>,
+    storage_config_override: Option<Arc<dyn Any + Send + Sync>>,
     /// Called after the segment was stored, with the new durable index
     on_store_callback: OnStoreCallback,
 }
 
-impl<C, S> fmt::Debug for StoreSegmentRequest<C, S>
+impl<S> fmt::Debug for StoreSegmentRequest<S>
 where
-    C: fmt::Debug,
     S: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -461,7 +461,6 @@ where
             .field("namespace", &self.namespace)
             .field("segment", &self.segment)
             .field("created_at", &self.created_at)
-            .field("storage_config_override", &self.storage_config_override)
             .finish()
     }
 }

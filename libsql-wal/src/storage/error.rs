@@ -19,6 +19,8 @@ pub enum Error {
     // We may recover from this error, and rebuild the index from the data file.
     #[error("invalid index: {0}")]
     InvalidIndex(&'static str),
+    #[error("Provided config is of an invalid type")]
+    InvalidConfigType,
 }
 
 impl Error {

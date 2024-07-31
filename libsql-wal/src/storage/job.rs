@@ -9,13 +9,13 @@ use crate::segment::Segment;
 
 /// A request, with an id
 #[derive(Debug)]
-pub(crate) struct IndexedRequest<C, T> {
-    pub(crate) request: StoreSegmentRequest<C, T>,
+pub(crate) struct IndexedRequest<T> {
+    pub(crate) request: StoreSegmentRequest<T>,
     pub(crate) id: u64,
 }
 
-impl<C, T> Deref for IndexedRequest<C, T> {
-    type Target = StoreSegmentRequest<C, T>;
+impl<T> Deref for IndexedRequest<T> {
+    type Target = StoreSegmentRequest<T>;
 
     fn deref(&self) -> &Self::Target {
         &self.request
@@ -24,10 +24,10 @@ impl<C, T> Deref for IndexedRequest<C, T> {
 
 /// A storage Job to be performed
 #[derive(Debug)]
-pub(crate) struct Job<C, T> {
+pub(crate) struct Job<T> {
     /// Segment to store.
     // TODO: implement request batching (merge segment and send).
-    pub(crate) request: IndexedRequest<C, T>,
+    pub(crate) request: IndexedRequest<T>,
 }
 
 // #[repr(transparent)]
@@ -42,14 +42,14 @@ pub(crate) struct Job<C, T> {
 //     }
 // }
 //
-impl<C, Seg> Job<C, Seg>
+impl<Seg> Job<Seg>
 where
     Seg: Segment,
 {
     /// Perform the job and return the JobResult. This is not allowed to panic.
-    pub(crate) async fn perform<B, IO>(self, backend: B, io: IO) -> JobResult<C, Seg>
+    pub(crate) async fn perform<B, IO>(self, backend: B, io: IO) -> JobResult<Seg>
     where
-        B: Backend<Config = C>,
+        B: Backend,
         IO: Io,
     {
         let result = self.try_perform(backend, io).await;
@@ -58,7 +58,7 @@ where
 
     async fn try_perform<B, IO>(&self, backend: B, io: IO) -> Result<u64>
     where
-        B: Backend<Config = C>,
+        B: Backend,
         IO: Io,
     {
         let segment = &self.request.segment;
@@ -81,6 +81,9 @@ where
             .request
             .storage_config_override
             .clone()
+            .map(|c| c.downcast::<B::Config>())
+            .transpose()
+            .map_err(|_| super::Error::InvalidConfigType)?
             .unwrap_or_else(|| backend.default_config());
 
         backend.store(&config, meta, tmp, new_index).await?;
@@ -90,9 +93,9 @@ where
 }
 
 #[derive(Debug)]
-pub(crate) struct JobResult<C, S> {
+pub(crate) struct JobResult<S> {
     /// The job that was performed
-    pub(crate) job: Job<C, S>,
+    pub(crate) job: Job<S>,
     /// The outcome of the job: the new durable index, or an error.
     pub(crate) result: Result<u64>,
 }
