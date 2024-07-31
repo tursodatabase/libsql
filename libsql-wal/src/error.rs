@@ -11,6 +11,10 @@ pub enum Error {
     BusySnapshot,
     #[error("invalid segment header checksum")]
     InvalidHeaderChecksum,
+    #[error("invalid segment header magic")]
+    InvalidHeaderMagic,
+    #[error("invalid segment header version")]
+    InvalidHeaderVersion,
 }
 
 impl Into<libsql_sys::ffi::Error> for Error {

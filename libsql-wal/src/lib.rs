@@ -16,24 +16,27 @@ const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
 #[cfg(any(debug_assertions, test))]
 pub mod test {
     use std::fs::OpenOptions;
+    use std::path::Path;
     use std::path::PathBuf;
-    use std::{path::Path, sync::Arc};
+    use std::sync::Arc;
 
-    use libsql_sys::{name::NamespaceName, rusqlite::OpenFlags};
+    use libsql_sys::name::NamespaceName;
+    use libsql_sys::rusqlite::OpenFlags;
     use tempfile::{tempdir, TempDir};
     use tokio::sync::mpsc;
 
     use crate::checkpointer::LibsqlCheckpointer;
+    use crate::io::Io;
     use crate::io::StdIO;
     use crate::registry::WalRegistry;
     use crate::shared_wal::SharedWal;
     use crate::storage::TestStorage;
     use crate::wal::{LibsqlWal, LibsqlWalManager};
 
-    pub struct TestEnv {
-        pub tmp: TempDir,
-        pub registry: Arc<WalRegistry<StdIO, TestStorage>>,
-        pub wal: LibsqlWalManager<StdIO, TestStorage>,
+    pub struct TestEnv<IO: Io = StdIO> {
+        pub tmp: Arc<TempDir>,
+        pub registry: Arc<WalRegistry<IO, TestStorage<IO>>>,
+        pub wal: LibsqlWalManager<IO, TestStorage<IO>>,
     }
 
     impl TestEnv {
@@ -42,7 +45,17 @@ pub mod test {
         }
 
         pub fn new_store(store: bool) -> Self {
+            TestEnv::new_io(StdIO(()), store)
+        }
+    }
+
+    impl<IO: Io + Clone> TestEnv<IO> {
+        pub fn new_io(io: IO, store: bool) -> Self {
             let tmp = tempdir().unwrap();
+            Self::new_io_and_tmp(io, tmp.into(), store)
+        }
+
+        pub fn new_io_and_tmp(io: IO, tmp: Arc<TempDir>, store: bool) -> Self {
             let resolver = |path: &Path| {
                 let name = path
                     .parent()
@@ -56,23 +69,26 @@ pub mod test {
 
             let (sender, receiver) = mpsc::channel(128);
             let registry = Arc::new(
-                WalRegistry::new(
+                WalRegistry::new_with_io(
+                    io.clone(),
                     tmp.path().join("test/wals"),
-                    TestStorage::new_io(store, StdIO(())),
+                    TestStorage::new_io(store, io),
                     sender,
                 )
                 .unwrap(),
             );
+
             if store {
                 let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 5);
                 tokio::spawn(checkpointer.run());
             }
+
             let wal = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
 
             Self { tmp, registry, wal }
         }
 
-        pub fn shared(&self, namespace: &str) -> Arc<SharedWal<StdIO>> {
+        pub fn shared(&self, namespace: &str) -> Arc<SharedWal<IO>> {
             let path = self.tmp.path().join(namespace).join("data");
             let registry = self.registry.clone();
             let namespace = NamespaceName::from_string(namespace.into());
@@ -83,10 +99,7 @@ pub mod test {
             self.tmp.path().join(namespace)
         }
 
-        pub fn open_conn(
-            &self,
-            namespace: &'static str,
-        ) -> libsql_sys::Connection<LibsqlWal<StdIO>> {
+        pub fn open_conn(&self, namespace: &'static str) -> libsql_sys::Connection<LibsqlWal<IO>> {
             let path = self.db_path(namespace);
             let wal = self.wal.clone();
             std::fs::create_dir_all(&path).unwrap();
@@ -110,7 +123,7 @@ pub mod test {
         }
     }
 
-    pub fn seal_current_segment(shared: &SharedWal<StdIO>) {
+    pub fn seal_current_segment<IO: Io>(shared: &SharedWal<IO>) {
         let mut tx = shared.begin_read(99999).into();
         shared.upgrade(&mut tx).unwrap();
         {

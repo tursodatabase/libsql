@@ -7,7 +7,9 @@ use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
 use parking_lot::{Mutex, MutexGuard};
+use tokio::sync::mpsc;
 
+use crate::checkpointer::CheckpointMessage;
 use crate::error::{Error, Result};
 use crate::io::file::FileExt;
 use crate::io::Io;
@@ -48,6 +50,7 @@ pub struct SharedWal<IO: Io> {
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
     pub(crate) stored_segments: Box<dyn ReplicateFromStorage>,
     pub(crate) shutdown: AtomicBool,
+    pub(crate) checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
 }
 
 impl<IO: Io> SharedWal<IO> {
@@ -87,6 +90,8 @@ impl<IO: Io> SharedWal<IO> {
             created_at: Instant::now(),
             conn_id,
             pages_read: 0,
+            namespace: self.namespace.clone(),
+            checkpoint_notifier: self.checkpoint_notifier.clone(),
         }
     }
 
@@ -164,18 +169,22 @@ impl<IO: Io> SharedWal<IO> {
         let next_offset = current.count_committed() as u32;
         let next_frame_no = current.next_frame_no().get();
         *tx_id_lock = Some(read_tx.id);
+        let current_checksum = current.current_checksum();
 
         Ok(WriteTransaction {
             wal_lock: self.wal_lock.clone(),
             savepoints: vec![Savepoint {
+                current_checksum,
                 next_offset,
                 next_frame_no,
                 index: BTreeMap::new(),
             }],
             next_frame_no,
             next_offset,
+            current_checksum,
             is_commited: false,
             read_tx: read_tx.clone(),
+            recompute_checksum: None,
         })
     }
 

@@ -3,8 +3,11 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::time::Instant;
 
+use libsql_sys::name::NamespaceName;
 use parking_lot::{ArcMutexGuard, RawMutex};
+use tokio::sync::mpsc;
 
+use crate::checkpointer::CheckpointMessage;
 use crate::segment::current::{CurrentSegment, SegmentIndex};
 use crate::shared_wal::WalLock;
 
@@ -77,8 +80,11 @@ pub struct ReadTransaction<F> {
     /// number of pages read by this transaction. This is used to determine whether a write lock
     /// will be re-acquired.
     pub pages_read: usize,
+    pub namespace: NamespaceName,
+    pub checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
 }
 
+// fixme: clone should probably not be implemented for this type, figure a way to do it
 impl<F> Clone for ReadTransaction<F> {
     fn clone(&self) -> Self {
         self.current.inc_reader_count();
@@ -90,20 +96,28 @@ impl<F> Clone for ReadTransaction<F> {
             created_at: self.created_at,
             conn_id: self.conn_id,
             pages_read: self.pages_read,
+            namespace: self.namespace.clone(),
+            checkpoint_notifier: self.checkpoint_notifier.clone(),
         }
     }
 }
 
 impl<F> Drop for ReadTransaction<F> {
     fn drop(&mut self) {
-        // FIXME: if the count drops to 0, register for compaction.
-        self.current.dec_reader_count();
+        // FIXME: it would be more approriate to wait till the segment is stored before notfying,
+        // because we are not waiting for read to be released before that
+        if self.current.dec_reader_count() && self.current.is_sealed() {
+            let _: Result<_, _> = self
+                .checkpoint_notifier
+                .try_send(self.namespace.clone().into());
+        }
     }
 }
 
 pub struct Savepoint {
     pub next_offset: u32,
     pub next_frame_no: u64,
+    pub current_checksum: u32,
     pub index: BTreeMap<u32, u32>,
 }
 
@@ -125,8 +139,12 @@ pub struct WriteTransaction<F> {
     pub savepoints: Vec<Savepoint>,
     pub next_frame_no: u64,
     pub next_offset: u32,
+    pub current_checksum: u32,
     pub is_commited: bool,
     pub read_tx: ReadTransaction<F>,
+    /// if transaction overwrote frames, then the running checksum needs to be recomputed.
+    /// We store here the lowest segment offset at which a frame was overwritten
+    pub recompute_checksum: Option<u32>,
 }
 
 pub struct TxGuard<'a, F> {
@@ -160,6 +178,7 @@ impl<F> WriteTransaction<F> {
             next_offset: self.next_offset,
             next_frame_no: self.next_frame_no,
             index: BTreeMap::new(),
+            current_checksum: self.current_checksum,
         });
         savepoint_id
     }
@@ -263,6 +282,10 @@ impl<F> WriteTransaction<F> {
 
     pub(crate) fn commit(&mut self) {
         self.is_commited = true;
+    }
+
+    pub(crate) fn current_checksum(&self) -> u32 {
+        self.savepoints.last().unwrap().current_checksum
     }
 }
 

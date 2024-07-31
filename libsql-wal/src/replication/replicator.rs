@@ -299,7 +299,6 @@ mod test {
         let mut replica_content = vec![0u8; db_content.len()];
         while let Some(f) = stream.next().await {
             let frame = f.unwrap();
-            dbg!(frame.header().page_no());
             let offset = (frame.header().page_no() as usize - 1) * 4096;
             tmp.as_file()
                 .write_all_at(frame.data(), offset as u64)

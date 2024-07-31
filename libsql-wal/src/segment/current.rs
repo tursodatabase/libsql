@@ -1,7 +1,9 @@
+use std::hash::Hasher;
 use std::io::{BufWriter, IoSlice, Write};
 use std::num::NonZeroU64;
 use std::ops::DerefMut;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicU32;
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     Arc,
@@ -12,16 +14,19 @@ use fst::MapBuilder;
 use parking_lot::{Mutex, RwLock};
 use roaring::RoaringBitmap;
 use tokio_stream::Stream;
+use zerocopy::little_endian::U32;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::io::buf::{IoBufMut, ZeroCopyBoxIoBuf, ZeroCopyBuf};
 use crate::io::file::FileExt;
-use crate::segment::SegmentFlags;
+use crate::io::Inspect;
+use crate::segment::{checked_frame_offset, SegmentFlags};
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
 use crate::transaction::{Transaction, TxGuard};
+use crate::LIBSQL_MAGIC;
 
 use super::list::SegmentList;
-use super::{Frame, FrameHeader, SegmentHeader};
+use super::{CheckedFrame, Frame, FrameHeader, SegmentHeader};
 
 use crate::error::Result;
 
@@ -34,6 +39,8 @@ pub struct CurrentSegment<F> {
     /// lock
     read_locks: Arc<AtomicU64>,
     sealed: AtomicBool,
+    /// current running checksum
+    current_checksum: AtomicU32,
     tail: Arc<SegmentList<SealedSegment<F>>>,
 }
 
@@ -46,6 +53,7 @@ impl<F> CurrentSegment<F> {
         start_frame_no: NonZeroU64,
         db_size: u32,
         tail: Arc<SegmentList<SealedSegment<F>>>,
+        salt: u32,
     ) -> Result<Self>
     where
         F: FileExt,
@@ -58,6 +66,9 @@ impl<F> CurrentSegment<F> {
             index_size: 0.into(),
             header_cheksum: 0.into(),
             flags: 0.into(),
+            magic: LIBSQL_MAGIC.into(),
+            version: 1.into(),
+            salt: salt.into(),
         };
 
         header.recompute_checksum();
@@ -72,6 +83,7 @@ impl<F> CurrentSegment<F> {
             read_locks: Arc::new(AtomicU64::new(0)),
             sealed: AtomicBool::default(),
             tail,
+            current_checksum: salt.into(),
         })
     }
 
@@ -100,10 +112,14 @@ impl<F> CurrentSegment<F> {
         self.header.lock().size_after.get()
     }
 
+    pub fn current_checksum(&self) -> u32 {
+        self.current_checksum.load(Ordering::Relaxed)
+    }
+
     /// insert a bunch of frames in the Wal. The frames needn't be ordered, therefore, on commit
     /// the last frame no needs to be passed alongside the new size_after.
     #[tracing::instrument(skip_all)]
-    pub async fn insert_frames(
+    pub async fn inject_frames(
         &self,
         frames: Vec<Box<Frame>>,
         // (size_after, last_frame_no)
@@ -114,19 +130,40 @@ impl<F> CurrentSegment<F> {
         F: FileExt,
     {
         assert!(!self.sealed.load(Ordering::SeqCst));
+        assert_eq!(
+            tx.savepoints.len(),
+            1,
+            "injecting wal should not use savepoints"
+        );
         {
             let tx = tx.deref_mut();
             // let mut commit_frame_written = false;
             let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
             let mut frames = frame_list_to_option(frames);
+            // For each frame, we compute and write the frame checksum, followed by the frame
+            // itself as an array of CheckedFrame
             for i in 0..frames.len() {
                 let offset = tx.next_offset;
+                let current_checksum = current_savepoint.current_checksum;
+                let mut digest = crc32fast::Hasher::new_with_initial(current_checksum);
+                digest.write(frames[i].as_ref().unwrap().as_bytes());
+                let new_checksum = digest.finalize();
+                let (_buf, ret) = self
+                    .file
+                    .write_all_at_async(
+                        ZeroCopyBuf::new_init(zerocopy::byteorder::little_endian::U32::new(
+                            new_checksum,
+                        )),
+                        checked_frame_offset(offset),
+                    )
+                    .await;
+                ret?;
+
                 let buf = ZeroCopyBoxIoBuf::new(frames[i].take().unwrap());
                 let (buf, ret) = self
                     .file
                     .write_all_at_async(buf, frame_offset(offset))
                     .await;
-
                 ret?;
 
                 let frame = buf.into_inner();
@@ -134,6 +171,7 @@ impl<F> CurrentSegment<F> {
                 current_savepoint
                     .index
                     .insert(frame.header().page_no(), offset);
+                current_savepoint.current_checksum = new_checksum;
                 tx.next_offset += 1;
                 frames[i] = Some(frame);
             }
@@ -159,6 +197,8 @@ impl<F> CurrentSegment<F> {
                     tx.merge_savepoints(&self.index);
                     // set the header last, so that a transaction does not witness a write before
                     // it's actually committed.
+                    self.current_checksum
+                        .store(tx.current_checksum(), Ordering::Relaxed);
                     *self.header.lock() = header.into_inner();
 
                     tx.is_commited = true;
@@ -192,6 +232,12 @@ impl<F> CurrentSegment<F> {
                 if let Some(offset) = current_savepoint.index.get(&page_no) {
                     tracing::trace!(page_no, "recycling frame");
                     self.file.write_all_at(page, page_offset(*offset))?;
+                    // we overwrote a frame, record that for later rewrite
+                    tx.recompute_checksum = Some(
+                        tx.recompute_checksum
+                            .map(|old| old.min(*offset))
+                            .unwrap_or(*offset),
+                    );
                     continue;
                 }
 
@@ -208,17 +254,37 @@ impl<F> CurrentSegment<F> {
                     size_after: size_after.into(),
                     frame_no: frame_no.into(),
                 };
-                let slices = &[IoSlice::new(header.as_bytes()), IoSlice::new(&page)];
+
+                // only compute checksum if we don't need to recompute it later
+                let checksum = if tx.recompute_checksum.is_none() {
+                    let mut digest =
+                        crc32fast::Hasher::new_with_initial(current_savepoint.current_checksum);
+                    digest.write(header.as_bytes());
+                    digest.write(page);
+                    digest.finalize()
+                } else {
+                    0
+                };
+
+                let checksum_bytes = checksum.to_le_bytes();
+                // We write a instance of a ChecksummedFrame
+                let slices = &[
+                    IoSlice::new(&checksum_bytes),
+                    IoSlice::new(header.as_bytes()),
+                    IoSlice::new(&page),
+                ];
                 let offset = tx.next_offset;
                 debug_assert_eq!(
                     self.header.lock().start_frame_no.get() + offset as u64,
                     frame_no
                 );
-                self.file.write_at_vectored(slices, frame_offset(offset))?;
+                self.file
+                    .write_at_vectored(slices, checked_frame_offset(offset))?;
                 assert!(
                     current_savepoint.index.insert(page_no, offset).is_none(),
                     "existing frames should be recycled"
                 );
+                current_savepoint.current_checksum = checksum;
                 tx.next_frame_no += 1;
                 tx.next_offset += 1;
             }
@@ -226,6 +292,27 @@ impl<F> CurrentSegment<F> {
 
         if let Some(size_after) = size_after {
             if tx.not_empty() {
+                let new_checksum = if let Some(offset) = tx.recompute_checksum {
+                    self.recompute_checksum(offset, tx.next_offset - 1)?
+                } else {
+                    tx.current_checksum()
+                };
+
+                #[cfg(debug_assertions)]
+                {
+                    // ensure that file checksum for that transaction is valid
+                    let from = {
+                        let header = self.header.lock();
+                        if header.last_commited_frame_no() == 0 {
+                            0
+                        } else {
+                            (header.last_commited_frame_no() - header.start_frame_no.get()) as u32
+                        }
+                    };
+
+                    self.assert_valid_checksum(from, tx.next_offset - 1)?;
+                }
+
                 let last_frame_no = tx.next_frame_no - 1;
                 let mut header = { *self.header.lock() };
                 header.last_commited_frame_no = last_frame_no.into();
@@ -233,11 +320,13 @@ impl<F> CurrentSegment<F> {
                 header.recompute_checksum();
 
                 self.file.write_all_at(header.as_bytes(), 0)?;
+                // todo: sync if sync mode is EXTRA
                 // self.file.sync_data().unwrap();
                 tx.merge_savepoints(&self.index);
                 // set the header last, so that a transaction does not witness a write before
                 // it's actually committed.
                 *self.header.lock() = header;
+                self.current_checksum.store(new_checksum, Ordering::Relaxed);
 
                 tx.is_commited = true;
 
@@ -302,15 +391,40 @@ impl<F> CurrentSegment<F> {
     {
         let mut header = self.header.lock();
         let index_offset = header.count_committed() as u32;
-        let index_byte_offset = frame_offset(index_offset);
+        let index_byte_offset = checked_frame_offset(index_offset);
         let mut cursor = self.file.cursor(index_byte_offset);
-        let mut writer = BufWriter::new(&mut cursor);
+        let writer = BufWriter::new(&mut cursor);
+
+        let current = self.current_checksum();
+        let mut digest = crc32fast::Hasher::new_with_initial(current);
+        let mut writer = Inspect::new(writer, |data: &[u8]| {
+            digest.write(data);
+        });
         self.index.merge_all(&mut writer)?;
+        let mut writer = writer.into_inner();
+        let index_checksum = digest.finalize();
+        let index_size = writer.get_ref().count();
+        writer.write_all(&index_checksum.to_le_bytes())?;
+
         writer.into_inner().map_err(|e| e.into_parts().0)?;
+        // we perform a first sync to ensure that all the segment has been flushed to disk. We then
+        // write the header and flush again. We want to guarantee that if we find a segement marked
+        // as "SEALED", then there was no partial flush.
+        //
+        // If a segment is found that doesn't have the SEALED flag, then we enter crash recovery,
+        // and we need to check the segment.
+        self.file.sync_all()?;
+
         header.index_offset = index_byte_offset.into();
-        header.index_size = cursor.count().into();
+        header.index_size = index_size.into();
+        let flags = header.flags();
+        header.set_flags(flags | SegmentFlags::SEALED);
         header.recompute_checksum();
         self.file.write_all_at(header.as_bytes(), 0)?;
+
+        // flush the header.
+        self.file.sync_all()?;
+
         let sealed = SealedSegment::open(
             self.file.clone(),
             self.path.clone(),
@@ -344,8 +458,9 @@ impl<F> CurrentSegment<F> {
         self.read_locks().fetch_add(1, Ordering::SeqCst);
     }
 
-    pub fn dec_reader_count(&self) {
-        self.read_locks().fetch_sub(1, Ordering::SeqCst);
+    /// return true if the reader count is 0
+    pub fn dec_reader_count(&self) -> bool {
+        self.read_locks().fetch_sub(1, Ordering::SeqCst) - 1 == 0
     }
 
     pub fn read_locks(&self) -> &AtomicU64 {
@@ -386,7 +501,6 @@ impl<F> CurrentSegment<F> {
                     let (buf, res) = self.read_frame_offset_async(frame_offset, buf).await;
                     res?;
 
-
                     let mut frame = buf.into_inner();
                     frame.header_mut().size_after = 0.into();
                     let page_no = frame.header().page_no();
@@ -411,6 +525,63 @@ impl<F> CurrentSegment<F> {
         };
 
         (stream, replicated_until, db_size)
+    }
+
+    fn recompute_checksum(&self, start_offset: u32, until_offset: u32) -> Result<u32>
+    where
+        F: FileExt,
+    {
+        let mut current_checksum = if start_offset == 0 {
+            self.header.lock().salt.get()
+        } else {
+            // we get the checksum from the frame just before the the start offset
+            let frame_offset = checked_frame_offset(start_offset - 1);
+            let mut out = U32::new(0);
+            self.file.read_exact_at(out.as_bytes_mut(), frame_offset)?;
+            out.get()
+        };
+
+        let mut checked_frame: Box<CheckedFrame> = CheckedFrame::new_box_zeroed();
+        for offset in start_offset..=until_offset {
+            let frame_offset = checked_frame_offset(offset);
+            self.file
+                .read_exact_at(checked_frame.as_bytes_mut(), frame_offset)?;
+            current_checksum = checked_frame.frame.checksum(current_checksum);
+            self.file
+                .write_all_at(&current_checksum.to_le_bytes(), frame_offset)?;
+        }
+
+        Ok(current_checksum)
+    }
+
+    /// test fuction to ensure checksum integrity
+    #[cfg(debug_assertions)]
+    #[track_caller]
+    fn assert_valid_checksum(&self, from: u32, until: u32) -> Result<()>
+    where
+        F: FileExt,
+    {
+        let mut frame: Box<CheckedFrame> = CheckedFrame::new_box_zeroed();
+        let mut current_checksum = if from != 0 {
+            let offset = checked_frame_offset(from - 1);
+            self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
+            frame.checksum.get()
+        } else {
+            self.header.lock().salt.get()
+        };
+
+        for i in from..=until {
+            let offset = checked_frame_offset(i);
+            self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
+            current_checksum = frame.frame.checksum(current_checksum);
+            assert_eq!(
+                current_checksum,
+                frame.checksum.get(),
+                "invalid checksum at offset {i}"
+            );
+        }
+
+        Ok(())
     }
 }
 
@@ -525,13 +696,17 @@ impl SegmentIndex {
 
 #[cfg(test)]
 mod test {
-    use std::io::Read;
+    use std::io::{self, Read};
 
+    use chrono::{DateTime, Utc};
+    use hashbrown::HashMap;
     use insta::assert_debug_snapshot;
-    use tempfile::tempfile;
+    use rand::rngs::ThreadRng;
+    use tempfile::{tempdir, tempfile};
     use tokio_stream::StreamExt;
+    use uuid::Uuid;
 
-    use crate::io::FileExt;
+    use crate::io::{FileExt, Io};
     use crate::test::{seal_current_segment, TestEnv};
 
     use super::*;
@@ -679,5 +854,199 @@ mod test {
         assert_eq!(replicated_until, 2);
         assert_eq!(size_after, 2);
         assert_eq!(stream.fold(0, |count, _| count + 1).await, 0);
+    }
+
+    #[tokio::test]
+    async fn crash_on_flush() {
+        #[derive(Clone, Default)]
+        struct SyncFailBufferIo {
+            inner: Arc<Mutex<HashMap<PathBuf, Arc<Mutex<Vec<u8>>>>>>,
+        }
+
+        struct File {
+            path: PathBuf,
+            io: SyncFailBufferIo,
+        }
+
+        impl File {
+            fn inner(&self) -> Arc<Mutex<Vec<u8>>> {
+                self.io.inner.lock().get(&self.path).cloned().unwrap()
+            }
+        }
+
+        impl FileExt for File {
+            fn len(&self) -> std::io::Result<u64> {
+                Ok(self.inner().lock().len() as u64)
+            }
+
+            fn write_at_vectored(&self, bufs: &[IoSlice], offset: u64) -> std::io::Result<usize> {
+                let mut written = 0;
+                for buf in bufs {
+                    self.write_at(buf.as_bytes(), written + offset)?;
+                    written += buf.len() as u64;
+                }
+                Ok(written as _)
+            }
+
+            fn write_at(&self, buf: &[u8], offset: u64) -> std::io::Result<usize> {
+                let data = self.inner();
+                let mut data = data.lock();
+                let new_len = offset as usize + buf.len();
+                let old_len = data.len();
+                if old_len < new_len {
+                    data.extend(std::iter::repeat(0).take(new_len - old_len));
+                }
+                data[offset as usize..offset as usize + buf.len()].copy_from_slice(buf);
+                Ok(buf.len())
+            }
+
+            fn read_at(&self, buf: &mut [u8], offset: u64) -> std::io::Result<usize> {
+                let inner = self.inner();
+                let inner = inner.lock();
+                if offset >= inner.len() as u64 {
+                    return Ok(0);
+                }
+
+                let read_len = buf.len().min(inner.len() - offset as usize);
+                buf[..read_len]
+                    .copy_from_slice(&inner[offset as usize..offset as usize + read_len]);
+                Ok(read_len)
+            }
+
+            fn sync_all(&self) -> std::io::Result<()> {
+                // simulate a flush that only flushes half the pages and then fail
+                let inner = self.inner();
+                let inner = inner.lock();
+                // just keep 5 pages from the log. The log will be incomplete and frames will be
+                // broken.
+                std::fs::write(&self.path, &inner[..4096 * 5])?;
+                Err(io::Error::new(io::ErrorKind::BrokenPipe, ""))
+            }
+
+            fn set_len(&self, _len: u64) -> std::io::Result<()> {
+                todo!()
+            }
+
+            async fn read_exact_at_async<B: IoBufMut + Send + 'static>(
+                &self,
+                mut buf: B,
+                offset: u64,
+            ) -> (B, std::io::Result<()>) {
+                let slice = unsafe {
+                    std::slice::from_raw_parts_mut(buf.stable_mut_ptr(), buf.bytes_total())
+                };
+                let ret = self.read_at(slice, offset);
+                (buf, ret.map(|_| ()))
+            }
+
+            async fn read_at_async<B: IoBufMut + Send + 'static>(
+                &self,
+                _buf: B,
+                _offset: u64,
+            ) -> (B, std::io::Result<usize>) {
+                todo!()
+            }
+
+            async fn write_all_at_async<B: crate::io::buf::IoBuf + Send + 'static>(
+                &self,
+                _buf: B,
+                _offset: u64,
+            ) -> (B, std::io::Result<()>) {
+                todo!()
+            }
+        }
+
+        impl Io for SyncFailBufferIo {
+            type File = File;
+            type Rng = ThreadRng;
+            type TempFile = File;
+
+            fn create_dir_all(&self, path: &std::path::Path) -> std::io::Result<()> {
+                std::fs::create_dir_all(path)
+            }
+
+            fn open(
+                &self,
+                _create_new: bool,
+                _read: bool,
+                _write: bool,
+                path: &std::path::Path,
+            ) -> std::io::Result<Self::File> {
+                let mut inner = self.inner.lock();
+                if !inner.contains_key(path) {
+                    let data = if path.exists() {
+                        std::fs::read(path)?
+                    } else {
+                        vec![]
+                    };
+                    inner.insert(path.to_owned(), Arc::new(Mutex::new(data)));
+                }
+
+                Ok(File {
+                    path: path.into(),
+                    io: self.clone(),
+                })
+            }
+
+            fn tempfile(&self) -> std::io::Result<Self::TempFile> {
+                todo!()
+            }
+
+            fn now(&self) -> DateTime<Utc> {
+                Utc::now()
+            }
+
+            fn uuid(&self) -> uuid::Uuid {
+                Uuid::new_v4()
+            }
+
+            fn hard_link(
+                &self,
+                _src: &std::path::Path,
+                _dst: &std::path::Path,
+            ) -> std::io::Result<()> {
+                todo!()
+            }
+
+            fn with_rng<F, R>(&self, f: F) -> R
+            where
+                F: FnOnce(&mut Self::Rng) -> R,
+            {
+                f(&mut rand::thread_rng())
+            }
+        }
+
+        let tmp = Arc::new(tempdir().unwrap());
+        {
+            let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone(), false);
+            let conn = env.open_conn("test");
+            let shared = env.shared("test");
+
+            conn.execute("create table test (x)", ()).unwrap();
+            for _ in 0..6 {
+                conn.execute("insert into test values (1234)", ()).unwrap();
+            }
+
+            // trigger a flush, that will fail. When we reopen the db, the log should need recovery
+            // this simulates a crash before flush
+            {
+                let mut tx = shared.begin_read(99999).into();
+                shared.upgrade(&mut tx).unwrap();
+                let mut guard = tx.as_write_mut().unwrap().lock();
+                guard.commit();
+                let _ = shared.swap_current(&mut guard);
+            }
+        }
+
+        {
+            let env = TestEnv::new_io_and_tmp(SyncFailBufferIo::default(), tmp.clone(), false);
+            let conn = env.open_conn("test");
+            // the db was recovered: we lost some rows, but it still works
+            conn.query_row("select count(*) from test", (), |row| {
+                assert_eq!(row.get::<_, u32>(0).unwrap(), 2);
+                Ok(())
+            })
+            .unwrap();
+        }
     }
 }
