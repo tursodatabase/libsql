@@ -1,6 +1,7 @@
 //! `AsyncStorage` is a `Storage` implementation that defer storage to a background thread. The
 //! durable frame_no is notified asynchronously.
 
+use std::any::Any;
 use std::sync::Arc;
 
 use chrono::Utc;
@@ -22,9 +23,9 @@ use super::{OnStoreCallback, RestoreOptions, Storage, StoreSegmentRequest};
 ///
 /// On shutdown, attempts to empty the queue, and flush the receiver. When the last handle of the
 /// receiver is dropped, and the queue is empty, exit.
-pub struct AsyncStorageLoop<B: Backend, IO: Io, S> {
-    receiver: mpsc::UnboundedReceiver<StorageLoopMessage<B::Config, S>>,
-    scheduler: Scheduler<B::Config, S>,
+pub struct AsyncStorageLoop<B, IO: Io, S> {
+    receiver: mpsc::UnboundedReceiver<StorageLoopMessage<S>>,
+    scheduler: Scheduler<S>,
     backend: Arc<B>,
     io: Arc<IO>,
     max_in_flight: usize,
@@ -112,14 +113,28 @@ where
     fn fetch_durable_frame_no_async(
         &self,
         namespace: NamespaceName,
-        ret: oneshot::Sender<u64>,
-        config_override: Option<Arc<B::Config>>,
+        ret: oneshot::Sender<super::Result<u64>>,
+        config_override: Option<Arc<dyn Any + Send + Sync>>,
     ) {
         let backend = self.backend.clone();
-        let config = config_override.unwrap_or_else(|| backend.default_config());
+        let config = match config_override
+            .map(|c| c.downcast::<B::Config>())
+            .transpose()
+        {
+            Ok(Some(config)) => config,
+            Ok(None) => backend.default_config(),
+            Err(_) => {
+                let _ = ret.send(Err(super::Error::InvalidConfigType));
+                return;
+            }
+        };
+
         tokio::spawn(async move {
-            let meta = backend.meta(&config, &namespace).await.unwrap();
-            let _ = ret.send(meta.max_frame_no);
+            let res = backend
+                .meta(&config, &namespace)
+                .await
+                .map(|meta| meta.max_frame_no);
+            let _ = ret.send(res);
         });
     }
 }
@@ -132,18 +147,18 @@ pub struct BottomlessConfig<C> {
     pub config: C,
 }
 
-enum StorageLoopMessage<C, S> {
-    StoreReq(StoreSegmentRequest<C, S>),
+enum StorageLoopMessage<S> {
+    StoreReq(StoreSegmentRequest<S>),
     DurableFrameNoReq {
         namespace: NamespaceName,
-        config_override: Option<Arc<C>>,
-        ret: oneshot::Sender<u64>,
+        config_override: Option<Arc<dyn Any + Send + Sync>>,
+        ret: oneshot::Sender<super::Result<u64>>,
     },
 }
 
-pub struct AsyncStorage<B: Backend, S> {
+pub struct AsyncStorage<B, S> {
     /// send request to the main loop
-    job_sender: mpsc::UnboundedSender<StorageLoopMessage<B::Config, S>>,
+    job_sender: mpsc::UnboundedSender<StorageLoopMessage<S>>,
     force_shutdown: oneshot::Sender<()>,
     backend: Arc<B>,
 }
@@ -163,11 +178,15 @@ where
         config_override: Option<Arc<Self::Config>>,
         on_store_callback: OnStoreCallback,
     ) {
+        fn into_any<T: Sync + Send + 'static>(t: Arc<T>) -> Arc<dyn Any + Sync + Send> {
+            t
+        }
+
         let req = StoreSegmentRequest {
             namespace: namespace.clone(),
             segment,
             created_at: Utc::now(),
-            storage_config_override: config_override,
+            storage_config_override: config_override.map(into_any),
             on_store_callback,
         };
 
