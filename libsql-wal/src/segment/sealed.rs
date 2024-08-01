@@ -17,7 +17,7 @@ use crate::io::buf::{IoBufMut, ZeroCopyBuf};
 use crate::io::file::{BufCopy, FileExt};
 use crate::io::Inspect;
 use crate::segment::{checked_frame_offset, CheckedFrame};
-use crate::LIBSQL_MAGIC;
+use crate::{LIBSQL_MAGIC, LIBSQL_WAL_VERSION};
 
 use super::compacted::{CompactedSegmentDataFooter, CompactedSegmentDataHeader};
 use super::{frame_offset, page_offset, Frame, Segment, SegmentFlags, SegmentHeader};
@@ -91,8 +91,9 @@ where
             start_frame_no: self.header().start_frame_no,
             end_frame_no: self.header().last_commited_frame_no,
             size_after: self.header.size_after,
-            version: 1.into(),
+            version: LIBSQL_WAL_VERSION.into(),
             magic: LIBSQL_MAGIC.into(),
+            page_size: self.header().page_size,
         };
 
         hasher.update(header.as_bytes());

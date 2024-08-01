@@ -22,6 +22,7 @@ use crate::error::{Error, Result};
 use crate::io::buf::IoBufMut;
 use crate::io::FileExt;
 use crate::LIBSQL_MAGIC;
+use crate::LIBSQL_PAGE_SIZE;
 
 pub(crate) mod compacted;
 pub mod current;
@@ -58,6 +59,9 @@ pub struct SegmentHeader {
     pub flags: U32,
     /// salt for the segment checksum
     pub salt: U32,
+    /// right now we only support 4096, but if se decided to support other sizes,
+    /// we could do it without changing the header
+    pub page_size: U16,
 
     /// checksum of the header fields, excluding the checksum itself. This field must be the last
     pub header_cheksum: U32,
@@ -71,6 +75,10 @@ impl SegmentHeader {
     }
 
     fn check(&self) -> Result<()> {
+        if self.page_size.get() != LIBSQL_PAGE_SIZE {
+            return Err(Error::InvalidPageSize);
+        }
+
         if self.magic.get() != LIBSQL_MAGIC {
             return Err(Error::InvalidHeaderChecksum);
         }
@@ -261,7 +269,7 @@ impl CheckedFrame {
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
 pub struct Frame {
     header: FrameHeader,
-    data: [u8; 4096],
+    data: [u8; LIBSQL_PAGE_SIZE as usize],
 }
 
 impl Frame {

@@ -15,6 +15,8 @@ pub enum Error {
     InvalidHeaderMagic,
     #[error("invalid segment header version")]
     InvalidHeaderVersion,
+    #[error("Invalid page size, only 4095 is supported")]
+    InvalidPageSize,
 }
 
 impl Into<libsql_sys::ffi::Error> for Error {
