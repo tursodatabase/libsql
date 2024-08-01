@@ -144,7 +144,7 @@ struct Cli {
     #[clap(long, env = "SQLD_HEARTBEAT_URL")]
     heartbeat_url: Option<String>,
 
-    /// The HTTP "Authornization" header to include in the a server heartbeat
+    /// The HTTP "Authorization" header to include in the a server heartbeat
     /// `POST` request.
     /// By default, the server doesn't send a heartbeat.
     #[clap(long, env = "SQLD_HEARTBEAT_AUTH")]
