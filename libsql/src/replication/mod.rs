@@ -35,7 +35,7 @@ pub(crate) mod remote_client;
 #[derive(Debug)]
 pub struct Replicated {
     frame_no: Option<FrameNo>,
-    start_frame_no: Option<FrameNo>,
+    frames_synced: usize,
 }
 
 impl Replicated {
@@ -43,8 +43,8 @@ impl Replicated {
         self.frame_no
     }
 
-    pub fn start_frame_no(&self) -> Option<FrameNo> {
-        self.start_frame_no
+    pub fn frames_synced(&self) -> usize {
+        self.frames_synced
     }
 }
 
@@ -209,8 +209,6 @@ impl EmbeddedReplicator {
             ));
         }
 
-        let start_frame_no = replicator.client_mut().committed_frame_no();
-
         // we force a handshake to get the most up to date replication index from the primary.
         replicator.force_handshake();
 
@@ -235,7 +233,7 @@ impl EmbeddedReplicator {
                     let Some(primary_index) = client.last_handshake_replication_index() else {
                         return Ok(Replicated {
                             frame_no: None,
-                            start_frame_no: None,
+                            frames_synced: 0,
                         });
                     };
                     if let Some(replica_index) = replicator.client_mut().committed_frame_no() {
@@ -249,7 +247,7 @@ impl EmbeddedReplicator {
 
         let replicated = Replicated {
             frame_no: replicator.client_mut().committed_frame_no(),
-            start_frame_no,
+            frames_synced: replicator.frames_synced(),
         };
 
         Ok(replicated)

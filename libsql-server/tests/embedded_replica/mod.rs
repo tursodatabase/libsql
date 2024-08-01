@@ -725,7 +725,8 @@ fn replicate_with_snapshots() {
         .await
         .unwrap();
 
-        db.sync().await.unwrap();
+        let rep = db.sync().await.unwrap();
+        assert_eq!(rep.frames_synced(), 427);
 
         let conn = db.connect().unwrap();
 
@@ -757,7 +758,8 @@ fn replicate_with_snapshots() {
 
         assert_eq!(stat, 427);
 
-        db.sync().await.unwrap();
+        let rep = db.sync().await.unwrap();
+        assert_eq!(rep.frames_synced(), 427);
 
         let conn = db.connect().unwrap();
 
@@ -1230,15 +1232,7 @@ fn txn_bug_issue_1283() {
 #[test]
 fn replicated_return() {
     let tmp_embedded = tempdir().unwrap();
-    let tmp_host = tempdir().unwrap();
     let tmp_embedded_path = tmp_embedded.path().to_owned();
-    let tmp_host_path = tmp_host.path().to_owned();
-
-    let mut sim = Builder::new()
-        .simulation_duration(Duration::from_secs(1000))
-        .build();
-
-    // make_primary(&mut sim, tmp_host_path.clone());
 
     let mut sim = Builder::new()
         .simulation_duration(Duration::from_secs(1000))
@@ -1318,7 +1312,7 @@ fn replicated_return() {
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), None);
-        assert_eq!(rep.start_frame_no(), None);
+        assert_eq!(rep.frames_synced(), 0);
 
         let conn = db.connect()?;
 
@@ -1328,7 +1322,7 @@ fn replicated_return() {
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), Some(1));
-        assert_eq!(rep.start_frame_no(), None);
+        assert_eq!(rep.frames_synced(), 2);
 
         conn.execute_batch(
             "
@@ -1342,8 +1336,9 @@ fn replicated_return() {
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), Some(10));
-        assert_eq!(rep.start_frame_no(), Some(1));
+        assert_eq!(rep.frames_synced(), 11);
 
+        // Regenerate log
         notify.notify_waiters();
         notify.notified().await;
 
@@ -1351,7 +1346,7 @@ fn replicated_return() {
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), Some(4));
-        assert_eq!(rep.start_frame_no(), Some(10));
+        assert_eq!(rep.frames_synced(), 16);
 
         let mut row = conn.query("select count(*) from user", ()).await.unwrap();
         let count = row.next().await.unwrap().unwrap().get::<u64>(0).unwrap();
