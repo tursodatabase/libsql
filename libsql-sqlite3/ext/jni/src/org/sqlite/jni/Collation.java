@@ -19,7 +19,8 @@ package org.sqlite.jni.capi;
 public interface PreupdateHookCallback extends CallbackProxy {
   /**
      Must function as described for the C-level sqlite3_preupdate_hook()
-     callback.
+     callback. If it throws, the exception is translated to a
+     db-level error and the exception is suppressed.
   */
   void call(sqlite3 db, int op, String dbName, String dbTable,
             long iKey1, long iKey2 );

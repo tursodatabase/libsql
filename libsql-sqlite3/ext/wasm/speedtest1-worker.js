@@ -7,9 +7,9 @@
   }
   importScripts(speedtestJs);
   /**
-     If this environment contains OPFS, this function initializes it and
-     returns the name of the dir on which OPFS is mounted, else it returns
-     an empty string.
+     If this build includes WASMFS, this function initializes it and
+     returns the name of the dir on which OPFS is mounted, else it
+     returns an empty string.
   */
   const wasmfsDir = function f(wasmUtil){
     if(undefined !== f._) return f._;
@@ -47,6 +47,7 @@
   };
   const log = (...args)=>logMsg('stdout',args);
   const logErr = (...args)=>logMsg('stderr',args);
+  const realSahName = 'opfs-sahpool-speedtest1';
 
   const runSpeedtest = async function(cliFlagsArray){
     const scope = App.wasm.scopedAllocPush();
@@ -57,7 +58,6 @@
       ];
       App.logBuffer.length = 0;
       const ndxSahPool = argv.indexOf('opfs-sahpool');
-      const realSahName = 'opfs-sahpool-speedtest1';
       if(ndxSahPool>0){
         argv[ndxSahPool] = realSahName;
         log("Updated argv for opfs-sahpool: --vfs",realSahName);
@@ -73,7 +73,7 @@
           clearOnInit: true,
           verbosity: 2
         }).then(PoolUtil=>{
-          log("opfs-sahpool successfully installed as",realSahName);
+          log("opfs-sahpool successfully installed as",PoolUtil.vfsName);
           App.sqlite3.$SAHPoolUtil = PoolUtil;
           //console.log("sqlite3.oo1.OpfsSAHPoolDb =", App.sqlite3.oo1.OpfsSAHPoolDb);
         });
@@ -100,19 +100,6 @@
           logErr("Unhandled worker message type:",msg.type);
           break;
     }
-  };
-
-  const sahpSanityChecks = function(sqlite3){
-    log("Attempting OpfsSAHPoolDb sanity checks...");
-    const db = new sqlite3.oo1.OpfsSAHPoolDb('opfs-sahpoool.db');
-    const fn = db.filename;
-    db.exec([
-      'create table t(a);',
-      'insert into t(a) values(1),(2),(3);'
-    ]);
-    db.close();
-    sqlite3.wasm.sqlite3_wasm_vfs_unlink(sqlite3_vfs_find("opfs-sahpool"), fn);
-    log("SAH sanity checks done.");
   };
 
   const EmscriptenModule = {

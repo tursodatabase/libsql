@@ -2348,9 +2348,7 @@ void sqlite3session_delete(sqlite3_session *pSession){
   ** associated hash-tables. */
   sessionDeleteTable(pSession, pSession->pTable);
 
-  /* Assert that all allocations have been freed and then free the 
-  ** session object itself. */
-  // assert( pSession->nMalloc==0 );
+  /* Free the session object. */
   sqlite3_free(pSession);
 }
 

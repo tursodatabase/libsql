@@ -4521,6 +4521,11 @@ static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 
 #if SQLITE_MAX_MMAP_SIZE>0
   if( pFd->mmapSizeMax>0 ){
+    /* Ensure that there is always at least a 256 byte buffer of addressable
+    ** memory following the returned page. If the database is corrupt,
+    ** SQLite may overread the page slightly (in practice only a few bytes,
+    ** but 256 is safe, round, number).  */
+    const int nEofBuffer = 256;
     if( pFd->pMapRegion==0 ){
       int rc = winMapfile(pFd, -1);
       if( rc!=SQLITE_OK ){
@@ -4529,7 +4534,7 @@ static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
         return rc;
       }
     }
-    if( pFd->mmapSize >= iOff+nAmt ){
+    if( pFd->mmapSize >= (iOff+nAmt+nEofBuffer) ){
       assert( pFd->pMapRegion!=0 );
       *pp = &((u8 *)pFd->pMapRegion)[iOff];
       pFd->nFetchOut++;

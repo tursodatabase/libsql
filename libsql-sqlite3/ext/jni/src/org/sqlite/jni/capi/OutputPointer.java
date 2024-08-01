@@ -228,4 +228,26 @@ public final class OutputPointer {
     /** Sets the current value. */
     public final void set(byte[] v){value = v;}
   }
+
+  /**
+     Output pointer for use with native routines which return
+     blobs via java.nio.ByteBuffer.
+
+     See {@link org.sqlite.jni.capi.CApi#sqlite3_jni_supports_nio}
+  */
+  public static final class ByteBuffer {
+    /**
+       This is public for ease of use. Accessors are provided for
+       consistency with the higher-level types.
+    */
+    public java.nio.ByteBuffer value;
+    /** Initializes with the value null. */
+    public ByteBuffer(){this(null);}
+    /** Initializes with the value v. */
+    public ByteBuffer(java.nio.ByteBuffer v){value = v;}
+    /** Returns the current value. */
+    public final java.nio.ByteBuffer get(){return value;}
+    /** Sets the current value. */
+    public final void set(java.nio.ByteBuffer v){value = v;}
+  }
 }

@@ -25,7 +25,6 @@ public final class sqlite3_blob extends NativePointerHolder<sqlite3_blob>
   private sqlite3_blob(){}
 
   @Override public void close(){
-    CApi.sqlite3_blob_close(this.clearNativePointer());
+    CApi.sqlite3_blob_close(this);
   }
-
 }

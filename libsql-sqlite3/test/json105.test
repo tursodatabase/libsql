@@ -13,7 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix json104
+set testprefix json105
 
 # This is the example from pages 2 and 3 of RFC-7396
 db eval {
@@ -96,18 +96,18 @@ json_replace_test 80 {'$.b[#-1]','AAA','$.b[#-1]','BBB'} \
 
 do_catchsql_test json105-6.10 {
   SELECT json_extract(j, '$.b[#-]') FROM t1;
-} {1 {JSON path error near '[#-]'}}
+} {1 {bad JSON path: '$.b[#-]'}}
 do_catchsql_test json105-6.20 {
   SELECT json_extract(j, '$.b[#9]') FROM t1;
-} {1 {JSON path error near '[#9]'}}
+} {1 {bad JSON path: '$.b[#9]'}}
 do_catchsql_test json105-6.30 {
   SELECT json_extract(j, '$.b[#+2]') FROM t1;
-} {1 {JSON path error near '[#+2]'}}
+} {1 {bad JSON path: '$.b[#+2]'}}
 do_catchsql_test json105-6.40 {
   SELECT json_extract(j, '$.b[#-1') FROM t1;
-} {1 {JSON path error near '[#-1'}}
+} {1 {bad JSON path: '$.b[#-1'}}
 do_catchsql_test json105-6.50 {
   SELECT json_extract(j, '$.b[#-1x]') FROM t1;
-} {1 {JSON path error near '[#-1x]'}}
+} {1 {bad JSON path: '$.b[#-1x]'}}
 
 finish_test
