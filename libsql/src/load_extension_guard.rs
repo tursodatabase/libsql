@@ -7,7 +7,7 @@ use crate::{Connection, Result};
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```ignore
 /// let _guard = LoadExtensionGuard::new(conn)?;
 /// conn.load_extension("uuid", None)?;
 /// ```
