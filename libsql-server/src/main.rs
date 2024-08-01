@@ -42,6 +42,8 @@ struct Cli {
 
     #[clap(long, default_value = "127.0.0.1:8080", env = "SQLD_HTTP_LISTEN_ADDR")]
     http_listen_addr: SocketAddr,
+
+    /// Enable a web-based http console served at the /console route.
     #[clap(long)]
     enable_http_console: bool,
 
