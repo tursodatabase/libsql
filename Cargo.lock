@@ -3674,6 +3674,7 @@ dependencies = [
  "foundationdb",
  "futures",
  "libsql-storage",
+ "prost",
  "redis",
  "serde",
  "thiserror",
