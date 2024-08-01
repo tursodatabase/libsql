@@ -11,7 +11,7 @@ use parking_lot::Mutex;
 
 use crate::parser;
 use crate::parser::StmtKind;
-use crate::rows::{RowInner, RowsInner};
+use crate::rows::{ColumnsInner, RowInner, RowsInner};
 use crate::statement::Stmt;
 use crate::transaction::Tx;
 use crate::{
@@ -780,7 +780,9 @@ impl RowsInner for RemoteRows {
         let row = RemoteRow(values, self.0.column_descriptions.clone());
         Ok(Some(row).map(Box::new).map(|inner| Row { inner }))
     }
+}
 
+impl ColumnsInner for RemoteRows {
     fn column_count(&self) -> i32 {
         self.0.column_descriptions.len() as i32
     }
@@ -813,10 +815,6 @@ impl RowInner for RemoteRow {
             .ok_or(Error::InvalidColumnIndex)
     }
 
-    fn column_name(&self, idx: i32) -> Option<&str> {
-        self.1.get(idx as usize).map(|s| s.name.as_str())
-    }
-
     fn column_str(&self, idx: i32) -> Result<&str> {
         let value = self.0.get(idx as usize).ok_or(Error::InvalidColumnIndex)?;
 
@@ -824,6 +822,12 @@ impl RowInner for RemoteRow {
             Value::Text(s) => Ok(s.as_str()),
             _ => Err(Error::InvalidColumnType),
         }
+    }
+}
+
+impl ColumnsInner for RemoteRow {
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        self.1.get(idx as usize).map(|s| s.name.as_str())
     }
 
     fn column_type(&self, idx: i32) -> Result<ValueType> {
@@ -835,8 +839,8 @@ impl RowInner for RemoteRow {
             .ok_or(Error::InvalidColumnType)
     }
 
-    fn column_count(&self) -> usize {
-        self.1.len()
+    fn column_count(&self) -> i32 {
+        self.1.len() as i32
     }
 }
 
