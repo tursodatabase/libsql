@@ -19,6 +19,7 @@ use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, Nam
 use crate::stats::Stats;
 
 use super::broadcasters::{BroadcasterHandle, BroadcasterRegistry};
+use super::configurator::NamespaceConfigurators;
 use super::meta_store::{MetaStore, MetaStoreHandle};
 use super::schema_lock::SchemaLocksRegistry;
 use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, ResolveNamespacePathFn, RestoreOption};
@@ -47,6 +48,7 @@ pub struct NamespaceStoreInner {
     pub config: NamespaceConfig,
     schema_locks: SchemaLocksRegistry,
     broadcasters: BroadcasterRegistry,
+    configurators: NamespaceConfigurators,
 }
 
 impl NamespaceStore {
@@ -90,6 +92,7 @@ impl NamespaceStore {
                 config,
                 schema_locks: Default::default(),
                 broadcasters: Default::default(),
+                configurators: NamespaceConfigurators::default(),
             }),
         })
     }

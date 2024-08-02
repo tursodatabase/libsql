@@ -12,7 +12,7 @@ mod primary;
 type DynConfigurator = Box<dyn ConfigureNamespace + Send + Sync + 'static>;
 
 #[derive(Default)]
-struct NamespaceConfigurators {
+pub(crate) struct NamespaceConfigurators {
     replica_configurator: Option<DynConfigurator>,
     primary_configurator: Option<DynConfigurator>,
     schema_configurator: Option<DynConfigurator>,
