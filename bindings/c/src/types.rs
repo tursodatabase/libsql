@@ -115,6 +115,12 @@ impl From<&mut libsql_connection> for libsql_connection_t {
     }
 }
 
+#[repr(C)]
+pub struct replicated {
+    pub frame_no: usize,
+    pub frames_synced: usize,
+}
+
 pub struct stmt {
     pub stmt: libsql::Statement,
     pub params: Vec<libsql::Value>,
