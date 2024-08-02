@@ -3430,7 +3430,7 @@ dependencies = [
 
 [[package]]
 name = "libsql"
-version = "0.5.0-alpha.2"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3488,7 +3488,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-ffi"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bindgen 0.66.1",
  "cc",
@@ -3508,7 +3508,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-rusqlite"
-version = "0.31.0"
+version = "0.32.0"
 dependencies = [
  "bencher",
  "bitflags 2.6.0",
@@ -3631,7 +3631,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-sqlite3-parser"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "bitflags 2.6.0",
  "cc",
@@ -3687,7 +3687,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-sys"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "bytes",
  "libsql-ffi",
@@ -3768,7 +3768,7 @@ dependencies = [
 
 [[package]]
 name = "libsql_replication"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "aes",
  "arbitrary",
