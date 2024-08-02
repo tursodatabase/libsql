@@ -261,7 +261,7 @@ impl Database {
     /// Perform a sync step, returning the new replication index, or None, if the nothing was
     /// replicated yet
     pub async fn sync_oneshot(&self) -> Result<crate::replication::Replicated> {
-        if let Some(ref ctx) = self.replication_ctx {
+        if let Some(ctx) = &self.replication_ctx {
             ctx.replicator.sync_oneshot().await
         } else {
             Err(crate::errors::Error::Misuse(

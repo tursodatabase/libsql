@@ -1,6 +1,7 @@
 //! Utilities used when using a replicated version of libsql.
 
 use std::path::PathBuf;
+use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -39,10 +40,16 @@ pub struct Replicated {
 }
 
 impl Replicated {
+    /// The currently synced frame number. This can be used to track
+    /// where in the log you might be. Beware that this value can be reset to a lower value by the
+    /// server in certain situations. Please use `frames_synced` if you want to track the amount of
+    /// work a sync has done.
     pub fn frame_no(&self) -> Option<FrameNo> {
         self.frame_no
     }
 
+    /// The count of frames synced during this call of `sync`. A frame is a 4kB frame from the
+    /// libsql write ahead log.
     pub fn frames_synced(&self) -> usize {
         self.frames_synced
     }
@@ -124,6 +131,7 @@ impl Writer {
 pub(crate) struct EmbeddedReplicator {
     replicator: Arc<Mutex<Replicator<Either<RemoteClient, LocalClient>>>>,
     bg_abort: Option<Arc<DropAbort>>,
+    last_frames_synced: Arc<AtomicUsize>,
 }
 
 impl From<libsql_replication::replicator::Error> for errors::Error {
@@ -153,6 +161,7 @@ impl EmbeddedReplicator {
         let mut replicator = Self {
             replicator,
             bg_abort: None,
+            last_frames_synced: Arc::new(AtomicUsize::new(0)),
         };
 
         if let Some(sync_duration) = perodic_sync {
@@ -196,6 +205,7 @@ impl EmbeddedReplicator {
         Ok(Self {
             replicator,
             bg_abort: None,
+            last_frames_synced: Arc::new(AtomicUsize::new(0)),
         })
     }
 
@@ -245,9 +255,13 @@ impl EmbeddedReplicator {
             }
         }
 
+        let last_frames_synced = self
+            .last_frames_synced
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
         let replicated = Replicated {
             frame_no: replicator.client_mut().committed_frame_no(),
-            frames_synced: replicator.frames_synced(),
+            frames_synced: replicator.frames_synced() - last_frames_synced,
         };
 
         Ok(replicated)
