@@ -1,11 +1,3 @@
-pub mod broadcasters;
-mod fork;
-pub mod meta_store;
-mod name;
-pub mod replication_wal;
-mod schema_lock;
-mod store;
-
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
@@ -56,6 +48,15 @@ use self::meta_store::MetaStoreHandle;
 pub use self::name::NamespaceName;
 use self::replication_wal::{make_replication_wal_wrapper, ReplicationWalWrapper};
 pub use self::store::NamespaceStore;
+
+pub mod broadcasters;
+mod fork;
+pub mod meta_store;
+mod name;
+pub mod replication_wal;
+mod schema_lock;
+mod store;
+mod configurator;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
 pub type ResolveNamespacePathFn =
