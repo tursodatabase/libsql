@@ -759,7 +759,7 @@ fn replicate_with_snapshots() {
         assert_eq!(stat, 427);
 
         let rep = db.sync().await.unwrap();
-        assert_eq!(rep.frames_synced(), 427);
+        assert_eq!(rep.frames_synced(), 0);
 
         let conn = db.connect().unwrap();
 
@@ -1336,7 +1336,7 @@ fn replicated_return() {
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), Some(10));
-        assert_eq!(rep.frames_synced(), 11);
+        assert_eq!(rep.frames_synced(), 9);
 
         // Regenerate log
         notify.notify_waiters();
@@ -1346,7 +1346,7 @@ fn replicated_return() {
 
         let rep = db.sync().await.unwrap();
         assert_eq!(rep.frame_no(), Some(4));
-        assert_eq!(rep.frames_synced(), 16);
+        assert_eq!(rep.frames_synced(), 3);
 
         let mut row = conn.query("select count(*) from user", ()).await.unwrap();
         let count = row.next().await.unwrap().unwrap().get::<u64>(0).unwrap();
