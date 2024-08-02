@@ -125,7 +125,7 @@ impl Connection {
     ///
     /// # Return
     ///
-    /// This returns a `BatchRows` currently only the `remote` connection supports this feature and
+    /// This returns a `BatchRows` currently only the `remote`  and `local` connection supports this feature and
     /// all other connection types will return an empty set always.
     pub async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         tracing::trace!("executing batch `{}`", sql);
@@ -136,7 +136,7 @@ impl Connection {
     ///
     /// # Return
     ///
-    /// This returns a `BatchRows` currently only the `remote` connection supports this feature and
+    /// This returns a `BatchRows` currently only the `remote` and `local` connection supports this feature and
     /// all other connection types will return an empty set always.
     pub async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows> {
         tracing::trace!("executing batch transactional `{}`", sql);
