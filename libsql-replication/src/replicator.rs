@@ -141,6 +141,7 @@ pub struct Replicator<C> {
     client: C,
     injector: Arc<Mutex<Injector>>,
     state: ReplicatorState,
+    frames_synced: usize,
 }
 
 const INJECTOR_BUFFER_CAPACITY: usize = 10;
@@ -178,6 +179,7 @@ impl<C: ReplicatorClient> Replicator<C> {
             client,
             injector: Arc::new(Mutex::new(injector)),
             state: ReplicatorState::NeedHandshake,
+            frames_synced: 0,
         })
     }
 
@@ -311,6 +313,8 @@ impl<C: ReplicatorClient> Replicator<C> {
     }
 
     async fn inject_frame(&mut self, frame: Frame) -> Result<(), Error> {
+        self.frames_synced += 1;
+
         let injector = self.injector.clone();
         match spawn_blocking(move || injector.lock().inject_frame(frame)).await? {
             Ok(Some(commit_fno)) => {
@@ -334,6 +338,10 @@ impl<C: ReplicatorClient> Replicator<C> {
         }
 
         Ok(())
+    }
+
+    pub fn frames_synced(&self) -> usize {
+        self.frames_synced
     }
 }
 

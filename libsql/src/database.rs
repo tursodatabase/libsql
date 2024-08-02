@@ -323,7 +323,7 @@ cfg_replication! {
 
         /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
-        pub async fn sync(&self) -> Result<Option<FrameNo>> {
+        pub async fn sync(&self) -> Result<crate::replication::Replicated> {
             if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.sync().await
             } else {
