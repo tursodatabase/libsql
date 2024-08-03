@@ -13,8 +13,10 @@ use tokio_stream::wrappers::BroadcastStream;
 use crate::auth::Authenticated;
 use crate::broadcaster::BroadcastMsg;
 use crate::connection::config::DatabaseConfig;
+use crate::database::DatabaseKind;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
+use crate::namespace::configurator::{PrimaryConfigurator, ReplicaConfigurator, SchemaConfigurator};
 use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName};
 use crate::stats::Stats;
 
@@ -82,6 +84,12 @@ impl NamespaceStore {
             .time_to_idle(Duration::from_secs(86400))
             .build();
 
+        let mut configurators = NamespaceConfigurators::default();
+        configurators
+            .with_primary(PrimaryConfigurator)
+            .with_replica(ReplicaConfigurator)
+            .with_schema(SchemaConfigurator);
+
         Ok(Self {
             inner: Arc::new(NamespaceStoreInner {
                 store,
@@ -92,7 +100,7 @@ impl NamespaceStore {
                 config,
                 schema_locks: Default::default(),
                 broadcasters: Default::default(),
-                configurators: NamespaceConfigurators::default(),
+                configurators,
             }),
         })
     }
@@ -177,27 +185,17 @@ impl NamespaceStore {
             ns.destroy().await?;
         }
 
-        let handle = self.inner.metadata.handle(namespace.clone());
+        let db_config = self.inner.metadata.handle(namespace.clone());
         // destroy on-disk database
         Namespace::cleanup(
             &self.inner.config,
             &namespace,
-            &handle.get(),
+            &db_config.get(),
             false,
             NamespaceBottomlessDbIdInit::FetchFromConfig,
         )
         .await?;
-        let ns = Namespace::from_config(
-            &self.inner.config,
-            handle,
-            restore_option,
-            &namespace,
-            self.make_reset_cb(),
-            self.resolve_attach_fn(),
-            self.clone(),
-            self.broadcaster(namespace.clone()),
-        )
-        .await?;
+        let ns = self.make_namespace(&namespace, db_config, restore_option).await?;
 
         lock.replace(ns);
 
@@ -304,9 +302,7 @@ impl NamespaceStore {
             to.clone(),
             handle.clone(),
             timestamp,
-            self.resolve_attach_fn(),
             self.clone(),
-            self.broadcaster(to),
         )
         .await?;
 
@@ -381,30 +377,42 @@ impl NamespaceStore {
         .clone()
     }
 
+    pub(crate) async fn make_namespace(
+        &self,
+        namespace: &NamespaceName,
+        config: MetaStoreHandle,
+        restore_option: RestoreOption,
+    ) -> crate::Result<Namespace> {
+        let configurator = match self.inner.config.db_kind {
+            DatabaseKind::Primary if config.get().is_shared_schema => {
+                self.inner.configurators.configure_schema()?
+            }
+            DatabaseKind::Primary => self.inner.configurators.configure_primary()?,
+            DatabaseKind::Replica => self.inner.configurators.configure_replica()?,
+        };
+        let ns = configurator.setup(
+            &self.inner.config,
+            config,
+            restore_option,
+            namespace,
+            self.make_reset_cb(),
+            self.resolve_attach_fn(),
+            self.clone(),
+            self.broadcaster(namespace.clone()),
+        ).await?;
+
+        Ok(ns)
+    }
+
     async fn load_namespace(
         &self,
         namespace: &NamespaceName,
         db_config: MetaStoreHandle,
         restore_option: RestoreOption,
     ) -> crate::Result<NamespaceEntry> {
-        let init = {
-            let namespace = namespace.clone();
-            async move {
-                let ns = Namespace::from_config(
-                    &self.inner.config,
-                    db_config,
-                    restore_option,
-                    &namespace,
-                    self.make_reset_cb(),
-                    self.resolve_attach_fn(),
-                    self.clone(),
-                    self.broadcaster(namespace.clone()),
-                )
-                .await?;
-                tracing::info!("loaded namespace: `{namespace}`");
-
-                Ok(Some(ns))
-            }
+        let init = async {
+            let ns = self.make_namespace(namespace, db_config, restore_option).await?;
+            Ok(Some(ns))
         };
 
         let before_load = Instant::now();

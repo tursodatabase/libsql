@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Weak};
 
 use anyhow::{Context as _, Error};
@@ -10,7 +10,6 @@ use chrono::NaiveDateTime;
 use enclose::enclose;
 use futures_core::{Future, Stream};
 use hyper::Uri;
-use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_sys::EncryptionConfig;
 use tokio::io::AsyncBufReadExt;
@@ -25,20 +24,17 @@ use crate::auth::parse_jwt_keys;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::connection_manager::InnerWalManager;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
-use crate::connection::write_proxy::MakeWriteProxyConn;
-use crate::connection::Connection;
-use crate::connection::MakeConnection;
+use crate::connection::{Connection as _, MakeConnection};
 use crate::database::{
-    Database, DatabaseKind, PrimaryConnection, PrimaryConnectionMaker, PrimaryDatabase,
-    ReplicaDatabase, SchemaDatabase,
+    Database, DatabaseKind, PrimaryConnection, PrimaryConnectionMaker,
 };
 use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::{FrameNo, ReplicationLogger};
-use crate::schema::{has_pending_migration_task, setup_migration_table, SchedulerHandle};
+use crate::schema::SchedulerHandle;
 use crate::stats::Stats;
 use crate::{
-    run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
+    StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
 };
 
 pub use fork::ForkError;
@@ -101,54 +97,6 @@ pub struct Namespace {
 }
 
 impl Namespace {
-    async fn from_config(
-        ns_config: &NamespaceConfig,
-        db_config: MetaStoreHandle,
-        restore_option: RestoreOption,
-        name: &NamespaceName,
-        reset: ResetCb,
-        resolve_attach_path: ResolveNamespacePathFn,
-        store: NamespaceStore,
-        broadcaster: BroadcasterHandle,
-    ) -> crate::Result<Self> {
-        match ns_config.db_kind {
-            DatabaseKind::Primary if db_config.get().is_shared_schema => {
-                Self::new_schema(
-                    ns_config,
-                    name.clone(),
-                    db_config,
-                    restore_option,
-                    resolve_attach_path,
-                    broadcaster,
-                )
-                .await
-            }
-            DatabaseKind::Primary => {
-                Self::new_primary(
-                    ns_config,
-                    name.clone(),
-                    db_config,
-                    restore_option,
-                    resolve_attach_path,
-                    broadcaster,
-                )
-                .await
-            }
-            DatabaseKind::Replica => {
-                Self::new_replica(
-                    ns_config,
-                    name.clone(),
-                    db_config,
-                    reset,
-                    resolve_attach_path,
-                    store,
-                    broadcaster,
-                )
-                .await
-            }
-        }
-    }
-
     pub(crate) fn name(&self) -> &NamespaceName {
         &self.name
     }
@@ -246,40 +194,6 @@ impl Namespace {
 
     pub fn config_changed(&self) -> impl Future<Output = ()> {
         self.db_config_store.changed()
-    }
-
-    async fn new_primary(
-        config: &NamespaceConfig,
-        name: NamespaceName,
-        meta_store_handle: MetaStoreHandle,
-        restore_option: RestoreOption,
-        resolve_attach_path: ResolveNamespacePathFn,
-        broadcaster: BroadcasterHandle,
-    ) -> crate::Result<Self> {
-        let db_path: Arc<Path> = config.base_path.join("dbs").join(name.as_str()).into();
-        let fresh_namespace = !db_path.try_exists()?;
-        // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
-        match Self::try_new_primary(
-            config,
-            name.clone(),
-            meta_store_handle,
-            restore_option,
-            resolve_attach_path,
-            db_path.clone(),
-            broadcaster,
-        )
-        .await
-        {
-            Ok(this) => Ok(this),
-            Err(e) if fresh_namespace => {
-                tracing::error!("an error occured while deleting creating namespace, cleaning...");
-                if let Err(e) = tokio::fs::remove_dir_all(&db_path).await {
-                    tracing::error!("failed to remove dirty namespace directory: {e}")
-                }
-                Err(e)
-            }
-            Err(e) => Err(e),
-        }
     }
 
     #[tracing::instrument(skip_all)]
@@ -417,237 +331,6 @@ impl Namespace {
         Ok((connection_maker, wal_wrapper, stats))
     }
 
-    #[tracing::instrument(skip_all, fields(namespace))]
-    async fn try_new_primary(
-        ns_config: &NamespaceConfig,
-        namespace: NamespaceName,
-        meta_store_handle: MetaStoreHandle,
-        restore_option: RestoreOption,
-        resolve_attach_path: ResolveNamespacePathFn,
-        db_path: Arc<Path>,
-        broadcaster: BroadcasterHandle,
-    ) -> crate::Result<Self> {
-        let mut join_set = JoinSet::new();
-
-        tokio::fs::create_dir_all(&db_path).await?;
-
-        let block_writes = Arc::new(AtomicBool::new(false));
-        let (connection_maker, wal_wrapper, stats) = Self::make_primary_connection_maker(
-            ns_config,
-            &meta_store_handle,
-            &db_path,
-            &namespace,
-            restore_option,
-            block_writes.clone(),
-            &mut join_set,
-            resolve_attach_path,
-            broadcaster,
-        )
-        .await?;
-        let connection_maker = Arc::new(connection_maker);
-
-        if meta_store_handle.get().shared_schema_name.is_some() {
-            let block_writes = block_writes.clone();
-            let conn = connection_maker.create().await?;
-            tokio::task::spawn_blocking(move || {
-                conn.with_raw(|conn| -> crate::Result<()> {
-                    setup_migration_table(conn)?;
-                    if has_pending_migration_task(conn)? {
-                        block_writes.store(true, Ordering::SeqCst);
-                    }
-                    Ok(())
-                })
-            })
-            .await
-            .unwrap()?;
-        }
-
-        if let Some(checkpoint_interval) = ns_config.checkpoint_interval {
-            join_set.spawn(run_periodic_checkpoint(
-                connection_maker.clone(),
-                checkpoint_interval,
-                namespace.clone(),
-            ));
-        }
-
-        tracing::debug!("Done making new primary");
-
-        Ok(Self {
-            tasks: join_set,
-            db: Database::Primary(PrimaryDatabase {
-                wal_wrapper,
-                connection_maker,
-                block_writes,
-            }),
-            name: namespace,
-            stats,
-            db_config_store: meta_store_handle,
-            path: db_path.into(),
-        })
-    }
-
-    #[tracing::instrument(skip_all, fields(name))]
-    #[async_recursion::async_recursion]
-    async fn new_replica(
-        config: &NamespaceConfig,
-        name: NamespaceName,
-        meta_store_handle: MetaStoreHandle,
-        reset: ResetCb,
-        resolve_attach_path: ResolveNamespacePathFn,
-        store: NamespaceStore,
-        broadcaster: BroadcasterHandle,
-    ) -> crate::Result<Self> {
-        tracing::debug!("creating replica namespace");
-        let db_path = config.base_path.join("dbs").join(name.as_str());
-        let channel = config.channel.clone().expect("bad replica config");
-        let uri = config.uri.clone().expect("bad replica config");
-
-        let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
-        let client = crate::replication::replicator_client::Client::new(
-            name.clone(),
-            rpc_client,
-            &db_path,
-            meta_store_handle.clone(),
-            store.clone(),
-        )
-        .await?;
-        let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
-        let mut replicator = libsql_replication::replicator::Replicator::new(
-            client,
-            db_path.join("data"),
-            DEFAULT_AUTO_CHECKPOINT,
-            config.encryption_config.clone(),
-        )
-        .await?;
-
-        tracing::debug!("try perform handshake");
-        // force a handshake now, to retrieve the primary's current replication index
-        match replicator.try_perform_handshake().await {
-            Err(libsql_replication::replicator::Error::Meta(
-                libsql_replication::meta::Error::LogIncompatible,
-            )) => {
-                tracing::error!(
-                    "trying to replicate incompatible logs, reseting replica and nuking db dir"
-                );
-                std::fs::remove_dir_all(&db_path).unwrap();
-                return Self::new_replica(
-                    config,
-                    name,
-                    meta_store_handle,
-                    reset,
-                    resolve_attach_path,
-                    store,
-                    broadcaster,
-                )
-                .await;
-            }
-            Err(e) => Err(e)?,
-            Ok(_) => (),
-        }
-
-        tracing::debug!("done performing handshake");
-
-        let primary_current_replicatio_index = replicator.client_mut().primary_replication_index;
-
-        let mut join_set = JoinSet::new();
-        let namespace = name.clone();
-        join_set.spawn(async move {
-            use libsql_replication::replicator::Error;
-            loop {
-                match replicator.run().await {
-                    err @ Error::Fatal(_) => Err(err)?,
-                    err @ Error::NamespaceDoesntExist => {
-                        tracing::error!("namespace {namespace} doesn't exist, destroying...");
-                        (reset)(ResetOp::Destroy(namespace.clone()));
-                        Err(err)?;
-                    }
-                    e @ Error::Injector(_) => {
-                        tracing::error!("potential corruption detected while replicating, reseting  replica: {e}");
-                        (reset)(ResetOp::Reset(namespace.clone()));
-                        Err(e)?;
-                    },
-                    Error::Meta(err) => {
-                        use libsql_replication::meta::Error;
-                        match err {
-                            Error::LogIncompatible => {
-                                tracing::error!("trying to replicate incompatible logs, reseting replica");
-                                (reset)(ResetOp::Reset(namespace.clone()));
-                                Err(err)?;
-                            }
-                            Error::InvalidMetaFile
-                            | Error::Io(_)
-                            | Error::InvalidLogId
-                            | Error::FailedToCommit(_)
-                            | Error::InvalidReplicationPath
-                            | Error::RequiresCleanDatabase => {
-                                // We retry from last frame index?
-                                tracing::warn!("non-fatal replication error, retrying from last commit index: {err}");
-                            },
-                        }
-                    }
-                    e @ (Error::Internal(_)
-                    | Error::Client(_)
-                    | Error::PrimaryHandshakeTimeout
-                    | Error::NeedSnapshot) => {
-                        tracing::warn!("non-fatal replication error, retrying from last commit index: {e}");
-                    },
-                    Error::NoHandshake => {
-                        // not strictly necessary, but in case the handshake error goes uncaught,
-                        // we reset the client state.
-                        replicator.client_mut().reset_token();
-                    }
-                    Error::SnapshotPending => unreachable!(),
-                }
-            }
-        });
-
-        let stats = make_stats(
-            &db_path,
-            &mut join_set,
-            meta_store_handle.clone(),
-            config.stats_sender.clone(),
-            name.clone(),
-            applied_frame_no_receiver.clone(),
-            config.encryption_config.clone(),
-        )
-        .await?;
-
-        let connection_maker = MakeWriteProxyConn::new(
-            db_path.clone(),
-            config.extensions.clone(),
-            channel.clone(),
-            uri.clone(),
-            stats.clone(),
-            broadcaster,
-            meta_store_handle.clone(),
-            applied_frame_no_receiver,
-            config.max_response_size,
-            config.max_total_response_size,
-            primary_current_replicatio_index,
-            config.encryption_config.clone(),
-            resolve_attach_path,
-            config.make_wal_manager.clone(),
-        )
-        .await?
-        .throttled(
-            config.max_concurrent_connections.clone(),
-            Some(DB_CREATE_TIMEOUT),
-            config.max_total_response_size,
-            config.max_concurrent_requests,
-        );
-
-        Ok(Self {
-            tasks: join_set,
-            db: Database::Replica(ReplicaDatabase {
-                connection_maker: Arc::new(connection_maker),
-            }),
-            name,
-            stats,
-            db_config_store: meta_store_handle,
-            path: db_path.into(),
-        })
-    }
-
     async fn fork(
         ns_config: &NamespaceConfig,
         from_ns: &Namespace,
@@ -655,9 +338,7 @@ impl Namespace {
         to_ns: NamespaceName,
         to_config: MetaStoreHandle,
         timestamp: Option<NaiveDateTime>,
-        resolve_attach: ResolveNamespacePathFn,
         store: NamespaceStore,
-        broadcaster: BroadcasterHandle,
     ) -> crate::Result<Namespace> {
         let from_config = from_config.get();
         match ns_config.db_kind {
@@ -696,10 +377,7 @@ impl Namespace {
                     logger,
                     restore_to,
                     to_config,
-                    ns_config,
-                    resolve_attach,
                     store,
-                    broadcaster: broadcaster.handle(to_ns),
                 };
 
                 let ns = fork_task.fork().await?;
@@ -707,48 +385,6 @@ impl Namespace {
             }
             DatabaseKind::Replica => Err(ForkError::ForkReplica.into()),
         }
-    }
-
-    async fn new_schema(
-        ns_config: &NamespaceConfig,
-        name: NamespaceName,
-        meta_store_handle: MetaStoreHandle,
-        restore_option: RestoreOption,
-        resolve_attach_path: ResolveNamespacePathFn,
-        broadcaster: BroadcasterHandle,
-    ) -> crate::Result<Namespace> {
-        let mut join_set = JoinSet::new();
-        let db_path = ns_config.base_path.join("dbs").join(name.as_str());
-
-        tokio::fs::create_dir_all(&db_path).await?;
-
-        let (connection_maker, wal_manager, stats) = Self::make_primary_connection_maker(
-            ns_config,
-            &meta_store_handle,
-            &db_path,
-            &name,
-            restore_option,
-            Arc::new(AtomicBool::new(false)), // this is always false for schema
-            &mut join_set,
-            resolve_attach_path,
-            broadcaster,
-        )
-        .await?;
-
-        Ok(Namespace {
-            db: Database::Schema(SchemaDatabase::new(
-                ns_config.migration_scheduler.clone(),
-                name.clone(),
-                connection_maker,
-                wal_manager,
-                meta_store_handle.clone(),
-            )),
-            name,
-            tasks: join_set,
-            stats,
-            db_config_store: meta_store_handle,
-            path: db_path.into(),
-        })
     }
 }
 

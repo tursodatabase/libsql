@@ -8,14 +8,19 @@ use super::{NamespaceConfig, NamespaceName, NamespaceStore, ResetCb, ResolveName
 
 mod replica;
 mod primary;
+mod schema;
 
-type DynConfigurator = Box<dyn ConfigureNamespace + Send + Sync + 'static>;
+pub use replica::ReplicaConfigurator;
+pub use primary::PrimaryConfigurator;
+pub use schema::SchemaConfigurator;
+
+type DynConfigurator = dyn ConfigureNamespace + Send + Sync + 'static;
 
 #[derive(Default)]
 pub(crate) struct NamespaceConfigurators {
-    replica_configurator: Option<DynConfigurator>,
-    primary_configurator: Option<DynConfigurator>,
-    schema_configurator: Option<DynConfigurator>,
+    replica_configurator: Option<Box<DynConfigurator>>,
+    primary_configurator: Option<Box<DynConfigurator>>,
+    schema_configurator: Option<Box<DynConfigurator>>,
 }
 
 impl NamespaceConfigurators {
@@ -38,6 +43,18 @@ impl NamespaceConfigurators {
     pub fn with_schema(&mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> &mut Self {
         self.schema_configurator = Some(Box::new(c));
         self
+    }
+
+    pub fn configure_schema(&self) -> crate::Result<&DynConfigurator> {
+        self.schema_configurator.as_deref().ok_or_else(|| todo!())
+    }
+
+    pub fn configure_primary(&self) -> crate::Result<&DynConfigurator> {
+        self.primary_configurator.as_deref().ok_or_else(|| todo!())
+    }
+
+    pub fn configure_replica(&self) -> crate::Result<&DynConfigurator> {
+        self.replica_configurator.as_deref().ok_or_else(|| todo!())
     }
 }
 

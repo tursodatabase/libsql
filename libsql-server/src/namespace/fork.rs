@@ -12,14 +12,12 @@ use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
-use crate::namespace::ResolveNamespacePathFn;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
-use super::broadcasters::BroadcasterHandle;
 use super::meta_store::MetaStoreHandle;
-use super::{Namespace, NamespaceConfig, NamespaceName, NamespaceStore, RestoreOption};
+use super::{NamespaceName, NamespaceStore, RestoreOption};
 
 type Result<T> = crate::Result<T, ForkError>;
 
@@ -54,16 +52,13 @@ async fn write_frame(frame: &FrameBorrowed, temp_file: &mut tokio::fs::File) -> 
     Ok(())
 }
 
-pub struct ForkTask<'a> {
+pub struct ForkTask {
     pub base_path: Arc<Path>,
     pub logger: Arc<ReplicationLogger>,
     pub to_namespace: NamespaceName,
     pub to_config: MetaStoreHandle,
     pub restore_to: Option<PointInTimeRestore>,
-    pub ns_config: &'a NamespaceConfig,
-    pub resolve_attach: ResolveNamespacePathFn,
     pub store: NamespaceStore,
-    pub broadcaster: BroadcasterHandle,
 }
 
 pub struct PointInTimeRestore {
@@ -71,7 +66,7 @@ pub struct PointInTimeRestore {
     pub replicator_options: bottomless::replicator::Options,
 }
 
-impl<'a> ForkTask<'a> {
+impl ForkTask {
     pub async fn fork(self) -> Result<super::Namespace> {
         let base_path = self.base_path.clone();
         let dest_namespace = self.to_namespace.clone();
@@ -105,18 +100,9 @@ impl<'a> ForkTask<'a> {
         let dest_path = self.base_path.join("dbs").join(self.to_namespace.as_str());
         tokio::fs::rename(temp_dir.path(), dest_path).await?;
 
-        Namespace::from_config(
-            self.ns_config,
-            self.to_config.clone(),
-            RestoreOption::Latest,
-            &self.to_namespace,
-            Box::new(|_op| {}),
-            self.resolve_attach.clone(),
-            self.store.clone(),
-            self.broadcaster,
-        )
-        .await
-        .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
+        self.store.make_namespace(&self.to_namespace, self.to_config, RestoreOption::Latest)
+            .await
+            .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
     }
 
     /// Restores the database state from a local log file.
