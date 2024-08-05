@@ -379,3 +379,26 @@ fn reindex_statement() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn test_simulate_vector_index_load_from_dump() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE t ( v FLOAT32(2) );", ()).await?;
+        conn.execute("CREATE TABLE t_idx_shadow(index_key  INTEGER , data BLOB, PRIMARY KEY (index_key));", ()).await?;
+        conn.execute("CREATE TABLE libsql_vector_meta_shadow ( name TEXT PRIMARY KEY, metadata BLOB ) WITHOUT ROWID", ()).await?;
+        conn.execute("INSERT INTO libsql_vector_meta_shadow VALUES ('t_idx', x'');", ()).await?;
+        conn.execute("INSERT INTO t VALUES (vector('[1,2]')), (vector('[2,3]'));", ()).await?;
+        conn.execute("CREATE INDEX t_idx ON t (libsql_vector_idx(v));", ()).await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
