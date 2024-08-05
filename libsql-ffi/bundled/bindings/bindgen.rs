@@ -3283,6 +3283,14 @@ pub struct libsql_wal_methods {
             arg3: *mut ::std::os::raw::c_uchar,
         ) -> ::std::os::raw::c_int,
     >,
+    pub xReadFrameRaw: ::std::option::Option<
+        unsafe extern "C" fn(
+            pWal: *mut wal_impl,
+            arg1: ::std::os::raw::c_uint,
+            arg2: ::std::os::raw::c_int,
+            arg3: *mut ::std::os::raw::c_uchar,
+        ) -> ::std::os::raw::c_int,
+    >,
     pub xDbsize:
         ::std::option::Option<unsafe extern "C" fn(pWal: *mut wal_impl) -> ::std::os::raw::c_uint>,
     pub xBeginWriteTransaction:
