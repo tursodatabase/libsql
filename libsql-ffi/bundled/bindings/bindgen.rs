@@ -24,10 +24,10 @@ extern "C" {
 }
 
 pub const __GNUC_VA_LIST: i32 = 1;
-pub const SQLITE_VERSION: &[u8; 7] = b"3.44.0\0";
-pub const SQLITE_VERSION_NUMBER: i32 = 3044000;
+pub const SQLITE_VERSION: &[u8; 7] = b"3.45.1\0";
+pub const SQLITE_VERSION_NUMBER: i32 = 3045001;
 pub const SQLITE_SOURCE_ID: &[u8; 85] =
-    b"2023-11-01 11:23:50 17129ba1ff7f0daf37100ee82d507aef7827cf38de1866e2633096ae6ad8alt1\0";
+    b"2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1\0";
 pub const LIBSQL_VERSION: &[u8; 6] = b"0.2.3\0";
 pub const SQLITE_OK: i32 = 0;
 pub const SQLITE_ERROR: i32 = 1;
@@ -356,6 +356,7 @@ pub const SQLITE_DETERMINISTIC: i32 = 2048;
 pub const SQLITE_DIRECTONLY: i32 = 524288;
 pub const SQLITE_SUBTYPE: i32 = 1048576;
 pub const SQLITE_INNOCUOUS: i32 = 2097152;
+pub const SQLITE_RESULT_SUBTYPE: i32 = 16777216;
 pub const SQLITE_WIN32_DATA_DIRECTORY_TYPE: i32 = 1;
 pub const SQLITE_WIN32_TEMP_DIRECTORY_TYPE: i32 = 2;
 pub const SQLITE_TXN_NONE: i32 = 0;
@@ -408,6 +409,7 @@ pub const SQLITE_TESTCTRL_PENDING_BYTE: i32 = 11;
 pub const SQLITE_TESTCTRL_ASSERT: i32 = 12;
 pub const SQLITE_TESTCTRL_ALWAYS: i32 = 13;
 pub const SQLITE_TESTCTRL_RESERVE: i32 = 14;
+pub const SQLITE_TESTCTRL_JSON_SELFCHECK: i32 = 14;
 pub const SQLITE_TESTCTRL_OPTIMIZATIONS: i32 = 15;
 pub const SQLITE_TESTCTRL_ISKEYWORD: i32 = 16;
 pub const SQLITE_TESTCTRL_SCRATCHMALLOC: i32 = 17;
@@ -3132,6 +3134,24 @@ pub struct Fts5ExtensionApi {
             arg2: *mut Fts5PhraseIter,
             piCol: *mut ::std::os::raw::c_int,
         ),
+    >,
+    pub xQueryToken: ::std::option::Option<
+        unsafe extern "C" fn(
+            arg1: *mut Fts5Context,
+            iPhrase: ::std::os::raw::c_int,
+            iToken: ::std::os::raw::c_int,
+            ppToken: *mut *const ::std::os::raw::c_char,
+            pnToken: *mut ::std::os::raw::c_int,
+        ) -> ::std::os::raw::c_int,
+    >,
+    pub xInstToken: ::std::option::Option<
+        unsafe extern "C" fn(
+            arg1: *mut Fts5Context,
+            iIdx: ::std::os::raw::c_int,
+            iToken: ::std::os::raw::c_int,
+            arg2: *mut *const ::std::os::raw::c_char,
+            arg3: *mut ::std::os::raw::c_int,
+        ) -> ::std::os::raw::c_int,
     >,
 }
 #[repr(C)]
