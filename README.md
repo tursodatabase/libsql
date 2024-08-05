@@ -70,7 +70,7 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 * [Beekeeper Studio](https://www.beekeeperstudio.io/db/libsql-client/) &mdash; macOS, Windows, and Linux
 * [Outerbase](https://www.outerbase.com) &mdash; Runs in the browser
 * [TablePlus](https://tableplus.com) &mdash; macOS, Windows, and Linux
-* [Dataflare](https://dataflare.app) &mdash; Paid (with limited free version) macOS app
+* [Dataflare](https://dataflare.app) &mdash; Paid (with limited free version) macOS, Windows, and Linux
 * [libSQL Studio](https://github.com/invisal/libsql-studio) - Runs in the browser
 
 ## Getting Started
