@@ -2868,6 +2868,14 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn libsql_wal_get_frame(
+        arg1: *mut sqlite3,
+        arg2: ::std::os::raw::c_uint,
+        arg3: *mut ::std::os::raw::c_void,
+        arg4: ::std::os::raw::c_uint,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn sqlite3_system_errno(arg1: *mut sqlite3) -> ::std::os::raw::c_int;
 }
 #[repr(C)]

@@ -10551,6 +10551,8 @@ SQLITE_API void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlit
 
 SQLITE_API int libsql_wal_frame_count(sqlite3*, unsigned int*);
 
+SQLITE_API int libsql_wal_get_frame(sqlite3*, unsigned int, void*, unsigned int);
+
 /*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
