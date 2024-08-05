@@ -56,6 +56,7 @@ typedef struct libsql_wal_methods {
   /* Read a page from the write-ahead log, if it is present. */
   int (*xFindFrame)(wal_impl* pWal, unsigned int, unsigned int *);
   int (*xReadFrame)(wal_impl* pWal, unsigned int, int, unsigned char *);
+  int (*xReadFrameRaw)(wal_impl* pWal, unsigned int, int, unsigned char *);
 
   /* If the WAL is not empty, return the size of the database. */
   unsigned int (*xDbsize)(wal_impl* pWal);
