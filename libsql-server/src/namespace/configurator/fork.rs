@@ -12,14 +12,70 @@ use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
+use crate::database::Database;
+use crate::namespace::meta_store::MetaStoreHandle;
+use crate::namespace::{Namespace, NamespaceBottomlessDbId};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
-use super::meta_store::MetaStoreHandle;
-use super::{NamespaceName, NamespaceStore, RestoreOption};
+use super::helpers::make_bottomless_options;
+use super::{NamespaceName, NamespaceStore, PrimaryExtraConfig, RestoreOption};
 
 type Result<T> = crate::Result<T, ForkError>;
+
+pub(super) async fn fork(
+    from_ns: &Namespace,
+    from_config: MetaStoreHandle,
+    to_ns: NamespaceName,
+    to_config: MetaStoreHandle,
+    timestamp: Option<NaiveDateTime>,
+    store: NamespaceStore,
+    primary_config: &PrimaryExtraConfig,
+    base_path: Arc<Path>,
+) -> crate::Result<Namespace> {
+    let from_config = from_config.get();
+    let bottomless_db_id = NamespaceBottomlessDbId::from_config(&from_config);
+    let restore_to = if let Some(timestamp) = timestamp {
+        if let Some(ref options) = primary_config.bottomless_replication {
+            Some(PointInTimeRestore {
+                timestamp,
+                replicator_options: make_bottomless_options(
+                    options,
+                    bottomless_db_id.clone(),
+                    from_ns.name().clone(),
+                ),
+            })
+        } else {
+            return Err(crate::Error::Fork(ForkError::BackupServiceNotConfigured));
+        }
+    } else {
+        None
+    };
+
+    let logger = match &from_ns.db {
+        Database::Primary(db) => db.wal_wrapper.wrapper().logger(),
+        Database::Schema(db) => db.wal_wrapper.wrapper().logger(),
+        _ => {
+            return Err(crate::Error::Fork(ForkError::Internal(anyhow::Error::msg(
+                            "Invalid source database type for fork",
+            ))));
+        }
+    };
+
+    let fork_task = ForkTask {
+        base_path,
+        to_namespace: to_ns.clone(),
+        logger,
+        restore_to,
+        to_config,
+        store,
+    };
+
+    let ns = fork_task.fork().await?;
+
+    Ok(ns)
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ForkError {
@@ -58,7 +114,7 @@ pub struct ForkTask {
     pub to_namespace: NamespaceName,
     pub to_config: MetaStoreHandle,
     pub restore_to: Option<PointInTimeRestore>,
-    pub store: NamespaceStore,
+    pub store: NamespaceStore
 }
 
 pub struct PointInTimeRestore {

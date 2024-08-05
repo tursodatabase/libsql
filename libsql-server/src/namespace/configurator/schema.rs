@@ -3,22 +3,36 @@ use std::sync::{atomic::AtomicBool, Arc};
 use futures::prelude::Future;
 use tokio::task::JoinSet;
 
+use crate::connection::config::DatabaseConfig;
+use crate::connection::connection_manager::InnerWalManager;
 use crate::database::{Database, SchemaDatabase};
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{
-    Namespace, NamespaceConfig, NamespaceName, NamespaceStore,
+    Namespace, NamespaceName, NamespaceStore,
     ResetCb, ResolveNamespacePathFn, RestoreOption,
 };
 use crate::namespace::broadcasters::BroadcasterHandle;
+use crate::schema::SchedulerHandle;
 
-use super::ConfigureNamespace;
+use super::helpers::{cleanup_primary, make_primary_connection_maker};
+use super::{BaseNamespaceConfig, ConfigureNamespace, PrimaryExtraConfig};
 
-pub struct SchemaConfigurator;
+pub struct SchemaConfigurator {
+    base: BaseNamespaceConfig,
+    primary_config: PrimaryExtraConfig,
+    make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+    migration_scheduler: SchedulerHandle,
+}
+
+impl SchemaConfigurator {
+    pub fn new(base: BaseNamespaceConfig, primary_config: PrimaryExtraConfig, make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>, migration_scheduler: SchedulerHandle) -> Self {
+        Self { base, primary_config, make_wal_manager, migration_scheduler }
+    }
+}
 
 impl ConfigureNamespace for SchemaConfigurator {
     fn setup<'a>(
         &'a self,
-        ns_config: &'a NamespaceConfig,
         db_config: MetaStoreHandle,
         restore_option: RestoreOption,
         name: &'a NamespaceName,
@@ -29,12 +43,13 @@ impl ConfigureNamespace for SchemaConfigurator {
     ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(async move {
             let mut join_set = JoinSet::new();
-            let db_path = ns_config.base_path.join("dbs").join(name.as_str());
+            let db_path = self.base.base_path.join("dbs").join(name.as_str());
 
             tokio::fs::create_dir_all(&db_path).await?;
 
-            let (connection_maker, wal_manager, stats) = Namespace::make_primary_connection_maker(
-                ns_config,
+            let (connection_maker, wal_manager, stats) = make_primary_connection_maker(
+                &self.primary_config,
+                &self.base,
                 &db_config,
                 &db_path,
                 &name,
@@ -43,12 +58,13 @@ impl ConfigureNamespace for SchemaConfigurator {
                 &mut join_set,
                 resolve_attach_path,
                 broadcaster,
+                self.make_wal_manager.clone()
             )
             .await?;
 
             Ok(Namespace {
                 db: Database::Schema(SchemaDatabase::new(
-                    ns_config.migration_scheduler.clone(),
+                    self.migration_scheduler.clone(),
                     name.clone(),
                     connection_maker,
                     wal_manager,
@@ -61,5 +77,44 @@ impl ConfigureNamespace for SchemaConfigurator {
                 path: db_path.into(),
             })
         })
+    }
+
+    fn cleanup<'a>(
+        &'a self,
+        namespace: &'a NamespaceName,
+        db_config: &'a DatabaseConfig,
+        prune_all: bool,
+        bottomless_db_id_init: crate::namespace::NamespaceBottomlessDbIdInit,
+    ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>> {
+        Box::pin(async move {
+            cleanup_primary(
+                &self.base,
+                &self.primary_config,
+                namespace,
+                db_config,
+                prune_all,
+                bottomless_db_id_init,
+            ).await
+        })
+    }
+
+    fn fork<'a>(
+        &'a self,
+        from_ns: &'a Namespace,
+        from_config: MetaStoreHandle,
+        to_ns: NamespaceName,
+        to_config: MetaStoreHandle,
+        timestamp: Option<chrono::prelude::NaiveDateTime>,
+        store: NamespaceStore,
+    ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
+        Box::pin(super::fork::fork(
+            from_ns,
+            from_config,
+            to_ns,
+            to_config,
+            timestamp, 
+            store,
+            &self.primary_config,
+            self.base.base_path.clone()))
     }
 }

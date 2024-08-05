@@ -809,10 +809,11 @@ mod test {
     use crate::connection::config::DatabaseConfig;
     use crate::database::DatabaseKind;
     use crate::namespace::configurator::{
-        NamespaceConfigurators, PrimaryConfigurator, SchemaConfigurator,
+        BaseNamespaceConfig, NamespaceConfigurators, PrimaryConfigurator, PrimaryExtraConfig,
+        SchemaConfigurator,
     };
     use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
-    use crate::namespace::{NamespaceConfig, RestoreOption};
+    use crate::namespace::RestoreOption;
     use crate::schema::SchedulerHandle;
 
     use super::super::migration::has_pending_migration_task;
@@ -833,9 +834,9 @@ mod test {
             false,
             false,
             10,
-            config,
             meta_store,
-            NamespaceConfigurators::default(),
+            config,
+            DatabaseKind::Primary
         )
         .await
         .unwrap();
@@ -912,27 +913,41 @@ mod test {
         assert!(!block_write.load(std::sync::atomic::Ordering::Relaxed));
     }
 
-    fn make_config(migration_scheduler: SchedulerHandle, path: &Path) -> NamespaceConfig {
-        NamespaceConfig {
-            db_kind: DatabaseKind::Primary,
+    fn make_config(migration_scheduler: SchedulerHandle, path: &Path) -> NamespaceConfigurators {
+        let mut configurators = NamespaceConfigurators::empty();
+        let base_config = BaseNamespaceConfig {
             base_path: path.to_path_buf().into(),
-            max_log_size: 1000000000,
-            max_log_duration: None,
             extensions: Arc::new([]),
             stats_sender: tokio::sync::mpsc::channel(1).0,
             max_response_size: 100000000000000,
             max_total_response_size: 100000000000,
-            checkpoint_interval: None,
             max_concurrent_connections: Arc::new(Semaphore::new(10)),
             max_concurrent_requests: 10000,
-            encryption_config: None,
-            channel: None,
-            uri: None,
+        };
+
+        let primary_config = PrimaryExtraConfig {
+            max_log_size: 1000000000,
+            max_log_duration: None,
             bottomless_replication: None,
             scripted_backup: None,
+            checkpoint_interval: None,
+        };
+
+        let make_wal_manager = Arc::new(|| EitherWAL::A(Sqlite3WalManager::default()));
+
+        configurators.with_schema(SchemaConfigurator::new(
+            base_config.clone(),
+            primary_config.clone(),
+            make_wal_manager.clone(),
             migration_scheduler,
-            make_wal_manager: Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
-        }
+        ));
+        configurators.with_primary(PrimaryConfigurator::new(
+            base_config,
+            primary_config,
+            make_wal_manager.clone(),
+        ));
+
+        configurators
     }
 
     #[tokio::test]
@@ -950,9 +965,9 @@ mod test {
                 false,
                 false,
                 10,
-                config,
                 meta_store,
-                NamespaceConfigurators::default(),
+                config,
+                DatabaseKind::Primary
             )
             .await
             .unwrap();
@@ -1029,9 +1044,16 @@ mod test {
             .unwrap();
         let (sender, _receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(false, false, 10, config, meta_store, NamespaceConfigurators::default())
-            .await
-            .unwrap();
+        let store = NamespaceStore::new(
+            false,
+            false,
+            10,
+            meta_store,
+            config,
+            DatabaseKind::Primary,
+        )
+        .await
+        .unwrap();
 
         store
             .with("ns".into(), |ns| {
@@ -1056,10 +1078,7 @@ mod test {
             .unwrap();
         let (sender, mut receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let configurators = NamespaceConfigurators::default()
-            .with_schema(SchemaConfigurator)
-            .with_primary(PrimaryConfigurator);
-        let store = NamespaceStore::new(false, false, 10, config, meta_store, configurators)
+        let store = NamespaceStore::new(false, false, 10, meta_store, config, DatabaseKind::Primary)
             .await
             .unwrap();
         let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
@@ -1132,9 +1151,16 @@ mod test {
             .unwrap();
         let (sender, _receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(false, false, 10, config, meta_store, NamespaceConfigurators::default())
-            .await
-            .unwrap();
+        let store = NamespaceStore::new(
+            false,
+            false,
+            10,
+            meta_store,
+            config,
+            DatabaseKind::Primary
+        )
+        .await
+        .unwrap();
         let scheduler = Scheduler::new(store.clone(), maker().unwrap())
             .await
             .unwrap();

@@ -46,7 +46,7 @@ use libsql_wal::registry::WalRegistry;
 use libsql_wal::storage::NoStorage;
 use libsql_wal::wal::LibsqlWalManager;
 use namespace::meta_store::MetaStoreHandle;
-use namespace::{NamespaceConfig, NamespaceName};
+use namespace::NamespaceName;
 use net::Connector;
 use once_cell::sync::Lazy;
 use rusqlite::ffi::SQLITE_CONFIG_MALLOC;
@@ -60,7 +60,7 @@ use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use self::config::MetaStoreConfig;
 use self::connection::connection_manager::InnerWalManager;
-use self::namespace::configurator::NamespaceConfigurators;
+use self::namespace::configurator::{BaseNamespaceConfig, NamespaceConfigurators, PrimaryConfigurator, PrimaryExtraConfig, ReplicaConfigurator, SchemaConfigurator};
 use self::namespace::NamespaceStore;
 use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
@@ -425,11 +425,6 @@ where
         let user_auth_strategy = self.user_api_config.auth_strategy.clone();
 
         let service_shutdown = Arc::new(Notify::new());
-        let db_kind = if self.rpc_client_config.is_some() {
-            DatabaseKind::Replica
-        } else {
-            DatabaseKind::Primary
-        };
 
         let scripted_backup = match self.db_config.snapshot_exec {
             Some(ref command) => {
@@ -457,27 +452,6 @@ where
         // chose the wal backend
         let (make_wal_manager, registry_shutdown) = self.configure_wal_manager(&mut join_set)?;
 
-        let ns_config = NamespaceConfig {
-            db_kind,
-            base_path: self.path.clone(),
-            max_log_size: self.db_config.max_log_size,
-            max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
-            bottomless_replication: self.db_config.bottomless_replication.clone(),
-            extensions,
-            stats_sender: stats_sender.clone(),
-            max_response_size: self.db_config.max_response_size,
-            max_total_response_size: self.db_config.max_total_response_size,
-            checkpoint_interval: self.db_config.checkpoint_interval,
-            encryption_config: self.db_config.encryption_config.clone(),
-            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
-            scripted_backup,
-            max_concurrent_requests: self.db_config.max_concurrent_requests,
-            channel: channel.clone(),
-            uri: uri.clone(),
-            migration_scheduler: scheduler_sender.into(),
-            make_wal_manager,
-        };
-
         let (metastore_conn_maker, meta_store_wal_manager) =
             metastore_connection_maker(self.meta_store_config.bottomless.clone(), &self.path)
                 .await?;
@@ -490,15 +464,67 @@ where
         )
         .await?;
 
-        let configurators = NamespaceConfigurators::default();
+        let base_config = BaseNamespaceConfig {
+            base_path: self.path.clone(),
+            extensions,
+            stats_sender,
+            max_response_size: self.db_config.max_response_size,
+            max_total_response_size: self.db_config.max_total_response_size,
+            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
+            max_concurrent_requests: self.db_config.max_concurrent_requests,
+        };
+
+        let mut configurators = NamespaceConfigurators::default();
+
+        let db_kind = match channel.clone().zip(uri.clone()) {
+            // replica mode
+            Some((channel, uri)) => {
+                let replica_configurator = ReplicaConfigurator::new(
+                    base_config,
+                    channel,
+                    uri,
+                    make_wal_manager,
+                );
+                configurators.with_replica(replica_configurator);
+                DatabaseKind::Replica
+            }
+            // primary mode
+            None =>  {
+                let primary_config = PrimaryExtraConfig {
+                    max_log_size: self.db_config.max_log_size,
+                    max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
+                    bottomless_replication: self.db_config.bottomless_replication.clone(),
+                    scripted_backup,
+                    checkpoint_interval: self.db_config.checkpoint_interval,
+                };
+
+                let primary_configurator = PrimaryConfigurator::new(
+                    base_config.clone(),
+                    primary_config.clone(),
+                    make_wal_manager.clone(),
+                );
+
+                let schema_configurator = SchemaConfigurator::new(
+                    base_config.clone(),
+                    primary_config,
+                    make_wal_manager.clone(),
+                    scheduler_sender.into(),
+                );
+
+                configurators.with_schema(schema_configurator);
+                configurators.with_primary(primary_configurator);
+
+                DatabaseKind::Primary
+            },
+        };
 
         let namespace_store: NamespaceStore = NamespaceStore::new(
             db_kind.is_replica(),
             self.db_config.snapshot_at_shutdown,
             self.max_active_namespaces,
-            ns_config,
             meta_store,
             configurators,
+            db_kind,
         )
         .await?;
 

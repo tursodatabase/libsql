@@ -1,22 +1,51 @@
+use std::path::{Path, PathBuf};
 use std::pin::Pin;
+use std::sync::Arc;
+use std::time::Duration;
 
+use chrono::NaiveDateTime;
 use futures::Future;
+use tokio::sync::Semaphore;
+
+use crate::connection::config::DatabaseConfig;
+use crate::replication::script_backup_manager::ScriptBackupManager;
+use crate::StatsSender;
 
 use super::broadcasters::BroadcasterHandle;
 use super::meta_store::MetaStoreHandle;
-use super::{
-    NamespaceConfig, NamespaceName, NamespaceStore, ResetCb, ResolveNamespacePathFn, RestoreOption,
-};
+use super::{Namespace, NamespaceBottomlessDbIdInit, NamespaceName, NamespaceStore, ResetCb, ResolveNamespacePathFn, RestoreOption};
 
+mod helpers;
 mod primary;
 mod replica;
 mod schema;
+pub mod fork;
 
 pub use primary::PrimaryConfigurator;
 pub use replica::ReplicaConfigurator;
 pub use schema::SchemaConfigurator;
 
-type DynConfigurator = dyn ConfigureNamespace + Send + Sync + 'static;
+#[derive(Clone, Debug)]
+pub struct BaseNamespaceConfig {
+    pub(crate) base_path: Arc<Path>,
+    pub(crate) extensions: Arc<[PathBuf]>,
+    pub(crate) stats_sender: StatsSender,
+    pub(crate) max_response_size: u64,
+    pub(crate) max_total_response_size: u64,
+    pub(crate) max_concurrent_connections: Arc<Semaphore>,
+    pub(crate) max_concurrent_requests: u64,
+}
+
+#[derive(Clone)]
+pub struct PrimaryExtraConfig {
+    pub(crate) max_log_size: u64,
+    pub(crate) max_log_duration: Option<Duration>,
+    pub(crate) bottomless_replication: Option<bottomless::replicator::Options>,
+    pub(crate) scripted_backup: Option<ScriptBackupManager>,
+    pub(crate) checkpoint_interval: Option<Duration>,
+}
+
+pub type DynConfigurator = dyn ConfigureNamespace + Send + Sync + 'static;
 
 pub(crate) struct NamespaceConfigurators {
     replica_configurator: Option<Box<DynConfigurator>>,
@@ -27,9 +56,6 @@ pub(crate) struct NamespaceConfigurators {
 impl Default for NamespaceConfigurators {
     fn default() -> Self {
         Self::empty()
-            .with_primary(PrimaryConfigurator)
-            .with_replica(ReplicaConfigurator)
-            .with_schema(SchemaConfigurator)
     }
 }
 
@@ -42,17 +68,17 @@ impl NamespaceConfigurators {
         }
     }
 
-    pub fn with_primary(mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> Self {
+    pub fn with_primary(&mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> &mut Self {
         self.primary_configurator = Some(Box::new(c));
         self
     }
 
-    pub fn with_replica(mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> Self {
+    pub fn with_replica(&mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> &mut Self {
         self.replica_configurator = Some(Box::new(c));
         self
     }
 
-    pub fn with_schema(mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> Self {
+    pub fn with_schema(&mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> &mut Self {
         self.schema_configurator = Some(Box::new(c));
         self
     }
@@ -73,7 +99,6 @@ impl NamespaceConfigurators {
 pub trait ConfigureNamespace {
     fn setup<'a>(
         &'a self,
-        ns_config: &'a NamespaceConfig,
         db_config: MetaStoreHandle,
         restore_option: RestoreOption,
         name: &'a NamespaceName,
@@ -81,5 +106,23 @@ pub trait ConfigureNamespace {
         resolve_attach_path: ResolveNamespacePathFn,
         store: NamespaceStore,
         broadcaster: BroadcasterHandle,
-    ) -> Pin<Box<dyn Future<Output = crate::Result<super::Namespace>> + Send + 'a>>;
+    ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>>;
+
+    fn cleanup<'a>(
+        &'a self,
+        namespace: &'a NamespaceName,
+        db_config: &'a DatabaseConfig,
+        prune_all: bool,
+        bottomless_db_id_init: NamespaceBottomlessDbIdInit,
+    ) -> Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>>;
+
+    fn fork<'a>(
+        &'a self,
+        from_ns: &'a Namespace,
+        from_config: MetaStoreHandle,
+        to_ns: NamespaceName,
+        to_config: MetaStoreHandle,
+        timestamp: Option<NaiveDateTime>,
+        store: NamespaceStore,
+    ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>>;
 }
