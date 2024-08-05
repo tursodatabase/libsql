@@ -9,13 +9,15 @@ cfg_replication!(
     use crate::replication::local_client::LocalClient;
     use crate::replication::remote_client::RemoteClient;
     use crate::replication::EmbeddedReplicator;
-    pub use crate::replication::Frames;
+    pub use crate::replication::{Replicated, Frames};
 
     pub struct ReplicationContext {
         pub(crate) replicator: EmbeddedReplicator,
         client: Option<Client>,
         read_your_writes: bool,
     }
+
+    use libsql_sync::sync::SyncContext;
 );
 
 use crate::{database::OpenFlags, local::connection::Connection};
@@ -28,6 +30,8 @@ pub struct Database {
     pub flags: OpenFlags,
     #[cfg(feature = "replication")]
     pub replication_ctx: Option<ReplicationContext>,
+    #[cfg(feature = "replication")]
+    pub sync_ctx: Option<SyncContext>,
 }
 
 impl Database {
@@ -118,6 +122,32 @@ impl Database {
             client: Some(remote),
             read_your_writes,
         });
+
+        Ok(db)
+    }
+
+    #[cfg(feature = "replication")]
+    #[doc(hidden)]
+    pub async fn open_local_with_offline_writes(
+        connector: crate::util::ConnectorService,
+        db_path: impl Into<String>,
+        flags: OpenFlags,
+        endpoint: String,
+        auth_token: String,
+        version: Option<String>,
+        http_request_callback: Option<crate::util::HttpRequestCallback>,
+        namespace: Option<String>
+
+    ) -> Result<Database> {
+        use std::path::PathBuf;
+
+        let db_path = db_path.into();
+        let mut db = Database::open(&db_path, flags)?;
+
+        let path = PathBuf::from(db_path);
+        let client = LocalClient::new(&path)
+            .await
+            .map_err(|e| crate::Error::Replication(e.into()))?;
 
         Ok(db)
     }
@@ -228,6 +258,8 @@ impl Database {
             flags,
             #[cfg(feature = "replication")]
             replication_ctx: None,
+            #[cfg(feature = "replication")]
+            sync_ctx: Some(SyncContext::new()),
         }
     }
 
@@ -311,6 +343,35 @@ impl Database {
                     .to_string(),
             ))
         }
+    }
+
+    #[cfg(feature = "replication")]
+    /// Push WAL frames to remote.
+    pub async fn push(&self) -> Result<Replicated> {
+        let conn = self.connect()?;
+        let conn = conn.handle();
+        let mut max_frame_no: std::os::raw::c_uint = 0;
+        println!("Maximum frame: {}", max_frame_no);
+        unsafe { libsql_sys::ffi::libsql_wal_frame_count(conn, &mut max_frame_no) };
+        let sync_ctx = self.sync_ctx.as_ref().unwrap();
+        let start_frame_no = sync_ctx.durable_frame_num() + 1;
+        let end_frame_no = max_frame_no;
+        for frame_no in start_frame_no..end_frame_no {
+            const FRAME_SIZE: usize = 24+4096; // FIXME: make dynamic
+            let frame: [u8; FRAME_SIZE] = [0; FRAME_SIZE];
+            let rc = unsafe {
+                libsql_sys::ffi::libsql_wal_get_frame(conn, frame_no, frame.as_ptr() as *mut _, FRAME_SIZE as u32)
+            };
+            if rc != 0 {
+                println!("Failed to get frame: {}", rc);
+            } else {
+                println!("Pushing frame: {:?}", frame);
+            }
+        }
+        Ok(Replicated{
+            frame_no: None,
+            frames_synced: 0,
+        })
     }
 
     pub(crate) fn path(&self) -> &str {
