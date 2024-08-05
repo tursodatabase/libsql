@@ -24,6 +24,7 @@ typedef u32 VectorDims;
 */
 #define VECTOR_TYPE_FLOAT32 1
 #define VECTOR_TYPE_FLOAT64 2
+#define VECTOR_TYPE_1BIT    3
 
 #define VECTOR_FLAGS_STATIC 1
 
@@ -48,8 +49,9 @@ void vectorInit(Vector *, VectorType, VectorDims, void *);
  * Dumps vector on the console (used only for debugging)
 */
 void vectorDump   (const Vector *v);
-void vectorF32Dump(const Vector *v);
-void vectorF64Dump(const Vector *v);
+void vectorF32Dump (const Vector *v);
+void vectorF64Dump (const Vector *v);
+void vector1BitDump(const Vector *v);
 
 /* 
  * Converts vector to the text representation and write the result to the sqlite3_context
@@ -61,9 +63,10 @@ void vectorF64MarshalToText(sqlite3_context *, const Vector *);
 /* 
  * Serializes vector to the blob in little-endian format according to the IEEE-754 standard
 */
-size_t vectorSerializeToBlob   (const Vector *, unsigned char *, size_t);
-size_t vectorF32SerializeToBlob(const Vector *, unsigned char *, size_t);
-size_t vectorF64SerializeToBlob(const Vector *, unsigned char *, size_t);
+size_t vectorSerializeToBlob    (const Vector *, unsigned char *, size_t);
+size_t vectorF32SerializeToBlob (const Vector *, unsigned char *, size_t);
+size_t vectorF64SerializeToBlob (const Vector *, unsigned char *, size_t);
+size_t vector1BitSerializeToBlob(const Vector *, unsigned char *, size_t);
 
 /* 
  * Calculates cosine distance between two vectors (vector must have same type and same dimensions)
@@ -71,6 +74,11 @@ size_t vectorF64SerializeToBlob(const Vector *, unsigned char *, size_t);
 float vectorDistanceCos    (const Vector *, const Vector *);
 float vectorF32DistanceCos (const Vector *, const Vector *);
 double vectorF64DistanceCos(const Vector *, const Vector *);
+
+/*
+ * Calculates hamming distance between two 1-bit vectors (vector must have same dimensions)
+*/
+int vector1BitDistanceHamming(const Vector *, const Vector *);
 
 /*
  * Calculates L2 distance between two vectors (vector must have same type and same dimensions)

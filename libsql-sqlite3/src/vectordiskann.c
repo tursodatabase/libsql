@@ -437,10 +437,11 @@ int diskAnnCreateIndex(
   const char *zDbSName,
   const char *zIdxName,
   const VectorIdxKey *pKey,
-  VectorIdxParams *pParams
+  VectorIdxParams *pParams,
+  const char **pzErrMsg
 ){
   int rc;
-  int type, dims;
+  int type, dims, metric, neighbours;
   u64 maxNeighborsParam, blockSizeBytes;
   char *zSql;
   char columnSqlDefs[VECTOR_INDEX_SQL_RENDER_LIMIT]; // definition of columns (e.g. index_key INTEGER BINARY, index_key1 TEXT, ...)
@@ -477,11 +478,19 @@ int diskAnnCreateIndex(
   if( vectorIdxParamsPutU64(pParams, VECTOR_BLOCK_SIZE_PARAM_ID, MAX(256, blockSizeBytes))  != 0 ){
     return SQLITE_ERROR;
   }
-  if( vectorIdxParamsGetU64(pParams, VECTOR_METRIC_TYPE_PARAM_ID) == 0 ){
-    if( vectorIdxParamsPutU64(pParams, VECTOR_METRIC_TYPE_PARAM_ID, VECTOR_METRIC_TYPE_COS) != 0 ){
+  metric = vectorIdxParamsGetU64(pParams, VECTOR_METRIC_TYPE_PARAM_ID);
+  if( metric == 0 ){
+    metric = VECTOR_METRIC_TYPE_COS;
+    if( vectorIdxParamsPutU64(pParams, VECTOR_METRIC_TYPE_PARAM_ID, metric) != 0 ){
       return SQLITE_ERROR;
     }
   }
+  neighbours = vectorIdxParamsGetU64(pParams, VECTOR_COMPRESS_NEIGHBORS_PARAM_ID);
+  if( neighbours == VECTOR_TYPE_1BIT && metric != VECTOR_METRIC_TYPE_COS ){
+    *pzErrMsg = "1-bit compression available only for cosine metric";
+    return SQLITE_ERROR;
+  }
+
   if( vectorIdxParamsGetF64(pParams, VECTOR_PRUNING_ALPHA_PARAM_ID) == 0 ){
     if( vectorIdxParamsPutF64(pParams, VECTOR_PRUNING_ALPHA_PARAM_ID, VECTOR_PRUNING_ALPHA_DEFAULT) != 0 ){
       return SQLITE_ERROR;
@@ -1544,8 +1553,8 @@ int diskAnnOpenIndex(
     pIndex->nEdgeVectorType = pIndex->nNodeVectorType;
     pIndex->nEdgeVectorSize = pIndex->nNodeVectorSize;
   }else if( compressNeighbours == VECTOR_TYPE_1BIT ){
-    pIndex->nEdgeVectorType = VECTOR_TYPE_1BIT;
-    pIndex->nEdgeVectorSize = vectorDataSize(VECTOR_TYPE_1BIT, pIndex->nVectorDims);
+    pIndex->nEdgeVectorType = compressNeighbours;
+    pIndex->nEdgeVectorSize = vectorDataSize(compressNeighbours, pIndex->nVectorDims);
   }else{
     return SQLITE_ERROR;
   }

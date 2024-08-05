@@ -100,43 +100,45 @@ typedef u8 MetricType;
 */
 
 /* format version which can help to upgrade vector on-disk format without breaking older version of the db */
-#define VECTOR_FORMAT_PARAM_ID         1
+#define VECTOR_FORMAT_PARAM_ID              1
 /*
  * 1 - initial version
 */
-#define VECTOR_FORMAT_DEFAULT          1
+#define VECTOR_FORMAT_DEFAULT               1
 
 /* type of the vector index */
-#define VECTOR_INDEX_TYPE_PARAM_ID     2
-#define VECTOR_INDEX_TYPE_DISKANN      1
+#define VECTOR_INDEX_TYPE_PARAM_ID          2
+#define VECTOR_INDEX_TYPE_DISKANN           1
 
 /* type of the underlying vector for the vector index */
-#define VECTOR_TYPE_PARAM_ID           3
+#define VECTOR_TYPE_PARAM_ID                3
 /* dimension of the underlying vector for the vector index */
-#define VECTOR_DIM_PARAM_ID            4
+#define VECTOR_DIM_PARAM_ID                 4
 
 /* metric type used for comparing two vectors */
-#define VECTOR_METRIC_TYPE_PARAM_ID    5
-#define VECTOR_METRIC_TYPE_COS         1
-#define VECTOR_METRIC_TYPE_L2          2
+#define VECTOR_METRIC_TYPE_PARAM_ID         5
+#define VECTOR_METRIC_TYPE_COS              1
+#define VECTOR_METRIC_TYPE_L2               2
 
 /* block size */
-#define VECTOR_BLOCK_SIZE_PARAM_ID     6
-#define VECTOR_BLOCK_SIZE_DEFAULT      128
+#define VECTOR_BLOCK_SIZE_PARAM_ID          6
+#define VECTOR_BLOCK_SIZE_DEFAULT           128
 
-#define VECTOR_PRUNING_ALPHA_PARAM_ID  7
-#define VECTOR_PRUNING_ALPHA_DEFAULT   1.2
+#define VECTOR_PRUNING_ALPHA_PARAM_ID       7
+#define VECTOR_PRUNING_ALPHA_DEFAULT        1.2
 
-#define VECTOR_INSERT_L_PARAM_ID       8
-#define VECTOR_INSERT_L_DEFAULT        70
+#define VECTOR_INSERT_L_PARAM_ID            8
+#define VECTOR_INSERT_L_DEFAULT             70
 
-#define VECTOR_SEARCH_L_PARAM_ID       9
-#define VECTOR_SEARCH_L_DEFAULT        200
+#define VECTOR_SEARCH_L_PARAM_ID            9
+#define VECTOR_SEARCH_L_DEFAULT             200
 
-#define VECTOR_MAX_NEIGHBORS_PARAM_ID  10
+#define VECTOR_MAX_NEIGHBORS_PARAM_ID       10
+
+#define VECTOR_COMPRESS_NEIGHBORS_PARAM_ID  11
 
 /* total amount of vector index parameters */
-#define VECTOR_PARAM_IDS_COUNT         9
+#define VECTOR_PARAM_IDS_COUNT              11
 
 /*
  * Vector index parameters are stored in simple binary format (1 byte tag + 8 byte u64 integer / f64 float)
@@ -218,7 +220,7 @@ int vectorOutRowsPut(VectorOutRows *, int, int, const u64 *, sqlite3_value *);
 void vectorOutRowsGet(sqlite3_context *, const VectorOutRows *, int, int);
 void vectorOutRowsFree(sqlite3 *, VectorOutRows *);
 
-int diskAnnCreateIndex(sqlite3 *, const char *, const char *, const VectorIdxKey *, VectorIdxParams *);
+int diskAnnCreateIndex(sqlite3 *, const char *, const char *, const VectorIdxKey *, VectorIdxParams *, const char **);
 int diskAnnClearIndex(sqlite3 *, const char *, const char *);
 int diskAnnDropIndex(sqlite3 *, const char *, const char *);
 int diskAnnOpenIndex(sqlite3 *, const char *, const char *, const VectorIdxParams *, DiskAnnIndex **);

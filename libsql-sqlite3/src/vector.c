@@ -41,6 +41,8 @@ size_t vectorDataSize(VectorType type, VectorDims dims){
       return dims * sizeof(float);
     case VECTOR_TYPE_FLOAT64:
       return dims * sizeof(double);
+    case VECTOR_TYPE_1BIT:
+      return (dims + 7) / 8;
     default:
       assert(0);
   }
@@ -111,6 +113,8 @@ float vectorDistanceCos(const Vector *pVector1, const Vector *pVector2){
       return vectorF32DistanceCos(pVector1, pVector2);
     case VECTOR_TYPE_FLOAT64:
       return vectorF64DistanceCos(pVector1, pVector2);
+    case VECTOR_TYPE_1BIT:
+      return vector1BitDistanceHamming(pVector1, pVector2);
     default:
       assert(0);
   }
@@ -381,6 +385,9 @@ void vectorDump(const Vector *pVector){
     case VECTOR_TYPE_FLOAT64:
       vectorF64Dump(pVector);
       break;
+    case VECTOR_TYPE_1BIT:
+      vector1BitDump(pVector);
+      break;
     default:
       assert(0);
   }
@@ -451,6 +458,8 @@ size_t vectorSerializeToBlob(const Vector *pVector, unsigned char *pBlob, size_t
       return vectorF32SerializeToBlob(pVector, pBlob, nBlobSize);
     case VECTOR_TYPE_FLOAT64:
       return vectorF64SerializeToBlob(pVector, pBlob, nBlobSize);
+    case VECTOR_TYPE_1BIT:
+      return vector1BitSerializeToBlob(pVector, pBlob, nBlobSize);
     default:
       assert(0);
   }
