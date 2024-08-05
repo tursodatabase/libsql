@@ -2256,9 +2256,10 @@ static int sqlite3WalClose(
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
-      rc = sqlite3WalCheckpoint(pWal, db,
-          SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0, NULL, NULL
-      );
+      rc = SQLITE_ERROR;
+      //rc = sqlite3WalCheckpoint(pWal, db,
+      //    SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0, NULL, NULL
+      //);
       if( rc==SQLITE_OK ){
         int bPersist = -1;
         sqlite3OsFileControlHint(
