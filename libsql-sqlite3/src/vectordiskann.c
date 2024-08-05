@@ -47,6 +47,7 @@
 **    diskAnnInsert()          Insert single new(!) vector in an opened index
 **    diskAnnDelete()          Delete row by key from an opened index
 */
+#include "vectorInt.h"
 #ifndef SQLITE_OMIT_VECTOR
 
 #include "math.h"
@@ -1490,6 +1491,7 @@ int diskAnnOpenIndex(
 ){
   DiskAnnIndex *pIndex;
   u64 nBlockSize;
+  int compressNeighbours;
   pIndex = sqlite3DbMallocRaw(db, sizeof(DiskAnnIndex));
   if( pIndex == NULL ){
     return SQLITE_NOMEM;
@@ -1536,9 +1538,17 @@ int diskAnnOpenIndex(
     pIndex->searchL = VECTOR_SEARCH_L_DEFAULT;
   }
   pIndex->nNodeVectorSize = vectorDataSize(pIndex->nNodeVectorType, pIndex->nVectorDims);
-  // will change in future when we will support compression of edges vectors
-  pIndex->nEdgeVectorType = pIndex->nNodeVectorType;
-  pIndex->nEdgeVectorSize = pIndex->nNodeVectorSize;
+
+  compressNeighbours = vectorIdxParamsGetU64(pParams, VECTOR_COMPRESS_NEIGHBORS_PARAM_ID);
+  if( compressNeighbours == 0 ){
+    pIndex->nEdgeVectorType = pIndex->nNodeVectorType;
+    pIndex->nEdgeVectorSize = pIndex->nNodeVectorSize;
+  }else if( compressNeighbours == VECTOR_TYPE_1BIT ){
+    pIndex->nEdgeVectorType = VECTOR_TYPE_1BIT;
+    pIndex->nEdgeVectorSize = vectorDataSize(VECTOR_TYPE_1BIT, pIndex->nVectorDims);
+  }else{
+    return SQLITE_ERROR;
+  }
 
   *ppIndex = pIndex;
   return SQLITE_OK;

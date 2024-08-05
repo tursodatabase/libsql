@@ -65,13 +65,6 @@ size_t vectorSerializeToBlob   (const Vector *, unsigned char *, size_t);
 size_t vectorF32SerializeToBlob(const Vector *, unsigned char *, size_t);
 size_t vectorF64SerializeToBlob(const Vector *, unsigned char *, size_t);
 
-/*
- * Deserializes vector from the blob in little-endian format according to the IEEE-754 standard
-*/
-size_t vectorDeserializeFromBlob   (Vector *, const unsigned char *, size_t);
-size_t vectorF32DeserializeFromBlob(Vector *, const unsigned char *, size_t);
-size_t vectorF64DeserializeFromBlob(Vector *, const unsigned char *, size_t);
-
 /* 
  * Calculates cosine distance between two vectors (vector must have same type and same dimensions)
 */
@@ -91,16 +84,15 @@ double vectorF64DistanceL2(const Vector *, const Vector *);
  * LibSQL can append one trailing byte in the end of final blob. This byte will be later used to determine type of the blob
  * By default, blob with even length will be treated as a f32 blob
 */
-void vectorSerialize   (sqlite3_context *, const Vector *);
-void vectorF32Serialize(sqlite3_context *, const Vector *);
-void vectorF64Serialize(sqlite3_context *, const Vector *);
+void vectorSerializeWithType(sqlite3_context *, const Vector *);
 
 /*
  * Parses Vector content from the blob; vector type and dimensions must be filled already
 */
 int vectorParseSqliteBlob   (sqlite3_value *, Vector *, char **);
-int vectorF32ParseSqliteBlob(sqlite3_value *, Vector *, char **);
-int vectorF64ParseSqliteBlob(sqlite3_value *, Vector *, char **);
+
+void vectorF32DeserializeFromBlob(Vector *, const unsigned char *, size_t);
+void vectorF64DeserializeFromBlob(Vector *, const unsigned char *, size_t);
 
 void vectorInitStatic(Vector *, VectorType, const unsigned char *, size_t);
 void vectorInitFromBlob(Vector *, const unsigned char *, size_t);
