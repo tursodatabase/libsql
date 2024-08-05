@@ -7771,6 +7771,16 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   return rc;
 }
 
+unsigned int sqlite3PagerWalFrameCount(Pager *pPager){
+  if( pagerUseWal(pPager) ){
+    // TODO: We are under sqlite3 mutex, but do we need something else?
+    struct sqlite3_wal* pWal = (void*) pPager->wal->pData;
+    return pWal->hdr.mxFrame;
+  }else{
+    return 0;
+  }
+}
+
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
 /*
 ** If pager pPager is a wal-mode database not in exclusive locking mode,
