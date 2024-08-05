@@ -10549,6 +10549,8 @@ SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
 */
 SQLITE_API void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), void *arg);
 
+SQLITE_API int libsql_wal_frame_count(sqlite3*, unsigned int*);
+
 /*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
