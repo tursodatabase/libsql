@@ -808,6 +808,9 @@ mod test {
 
     use crate::connection::config::DatabaseConfig;
     use crate::database::DatabaseKind;
+    use crate::namespace::configurator::{
+        NamespaceConfigurators, PrimaryConfigurator, SchemaConfigurator,
+    };
     use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
     use crate::namespace::{NamespaceConfig, RestoreOption};
     use crate::schema::SchedulerHandle;
@@ -826,9 +829,16 @@ mod test {
             .unwrap();
         let (sender, mut receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(false, false, 10, config, meta_store)
-            .await
-            .unwrap();
+        let store = NamespaceStore::new(
+            false,
+            false,
+            10,
+            config,
+            meta_store,
+            NamespaceConfigurators::default(),
+        )
+        .await
+        .unwrap();
         let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
             .await
             .unwrap();
@@ -936,9 +946,16 @@ mod test {
                 .unwrap();
             let (sender, mut receiver) = mpsc::channel(100);
             let config = make_config(sender.clone().into(), tmp.path());
-            let store = NamespaceStore::new(false, false, 10, config, meta_store)
-                .await
-                .unwrap();
+            let store = NamespaceStore::new(
+                false,
+                false,
+                10,
+                config,
+                meta_store,
+                NamespaceConfigurators::default(),
+            )
+            .await
+            .unwrap();
             let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
                 .await
                 .unwrap();
@@ -1012,7 +1029,7 @@ mod test {
             .unwrap();
         let (sender, _receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(false, false, 10, config, meta_store)
+        let store = NamespaceStore::new(false, false, 10, config, meta_store, NamespaceConfigurators::default())
             .await
             .unwrap();
 
@@ -1039,7 +1056,10 @@ mod test {
             .unwrap();
         let (sender, mut receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(false, false, 10, config, meta_store)
+        let configurators = NamespaceConfigurators::default()
+            .with_schema(SchemaConfigurator)
+            .with_primary(PrimaryConfigurator);
+        let store = NamespaceStore::new(false, false, 10, config, meta_store, configurators)
             .await
             .unwrap();
         let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
@@ -1112,7 +1132,7 @@ mod test {
             .unwrap();
         let (sender, _receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(false, false, 10, config, meta_store)
+        let store = NamespaceStore::new(false, false, 10, config, meta_store, NamespaceConfigurators::default())
             .await
             .unwrap();
         let scheduler = Scheduler::new(store.clone(), maker().unwrap())

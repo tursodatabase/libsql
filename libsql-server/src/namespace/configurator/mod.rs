@@ -4,43 +4,55 @@ use futures::Future;
 
 use super::broadcasters::BroadcasterHandle;
 use super::meta_store::MetaStoreHandle;
-use super::{NamespaceConfig, NamespaceName, NamespaceStore, ResetCb, ResolveNamespacePathFn, RestoreOption};
+use super::{
+    NamespaceConfig, NamespaceName, NamespaceStore, ResetCb, ResolveNamespacePathFn, RestoreOption,
+};
 
-mod replica;
 mod primary;
+mod replica;
 mod schema;
 
-pub use replica::ReplicaConfigurator;
 pub use primary::PrimaryConfigurator;
+pub use replica::ReplicaConfigurator;
 pub use schema::SchemaConfigurator;
 
 type DynConfigurator = dyn ConfigureNamespace + Send + Sync + 'static;
 
-#[derive(Default)]
 pub(crate) struct NamespaceConfigurators {
     replica_configurator: Option<Box<DynConfigurator>>,
     primary_configurator: Option<Box<DynConfigurator>>,
     schema_configurator: Option<Box<DynConfigurator>>,
 }
 
+impl Default for NamespaceConfigurators {
+    fn default() -> Self {
+        Self::empty()
+            .with_primary(PrimaryConfigurator)
+            .with_replica(ReplicaConfigurator)
+            .with_schema(SchemaConfigurator)
+    }
+}
+
 impl NamespaceConfigurators {
-    pub fn with_primary(
-        &mut self,
-        c: impl ConfigureNamespace + Send + Sync + 'static,
-    ) -> &mut Self {
+    pub fn empty() -> Self {
+        Self {
+            replica_configurator: None,
+            primary_configurator: None,
+            schema_configurator: None,
+        }
+    }
+
+    pub fn with_primary(mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> Self {
         self.primary_configurator = Some(Box::new(c));
         self
     }
 
-    pub fn with_replica(
-        &mut self,
-        c: impl ConfigureNamespace + Send + Sync + 'static,
-    ) -> &mut Self {
+    pub fn with_replica(mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> Self {
         self.replica_configurator = Some(Box::new(c));
         self
     }
 
-    pub fn with_schema(&mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> &mut Self {
+    pub fn with_schema(mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> Self {
         self.schema_configurator = Some(Box::new(c));
         self
     }

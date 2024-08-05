@@ -16,7 +16,6 @@ use crate::connection::config::DatabaseConfig;
 use crate::database::DatabaseKind;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
-use crate::namespace::configurator::{PrimaryConfigurator, ReplicaConfigurator, SchemaConfigurator};
 use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName};
 use crate::stats::Stats;
 
@@ -54,12 +53,13 @@ pub struct NamespaceStoreInner {
 }
 
 impl NamespaceStore {
-    pub async fn new(
+    pub(crate) async fn new(
         allow_lazy_creation: bool,
         snapshot_at_shutdown: bool,
         max_active_namespaces: usize,
         config: NamespaceConfig,
         metadata: MetaStore,
+        configurators: NamespaceConfigurators,
     ) -> crate::Result<Self> {
         tracing::trace!("Max active namespaces: {max_active_namespaces}");
         let store = Cache::<NamespaceName, NamespaceEntry>::builder()
@@ -83,12 +83,6 @@ impl NamespaceStore {
             .max_capacity(max_active_namespaces as u64)
             .time_to_idle(Duration::from_secs(86400))
             .build();
-
-        let mut configurators = NamespaceConfigurators::default();
-        configurators
-            .with_primary(PrimaryConfigurator)
-            .with_replica(ReplicaConfigurator)
-            .with_schema(SchemaConfigurator);
 
         Ok(Self {
             inner: Arc::new(NamespaceStoreInner {

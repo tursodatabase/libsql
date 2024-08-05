@@ -60,6 +60,7 @@ use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use self::config::MetaStoreConfig;
 use self::connection::connection_manager::InnerWalManager;
+use self::namespace::configurator::NamespaceConfigurators;
 use self::namespace::NamespaceStore;
 use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
@@ -488,12 +489,16 @@ where
             meta_store_wal_manager,
         )
         .await?;
+
+        let configurators = NamespaceConfigurators::default();
+
         let namespace_store: NamespaceStore = NamespaceStore::new(
             db_kind.is_replica(),
             self.db_config.snapshot_at_shutdown,
             self.max_active_namespaces,
             ns_config,
             meta_store,
+            configurators,
         )
         .await?;
 

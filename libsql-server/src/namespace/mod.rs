@@ -52,7 +52,7 @@ mod name;
 pub mod replication_wal;
 mod schema_lock;
 mod store;
-mod configurator;
+pub(crate) mod configurator;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
 pub type ResolveNamespacePathFn =
