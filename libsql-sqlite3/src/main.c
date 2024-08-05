@@ -2426,6 +2426,30 @@ void *libsql_close_hook(
 }
 
 /*
+** Disable WAL checkpointing.
+**
+** Note: This function disables WAL checkpointing entirely, including when
+** the last database connection is closed. This is different from
+** sqlite3_wal_autocheckpoint() which only disables automatic checkpoints
+** for the current connection, but still allows checkpointing when the
+** connection is closed.
+**/
+int libsql_wal_disable_checkpoint(sqlite3 *db) {
+#ifndef SQLITE_OMIT_WAL
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  db->walCheckPointDisabled = 1;
+  db->xWalCallback = 0;
+  sqlite3_mutex_leave(db->mutex);
+#endif
+  return SQLITE_OK;
+}
+
+/*
 ** Register a function to be invoked prior to each autovacuum that
 ** determines the number of pages to vacuum.
 */
@@ -2522,6 +2546,7 @@ void *sqlite3_wal_hook(
 #endif
   sqlite3_mutex_enter(db->mutex);
   pRet = db->pWalArg;
+  db->walCheckPointDisabled = 0;
   db->xWalCallback = xCallback;
   db->pWalArg = pArg;
   sqlite3_mutex_leave(db->mutex);

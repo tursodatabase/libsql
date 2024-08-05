@@ -1755,6 +1755,7 @@ struct sqlite3 {
   PreUpdate *pPreUpdate;        /* Context for active pre-update callback */
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 #ifndef SQLITE_OMIT_WAL
+  int walCheckPointDisabled;
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;
 #endif

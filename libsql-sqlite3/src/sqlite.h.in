@@ -10550,6 +10550,21 @@ int sqlite3_preupdate_blobwrite(sqlite3 *);
 void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), void *arg);
 
 /*
+** CAPI3REF: Disable WAL checkpointing
+** METHOD: sqlite3
+**
+** ^The [libsql_wal_disable_checkpoint(D)] interface disables automatic
+** checkpointing of the WAL file for [database connection] D.
+**
+** Note: This function disables WAL checkpointing entirely, including when
+** the last database connection is closed. This is different from
+** sqlite3_wal_autocheckpoint() which only disables automatic checkpoints
+** for the current connection, but still allows checkpointing when the
+** connection is closed.
+*/
+int libsql_wal_disable_checkpoint(sqlite3 *db);
+
+/*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
 **
