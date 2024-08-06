@@ -629,7 +629,7 @@ int insertIndexParameters(sqlite3* db, const char *zDbSName, const char *zName, 
     goto clear_and_exit;
   }
   rc = sqlite3_step(pStatement);
-  if( rc == SQLITE_CONSTRAINT ){
+  if( (rc&0xff) == SQLITE_CONSTRAINT ){
     rc = SQLITE_CONSTRAINT;
   }else if( rc != SQLITE_DONE ){
     rc = SQLITE_ERROR;
@@ -937,7 +937,10 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
     return CREATE_FAIL;
   }
   rc = insertIndexParameters(db, zDbSName, pIdx->zName, &idxParams);
-  if( rc == SQLITE_CONSTRAINT ){
+
+  // we must consider only lower bits because with sqlite3_extended_result_codes on
+  // we can recieve different subtypes of CONSTRAINT error
+  if( (rc&0xff) == SQLITE_CONSTRAINT ){
     // we are violating unique constraint here which means that someone inserted parameters in the table before us
     // taking aside corruption scenarios, this can be in case of loading dump (because tables and data are loaded before indices)
     // this case is valid and we must proceed with index creating but avoid index-refill step as it is already filled
