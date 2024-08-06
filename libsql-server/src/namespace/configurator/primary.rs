@@ -1,7 +1,10 @@
+use std::path::Path;
+use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::{path::Path, pin::Pin, sync::Arc};
+use std::sync::Arc;
 
 use futures::prelude::Future;
+use libsql_sys::EncryptionConfig;
 use tokio::task::JoinSet;
 
 use crate::connection::config::DatabaseConfig;
@@ -49,6 +52,7 @@ impl PrimaryConfigurator {
         resolve_attach_path: ResolveNamespacePathFn,
         db_path: Arc<Path>,
         broadcaster: BroadcasterHandle,
+        encryption_config: Option<EncryptionConfig>,
     ) -> crate::Result<Namespace> {
         let mut join_set = JoinSet::new();
 
@@ -67,6 +71,7 @@ impl PrimaryConfigurator {
             resolve_attach_path,
             broadcaster,
             self.make_wal_manager.clone(),
+            encryption_config,
         )
         .await?;
         let connection_maker = Arc::new(connection_maker);
@@ -135,6 +140,7 @@ impl ConfigureNamespace for PrimaryConfigurator {
                     resolve_attach_path,
                     db_path.clone(),
                     broadcaster,
+                    self.base.encryption_config.clone(),
                 )
                 .await
             {

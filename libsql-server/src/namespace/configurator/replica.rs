@@ -169,6 +169,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 self.base.stats_sender.clone(),
                 name.clone(),
                 applied_frame_no_receiver.clone(),
+                self.base.encryption_config.clone(),
             )
             .await?;
 

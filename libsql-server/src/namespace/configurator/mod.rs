@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use chrono::NaiveDateTime;
 use futures::Future;
+use libsql_sys::EncryptionConfig;
 use tokio::sync::Semaphore;
 
 use crate::connection::config::DatabaseConfig;
@@ -38,6 +39,7 @@ pub struct BaseNamespaceConfig {
     pub(crate) max_total_response_size: u64,
     pub(crate) max_concurrent_connections: Arc<Semaphore>,
     pub(crate) max_concurrent_requests: u64,
+    pub(crate) encryption_config: Option<EncryptionConfig>,
 }
 
 #[derive(Clone)]

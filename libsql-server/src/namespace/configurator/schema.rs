@@ -68,6 +68,7 @@ impl ConfigureNamespace for SchemaConfigurator {
                 resolve_attach_path,
                 broadcaster,
                 self.make_wal_manager.clone(),
+                self.base.encryption_config.clone(),
             )
             .await?;
 

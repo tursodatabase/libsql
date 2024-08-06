@@ -9,6 +9,7 @@ use bytes::Bytes;
 use enclose::enclose;
 use futures::Stream;
 use libsql_sys::wal::Sqlite3WalManager;
+use libsql_sys::EncryptionConfig;
 use tokio::io::AsyncBufReadExt as _;
 use tokio::sync::watch;
 use tokio::task::JoinSet;
@@ -49,6 +50,7 @@ pub(super) async fn make_primary_connection_maker(
     resolve_attach_path: ResolveNamespacePathFn,
     broadcaster: BroadcasterHandle,
     make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+    encryption_config: Option<EncryptionConfig>,
 ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalWrapper, Arc<Stats>)> {
     let db_config = meta_store_handle.get();
     let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
@@ -102,7 +104,7 @@ pub(super) async fn make_primary_connection_maker(
         auto_checkpoint,
         primary_config.scripted_backup.clone(),
         name.clone(),
-        None,
+        encryption_config.clone(),
     )?);
 
     tracing::debug!("sending stats");
@@ -114,6 +116,7 @@ pub(super) async fn make_primary_connection_maker(
         base_config.stats_sender.clone(),
         name.clone(),
         logger.new_frame_notifier.subscribe(),
+        base_config.encryption_config.clone(),
     )
     .await?;
 
@@ -133,7 +136,7 @@ pub(super) async fn make_primary_connection_maker(
         base_config.max_total_response_size,
         auto_checkpoint,
         logger.new_frame_notifier.subscribe(),
-        None,
+        encryption_config,
         block_writes,
         resolve_attach_path,
         make_wal_manager.clone(),
@@ -332,6 +335,7 @@ pub(super) async fn make_stats(
     stats_sender: StatsSender,
     name: NamespaceName,
     mut current_frame_no: watch::Receiver<Option<FrameNo>>,
+    encryption_config: Option<EncryptionConfig>,
 ) -> anyhow::Result<Arc<Stats>> {
     tracing::debug!("creating stats type");
     let stats = Stats::new(name.clone(), db_path, join_set).await?;
@@ -358,7 +362,11 @@ pub(super) async fn make_stats(
         }
     });
 
-    join_set.spawn(run_storage_monitor(db_path.into(), Arc::downgrade(&stats)));
+    join_set.spawn(run_storage_monitor(
+        db_path.into(),
+        Arc::downgrade(&stats),
+        encryption_config,
+    ));
 
     tracing::debug!("done sending stats, and creating bg tasks");
 
@@ -368,7 +376,11 @@ pub(super) async fn make_stats(
 // Periodically check the storage used by the database and save it in the Stats structure.
 // TODO: Once we have a separate fiber that does WAL checkpoints, running this routine
 // right after checkpointing is exactly where it should be done.
-async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Result<()> {
+async fn run_storage_monitor(
+    db_path: PathBuf,
+    stats: Weak<Stats>,
+    encryption_config: Option<EncryptionConfig>,
+) -> anyhow::Result<()> {
     // on initialization, the database file doesn't exist yet, so we wait a bit for it to be
     // created
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -381,11 +393,12 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Re
             return Ok(());
         };
 
+        let encryption_config = encryption_config.clone();
         let _ = tokio::task::spawn_blocking(move || {
             // because closing the last connection interferes with opening a new one, we lazily
             // initialize a connection here, and keep it alive for the entirety of the program. If we
             // fail to open it, we wait for `duration` and try again later.
-            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), None) {
+            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), encryption_config) {
                 Ok(mut conn) => {
                     if let Ok(tx) = conn.transaction() {
                         let page_count = tx.query_row("pragma page_count;", [], |row| { row.get::<usize, u64>(0) });

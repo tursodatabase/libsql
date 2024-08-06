@@ -917,6 +917,7 @@ mod test {
             max_total_response_size: 100000000000,
             max_concurrent_connections: Arc::new(Semaphore::new(10)),
             max_concurrent_requests: 10000,
+            encryption_config: None,
         };
 
         let primary_config = PrimaryExtraConfig {

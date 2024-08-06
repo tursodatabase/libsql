@@ -458,6 +458,7 @@ where
             max_total_response_size: self.db_config.max_total_response_size,
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
             max_concurrent_requests: self.db_config.max_concurrent_requests,
+            encryption_config: self.db_config.encryption_config.clone(),
         };
 
         let configurators = self
