@@ -745,21 +745,27 @@ where
         });
 
         let make_wal_manager = Arc::new(move || EitherWAL::B(wal.clone()));
-        let mut configurators = NamespaceConfigurators::empty();
+        // let mut configurators = NamespaceConfigurators::empty();
 
-        match client_config {
-            Some(_) => todo!("configure replica"),
-            // configure primary
-            None => self.configure_primary_common(
-                base_config,
-                &mut configurators,
-                make_wal_manager,
-                migration_scheduler_handle,
-                scripted_backup,
-            ),
-        }
+        // match client_config {
+        //     Some(_) => todo!("configure replica"),
+        //     // configure primary
+        //     None => self.configure_primary_common(
+        //         base_config,
+        //         &mut configurators,
+        //         make_wal_manager,
+        //         migration_scheduler_handle,
+        //         scripted_backup,
+        //     ),
+        // }
 
-        Ok(configurators)
+        self.configurators_common(
+            base_config,
+            client_config,
+            make_wal_manager,
+            migration_scheduler_handle,
+            scripted_backup,
+        )
     }
 
     #[cfg(feature = "durable-wal")]

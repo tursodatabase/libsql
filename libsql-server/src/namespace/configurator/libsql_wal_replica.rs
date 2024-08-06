@@ -46,63 +46,64 @@ impl ConfigureNamespace for LibsqlWalReplicaConfigurator {
         store: NamespaceStore,
         broadcaster: BroadcasterHandle,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
-        Box::pin(async move {
-            tracing::debug!("creating replica namespace");
-            let db_path = self.base.base_path.join("dbs").join(name.as_str());
-            let channel = self.channel.clone();
-            let uri = self.uri.clone();
-
-            let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
-            // TODO! setup replication
-
-            let mut join_set = JoinSet::new();
-            let namespace = name.clone();
-
-            let stats = make_stats(
-                &db_path,
-                &mut join_set,
-                db_config.clone(),
-                self.base.stats_sender.clone(),
-                name.clone(),
-                applied_frame_no_receiver.clone(),
-            )
-            .await?;
-
-            let connection_maker = MakeWriteProxyConn::new(
-                db_path.clone(),
-                self.base.extensions.clone(),
-                channel.clone(),
-                uri.clone(),
-                stats.clone(),
-                broadcaster,
-                db_config.clone(),
-                applied_frame_no_receiver,
-                self.base.max_response_size,
-                self.base.max_total_response_size,
-                primary_current_replication_index,
-                None,
-                resolve_attach_path,
-                self.make_wal_manager.clone(),
-            )
-            .await?
-            .throttled(
-                self.base.max_concurrent_connections.clone(),
-                Some(DB_CREATE_TIMEOUT),
-                self.base.max_total_response_size,
-                self.base.max_concurrent_requests,
-            );
-
-            Ok(Namespace {
-                tasks: join_set,
-                db: Database::Replica(ReplicaDatabase {
-                    connection_maker: Arc::new(connection_maker),
-                }),
-                name: name.clone(),
-                stats,
-                db_config_store: db_config,
-                path: db_path.into(),
-            })
-        })
+        todo!()
+        // Box::pin(async move {
+        //     tracing::debug!("creating replica namespace");
+        //     let db_path = self.base.base_path.join("dbs").join(name.as_str());
+        //     let channel = self.channel.clone();
+        //     let uri = self.uri.clone();
+        //
+        //     let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
+        //     // TODO! setup replication
+        //
+        //     let mut join_set = JoinSet::new();
+        //     let namespace = name.clone();
+        //
+        //     let stats = make_stats(
+        //         &db_path,
+        //         &mut join_set,
+        //         db_config.clone(),
+        //         self.base.stats_sender.clone(),
+        //         name.clone(),
+        //         applied_frame_no_receiver.clone(),
+        //     )
+        //     .await?;
+        //
+        //     let connection_maker = MakeWriteProxyConn::new(
+        //         db_path.clone(),
+        //         self.base.extensions.clone(),
+        //         channel.clone(),
+        //         uri.clone(),
+        //         stats.clone(),
+        //         broadcaster,
+        //         db_config.clone(),
+        //         applied_frame_no_receiver,
+        //         self.base.max_response_size,
+        //         self.base.max_total_response_size,
+        //         primary_current_replication_index,
+        //         None,
+        //         resolve_attach_path,
+        //         self.make_wal_manager.clone(),
+        //     )
+        //     .await?
+        //     .throttled(
+        //         self.base.max_concurrent_connections.clone(),
+        //         Some(DB_CREATE_TIMEOUT),
+        //         self.base.max_total_response_size,
+        //         self.base.max_concurrent_requests,
+        //     );
+        //
+        //     Ok(Namespace {
+        //         tasks: join_set,
+        //         db: Database::Replica(ReplicaDatabase {
+        //             connection_maker: Arc::new(connection_maker),
+        //         }),
+        //         name: name.clone(),
+        //         stats,
+        //         db_config_store: db_config,
+        //         path: db_path.into(),
+        //     })
+        // })
     }
 
     fn cleanup<'a>(
