@@ -236,12 +236,17 @@ do_execsql_test vector-attach {
 
 do_execsql_test vector-vacuum {
   CREATE TABLE t_vacuum ( emb FLOAT32(2) );
-  INSERT INTO t_vacuum VALUES (vector('[1,2]')), (vector('[3,4]'));
+  INSERT INTO t_vacuum VALUES (vector('[1,2]')), (vector('[3,4]')), (vector('[5,6]'));
   CREATE INDEX t_vacuum_idx ON t_vacuum(libsql_vector_idx(emb));
   VACUUM;
   SELECT COUNT(*) FROM t_vacuum;
   SELECT COUNT(*) FROM t_vacuum_idx_shadow;
-} {2 2}
+  DELETE FROM t_vacuum WHERE rowid = 2;
+  VACUUM;
+  SELECT * FROM vector_top_k('t_vacuum_idx', vector('[1,2]'), 3);
+  SELECT * FROM vector_top_k('t_vacuum_idx', vector('[5,6]'), 3);
+  SELECT * FROM vector_top_k('t_vacuum_idx', vector('[3,4]'), 3);
+} {3 3 1 2 2 1 2 1}
 
 do_execsql_test vector-many-columns {
   CREATE TABLE t_many ( i INTEGER PRIMARY KEY, e1 FLOAT32(2), e2 FLOAT32(2) );
