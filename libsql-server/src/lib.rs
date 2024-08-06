@@ -55,6 +55,7 @@ use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use self::config::MetaStoreConfig;
+use self::connection::connection_manager::InnerWalManager;
 use self::namespace::configurator::{
     BaseNamespaceConfig, NamespaceConfigurators, PrimaryConfigurator, PrimaryExtraConfig,
     ReplicaConfigurator, SchemaConfigurator,
@@ -336,7 +337,8 @@ where
                     config.heartbeat_url.as_deref().unwrap_or("<not supplied>"),
                     config.heartbeat_period,
                 );
-                join_set.spawn({
+
+                self.spawn_until_shutdown_on(join_set, {
                     let heartbeat_auth = config.heartbeat_auth.clone();
                     let heartbeat_period = config.heartbeat_period;
                     let heartbeat_url = if let Some(url) = &config.heartbeat_url {
@@ -428,7 +430,7 @@ where
                 let (scripted_backup, script_backup_task) =
                     ScriptBackupManager::new(&self.path, CommandHandler::new(command.to_string()))
                         .await?;
-                self.spawn_until_shutdown(&mut join_set, script_backup_task.run());
+                self.spawn_until_shutdown_on(&mut join_set, script_backup_task.run());
                 Some(scripted_backup)
             }
             None => None,
@@ -484,7 +486,6 @@ where
         )
         .await?;
 
-
         self.spawn_monitoring_tasks(&mut join_set, stats_receiver)?;
 
         // if namespaces are enabled, then bottomless must have set DB ID
@@ -501,7 +502,7 @@ where
             let proxy_service =
                 ProxyService::new(namespace_store.clone(), None, self.disable_namespaces);
             // Garbage collect proxy clients every 30 seconds
-            self.spawn_until_shutdown(&mut join_set, {
+            self.spawn_until_shutdown_on(&mut join_set, {
                 let clients = proxy_service.clients();
                 async move {
                     loop {
@@ -511,14 +512,17 @@ where
                 }
             });
 
-            self.spawn_until_shutdown(&mut join_set, run_rpc_server(
-                proxy_service,
-                config.acceptor,
-                config.tls_config,
-                idle_shutdown_kicker.clone(),
-                namespace_store.clone(),
-                self.disable_namespaces,
-            ));
+            self.spawn_until_shutdown_on(
+                &mut join_set,
+                run_rpc_server(
+                    proxy_service,
+                    config.acceptor,
+                    config.tls_config,
+                    idle_shutdown_kicker.clone(),
+                    namespace_store.clone(),
+                    self.disable_namespaces,
+                ),
+            );
         }
 
         let shutdown_timeout = self.shutdown_timeout.clone();
@@ -530,7 +534,7 @@ where
                 // The migration scheduler is only useful on the primary
                 let meta_conn = metastore_conn_maker()?;
                 let scheduler = Scheduler::new(namespace_store.clone(), meta_conn).await?;
-                self.spawn_until_shutdown(&mut join_set, async move {
+                self.spawn_until_shutdown_on(&mut join_set, async move {
                     scheduler.run(scheduler_receiver).await;
                     Ok(())
                 });
@@ -560,7 +564,7 @@ where
                 );
 
                 // Garbage collect proxy clients every 30 seconds
-                self.spawn_until_shutdown(&mut join_set, {
+                self.spawn_until_shutdown_on(&mut join_set, {
                     let clients = proxy_svc.clients();
                     async move {
                         loop {
@@ -583,8 +587,7 @@ where
             DatabaseKind::Replica => {
                 dbg!();
                 let (channel, uri) = client_config.clone().unwrap();
-                let replication_svc =
-                    ReplicationLogProxyService::new(channel.clone(), uri.clone());
+                let replication_svc = ReplicationLogProxyService::new(channel.clone(), uri.clone());
                 let proxy_svc = ReplicaProxyService::new(
                     channel,
                     uri,
@@ -651,7 +654,12 @@ where
         match self.use_custom_wal {
             Some(CustomWAL::LibsqlWal) => self.libsql_wal_configurators(),
             #[cfg(feature = "durable-wal")]
-            Some(CustomWAL::DurableWal) => self.durable_wal_configurators(),
+            Some(CustomWAL::DurableWal) => self.durable_wal_configurators(
+                base_config,
+                scripted_backup,
+                migration_scheduler_handle,
+                client_config,
+            ),
             None => {
                 self.legacy_configurators(
                     base_config,
@@ -669,11 +677,44 @@ where
     }
 
     #[cfg(feature = "durable-wal")]
-    fn durable_wal_configurators(&self) -> anyhow::Result<NamespaceConfigurators> {
-        todo!();
+    fn durable_wal_configurators(
+        &self,
+        base_config: BaseNamespaceConfig,
+        scripted_backup: Option<ScriptBackupManager>,
+        migration_scheduler_handle: SchedulerHandle,
+        client_config: Option<(Channel, Uri)>,
+    ) -> anyhow::Result<NamespaceConfigurators> {
+        tracing::info!("using durable wal");
+        let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
+        let namespace_resolver = |path: &Path| {
+            NamespaceName::from_string(
+                path.parent()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )
+            .unwrap()
+            .into()
+        };
+        let wal = DurableWalManager::new(
+            lock_manager,
+            namespace_resolver,
+            self.storage_server_address.clone(),
+        );
+        let make_wal_manager = Arc::new(move || EitherWAL::C(wal.clone()));
+        self.configurators_common(
+            client_config,
+            base_config,
+            make_wal_manager,
+            scripted_backup,
+            migration_scheduler_handle,
+        )
     }
 
-    fn spawn_until_shutdown<F>(&self, join_set: &mut JoinSet<anyhow::Result<()>>, fut: F)
+    fn spawn_until_shutdown_on<F>(&self, join_set: &mut JoinSet<anyhow::Result<()>>, fut: F)
     where
         F: Future<Output = anyhow::Result<()>> + Send + 'static,
     {
@@ -694,6 +735,23 @@ where
         client_config: Option<(Channel, Uri)>,
     ) -> anyhow::Result<NamespaceConfigurators> {
         let make_wal_manager = Arc::new(|| EitherWAL::A(Sqlite3WalManager::default()));
+        self.configurators_common(
+            client_config,
+            base_config,
+            make_wal_manager,
+            scripted_backup,
+            migration_scheduler_handle,
+        )
+    }
+
+    fn configurators_common(
+        &self,
+        client_config: Option<(Channel, Uri)>,
+        base_config: BaseNamespaceConfig,
+        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+        scripted_backup: Option<ScriptBackupManager>,
+        migration_scheduler_handle: SchedulerHandle,
+    ) -> anyhow::Result<NamespaceConfigurators> {
         let mut configurators = NamespaceConfigurators::empty();
 
         match client_config {
