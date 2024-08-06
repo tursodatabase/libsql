@@ -159,8 +159,8 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
-      - name: check libsql remote
-        run: cargo check -p libsql --no-default-features -F remote
+      - name: build libsql all features
+        run: cargo build -p libsql --all-features 
 
   # test-rust-wasm:
   #   runs-on: ubuntu-latest
