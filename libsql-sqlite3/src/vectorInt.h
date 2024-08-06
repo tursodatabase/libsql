@@ -102,10 +102,12 @@ int vectorParseSqliteBlob   (sqlite3_value *, Vector *, char **);
 void vectorF32DeserializeFromBlob(Vector *, const unsigned char *, size_t);
 void vectorF64DeserializeFromBlob(Vector *, const unsigned char *, size_t);
 
-void vectorInitStatic(Vector *, VectorType, const unsigned char *, size_t);
+void vectorInitStatic(Vector *, VectorType, VectorDims, void *);
 void vectorInitFromBlob(Vector *, const unsigned char *, size_t);
 void vectorF32InitFromBlob(Vector *, const unsigned char *, size_t);
 void vectorF64InitFromBlob(Vector *, const unsigned char *, size_t);
+
+void vectorConvert(const Vector *, Vector *);
 
 /* Detect type and dimension of vector provided with first parameter of sqlite3_value * type */
 int detectVectorParameters(sqlite3_value *, int, int *, int *, char **);

@@ -74,10 +74,11 @@ Vector *vectorAlloc(VectorType type, VectorDims dims){
 ** Note that the vector object points to the blob so if
 ** you free the blob, the vector becomes invalid.
 **/
-void vectorInitStatic(Vector *pVector, VectorType type, const unsigned char *pBlob, size_t nBlobSize){
-  pVector->type = type;
+void vectorInitStatic(Vector *pVector, VectorType type, VectorDims dims, void *pBlob){
   pVector->flags = VECTOR_FLAGS_STATIC;
-  vectorInitFromBlob(pVector, pBlob, nBlobSize);
+  pVector->type = type;
+  pVector->dims = dims;
+  pVector->data = pBlob;
 }
 
 /*
@@ -476,6 +477,31 @@ void vectorInitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlo
       break;
     default:
       assert(0);
+  }
+}
+
+void vectorConvert(const Vector *pFrom, Vector *pTo){
+  int i;
+  u8 *bitData;
+  float *floatData;
+
+  assert( pFrom->dims == pTo->dims );
+
+  if( pFrom->type == VECTOR_TYPE_FLOAT32 && pTo->type == VECTOR_TYPE_1BIT ){
+    floatData = pFrom->data;
+    bitData = pTo->data;
+    for(i = 0; i < pFrom->dims; i += 8){
+      bitData[i / 8] = 0;
+    }
+    for(i = 0; i < pFrom->dims; i++){
+      if( floatData[i] < 0 ){
+        bitData[i / 8] &= ~(1 << (i & 7));
+      }else{
+        bitData[i / 8] |= (1 << (i & 7));
+      }
+    }
+  }else{
+    assert(0);
   }
 }
 

@@ -56,17 +56,16 @@ size_t vector1BitSerializeToBlob(
   unsigned char *pBlob,
   size_t nBlobSize
 ){
-  float *elems = pVector->data;
-  unsigned char *pPtr = pBlob;
-  size_t len = 0;
+  u8 *elems = pVector->data;
+  u8 *pPtr = pBlob;
   unsigned i;
 
   assert( pVector->type == VECTOR_TYPE_1BIT );
   assert( pVector->dims <= MAX_VECTOR_SZ );
   assert( nBlobSize >= (pVector->dims + 7) / 8 );
 
-  for(i = 0; i < pVector->dims; i++){
-    elems[i] = pPtr[i];
+  for(i = 0; i < (pVector->dims + 7) / 8; i++){
+    pPtr[i] = elems[i];
   }
   return (pVector->dims + 7) / 8;
 }
@@ -92,7 +91,7 @@ static int BitsCount[256] = {
 };
 
 int vector1BitDistanceHamming(const Vector *v1, const Vector *v2){
-  int sum = 0;
+  int diff = 0;
   u8 *e1 = v1->data;
   u8 *e2 = v2->data;
   int i;
@@ -101,10 +100,10 @@ int vector1BitDistanceHamming(const Vector *v1, const Vector *v2){
   assert( v1->type == VECTOR_TYPE_1BIT );
   assert( v2->type == VECTOR_TYPE_1BIT );
 
-  for(i = 0; i < v1->dims; i++){
-    sum += BitsCount[e1[i]&e2[i]];
+  for(i = 0; i < v1->dims; i += 8){
+    diff += BitsCount[e1[i/8] ^ e2[i/8]];
   }
-  return sum;
+  return diff;
 }
 
 #endif /* !defined(SQLITE_OMIT_VECTOR) */
