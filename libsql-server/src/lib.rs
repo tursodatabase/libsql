@@ -4,7 +4,6 @@ use std::alloc::Layout;
 use std::ffi::c_void;
 use std::mem::{align_of, size_of};
 use std::path::{Path, PathBuf};
-use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::{Arc, Weak};
 
@@ -29,10 +28,10 @@ use auth::Auth;
 use config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
 };
-use futures::future::ready;
 use futures::Future;
 use http::user::UserApi;
 use hyper::client::HttpConnector;
+use hyper::Uri;
 use hyper_rustls::HttpsConnector;
 #[cfg(feature = "durable-wal")]
 use libsql_storage::{DurableWalManager, LockManager};
@@ -41,10 +40,6 @@ use libsql_sys::wal::either::Either as EitherWAL;
 #[cfg(feature = "durable-wal")]
 use libsql_sys::wal::either::Either3 as EitherWAL;
 use libsql_sys::wal::Sqlite3WalManager;
-use libsql_wal::checkpointer::LibsqlCheckpointer;
-use libsql_wal::registry::WalRegistry;
-use libsql_wal::storage::NoStorage;
-use libsql_wal::wal::LibsqlWalManager;
 use namespace::meta_store::MetaStoreHandle;
 use namespace::NamespaceName;
 use net::Connector;
@@ -55,15 +50,19 @@ use tokio::runtime::Runtime;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::Duration;
+use tonic::transport::Channel;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use self::config::MetaStoreConfig;
-use self::connection::connection_manager::InnerWalManager;
-use self::namespace::configurator::{BaseNamespaceConfig, NamespaceConfigurators, PrimaryConfigurator, PrimaryExtraConfig, ReplicaConfigurator, SchemaConfigurator};
+use self::namespace::configurator::{
+    BaseNamespaceConfig, NamespaceConfigurators, PrimaryConfigurator, PrimaryExtraConfig,
+    ReplicaConfigurator, SchemaConfigurator,
+};
 use self::namespace::NamespaceStore;
 use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
+use self::schema::SchedulerHandle;
 
 pub mod auth;
 mod broadcaster;
@@ -424,33 +423,44 @@ where
         let extensions = self.db_config.validate_extensions()?;
         let user_auth_strategy = self.user_api_config.auth_strategy.clone();
 
-        let service_shutdown = Arc::new(Notify::new());
-
         let scripted_backup = match self.db_config.snapshot_exec {
             Some(ref command) => {
                 let (scripted_backup, script_backup_task) =
                     ScriptBackupManager::new(&self.path, CommandHandler::new(command.to_string()))
                         .await?;
-                join_set.spawn(script_backup_task.run());
+                self.spawn_until_shutdown(&mut join_set, script_backup_task.run());
                 Some(scripted_backup)
             }
             None => None,
         };
 
-        let (channel, uri) = match self.rpc_client_config {
-            Some(ref config) => {
-                let (channel, uri) = config.configure().await?;
-                (Some(channel), Some(uri))
-            }
-            None => (None, None),
+        let db_kind = match self.rpc_client_config {
+            Some(_) => DatabaseKind::Replica,
+            _ => DatabaseKind::Primary,
         };
 
+        let client_config = self.get_client_config().await?;
         let (scheduler_sender, scheduler_receiver) = mpsc::channel(128);
-
         let (stats_sender, stats_receiver) = mpsc::channel(1024);
 
-        // chose the wal backend
-        let (make_wal_manager, registry_shutdown) = self.configure_wal_manager(&mut join_set)?;
+        let base_config = BaseNamespaceConfig {
+            base_path: self.path.clone(),
+            extensions,
+            stats_sender,
+            max_response_size: self.db_config.max_response_size,
+            max_total_response_size: self.db_config.max_total_response_size,
+            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
+            max_concurrent_requests: self.db_config.max_concurrent_requests,
+        };
+
+        let configurators = self
+            .make_configurators(
+                base_config,
+                scripted_backup,
+                scheduler_sender.into(),
+                client_config.clone(),
+            )
+            .await?;
 
         let (metastore_conn_maker, meta_store_wal_manager) =
             metastore_connection_maker(self.meta_store_config.bottomless.clone(), &self.path)
@@ -464,60 +474,6 @@ where
         )
         .await?;
 
-        let base_config = BaseNamespaceConfig {
-            base_path: self.path.clone(),
-            extensions,
-            stats_sender,
-            max_response_size: self.db_config.max_response_size,
-            max_total_response_size: self.db_config.max_total_response_size,
-            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
-            max_concurrent_requests: self.db_config.max_concurrent_requests,
-        };
-
-        let mut configurators = NamespaceConfigurators::default();
-
-        let db_kind = match channel.clone().zip(uri.clone()) {
-            // replica mode
-            Some((channel, uri)) => {
-                let replica_configurator = ReplicaConfigurator::new(
-                    base_config,
-                    channel,
-                    uri,
-                    make_wal_manager,
-                );
-                configurators.with_replica(replica_configurator);
-                DatabaseKind::Replica
-            }
-            // primary mode
-            None =>  {
-                let primary_config = PrimaryExtraConfig {
-                    max_log_size: self.db_config.max_log_size,
-                    max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
-                    bottomless_replication: self.db_config.bottomless_replication.clone(),
-                    scripted_backup,
-                    checkpoint_interval: self.db_config.checkpoint_interval,
-                };
-
-                let primary_configurator = PrimaryConfigurator::new(
-                    base_config.clone(),
-                    primary_config.clone(),
-                    make_wal_manager.clone(),
-                );
-
-                let schema_configurator = SchemaConfigurator::new(
-                    base_config.clone(),
-                    primary_config,
-                    make_wal_manager.clone(),
-                    scheduler_sender.into(),
-                );
-
-                configurators.with_schema(schema_configurator);
-                configurators.with_primary(primary_configurator);
-
-                DatabaseKind::Primary
-            },
-        };
-
         let namespace_store: NamespaceStore = NamespaceStore::new(
             db_kind.is_replica(),
             self.db_config.snapshot_at_shutdown,
@@ -528,26 +484,8 @@ where
         )
         .await?;
 
-        let meta_conn = metastore_conn_maker()?;
-        let scheduler = Scheduler::new(namespace_store.clone(), meta_conn).await?;
-
-        join_set.spawn(async move {
-            scheduler.run(scheduler_receiver).await;
-            Ok(())
-        });
 
         self.spawn_monitoring_tasks(&mut join_set, stats_receiver)?;
-
-        // eagerly load the default namespace when namespaces are disabled
-        if self.disable_namespaces && db_kind.is_primary() {
-            namespace_store
-                .create(
-                    NamespaceName::default(),
-                    namespace::RestoreOption::Latest,
-                    Default::default(),
-                )
-                .await?;
-        }
 
         // if namespaces are enabled, then bottomless must have set DB ID
         if !self.disable_namespaces {
@@ -563,7 +501,7 @@ where
             let proxy_service =
                 ProxyService::new(namespace_store.clone(), None, self.disable_namespaces);
             // Garbage collect proxy clients every 30 seconds
-            join_set.spawn({
+            self.spawn_until_shutdown(&mut join_set, {
                 let clients = proxy_service.clients();
                 async move {
                     loop {
@@ -572,7 +510,8 @@ where
                     }
                 }
             });
-            join_set.spawn(run_rpc_server(
+
+            self.spawn_until_shutdown(&mut join_set, run_rpc_server(
                 proxy_service,
                 config.acceptor,
                 config.tls_config,
@@ -584,9 +523,28 @@ where
 
         let shutdown_timeout = self.shutdown_timeout.clone();
         let shutdown = self.shutdown.clone();
+        let service_shutdown = Arc::new(Notify::new());
         // setup user-facing rpc services
         match db_kind {
             DatabaseKind::Primary => {
+                // The migration scheduler is only useful on the primary
+                let meta_conn = metastore_conn_maker()?;
+                let scheduler = Scheduler::new(namespace_store.clone(), meta_conn).await?;
+                self.spawn_until_shutdown(&mut join_set, async move {
+                    scheduler.run(scheduler_receiver).await;
+                    Ok(())
+                });
+
+                if self.disable_namespaces {
+                    namespace_store
+                        .create(
+                            NamespaceName::default(),
+                            namespace::RestoreOption::Latest,
+                            Default::default(),
+                        )
+                        .await?;
+                }
+
                 let replication_svc = ReplicationLogService::new(
                     namespace_store.clone(),
                     idle_shutdown_kicker.clone(),
@@ -602,7 +560,7 @@ where
                 );
 
                 // Garbage collect proxy clients every 30 seconds
-                join_set.spawn({
+                self.spawn_until_shutdown(&mut join_set, {
                     let clients = proxy_svc.clients();
                     async move {
                         loop {
@@ -623,16 +581,19 @@ where
                 .configure(&mut join_set);
             }
             DatabaseKind::Replica => {
+                dbg!();
+                let (channel, uri) = client_config.clone().unwrap();
                 let replication_svc =
-                    ReplicationLogProxyService::new(channel.clone().unwrap(), uri.clone().unwrap());
+                    ReplicationLogProxyService::new(channel.clone(), uri.clone());
                 let proxy_svc = ReplicaProxyService::new(
-                    channel.clone().unwrap(),
-                    uri.clone().unwrap(),
+                    channel,
+                    uri,
                     namespace_store.clone(),
                     user_auth_strategy.clone(),
                     self.disable_namespaces,
                 );
 
+                dbg!();
                 self.make_services(
                     namespace_store.clone(),
                     idle_shutdown_kicker,
@@ -642,6 +603,7 @@ where
                     service_shutdown.clone(),
                 )
                 .configure(&mut join_set);
+                dbg!();
             }
         };
 
@@ -651,7 +613,6 @@ where
                     join_set.shutdown().await;
                     service_shutdown.notify_waiters();
                     namespace_store.shutdown().await?;
-                    registry_shutdown.await?;
 
                     Ok::<_, crate::Error>(())
                 };
@@ -680,6 +641,99 @@ where
         Ok(())
     }
 
+    async fn make_configurators(
+        &self,
+        base_config: BaseNamespaceConfig,
+        scripted_backup: Option<ScriptBackupManager>,
+        migration_scheduler_handle: SchedulerHandle,
+        client_config: Option<(Channel, Uri)>,
+    ) -> anyhow::Result<NamespaceConfigurators> {
+        match self.use_custom_wal {
+            Some(CustomWAL::LibsqlWal) => self.libsql_wal_configurators(),
+            #[cfg(feature = "durable-wal")]
+            Some(CustomWAL::DurableWal) => self.durable_wal_configurators(),
+            None => {
+                self.legacy_configurators(
+                    base_config,
+                    scripted_backup,
+                    migration_scheduler_handle,
+                    client_config,
+                )
+                .await
+            }
+        }
+    }
+
+    fn libsql_wal_configurators(&self) -> anyhow::Result<NamespaceConfigurators> {
+        todo!()
+    }
+
+    #[cfg(feature = "durable-wal")]
+    fn durable_wal_configurators(&self) -> anyhow::Result<NamespaceConfigurators> {
+        todo!();
+    }
+
+    fn spawn_until_shutdown<F>(&self, join_set: &mut JoinSet<anyhow::Result<()>>, fut: F)
+    where
+        F: Future<Output = anyhow::Result<()>> + Send + 'static,
+    {
+        let shutdown = self.shutdown.clone();
+        join_set.spawn(async move {
+            tokio::select! {
+                _ = shutdown.notified() => Ok(()),
+                ret = fut => ret
+            }
+        });
+    }
+
+    async fn legacy_configurators(
+        &self,
+        base_config: BaseNamespaceConfig,
+        scripted_backup: Option<ScriptBackupManager>,
+        migration_scheduler_handle: SchedulerHandle,
+        client_config: Option<(Channel, Uri)>,
+    ) -> anyhow::Result<NamespaceConfigurators> {
+        let make_wal_manager = Arc::new(|| EitherWAL::A(Sqlite3WalManager::default()));
+        let mut configurators = NamespaceConfigurators::empty();
+
+        match client_config {
+            // replica mode
+            Some((channel, uri)) => {
+                let replica_configurator =
+                    ReplicaConfigurator::new(base_config, channel, uri, make_wal_manager);
+                configurators.with_replica(replica_configurator);
+            }
+            // primary mode
+            None => {
+                let primary_config = PrimaryExtraConfig {
+                    max_log_size: self.db_config.max_log_size,
+                    max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
+                    bottomless_replication: self.db_config.bottomless_replication.clone(),
+                    scripted_backup,
+                    checkpoint_interval: self.db_config.checkpoint_interval,
+                };
+
+                let primary_configurator = PrimaryConfigurator::new(
+                    base_config.clone(),
+                    primary_config.clone(),
+                    make_wal_manager.clone(),
+                );
+
+                let schema_configurator = SchemaConfigurator::new(
+                    base_config.clone(),
+                    primary_config,
+                    make_wal_manager.clone(),
+                    migration_scheduler_handle,
+                );
+
+                configurators.with_schema(schema_configurator);
+                configurators.with_primary(primary_configurator);
+            }
+        }
+
+        Ok(configurators)
+    }
+
     fn setup_shutdown(&self) -> Option<IdleShutdownKicker> {
         let shutdown_notify = self.shutdown.clone();
         self.idle_shutdown_timeout.map(|d| {
@@ -687,92 +741,99 @@ where
         })
     }
 
-    fn configure_wal_manager(
-        &self,
-        join_set: &mut JoinSet<anyhow::Result<()>>,
-    ) -> anyhow::Result<(
-        Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
-        Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + Sync + 'static>>,
-    )> {
-        let wal_path = self.path.join("wals");
-        let enable_libsql_wal_test = {
-            let is_primary = self.rpc_server_config.is_some();
-            let is_libsql_wal_test = std::env::var("LIBSQL_WAL_TEST").is_ok();
-            is_primary && is_libsql_wal_test
-        };
-        let use_libsql_wal =
-            self.use_custom_wal == Some(CustomWAL::LibsqlWal) || enable_libsql_wal_test;
-        if !use_libsql_wal {
-            if wal_path.try_exists()? {
-                anyhow::bail!("database was previously setup to use libsql-wal");
-            }
-        }
+    // fn configure_wal_manager(
+    //     &self,
+    //     join_set: &mut JoinSet<anyhow::Result<()>>,
+    // ) -> anyhow::Result<(
+    //     Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+    //     Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + Sync + 'static>>,
+    // )> {
+    //     let wal_path = self.path.join("wals");
+    //     let enable_libsql_wal_test = {
+    //         let is_primary = self.rpc_server_config.is_some();
+    //         let is_libsql_wal_test = std::env::var("LIBSQL_WAL_TEST").is_ok();
+    //         is_primary && is_libsql_wal_test
+    //     };
+    //     let use_libsql_wal =
+    //         self.use_custom_wal == Some(CustomWAL::LibsqlWal) || enable_libsql_wal_test;
+    //     if !use_libsql_wal {
+    //         if wal_path.try_exists()? {
+    //             anyhow::bail!("database was previously setup to use libsql-wal");
+    //         }
+    //     }
+    //
+    //     if self.use_custom_wal.is_some() {
+    //         if self.db_config.bottomless_replication.is_some() {
+    //             anyhow::bail!("bottomless not supported with custom WAL");
+    //         }
+    //         if self.rpc_client_config.is_some() {
+    //             anyhow::bail!("custom WAL not supported in replica mode");
+    //         }
+    //     }
+    //
+    //     let namespace_resolver = |path: &Path| {
+    //         NamespaceName::from_string(
+    //             path.parent()
+    //                 .unwrap()
+    //                 .file_name()
+    //                 .unwrap()
+    //                 .to_str()
+    //                 .unwrap()
+    //                 .to_string(),
+    //         )
+    //         .unwrap()
+    //         .into()
+    //     };
+    //
+    //     match self.use_custom_wal {
+    //         Some(CustomWAL::LibsqlWal) => {
+    //             let (sender, receiver) = tokio::sync::mpsc::channel(64);
+    //             let registry = Arc::new(WalRegistry::new(wal_path, NoStorage, sender)?);
+    //             let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
+    //             join_set.spawn(async move {
+    //                 checkpointer.run().await;
+    //                 Ok(())
+    //             });
+    //
+    //             let wal = LibsqlWalManager::new(registry.clone(), Arc::new(namespace_resolver));
+    //             let shutdown_notify = self.shutdown.clone();
+    //             let shutdown_fut = Box::pin(async move {
+    //                 shutdown_notify.notified().await;
+    //                 registry.shutdown().await?;
+    //                 Ok(())
+    //             });
+    //
+    //             tracing::info!("using libsql wal");
+    //             Ok((Arc::new(move || EitherWAL::B(wal.clone())), shutdown_fut))
+    //         }
+    //         #[cfg(feature = "durable-wal")]
+    //         Some(CustomWAL::DurableWal) => {
+    //             tracing::info!("using durable wal");
+    //             let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
+    //             let wal = DurableWalManager::new(
+    //                 lock_manager,
+    //                 namespace_resolver,
+    //                 self.storage_server_address.clone(),
+    //             );
+    //             Ok((
+    //                 Arc::new(move || EitherWAL::C(wal.clone())),
+    //                 Box::pin(ready(Ok(()))),
+    //             ))
+    //         }
+    //         None => {
+    //             tracing::info!("using sqlite3 wal");
+    //             Ok((
+    //                 Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+    //                 Box::pin(ready(Ok(()))),
+    //             ))
+    //         }
+    //     }
+    // }
 
-        if self.use_custom_wal.is_some() {
-            if self.db_config.bottomless_replication.is_some() {
-                anyhow::bail!("bottomless not supported with custom WAL");
-            }
-            if self.rpc_client_config.is_some() {
-                anyhow::bail!("custom WAL not supported in replica mode");
-            }
-        }
-
-        let namespace_resolver = |path: &Path| {
-            NamespaceName::from_string(
-                path.parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-            )
-            .unwrap()
-            .into()
-        };
-
-        match self.use_custom_wal {
-            Some(CustomWAL::LibsqlWal) => {
-                let (sender, receiver) = tokio::sync::mpsc::channel(64);
-                let registry = Arc::new(WalRegistry::new(wal_path, NoStorage, sender)?);
-                let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
-                join_set.spawn(async move {
-                    checkpointer.run().await;
-                    Ok(())
-                });
-
-                let wal = LibsqlWalManager::new(registry.clone(), Arc::new(namespace_resolver));
-                let shutdown_notify = self.shutdown.clone();
-                let shutdown_fut = Box::pin(async move {
-                    shutdown_notify.notified().await;
-                    registry.shutdown().await?;
-                    Ok(())
-                });
-
-                tracing::info!("using libsql wal");
-                Ok((Arc::new(move || EitherWAL::B(wal.clone())), shutdown_fut))
-            }
-            #[cfg(feature = "durable-wal")]
-            Some(CustomWAL::DurableWal) => {
-                tracing::info!("using durable wal");
-                let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
-                let wal = DurableWalManager::new(
-                    lock_manager,
-                    namespace_resolver,
-                    self.storage_server_address.clone(),
-                );
-                Ok((
-                    Arc::new(move || EitherWAL::C(wal.clone())),
-                    Box::pin(ready(Ok(()))),
-                ))
-            }
-            None => {
-                tracing::info!("using sqlite3 wal");
-                Ok((
-                    Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
-                    Box::pin(ready(Ok(()))),
-                ))
-            }
+    async fn get_client_config(&self) -> anyhow::Result<Option<(Channel, hyper::Uri)>> {
+        match self.rpc_client_config {
+            Some(ref config) => Ok(Some(config.configure().await?)),
+            None => Ok(None),
         }
     }
 }

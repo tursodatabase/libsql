@@ -327,6 +327,7 @@ impl NamespaceStore {
     where
         Fun: FnOnce(&Namespace) -> R,
     {
+    dbg!();
         if namespace != NamespaceName::default()
             && !self.inner.metadata.exists(&namespace)
             && !self.inner.allow_lazy_creation
@@ -334,6 +335,7 @@ impl NamespaceStore {
             return Err(Error::NamespaceDoesntExist(namespace.to_string()));
         }
 
+    dbg!();
         let f = {
             let name = namespace.clone();
             move |ns: NamespaceEntry| async move {
@@ -346,7 +348,9 @@ impl NamespaceStore {
             }
         };
 
+    dbg!();
         let handle = self.inner.metadata.handle(namespace.to_owned());
+    dbg!();
         f(self
             .load_namespace(&namespace, handle, RestoreOption::Latest)
             .await?)
@@ -373,6 +377,7 @@ impl NamespaceStore {
         config: MetaStoreHandle,
         restore_option: RestoreOption,
     ) -> crate::Result<Namespace> {
+            dbg!();
         let ns = self
             .get_configurator(&config.get())
             .setup(
@@ -386,6 +391,7 @@ impl NamespaceStore {
             )
             .await?;
 
+            dbg!();
         Ok(ns)
     }
 
@@ -395,13 +401,17 @@ impl NamespaceStore {
         db_config: MetaStoreHandle,
         restore_option: RestoreOption,
     ) -> crate::Result<NamespaceEntry> {
+        dbg!();
         let init = async {
+            dbg!();
             let ns = self
                 .make_namespace(namespace, db_config, restore_option)
                 .await?;
+            dbg!();
             Ok(Some(ns))
         };
 
+        dbg!();
         let before_load = Instant::now();
         let ns = self
             .inner
@@ -410,7 +420,8 @@ impl NamespaceStore {
                 namespace.clone(),
                 init.map_ok(|ns| Arc::new(RwLock::new(ns))),
             )
-            .await?;
+            .await.map_err(|e| dbg!(e))?;
+        dbg!();
         NAMESPACE_LOAD_LATENCY.record(before_load.elapsed());
 
         Ok(ns)

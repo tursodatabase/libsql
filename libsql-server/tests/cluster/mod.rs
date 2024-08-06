@@ -149,23 +149,29 @@ fn sync_many_replica() {
     let mut sim = Builder::new()
         .simulation_duration(Duration::from_secs(1000))
         .build();
+    dbg!();
     make_cluster(&mut sim, NUM_REPLICA, true);
+    dbg!();
     sim.client("client", async {
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
+    dbg!();
         conn.execute("create table test (x)", ()).await?;
+    dbg!();
         conn.execute("insert into test values (42)", ()).await?;
+    dbg!();
 
         async fn get_frame_no(url: &str) -> Option<u64> {
             let client = Client::new();
+            dbg!();
             Some(
-                client
-                    .get(url)
-                    .await
-                    .unwrap()
-                    .json::<serde_json::Value>()
-                    .await
+                dbg!(client
+                 .get(url)
+                 .await
+                 .unwrap()
+                 .json::<serde_json::Value>()
+                 .await)
                     .unwrap()
                     .get("replication_index")?
                     .as_u64()
@@ -173,6 +179,7 @@ fn sync_many_replica() {
             )
         }
 
+    dbg!();
         let primary_fno = loop {
             if let Some(fno) = get_frame_no("http://primary:9090/v1/namespaces/default/stats").await
             {
@@ -180,13 +187,15 @@ fn sync_many_replica() {
             }
         };
 
+    dbg!();
         // wait for all replicas to sync
         let mut join_set = JoinSet::new();
         for i in 0..NUM_REPLICA {
             join_set.spawn(async move {
                 let uri = format!("http://replica{i}:9090/v1/namespaces/default/stats");
+                dbg!();
                 loop {
-                    if let Some(replica_fno) = get_frame_no(&uri).await {
+                    if let Some(replica_fno) = dbg!(get_frame_no(&uri).await) {
                         if replica_fno == primary_fno {
                             break;
                         }
@@ -196,8 +205,10 @@ fn sync_many_replica() {
             });
         }
 
+    dbg!();
         while join_set.join_next().await.is_some() {}
 
+    dbg!();
         for i in 0..NUM_REPLICA {
             let db = Database::open_remote_with_connector(
                 format!("http://replica{i}:8080"),
@@ -212,8 +223,10 @@ fn sync_many_replica() {
             ));
         }
 
+    dbg!();
         let client = Client::new();
 
+    dbg!();
         let stats = client
             .get("http://primary:9090/v1/namespaces/default/stats")
             .await?
@@ -221,12 +234,14 @@ fn sync_many_replica() {
             .await
             .unwrap();
 
+    dbg!();
         let stat = stats
             .get("embedded_replica_frames_replicated")
             .unwrap()
             .as_u64()
             .unwrap();
 
+    dbg!();
         assert_eq!(stat, 0);
 
         Ok(())
