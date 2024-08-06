@@ -49,11 +49,6 @@
 ** VectorIdxParams utilities
 ****************************************************************************/
 
-// VACUUM creates tables and indices first and only then populate data
-// we need to ignore inserts from 'INSERT INTO vacuum.t SELECT * FROM t' statements because
-// all shadow tables will be populated by VACUUM process during regular process of table copy
-#define IsVacuum(db) ((db->mDbFlags&DBFLAG_Vacuum)!=0)
-
 void vectorIdxParamsInit(VectorIdxParams *pParams, u8 *pBinBuf, int nBinSize) {
   assert( nBinSize <= VECTOR_INDEX_PARAMS_BUF_SIZE );
 
@@ -772,10 +767,6 @@ int vectorIndexDrop(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
   // this is done to prevent unrecoverable situations where index were dropped but index parameters deletion failed and second attempt will fail on first step
   int rcIdx, rcParams;
 
-  if( IsVacuum(db) ){
-    return SQLITE_OK;
-  }
-
   assert( zDbSName != NULL );
 
   rcIdx = diskAnnDropIndex(db, zDbSName, zIdxName);
@@ -786,10 +777,6 @@ int vectorIndexDrop(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
 int vectorIndexClear(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
   assert( zDbSName != NULL );
 
-  if( IsVacuum(db) ){
-    return SQLITE_OK;
-  }
-
   return diskAnnClearIndex(db, zDbSName, zIdxName);
 }
 
@@ -799,7 +786,7 @@ int vectorIndexClear(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
  * this made intentionally in order to natively support upload of SQLite dumps
  *
  * dump populates tables first and create indices after
- * so we must omit them because shadow tables already filled
+ * so we must omit index refill setp because shadow tables already filled
  *
  * 1. in case of any error                                        :-1 returned (and pParse errMsg is populated with some error message)
  * 2. if vector index must not be created                         : 0 returned
@@ -816,10 +803,6 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
   int dims, type;
   int hasLibsqlVectorIdxFn = 0, hasCollation = 0;
   const char *pzErrMsg;
-
-  if( IsVacuum(pParse->db) ){
-    return CREATE_IGNORE;
-  }
 
   assert( zDbSName != NULL );
 
@@ -973,7 +956,6 @@ int vectorIndexSearch(
   VectorIdxParams idxParams;
   vectorIdxParamsInit(&idxParams, NULL, 0);
 
-  assert( !IsVacuum(db) );
   assert( zDbSName != NULL );
 
   if( argc != 3 ){
@@ -1058,10 +1040,6 @@ int vectorIndexInsert(
   int rc;
   VectorInRow vectorInRow;
 
-  if( IsVacuum(pCur->db) ){
-    return SQLITE_OK;
-  }
-
   rc = vectorInRowAlloc(pCur->db, pRecord, &vectorInRow, pzErrMsg);
   if( rc != SQLITE_OK ){
     return rc;
@@ -1080,10 +1058,6 @@ int vectorIndexDelete(
   char **pzErrMsg
 ){
   VectorInRow payload;
-
-  if( IsVacuum(pCur->db) ){
-    return SQLITE_OK;
-  }
 
   payload.pVector = NULL;
   payload.nKeys = r->nField - 1;
