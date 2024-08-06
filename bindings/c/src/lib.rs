@@ -34,14 +34,32 @@ unsafe fn set_err_msg(msg: String, output: *mut *const std::ffi::c_char) {
 #[no_mangle]
 pub unsafe extern "C" fn libsql_sync(
     db: libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let db = db.get_ref();
+    match RT.block_on(db.sync()) {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err_msg(format!("Error syncing database: {e}"), out_err_msg);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_sync2(
+    db: libsql_database_t,
     out_replicated: *mut replicated,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
     let db = db.get_ref();
     match RT.block_on(db.sync()) {
         Ok(replicated) => {
-            (*out_replicated).frame_no = replicated.frame_no().unwrap_or(0) as usize;
-            (*out_replicated).frames_synced = replicated.frames_synced() as usize;
+            if !out_replicated.is_null() {
+                (*out_replicated).frame_no = replicated.frame_no().unwrap_or(0) as i32;
+                (*out_replicated).frames_synced = replicated.frames_synced() as i32;
+            }
+
             0
         }
         Err(e) => {

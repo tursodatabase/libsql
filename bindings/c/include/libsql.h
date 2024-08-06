@@ -28,8 +28,8 @@ typedef struct libsql_stmt libsql_stmt;
 typedef const libsql_database *libsql_database_t;
 
 typedef struct {
-  uintptr_t frame_no;
-  uintptr_t frames_synced;
+  int frame_no;
+  int frames_synced;
 } replicated;
 
 typedef struct {
@@ -61,7 +61,9 @@ typedef struct {
 extern "C" {
 #endif // __cplusplus
 
-int libsql_sync(libsql_database_t db, replicated *out_replicated, const char **out_err_msg);
+int libsql_sync(libsql_database_t db, const char **out_err_msg);
+
+int libsql_sync2(libsql_database_t db, replicated *out_replicated, const char **out_err_msg);
 
 int libsql_open_sync(const char *db_path,
                      const char *primary_url,

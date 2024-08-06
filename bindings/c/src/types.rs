@@ -117,8 +117,8 @@ impl From<&mut libsql_connection> for libsql_connection_t {
 
 #[repr(C)]
 pub struct replicated {
-    pub frame_no: usize,
-    pub frames_synced: usize,
+    pub frame_no: std::ffi::c_int,
+    pub frames_synced: std::ffi::c_int,
 }
 
 pub struct stmt {
