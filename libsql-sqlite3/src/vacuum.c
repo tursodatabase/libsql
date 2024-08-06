@@ -314,7 +314,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
         "SELECT'INSERT INTO vacuum_db.'||quote(name)"
         "||' SELECT*FROM\"%w\".'||quote(name)"
         "FROM vacuum_db.sqlite_schema "
-        "WHERE type='table'AND coalesce(rootpage,1)>0 AND name",
+        "WHERE type='table'AND coalesce(rootpage,1)>0",
         zDbMain
     );
   }
