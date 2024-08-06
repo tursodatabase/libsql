@@ -5321,6 +5321,8 @@ int sqlite3AddInt64(i64*,i64);
 int sqlite3SubInt64(i64*,i64);
 int sqlite3MulInt64(i64*,i64);
 int sqlite3AbsInt32(int);
+int sqlite3PopCount32(u32);
+int sqlite3PopCount64(u64);
 #ifdef SQLITE_ENABLE_8_3_NAMES
 void sqlite3FileSuffix3(const char*, char*);
 #else

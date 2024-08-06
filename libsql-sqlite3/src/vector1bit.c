@@ -70,38 +70,27 @@ size_t vector1BitSerializeToBlob(
   return (pVector->dims + 7) / 8;
 }
 
-// [sum(map(int, bin(i)[2:])) for i in range(256)]
-static int BitsCount[256] = {
-  0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
-  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-  4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
-};
-
 int vector1BitDistanceHamming(const Vector *v1, const Vector *v2){
   int diff = 0;
-  u8 *e1 = v1->data;
-  u8 *e2 = v2->data;
-  int i;
+  u8 *e1U8 = v1->data;
+  u32 *e1U32 = v1->data;
+  u8 *e2U8 = v2->data;
+  u32 *e2U32 = v2->data;
+  int i, len8, len32, offset8;
 
   assert( v1->dims == v2->dims );
   assert( v1->type == VECTOR_TYPE_1BIT );
   assert( v2->type == VECTOR_TYPE_1BIT );
 
-  for(i = 0; i < v1->dims; i += 8){
-    diff += BitsCount[e1[i/8] ^ e2[i/8]];
+  len8 = (v1->dims + 7) / 8;
+  len32 = v1->dims / 32;
+  offset8 = len32 * 4;
+
+  for(i = 0; i < len32; i++){
+    diff += sqlite3PopCount32(e1U32[i] ^ e2U32[i]);
+  }
+  for(i = offset8; i < len8; i++){
+    diff += sqlite3PopCount32(e1U8[i] ^ e2U8[i]);
   }
   return diff;
 }

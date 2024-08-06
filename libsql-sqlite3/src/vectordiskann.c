@@ -54,7 +54,7 @@
 #include "sqliteInt.h"
 #include "vectorIndexInt.h"
 
-#define SQLITE_VECTOR_TRACE
+// #define SQLITE_VECTOR_TRACE
 #if defined(SQLITE_DEBUG) && defined(SQLITE_VECTOR_TRACE)
 #define DiskAnnTrace(X) sqlite3DebugPrintf X;
 #else
