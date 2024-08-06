@@ -6,12 +6,11 @@ use tokio::task::JoinSet;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::connection_manager::InnerWalManager;
 use crate::database::{Database, SchemaDatabase};
+use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{
-    Namespace, NamespaceName, NamespaceStore,
-    ResetCb, ResolveNamespacePathFn, RestoreOption,
+    Namespace, NamespaceName, NamespaceStore, ResetCb, ResolveNamespacePathFn, RestoreOption,
 };
-use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::schema::SchedulerHandle;
 
 use super::helpers::{cleanup_primary, make_primary_connection_maker};
@@ -25,8 +24,18 @@ pub struct SchemaConfigurator {
 }
 
 impl SchemaConfigurator {
-    pub fn new(base: BaseNamespaceConfig, primary_config: PrimaryExtraConfig, make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>, migration_scheduler: SchedulerHandle) -> Self {
-        Self { base, primary_config, make_wal_manager, migration_scheduler }
+    pub fn new(
+        base: BaseNamespaceConfig,
+        primary_config: PrimaryExtraConfig,
+        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+        migration_scheduler: SchedulerHandle,
+    ) -> Self {
+        Self {
+            base,
+            primary_config,
+            make_wal_manager,
+            migration_scheduler,
+        }
     }
 }
 
@@ -58,7 +67,7 @@ impl ConfigureNamespace for SchemaConfigurator {
                 &mut join_set,
                 resolve_attach_path,
                 broadcaster,
-                self.make_wal_manager.clone()
+                self.make_wal_manager.clone(),
             )
             .await?;
 
@@ -94,7 +103,8 @@ impl ConfigureNamespace for SchemaConfigurator {
                 db_config,
                 prune_all,
                 bottomless_db_id_init,
-            ).await
+            )
+            .await
         })
     }
 
@@ -112,9 +122,10 @@ impl ConfigureNamespace for SchemaConfigurator {
             from_config,
             to_ns,
             to_config,
-            timestamp, 
+            timestamp,
             store,
             &self.primary_config,
-            self.base.base_path.clone()))
+            self.base.base_path.clone(),
+        ))
     }
 }

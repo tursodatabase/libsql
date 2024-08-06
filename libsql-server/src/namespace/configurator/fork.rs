@@ -58,7 +58,7 @@ pub(super) async fn fork(
         Database::Schema(db) => db.wal_wrapper.wrapper().logger(),
         _ => {
             return Err(crate::Error::Fork(ForkError::Internal(anyhow::Error::msg(
-                            "Invalid source database type for fork",
+                "Invalid source database type for fork",
             ))));
         }
     };
@@ -114,7 +114,7 @@ pub struct ForkTask {
     pub to_namespace: NamespaceName,
     pub to_config: MetaStoreHandle,
     pub restore_to: Option<PointInTimeRestore>,
-    pub store: NamespaceStore
+    pub store: NamespaceStore,
 }
 
 pub struct PointInTimeRestore {
@@ -156,7 +156,8 @@ impl ForkTask {
         let dest_path = self.base_path.join("dbs").join(self.to_namespace.as_str());
         tokio::fs::rename(temp_dir.path(), dest_path).await?;
 
-        self.store.make_namespace(&self.to_namespace, self.to_config, RestoreOption::Latest)
+        self.store
+            .make_namespace(&self.to_namespace, self.to_config, RestoreOption::Latest)
             .await
             .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
     }

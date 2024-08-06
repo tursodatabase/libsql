@@ -140,12 +140,10 @@ pub(super) async fn handle_stats<C>(
     State(app_state): State<Arc<AppState<C>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<Json<StatsResponse>> {
-    dbg!();
     let stats = app_state
         .namespaces
         .stats(NamespaceName::from_string(namespace)?)
         .await?;
-    dbg!();
     let resp: StatsResponse = stats.as_ref().into();
 
     Ok(Json(resp))

@@ -6,26 +6,29 @@ use std::time::Duration;
 use anyhow::Context as _;
 use bottomless::replicator::Options;
 use bytes::Bytes;
+use enclose::enclose;
 use futures::Stream;
 use libsql_sys::wal::Sqlite3WalManager;
 use tokio::io::AsyncBufReadExt as _;
 use tokio::sync::watch;
 use tokio::task::JoinSet;
 use tokio_util::io::StreamReader;
-use enclose::enclose;
 
 use crate::connection::config::DatabaseConfig;
 use crate::connection::connection_manager::InnerWalManager;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::{Connection as _, MakeConnection as _};
+use crate::database::{PrimaryConnection, PrimaryConnectionMaker};
 use crate::error::LoadDumpError;
+use crate::namespace::broadcasters::BroadcasterHandle;
+use crate::namespace::meta_store::MetaStoreHandle;
+use crate::namespace::replication_wal::{make_replication_wal_wrapper, ReplicationWalWrapper};
+use crate::namespace::{
+    NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName, ResolveNamespacePathFn,
+    RestoreOption,
+};
 use crate::replication::{FrameNo, ReplicationLogger};
 use crate::stats::Stats;
-use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName, ResolveNamespacePathFn, RestoreOption};
-use crate::namespace::replication_wal::{make_replication_wal_wrapper, ReplicationWalWrapper};
-use crate::namespace::meta_store::MetaStoreHandle;
-use crate::namespace::broadcasters::BroadcasterHandle;
-use crate::database::{PrimaryConnection, PrimaryConnectionMaker};
 use crate::{StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
 
 use super::{BaseNamespaceConfig, PrimaryExtraConfig};
@@ -74,8 +77,7 @@ pub(super) async fn make_primary_connection_maker(
             tracing::debug!("Checkpointed before initializing bottomless");
             let options = make_bottomless_options(options, bottomless_db_id, name.clone());
             let (replicator, did_recover) =
-                init_bottomless_replicator(db_path.join("data"), options, &restore_option)
-                .await?;
+                init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
             tracing::debug!("Completed init of bottomless replicator");
             is_dirty |= did_recover;
             Some(replicator)
@@ -93,14 +95,14 @@ pub(super) async fn make_primary_connection_maker(
     };
 
     let logger = Arc::new(ReplicationLogger::open(
-            &db_path,
-            primary_config.max_log_size,
-            primary_config.max_log_duration,
-            is_dirty,
-            auto_checkpoint,
-            primary_config.scripted_backup.clone(),
-            name.clone(),
-            None,
+        &db_path,
+        primary_config.max_log_size,
+        primary_config.max_log_duration,
+        is_dirty,
+        auto_checkpoint,
+        primary_config.scripted_backup.clone(),
+        name.clone(),
+        None,
     )?);
 
     tracing::debug!("sending stats");
@@ -113,7 +115,7 @@ pub(super) async fn make_primary_connection_maker(
         name.clone(),
         logger.new_frame_notifier.subscribe(),
     )
-        .await?;
+    .await?;
 
     tracing::debug!("Making replication wal wrapper");
     let wal_wrapper = make_replication_wal_wrapper(bottomless_replicator, logger.clone());
@@ -136,13 +138,13 @@ pub(super) async fn make_primary_connection_maker(
         resolve_attach_path,
         make_wal_manager.clone(),
     )
-        .await?
-        .throttled(
-            base_config.max_concurrent_connections.clone(),
-            Some(DB_CREATE_TIMEOUT),
-            base_config.max_total_response_size,
-            base_config.max_concurrent_requests,
-        );
+    .await?
+    .throttled(
+        base_config.max_concurrent_connections.clone(),
+        Some(DB_CREATE_TIMEOUT),
+        base_config.max_total_response_size,
+        base_config.max_concurrent_requests,
+    );
 
     tracing::debug!("Completed opening libsql connection");
 
@@ -356,10 +358,7 @@ pub(super) async fn make_stats(
         }
     });
 
-    join_set.spawn(run_storage_monitor(
-        db_path.into(),
-        Arc::downgrade(&stats),
-    ));
+    join_set.spawn(run_storage_monitor(db_path.into(), Arc::downgrade(&stats)));
 
     tracing::debug!("done sending stats, and creating bg tasks");
 
@@ -369,10 +368,7 @@ pub(super) async fn make_stats(
 // Periodically check the storage used by the database and save it in the Stats structure.
 // TODO: Once we have a separate fiber that does WAL checkpoints, running this routine
 // right after checkpointing is exactly where it should be done.
-async fn run_storage_monitor(
-    db_path: PathBuf,
-    stats: Weak<Stats>,
-) -> anyhow::Result<()> {
+async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Result<()> {
     // on initialization, the database file doesn't exist yet, so we wait a bit for it to be
     // created
     tokio::time::sleep(Duration::from_secs(1)).await;

@@ -591,7 +591,6 @@ where
                 .configure(&mut join_set);
             }
             DatabaseKind::Replica => {
-                dbg!();
                 let (channel, uri) = client_config.clone().unwrap();
                 let replication_svc = ReplicationLogProxyService::new(channel.clone(), uri.clone());
                 let proxy_svc = ReplicaProxyService::new(
@@ -611,7 +610,6 @@ where
                     service_shutdown.clone(),
                 )
                 .configure(&mut join_set);
-                dbg!();
             }
         };
 

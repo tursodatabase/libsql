@@ -13,13 +13,17 @@ use crate::StatsSender;
 
 use super::broadcasters::BroadcasterHandle;
 use super::meta_store::MetaStoreHandle;
-use super::{Namespace, NamespaceBottomlessDbIdInit, NamespaceName, NamespaceStore, ResetCb, ResolveNamespacePathFn, RestoreOption};
+use super::{
+    Namespace, NamespaceBottomlessDbIdInit, NamespaceName, NamespaceStore, ResetCb,
+    ResolveNamespacePathFn, RestoreOption,
+};
 
+pub mod fork;
 mod helpers;
+mod libsql_wal_replica;
 mod primary;
 mod replica;
 mod schema;
-pub mod fork;
 
 pub use primary::PrimaryConfigurator;
 pub use replica::ReplicaConfigurator;
@@ -68,12 +72,18 @@ impl NamespaceConfigurators {
         }
     }
 
-    pub fn with_primary(&mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> &mut Self {
+    pub fn with_primary(
+        &mut self,
+        c: impl ConfigureNamespace + Send + Sync + 'static,
+    ) -> &mut Self {
         self.primary_configurator = Some(Box::new(c));
         self
     }
 
-    pub fn with_replica(&mut self, c: impl ConfigureNamespace + Send + Sync + 'static) -> &mut Self {
+    pub fn with_replica(
+        &mut self,
+        c: impl ConfigureNamespace + Send + Sync + 'static,
+    ) -> &mut Self {
         self.replica_configurator = Some(Box::new(c));
         self
     }

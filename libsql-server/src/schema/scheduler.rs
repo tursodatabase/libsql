@@ -830,16 +830,10 @@ mod test {
             .unwrap();
         let (sender, mut receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(
-            false,
-            false,
-            10,
-            meta_store,
-            config,
-            DatabaseKind::Primary
-        )
-        .await
-        .unwrap();
+        let store =
+            NamespaceStore::new(false, false, 10, meta_store, config, DatabaseKind::Primary)
+                .await
+                .unwrap();
         let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
             .await
             .unwrap();
@@ -961,16 +955,10 @@ mod test {
                 .unwrap();
             let (sender, mut receiver) = mpsc::channel(100);
             let config = make_config(sender.clone().into(), tmp.path());
-            let store = NamespaceStore::new(
-                false,
-                false,
-                10,
-                meta_store,
-                config,
-                DatabaseKind::Primary
-            )
-            .await
-            .unwrap();
+            let store =
+                NamespaceStore::new(false, false, 10, meta_store, config, DatabaseKind::Primary)
+                    .await
+                    .unwrap();
             let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
                 .await
                 .unwrap();
@@ -1044,16 +1032,10 @@ mod test {
             .unwrap();
         let (sender, _receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(
-            false,
-            false,
-            10,
-            meta_store,
-            config,
-            DatabaseKind::Primary,
-        )
-        .await
-        .unwrap();
+        let store =
+            NamespaceStore::new(false, false, 10, meta_store, config, DatabaseKind::Primary)
+                .await
+                .unwrap();
 
         store
             .with("ns".into(), |ns| {
@@ -1078,9 +1060,10 @@ mod test {
             .unwrap();
         let (sender, mut receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(false, false, 10, meta_store, config, DatabaseKind::Primary)
-            .await
-            .unwrap();
+        let store =
+            NamespaceStore::new(false, false, 10, meta_store, config, DatabaseKind::Primary)
+                .await
+                .unwrap();
         let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
             .await
             .unwrap();
@@ -1151,16 +1134,10 @@ mod test {
             .unwrap();
         let (sender, _receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
-        let store = NamespaceStore::new(
-            false,
-            false,
-            10,
-            meta_store,
-            config,
-            DatabaseKind::Primary
-        )
-        .await
-        .unwrap();
+        let store =
+            NamespaceStore::new(false, false, 10, meta_store, config, DatabaseKind::Primary)
+                .await
+                .unwrap();
         let scheduler = Scheduler::new(store.clone(), maker().unwrap())
             .await
             .unwrap();

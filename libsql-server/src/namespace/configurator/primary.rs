@@ -12,8 +12,8 @@ use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::namespace::configurator::helpers::make_primary_connection_maker;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{
-    Namespace, NamespaceBottomlessDbIdInit, NamespaceName, NamespaceStore,
-    ResetCb, ResolveNamespacePathFn, RestoreOption,
+    Namespace, NamespaceBottomlessDbIdInit, NamespaceName, NamespaceStore, ResetCb,
+    ResolveNamespacePathFn, RestoreOption,
 };
 use crate::run_periodic_checkpoint;
 use crate::schema::{has_pending_migration_task, setup_migration_table};
@@ -168,7 +168,8 @@ impl ConfigureNamespace for PrimaryConfigurator {
                 db_config,
                 prune_all,
                 bottomless_db_id_init,
-            ).await
+            )
+            .await
         })
     }
 
@@ -186,10 +187,10 @@ impl ConfigureNamespace for PrimaryConfigurator {
             from_config,
             to_ns,
             to_config,
-            timestamp, 
+            timestamp,
             store,
             &self.primary_config,
-            self.base.base_path.clone()))
+            self.base.base_path.clone(),
+        ))
     }
 }
-

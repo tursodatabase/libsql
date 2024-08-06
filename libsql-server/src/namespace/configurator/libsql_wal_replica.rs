@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use chrono::prelude::NaiveDateTime;
@@ -66,7 +66,7 @@ impl ConfigureNamespace for LibsqlWalReplicaConfigurator {
                 name.clone(),
                 applied_frame_no_receiver.clone(),
             )
-                .await?;
+            .await?;
 
             let connection_maker = MakeWriteProxyConn::new(
                 db_path.clone(),
@@ -84,13 +84,13 @@ impl ConfigureNamespace for LibsqlWalReplicaConfigurator {
                 resolve_attach_path,
                 self.make_wal_manager.clone(),
             )
-                .await?
-                .throttled(
-                    self.base.max_concurrent_connections.clone(),
-                    Some(DB_CREATE_TIMEOUT),
-                    self.base.max_total_response_size,
-                    self.base.max_concurrent_requests,
-                );
+            .await?
+            .throttled(
+                self.base.max_concurrent_connections.clone(),
+                Some(DB_CREATE_TIMEOUT),
+                self.base.max_total_response_size,
+                self.base.max_concurrent_requests,
+            );
 
             Ok(Namespace {
                 tasks: join_set,
