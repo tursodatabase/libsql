@@ -28,6 +28,7 @@ use auth::Auth;
 use config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
 };
+use futures::future::{pending, ready};
 use futures::Future;
 use http::user::UserApi;
 use hyper::client::HttpConnector;
@@ -40,6 +41,10 @@ use libsql_sys::wal::either::Either as EitherWAL;
 #[cfg(feature = "durable-wal")]
 use libsql_sys::wal::either::Either3 as EitherWAL;
 use libsql_sys::wal::Sqlite3WalManager;
+use libsql_wal::checkpointer::LibsqlCheckpointer;
+use libsql_wal::registry::WalRegistry;
+use libsql_wal::storage::NoStorage;
+use libsql_wal::wal::LibsqlWalManager;
 use namespace::meta_store::MetaStoreHandle;
 use namespace::NamespaceName;
 use net::Connector;
@@ -458,9 +463,10 @@ where
         let configurators = self
             .make_configurators(
                 base_config,
-                scripted_backup,
-                scheduler_sender.into(),
                 client_config.clone(),
+                &mut join_set,
+                scheduler_sender.into(),
+                scripted_backup,
             )
             .await?;
 
@@ -596,7 +602,6 @@ where
                     self.disable_namespaces,
                 );
 
-                dbg!();
                 self.make_services(
                     namespace_store.clone(),
                     idle_shutdown_kicker,
@@ -647,42 +652,125 @@ where
     async fn make_configurators(
         &self,
         base_config: BaseNamespaceConfig,
-        scripted_backup: Option<ScriptBackupManager>,
-        migration_scheduler_handle: SchedulerHandle,
         client_config: Option<(Channel, Uri)>,
+        join_set: &mut JoinSet<anyhow::Result<()>>,
+        migration_scheduler_handle: SchedulerHandle,
+        scripted_backup: Option<ScriptBackupManager>,
     ) -> anyhow::Result<NamespaceConfigurators> {
+        let wal_path = base_config.base_path.join("wals");
+        let enable_libsql_wal_test = {
+            let is_primary = self.rpc_server_config.is_some();
+            let is_libsql_wal_test = std::env::var("LIBSQL_WAL_TEST").is_ok();
+            is_primary && is_libsql_wal_test
+        };
+        let use_libsql_wal =
+            self.use_custom_wal == Some(CustomWAL::LibsqlWal) || enable_libsql_wal_test;
+        if !use_libsql_wal {
+            if wal_path.try_exists()? {
+                anyhow::bail!("database was previously setup to use libsql-wal");
+            }
+        }
+
+        if self.use_custom_wal.is_some() {
+            if self.db_config.bottomless_replication.is_some() {
+                anyhow::bail!("bottomless not supported with custom WAL");
+            }
+            if self.rpc_client_config.is_some() {
+                anyhow::bail!("custom WAL not supported in replica mode");
+            }
+        }
+
         match self.use_custom_wal {
-            Some(CustomWAL::LibsqlWal) => self.libsql_wal_configurators(),
+            Some(CustomWAL::LibsqlWal) => self.libsql_wal_configurators(
+                base_config,
+                client_config,
+                join_set,
+                migration_scheduler_handle,
+                scripted_backup,
+                wal_path,
+            ),
             #[cfg(feature = "durable-wal")]
             Some(CustomWAL::DurableWal) => self.durable_wal_configurators(
                 base_config,
-                scripted_backup,
-                migration_scheduler_handle,
                 client_config,
+                migration_scheduler_handle,
+                scripted_backup,
             ),
             None => {
                 self.legacy_configurators(
                     base_config,
-                    scripted_backup,
-                    migration_scheduler_handle,
                     client_config,
+                    migration_scheduler_handle,
+                    scripted_backup,
                 )
                 .await
             }
         }
     }
 
-    fn libsql_wal_configurators(&self) -> anyhow::Result<NamespaceConfigurators> {
-        todo!()
+    fn libsql_wal_configurators(
+        &self,
+        base_config: BaseNamespaceConfig,
+        client_config: Option<(Channel, Uri)>,
+        join_set: &mut JoinSet<anyhow::Result<()>>,
+        migration_scheduler_handle: SchedulerHandle,
+        scripted_backup: Option<ScriptBackupManager>,
+        wal_path: PathBuf,
+    ) -> anyhow::Result<NamespaceConfigurators> {
+        tracing::info!("using libsql wal");
+        let (sender, receiver) = tokio::sync::mpsc::channel(64);
+        let registry = Arc::new(WalRegistry::new(wal_path, NoStorage, sender)?);
+        let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
+        self.spawn_until_shutdown_on(join_set, async move {
+            checkpointer.run().await;
+            Ok(())
+        });
+
+        let namespace_resolver = |path: &Path| {
+            NamespaceName::from_string(
+                path.parent()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )
+            .unwrap()
+            .into()
+        };
+        let wal = LibsqlWalManager::new(registry.clone(), Arc::new(namespace_resolver));
+
+        self.spawn_until_shutdown_with_teardown(join_set, pending(), async move {
+            registry.shutdown().await?;
+            Ok(())
+        });
+
+        let make_wal_manager = Arc::new(move || EitherWAL::B(wal.clone()));
+        let mut configurators = NamespaceConfigurators::empty();
+
+        match client_config {
+            Some(_) => todo!("configure replica"),
+            // configure primary
+            None => self.configure_primary_common(
+                base_config,
+                &mut configurators,
+                make_wal_manager,
+                migration_scheduler_handle,
+                scripted_backup,
+            ),
+        }
+
+        Ok(configurators)
     }
 
     #[cfg(feature = "durable-wal")]
     fn durable_wal_configurators(
         &self,
         base_config: BaseNamespaceConfig,
-        scripted_backup: Option<ScriptBackupManager>,
-        migration_scheduler_handle: SchedulerHandle,
         client_config: Option<(Channel, Uri)>,
+        migration_scheduler_handle: SchedulerHandle,
+        scripted_backup: Option<ScriptBackupManager>,
     ) -> anyhow::Result<NamespaceConfigurators> {
         tracing::info!("using durable wal");
         let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
@@ -706,11 +794,11 @@ where
         );
         let make_wal_manager = Arc::new(move || EitherWAL::C(wal.clone()));
         self.configurators_common(
-            client_config,
             base_config,
+            client_config,
             make_wal_manager,
-            scripted_backup,
             migration_scheduler_handle,
+            scripted_backup,
         )
     }
 
@@ -718,10 +806,25 @@ where
     where
         F: Future<Output = anyhow::Result<()>> + Send + 'static,
     {
+        self.spawn_until_shutdown_with_teardown(join_set, fut, ready(Ok(())))
+    }
+
+    /// run the passed future until shutdown is called, then call the passed teardown future
+    fn spawn_until_shutdown_with_teardown<F, T>(
+        &self,
+        join_set: &mut JoinSet<anyhow::Result<()>>,
+        fut: F,
+        teardown: T,
+    ) where
+        F: Future<Output = anyhow::Result<()>> + Send + 'static,
+        T: Future<Output = anyhow::Result<()>> + Send + 'static,
+    {
         let shutdown = self.shutdown.clone();
         join_set.spawn(async move {
             tokio::select! {
-                _ = shutdown.notified() => Ok(()),
+                _ = shutdown.notified() => {
+                    teardown.await
+                },
                 ret = fut => ret
             }
         });
@@ -730,30 +833,29 @@ where
     async fn legacy_configurators(
         &self,
         base_config: BaseNamespaceConfig,
-        scripted_backup: Option<ScriptBackupManager>,
-        migration_scheduler_handle: SchedulerHandle,
         client_config: Option<(Channel, Uri)>,
+        migration_scheduler_handle: SchedulerHandle,
+        scripted_backup: Option<ScriptBackupManager>,
     ) -> anyhow::Result<NamespaceConfigurators> {
         let make_wal_manager = Arc::new(|| EitherWAL::A(Sqlite3WalManager::default()));
         self.configurators_common(
-            client_config,
             base_config,
+            client_config,
             make_wal_manager,
-            scripted_backup,
             migration_scheduler_handle,
+            scripted_backup,
         )
     }
 
     fn configurators_common(
         &self,
-        client_config: Option<(Channel, Uri)>,
         base_config: BaseNamespaceConfig,
+        client_config: Option<(Channel, Uri)>,
         make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
-        scripted_backup: Option<ScriptBackupManager>,
         migration_scheduler_handle: SchedulerHandle,
+        scripted_backup: Option<ScriptBackupManager>,
     ) -> anyhow::Result<NamespaceConfigurators> {
         let mut configurators = NamespaceConfigurators::empty();
-
         match client_config {
             // replica mode
             Some((channel, uri)) => {
@@ -762,34 +864,49 @@ where
                 configurators.with_replica(replica_configurator);
             }
             // primary mode
-            None => {
-                let primary_config = PrimaryExtraConfig {
-                    max_log_size: self.db_config.max_log_size,
-                    max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
-                    bottomless_replication: self.db_config.bottomless_replication.clone(),
-                    scripted_backup,
-                    checkpoint_interval: self.db_config.checkpoint_interval,
-                };
-
-                let primary_configurator = PrimaryConfigurator::new(
-                    base_config.clone(),
-                    primary_config.clone(),
-                    make_wal_manager.clone(),
-                );
-
-                let schema_configurator = SchemaConfigurator::new(
-                    base_config.clone(),
-                    primary_config,
-                    make_wal_manager.clone(),
-                    migration_scheduler_handle,
-                );
-
-                configurators.with_schema(schema_configurator);
-                configurators.with_primary(primary_configurator);
-            }
+            None => self.configure_primary_common(
+                base_config,
+                &mut configurators,
+                make_wal_manager,
+                migration_scheduler_handle,
+                scripted_backup,
+            ),
         }
 
         Ok(configurators)
+    }
+
+    fn configure_primary_common(
+        &self,
+        base_config: BaseNamespaceConfig,
+        configurators: &mut NamespaceConfigurators,
+        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+        migration_scheduler_handle: SchedulerHandle,
+        scripted_backup: Option<ScriptBackupManager>,
+    ) {
+        let primary_config = PrimaryExtraConfig {
+            max_log_size: self.db_config.max_log_size,
+            max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
+            bottomless_replication: self.db_config.bottomless_replication.clone(),
+            scripted_backup,
+            checkpoint_interval: self.db_config.checkpoint_interval,
+        };
+
+        let primary_configurator = PrimaryConfigurator::new(
+            base_config.clone(),
+            primary_config.clone(),
+            make_wal_manager.clone(),
+        );
+
+        let schema_configurator = SchemaConfigurator::new(
+            base_config.clone(),
+            primary_config,
+            make_wal_manager.clone(),
+            migration_scheduler_handle,
+        );
+
+        configurators.with_schema(schema_configurator);
+        configurators.with_primary(primary_configurator);
     }
 
     fn setup_shutdown(&self) -> Option<IdleShutdownKicker> {
