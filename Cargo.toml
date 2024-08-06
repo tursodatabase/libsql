@@ -19,6 +19,7 @@ members = [
   "libsql-wal",
   "libsql-storage",
   "libsql-storage-server",
+  "libsql-sync",
 ]
 
 exclude = [

@@ -13,6 +13,7 @@ thiserror = "1.0.40"
 futures = { version = "0.3.28", optional = true }
 libsql-sys = { version = "0.6", path = "../libsql-sys", optional = true }
 libsql-hrana = { version = "0.2", path = "../libsql-hrana", optional = true }
+libsql_sync = { version = "0.4", path = "../libsql-sync", optional = true }
 tokio = { version = "1.29.1", features = ["sync"], optional = true }
 tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
@@ -91,6 +92,7 @@ replication = [
   "dep:hyper-rustls",
   "dep:futures",
   "dep:libsql_replication",
+  "dep:libsql_sync",
 ]
 hrana = [
   "parser",

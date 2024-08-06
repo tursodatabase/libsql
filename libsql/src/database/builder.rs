@@ -12,6 +12,8 @@ use super::DbType;
 ///     it does no networking and does not connect to any remote database.
 /// - `new_remote_replica`/`RemoteReplica` creates an embedded replica database that will be able
 ///     to sync from the remote url and delegate writes to the remote primary.
+/// - `new_offline_replica`/`OfflineReplica` creates an embedded replica database that supports
+///     offline writes.
 /// - `new_local_replica`/`LocalReplica` creates an embedded replica similar to the remote version
 ///     except you must use `Database::sync_frames` to sync with the remote. This version also
 ///     includes the ability to delegate writes to a remote primary.
@@ -63,6 +65,30 @@ impl Builder<()> {
                     http_request_callback: None,
                     namespace: None
                 },
+            }
+        }
+
+        cfg_replication! {
+            /// Create a new offline embedded replica.
+            pub fn new_offline_replica(
+                path: impl AsRef<std::path::Path>,
+                url: String,
+                auth_token: String,
+            ) -> Builder<OfflineReplica> {
+                Builder {
+                    inner: OfflineReplica {
+                        path: path.as_ref().to_path_buf(),
+                        flags: crate::OpenFlags::default(),
+                        remote: Remote {
+                            url,
+                            auth_token,
+                            connector: None,
+                            version: None,
+                        },
+                        http_request_callback: None,
+                        namespace: None
+                    },
+                }
             }
         }
 
@@ -166,6 +192,15 @@ cfg_replication! {
         encryption_config: Option<EncryptionConfig>,
         read_your_writes: bool,
         sync_interval: Option<std::time::Duration>,
+        http_request_callback: Option<crate::util::HttpRequestCallback>,
+        namespace: Option<String>,
+    }
+
+    /// Remote replica configuration type in [`Builder`].
+    pub struct OfflineReplica {
+        path: std::path::PathBuf,
+        flags: crate::OpenFlags,
+        remote: Remote,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
         namespace: Option<String>,
     }
@@ -291,6 +326,90 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+            })
+        }
+    }
+
+    impl Builder<OfflineReplica> {
+        /// Provide a custom http connector that will be used to create http connections.
+        pub fn connector<C>(mut self, connector: C) -> Builder<OfflineReplica>
+        where
+            C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
+            C::Response: crate::util::Socket,
+            C::Future: Send + 'static,
+            C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+        {
+            self.inner.remote = self.inner.remote.connector(connector);
+            self
+        }
+
+        pub fn http_request_callback<F>(mut self, f: F) -> Builder<OfflineReplica>
+        where
+            F: Fn(&mut http::Request<()>) + Send + Sync + 'static
+        {
+            self.inner.http_request_callback = Some(std::sync::Arc::new(f));
+            self
+
+        }
+
+        /// Set the namespace that will be communicated to remote replica in the http header.
+        pub fn namespace(mut self, namespace: impl Into<String>) -> Builder<OfflineReplica>
+        {
+            self.inner.namespace = Some(namespace.into());
+            self
+        }
+
+        #[doc(hidden)]
+        pub fn version(mut self, version: String) -> Builder<OfflineReplica> {
+            self.inner.remote = self.inner.remote.version(version);
+            self
+        }
+
+        /// Build the remote embedded replica database.
+        pub async fn build(self) -> Result<Database> {
+            let OfflineReplica {
+                path,
+                flags,
+                remote:
+                    Remote {
+                        url,
+                        auth_token,
+                        connector,
+                        version,
+                    },
+                http_request_callback,
+                namespace
+            } = self.inner;
+
+            let connector = if let Some(connector) = connector {
+                connector
+            } else {
+                let https = super::connector()?;
+                use tower::ServiceExt;
+
+                let svc = https
+                    .map_err(|e| e.into())
+                    .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
+
+                crate::util::ConnectorService::new(svc)
+            };
+
+            let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
+
+            let db = crate::local::Database::open_local_with_offline_writes(
+                connector,
+                path,
+                flags,
+                url,
+                auth_token,
+                version,
+                http_request_callback,
+                namespace,
+            )
+            .await?;
+
+            Ok(Database {
+                db_type: DbType::Offline { db },
             })
         }
     }
