@@ -15,6 +15,22 @@ const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
 const LIBSQL_PAGE_SIZE: u16 = 4096;
 const LIBSQL_WAL_VERSION: u16 = 1;
 
+use zerocopy::byteorder::big_endian::{U16 as bu16, U64 as bu64};
+/// LibsqlFooter is located at the end of the libsql file. I contains libsql specific metadata,
+/// while remaining fully compatible with sqlite (which just ignores that footer)
+///
+/// The fields are in big endian to remain coherent with sqlite
+#[derive(Copy, Clone, Debug, zerocopy::FromBytes, zerocopy::FromZeroes, zerocopy::AsBytes)]
+#[repr(C)]
+pub struct LibsqlFooter {
+    pub magic: bu64,
+    pub version: bu16,
+    /// Replication index checkpointed into this file.
+    /// only valid if there are no outstanding segments to checkpoint, since a checkpoint could be
+    /// partial.
+    pub replication_index: bu64,
+}
+
 #[cfg(any(debug_assertions, test))]
 pub mod test {
     use std::fs::OpenOptions;

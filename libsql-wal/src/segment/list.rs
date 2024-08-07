@@ -15,6 +15,7 @@ use crate::error::Result;
 use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
 use crate::io::FileExt;
 use crate::segment::Frame;
+use crate::{LibsqlFooter, LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::Segment;
 
@@ -157,6 +158,21 @@ where
             buf = read_buf.into_inner();
         }
 
+        // update the footer at the end of the db file.
+        let footer = LibsqlFooter {
+            magic: LIBSQL_MAGIC.into(),
+            version: LIBSQL_WAL_VERSION.into(),
+            replication_index: last_replication_index.into(),
+        };
+
+        let footer_offset = size_after as usize * LIBSQL_PAGE_SIZE as usize;
+        let (_, ret) = db_file
+            .write_all_at_async(ZeroCopyBuf::new_init(footer), footer_offset as u64)
+            .await;
+        ret?;
+
+        // todo: truncate if necessary
+
         //// todo: make async
         db_file.sync_all()?;
 
@@ -185,7 +201,7 @@ where
         Ok(Some(last_replication_index))
     }
 
-    /// returnsstream pages from the sealed segment list, and what's the lowest replication index
+    /// returns a stream of pages from the sealed segment list, and what's the lowest replication index
     /// that was covered. If the returned index is less than start frame_no, the missing frames
     /// must be read somewhere else.
     pub async fn stream_pages_from<'a>(
