@@ -399,7 +399,7 @@ where
         impl Drop for Bomb {
             fn drop(&mut self) {
                 if !self.defused {
-                    tracing::debug!("cancelling request");
+                    tracing::trace!("cancelling request");
                     self.canceled.store(true, Ordering::Relaxed);
                 }
             }
@@ -512,7 +512,7 @@ impl<W: Wal> Connection<W> {
             Some(move || {
                 let canceled = canceled.load(Ordering::Relaxed);
                 if canceled {
-                    tracing::debug!("request canceled");
+                    tracing::trace!("request canceled");
                 }
                 canceled
             })
