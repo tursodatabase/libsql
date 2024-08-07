@@ -135,7 +135,7 @@ impl RemoteClient {
             (hello_fut.await, None)
         };
         self.prefetched_batch_log_entries = if let Ok(true) = hello.0 {
-            tracing::warn!(
+            tracing::debug!(
                 "Frames prefetching failed because of new session token returned by handshake"
             );
             None
