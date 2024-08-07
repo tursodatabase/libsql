@@ -15,7 +15,9 @@ use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 
 use crate::error::Error;
-use crate::metrics::{DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT};
+use crate::metrics::{
+    DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, QUERY_CANCELED, VACUUM_COUNT, WAL_CHECKPOINT_COUNT,
+};
 use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::ResolveNamespacePathFn;
@@ -512,6 +514,7 @@ impl<W: Wal> Connection<W> {
             Some(move || {
                 let canceled = canceled.load(Ordering::Relaxed);
                 if canceled {
+                    QUERY_CANCELED.increment(1);
                     tracing::trace!("request canceled");
                 }
                 canceled

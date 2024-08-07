@@ -153,3 +153,8 @@ pub static LISTEN_EVENTS_DROPPED: Lazy<Counter> = Lazy::new(|| {
     describe_counter!(NAME, "Number of listen events dropped");
     register_counter!(NAME)
 });
+pub static QUERY_CANCELED: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_query_canceled";
+    describe_counter!(NAME, "Number of canceled queries");
+    register_counter!(NAME)
+});
