@@ -413,14 +413,15 @@ where
             cancelled
         };
 
+        PROGRAM_EXEC_COUNT.increment(1);
+
+        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
+
+        // create the bomb right before spawning the blocking task.
         let mut bomb = Bomb {
             canceled,
             defused: false,
         };
-
-        PROGRAM_EXEC_COUNT.increment(1);
-
-        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
         let conn = self.inner.clone();
         let ret = BLOCKING_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
