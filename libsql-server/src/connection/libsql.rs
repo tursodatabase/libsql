@@ -391,14 +391,43 @@ where
         ctx: RequestContext,
         builder: B,
     ) -> Result<(B, Program)> {
+        struct Bomb {
+            canceled: Arc<AtomicBool>,
+            defused: bool,
+        }
+
+        impl Drop for Bomb {
+            fn drop(&mut self) {
+                if !self.defused {
+                    tracing::debug!("cancelling request");
+                    self.canceled.store(true, Ordering::Relaxed);
+                }
+            }
+        }
+
+        let canceled = {
+            let cancelled = self.inner.lock().canceled.clone();
+            cancelled.store(false, Ordering::Relaxed);
+            cancelled
+        };
+
+        let mut bomb = Bomb {
+            canceled,
+            defused: false,
+        };
+
         PROGRAM_EXEC_COUNT.increment(1);
 
         check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
         let conn = self.inner.clone();
-        BLOCKING_RT
+        let ret = BLOCKING_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
             .await
-            .unwrap()
+            .unwrap();
+
+        bomb.defused = true;
+
+        ret
     }
 }
 
@@ -413,6 +442,7 @@ pub(super) struct Connection<W> {
     forced_rollback: bool,
     broadcaster: BroadcasterHandle,
     hooked: bool,
+    canceled: Arc<AtomicBool>,
 }
 
 fn update_stats(
@@ -475,6 +505,19 @@ impl<W: Wal> Connection<W> {
             );
         }
 
+        let canceled = Arc::new(AtomicBool::new(false));
+
+        conn.progress_handler(100, {
+            let canceled = canceled.clone();
+            Some(move || {
+                let canceled = canceled.load(Ordering::Relaxed);
+                if canceled {
+                    tracing::debug!("request canceled");
+                }
+                canceled
+            })
+        });
+
         let this = Self {
             conn,
             stats,
@@ -486,6 +529,7 @@ impl<W: Wal> Connection<W> {
             forced_rollback: false,
             broadcaster,
             hooked: false,
+            canceled,
         };
 
         for ext in extensions.iter() {
@@ -795,6 +839,7 @@ mod test {
             forced_rollback: false,
             broadcaster: Default::default(),
             hooked: false,
+            canceled: Arc::new(false.into()),
         };
 
         let conn = Arc::new(Mutex::new(conn));
