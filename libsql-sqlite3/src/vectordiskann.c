@@ -574,8 +574,8 @@ static int diskAnnSelectRandomShadowRow(const DiskAnnIndex *pIndex, u64 *pRowid)
 
   zSql = sqlite3MPrintf(
     pIndex->db,
-    "SELECT rowid FROM \"%w\".%s LIMIT 1 OFFSET ABS(RANDOM()) %% MAX((SELECT COUNT(*) FROM %s), 1)",
-    pIndex->zDbSName, pIndex->zShadow, pIndex->zShadow
+    "SELECT rowid FROM \"%w\".%s LIMIT 1 OFFSET ABS(RANDOM()) %% MAX((SELECT COUNT(*) FROM \"%w\".%s), 1)",
+    pIndex->zDbSName, pIndex->zShadow, pIndex->zDbSName, pIndex->zShadow
   );
   if( zSql == NULL ){
     rc = SQLITE_NOMEM_BKPT;
