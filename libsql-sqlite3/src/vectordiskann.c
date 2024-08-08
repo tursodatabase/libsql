@@ -442,6 +442,7 @@ int diskAnnCreateIndex(
   int type, dims;
   u64 maxNeighborsParam, blockSizeBytes;
   char *zSql;
+  const char *zRowidColumnName;
   char columnSqlDefs[VECTOR_INDEX_SQL_RENDER_LIMIT]; // definition of columns (e.g. index_key INTEGER BINARY, index_key1 TEXT, ...)
   char columnSqlNames[VECTOR_INDEX_SQL_RENDER_LIMIT]; // just column names (e.g. index_key, index_key1, index_key2, ...)
   if( vectorIdxKeyDefsRender(pKey, "index_key", columnSqlDefs, sizeof(columnSqlDefs)) != 0 ){
@@ -509,6 +510,7 @@ int diskAnnCreateIndex(
         columnSqlDefs,
         columnSqlNames
         );
+    zRowidColumnName = "index_key";
   }else{
     zSql = sqlite3MPrintf(
         db,
@@ -518,7 +520,29 @@ int diskAnnCreateIndex(
         columnSqlDefs,
         columnSqlNames
         );
+    zRowidColumnName = "rowid";
   }
+  rc = sqlite3_exec(db, zSql, 0, 0, 0);
+  sqlite3DbFree(db, zSql);
+  if( rc != SQLITE_OK ){
+    return rc;
+  }
+  /*
+   * vector blobs are usually pretty huge (more than a page size, for example, node block for 1024d f32 embeddings with 1bit compression will occupy ~20KB)
+   * in this case, main table B-Tree takes on redundant shape where all leaf nodes has only 1 cell
+   *
+   * as we have a query which selects random row using OFFSET/LIMIT trick - we will need to read all these leaf nodes pages just to skip them
+   * so, in order to remove this overhead for random row selection - we creating an index with just single column used
+   * in this case B-Tree leafs will be full of rowids and the overhead for page reads will be very small
+  */
+  zSql = sqlite3MPrintf(
+      db,
+      "CREATE INDEX IF NOT EXISTS \"%w\".%s_shadow_idx ON %s_shadow (%s)",
+      zDbSName,
+      zIdxName,
+      zIdxName,
+      zRowidColumnName
+  );
   rc = sqlite3_exec(db, zSql, 0, 0, 0);
   sqlite3DbFree(db, zSql);
   return rc;
