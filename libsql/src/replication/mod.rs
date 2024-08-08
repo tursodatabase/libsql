@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 pub use libsql_replication::frame::{Frame, FrameNo};
+use libsql_replication::injector::SqliteInjector;
 use libsql_replication::replicator::{Either, Replicator};
 pub use libsql_replication::snapshot::SnapshotFile;
 
@@ -129,7 +130,7 @@ impl Writer {
 
 #[derive(Clone)]
 pub(crate) struct EmbeddedReplicator {
-    replicator: Arc<Mutex<Replicator<Either<RemoteClient, LocalClient>>>>,
+    replicator: Arc<Mutex<Replicator<Either<RemoteClient, LocalClient>, SqliteInjector>>>,
     bg_abort: Option<Arc<DropAbort>>,
     last_frames_synced: Arc<AtomicUsize>,
 }
@@ -149,7 +150,7 @@ impl EmbeddedReplicator {
         perodic_sync: Option<Duration>,
     ) -> Result<Self> {
         let replicator = Arc::new(Mutex::new(
-            Replicator::new(
+            Replicator::new_sqlite(
                 Either::Left(client),
                 db_path,
                 auto_checkpoint,
@@ -193,7 +194,7 @@ impl EmbeddedReplicator {
         encryption_config: Option<EncryptionConfig>,
     ) -> Result<Self> {
         let replicator = Arc::new(Mutex::new(
-            Replicator::new(
+            Replicator::new_sqlite(
                 Either::Right(client),
                 db_path,
                 auto_checkpoint,
