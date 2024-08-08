@@ -20,7 +20,7 @@ hyper = { workspace = true, features = ["client", "stream"], optional = true }
 hyper-rustls = { version = "0.25", features = ["webpki-roots"], optional = true }
 base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
-serde_json = { version = "1", optional = true }
+serde_json = { version = "1", features = ["float_roundtrip"], optional = true }
 async-trait = "0.1"
 bitflags = { version = "2.4.0", optional = true }
 tower = { workspace = true, features = ["util"], optional = true }
