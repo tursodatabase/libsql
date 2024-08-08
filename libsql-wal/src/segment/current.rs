@@ -22,7 +22,7 @@ use crate::io::file::FileExt;
 use crate::io::Inspect;
 use crate::segment::{checked_frame_offset, SegmentFlags};
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
-use crate::transaction::{Transaction, TxGuard};
+use crate::transaction::{Transaction, TxGuard, TxGuardOwned};
 use crate::{LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::list::SegmentList;
@@ -125,7 +125,7 @@ impl<F> CurrentSegment<F> {
         frames: Vec<Box<Frame>>,
         // (size_after, last_frame_no)
         commit_data: Option<(u32, u64)>,
-        tx: &mut TxGuard<'_, F>,
+        tx: &mut TxGuardOwned<F>,
     ) -> Result<Vec<Box<Frame>>>
     where
         F: FileExt,

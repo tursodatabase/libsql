@@ -3702,6 +3702,7 @@ name = "libsql-wal"
 version = "0.1.0"
 dependencies = [
  "arc-swap",
+ "async-lock 3.4.0",
  "async-stream",
  "aws-config 1.5.4",
  "aws-credential-types 1.2.0",
@@ -3779,6 +3780,7 @@ dependencies = [
  "cbc",
  "libsql-rusqlite",
  "libsql-sys",
+ "libsql-wal",
  "parking_lot",
  "prost",
  "prost-build",

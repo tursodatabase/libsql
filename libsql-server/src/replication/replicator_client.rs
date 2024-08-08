@@ -7,6 +7,7 @@ use futures::TryStreamExt;
 use libsql_replication::frame::Frame;
 use libsql_replication::meta::WalIndexMeta;
 use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
+use libsql_replication::rpc::replication::hello_request::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{
     verify_session_token, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY, SESSION_TOKEN_KEY,
@@ -35,6 +36,7 @@ pub struct Client {
     // the primary current replication index, as reported by the last handshake
     pub primary_replication_index: Option<FrameNo>,
     store: NamespaceStore,
+    wal_flavor: WalFlavor,
 }
 
 impl Client {
@@ -44,6 +46,7 @@ impl Client {
         path: &Path,
         meta_store_handle: MetaStoreHandle,
         store: NamespaceStore,
+        wal_flavor: WalFlavor,
     ) -> crate::Result<Self> {
         let (current_frame_no_notifier, _) = watch::channel(None);
         let meta = WalIndexMeta::open(path).await?;
@@ -57,6 +60,7 @@ impl Client {
             meta_store_handle,
             primary_replication_index: None,
             store,
+            wal_flavor,
         })
     }
 
@@ -96,7 +100,7 @@ impl ReplicatorClient for Client {
     #[tracing::instrument(skip(self))]
     async fn handshake(&mut self) -> Result<(), Error> {
         tracing::debug!("Attempting to perform handshake with primary.");
-        let req = self.make_request(HelloRequest::new());
+        let req = self.make_request(HelloRequest::new(self.wal_flavor));
         let resp = self.client.hello(req).await?;
         let hello = resp.into_inner();
         verify_session_token(&hello.session_token).map_err(Error::Client)?;

@@ -1,6 +1,7 @@
 use std::future::Future;
 
 pub use sqlite_injector::SqliteInjector;
+pub use libsql_injector::LibsqlInjector;
 
 use crate::frame::{Frame, FrameNo};
 
@@ -9,6 +10,7 @@ pub use error::Error;
 
 mod error;
 mod sqlite_injector;
+mod libsql_injector;
 
 pub trait Injector {
     /// Inject a singular frame.

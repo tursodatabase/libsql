@@ -4,7 +4,6 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use libsql_sys::name::NamespaceName;
-use parking_lot::{ArcMutexGuard, RawMutex};
 use tokio::sync::mpsc;
 
 use crate::checkpointer::CheckpointMessage;
@@ -28,6 +27,14 @@ impl<F> Transaction<F> {
             Some(v)
         } else {
             None
+        }
+    }
+
+    pub fn into_write(self) -> Result<WriteTransaction<F>, Self> {
+        if let Self::Write(v) = self {
+            Ok(v)
+        } else {
+            Err(self)
         }
     }
 
@@ -147,8 +154,27 @@ pub struct WriteTransaction<F> {
     pub recompute_checksum: Option<u32>,
 }
 
+pub struct TxGuardOwned<F> {
+    _lock: async_lock::MutexGuardArc<Option<u64>>,
+    inner: WriteTransaction<F>,
+}
+
+impl<F> Deref for TxGuardOwned<F> {
+    type Target = WriteTransaction<F>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<F> DerefMut for TxGuardOwned<F> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
 pub struct TxGuard<'a, F> {
-    _lock: ArcMutexGuard<RawMutex, Option<u64>>,
+    _lock: async_lock::MutexGuardArc<Option<u64>>,
     inner: &'a mut WriteTransaction<F>,
 }
 
@@ -189,10 +215,29 @@ impl<F> WriteTransaction<F> {
             todo!("txn has already been commited");
         }
 
-        let g = self.wal_lock.tx_id.lock_arc();
+        let g = self.wal_lock.tx_id.lock_arc_blocking();
         match *g {
             // we still hold the lock, we can proceed
             Some(id) if self.id == id => TxGuard {
+                _lock: g,
+                inner: self,
+            },
+            // Somebody took the lock from us
+            Some(_) => todo!("lock stolen"),
+            None => todo!("not a transaction"),
+        }
+    }
+
+    pub fn into_lock_owned(self) -> TxGuardOwned<F> {
+        if self.is_commited {
+            tracing::error!("transaction already commited");
+            todo!("txn has already been commited");
+        }
+
+        let g = self.wal_lock.tx_id.lock_arc_blocking();
+        match *g {
+            // we still hold the lock, we can proceed
+            Some(id) if self.id == id => TxGuardOwned {
                 _lock: g,
                 inner: self,
             },
@@ -231,7 +276,7 @@ impl<F> WriteTransaction<F> {
         let Self {
             wal_lock, read_tx, ..
         } = self;
-        let mut lock = wal_lock.tx_id.lock();
+        let mut lock = wal_lock.tx_id.lock_blocking();
         match *lock {
             Some(lock_id) if lock_id == read_tx.id => {
                 lock.take();

@@ -9,6 +9,7 @@ publish = false
 [dependencies]
 arc-swap = "1.7.1"
 async-stream = "0.3.5"
+async-lock = "3.4.0"
 bitflags = "2.5.0"
 bytes = "1.6.0"
 chrono = "0.4.38"
@@ -29,7 +30,7 @@ tokio-stream = "0.1.15"
 tracing = "0.1.40"
 uuid = { version = "1.8.0", features = ["v4"] }
 walkdir = "2.5.0"
-zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
+zerocopy = { workspace = true }
 
 aws-config = { version = "1", optional = true, features = ["behavior-version-latest"] }
 aws-sdk-s3 = { version = "1", optional = true }

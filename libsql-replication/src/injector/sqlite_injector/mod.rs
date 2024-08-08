@@ -192,8 +192,8 @@ impl SqliteInjectorInner {
         match stmt.execute(()).and_then(|_| connection.cache_flush()) {
             Ok(_) => panic!("replication hook was not called"),
             Err(e) => {
-                if let Some(e) = e.sqlite_error() {
-                    if e.extended_code == LIBSQL_INJECT_OK {
+                if let Some(err) = e.sqlite_error() {
+                    if err.extended_code == LIBSQL_INJECT_OK {
                         // refresh schema
                         connection.pragma_update(None, "writable_schema", "reset")?;
                         let mut rollback = connection.prepare_cached("ROLLBACK")?;
@@ -203,16 +203,16 @@ impl SqliteInjectorInner {
                         let commit_frame_no = self.biggest_uncommitted_seen;
                         self.biggest_uncommitted_seen = 0;
                         return Ok(Some(commit_frame_no));
-                    } else if e.extended_code == LIBSQL_INJECT_OK_TXN {
+                    } else if err.extended_code == LIBSQL_INJECT_OK_TXN {
                         self.is_txn = true;
                         assert!(self.buffer.lock().is_empty());
                         return Ok(None);
-                    } else if e.extended_code == LIBSQL_INJECT_FATAL {
-                        return Err(Error::FatalInjectError);
+                    } else if err.extended_code == LIBSQL_INJECT_FATAL {
+                        return Err(Error::FatalInjectError(e.into()));
                     }
                 }
 
-                Err(Error::FatalInjectError)
+                Err(Error::FatalInjectError(e.into()))
             }
         }
     }
