@@ -118,7 +118,7 @@ jobs:
           context: .
           platforms: ${{ env.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-debug,push-by-digest=true,name-canonical=true,push=true
           build-args: |
             BUILD_DEBUG=true
       -
