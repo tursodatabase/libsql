@@ -7,6 +7,7 @@ use rusqlite::OpenFlags;
 use tokio::task::spawn_blocking;
 
 use crate::frame::{Frame, FrameNo};
+use crate::rpc::replication::Frame as RpcFrame;
 
 use self::injector_wal::{
     InjectorWal, InjectorWalManager, LIBSQL_INJECT_FATAL, LIBSQL_INJECT_OK, LIBSQL_INJECT_OK_TXN,
@@ -25,8 +26,10 @@ pub struct SqliteInjector {
 }
 
 impl Injector for SqliteInjector {
-    async fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>> {
+    async fn inject_frame(&mut self, frame: RpcFrame) -> Result<Option<FrameNo>> {
         let inner = self.inner.clone();
+        let frame =
+            Frame::try_from(&frame.data[..]).map_err(|e| Error::FatalInjectError(e.into()))?;
         spawn_blocking(move || inner.lock().inject_frame(frame))
             .await
             .unwrap()

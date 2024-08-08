@@ -1,9 +1,10 @@
 use std::future::Future;
 
+use super::rpc::replication::Frame as RpcFrame;
 pub use libsql_injector::LibsqlInjector;
 pub use sqlite_injector::SqliteInjector;
 
-use crate::frame::{Frame, FrameNo};
+use crate::frame::FrameNo;
 
 pub use error::Error;
 use error::Result;
@@ -16,7 +17,7 @@ pub trait Injector {
     /// Inject a singular frame.
     fn inject_frame(
         &mut self,
-        frame: Frame,
+        frame: RpcFrame,
     ) -> impl Future<Output = Result<Option<FrameNo>>> + Send;
 
     /// Discard any uncommintted frames.

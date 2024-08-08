@@ -18,6 +18,7 @@ use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use libsql_replication::injector::Injector as _;
+use libsql_replication::rpc::replication::Frame as RpcFrame;
 use libsql_sys::{Cipher, EncryptionConfig};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -1554,7 +1555,11 @@ impl Replicator {
                         },
                         page_buf.as_slice(),
                     );
-                    injector.inject_frame(frame_to_inject).await?;
+                    let frame = RpcFrame {
+                        data: frame_to_inject.bytes(),
+                        timestamp: None,
+                    };
+                    injector.inject_frame(frame).await?;
                     applied_wal_frame = true;
                 }
             }

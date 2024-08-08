@@ -63,7 +63,7 @@ impl From<tokio::task::JoinError> for Error {
 
 #[async_trait::async_trait]
 pub trait ReplicatorClient {
-    type FrameStream: Stream<Item = Result<Frame, Error>> + Unpin + Send;
+    type FrameStream: Stream<Item = Result<RpcFrame, Error>> + Unpin + Send;
 
     /// Perform handshake with remote
     async fn handshake(&mut self) -> Result<(), Error>;
@@ -318,7 +318,7 @@ where
         }
     }
 
-    async fn inject_frame(&mut self, frame: Frame) -> Result<(), Error> {
+    async fn inject_frame(&mut self, frame: RpcFrame) -> Result<(), Error> {
         self.frames_synced += 1;
 
         match self.injector.inject_frame(frame).await? {
@@ -360,6 +360,7 @@ mod test {
     use async_stream::stream;
 
     use crate::frame::{FrameBorrowed, FrameMut};
+    use crate::rpc::replication::Frame as RpcFrame;
 
     use super::*;
 
@@ -370,7 +371,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -414,7 +416,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -456,7 +459,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -500,7 +504,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -544,7 +549,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -586,7 +592,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -627,7 +634,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -672,7 +680,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -740,7 +749,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -752,15 +762,26 @@ mod test {
                     let frames = self
                         .frames
                         .iter()
+                        .map(|f| RpcFrame {
+                            data: f.bytes(),
+                            timestamp: None,
+                        })
                         .take(2)
-                        .cloned()
                         .map(Ok)
                         .chain(Some(Err(Error::Client("some client error".into()))))
                         .collect::<Vec<_>>();
                     Ok(Box::pin(tokio_stream::iter(frames)))
                 } else {
-                    let stream = tokio_stream::iter(self.frames.clone().into_iter().map(Ok));
-                    Ok(Box::pin(stream))
+                    let iter = self
+                        .frames
+                        .iter()
+                        .map(|f| RpcFrame {
+                            data: f.bytes(),
+                            timestamp: None,
+                        })
+                        .map(Ok)
+                        .collect::<Vec<_>>();
+                    Ok(Box::pin(tokio_stream::iter(iter)))
                 }
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
