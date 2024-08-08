@@ -18,6 +18,7 @@ use chrono::NaiveDateTime;
 use enclose::enclose;
 use futures_core::{Future, Stream};
 use hyper::Uri;
+use libsql_replication::rpc::replication::hello_request::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_sys::EncryptionConfig;
@@ -508,10 +509,11 @@ impl Namespace {
             &db_path,
             meta_store_handle.clone(),
             store.clone(),
+            WalFlavor::Sqlite,
         )
         .await?;
         let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
-        let mut replicator = libsql_replication::replicator::Replicator::new(
+        let mut replicator = libsql_replication::replicator::Replicator::new_sqlite(
             client,
             db_path.join("data"),
             DEFAULT_AUTO_CHECKPOINT,

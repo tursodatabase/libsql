@@ -1,14 +1,11 @@
 use std::path::PathBuf;
-use std::sync::Arc;
 
-use parking_lot::Mutex;
-use tokio::task::spawn_blocking;
 use tokio::time::Duration;
 use tokio_stream::{Stream, StreamExt};
 use tonic::{Code, Status};
 
 use crate::frame::{Frame, FrameNo};
-use crate::injector::Injector;
+use crate::injector::{Injector, SqliteInjector};
 use crate::rpc::replication::{
     Frame as RpcFrame, NAMESPACE_DOESNT_EXIST, NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG,
 };
@@ -66,7 +63,7 @@ impl From<tokio::task::JoinError> for Error {
 
 #[async_trait::async_trait]
 pub trait ReplicatorClient {
-    type FrameStream: Stream<Item = Result<Frame, Error>> + Unpin + Send;
+    type FrameStream: Stream<Item = Result<RpcFrame, Error>> + Unpin + Send;
 
     /// Perform handshake with remote
     async fn handshake(&mut self) -> Result<(), Error>;
@@ -137,9 +134,9 @@ where
 
 /// The `Replicator`'s duty is to download frames from the primary, and pass them to the injector at
 /// transaction boundaries.
-pub struct Replicator<C> {
+pub struct Replicator<C, I> {
     client: C,
-    injector: Arc<Mutex<Injector>>,
+    injector: I,
     state: ReplicatorState,
     frames_synced: usize,
 }
@@ -154,33 +151,41 @@ enum ReplicatorState {
     Exit,
 }
 
-impl<C: ReplicatorClient> Replicator<C> {
+impl<C> Replicator<C, SqliteInjector>
+where
+    C: ReplicatorClient,
+{
     /// Creates a replicator for the db file pointed at by `db_path`
-    pub async fn new(
+    pub async fn new_sqlite(
         client: C,
         db_path: PathBuf,
         auto_checkpoint: u32,
         encryption_config: Option<libsql_sys::EncryptionConfig>,
     ) -> Result<Self, Error> {
-        let injector = {
-            let db_path = db_path.clone();
-            spawn_blocking(move || {
-                Injector::new(
-                    db_path,
-                    INJECTOR_BUFFER_CAPACITY,
-                    auto_checkpoint,
-                    encryption_config,
-                )
-            })
-            .await??
-        };
+        let injector = SqliteInjector::new(
+            db_path.clone(),
+            INJECTOR_BUFFER_CAPACITY,
+            auto_checkpoint,
+            encryption_config,
+        )
+        .await?;
 
-        Ok(Self {
+        Ok(Self::new(client, injector))
+    }
+}
+
+impl<C, I> Replicator<C, I>
+where
+    C: ReplicatorClient,
+    I: Injector,
+{
+    pub fn new(client: C, injector: I) -> Self {
+        Self {
             client,
-            injector: Arc::new(Mutex::new(injector)),
+            injector,
             state: ReplicatorState::NeedHandshake,
             frames_synced: 0,
-        })
+        }
     }
 
     /// for a handshake on next call to replicate.
@@ -250,7 +255,7 @@ impl<C: ReplicatorClient> Replicator<C> {
         // in case of error we rollback the current injector transaction, and start over.
         if ret.is_err() {
             self.client.rollback();
-            self.injector.lock().rollback();
+            self.injector.rollback().await;
         }
 
         self.state = match ret {
@@ -293,7 +298,8 @@ impl<C: ReplicatorClient> Replicator<C> {
     }
 
     async fn load_snapshot(&mut self) -> Result<(), Error> {
-        self.injector.lock().clear_buffer();
+        self.client.rollback();
+        self.injector.rollback().await;
         loop {
             match self.client.snapshot().await {
                 Ok(mut stream) => {
@@ -312,29 +318,25 @@ impl<C: ReplicatorClient> Replicator<C> {
         }
     }
 
-    async fn inject_frame(&mut self, frame: Frame) -> Result<(), Error> {
+    async fn inject_frame(&mut self, frame: RpcFrame) -> Result<(), Error> {
         self.frames_synced += 1;
 
-        let injector = self.injector.clone();
-        match spawn_blocking(move || injector.lock().inject_frame(frame)).await? {
-            Ok(Some(commit_fno)) => {
+        match self.injector.inject_frame(frame).await? {
+            Some(commit_fno) => {
                 self.client.commit_frame_no(commit_fno).await?;
             }
-            Ok(None) => (),
-            Err(e) => Err(e)?,
+            None => (),
         }
 
         Ok(())
     }
 
     pub async fn flush(&mut self) -> Result<(), Error> {
-        let injector = self.injector.clone();
-        match spawn_blocking(move || injector.lock().flush()).await? {
-            Ok(Some(commit_fno)) => {
+        match self.injector.flush().await? {
+            Some(commit_fno) => {
                 self.client.commit_frame_no(commit_fno).await?;
             }
-            Ok(None) => (),
-            Err(e) => Err(e)?,
+            None => (),
         }
 
         Ok(())
@@ -358,6 +360,7 @@ mod test {
     use async_stream::stream;
 
     use crate::frame::{FrameBorrowed, FrameMut};
+    use crate::rpc::replication::Frame as RpcFrame;
 
     use super::*;
 
@@ -368,7 +371,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -395,7 +399,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
 
@@ -412,7 +416,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -438,7 +443,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -454,7 +459,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -482,7 +488,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -498,7 +504,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -526,7 +533,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -542,7 +549,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -568,7 +576,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -584,7 +592,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -610,7 +619,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         replicator.state = ReplicatorState::NeedSnapshot;
@@ -625,7 +634,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -653,7 +663,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -670,7 +680,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -696,7 +707,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         replicator.state = ReplicatorState::NeedHandshake;
@@ -738,7 +749,8 @@ mod test {
 
         #[async_trait::async_trait]
         impl ReplicatorClient for Client {
-            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+            type FrameStream =
+                Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
             async fn handshake(&mut self) -> Result<(), Error> {
@@ -750,15 +762,26 @@ mod test {
                     let frames = self
                         .frames
                         .iter()
+                        .map(|f| RpcFrame {
+                            data: f.bytes(),
+                            timestamp: None,
+                        })
                         .take(2)
-                        .cloned()
                         .map(Ok)
                         .chain(Some(Err(Error::Client("some client error".into()))))
                         .collect::<Vec<_>>();
                     Ok(Box::pin(tokio_stream::iter(frames)))
                 } else {
-                    let stream = tokio_stream::iter(self.frames.clone().into_iter().map(Ok));
-                    Ok(Box::pin(stream))
+                    let iter = self
+                        .frames
+                        .iter()
+                        .map(|f| RpcFrame {
+                            data: f.bytes(),
+                            timestamp: None,
+                        })
+                        .map(Ok)
+                        .collect::<Vec<_>>();
+                    Ok(Box::pin(tokio_stream::iter(iter)))
                 }
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
@@ -784,7 +807,7 @@ mod test {
             committed_frame_no: None,
         };
 
-        let mut replicator = Replicator::new(client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new_sqlite(client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
 
@@ -795,7 +818,7 @@ mod test {
             replicator.try_replicate_step().await.unwrap_err(),
             Error::Client(_)
         ));
-        assert!(!replicator.injector.lock().is_txn());
+        assert!(!replicator.injector.inner.lock().is_txn());
         assert!(replicator.client_mut().committed_frame_no.is_none());
         assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
 
@@ -805,7 +828,7 @@ mod test {
         replicator.client_mut().should_error = false;
 
         replicator.try_replicate_step().await.unwrap();
-        assert!(!replicator.injector.lock().is_txn());
+        assert!(!replicator.injector.inner.lock().is_txn());
         assert_eq!(replicator.state, ReplicatorState::Exit);
         assert_eq!(replicator.client_mut().committed_frame_no, Some(6));
     }

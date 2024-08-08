@@ -17,6 +17,8 @@ use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use libsql_replication::injector::Injector as _;
+use libsql_replication::rpc::replication::Frame as RpcFrame;
 use libsql_sys::{Cipher, EncryptionConfig};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -1449,12 +1451,13 @@ impl Replicator {
         db_path: &Path,
     ) -> Result<bool> {
         let encryption_config = self.encryption_config.clone();
-        let mut injector = libsql_replication::injector::Injector::new(
-            db_path,
+        let mut injector = libsql_replication::injector::SqliteInjector::new(
+            db_path.to_path_buf(),
             4096,
             libsql_sys::connection::NO_AUTOCHECKPOINT,
             encryption_config,
-        )?;
+        )
+        .await?;
         let prefix = format!("{}-{}/", self.db_name, generation);
         let mut page_buf = {
             let mut v = Vec::with_capacity(page_size);
@@ -1552,7 +1555,11 @@ impl Replicator {
                         },
                         page_buf.as_slice(),
                     );
-                    injector.inject_frame(frame_to_inject)?;
+                    let frame = RpcFrame {
+                        data: frame_to_inject.bytes(),
+                        timestamp: None,
+                    };
+                    injector.inject_frame(frame).await?;
                     applied_wal_frame = true;
                 }
             }

@@ -8,6 +8,7 @@ use chrono::{DateTime, Utc};
 use futures::stream::BoxStream;
 use futures_core::Future;
 pub use libsql_replication::rpc::replication as rpc;
+use libsql_replication::rpc::replication::hello_request::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
 use libsql_replication::rpc::replication::{
     Frame, Frames, HelloRequest, HelloResponse, LogOffset, NAMESPACE_DOESNT_EXIST,
@@ -353,6 +354,10 @@ impl ReplicationLog for ReplicationLogService {
                 let mut guard = self.replicas_with_hello.write().unwrap();
                 guard.insert((replica_addr, namespace.clone()));
             }
+        }
+
+        if let WalFlavor::Libsql = req.get_ref().wal_flavor() {
+            return Err(Status::invalid_argument("libsql wal not supported"));
         }
 
         let (logger, config, version, _, _) =

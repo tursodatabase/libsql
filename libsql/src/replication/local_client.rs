@@ -3,6 +3,7 @@ use std::pin::Pin;
 
 use futures::{StreamExt, TryStreamExt};
 use libsql_replication::{
+    rpc::replication::Frame as RpcFrame,
     frame::{Frame, FrameNo},
     meta::WalIndexMeta,
     replicator::{Error, ReplicatorClient},
@@ -35,7 +36,7 @@ impl LocalClient {
 
 #[async_trait::async_trait]
 impl ReplicatorClient for LocalClient {
-    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+    type FrameStream = Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
     /// Perform handshake with remote
     async fn handshake(&mut self) -> Result<(), Error> {
@@ -46,7 +47,7 @@ impl ReplicatorClient for LocalClient {
     async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
         match self.frames.take() {
             Some(Frames::Vec(f)) => {
-                let iter = f.into_iter().map(Ok);
+                let iter = f.into_iter().map(|f| RpcFrame { data: f.bytes(), timestamp: None }).map(Ok);
                 Ok(Box::pin(tokio_stream::iter(iter)))
             }
             Some(f @ Frames::Snapshot(_)) => {
@@ -70,7 +71,8 @@ impl ReplicatorClient for LocalClient {
                         if s.as_mut().peek().await.is_none() {
                             next.header_mut().size_after = size_after.into();
                         }
-                        yield Frame::from(next);
+                        let frame = Frame::from(next);
+                        yield RpcFrame { data: frame.bytes(), timestamp: None };
                     }
                 };
 
@@ -95,8 +97,9 @@ impl ReplicatorClient for LocalClient {
 
 #[cfg(test)]
 mod test {
-    use libsql_replication::snapshot::SnapshotFile;
+    use libsql_replication::{frame::FrameHeader, snapshot::SnapshotFile};
     use tempfile::tempdir;
+    use zerocopy::FromBytes;
 
     use super::*;
 
@@ -111,7 +114,8 @@ mod test {
         let mut s = client.snapshot().await.unwrap();
         assert!(matches!(s.next().await, Some(Ok(_))));
         let last = s.next().await.unwrap().unwrap();
-        assert_eq!(last.header().size_after.get(), 2);
+        let header: FrameHeader = FrameHeader::read_from_prefix(&last.data[..]).unwrap();
+        assert_eq!(header.size_after.get(), 2);
         assert!(s.next().await.is_none());
     }
 }

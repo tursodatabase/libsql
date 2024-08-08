@@ -4,12 +4,13 @@ use std::pin::Pin;
 use std::time::{Duration, Instant};
 
 use bytes::Bytes;
-use futures::StreamExt as _;
-use libsql_replication::frame::{Frame, FrameHeader, FrameNo};
+use futures::{StreamExt as _, TryStreamExt};
+use libsql_replication::frame::{FrameHeader, FrameNo};
 use libsql_replication::meta::WalIndexMeta;
-use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
+use libsql_replication::replicator::{Error, ReplicatorClient};
+use libsql_replication::rpc::replication::hello_request::WalFlavor;
 use libsql_replication::rpc::replication::{
-    verify_session_token, Frames, HelloRequest, HelloResponse, LogOffset, SESSION_TOKEN_KEY,
+    Frame as RpcFrame, verify_session_token, Frames, HelloRequest, HelloResponse, LogOffset, SESSION_TOKEN_KEY,
 };
 use tokio_stream::Stream;
 use tonic::metadata::AsciiMetadataValue;
@@ -116,7 +117,7 @@ impl RemoteClient {
             self.dirty = false;
         }
         let prefetch = self.session_token.is_some();
-        let hello_req = self.make_request(HelloRequest::new());
+        let hello_req = self.make_request(HelloRequest::new(WalFlavor::Sqlite));
         let log_offset_req = self.make_request(LogOffset {
             next_offset: self.next_offset(),
         });
@@ -160,7 +161,7 @@ impl RemoteClient {
 
         let frames_iter = frames
             .into_iter()
-            .map(|f| Frame::try_from(&*f.data).map_err(|e| Error::Client(e.into())));
+            .map(Ok);
 
         let stream = tokio_stream::iter(frames_iter);
 
@@ -196,7 +197,7 @@ impl RemoteClient {
             .snapshot(req)
             .await?
             .into_inner()
-            .map(map_frame_err)
+            .map_err(|e| e.into())
             .peekable();
 
         {
@@ -204,7 +205,8 @@ impl RemoteClient {
 
             // the first frame is the one with the highest frame_no in the snapshot
             if let Some(Ok(f)) = frames.peek().await {
-                self.last_received = Some(f.header().frame_no.get());
+                let header: FrameHeader = FrameHeader::read_from_prefix(&f.data[..]).unwrap();
+                self.last_received = Some(header.frame_no.get());
             }
         }
 
@@ -239,7 +241,7 @@ fn maybe_log<T>(
 
 #[async_trait::async_trait]
 impl ReplicatorClient for RemoteClient {
-    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+    type FrameStream = Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
     /// Perform handshake with remote
     async fn handshake(&mut self) -> Result<(), Error> {

@@ -20,7 +20,7 @@ use libsql_sys::name::NamespaceName;
 
 #[derive(Default)]
 pub struct WalLock {
-    pub(crate) tx_id: Arc<Mutex<Option<u64>>>,
+    pub(crate) tx_id: Arc<async_lock::Mutex<Option<u64>>>,
     /// When a writer is popped from the write queue, its write transaction may not be reading from the most recent
     /// snapshot. In this case, we return `SQLITE_BUSY_SNAPHSOT` to the caller. If no reads were performed
     /// with that transaction before upgrading, then the caller will call us back immediately after re-acquiring
@@ -108,7 +108,7 @@ impl<IO: Io> SharedWal<IO> {
                             Some(id) if id == read_tx.conn_id => {
                                 tracing::trace!("taking reserved slot");
                                 reserved.take();
-                                let lock = self.wal_lock.tx_id.lock();
+                                let lock = self.wal_lock.tx_id.lock_blocking();
                                 let write_tx = self.acquire_write(read_tx, lock, reserved)?;
                                 *tx = Transaction::Write(write_tx);
                                 return Ok(());
@@ -117,7 +117,7 @@ impl<IO: Io> SharedWal<IO> {
                         }
                     }
 
-                    let lock = self.wal_lock.tx_id.lock();
+                    let lock = self.wal_lock.tx_id.lock_blocking();
                     match *lock {
                         None if self.wal_lock.waiters.is_empty() => {
                             let write_tx =
@@ -144,7 +144,7 @@ impl<IO: Io> SharedWal<IO> {
     fn acquire_write(
         &self,
         read_tx: &ReadTransaction<IO::File>,
-        mut tx_id_lock: MutexGuard<Option<u64>>,
+        mut tx_id_lock: async_lock::MutexGuard<Option<u64>>,
         mut reserved: MutexGuard<Option<u64>>,
     ) -> Result<WriteTransaction<IO::File>> {
         // we read two fields in the header. There is no risk that a transaction commit in
