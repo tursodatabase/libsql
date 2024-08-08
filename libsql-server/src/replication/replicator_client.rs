@@ -4,16 +4,17 @@ use std::pin::Pin;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
-use libsql_replication::frame::Frame;
 use libsql_replication::meta::WalIndexMeta;
-use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
+use libsql_replication::replicator::{Error, ReplicatorClient};
 use libsql_replication::rpc::replication::hello_request::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{
-    verify_session_token, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY, SESSION_TOKEN_KEY,
+    verify_session_token, Frame as RpcFrame, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY,
+    SESSION_TOKEN_KEY,
 };
 use tokio::sync::watch;
-use tokio_stream::{Stream, StreamExt};
+use tokio_stream::Stream;
+
 use tonic::metadata::{AsciiMetadataValue, BinaryMetadataValue};
 use tonic::transport::Channel;
 use tonic::{Code, Request, Status};
@@ -95,7 +96,7 @@ impl Client {
 
 #[async_trait::async_trait]
 impl ReplicatorClient for Client {
-    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+    type FrameStream = Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
     #[tracing::instrument(skip(self))]
     async fn handshake(&mut self) -> Result<(), Error> {
@@ -169,7 +170,7 @@ impl ReplicatorClient for Client {
                     None => REPLICATION_LATENCY_CACHE_MISS.increment(1),
                 }
             })
-            .map(map_frame_err);
+            .map_err(Into::into);
 
         Ok(Box::pin(stream))
     }
@@ -181,7 +182,7 @@ impl ReplicatorClient for Client {
         let req = self.make_request(offset);
         match self.client.snapshot(req).await {
             Ok(resp) => {
-                let stream = resp.into_inner().map(map_frame_err);
+                let stream = resp.into_inner().map_err(Into::into);
                 Ok(Box::pin(stream))
             }
             Err(e) if e.code() == Code::Unavailable => Err(Error::SnapshotPending),
