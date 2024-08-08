@@ -268,9 +268,19 @@ do_execsql_test vector-transaction {
   SELECT * FROM vector_top_k('t_transaction_idx', vector('[1,2]'), 2);
 } {3 4 1 2}
 
+do_execsql_test vector-1bit {
+  CREATE TABLE t_1bit( v FLOAT32(3) );
+  CREATE INDEX t_1bit_idx ON t_1bit( libsql_vector_idx(v, 'compress_neighbors=1bit') );
+  INSERT INTO t_1bit VALUES (vector('[-1,-1,1]'));
+  INSERT INTO t_1bit VALUES (vector('[-1,1,-1.5]'));
+  INSERT INTO t_1bit VALUES (vector('[1,-1,-1]'));
+  INSERT INTO t_1bit VALUES (vector('[-1,-1,-1]'));
+  SELECT rowid FROM vector_top_k('t_1bit_idx', vector('[1,-1,-1]'), 4);
+} {3 4 2 1}
+
 do_execsql_test vector-all-params {
   CREATE TABLE t_all_params ( emb FLOAT32(2) );
-  CREATE INDEX t_all_params_idx ON t_all_params(libsql_vector_idx(emb, 'type=diskann', 'metric=cos', 'alpha=1.2', 'search_l=200', 'insert_l=70', 'max_neighbors=6'));
+  CREATE INDEX t_all_params_idx ON t_all_params(libsql_vector_idx(emb, 'type=diskann', 'metric=cos', 'alpha=1.2', 'search_l=200', 'insert_l=70', 'max_neighbors=6', 'compress_neighbors=1bit'));
   INSERT INTO t_all_params VALUES (vector('[1,2]')), (vector('[3,4]'));
   SELECT * FROM vector_top_k('t_all_params_idx', vector('[1,2]'), 2);
 } {1 2}
