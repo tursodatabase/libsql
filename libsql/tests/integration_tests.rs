@@ -596,6 +596,26 @@ async fn debug_print_row() {
     );
 }
 
+#[tokio::test]
+async fn fts5_invalid_tokenizer() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    assert!(conn
+        .execute(
+            "CREATE VIRTUAL TABLE t USING fts5(s, tokenize='trigram case_sensitive ')",
+            (),
+        )
+        .await
+        .is_err());
+    assert!(conn
+        .execute(
+            "CREATE VIRTUAL TABLE t USING fts5(s, tokenize='trigram remove_diacritics ')",
+            (),
+        )
+        .await
+        .is_err());
+}
+
 #[cfg(feature = "serde")]
 #[tokio::test]
 async fn deserialize_row() {
