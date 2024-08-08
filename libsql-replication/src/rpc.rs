@@ -51,7 +51,7 @@ pub mod replication {
         pub fn new(wal_flavor: WalFlavor) -> Self {
             Self {
                 handshake_version: Some(1),
-                wal_flavor: Some(wal_flavor.into())
+                wal_flavor: Some(wal_flavor.into()),
             }
         }
     }

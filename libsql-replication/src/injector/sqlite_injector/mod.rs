@@ -25,28 +25,23 @@ pub struct SqliteInjector {
 }
 
 impl Injector for SqliteInjector {
-    async fn inject_frame(
-        &mut self,
-        frame: Frame,
-    ) -> Result<Option<FrameNo>> {
+    async fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>> {
         let inner = self.inner.clone();
-        spawn_blocking(move || {
-            inner.lock().inject_frame(frame)
-        }).await.unwrap()
+        spawn_blocking(move || inner.lock().inject_frame(frame))
+            .await
+            .unwrap()
     }
 
     async fn rollback(&mut self) {
         let inner = self.inner.clone();
-        spawn_blocking(move || {
-            inner.lock().rollback()
-        }).await.unwrap();
+        spawn_blocking(move || inner.lock().rollback())
+            .await
+            .unwrap();
     }
 
     async fn flush(&mut self) -> Result<Option<FrameNo>> {
         let inner = self.inner.clone();
-        spawn_blocking(move || {
-            inner.lock().flush()
-        }).await.unwrap()
+        spawn_blocking(move || inner.lock().flush()).await.unwrap()
     }
 }
 
@@ -56,13 +51,15 @@ impl SqliteInjector {
         capacity: usize,
         auto_checkpoint: u32,
         encryption_config: Option<libsql_sys::EncryptionConfig>,
-    ) ->super::Result<Self> {
+    ) -> super::Result<Self> {
         let inner = spawn_blocking(move || {
             SqliteInjectorInner::new(path, capacity, auto_checkpoint, encryption_config)
-        }).await.unwrap()?;
+        })
+        .await
+        .unwrap()?;
 
         Ok(Self {
-            inner: Arc::new(Mutex::new(inner))
+            inner: Arc::new(Mutex::new(inner)),
         })
     }
 }
@@ -278,7 +275,8 @@ mod test {
     fn test_simple_inject_frames() {
         let temp = tempfile::tempdir().unwrap();
 
-        let mut injector = SqliteInjectorInner::new(temp.path().join("data"), 10, 10000, None).unwrap();
+        let mut injector =
+            SqliteInjectorInner::new(temp.path().join("data"), 10, 10000, None).unwrap();
         let log = wal_log();
         for frame in log {
             injector.inject_frame(frame).unwrap();
@@ -298,7 +296,8 @@ mod test {
         let temp = tempfile::tempdir().unwrap();
 
         // inject one frame at a time
-        let mut injector = SqliteInjectorInner::new(temp.path().join("data"), 1, 10000, None).unwrap();
+        let mut injector =
+            SqliteInjectorInner::new(temp.path().join("data"), 1, 10000, None).unwrap();
         let log = wal_log();
         for frame in log {
             injector.inject_frame(frame).unwrap();
@@ -318,7 +317,8 @@ mod test {
         let temp = tempfile::tempdir().unwrap();
 
         // inject one frame at a time
-        let mut injector = SqliteInjectorInner::new(temp.path().join("data"), 10, 1000, None).unwrap();
+        let mut injector =
+            SqliteInjectorInner::new(temp.path().join("data"), 10, 1000, None).unwrap();
         let mut frames = wal_log();
 
         assert!(injector

@@ -509,7 +509,7 @@ impl Namespace {
             &db_path,
             meta_store_handle.clone(),
             store.clone(),
-            WalFlavor::Sqlite
+            WalFlavor::Sqlite,
         )
         .await?;
         let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
