@@ -25,6 +25,8 @@ pub mod replication {
     #![allow(clippy::all)]
 
     use uuid::Uuid;
+
+    use self::hello_request::WalFlavor;
     include!("generated/wal_log.rs");
 
     pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
@@ -46,9 +48,10 @@ pub mod replication {
     }
 
     impl HelloRequest {
-        pub fn new() -> Self {
+        pub fn new(wal_flavor: WalFlavor) -> Self {
             Self {
                 handshake_version: Some(1),
+                wal_flavor: Some(wal_flavor.into())
             }
         }
     }

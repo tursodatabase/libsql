@@ -8,6 +8,7 @@ use futures::StreamExt as _;
 use libsql_replication::frame::{Frame, FrameHeader, FrameNo};
 use libsql_replication::meta::WalIndexMeta;
 use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
+use libsql_replication::rpc::replication::hello_request::WalFlavor;
 use libsql_replication::rpc::replication::{
     verify_session_token, Frames, HelloRequest, HelloResponse, LogOffset, SESSION_TOKEN_KEY,
 };
@@ -116,7 +117,7 @@ impl RemoteClient {
             self.dirty = false;
         }
         let prefetch = self.session_token.is_some();
-        let hello_req = self.make_request(HelloRequest::new());
+        let hello_req = self.make_request(HelloRequest::new(WalFlavor::Sqlite));
         let log_offset_req = self.make_request(LogOffset {
             next_offset: self.next_offset(),
         });

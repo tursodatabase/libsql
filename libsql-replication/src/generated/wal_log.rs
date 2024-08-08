@@ -10,6 +10,48 @@ pub struct LogOffset {
 pub struct HelloRequest {
     #[prost(uint64, optional, tag = "1")]
     pub handshake_version: ::core::option::Option<u64>,
+    /// the type of wal that the client is expecting
+    #[prost(enumeration = "hello_request::WalFlavor", optional, tag = "2")]
+    pub wal_flavor: ::core::option::Option<i32>,
+}
+/// Nested message and enum types in `HelloRequest`.
+pub mod hello_request {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
+    pub enum WalFlavor {
+        Sqlite = 0,
+        Libsql = 1,
+    }
+    impl WalFlavor {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                WalFlavor::Sqlite => "Sqlite",
+                WalFlavor::Libsql => "Libsql",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "Sqlite" => Some(Self::Sqlite),
+                "Libsql" => Some(Self::Libsql),
+                _ => None,
+            }
+        }
+    }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
