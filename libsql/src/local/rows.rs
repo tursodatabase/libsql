@@ -1,6 +1,6 @@
 use crate::local::{Connection, Statement};
 use crate::params::Params;
-use crate::rows::{RowInner, RowsInner};
+use crate::rows::{ColumnsInner, RowInner, RowsInner};
 use crate::{errors, Error, Result};
 use crate::{Value, ValueRef};
 use libsql_sys::ValueType;
@@ -213,7 +213,9 @@ impl RowsInner for BatchedRows {
             Ok(None)
         }
     }
+}
 
+impl ColumnsInner for BatchedRows {
     fn column_count(&self) -> i32 {
         self.cols.len() as i32
     }
@@ -244,10 +246,6 @@ impl RowInner for BatchedRow {
             .ok_or(Error::InvalidColumnIndex)
     }
 
-    fn column_name(&self, idx: i32) -> Option<&str> {
-        self.cols.get(idx as usize).map(|c| c.0.as_str())
-    }
-
     fn column_str(&self, idx: i32) -> Result<&str> {
         self.row
             .get(idx as usize)
@@ -258,9 +256,15 @@ impl RowInner for BatchedRow {
                     .ok_or(Error::InvalidColumnType)
             })
     }
+}
 
-    fn column_count(&self) -> usize {
-        self.cols.len()
+impl ColumnsInner for BatchedRow {
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        self.cols.get(idx as usize).map(|c| c.0.as_str())
+    }
+
+    fn column_count(&self) -> i32 {
+        self.cols.len() as i32
     }
 
     fn column_type(&self, idx: i32) -> Result<crate::value::ValueType> {
