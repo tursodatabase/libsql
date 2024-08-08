@@ -107,9 +107,9 @@ struct DiskAnnNode {
  * so caller which puts nodes in the context can forget about resource managmenet (context will take care of this)
 */
 struct DiskAnnSearchCtx {
-  VectorPair query;       /* initial query vector; user query for SELECT and row vector for INSERT */
-  DiskAnnNode **aCandidates;    /* array of candidates ordered by distance to the query (ascending) */
-  float *aDistances;            /* array of distances to the query vector */
+  VectorPair query;             /* initial query vector; user query for SELECT and row vector for INSERT */
+  DiskAnnNode **aCandidates;    /* array of unvisited candidates ordered by distance (possibly approximate) to the query (ascending) */
+  float *aDistances;            /* array of distances (possible approximate) to the query vector */
   unsigned int nCandidates;     /* current size of aCandidates/aDistances arrays */
   unsigned int maxCandidates;   /* max size of aCandidates/aDistances arrays */
   DiskAnnNode **aTopCandidates; /* top candidates with exact distance calculated */
