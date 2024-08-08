@@ -140,7 +140,7 @@ do_execsql_test vector-sql {
   INSERT INTO t_sql VALUES(vector('[1,2,3]')), (vector('[2,3,4]'));
   SELECT sql FROM sqlite_master WHERE name LIKE '%t_sql%';
   SELECT name FROM libsql_vector_meta_shadow WHERE name = 't_sql_idx';
-} {{CREATE TABLE t_sql( v FLOAT32(3))} {CREATE TABLE t_sql_idx_shadow (index_key  INTEGER , data BLOB, PRIMARY KEY (index_key))} {CREATE INDEX t_sql_idx ON t_sql( libsql_vector_idx(v) )} {t_sql_idx}}
+} {{CREATE TABLE t_sql( v FLOAT32(3))} {CREATE TABLE t_sql_idx_shadow (index_key  INTEGER , data BLOB, PRIMARY KEY (index_key))} {CREATE INDEX t_sql_idx_shadow_idx ON t_sql_idx_shadow (index_key)} {CREATE INDEX t_sql_idx ON t_sql( libsql_vector_idx(v) )} {t_sql_idx}}
 
 do_execsql_test vector-drop-index {
   CREATE TABLE t_index_drop( v FLOAT32(3));
