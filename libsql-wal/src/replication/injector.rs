@@ -94,7 +94,10 @@ mod test {
 
         let mut tx = crate::transaction::Transaction::Read(replica_shared.begin_read(42));
         replica_shared.upgrade(&mut tx).unwrap();
-        let guard = tx.into_write().unwrap_or_else(|_| panic!()).into_lock_owned();
+        let guard = tx
+            .into_write()
+            .unwrap_or_else(|_| panic!())
+            .into_lock_owned();
         let mut injector = Injector::new(replica_shared.clone(), guard, 10).unwrap();
 
         primary_conn.execute("create table test (x)", ()).unwrap();

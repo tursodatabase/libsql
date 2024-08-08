@@ -1455,7 +1455,8 @@ impl Replicator {
             4096,
             libsql_sys::connection::NO_AUTOCHECKPOINT,
             encryption_config,
-        ).await?;
+        )
+        .await?;
         let prefix = format!("{}-{}/", self.db_name, generation);
         let mut page_buf = {
             let mut v = Vec::with_capacity(page_size);

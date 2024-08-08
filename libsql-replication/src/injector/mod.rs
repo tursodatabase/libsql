@@ -1,16 +1,16 @@
 use std::future::Future;
 
-pub use sqlite_injector::SqliteInjector;
 pub use libsql_injector::LibsqlInjector;
+pub use sqlite_injector::SqliteInjector;
 
 use crate::frame::{Frame, FrameNo};
 
-use error::Result;
 pub use error::Error;
+use error::Result;
 
 mod error;
-mod sqlite_injector;
 mod libsql_injector;
+mod sqlite_injector;
 
 pub trait Injector {
     /// Inject a singular frame.

@@ -168,7 +168,7 @@ where
             auto_checkpoint,
             encryption_config,
         )
-            .await?;
+        .await?;
 
         Ok(Self::new(client, injector))
     }
@@ -179,7 +179,6 @@ where
     C: ReplicatorClient,
     I: Injector,
 {
-
     pub fn new(client: C, injector: I) -> Self {
         Self {
             client,
