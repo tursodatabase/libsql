@@ -129,6 +129,10 @@ static inline u16 readLE16(const unsigned char *p){
   return (u16)p[0] | (u16)p[1] << 8;
 }
 
+static inline u32 readLE32(const unsigned char *p){
+  return (u32)p[0] | (u32)p[1] << 8 | (u32)p[2] << 16 | (u32)p[3] << 24;
+}
+
 static inline u64 readLE64(const unsigned char *p){
   return (u64)p[0]
        | (u64)p[1] << 8
@@ -143,6 +147,13 @@ static inline u64 readLE64(const unsigned char *p){
 static inline void writeLE16(unsigned char *p, u16 v){
   p[0] = v;
   p[1] = v >> 8;
+}
+
+static inline void writeLE32(unsigned char *p, u32 v){
+  p[0] = v;
+  p[1] = v >> 8;
+  p[2] = v >> 16;
+  p[3] = v >> 24;
 }
 
 static inline void writeLE64(unsigned char *p, u64 v){
@@ -333,12 +344,17 @@ u16 nodeBinEdges(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
   return readLE16(pBlobSpot->pBuffer + sizeof(u64));
 }
 
-void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, Vector *pVector) {
+void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, float *pDistance, Vector *pVector) {
+  u32 distance;
   int offset = nodeEdgesMetadataOffset(pIndex);
 
   if( pRowid != NULL ){
     assert( offset + (iEdge + 1) * VECTOR_EDGE_METADATA_SIZE <= pBlobSpot->nBufferSize );
     *pRowid = readLE64(pBlobSpot->pBuffer + offset + iEdge * VECTOR_EDGE_METADATA_SIZE + sizeof(u64));
+  }
+  if( pIndex->nFormatVersion != VECTOR_FORMAT_V1 && pDistance != NULL ){
+    distance = readLE32(pBlobSpot->pBuffer + offset + iEdge * VECTOR_EDGE_METADATA_SIZE + sizeof(u32));
+    *pDistance = *((float*)&distance);
   }
   if( pVector != NULL ){
     assert( VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + iEdge * pIndex->nEdgeVectorSize < offset );
@@ -356,7 +372,7 @@ int nodeBinEdgeFindIdx(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, u6
   // todo: if edges will be sorted by identifiers we can use binary search here (although speed up will be visible only on pretty loaded nodes: >128 edges)
   for(i = 0; i < nEdges; i++){
     u64 edgeId;
-    nodeBinEdge(pIndex, pBlobSpot, i, &edgeId, NULL);
+    nodeBinEdge(pIndex, pBlobSpot, i, &edgeId, NULL, NULL);
     if( edgeId == nRowid ){
       return i;
     }
@@ -371,7 +387,7 @@ void nodeBinPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int nPru
 }
 
 // replace edge at position iReplace or add new one if iReplace == nEdges
-void nodeBinReplaceEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iReplace, u64 nRowid, Vector *pVector) {
+void nodeBinReplaceEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iReplace, u64 nRowid, float distance, Vector *pVector) {
   int nMaxEdges = nodeEdgesMaxCount(pIndex);
   int nEdges = nodeBinEdges(pIndex, pBlobSpot);
   int edgeVectorOffset, edgeMetaOffset, itemsToMove;
@@ -390,6 +406,7 @@ void nodeBinReplaceEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iRe
   assert( edgeMetaOffset + VECTOR_EDGE_METADATA_SIZE <= pBlobSpot->nBufferSize );
 
   vectorSerializeToBlob(pVector, pBlobSpot->pBuffer + edgeVectorOffset, pIndex->nEdgeVectorSize);
+  writeLE32(pBlobSpot->pBuffer + edgeMetaOffset + sizeof(u32), *((u32*)&distance));
   writeLE64(pBlobSpot->pBuffer + edgeMetaOffset + sizeof(u64), nRowid);
 
   writeLE16(pBlobSpot->pBuffer + sizeof(u64), nEdges);
@@ -424,6 +441,7 @@ void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
 #if defined(SQLITE_DEBUG) && defined(SQLITE_VECTOR_TRACE)
   int nEdges, nMaxEdges, i;
   u64 nRowid;
+  float distance = 0;
   Vector vector;
 
   nEdges = nodeBinEdges(pIndex, pBlobSpot);
@@ -434,8 +452,8 @@ void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
   DiskAnnTrace(("  nEdges=%d, nMaxEdges=%d, vector=", nEdges, nMaxEdges));
   vectorDump(&vector);
   for(i = 0; i < nEdges; i++){
-    nodeBinEdge(pIndex, pBlobSpot, i, &nRowid, &vector);
-    DiskAnnTrace(("  to=%lld, vector=", nRowid, nRowid));
+    nodeBinEdge(pIndex, pBlobSpot, i, &nRowid, &distance, &vector);
+    DiskAnnTrace(("  to=%lld, distance=%f, vector=", nRowid, distance));
     vectorDump(&vector);
   }
 #endif
@@ -1126,7 +1144,8 @@ static int diskAnnReplaceEdgeIdx(
   BlobSpot *pNodeBlob,
   u64 newRowid,
   VectorPair *pNewVector,
-  VectorPair *pPlaceholder
+  VectorPair *pPlaceholder,
+  float *pNodeToNew
 ) {
   int i, nEdges, nMaxEdges, iReplace = -1;
   Vector nodeVector, edgeVector;
@@ -1139,19 +1158,23 @@ static int diskAnnReplaceEdgeIdx(
 
   // we need to evaluate potentially approximate distance here in order to correctly compare it with edge distances
   nodeToNew = diskAnnVectorDistance(pIndex, pPlaceholder->pEdge, pNewVector->pEdge);
+  *pNodeToNew = nodeToNew;
 
   for(i = nEdges - 1; i >= 0; i--){
     u64 edgeRowid;
     float edgeToNew, nodeToEdge;
 
-    nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, &edgeVector);
+    nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, &nodeToEdge, &edgeVector);
     if( edgeRowid == newRowid ){
       // deletes can leave "zombie" edges in the graph and we must override them and not store duplicate edges in the node
       return i;
     }
 
+    if( pIndex->nFormatVersion == VECTOR_FORMAT_V1 ){
+      nodeToEdge = diskAnnVectorDistance(pIndex, pPlaceholder->pEdge, &edgeVector);
+    }
+
     edgeToNew = diskAnnVectorDistance(pIndex, &edgeVector, pNewVector->pEdge);
-    nodeToEdge = diskAnnVectorDistance(pIndex, pPlaceholder->pEdge, &edgeVector);
     if( nodeToNew > pIndex->pruningAlpha * edgeToNew ){
       return -1;
     }
@@ -1186,7 +1209,7 @@ static void diskAnnPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob, i
   nodeBinDebug(pIndex, pNodeBlob);
 #endif
 
-  nodeBinEdge(pIndex, pNodeBlob, iInserted, &hintRowid, &hintEdgeVector);
+  nodeBinEdge(pIndex, pNodeBlob, iInserted, &hintRowid, NULL, &hintEdgeVector);
 
   // remove edges which is no longer interesting due to the addition of iInserted
   i = 0;
@@ -1194,13 +1217,16 @@ static void diskAnnPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pNodeBlob, i
     Vector edgeVector;
     float nodeToEdge, hintToEdge;
     u64 edgeRowid;
-    nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, &edgeVector);
+    nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, &nodeToEdge, &edgeVector);
 
     if( hintRowid == edgeRowid ){
       i++;
       continue;
     }
-    nodeToEdge = diskAnnVectorDistance(pIndex, pPlaceholder->pEdge, &edgeVector);
+    if( pIndex->nFormatVersion == VECTOR_FORMAT_V1 ){
+      nodeToEdge = diskAnnVectorDistance(pIndex, pPlaceholder->pEdge, &edgeVector);
+    }
+
     hintToEdge = diskAnnVectorDistance(pIndex, &hintEdgeVector, &edgeVector);
     if( nodeToEdge > pIndex->pruningAlpha * hintToEdge ){
       nodeBinDeleteEdge(pIndex, pNodeBlob, i);
@@ -1315,7 +1341,7 @@ static int diskAnnSearchInternal(DiskAnnIndex *pIndex, DiskAnnSearchCtx *pCtx, u
       float edgeDistance;
       int iInsert;
       DiskAnnNode *pNewCandidate;
-      nodeBinEdge(pIndex, pCandidateBlob, i, &edgeRowid, &edgeVector);
+      nodeBinEdge(pIndex, pCandidateBlob, i, &edgeRowid, NULL, &edgeVector);
       if( diskAnnSearchCtxIsVisited(pCtx, edgeRowid) || diskAnnSearchCtxHasCandidate(pCtx, edgeRowid) ){
         continue;
       }
@@ -1512,15 +1538,16 @@ int diskAnnInsert(
   for(pVisited = ctx.visitedList; pVisited != NULL; pVisited = pVisited->pNext){
     Vector nodeVector;
     int iReplace;
+    float nodeToNew;
 
     nodeBinVector(pIndex, pVisited->pBlobSpot, &nodeVector);
     loadVectorPair(&vCandidate, &nodeVector);
 
-    iReplace = diskAnnReplaceEdgeIdx(pIndex, pBlobSpot, pVisited->nRowid, &vCandidate, &vInsert);
+    iReplace = diskAnnReplaceEdgeIdx(pIndex, pBlobSpot, pVisited->nRowid, &vCandidate, &vInsert, &nodeToNew);
     if( iReplace == -1 ){
       continue;
     }
-    nodeBinReplaceEdge(pIndex, pBlobSpot, iReplace, pVisited->nRowid, vCandidate.pEdge);
+    nodeBinReplaceEdge(pIndex, pBlobSpot, iReplace, pVisited->nRowid, nodeToNew, vCandidate.pEdge);
     diskAnnPruneEdges(pIndex, pBlobSpot, iReplace, &vInsert);
   }
 
@@ -1528,12 +1555,13 @@ int diskAnnInsert(
   loadVectorPair(&vInsert, pVectorInRow->pVector);
   for(pVisited = ctx.visitedList; pVisited != NULL; pVisited = pVisited->pNext){
     int iReplace;
+    float nodeToNew;
 
-    iReplace = diskAnnReplaceEdgeIdx(pIndex, pVisited->pBlobSpot, nNewRowid, &vInsert, &vCandidate);
+    iReplace = diskAnnReplaceEdgeIdx(pIndex, pVisited->pBlobSpot, nNewRowid, &vInsert, &vCandidate, &nodeToNew);
     if( iReplace == -1 ){
       continue;
     }
-    nodeBinReplaceEdge(pIndex, pVisited->pBlobSpot, iReplace, nNewRowid, vInsert.pEdge);
+    nodeBinReplaceEdge(pIndex, pVisited->pBlobSpot, iReplace, nNewRowid, nodeToNew, vInsert.pEdge);
     diskAnnPruneEdges(pIndex, pVisited->pBlobSpot, iReplace, &vCandidate);
 
     rc = blobSpotFlush(pIndex, pVisited->pBlobSpot);
@@ -1598,7 +1626,7 @@ int diskAnnDelete(
   nNeighbours = nodeBinEdges(pIndex, pNodeBlob);
   for(i = 0; i < nNeighbours; i++){
     u64 edgeRowid;
-    nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, NULL);
+    nodeBinEdge(pIndex, pNodeBlob, i, &edgeRowid, NULL, NULL);
     rc = blobSpotReload(pIndex, pEdgeBlob, edgeRowid, pIndex->nBlockSize);
     if( rc == DISKANN_ROW_NOT_FOUND ){
       continue;

@@ -73,10 +73,10 @@ int nodeEdgesMetadataOffset(const DiskAnnIndex *pIndex);
 void nodeBinInit(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, Vector *pVector);
 void nodeBinVector(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, Vector *pVector);
 u16 nodeBinEdges(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot);
-void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, Vector *pVector);
+void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdge, u64 *pRowid, float *distance, Vector *pVector);
 int nodeBinEdgeFindIdx(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, u64 nRowid);
 void nodeBinPruneEdges(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int nPruned);
-void nodeBinReplaceEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iReplace, u64 nRowid, Vector *pVector);
+void nodeBinReplaceEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iReplace, u64 nRowid, float distance, Vector *pVector);
 void nodeBinDeleteEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDelete);
 void nodeBinDebug(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot);
 
@@ -102,9 +102,11 @@ typedef u8 MetricType;
 /* format version which can help to upgrade vector on-disk format without breaking older version of the db */
 #define VECTOR_FORMAT_PARAM_ID              1
 /*
- * 1 - initial version
+ * 1 - v1 version; node block format: [node meta] [node vector] [edge vectors] ... [ [u64 unused               ] [u64 edge rowid] ] ...
+ * 2 - v2 version; node block format: [node meta] [node vector] [edge vectors] ... [ [u32 unused] [f32 distance] [u64 edge rowid] ] ...
 */
-#define VECTOR_FORMAT_DEFAULT               1
+#define VECTOR_FORMAT_V1                    1
+#define VECTOR_FORMAT_DEFAULT               2
 
 /* type of the vector index */
 #define VECTOR_INDEX_TYPE_PARAM_ID          2
