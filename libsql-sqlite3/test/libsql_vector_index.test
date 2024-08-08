@@ -275,6 +275,36 @@ do_execsql_test vector-all-params {
   SELECT * FROM vector_top_k('t_all_params_idx', vector('[1,2]'), 2);
 } {1 2}
 
+do_execsql_test vector-partial {
+  CREATE TABLE t_partial( name TEXT, type INT, v FLOAT32(3));
+  INSERT INTO t_partial VALUES ( 'a', 0, vector('[1,2,3]') );
+  INSERT INTO t_partial VALUES ( 'b', 1, vector('[3,4,5]') );
+  INSERT INTO t_partial VALUES ( 'c', 2, vector('[4,5,6]') );
+  INSERT INTO t_partial VALUES ( 'd', 0, vector('[5,6,7]') );
+  INSERT INTO t_partial VALUES ( 'e', 1, vector('[6,7,8]') );
+  INSERT INTO t_partial VALUES ( 'f', 2, vector('[7,8,9]') );
+  CREATE INDEX t_partial_idx_0 ON t_partial( libsql_vector_idx(v) ) WHERE type = 0;
+  CREATE INDEX t_partial_idx_1 ON t_partial( libsql_vector_idx(v) ) WHERE type = 1;
+  CREATE INDEX t_partial_idx_not_0 ON t_partial( libsql_vector_idx(v) ) WHERE type != 0;
+  SELECT id FROM vector_top_k('t_partial_idx_0', vector('[1,2,3]'), 10);
+  SELECT id FROM vector_top_k('t_partial_idx_1', vector('[1,2,3]'), 10);
+  SELECT id FROM vector_top_k('t_partial_idx_not_0', vector('[1,2,3]'), 10);
+  INSERT INTO t_partial VALUES ( 'g', 0, vector('[8,9,10]') );
+  INSERT INTO t_partial VALUES ( 'h', 1, vector('[9,10,11]') );
+  INSERT INTO t_partial VALUES ( 'i', 2, vector('[10,11,12]') );
+  SELECT id FROM vector_top_k('t_partial_idx_0', vector('[1,2,3]'), 10);
+  SELECT id FROM vector_top_k('t_partial_idx_1', vector('[1,2,3]'), 10);
+  SELECT id FROM vector_top_k('t_partial_idx_not_0', vector('[1,2,3]'), 10);
+} {
+  1 4  
+  2 5  
+  2 3 5 6  
+
+  1 4 7  
+  2 5 8  
+  2 3 5 6 8 9
+}
+
 proc error_messages {sql} {
   set ret ""
   catch {
@@ -309,8 +339,6 @@ do_test vector-errors {
   sqlite3_exec db { CREATE TABLE t_mixed_t( v FLOAT32(3)); }
   sqlite3_exec db { INSERT INTO t_mixed_t VALUES('[1]'); }
   lappend ret [error_messages {CREATE INDEX t_mixed_t_idx ON t_mixed_t( libsql_vector_idx(v) )}]
-  sqlite3_exec db { CREATE TABLE t_partial( name TEXT, type INT, v FLOAT32(3)); }
-  lappend ret [error_messages {CREATE INDEX t_partial_idx ON t_partial( libsql_vector_idx(v) ) WHERE type = 0}]
 } [list {*}{
   {no such table: main.t_no}
   {no such column: v}
@@ -328,5 +356,4 @@ do_test vector-errors {
   {vector index(insert): only f32 vectors are supported}
   {vector index(search): dimensions are different: 2 != 4}
   {vector index(insert): dimensions are different: 1 != 3}
-  {vector index: where condition is forbidden}
 }]
