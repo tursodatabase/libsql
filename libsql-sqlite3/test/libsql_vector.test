@@ -50,6 +50,16 @@ do_execsql_test vector-1-func-valid {
   SELECT vector_distance_cos('[1,1]', '[-1,-1]');
   SELECT vector_distance_cos('[1,1]', '[-1,1]');
   SELECT vector_distance_cos('[1,2]', '[2,1]');
+  SELECT
+    vector_extract(vector_mult(-0.5, '[2,-4]')),
+    vector_extract(vector_mult('[2,-4]', -0.5)),
+    vector_extract(vector_mult(-1, '[2,-4]')),
+    vector_extract(vector_mult(-0.5, vector('[2,-4]')));
+  SELECT vector_extract(vector_sum(
+    '[1,2]',
+    vector('[2,3]'),
+    vector_mult(2, vector('[3,4]'))
+  ));
 } {
   {[]} 
   {[]} 
@@ -65,6 +75,26 @@ do_execsql_test vector-1-func-valid {
   {2.0} 
   {1.0} 
   {0.200000002980232}
+  {[-1,2]} {[-1,2]} {[-2,4]} {[-1,2]}
+  {[9,13]}
+}
+
+do_execsql_test vector-1-agg-valid {
+  CREATE TABLE t_vec_agg ( a FLOAT32(2), b FLOAT32(2), c FLOAT32(2), k FLOAT );
+  INSERT INTO t_vec_agg VALUES (vector('[1,2]'), '[2,3]', '[3,4]', 1);
+  INSERT INTO t_vec_agg VALUES (vector('[2,3]'), '[3,4]', vector('[4,5]'), 2);
+  SELECT vector_extract(vector_sum(a)) FROM t_vec_agg;
+  SELECT vector_extract(vector_sum(b)) FROM t_vec_agg;
+  SELECT vector_extract(vector_sum(c)) FROM t_vec_agg;
+  INSERT INTO t_vec_agg VALUES (vector('[3,4]'), '[4,5]', '6', 3);
+  SELECT vector_extract(vector_sum(a)) FROM t_vec_agg;
+  SELECT vector_extract(vector_sum(vector_mult(b, k))) FROM t_vec_agg;
+} {
+  {[3,5]}
+  {[5,7]}
+  {[7,9]}
+  {[6,9]}
+  {[20,26]}
 }
 
 proc error_messages {sql} {
@@ -89,6 +119,10 @@ do_test vector-1-func-errors {
   lappend ret [error_messages {SELECT vector(x'0000000000')}]
   lappend ret [error_messages {SELECT vector_distance_cos('[1,2,3]', '[1,2]')}]
   lappend ret [error_messages {SELECT vector_distance_cos(vector32('[1,2,3]'), vector64('[1,2,3]'))}]
+  lappend ret [error_messages {SELECT vector_sum(vector32('[1,2,3]'), vector64('[1,2,3]'))}]
+  lappend ret [error_messages {SELECT vector_sum(vector('[1,2,3]'), vector('[1,2]'))}]
+  lappend ret [error_messages {SELECT vector_sum(1, vector64('[1,2,3]'))}]
+  lappend ret [error_messages {SELECT vector_mult(1, 2)}]
 } [list {*}{
   {vector: unexpected value type: got FLOAT, expected TEXT or BLOB}
   {vector: unexpected value type: got INTEGER, expected TEXT or BLOB}
@@ -102,4 +136,8 @@ do_test vector-1-func-errors {
   {vector: unexpected binary type: got 0, expected 1 or 2}
   {vector_distance_cos: vectors must have the same length: 3 != 2}
   {vector_distance_cos: vectors must have the same type: 1 != 2}
+  {vector_sum: vectors must have the same type: 1 != 2}
+  {vector_sum: vectors must have the same length: 3 != 2}
+  {vector: unexpected value type: got INTEGER, expected TEXT or BLOB}
+  {vector_mult: unexpected parameters: got INTEGER and INTEGER, but expected vector-compatible and float-compatible types}
 }]
