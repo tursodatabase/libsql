@@ -511,7 +511,7 @@ impl Namespace {
         )
         .await?;
         let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
-        let mut replicator = libsql_replication::replicator::Replicator::new(
+        let mut replicator = libsql_replication::replicator::Replicator::new_sqlite(
             client,
             db_path.join("data"),
             DEFAULT_AUTO_CHECKPOINT,
