@@ -1542,43 +1542,6 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
   }
 }
 
-
-// [sum(map(int, bin(i)[2:])) for i in range(256)]
-static int BitsCount[256] = {
-  0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
-  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-  4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
-};
-
-int sqlite3PopCount32(u32 a){
-#if GCC_VERSION>=5004000 && !defined(__INTEL_COMPILER)
-  return __builtin_popcount(a);
-#else
-  return BitsCount[a >> 24] + BitsCount[(a >> 16) & 0xff] + BitsCount[(a >> 8) & 0xff] + BitsCount[a & 0xff];
-#endif
-}
-
-int sqlite3PopCount64(u64 a){
-#if GCC_VERSION>=5004000 && !defined(__INTEL_COMPILER)
-  return __builtin_popcountll(a);
-#else
-  return sqlite3PopCount32(a >> 32) + sqlite3PopCount32(a & 0xffffffff);
-#endif
-}
-
 /*
 ** Attempt to add, subtract, or multiply the 64-bit signed value iB against
 ** the other 64-bit signed integer at *pA and store the result in *pA.

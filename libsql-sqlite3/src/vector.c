@@ -494,9 +494,7 @@ void vectorConvert(const Vector *pFrom, Vector *pTo){
       bitData[i / 8] = 0;
     }
     for(i = 0; i < pFrom->dims; i++){
-      if( floatData[i] < 0 ){
-        bitData[i / 8] &= ~(1 << (i & 7));
-      }else{
+      if( floatData[i] > 0 ){
         bitData[i / 8] |= (1 << (i & 7));
       }
     }
