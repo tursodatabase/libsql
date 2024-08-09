@@ -261,7 +261,7 @@ int vectorInRowAlloc(sqlite3 *db, const UnpackedRecord *pRecord, VectorInRow *pV
     vectorInitFromBlob(pVectorInRow->pVector, sqlite3_value_blob(pVectorValue), sqlite3_value_bytes(pVectorValue));
   } else if( sqlite3_value_type(pVectorValue) == SQLITE_TEXT ){
     // users can put strings (e.g. '[1,2,3]') in the table and we should process them correctly
-    if( vectorParse(pVectorValue, pVectorInRow->pVector, pzErrMsg) != 0 ){
+    if( vectorParseWithType(pVectorValue, pVectorInRow->pVector, pzErrMsg) != 0 ){
       rc = SQLITE_ERROR;
       goto out;
     }
@@ -396,13 +396,14 @@ struct VectorParamName {
 };
 
 static struct VectorParamName VECTOR_PARAM_NAMES[] = {
-  { "type",          VECTOR_INDEX_TYPE_PARAM_ID,    0, "diskann", VECTOR_INDEX_TYPE_DISKANN },
-  { "metric",        VECTOR_METRIC_TYPE_PARAM_ID,   0, "cosine", VECTOR_METRIC_TYPE_COS },
-  { "metric",        VECTOR_METRIC_TYPE_PARAM_ID,   0, "l2",     VECTOR_METRIC_TYPE_L2 },
-  { "alpha",         VECTOR_PRUNING_ALPHA_PARAM_ID, 2, 0, 0 },
-  { "search_l",      VECTOR_SEARCH_L_PARAM_ID,      1, 0, 0 },
-  { "insert_l",      VECTOR_INSERT_L_PARAM_ID,      1, 0, 0 },
-  { "max_neighbors", VECTOR_MAX_NEIGHBORS_PARAM_ID, 1, 0, 0 },
+  { "type",               VECTOR_INDEX_TYPE_PARAM_ID,         0, "diskann", VECTOR_INDEX_TYPE_DISKANN },
+  { "metric",             VECTOR_METRIC_TYPE_PARAM_ID,        0, "cosine",  VECTOR_METRIC_TYPE_COS },
+  { "metric",             VECTOR_METRIC_TYPE_PARAM_ID,        0, "l2",      VECTOR_METRIC_TYPE_L2 },
+  { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "1bit",    VECTOR_TYPE_1BIT },
+  { "alpha",              VECTOR_PRUNING_ALPHA_PARAM_ID, 2, 0, 0 },
+  { "search_l",           VECTOR_SEARCH_L_PARAM_ID,      1, 0, 0 },
+  { "insert_l",           VECTOR_INSERT_L_PARAM_ID,      1, 0, 0 },
+  { "max_neighbors",      VECTOR_MAX_NEIGHBORS_PARAM_ID, 1, 0, 0 },
 };
 
 static int parseVectorIdxParam(const char *zParam, VectorIdxParams *pParams, const char **pErrMsg) {
@@ -802,7 +803,7 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
   int i, rc = SQLITE_OK;
   int dims, type;
   int hasLibsqlVectorIdxFn = 0, hasCollation = 0;
-  const char *pzErrMsg;
+  const char *pzErrMsg = NULL;
 
   assert( zDbSName != NULL );
 
@@ -909,9 +910,13 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
     sqlite3ErrorMsg(pParse, "vector index: unsupported for tables without ROWID and composite primary key");
     return CREATE_FAIL;
   }
-  rc = diskAnnCreateIndex(db, zDbSName, pIdx->zName, &idxKey, &idxParams);
+  rc = diskAnnCreateIndex(db, zDbSName, pIdx->zName, &idxKey, &idxParams, &pzErrMsg);
   if( rc != SQLITE_OK ){
-    sqlite3ErrorMsg(pParse, "vector index: unable to initialize diskann");
+    if( pzErrMsg != NULL ){
+      sqlite3ErrorMsg(pParse, "vector index: unable to initialize diskann: %s", pzErrMsg);
+    }else{
+      sqlite3ErrorMsg(pParse, "vector index: unable to initialize diskann");
+    }
     return CREATE_FAIL;
   }
   rc = insertIndexParameters(db, zDbSName, pIdx->zName, &idxParams);
@@ -972,7 +977,7 @@ int vectorIndexSearch(
     rc = SQLITE_NOMEM_BKPT;
     goto out;
   }
-  if( vectorParse(argv[1], pVector, pzErrMsg) != 0 ){
+  if( vectorParseWithType(argv[1], pVector, pzErrMsg) != 0 ){
     rc = SQLITE_ERROR;
     goto out;
   }
