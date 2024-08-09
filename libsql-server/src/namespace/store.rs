@@ -13,15 +13,17 @@ use tokio_stream::wrappers::BroadcastStream;
 use crate::auth::Authenticated;
 use crate::broadcaster::BroadcastMsg;
 use crate::connection::config::DatabaseConfig;
+use crate::database::DatabaseKind;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
 use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName};
 use crate::stats::Stats;
 
 use super::broadcasters::{BroadcasterHandle, BroadcasterRegistry};
+use super::configurator::{DynConfigurator, NamespaceConfigurators};
 use super::meta_store::{MetaStore, MetaStoreHandle};
 use super::schema_lock::SchemaLocksRegistry;
-use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, ResolveNamespacePathFn, RestoreOption};
+use super::{Namespace, ResetCb, ResetOp, ResolveNamespacePathFn, RestoreOption};
 
 type NamespaceEntry = Arc<RwLock<Option<Namespace>>>;
 
@@ -44,18 +46,20 @@ pub struct NamespaceStoreInner {
     allow_lazy_creation: bool,
     has_shutdown: AtomicBool,
     snapshot_at_shutdown: bool,
-    pub config: NamespaceConfig,
     schema_locks: SchemaLocksRegistry,
     broadcasters: BroadcasterRegistry,
+    configurators: NamespaceConfigurators,
+    db_kind: DatabaseKind,
 }
 
 impl NamespaceStore {
-    pub async fn new(
+    pub(crate) async fn new(
         allow_lazy_creation: bool,
         snapshot_at_shutdown: bool,
         max_active_namespaces: usize,
-        config: NamespaceConfig,
         metadata: MetaStore,
+        configurators: NamespaceConfigurators,
+        db_kind: DatabaseKind,
     ) -> crate::Result<Self> {
         tracing::trace!("Max active namespaces: {max_active_namespaces}");
         let store = Cache::<NamespaceName, NamespaceEntry>::builder()
@@ -87,9 +91,10 @@ impl NamespaceStore {
                 allow_lazy_creation,
                 has_shutdown: AtomicBool::new(false),
                 snapshot_at_shutdown,
-                config,
                 schema_locks: Default::default(),
                 broadcasters: Default::default(),
+                configurators,
+                db_kind,
             }),
         })
     }
@@ -127,14 +132,8 @@ impl NamespaceStore {
             }
         }
 
-        Namespace::cleanup(
-            &self.inner.config,
-            &namespace,
-            &db_config,
-            prune_all,
-            bottomless_db_id_init,
-        )
-        .await?;
+        self.cleanup(&namespace, &db_config, prune_all, bottomless_db_id_init)
+            .await?;
 
         tracing::info!("destroyed namespace: {namespace}");
 
@@ -174,27 +173,18 @@ impl NamespaceStore {
             ns.destroy().await?;
         }
 
-        let handle = self.inner.metadata.handle(namespace.clone());
+        let db_config = self.inner.metadata.handle(namespace.clone());
         // destroy on-disk database
-        Namespace::cleanup(
-            &self.inner.config,
+        self.cleanup(
             &namespace,
-            &handle.get(),
+            &db_config.get(),
             false,
             NamespaceBottomlessDbIdInit::FetchFromConfig,
         )
         .await?;
-        let ns = Namespace::from_config(
-            &self.inner.config,
-            handle,
-            restore_option,
-            &namespace,
-            self.make_reset_cb(),
-            self.resolve_attach_fn(),
-            self.clone(),
-            self.broadcaster(namespace.clone()),
-        )
-        .await?;
+        let ns = self
+            .make_namespace(&namespace, db_config, restore_option)
+            .await?;
 
         lock.replace(ns);
 
@@ -294,18 +284,17 @@ impl NamespaceStore {
         handle
             .store_and_maybe_flush(Some(to_config.into()), false)
             .await?;
-        let to_ns = Namespace::fork(
-            &self.inner.config,
-            from_ns,
-            from_config,
-            to.clone(),
-            handle.clone(),
-            timestamp,
-            self.resolve_attach_fn(),
-            self.clone(),
-            self.broadcaster(to),
-        )
-        .await?;
+        let to_ns = self
+            .get_configurator(&from_config.get())
+            .fork(
+                from_ns,
+                from_config,
+                to.clone(),
+                handle.clone(),
+                timestamp,
+                self.clone(),
+            )
+            .await?;
 
         to_lock.replace(to_ns);
         handle.flush().await?;
@@ -378,30 +367,39 @@ impl NamespaceStore {
         .clone()
     }
 
+    pub(crate) async fn make_namespace(
+        &self,
+        namespace: &NamespaceName,
+        config: MetaStoreHandle,
+        restore_option: RestoreOption,
+    ) -> crate::Result<Namespace> {
+        let ns = self
+            .get_configurator(&config.get())
+            .setup(
+                config,
+                restore_option,
+                namespace,
+                self.make_reset_cb(),
+                self.resolve_attach_fn(),
+                self.clone(),
+                self.broadcaster(namespace.clone()),
+            )
+            .await?;
+
+        Ok(ns)
+    }
+
     async fn load_namespace(
         &self,
         namespace: &NamespaceName,
         db_config: MetaStoreHandle,
         restore_option: RestoreOption,
     ) -> crate::Result<NamespaceEntry> {
-        let init = {
-            let namespace = namespace.clone();
-            async move {
-                let ns = Namespace::from_config(
-                    &self.inner.config,
-                    db_config,
-                    restore_option,
-                    &namespace,
-                    self.make_reset_cb(),
-                    self.resolve_attach_fn(),
-                    self.clone(),
-                    self.broadcaster(namespace.clone()),
-                )
+        let init = async {
+            let ns = self
+                .make_namespace(namespace, db_config, restore_option)
                 .await?;
-                tracing::info!("loaded namespace: `{namespace}`");
-
-                Ok(Some(ns))
-            }
+            Ok(Some(ns))
         };
 
         let before_load = Instant::now();
@@ -515,5 +513,27 @@ impl NamespaceStore {
 
     pub(crate) fn schema_locks(&self) -> &SchemaLocksRegistry {
         &self.inner.schema_locks
+    }
+
+    fn get_configurator(&self, db_config: &DatabaseConfig) -> &DynConfigurator {
+        match self.inner.db_kind {
+            DatabaseKind::Primary if db_config.is_shared_schema => {
+                self.inner.configurators.configure_schema().unwrap()
+            }
+            DatabaseKind::Primary => self.inner.configurators.configure_primary().unwrap(),
+            DatabaseKind::Replica => self.inner.configurators.configure_replica().unwrap(),
+        }
+    }
+
+    async fn cleanup(
+        &self,
+        namespace: &NamespaceName,
+        db_config: &DatabaseConfig,
+        prune_all: bool,
+        bottomless_db_id_init: NamespaceBottomlessDbIdInit,
+    ) -> crate::Result<()> {
+        self.get_configurator(db_config)
+            .cleanup(namespace, db_config, prune_all, bottomless_db_id_init)
+            .await
     }
 }
