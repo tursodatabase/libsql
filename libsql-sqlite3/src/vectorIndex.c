@@ -862,11 +862,6 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
     sqlite3ErrorMsg(pParse, "vector index: must contain exactly one column wrapped into the " VECTOR_INDEX_MARKER_FUNCTION " function");
     return CREATE_FAIL;
   }
-  // we are able to support this but I doubt this works for now - more polishing required to make this work
-  if( pIdx->pPartIdxWhere != NULL ) {
-    sqlite3ErrorMsg(pParse, "vector index: where condition is forbidden");
-    return CREATE_FAIL;
-  }
 
   pArgsList = pIdx->aColExpr->a[0].pExpr->x.pList;
   pListItem = pArgsList->a;
