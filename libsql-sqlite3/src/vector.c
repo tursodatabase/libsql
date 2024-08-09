@@ -42,6 +42,7 @@ size_t vectorDataSize(VectorType type, VectorDims dims){
     case VECTOR_TYPE_FLOAT64:
       return dims * sizeof(double);
     case VECTOR_TYPE_1BIT:
+      assert( dims > 0 );
       return (dims + 7) / 8;
     default:
       assert(0);
@@ -252,7 +253,7 @@ error:
   return -1;
 }
 
-int vectorParseSqliteBlob(
+int vectorParseSqliteBlobWithType(
   sqlite3_value *arg,
   Vector *pVector,
   char **pzErrMsg
@@ -362,14 +363,14 @@ int detectVectorParameters(sqlite3_value *arg, int typeHint, int *pType, int *pD
   }
 }
 
-int vectorParse(
+int vectorParseWithType(
   sqlite3_value *arg,
   Vector *pVector,
   char **pzErrMsg
 ){
   switch( sqlite3_value_type(arg) ){
     case SQLITE_BLOB:
-      return vectorParseSqliteBlob(arg, pVector, pzErrMsg);
+      return vectorParseSqliteBlobWithType(arg, pVector, pzErrMsg);
     case SQLITE_TEXT:
       return vectorParseSqliteText(arg, pVector, pzErrMsg);
     default:
@@ -531,7 +532,7 @@ static void vectorFuncHintedType(
   if( pVector==NULL ){
     return;
   }
-  if( vectorParse(argv[0], pVector, &pzErrMsg) != 0 ){
+  if( vectorParseWithType(argv[0], pVector, &pzErrMsg) != 0 ){
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
     goto out_free_vec;
@@ -581,7 +582,7 @@ static void vectorExtractFunc(
   if( pVector==NULL ){
     return;
   }
-  if( vectorParse(argv[0], pVector, &pzErrMsg)<0 ){
+  if( vectorParseWithType(argv[0], pVector, &pzErrMsg)<0 ){
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
     goto out_free;
@@ -636,12 +637,12 @@ static void vectorDistanceCosFunc(
   if( pVector2==NULL ){
     goto out_free;
   }
-  if( vectorParse(argv[0], pVector1, &pzErrMsg)<0 ){
+  if( vectorParseWithType(argv[0], pVector1, &pzErrMsg)<0 ){
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
     goto out_free;
   }
-  if( vectorParse(argv[1], pVector2, &pzErrMsg)<0 ){
+  if( vectorParseWithType(argv[1], pVector2, &pzErrMsg)<0 ){
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
     goto out_free;

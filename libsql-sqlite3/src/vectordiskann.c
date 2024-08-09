@@ -47,7 +47,6 @@
 **    diskAnnInsert()          Insert single new(!) vector in an opened index
 **    diskAnnDelete()          Delete row by key from an opened index
 */
-#include "vectorInt.h"
 #ifndef SQLITE_OMIT_VECTOR
 
 #include "math.h"
@@ -84,7 +83,8 @@ typedef struct VectorPair VectorPair;
 typedef struct DiskAnnSearchCtx DiskAnnSearchCtx;
 typedef struct DiskAnnNode DiskAnnNode;
 
-// VectorPair represents single vector where pNode is an exact representation and pEdge - compressed representation (always NULL if pNodeType == pEdgeType)
+// VectorPair represents single vector where pNode is an exact representation and pEdge - compressed representation 
+// (pEdge pointer always equals to pNode if pNodeType == pEdgeType)
 struct VectorPair {
   int nodeType;
   int edgeType;
@@ -966,15 +966,13 @@ static int diskAnnSearchCtxInit(const DiskAnnIndex *pIndex, DiskAnnSearchCtx *pC
   pCtx->nUnvisited = 0;
   pCtx->blobMode = blobMode;
   if( initVectorPair(pIndex->nNodeVectorType, pIndex->nEdgeVectorType, pIndex->nVectorDims, &pCtx->query) != 0 ){
-    goto out_oom;
+    return SQLITE_NOMEM_BKPT;
   }
   loadVectorPair(&pCtx->query, pQuery);
 
-  if( pCtx->aDistances == NULL || pCtx->aCandidates == NULL || pCtx->aTopDistances == NULL || pCtx->aTopCandidates == NULL ){
-    goto out_oom;
+  if( pCtx->aDistances != NULL && pCtx->aCandidates != NULL && pCtx->aTopDistances != NULL && pCtx->aTopCandidates != NULL ){
+    return SQLITE_OK;
   }
-  return SQLITE_OK;
-out_oom:
   if( pCtx->aDistances != NULL ){
     sqlite3_free(pCtx->aDistances);
   }
@@ -987,6 +985,7 @@ out_oom:
   if( pCtx->aTopCandidates != NULL ){
     sqlite3_free(pCtx->aTopCandidates);
   }
+  deinitVectorPair(&pCtx->query);
   return SQLITE_NOMEM_BKPT;
 }
 

@@ -38,10 +38,14 @@
 void vectorF64Dump(const Vector *pVec){
   double *elems = pVec->data;
   unsigned i;
+
+  assert( pVec->type == VECTOR_TYPE_FLOAT64 );
+
+  printf("f64: [");
   for(i = 0; i < pVec->dims; i++){
-    printf("%lf ", elems[i]);
+    printf("%s%lf", i == 0 ? "" : ", ", elems[i]);
   }
-  printf("\n");
+  printf("]\n");
 }
 
 /**************************************************************************

@@ -41,10 +41,11 @@ void vectorF32Dump(const Vector *pVec){
 
   assert( pVec->type == VECTOR_TYPE_FLOAT32 );
 
+  printf("f32: [");
   for(i = 0; i < pVec->dims; i++){
-    printf("%f ", elems[i]);
+    printf("%s%f", i == 0 ? "" : ", ", elems[i]);
   }
-  printf("\n");
+  printf("]\n");
 }
 
 /**************************************************************************
@@ -92,34 +93,6 @@ size_t vectorF32SerializeToBlob(
     pPtr += serializeF32(pPtr, elems[i]);
   }
   return sizeof(float) * pVector->dims;
-}
-
-void vectorF32Serialize(
-  sqlite3_context *context,
-  const Vector *pVector
-){
-  float *elems = pVector->data;
-  unsigned char *pBlob;
-  size_t nBlobSize;
-
-  assert( pVector->type == VECTOR_TYPE_FLOAT32 );
-  assert( pVector->dims <= MAX_VECTOR_SZ );
-
-  nBlobSize = vectorDataSize(pVector->type, pVector->dims);
-
-  if( nBlobSize == 0 ){
-    sqlite3_result_zeroblob(context, 0);
-    return;
-  }
-
-  pBlob = sqlite3_malloc64(nBlobSize);
-  if( pBlob == NULL ){
-    sqlite3_result_error_nomem(context);
-    return;
-  }
-
-  vectorF32SerializeToBlob(pVector, pBlob, nBlobSize);
-  sqlite3_result_blob(context, (char*)pBlob, nBlobSize, sqlite3_free);
 }
 
 #define SINGLE_FLOAT_CHAR_LIMIT 32

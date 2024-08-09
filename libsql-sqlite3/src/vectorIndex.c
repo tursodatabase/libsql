@@ -261,7 +261,7 @@ int vectorInRowAlloc(sqlite3 *db, const UnpackedRecord *pRecord, VectorInRow *pV
     vectorInitFromBlob(pVectorInRow->pVector, sqlite3_value_blob(pVectorValue), sqlite3_value_bytes(pVectorValue));
   } else if( sqlite3_value_type(pVectorValue) == SQLITE_TEXT ){
     // users can put strings (e.g. '[1,2,3]') in the table and we should process them correctly
-    if( vectorParse(pVectorValue, pVectorInRow->pVector, pzErrMsg) != 0 ){
+    if( vectorParseWithType(pVectorValue, pVectorInRow->pVector, pzErrMsg) != 0 ){
       rc = SQLITE_ERROR;
       goto out;
     }
@@ -982,7 +982,7 @@ int vectorIndexSearch(
     rc = SQLITE_NOMEM_BKPT;
     goto out;
   }
-  if( vectorParse(argv[1], pVector, pzErrMsg) != 0 ){
+  if( vectorParseWithType(argv[1], pVector, pzErrMsg) != 0 ){
     rc = SQLITE_ERROR;
     goto out;
   }

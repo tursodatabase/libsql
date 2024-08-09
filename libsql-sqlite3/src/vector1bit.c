@@ -41,10 +41,11 @@ void vector1BitDump(const Vector *pVec){
 
   assert( pVec->type == VECTOR_TYPE_1BIT );
 
+  printf("f1bit: [");
   for(i = 0; i < pVec->dims; i++){
-    printf("%d ", ((elems[i / 8] >> (i & 7)) & 1) ? +1 : -1);
+    printf("%s%d", i == 0 ? "" : ", ", ((elems[i / 8] >> (i & 7)) & 1) ? +1 : -1);
   }
-  printf("\n");
+  printf("]\n");
 }
 
 /**************************************************************************

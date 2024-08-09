@@ -42,7 +42,7 @@ struct Vector {
 size_t vectorDataSize(VectorType, VectorDims);
 Vector *vectorAlloc(VectorType, VectorDims);
 void vectorFree(Vector *v);
-int vectorParse(sqlite3_value *, Vector *, char **);
+int vectorParseWithType(sqlite3_value *, Vector *, char **);
 void vectorInit(Vector *, VectorType, VectorDims, void *);
 
 /*
@@ -97,7 +97,7 @@ void vectorSerializeWithType(sqlite3_context *, const Vector *);
 /*
  * Parses Vector content from the blob; vector type and dimensions must be filled already
 */
-int vectorParseSqliteBlob   (sqlite3_value *, Vector *, char **);
+int vectorParseSqliteBlobWithType(sqlite3_value *, Vector *, char **);
 
 void vectorF32DeserializeFromBlob(Vector *, const unsigned char *, size_t);
 void vectorF64DeserializeFromBlob(Vector *, const unsigned char *, size_t);
