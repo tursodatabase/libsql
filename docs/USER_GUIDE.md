@@ -237,6 +237,12 @@ For example, if you have the following entries in your `/etc/hosts` file:
 You can access `db1` with the `http://db1.local:8080`URL and `db2` with `http://db2.local:8080`.
 The database files for the databases are stored in `<data dir>/dbs/db1` and `<data dir/dbs/db2`, respectively.
 
+### Path based routing
+
+For local development and testing, you can also connect to your databases by specifying the database namespace in the URL path.
+
+You can access namespace `db1` with the `http://local:8080/dev/db1` URL and `db2` with `http://local:8080/dev/db2`, respectively.
+
 ### Wildcard domain for development
 
 If you don't feel like editing `/etc/hosts` each time you want to test a new namespace, you can use any domain
