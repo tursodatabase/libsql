@@ -3449,6 +3449,7 @@ dependencies = [
  "libsql-sqlite3-parser",
  "libsql-sys",
  "libsql_replication",
+ "libsql_sync",
  "parking_lot",
  "pprof",
  "rand",
@@ -3581,6 +3582,7 @@ dependencies = [
  "libsql-sys",
  "libsql-wal",
  "libsql_replication",
+ "libsql_sync",
  "md-5",
  "metrics",
  "metrics-exporter-prometheus",
@@ -3793,6 +3795,17 @@ dependencies = [
  "tracing",
  "uuid",
  "zerocopy",
+]
+
+[[package]]
+name = "libsql_sync"
+version = "0.4.0"
+dependencies = [
+ "libsql-sys",
+ "prost",
+ "prost-build",
+ "tonic 0.11.0",
+ "tonic-build 0.11.0",
 ]
 
 [[package]]

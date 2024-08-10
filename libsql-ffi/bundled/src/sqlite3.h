@@ -10549,6 +10549,10 @@ SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
 */
 SQLITE_API void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), void *arg);
 
+SQLITE_API int libsql_wal_frame_count(sqlite3*, unsigned int*);
+
+SQLITE_API int libsql_wal_get_frame(sqlite3*, unsigned int, void*, unsigned int);
+
 /*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
@@ -13574,6 +13578,7 @@ typedef struct libsql_wal_methods {
   /* Read a page from the write-ahead log, if it is present. */
   int (*xFindFrame)(wal_impl* pWal, unsigned int, unsigned int *);
   int (*xReadFrame)(wal_impl* pWal, unsigned int, int, unsigned char *);
+  int (*xReadFrameRaw)(wal_impl* pWal, unsigned int, int, unsigned char *);
 
   /* If the WAL is not empty, return the size of the database. */
   unsigned int (*xDbsize)(wal_impl* pWal);

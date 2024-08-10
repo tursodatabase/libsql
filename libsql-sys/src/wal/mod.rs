@@ -186,6 +186,7 @@ pub trait Wal {
     fn find_frame(&mut self, page_no: NonZeroU32) -> Result<Option<NonZeroU32>>;
     /// reads frame `frame_no` into buffer.
     fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()>;
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()>;
 
     fn db_size(&self) -> u32;
 

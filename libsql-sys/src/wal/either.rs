@@ -39,6 +39,12 @@ macro_rules! create_either {
                 }
             }
 
+            fn read_frame_raw(&mut self, frame_no: std::num::NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+                match self {
+                    $( $name::$t(inner) => inner.read_frame_raw(frame_no, buffer) ),*
+                }
+            }
+
             fn db_size(&self) -> u32 {
                 match self {
                     $( $name::$t(inner) => inner.db_size() ),*

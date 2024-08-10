@@ -1,0 +1,16 @@
+[package]
+name = "libsql_sync"
+version = "0.4.0"
+edition = "2021"
+description = "libSQL WAL sync protocol"
+repository = "https://github.com/tursodatabase/libsql"
+license = "MIT"
+
+[dependencies]
+libsql-sys = { version = "0.6", path = "../libsql-sys" }
+tonic = { version = "0.11", features = ["tls"] }
+prost = "0.12"
+ 
+[dev-dependencies]
+prost-build = "0.12"
+tonic-build = "0.11"

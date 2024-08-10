@@ -24,6 +24,7 @@ pub mod replica_proxy;
 pub mod replication_log;
 pub mod replication_log_proxy;
 pub mod streaming_exec;
+pub mod sync;
 
 pub async fn run_rpc_server<A: crate::net::Accept>(
     proxy_service: ProxyService,

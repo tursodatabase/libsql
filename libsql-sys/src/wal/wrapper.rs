@@ -61,6 +61,10 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
         unsafe { (*self.wrapper).read_frame(&mut *self.wrapped, frame_no, buffer) }
     }
 
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+        unsafe { (*self.wrapper).read_frame_raw(&mut *self.wrapped, frame_no, buffer) }
+    }
+
     fn db_size(&self) -> u32 {
         unsafe { (*self.wrapper).db_size(&*self.wrapped) }
     }
@@ -234,6 +238,10 @@ where
         self.wrapper.read_frame(&mut self.wrapped, frame_no, buffer)
     }
 
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+        self.wrapper.read_frame_raw(&mut self.wrapped, frame_no, buffer)
+    }
+
     fn db_size(&self) -> u32 {
         self.wrapper.db_size(&self.wrapped)
     }
@@ -347,6 +355,15 @@ pub trait WrapWal<W: Wal> {
     }
 
     fn read_frame(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        wrapped.read_frame(frame_no, buffer)
+    }
+
+    fn read_frame_raw(
         &mut self,
         wrapped: &mut W,
         frame_no: NonZeroU32,
