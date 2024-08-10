@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use libsql_replication::meta::WalIndexMeta;
 use libsql_replication::replicator::{Error, ReplicatorClient};
-use libsql_replication::rpc::replication::hello_request::WalFlavor;
+use libsql_replication::rpc::replication::log_offset::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{
     verify_session_token, Frame as RpcFrame, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY,
@@ -101,7 +101,7 @@ impl ReplicatorClient for Client {
     #[tracing::instrument(skip(self))]
     async fn handshake(&mut self) -> Result<(), Error> {
         tracing::debug!("Attempting to perform handshake with primary.");
-        let req = self.make_request(HelloRequest::new(self.wal_flavor));
+        let req = self.make_request(HelloRequest::new());
         let resp = self.client.hello(req).await?;
         let hello = resp.into_inner();
         verify_session_token(&hello.session_token).map_err(Error::Client)?;
@@ -143,6 +143,7 @@ impl ReplicatorClient for Client {
     async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
         let offset = LogOffset {
             next_offset: self.next_frame_no(),
+            wal_flavor: Some(self.wal_flavor.into()),
         };
         let req = self.make_request(offset);
         let stream = self
@@ -178,6 +179,7 @@ impl ReplicatorClient for Client {
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
         let offset = LogOffset {
             next_offset: self.next_frame_no(),
+            wal_flavor: Some(self.wal_flavor.into()),
         };
         let req = self.make_request(offset);
         match self.client.snapshot(req).await {

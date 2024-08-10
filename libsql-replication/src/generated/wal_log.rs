@@ -4,18 +4,12 @@
 pub struct LogOffset {
     #[prost(uint64, tag = "1")]
     pub next_offset: u64,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct HelloRequest {
-    #[prost(uint64, optional, tag = "1")]
-    pub handshake_version: ::core::option::Option<u64>,
-    /// the type of wal that the client is expecting
-    #[prost(enumeration = "hello_request::WalFlavor", optional, tag = "2")]
+    /// the type of wal frames that the client is expecting
+    #[prost(enumeration = "log_offset::WalFlavor", optional, tag = "2")]
     pub wal_flavor: ::core::option::Option<i32>,
 }
-/// Nested message and enum types in `HelloRequest`.
-pub mod hello_request {
+/// Nested message and enum types in `LogOffset`.
+pub mod log_offset {
     #[derive(
         Clone,
         Copy,
@@ -52,6 +46,12 @@ pub mod hello_request {
             }
         }
     }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HelloRequest {
+    #[prost(uint64, optional, tag = "1")]
+    pub handshake_version: ::core::option::Option<u64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

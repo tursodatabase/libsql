@@ -5,16 +5,16 @@ import "metadata.proto";
 
 message LogOffset {
     uint64 next_offset = 1;
-}
-
-message HelloRequest {
-    optional uint64 handshake_version = 1;
     enum WalFlavor {
         Sqlite = 0;
         Libsql = 1;
     }
-    // the type of wal that the client is expecting
+    // the type of wal frames that the client is expecting
     optional WalFlavor wal_flavor = 2;
+}
+
+message HelloRequest {
+    optional uint64 handshake_version = 1;
 }
 
 message HelloResponse {

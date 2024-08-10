@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 use futures::stream::BoxStream;
 use futures_core::Future;
 pub use libsql_replication::rpc::replication as rpc;
-use libsql_replication::rpc::replication::hello_request::WalFlavor;
+use libsql_replication::rpc::replication::log_offset::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
 use libsql_replication::rpc::replication::{
     Frame, Frames, HelloRequest, HelloResponse, LogOffset, NAMESPACE_DOESNT_EXIST,
@@ -260,6 +260,9 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
+        if let WalFlavor::Libsql = req.get_ref().wal_flavor() {
+            return Err(Status::invalid_argument("libsql wal not supported"));
+        }
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
         self.authenticate(&req, namespace.clone()).await?;
@@ -305,6 +308,9 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Frames>, Status> {
+        if let WalFlavor::Libsql = req.get_ref().wal_flavor() {
+            return Err(Status::invalid_argument("libsql wal not supported"));
+        }
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
@@ -355,11 +361,6 @@ impl ReplicationLog for ReplicationLogService {
                 guard.insert((replica_addr, namespace.clone()));
             }
         }
-
-        if let WalFlavor::Libsql = req.get_ref().wal_flavor() {
-            return Err(Status::invalid_argument("libsql wal not supported"));
-        }
-
         let (logger, config, version, _, _) =
             self.logger_from_namespace(namespace, &req, false).await?;
 
@@ -381,7 +382,12 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
+        if let WalFlavor::Libsql = req.get_ref().wal_flavor() {
+            return Err(Status::invalid_argument("libsql wal not supported"));
+        }
+
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+
         self.authenticate(&req, namespace.clone()).await?;
 
         let (logger, _, _, stats, _) = self.logger_from_namespace(namespace, &req, true).await?;

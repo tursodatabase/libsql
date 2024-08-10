@@ -8,7 +8,6 @@ use futures::{StreamExt as _, TryStreamExt};
 use libsql_replication::frame::{FrameHeader, FrameNo};
 use libsql_replication::meta::WalIndexMeta;
 use libsql_replication::replicator::{Error, ReplicatorClient};
-use libsql_replication::rpc::replication::hello_request::WalFlavor;
 use libsql_replication::rpc::replication::{
     Frame as RpcFrame, verify_session_token, Frames, HelloRequest, HelloResponse, LogOffset, SESSION_TOKEN_KEY,
 };
@@ -117,9 +116,10 @@ impl RemoteClient {
             self.dirty = false;
         }
         let prefetch = self.session_token.is_some();
-        let hello_req = self.make_request(HelloRequest::new(WalFlavor::Sqlite));
+        let hello_req = self.make_request(HelloRequest::new());
         let log_offset_req = self.make_request(LogOffset {
             next_offset: self.next_offset(),
+            wal_flavor: None,
         });
         let mut client_clone = self.remote.clone();
         let hello_fut = time(async {
@@ -179,6 +179,7 @@ impl RemoteClient {
             None => {
                 let req = self.make_request(LogOffset {
                     next_offset: self.next_offset(),
+                    wal_flavor: None,
                 });
                 time(self.remote.replication.batch_log_entries(req)).await
             }
@@ -190,6 +191,7 @@ impl RemoteClient {
     async fn do_snapshot(&mut self) -> Result<<Self as ReplicatorClient>::FrameStream, Error> {
         let req = self.make_request(LogOffset {
             next_offset: self.next_offset(),
+            wal_flavor: None,
         });
         let mut frames = self
             .remote
