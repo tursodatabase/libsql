@@ -4,15 +4,17 @@ use std::pin::Pin;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
-use libsql_replication::frame::Frame;
 use libsql_replication::meta::WalIndexMeta;
-use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
+use libsql_replication::replicator::{Error, ReplicatorClient};
+use libsql_replication::rpc::replication::log_offset::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{
-    verify_session_token, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY, SESSION_TOKEN_KEY,
+    verify_session_token, Frame as RpcFrame, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY,
+    SESSION_TOKEN_KEY,
 };
 use tokio::sync::watch;
-use tokio_stream::{Stream, StreamExt};
+use tokio_stream::Stream;
+
 use tonic::metadata::{AsciiMetadataValue, BinaryMetadataValue};
 use tonic::transport::Channel;
 use tonic::{Code, Request, Status};
@@ -35,6 +37,7 @@ pub struct Client {
     // the primary current replication index, as reported by the last handshake
     pub primary_replication_index: Option<FrameNo>,
     store: NamespaceStore,
+    wal_flavor: WalFlavor,
 }
 
 impl Client {
@@ -44,6 +47,7 @@ impl Client {
         path: &Path,
         meta_store_handle: MetaStoreHandle,
         store: NamespaceStore,
+        wal_flavor: WalFlavor,
     ) -> crate::Result<Self> {
         let (current_frame_no_notifier, _) = watch::channel(None);
         let meta = WalIndexMeta::open(path).await?;
@@ -57,6 +61,7 @@ impl Client {
             meta_store_handle,
             primary_replication_index: None,
             store,
+            wal_flavor,
         })
     }
 
@@ -91,7 +96,7 @@ impl Client {
 
 #[async_trait::async_trait]
 impl ReplicatorClient for Client {
-    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+    type FrameStream = Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
     #[tracing::instrument(skip(self))]
     async fn handshake(&mut self) -> Result<(), Error> {
@@ -138,6 +143,7 @@ impl ReplicatorClient for Client {
     async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
         let offset = LogOffset {
             next_offset: self.next_frame_no(),
+            wal_flavor: Some(self.wal_flavor.into()),
         };
         let req = self.make_request(offset);
         let stream = self
@@ -165,7 +171,7 @@ impl ReplicatorClient for Client {
                     None => REPLICATION_LATENCY_CACHE_MISS.increment(1),
                 }
             })
-            .map(map_frame_err);
+            .map_err(Into::into);
 
         Ok(Box::pin(stream))
     }
@@ -173,11 +179,12 @@ impl ReplicatorClient for Client {
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
         let offset = LogOffset {
             next_offset: self.next_frame_no(),
+            wal_flavor: Some(self.wal_flavor.into()),
         };
         let req = self.make_request(offset);
         match self.client.snapshot(req).await {
             Ok(resp) => {
-                let stream = resp.into_inner().map(map_frame_err);
+                let stream = resp.into_inner().map_err(Into::into);
                 Ok(Box::pin(stream))
             }
             Err(e) if e.code() == Code::Unavailable => Err(Error::SnapshotPending),

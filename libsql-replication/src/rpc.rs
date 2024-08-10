@@ -25,6 +25,7 @@ pub mod replication {
     #![allow(clippy::all)]
 
     use uuid::Uuid;
+
     include!("generated/wal_log.rs");
 
     pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";

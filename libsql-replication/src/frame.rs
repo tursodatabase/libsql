@@ -13,7 +13,6 @@ use crate::LIBSQL_PAGE_SIZE;
 pub type FrameNo = u64;
 
 /// The file header for the WAL log. All fields are represented in little-endian ordering.
-/// See `encode` and `decode` for actual layout.
 // repr C for stable sizing
 #[repr(C)]
 #[derive(Debug, Clone, Copy, zerocopy::FromZeroes, zerocopy::FromBytes, zerocopy::AsBytes)]
@@ -22,7 +21,7 @@ pub struct FrameHeader {
     pub frame_no: lu64,
     /// Rolling checksum of all the previous frames, including this one.
     pub checksum: lu64,
-    /// page number, if frame_type is FrameType::Page
+    /// page number
     pub page_no: lu32,
     /// Size of the database (in page) after committing the transaction. This is passed from sqlite,
     /// and serves as commit transaction boundary
