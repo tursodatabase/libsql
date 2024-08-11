@@ -1451,9 +1451,6 @@ paren_exprlist(A) ::= LP exprlist(X) RP.  {A = X;}
 cmd ::= createkw(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D) indextype(T)
         ON nm(Y) LP sortlist(Z) RP where_opt(W). {
   u8 idxType = SQLITE_IDXTYPE_APPDEF;
-  if( T.pUsing!=0 ){
-    idxType = SQLITE_IDXTYPE_VECTOR;
-  }
   sqlite3CreateIndex(pParse, &X, &D, 
                      sqlite3SrcListAppend(pParse,0,&Y,0), Z, U,
                       &S, W, SQLITE_SO_ASC, NE, idxType, T.pUsing);
