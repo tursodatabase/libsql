@@ -954,6 +954,11 @@ static void diskAnnNodeFree(DiskAnnNode *pNode){
 }
 
 static int diskAnnSearchCtxInit(const DiskAnnIndex *pIndex, DiskAnnSearchCtx *pCtx, const Vector* pQuery, int maxCandidates, int topCandidates, int blobMode){
+  if( initVectorPair(pIndex->nNodeVectorType, pIndex->nEdgeVectorType, pIndex->nVectorDims, &pCtx->query) != 0 ){
+    return SQLITE_NOMEM_BKPT;
+  }
+  loadVectorPair(&pCtx->query, pQuery);
+
   pCtx->aDistances = sqlite3_malloc(maxCandidates * sizeof(double));
   pCtx->aCandidates = sqlite3_malloc(maxCandidates * sizeof(DiskAnnNode*));
   pCtx->nCandidates = 0;
@@ -965,10 +970,6 @@ static int diskAnnSearchCtxInit(const DiskAnnIndex *pIndex, DiskAnnSearchCtx *pC
   pCtx->visitedList = NULL;
   pCtx->nUnvisited = 0;
   pCtx->blobMode = blobMode;
-  if( initVectorPair(pIndex->nNodeVectorType, pIndex->nEdgeVectorType, pIndex->nVectorDims, &pCtx->query) != 0 ){
-    return SQLITE_NOMEM_BKPT;
-  }
-  loadVectorPair(&pCtx->query, pQuery);
 
   if( pCtx->aDistances != NULL && pCtx->aCandidates != NULL && pCtx->aTopDistances != NULL && pCtx->aTopCandidates != NULL ){
     return SQLITE_OK;
