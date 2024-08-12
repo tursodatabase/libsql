@@ -327,6 +327,15 @@ do_execsql_test vector-partial {
   2 3 5 6 8 9
 }
 
+do_execsql_test vector-1bit-table {
+  CREATE TABLE t_1bit_table( v FLOAT1BIT(4) );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[1,-1,1,-1]') );
+  CREATE INDEX t_1bit_table_idx ON t_1bit_table( libsql_vector_idx(v) );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[-1,1,1,-1]') );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_1bit_table_idx', vector1bit('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
 proc error_messages {sql} {
   set ret ""
   catch {

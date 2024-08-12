@@ -50,6 +50,9 @@ do_execsql_test vector-1-func-valid {
   SELECT vector_distance_cos('[1,1]', '[-1,-1]');
   SELECT vector_distance_cos('[1,1]', '[-1,1]');
   SELECT vector_distance_cos('[1,2]', '[2,1]');
+  SELECT vector_distance_cos(vector1bit('[10,-10]'), vector1bit('[-5,4]'));
+  SELECT vector_distance_cos(vector1bit('[10,-10]'), vector1bit('[20,4]'));
+  SELECT vector_distance_cos(vector1bit('[10,-10]'), vector1bit('[20,-2]'));
 } {
   {[]} 
   {[]} 
@@ -65,6 +68,9 @@ do_execsql_test vector-1-func-valid {
   {2.0} 
   {1.0} 
   {0.200000002980232}
+  {2.0}
+  {1.0}
+  {0.0}
 }
 
 do_execsql_test vector-1-conversion {
