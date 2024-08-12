@@ -11,7 +11,7 @@ use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
     libsql_row_t, libsql_rows, libsql_rows_future_t, libsql_rows_t, libsql_stmt, libsql_stmt_t,
-    stmt,
+    replicated, stmt,
 };
 
 lazy_static! {
@@ -39,6 +39,29 @@ pub unsafe extern "C" fn libsql_sync(
     let db = db.get_ref();
     match RT.block_on(db.sync()) {
         Ok(_) => 0,
+        Err(e) => {
+            set_err_msg(format!("Error syncing database: {e}"), out_err_msg);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_sync2(
+    db: libsql_database_t,
+    out_replicated: *mut replicated,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let db = db.get_ref();
+    match RT.block_on(db.sync()) {
+        Ok(replicated) => {
+            if !out_replicated.is_null() {
+                (*out_replicated).frame_no = replicated.frame_no().unwrap_or(0) as i32;
+                (*out_replicated).frames_synced = replicated.frames_synced() as i32;
+            }
+
+            0
+        }
         Err(e) => {
             set_err_msg(format!("Error syncing database: {e}"), out_err_msg);
             1
