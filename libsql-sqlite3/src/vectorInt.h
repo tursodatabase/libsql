@@ -105,8 +105,6 @@ void vector1BitDeserializeFromBlob(Vector *, const unsigned char *, size_t);
 
 void vectorInitStatic(Vector *, VectorType, VectorDims, void *);
 void vectorInitFromBlob(Vector *, const unsigned char *, size_t);
-void vectorF32InitFromBlob(Vector *, const unsigned char *, size_t);
-void vectorF64InitFromBlob(Vector *, const unsigned char *, size_t);
 
 void vectorConvert(const Vector *, Vector *);
 

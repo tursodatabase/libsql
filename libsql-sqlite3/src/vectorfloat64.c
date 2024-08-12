@@ -175,11 +175,6 @@ double vectorF64DistanceL2(const Vector *v1, const Vector *v2){
   return sqrt(sum);
 }
 
-void vectorF64InitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlobSize){
-  pVector->dims = nBlobSize / sizeof(double);
-  pVector->data = (void*)pBlob;
-}
-
 void vectorF64DeserializeFromBlob(
   Vector *pVector,
   const unsigned char *pBlob,

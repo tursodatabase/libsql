@@ -883,7 +883,6 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
     sqlite3ErrorMsg(pParse, "vector index: %s: %s", pzErrMsg, zEmbeddingColumnTypeName);
     return CREATE_FAIL;
   }
-
   // schema is locked while db is initializing and we need to just proceed here
   if( db->init.busy == 1 ){
     return CREATE_OK;
@@ -963,11 +962,8 @@ int vectorIndexSearch(
     rc = SQLITE_ERROR;
     goto out;
   }
-  if( type != VECTOR_TYPE_FLOAT32 && type != VECTOR_TYPE_FLOAT64 ){
-    *pzErrMsg = sqlite3_mprintf("vector index(search): unsupported vector type: only FLOAT32/FLOAT64 are available for indexing");
-    rc = SQLITE_ERROR;
-    goto out;
-  }
+  assert( type == VECTOR_TYPE_FLOAT32 || type == VECTOR_TYPE_FLOAT64 || type == VECTOR_TYPE_1BIT );
+
   pVector = vectorAlloc(type, dims);
   if( pVector == NULL ){
     rc = SQLITE_NOMEM_BKPT;

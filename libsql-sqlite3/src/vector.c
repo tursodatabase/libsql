@@ -339,39 +339,21 @@ int vectorParseSqliteBlobWithType(
 
 int detectBlobVectorParameters(sqlite3_value *arg, int *pType, int *pDims, char **pzErrMsg) {
   const u8 *pBlob;
-  int nBlobSize;
+  size_t nBlobSize, nDataSize;
   
   assert( sqlite3_value_type(arg) == SQLITE_BLOB );
 
   pBlob = sqlite3_value_blob(arg);
   nBlobSize = sqlite3_value_bytes(arg);
-  if( nBlobSize % 2 != 0 ){ 
-    // we have trailing byte with explicit type definition
-    *pType = pBlob[nBlobSize - 1];
-    nBlobSize--;
-  } else { 
-    // else, fallback to FLOAT32
-    *pType = VECTOR_TYPE_FLOAT32;
-  }
-  if( *pType == VECTOR_TYPE_FLOAT32 ){
-    *pDims = nBlobSize / sizeof(float);
-  }else if( *pType == VECTOR_TYPE_FLOAT64 ){
-    *pDims = nBlobSize / sizeof(double);
-  }else if( *pType == VECTOR_TYPE_1BIT ){
-    if( nBlobSize == 0 || nBlobSize % 2 != 0 ){
-      *pzErrMsg = sqlite3_mprintf("vector: malformed 1bit float: blob size must has even size (without last byte): size=%d", nBlobSize);
-      return -1;
-    }
-    *pDims = nBlobSize * 8 - pBlob[nBlobSize - 1];
-  }else{
-    *pzErrMsg = sqlite3_mprintf("vector: unexpected binary type: got %d, expected %d or %d", *pType, VECTOR_TYPE_FLOAT32, VECTOR_TYPE_FLOAT64);
-    return -1;
+
+  if( vectorParseMeta(pBlob, nBlobSize, pType, pDims, &nDataSize, pzErrMsg) != SQLITE_OK ){
+    return SQLITE_ERROR;
   }
   if( *pDims > MAX_VECTOR_SZ ){
     *pzErrMsg = sqlite3_mprintf("vector: max size exceeded: %d > %d", *pDims, MAX_VECTOR_SZ);
-    return -1;
+    return SQLITE_ERROR;
   }
-  return 0;
+  return SQLITE_OK;
 }
 
 int detectTextVectorParameters(sqlite3_value *arg, int typeHint, int *pType, int *pDims, char **pzErrMsg) {
@@ -560,16 +542,7 @@ size_t vectorSerializeToBlob(const Vector *pVector, unsigned char *pBlob, size_t
 }
 
 void vectorInitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlobSize){
-  switch (pVector->type) {
-    case VECTOR_TYPE_FLOAT32:
-      vectorF32InitFromBlob(pVector, pBlob, nBlobSize);
-      break;
-    case VECTOR_TYPE_FLOAT64:
-      vectorF64InitFromBlob(pVector, pBlob, nBlobSize);
-      break;
-    default:
-      assert(0);
-  }
+  pVector->data = (void*)pBlob;
 }
 
 static void vectorConvertFromF32(const Vector *pFrom, Vector *pTo){
