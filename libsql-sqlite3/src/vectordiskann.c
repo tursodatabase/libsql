@@ -1428,12 +1428,12 @@ int diskAnnSearch(
     *pzErrMsg = sqlite3_mprintf("vector index(search): k must be a non-negative integer");
     return SQLITE_ERROR;
   }
-  if( pIndex->nVectorDims != pVector->dims ){
+  if( pVector->dims != pIndex->nVectorDims ){
     *pzErrMsg = sqlite3_mprintf("vector index(search): dimensions are different: %d != %d", pVector->dims, pIndex->nVectorDims);
     return SQLITE_ERROR;
   }
-  if( pVector->type != VECTOR_TYPE_FLOAT32 ){
-    *pzErrMsg = sqlite3_mprintf("vector index(search): only f32 vectors are supported");
+  if( pVector->type != pIndex->nNodeVectorType ){
+    *pzErrMsg = sqlite3_mprintf("vector index(search): vector type differs from column type: %d != %d", pVector->type, pIndex->nNodeVectorType);
     return SQLITE_ERROR;
   }
 
@@ -1498,8 +1498,8 @@ int diskAnnInsert(
     *pzErrMsg = sqlite3_mprintf("vector index(insert): dimensions are different: %d != %d", pVectorInRow->pVector->dims, pIndex->nVectorDims);
     return SQLITE_ERROR;
   }
-  if( pVectorInRow->pVector->type != VECTOR_TYPE_FLOAT32 ){
-    *pzErrMsg = sqlite3_mprintf("vector index(insert): only f32 vectors are supported");
+  if( pVectorInRow->pVector->type != pIndex->nNodeVectorType ){
+    *pzErrMsg = sqlite3_mprintf("vector index(insert): vector type differs from column type: %d != %d", pVectorInRow->pVector->type, pIndex->nNodeVectorType);
     return SQLITE_ERROR;
   }
 

@@ -290,6 +290,13 @@ do_execsql_test vector-all-params {
   SELECT * FROM vector_top_k('t_all_params_idx', vector('[1,2]'), 2);
 } {1 2}
 
+do_execsql_test vector-f64-index {
+  CREATE TABLE t_f64 ( emb FLOAT64(2) );
+  CREATE INDEX t_f64_idx ON t_f64(libsql_vector_idx(emb));
+  INSERT INTO t_f64 VALUES (vector64('[1,2]')), (vector64('[3,4]'));
+  SELECT * FROM vector_top_k('t_f64_idx', vector64('[1,2]'), 2);
+} {1 2}
+
 do_execsql_test vector-partial {
   CREATE TABLE t_partial( name TEXT, type INT, v FLOAT32(3));
   INSERT INTO t_partial VALUES ( 'a', 0, vector('[1,2,3]') );
@@ -368,7 +375,7 @@ do_test vector-errors {
   {vector index: unsupported for tables without ROWID and composite primary key}
   {vector index(insert): dimensions are different: 1 != 4}
   {vector index(insert): dimensions are different: 5 != 4}
-  {vector index(insert): only f32 vectors are supported}
+  {vector index(insert): vector type differs from column type: 2 != 1}
   {vector index(search): dimensions are different: 2 != 4}
   {vector index(insert): dimensions are different: 1 != 3}
 }]

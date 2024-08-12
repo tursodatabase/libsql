@@ -967,8 +967,8 @@ int vectorIndexSearch(
     rc = SQLITE_ERROR;
     goto out;
   }
-  if( type != VECTOR_TYPE_FLOAT32 ){
-    *pzErrMsg = sqlite3_mprintf("vector index(search): only f32 vectors are supported");
+  if( type != VECTOR_TYPE_FLOAT32 && type != VECTOR_TYPE_FLOAT64 ){
+    *pzErrMsg = sqlite3_mprintf("vector index(search): unsupported vector type: only FLOAT32/FLOAT64 are available for indexing");
     rc = SQLITE_ERROR;
     goto out;
   }
