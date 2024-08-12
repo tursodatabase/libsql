@@ -124,4 +124,18 @@ int vector1BitDistanceHamming(const Vector *v1, const Vector *v2){
   return diff;
 }
 
+void vector1BitDeserializeFromBlob(
+  Vector *pVector,
+  const unsigned char *pBlob,
+  size_t nBlobSize
+){
+  u8 *elems = pVector->data;
+
+  assert( pVector->type == VECTOR_TYPE_1BIT );
+  assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
+  assert( nBlobSize >= (pVector->dims + 7) / 8 );
+
+  memcpy(elems, pBlob, (pVector->dims + 7) / 8);
+}
+
 #endif /* !defined(SQLITE_OMIT_VECTOR) */

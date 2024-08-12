@@ -92,15 +92,16 @@ double vectorF64DistanceL2(const Vector *, const Vector *);
  * LibSQL can append one trailing byte in the end of final blob. This byte will be later used to determine type of the blob
  * By default, blob with even length will be treated as a f32 blob
 */
-void vectorSerializeWithType(sqlite3_context *, const Vector *);
+void vectorSerializeWithMeta(sqlite3_context *, const Vector *);
 
 /*
  * Parses Vector content from the blob; vector type and dimensions must be filled already
 */
 int vectorParseSqliteBlobWithType(sqlite3_value *, Vector *, char **);
 
-void vectorF32DeserializeFromBlob(Vector *, const unsigned char *, size_t);
-void vectorF64DeserializeFromBlob(Vector *, const unsigned char *, size_t);
+void vectorF32DeserializeFromBlob (Vector *, const unsigned char *, size_t);
+void vectorF64DeserializeFromBlob (Vector *, const unsigned char *, size_t);
+void vector1BitDeserializeFromBlob(Vector *, const unsigned char *, size_t);
 
 void vectorInitStatic(Vector *, VectorType, VectorDims, void *);
 void vectorInitFromBlob(Vector *, const unsigned char *, size_t);
