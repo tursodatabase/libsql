@@ -1634,7 +1634,8 @@ int diskAnnDelete(
 
   rc = blobSpotCreate(pIndex, &pNodeBlob, nodeRowid, pIndex->nBlockSize, DISKANN_BLOB_WRITABLE);
   if( rc == DISKANN_ROW_NOT_FOUND ){
-    // we omit rows with NULL values so it can be the case that there is nothing to delete in the index while row exists in the base table
+    // as we omit rows with NULL values during insert, it can be the case that there is nothing to delete in the index, while row exists in the base table
+    // so, we must simply silently stop delete process as there is nothing to delete from index
     rc = SQLITE_OK;
     goto out;
   }else if( rc != SQLITE_OK ){
