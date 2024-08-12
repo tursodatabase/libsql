@@ -135,9 +135,19 @@ do_execsql_test vector-null {
   CREATE INDEX t_null_idx ON t_null( libsql_vector_idx(v) );
   INSERT INTO t_null VALUES(vector('[1,2,3]'));
   INSERT INTO t_null VALUES(NULL);
-  INSERT INTO t_null VALUES(vector('[2,3,4]'));
+  INSERT INTO t_null VALUES(vector('[3,4,5]'));
   SELECT * FROM vector_top_k('t_null_idx', '[1,2,3]', 2);
-} {1 3}
+  UPDATE t_null SET v = vector('[2,3,4]') WHERE rowid = 2;
+  SELECT rowid FROM vector_top_k('t_null_idx', vector('[2,3,4]'), 3);
+  UPDATE t_null SET v = NULL WHERE rowid = 3;
+  SELECT rowid FROM vector_top_k('t_null_idx', vector('[2,3,4]'), 3);
+  UPDATE t_null SET v = NULL;
+  SELECT rowid FROM vector_top_k('t_null_idx', vector('[2,3,4]'), 3);
+} {
+  1 3
+  2 3 1
+  2 1
+}
 
 do_execsql_test vector-sql {
   CREATE TABLE t_sql( v FLOAT32(3));

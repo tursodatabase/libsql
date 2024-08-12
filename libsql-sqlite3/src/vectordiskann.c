@@ -1633,7 +1633,11 @@ int diskAnnDelete(
   DiskAnnTrace(("diskAnnDelete started: rowid=%lld\n", nodeRowid));
 
   rc = blobSpotCreate(pIndex, &pNodeBlob, nodeRowid, pIndex->nBlockSize, DISKANN_BLOB_WRITABLE);
-  if( rc != SQLITE_OK ){
+  if( rc == DISKANN_ROW_NOT_FOUND ){
+    // we omit rows with NULL values so it can be the case that there is nothing to delete in the index while row exists in the base table
+    rc = SQLITE_OK;
+    goto out;
+  }else if( rc != SQLITE_OK ){
     *pzErrMsg = sqlite3_mprintf("vector index(delete): failed to create blob for node row");
     goto out;
   }
