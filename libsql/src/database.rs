@@ -582,7 +582,10 @@ impl Database {
     }
 }
 
-#[cfg(any(feature = "replication", feature = "remote"))]
+#[cfg(any(
+    all(feature = "tls", feature = "replication"),
+    all(feature = "tls", feature = "remote")
+))]
 fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     let mut http = hyper::client::HttpConnector::new();
     http.enforce_http(false);
@@ -594,6 +597,14 @@ fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnect
         .https_or_http()
         .enable_http1()
         .wrap_connector(http))
+}
+
+#[cfg(any(
+    all(not(feature = "tls"), feature = "replication"),
+    all(not(feature = "tls"), feature = "remote")
+))]
+fn connector() -> Result<hyper::client::HttpConnector> {
+    panic!("The `tls` feature is disabled, you must provide your own http connector");
 }
 
 impl std::fmt::Debug for Database {

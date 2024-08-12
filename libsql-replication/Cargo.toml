@@ -9,7 +9,7 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tonic = { version = "0.11", features = ["tls"] }
+tonic = { version = "0.11", default-features = false, features = ["codegen", "prost"] }
 prost = "0.12"
 libsql-sys = { version = "0.7", path = "../libsql-sys", default-features = false, features = ["wal", "rusqlite", "api"] }
 libsql-wal = { path = "../libsql-wal/", optional = true }
