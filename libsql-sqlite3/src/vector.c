@@ -266,28 +266,28 @@ static int vectorParseMeta(const unsigned char *pBlob, size_t nBlobSize, int *pT
 
   if( *pType == VECTOR_TYPE_FLOAT32 ){
     if( nBlobSize % 4 != 0 ){
-      *pzErrMsg = sqlite3_mprintf("invalid vector: f32 vector blob length must be divisible by 4 (excluding optional 'type'-byte): length=%d", nBlobSize);
+      *pzErrMsg = sqlite3_mprintf("vector: f32 vector blob length must be divisible by 4 (excluding optional 'type'-byte): length=%d", nBlobSize);
       return SQLITE_ERROR;
     }
     *pDims = nBlobSize / sizeof(float);
     *pDataSize = nBlobSize;
   }else if( *pType == VECTOR_TYPE_FLOAT64 ){
     if( nBlobSize % 8 != 0 ){
-      *pzErrMsg = sqlite3_mprintf("invalid vector: f64 vector blob length must be divisible by 8 (excluding 'type'-byte): length=%d", nBlobSize);
+      *pzErrMsg = sqlite3_mprintf("vector: f64 vector blob length must be divisible by 8 (excluding 'type'-byte): length=%d", nBlobSize);
       return SQLITE_ERROR;
     }
     *pDims = nBlobSize / sizeof(double);
     *pDataSize = nBlobSize;
   }else if( *pType == VECTOR_TYPE_1BIT ){
     if( nBlobSize == 0 || nBlobSize % 2 != 0 ){
-      *pzErrMsg = sqlite3_mprintf("invalid vector: 1bit vector blob length must be divisible by 2 and not be empty (excluding 'type'-byte): length=%d", nBlobSize);
+      *pzErrMsg = sqlite3_mprintf("vector: 1bit vector blob length must be divisible by 2 and not be empty (excluding 'type'-byte): length=%d", nBlobSize);
       return SQLITE_ERROR;
     }
     nLeftoverBits = pBlob[nBlobSize - 1];
     *pDims = nBlobSize * 8 - nLeftoverBits;
     *pDataSize = (*pDims + 7) / 8;
   }else{
-    *pzErrMsg = sqlite3_mprintf("invalid vector: unexpected type: %d", *pType);
+    *pzErrMsg = sqlite3_mprintf("vector: unexpected binary type: %d", *pType);
     return SQLITE_ERROR;
   }
   return SQLITE_OK;
@@ -312,7 +312,7 @@ int vectorParseSqliteBlobWithType(
 
   if( nDataSize != vectorDataSize(pVector->type, pVector->dims) ){
     *pzErrMsg = sqlite3_mprintf(
-      "invalid vector: unexpected data size bytes: type=%d, dims=%d, %ull != %ull",
+      "vector: unexpected data part size: type=%d, dims=%d, %ull != %ull",
       pVector->type,
       pVector->dims,
       nDataSize,
