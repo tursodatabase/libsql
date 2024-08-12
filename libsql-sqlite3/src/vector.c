@@ -481,26 +481,121 @@ void vectorInitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlo
   }
 }
 
-void vectorConvert(const Vector *pFrom, Vector *pTo){
+static void vectorConvertFromF32(const Vector *pFrom, Vector *pTo){
   int i;
-  u8 *bitData;
-  float *floatData;
+  float *src;
+
+  u8 *dst1Bit;
+  double *dstF64;
 
   assert( pFrom->dims == pTo->dims );
+  assert( pFrom->type != pTo->type );
+  assert( pFrom->type == VECTOR_TYPE_FLOAT32 );
 
-  if( pFrom->type == VECTOR_TYPE_FLOAT32 && pTo->type == VECTOR_TYPE_1BIT ){
-    floatData = pFrom->data;
-    bitData = pTo->data;
+  src = pFrom->data;
+  if( pTo->type == VECTOR_TYPE_FLOAT64 ){
+    dstF64 = pTo->data;
+    for(i = 0; i < pFrom->dims; i++){
+      dstF64[i] = src[i];
+    }
+  }else if( pTo->type == VECTOR_TYPE_1BIT ){
+    dst1Bit = pTo->data;
     for(i = 0; i < pFrom->dims; i += 8){
-      bitData[i / 8] = 0;
+      dst1Bit[i / 8] = 0;
     }
     for(i = 0; i < pFrom->dims; i++){
-      if( floatData[i] > 0 ){
-        bitData[i / 8] |= (1 << (i & 7));
+      if( src[i] > 0 ){
+        dst1Bit[i / 8] |= (1 << (i & 7));
       }
     }
   }else{
-    assert(0);
+    assert( 0 );
+  }
+}
+
+static void vectorConvertFromF64(const Vector *pFrom, Vector *pTo){
+  int i;
+  double *src;
+
+  u8 *dst1Bit;
+  float *dstF32;
+
+  assert( pFrom->dims == pTo->dims );
+  assert( pFrom->type != pTo->type );
+  assert( pFrom->type == VECTOR_TYPE_FLOAT64 );
+
+  src = pFrom->data;
+  if( pTo->type == VECTOR_TYPE_FLOAT32 ){
+    dstF32 = pTo->data;
+    for(i = 0; i < pFrom->dims; i++){
+      dstF32[i] = src[i];
+    }
+  }else if( pTo->type == VECTOR_TYPE_1BIT ){
+    dst1Bit = pTo->data;
+    for(i = 0; i < pFrom->dims; i += 8){
+      dst1Bit[i / 8] = 0;
+    }
+    for(i = 0; i < pFrom->dims; i++){
+      if( src[i] > 0 ){
+        dst1Bit[i / 8] |= (1 << (i & 7));
+      }
+    }
+  }else{
+    assert( 0 );
+  }
+}
+
+static void vectorConvertFrom1Bit(const Vector *pFrom, Vector *pTo){
+  int i;
+  u8 *src;
+
+  float *dstF32;
+  double *dstF64;
+
+  assert( pFrom->dims == pTo->dims );
+  assert( pFrom->type != pTo->type );
+  assert( pFrom->type == VECTOR_TYPE_1BIT );
+
+  src = pFrom->data;
+  if( pTo->type == VECTOR_TYPE_FLOAT32 ){
+    dstF32 = pTo->data;
+    for(i = 0; i < pFrom->dims; i++){
+      if( ((src[i / 8] >> (i & 7)) & 1) == 1 ){
+        dstF32[i] = +1;
+      }else{
+        dstF32[i] = -1;
+      }
+    }
+  }else if( pTo->type == VECTOR_TYPE_FLOAT64 ){
+    dstF64 = pTo->data;
+    for(i = 0; i < pFrom->dims; i++){
+      if( ((src[i / 8] >> (i & 7)) & 1) == 1 ){
+        dstF64[i] = +1;
+      }else{
+        dstF64[i] = -1;
+      }
+    }
+  }else{
+    assert( 0 );
+  }
+}
+
+void vectorConvert(const Vector *pFrom, Vector *pTo){
+  assert( pFrom->dims == pTo->dims );
+
+  if( pFrom->type == pTo->type ){
+    memcpy(pTo->data, pFrom->data, vectorDataSize(pFrom->type, pFrom->dims));
+    return;
+  }
+
+  if( pFrom->type == VECTOR_TYPE_FLOAT32 ){
+    vectorConvertFromF32(pFrom, pTo);
+  }else if( pFrom->type == VECTOR_TYPE_FLOAT64 ){
+    vectorConvertFromF64(pFrom, pTo);
+  }else if( pFrom->type == VECTOR_TYPE_1BIT ){
+    vectorConvertFrom1Bit(pFrom, pTo);
+  }else{
+    assert( 0 );
   }
 }
 
