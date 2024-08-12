@@ -610,31 +610,45 @@ static void vectorFuncHintedType(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv,
-  int typeHint
+  int targetType
 ){
   char *pzErrMsg = NULL;
-  Vector *pVector;
+  Vector *pVector = NULL, *pTarget = NULL;
   int type, dims;
   if( argc < 1 ){
-    return;
+    goto out;
   }
-  if( detectVectorParameters(argv[0], typeHint, &type, &dims, &pzErrMsg) != 0 ){
+  if( detectVectorParameters(argv[0], targetType, &type, &dims, &pzErrMsg) != 0 ){
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
-    return;
+    goto out;
   }
   pVector = vectorContextAlloc(context, type, dims);
-  if( pVector==NULL ){
-    return;
+  if( pVector == NULL ){
+    goto out;
   }
   if( vectorParseWithType(argv[0], pVector, &pzErrMsg) != 0 ){
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
-    goto out_free_vec;
+    goto out;
   }
-  vectorSerializeWithType(context, pVector);
-out_free_vec:
-  vectorFree(pVector);
+  if( type == targetType ){
+    vectorSerializeWithType(context, pVector);
+  }else{
+    pTarget = vectorContextAlloc(context, targetType, dims);
+    if( pTarget == NULL ){
+      goto out;
+    }
+    vectorConvert(pVector, pTarget);
+    vectorSerializeWithType(context, pTarget);
+  }
+out:
+  if( pVector != NULL ){
+    vectorFree(pVector);
+  }
+  if( pTarget != NULL ){
+    vectorFree(pTarget);
+  }
 }
 
 static void vector32Func(
