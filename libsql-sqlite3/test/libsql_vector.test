@@ -131,7 +131,7 @@ do_test vector-1-func-errors {
   {vector: invalid float at position 0: '[1'}
   {vector: invalid float at position 2: '1.1.1'}
   {vector: must end with ']'}
-  {vector: unexpected binary type: got 0, expected 1 or 2}
+  {invalid vector: unexpected type: 0}
   {vector_distance_cos: vectors must have the same length: 3 != 2}
   {vector_distance_cos: vectors must have the same type: 1 != 2}
 }]
