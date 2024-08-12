@@ -913,7 +913,7 @@ int distanceBufferInsertIdx(const float *aDistances, int nSize, int nMaxSize, fl
   return nSize < nMaxSize ? nSize : -1;
 }
 
-void bufferInsert(void *aBuffer, int nSize, int nMaxSize, int iInsert, int nItemSize, const void *pItem, void *pLast) {
+void bufferInsert(u8 *aBuffer, int nSize, int nMaxSize, int iInsert, int nItemSize, const u8 *pItem, u8 *pLast) {
   int itemsToMove;
 
   assert( nMaxSize > 0 && nItemSize > 0 );
@@ -931,7 +931,7 @@ void bufferInsert(void *aBuffer, int nSize, int nMaxSize, int iInsert, int nItem
   memcpy(aBuffer + iInsert * nItemSize, pItem, nItemSize);
 }
 
-void bufferDelete(void *aBuffer, int nSize, int iDelete, int nItemSize) {
+void bufferDelete(u8 *aBuffer, int nSize, int iDelete, int nItemSize) {
   int itemsToMove;
 
   assert( nItemSize > 0 );
@@ -1094,8 +1094,8 @@ static void diskAnnSearchCtxMarkVisited(DiskAnnSearchCtx *pCtx, DiskAnnNode *pNo
   if( iInsert < 0 ){
     return;
   }
-  bufferInsert(pCtx->aTopCandidates, pCtx->nTopCandidates, pCtx->maxTopCandidates, iInsert, sizeof(DiskAnnNode*), &pNode, NULL);
-  bufferInsert(pCtx->aTopDistances, pCtx->nTopCandidates, pCtx->maxTopCandidates, iInsert, sizeof(float), &distance, NULL);
+  bufferInsert((u8*)pCtx->aTopCandidates, pCtx->nTopCandidates, pCtx->maxTopCandidates, iInsert, sizeof(DiskAnnNode*), (u8*)&pNode, NULL);
+  bufferInsert((u8*)pCtx->aTopDistances, pCtx->nTopCandidates, pCtx->maxTopCandidates, iInsert, sizeof(float), (u8*)&distance, NULL);
   pCtx->nTopCandidates = MIN(pCtx->nTopCandidates + 1, pCtx->maxTopCandidates);
 }
 
@@ -1116,8 +1116,8 @@ static void diskAnnSearchCtxDeleteCandidate(DiskAnnSearchCtx *pCtx, int iDelete)
   assert( pCtx->aCandidates[iDelete]->pBlobSpot == NULL );
 
   diskAnnNodeFree(pCtx->aCandidates[iDelete]);
-  bufferDelete(pCtx->aCandidates, pCtx->nCandidates, iDelete, sizeof(DiskAnnNode*));
-  bufferDelete(pCtx->aDistances, pCtx->nCandidates, iDelete, sizeof(float));
+  bufferDelete((u8*)pCtx->aCandidates, pCtx->nCandidates, iDelete, sizeof(DiskAnnNode*));
+  bufferDelete((u8*)pCtx->aDistances, pCtx->nCandidates, iDelete, sizeof(float));
 
   pCtx->nCandidates--;
   pCtx->nUnvisited--;
@@ -1125,8 +1125,8 @@ static void diskAnnSearchCtxDeleteCandidate(DiskAnnSearchCtx *pCtx, int iDelete)
 
 static void diskAnnSearchCtxInsertCandidate(DiskAnnSearchCtx *pCtx, int iInsert, DiskAnnNode* pCandidate, float distance){
   DiskAnnNode *pLast = NULL;
-  bufferInsert(pCtx->aCandidates, pCtx->nCandidates, pCtx->maxCandidates, iInsert, sizeof(DiskAnnNode*), &pCandidate, &pLast);
-  bufferInsert(pCtx->aDistances, pCtx->nCandidates, pCtx->maxCandidates, iInsert, sizeof(float), &distance, NULL);
+  bufferInsert((u8*)pCtx->aCandidates, pCtx->nCandidates, pCtx->maxCandidates, iInsert, sizeof(DiskAnnNode*), (u8*)&pCandidate, (u8*)&pLast);
+  bufferInsert((u8*)pCtx->aDistances, pCtx->nCandidates, pCtx->maxCandidates, iInsert, sizeof(float), (u8*)&distance, NULL);
   pCtx->nCandidates = MIN(pCtx->nCandidates + 1, pCtx->maxCandidates);
   if( pLast != NULL && !pLast->visited ){
     // since pLast is not visited it should have uninitialized pBlobSpot - so it's safe to completely free the node
