@@ -24,6 +24,7 @@
 **
 ** libSQL vector search.
 */
+#include "vectorInt.h"
 #ifndef SQLITE_OMIT_VECTOR
 #include "sqlite3.h"
 #include "vdbeInt.h"
@@ -373,14 +374,14 @@ void vectorOutRowsFree(sqlite3 *db, VectorOutRows *pRows) {
 */
 struct VectorColumnType {
   const char *zName;
-  int nBits;
+  int type;
 };
 
 static struct VectorColumnType VECTOR_COLUMN_TYPES[] = {
-  { "FLOAT32",  32 },
-  { "FLOAT64",  64 },
-  { "F32_BLOB", 32 },
-  { "F64_BLOB", 64 }
+  { "FLOAT32",  VECTOR_TYPE_FLOAT32 },
+  { "FLOAT64",  VECTOR_TYPE_FLOAT64 },
+  { "F32_BLOB", VECTOR_TYPE_FLOAT32 },
+  { "F64_BLOB", VECTOR_TYPE_FLOAT64 }
 };
 
 /*
@@ -569,14 +570,7 @@ int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, const ch
     }
 
     *pDims = dimensions;
-    if( VECTOR_COLUMN_TYPES[i].nBits == 32 ) {
-      *pType = VECTOR_TYPE_FLOAT32;
-    } else if( VECTOR_COLUMN_TYPES[i].nBits == 64 ) {
-      *pType = VECTOR_TYPE_FLOAT64;
-    } else {
-      *pErrMsg = "unsupported vector type";
-      return -1;
-    }
+    *pType = VECTOR_COLUMN_TYPES[i].type;
     return 0;
   }
   *pErrMsg = "unexpected vector column type";
