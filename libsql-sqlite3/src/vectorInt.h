@@ -37,6 +37,13 @@ typedef u32 VectorDims;
  *  - "trailing_bits" byte specify amount of trailing *bits* in the blob without last 'type'-byte which must be omitted
  *    (so, vector dimensions are equal to 8 * (blob_size - 1) - trailing_bits)
  *  - last 'type'-byte is mandatory for float1bit vectors
+ *
+ * 4. float8
+ *  [data[0] as u8] [data[1] as u8] ... [data[dims - 1] as u8] [_ as u8; alignment_padding]* [alpha as f32] [shift as f32] [padding as u8] [trailing_bytes as u8] [4 as u8]
+ *  - every data byte represents single quantized vector component
+ *  - "alignment_padding" has size from 0 to 3 bytes in order to pad content to multiple of 4 = sizeof(float)
+ *  - "trailing_bytes" byte specify amount of bytes in the "alignment_padding"
+ *  - last 'type'-byte is mandatory for float8 vectors
 */
 
 /*
