@@ -120,6 +120,7 @@ int vector1BitDistanceHamming(const Vector *, const Vector *);
  * Calculates L2 distance between two vectors (vector must have same type and same dimensions)
 */
 float vectorDistanceL2    (const Vector *, const Vector *);
+float vectorF8DistanceL2  (const Vector *, const Vector *);
 float vectorF32DistanceL2 (const Vector *, const Vector *);
 double vectorF64DistanceL2(const Vector *, const Vector *);
 

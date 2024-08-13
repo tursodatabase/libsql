@@ -133,6 +133,8 @@ float vectorDistanceL2(const Vector *pVector1, const Vector *pVector2){
       return vectorF32DistanceL2(pVector1, pVector2);
     case VECTOR_TYPE_FLOAT64:
       return vectorF64DistanceL2(pVector1, pVector2);
+    case VECTOR_TYPE_FLOAT8:
+      return vectorF8DistanceL2(pVector1, pVector2);
     default:
       assert(0);
   }
@@ -928,13 +930,11 @@ out:
   }
 }
 
-/*
-** Implementation of vector_distance_cos(X, Y) function.
-*/
-static void vectorDistanceCosFunc(
+static void vectorDistanceFunc(
   sqlite3_context *context,
   int argc,
-  sqlite3_value **argv
+  sqlite3_value **argv,
+  float (*vectorDistance)(const Vector *pVector1, const Vector *pVector2)
 ){
   char *pzErrMsg = NULL;
   Vector *pVector1 = NULL, *pVector2 = NULL;
@@ -983,7 +983,7 @@ static void vectorDistanceCosFunc(
     sqlite3_free(pzErrMsg);
     goto out_free;
   }
-  sqlite3_result_double(context, vectorDistanceCos(pVector1, pVector2));
+  sqlite3_result_double(context, vectorDistance(pVector1, pVector2));
 out_free:
   if( pVector2 ){
     vectorFree(pVector2);
@@ -991,6 +991,20 @@ out_free:
   if( pVector1 ){
     vectorFree(pVector1);
   }
+}
+
+/*
+** Implementation of vector_distance_cos(X, Y) function.
+*/
+static void vectorDistanceCosFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+  vectorDistanceFunc(context, argc, argv, vectorDistanceCos);
+}
+
+/*
+** Implementation of vector_distance_l2(X, Y) function.
+*/
+static void vectorDistanceL2Func(sqlite3_context *context, int argc, sqlite3_value **argv){
+  vectorDistanceFunc(context, argc, argv, vectorDistanceL2);
 }
 
 /*
@@ -1013,6 +1027,7 @@ void sqlite3RegisterVectorFunctions(void){
     FUNCTION(vector8,             1, 0, 0, vector8Func),
     FUNCTION(vector_extract,      1, 0, 0, vectorExtractFunc),
     FUNCTION(vector_distance_cos, 2, 0, 0, vectorDistanceCosFunc),
+    FUNCTION(vector_distance_l2,  2, 0, 0, vectorDistanceL2Func),
 
     FUNCTION(libsql_vector_idx,  -1, 0, 0, libsqlVectorIdx),
   };

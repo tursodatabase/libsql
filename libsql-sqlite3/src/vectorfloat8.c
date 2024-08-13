@@ -123,11 +123,23 @@ float vectorF8DistanceCos(const Vector *v1, const Vector *v2){
 }
 
 float vectorF8DistanceL2(const Vector *v1, const Vector *v2){
+  int i;
+  float alpha1, shift1, alpha2, shift2;
+  float sum = 0;
+  u8 *data1 = v1->data, *data2 = v2->data;
+
   assert( v1->dims == v2->dims );
   assert( v1->type == VECTOR_TYPE_FLOAT8 );
   assert( v2->type == VECTOR_TYPE_FLOAT8 );
 
-  assert( 0 );
+  vectorF8GetParameters(v1->data, v1->dims, &alpha1, &shift1);
+  vectorF8GetParameters(v2->data, v2->dims, &alpha2, &shift2);
+
+  for(i = 0; i < v1->dims; i++){
+    float d = (alpha1 * data1[i] + shift1) - (alpha2 * data2[i] + shift2);
+    sum += d*d;
+  }
+  return sqrt(sum);
 }
 
 void vectorF8DeserializeFromBlob(
