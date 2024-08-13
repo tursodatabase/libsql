@@ -388,6 +388,18 @@ cfg_replication! {
                t => Err(Error::FreezeNotSupported(format!("{:?}", t)))
            }
         }
+
+        /// Get the maximum replication index returned from a write performed using any connection created using this Database object.
+        pub fn max_write_replication_index(&self) -> Option<FrameNo> {
+            let index = self
+                .max_write_replication_index
+                .load(std::sync::atomic::Ordering::SeqCst);
+            if index == 0 {
+                None
+            } else {
+                Some(index)
+            }
+        }
     }
 }
 
