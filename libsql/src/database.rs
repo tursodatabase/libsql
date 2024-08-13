@@ -7,9 +7,10 @@ pub use builder::Builder;
 #[cfg(feature = "core")]
 pub use libsql_sys::{Cipher, EncryptionConfig};
 
-use std::fmt;
-
 use crate::{Connection, Result};
+use std::fmt;
+use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
 
 cfg_core! {
     bitflags::bitflags! {
@@ -76,6 +77,9 @@ impl fmt::Debug for DbType {
 /// not do much work until the [`Database::connect`] fn is called.
 pub struct Database {
     db_type: DbType,
+    /// The maximum replication index returned from a write performed using any connection created using this Database object.
+    #[allow(dead_code)]
+    max_write_replication_index: Arc<AtomicU64>,
 }
 
 cfg_core! {
@@ -87,6 +91,7 @@ cfg_core! {
 
             Ok(Database {
                 db_type: DbType::Memory { db },
+                max_write_replication_index: Default::default(),
             })
         }
 
@@ -105,6 +110,7 @@ cfg_core! {
                     flags,
                     encryption_config: None,
                 },
+                max_write_replication_index: Default::default(),
             })
         }
     }
@@ -130,6 +136,7 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
             })
         }
 
@@ -191,6 +198,7 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
             })
         }
 
@@ -317,6 +325,7 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
             })
         }
 
@@ -372,7 +381,8 @@ cfg_replication! {
                DbType::Sync { db, .. } => {
                    let path = db.path().to_string();
                    Ok(Database {
-                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None}
+                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None},
+                       max_write_replication_index: Default::default(),
                    })
                }
                t => Err(Error::FreezeNotSupported(format!("{:?}", t)))
@@ -445,6 +455,7 @@ cfg_remote! {
                     connector: crate::util::ConnectorService::new(svc),
                     version,
                 },
+                max_write_replication_index: Default::default(),
             })
         }
     }
