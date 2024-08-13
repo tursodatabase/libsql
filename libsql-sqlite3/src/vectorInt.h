@@ -30,12 +30,12 @@ typedef u32 VectorDims;
  *  - last 'type'-byte is mandatory for float64 vectors
  *
  * 3. float1bit
- *  [data[0] as u8] [data[1] as u8] ... [data[(dims + 7) / 8] as u8] [_ as u8; padding]? [leftover as u8] [3 as u8]
+ *  [data[0] as u8] [data[1] as u8] ... [data[(dims + 7) / 8] as u8] [_ as u8; padding]? [trailing_bits as u8] [3 as u8]
  *  - every data byte (except for the last) represents exactly 8 components of the vector
  *  - last data byte represents [1..8] components of the vector
- *  - optional padding byte ensures that leftover byte will be written at the odd blob position (0-based)
- *  - leftover byte specify amount of trailing *bits* in the blob without last 'type'-byte which must be omitted
- *    (so, vector dimensions are equal to 8 * (blob_size - 1) - leftover)
+ *  - optional padding byte ensures that "trailing_bits" byte will be written at the odd blob position (0-based)
+ *  - "trailing_bits" byte specify amount of trailing *bits* in the blob without last 'type'-byte which must be omitted
+ *    (so, vector dimensions are equal to 8 * (blob_size - 1) - trailing_bits)
  *  - last 'type'-byte is mandatory for float1bit vectors
 */
 
@@ -45,8 +45,11 @@ typedef u32 VectorDims;
 #define VECTOR_TYPE_FLOAT32   1
 #define VECTOR_TYPE_FLOAT64   2
 #define VECTOR_TYPE_FLOAT1BIT 3
+#define VECTOR_TYPE_FLOAT8    4
 
 #define VECTOR_FLAGS_STATIC 1
+
+#define ALIGN(n, size) (((n + size - 1) / size) * size)
 
 /*
  * Object which represents a vector
@@ -68,10 +71,14 @@ void vectorInit(Vector *, VectorType, VectorDims, void *);
 /*
  * Dumps vector on the console (used only for debugging)
 */
-void vectorDump   (const Vector *v);
+void vectorDump    (const Vector *v);
+void vectorF8Dump  (const Vector *v);
 void vectorF32Dump (const Vector *v);
 void vectorF64Dump (const Vector *v);
 void vector1BitDump(const Vector *v);
+
+void vectorF8GetParameters(const u8 *, int, float *, float *);
+void vectorF8SetParameters(u8 *, int, float, float);
 
 /* 
  * Converts vector to the text representation and write the result to the sqlite3_context
@@ -83,15 +90,17 @@ void vectorF64MarshalToText(sqlite3_context *, const Vector *);
 /* 
  * Serializes vector to the blob in little-endian format according to the IEEE-754 standard
 */
-size_t vectorSerializeToBlob    (const Vector *, unsigned char *, size_t);
-size_t vectorF32SerializeToBlob (const Vector *, unsigned char *, size_t);
-size_t vectorF64SerializeToBlob (const Vector *, unsigned char *, size_t);
-size_t vector1BitSerializeToBlob(const Vector *, unsigned char *, size_t);
+void vectorSerializeToBlob    (const Vector *, unsigned char *, size_t);
+void vectorF8SerializeToBlob  (const Vector *, unsigned char *, size_t);
+void vectorF32SerializeToBlob (const Vector *, unsigned char *, size_t);
+void vectorF64SerializeToBlob (const Vector *, unsigned char *, size_t);
+void vector1BitSerializeToBlob(const Vector *, unsigned char *, size_t);
 
 /* 
  * Calculates cosine distance between two vectors (vector must have same type and same dimensions)
 */
 float vectorDistanceCos    (const Vector *, const Vector *);
+float vectorF8DistanceCos  (const Vector *, const Vector *);
 float vectorF32DistanceCos (const Vector *, const Vector *);
 double vectorF64DistanceCos(const Vector *, const Vector *);
 
@@ -119,6 +128,7 @@ void vectorSerializeWithMeta(sqlite3_context *, const Vector *);
 */
 int vectorParseSqliteBlobWithType(sqlite3_value *, Vector *, char **);
 
+void vectorF8DeserializeFromBlob  (Vector *, const unsigned char *, size_t);
 void vectorF32DeserializeFromBlob (Vector *, const unsigned char *, size_t);
 void vectorF64DeserializeFromBlob (Vector *, const unsigned char *, size_t);
 void vector1BitDeserializeFromBlob(Vector *, const unsigned char *, size_t);
@@ -130,6 +140,24 @@ void vectorConvert(const Vector *, Vector *);
 
 /* Detect type and dimension of vector provided with first parameter of sqlite3_value * type */
 int detectVectorParameters(sqlite3_value *, int, int *, int *, char **);
+
+static inline unsigned serializeF32(unsigned char *pBuf, float value){
+  u32 *p = (u32 *)&value;
+  pBuf[0] = *p & 0xFF;
+  pBuf[1] = (*p >> 8) & 0xFF;
+  pBuf[2] = (*p >> 16) & 0xFF;
+  pBuf[3] = (*p >> 24) & 0xFF;
+  return sizeof(float);
+}
+
+static inline float deserializeF32(const unsigned char *pBuf){
+  u32 value = 0;
+  value |= (u32)pBuf[0];
+  value |= (u32)pBuf[1] << 8;
+  value |= (u32)pBuf[2] << 16;
+  value |= (u32)pBuf[3] << 24;
+  return *(float *)&value;
+}
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */

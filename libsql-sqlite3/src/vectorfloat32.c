@@ -57,25 +57,7 @@ static inline unsigned formatF32(float value, char *pBuf, int nBufSize){
   return strlen(pBuf);
 }
 
-static inline unsigned serializeF32(unsigned char *pBuf, float value){
-  u32 *p = (u32 *)&value;
-  pBuf[0] = *p & 0xFF;
-  pBuf[1] = (*p >> 8) & 0xFF;
-  pBuf[2] = (*p >> 16) & 0xFF;
-  pBuf[3] = (*p >> 24) & 0xFF;
-  return sizeof(float);
-}
-
-static inline float deserializeF32(const unsigned char *pBuf){
-  u32 value = 0;
-  value |= (u32)pBuf[0];
-  value |= (u32)pBuf[1] << 8;
-  value |= (u32)pBuf[2] << 16;
-  value |= (u32)pBuf[3] << 24;
-  return *(float *)&value;
-}
-
-size_t vectorF32SerializeToBlob(
+void vectorF32SerializeToBlob(
   const Vector *pVector,
   unsigned char *pBlob,
   size_t nBlobSize
@@ -87,12 +69,11 @@ size_t vectorF32SerializeToBlob(
 
   assert( pVector->type == VECTOR_TYPE_FLOAT32 );
   assert( pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= pVector->dims * sizeof(float) );
+  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   for(i = 0; i < pVector->dims; i++){
     pPtr += serializeF32(pPtr, elems[i]);
   }
-  return sizeof(float) * pVector->dims;
 }
 
 #define SINGLE_FLOAT_CHAR_LIMIT 32
@@ -178,7 +159,7 @@ void vectorF32DeserializeFromBlob(
 
   assert( pVector->type == VECTOR_TYPE_FLOAT32 );
   assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= pVector->dims * sizeof(float) );
+  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   for(i = 0; i < pVector->dims; i++){
     elems[i] = deserializeF32(pBlob);
