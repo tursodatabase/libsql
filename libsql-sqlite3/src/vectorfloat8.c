@@ -100,10 +100,10 @@ float vectorF8DistanceCos(const Vector *v1, const Vector *v2){
   assert( v2->type == VECTOR_TYPE_FLOAT8 );
 
   vectorF8GetParameters(v1->data, v1->dims, &alpha1, &shift1);
-  vectorF8GetParameters(v2->data, v1->dims, &alpha2, &shift2);
+  vectorF8GetParameters(v2->data, v2->dims, &alpha2, &shift2);
 
   /*
-   * (Ax + S)^2 = A^2 x^2 + S^2 + 2AS x -> we need to maintain 'sumsq' and 'sum'
+   * (Ax + S)^2 = A^2 x^2 + 2AS x + S^2 -> we need to maintain 'sumsq' and 'sum'
    * (A1x + S1) * (A2y + S2) = A1A2 xy + A1 S2 x + A2 S1 y + S1 S2 -> we need to maintain 'dot' and 'sum' again
   */
 
@@ -112,12 +112,12 @@ float vectorF8DistanceCos(const Vector *v1, const Vector *v2){
     sum2 += data2[i];
     sumsq1 += data1[i]*data1[i];
     sumsq2 += data2[i]*data2[i];
-    doti += data1[i] * data2[i];
+    doti += data1[i]*data2[i];
   }
 
-  dot = alpha1 * alpha2 * (float)doti + alpha1 * shift2 * (float)sum1 + alpha2 * shift1 * (float)sum2 + shift1 * shift2;
-  norm1 = alpha1 * alpha1 * (float)sumsq1 + 2 * alpha1 * shift1 * (float)sum1 + shift1 * shift1;
-  norm2 = alpha2 * alpha2 * (float)sumsq2 + 2 * alpha2 * shift2 * (float)sum2 + shift2 * shift2;
+  dot = alpha1 * alpha2 * (float)doti + alpha1 * shift2 * (float)sum1 + alpha2 * shift1 * (float)sum2 + shift1 * shift2 * v1->dims;
+  norm1 = alpha1 * alpha1 * (float)sumsq1 + 2 * alpha1 * shift1 * (float)sum1 + shift1 * shift1 * v1->dims;
+  norm2 = alpha2 * alpha2 * (float)sumsq2 + 2 * alpha2 * shift2 * (float)sum2 + shift2 * shift2 * v1->dims;
 
   return 1.0 - (dot / sqrt(norm1 * norm2));
 }

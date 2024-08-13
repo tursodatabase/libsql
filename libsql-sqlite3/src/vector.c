@@ -538,22 +538,7 @@ void vectorSerializeWithMeta(
     return;
   }
 
-  switch (pVector->type) {
-    case VECTOR_TYPE_FLOAT32:
-      vectorF32SerializeToBlob(pVector, pBlob, nDataSize);
-      break;
-    case VECTOR_TYPE_FLOAT64:
-      vectorF64SerializeToBlob(pVector, pBlob, nDataSize);
-      break;
-    case VECTOR_TYPE_FLOAT1BIT:
-      vector1BitSerializeToBlob(pVector, pBlob, nDataSize);
-      break;
-    case VECTOR_TYPE_FLOAT8:
-      vectorF8SerializeToBlob(pVector, pBlob, nDataSize);
-      break;
-    default:
-      assert(0);
-  }
+  vectorSerializeToBlob(pVector, pBlob, nDataSize);
   vectorSerializeMeta(pVector, nDataSize, pBlob, nBlobSize);
   sqlite3_result_blob(context, (char*)pBlob, nBlobSize, sqlite3_free);
 }
@@ -568,6 +553,9 @@ void vectorSerializeToBlob(const Vector *pVector, unsigned char *pBlob, size_t n
       break;
     case VECTOR_TYPE_FLOAT1BIT:
       vector1BitSerializeToBlob(pVector, pBlob, nBlobSize);
+      break;
+    case VECTOR_TYPE_FLOAT8:
+      vectorF8SerializeToBlob(pVector, pBlob, nBlobSize);
       break;
     default:
       assert(0);
