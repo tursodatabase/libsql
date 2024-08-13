@@ -575,7 +575,11 @@ impl Database {
 
                 let local = LibsqlConnection { conn };
                 let writer = local.conn.new_connection_writer();
-                let remote = crate::replication::RemoteConnection::new(local, writer);
+                let remote = crate::replication::RemoteConnection::new(
+                    local,
+                    writer,
+                    self.max_write_replication_index.clone(),
+                );
                 let conn = std::sync::Arc::new(remote);
 
                 Ok(Connection { conn })
