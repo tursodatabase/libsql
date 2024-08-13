@@ -39,7 +39,7 @@ void vector1BitDump(const Vector *pVec){
   u8 *elems = pVec->data;
   unsigned i;
 
-  assert( pVec->type == VECTOR_TYPE_1BIT );
+  assert( pVec->type == VECTOR_TYPE_FLOAT1BIT );
 
   printf("f1bit: [");
   for(i = 0; i < pVec->dims; i++){
@@ -61,7 +61,7 @@ size_t vector1BitSerializeToBlob(
   u8 *pPtr = pBlob;
   unsigned i;
 
-  assert( pVector->type == VECTOR_TYPE_1BIT );
+  assert( pVector->type == VECTOR_TYPE_FLOAT1BIT );
   assert( pVector->dims <= MAX_VECTOR_SZ );
   assert( nBlobSize >= (pVector->dims + 7) / 8 );
 
@@ -108,8 +108,8 @@ int vector1BitDistanceHamming(const Vector *v1, const Vector *v2){
   int i, len8, len32, offset8;
 
   assert( v1->dims == v2->dims );
-  assert( v1->type == VECTOR_TYPE_1BIT );
-  assert( v2->type == VECTOR_TYPE_1BIT );
+  assert( v1->type == VECTOR_TYPE_FLOAT1BIT );
+  assert( v2->type == VECTOR_TYPE_FLOAT1BIT );
 
   len8 = (v1->dims + 7) / 8;
   len32 = v1->dims / 32;
@@ -131,7 +131,7 @@ void vector1BitDeserializeFromBlob(
 ){
   u8 *elems = pVector->data;
 
-  assert( pVector->type == VECTOR_TYPE_1BIT );
+  assert( pVector->type == VECTOR_TYPE_FLOAT1BIT );
   assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
   assert( nBlobSize >= (pVector->dims + 7) / 8 );
 

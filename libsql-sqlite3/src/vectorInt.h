@@ -42,9 +42,9 @@ typedef u32 VectorDims;
 /*
  * Enumerate of supported vector types (0 omitted intentionally as we can use zero as "undefined" value)
 */
-#define VECTOR_TYPE_FLOAT32 1
-#define VECTOR_TYPE_FLOAT64 2
-#define VECTOR_TYPE_1BIT    3
+#define VECTOR_TYPE_FLOAT32   1
+#define VECTOR_TYPE_FLOAT64   2
+#define VECTOR_TYPE_FLOAT1BIT 3
 
 #define VECTOR_FLAGS_STATIC 1
 

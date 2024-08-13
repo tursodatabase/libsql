@@ -505,7 +505,7 @@ int diskAnnCreateIndex(
     }
   }
   neighbours = vectorIdxParamsGetU64(pParams, VECTOR_COMPRESS_NEIGHBORS_PARAM_ID);
-  if( neighbours == VECTOR_TYPE_1BIT && metric != VECTOR_METRIC_TYPE_COS ){
+  if( neighbours == VECTOR_TYPE_FLOAT1BIT && metric != VECTOR_METRIC_TYPE_COS ){
     *pzErrMsg = "1-bit compression available only for cosine metric";
     return SQLITE_ERROR;
   }
@@ -1749,7 +1749,7 @@ int diskAnnOpenIndex(
   if( compressNeighbours == 0 ){
     pIndex->nEdgeVectorType = pIndex->nNodeVectorType;
     pIndex->nEdgeVectorSize = pIndex->nNodeVectorSize;
-  }else if( compressNeighbours == VECTOR_TYPE_1BIT ){
+  }else if( compressNeighbours == VECTOR_TYPE_FLOAT1BIT ){
     pIndex->nEdgeVectorType = compressNeighbours;
     pIndex->nEdgeVectorSize = vectorDataSize(compressNeighbours, pIndex->nVectorDims);
   }else{

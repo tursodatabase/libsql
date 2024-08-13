@@ -275,7 +275,7 @@ do_execsql_test vector-transaction {
 
 do_execsql_test vector-1bit {
   CREATE TABLE t_1bit( v FLOAT32(3) );
-  CREATE INDEX t_1bit_idx ON t_1bit( libsql_vector_idx(v, 'compress_neighbors=1bit') );
+  CREATE INDEX t_1bit_idx ON t_1bit( libsql_vector_idx(v, 'compress_neighbors=float1bit') );
   INSERT INTO t_1bit VALUES (vector('[-1,-1,1]'));
   INSERT INTO t_1bit VALUES (vector('[-1,1,-1.5]'));
   INSERT INTO t_1bit VALUES (vector('[1,-1,-1]'));
@@ -285,7 +285,7 @@ do_execsql_test vector-1bit {
 
 do_execsql_test vector-all-params {
   CREATE TABLE t_all_params ( emb FLOAT32(2) );
-  CREATE INDEX t_all_params_idx ON t_all_params(libsql_vector_idx(emb, 'type=diskann', 'metric=cos', 'alpha=1.2', 'search_l=200', 'insert_l=70', 'max_neighbors=6', 'compress_neighbors=1bit'));
+  CREATE INDEX t_all_params_idx ON t_all_params(libsql_vector_idx(emb, 'type=diskann', 'metric=cos', 'alpha=1.2', 'search_l=200', 'insert_l=70', 'max_neighbors=6', 'compress_neighbors=float1bit'));
   INSERT INTO t_all_params VALUES (vector('[1,2]')), (vector('[3,4]'));
   SELECT * FROM vector_top_k('t_all_params_idx', vector('[1,2]'), 2);
 } {1 2}
@@ -334,6 +334,15 @@ do_execsql_test vector-1bit-index {
   INSERT INTO t_1bit_table VALUES ( vector1bit('[-1,1,1,-1]') );
   INSERT INTO t_1bit_table VALUES ( vector1bit('[1,-1,-1,1]') );
   SELECT * FROM vector_top_k('t_1bit_table_idx', vector1bit('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f64-compress-f32 {
+  CREATE TABLE t_f64_f32( v FLOAT64(4) );
+  CREATE INDEX t_f64_f32_idx ON t_f64_f32( libsql_vector_idx(v, 'compress_neighbors=float32') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[1,-1,1,-1]') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[-1,1,1,-1]') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f64_f32_idx', vector64('[10,-10,-20,20]'), 4);
 } {3 1 2}
 
 proc error_messages {sql} {
