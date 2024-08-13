@@ -78,7 +78,6 @@ impl fmt::Debug for DbType {
 pub struct Database {
     db_type: DbType,
     /// The maximum replication index returned from a write performed using any connection created using this Database object.
-    #[allow(dead_code)]
     max_write_replication_index: Arc<AtomicU64>,
 }
 
@@ -387,6 +386,18 @@ cfg_replication! {
                }
                t => Err(Error::FreezeNotSupported(format!("{:?}", t)))
            }
+        }
+
+        /// Get the maximum replication index returned from a write performed using any connection created using this Database object.
+        pub fn max_write_replication_index(&self) -> Option<FrameNo> {
+            let index = self
+                .max_write_replication_index
+                .load(std::sync::atomic::Ordering::SeqCst);
+            if index == 0 {
+                None
+            } else {
+                Some(index)
+            }
         }
     }
 }
