@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 use std::sync::Arc;
-
+use std::sync::atomic::AtomicU64;
 use libsql_replication::rpc::proxy::{
     describe_result, query_result::RowResult, Cond, DescribeResult, ExecuteResults, NotCond,
     OkCond, Positional, Query, ResultRows, State as RemoteState, Step,
@@ -28,6 +28,8 @@ pub struct RemoteConnection {
     pub(self) local: LibsqlConnection,
     writer: Option<Writer>,
     inner: Arc<Mutex<Inner>>,
+    #[allow(dead_code)]
+    max_write_replication_index: Arc<AtomicU64>,
 }
 
 #[derive(Default, Debug)]
@@ -166,12 +168,13 @@ impl From<RemoteState> for State {
 }
 
 impl RemoteConnection {
-    pub(crate) fn new(local: LibsqlConnection, writer: Option<Writer>) -> Self {
+    pub(crate) fn new(local: LibsqlConnection, writer: Option<Writer>, max_write_replication_index: Arc<AtomicU64>) -> Self {
         let state = Arc::new(Mutex::new(Inner::default()));
         Self {
             local,
             writer,
             inner: state,
+            max_write_replication_index,
         }
     }
 
