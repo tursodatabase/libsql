@@ -28,7 +28,6 @@ pub struct RemoteConnection {
     pub(self) local: LibsqlConnection,
     writer: Option<Writer>,
     inner: Arc<Mutex<Inner>>,
-    #[allow(dead_code)]
     max_write_replication_index: Arc<AtomicU64>,
 }
 
@@ -178,6 +177,18 @@ impl RemoteConnection {
         }
     }
 
+    fn update_max_write_replication_index(&self, index: Option<u64>) {
+        if let Some(index) = index {
+            let mut current = self.max_write_replication_index.load(std::sync::atomic::Ordering::SeqCst);
+            while index > current {
+                match self.max_write_replication_index.compare_exchange(current, index, std::sync::atomic::Ordering::SeqCst, std::sync::atomic::Ordering::SeqCst) {
+                    Ok(_) => break,
+                    Err(new_current) => current = new_current,
+                }
+            }
+        }
+    }
+
     fn is_state_init(&self) -> bool {
         matches!(self.inner.lock().state, State::Init)
     }
@@ -204,6 +215,8 @@ impl RemoteConnection {
                 .into();
         }
 
+        self.update_max_write_replication_index(res.current_frame_no);
+
         if let Some(replicator) = writer.replicator() {
             replicator.sync_oneshot().await?;
         }
@@ -228,6 +241,8 @@ impl RemoteConnection {
                 .expect("Invalid state enum")
                 .into();
         }
+
+        self.update_max_write_replication_index(res.current_frame_no);
 
         if let Some(replicator) = writer.replicator() {
             replicator.sync_oneshot().await?;
