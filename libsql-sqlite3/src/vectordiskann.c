@@ -1749,11 +1749,9 @@ int diskAnnOpenIndex(
   if( compressNeighbours == 0 ){
     pIndex->nEdgeVectorType = pIndex->nNodeVectorType;
     pIndex->nEdgeVectorSize = pIndex->nNodeVectorSize;
-  }else if( compressNeighbours == VECTOR_TYPE_FLOAT1BIT ){
+  }else{
     pIndex->nEdgeVectorType = compressNeighbours;
     pIndex->nEdgeVectorSize = vectorDataSize(compressNeighbours, pIndex->nVectorDims);
-  }else{
-    return SQLITE_ERROR;
   }
 
   *ppIndex = pIndex;
