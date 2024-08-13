@@ -179,6 +179,8 @@ fn execute_batch() {
         conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
             .await?;
 
+        assert_eq!(db.max_write_replication_index(), Some(1));
+
         let n = db.sync().await?.frame_no();
         assert_eq!(n, Some(1));
 
@@ -231,6 +233,7 @@ fn stream() {
 
         conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
             .await?;
+        assert_eq!(db.max_write_replication_index(), Some(1));
 
         let n = db.sync().await?.frame_no();
         assert_eq!(n, Some(1));
@@ -244,8 +247,10 @@ fn stream() {
             ",
         )
         .await?;
+        let replication_index = db.max_write_replication_index();
 
-        db.sync().await.unwrap();
+        let synced_replication_index = db.sync().await.unwrap().frame_no();
+        assert_eq!(synced_replication_index, replication_index);
 
         let rows = conn.query("select * from user", ()).await.unwrap();
 
