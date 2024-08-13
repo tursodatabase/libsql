@@ -24,7 +24,6 @@
 **
 ** libSQL vector search.
 */
-#include "vectorInt.h"
 #ifndef SQLITE_OMIT_VECTOR
 #include "sqlite3.h"
 #include "vdbeInt.h"
