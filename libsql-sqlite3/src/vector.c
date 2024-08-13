@@ -954,13 +954,19 @@ static void vectorDistanceFunc(
     goto out_free;
   }
   if( type1 != type2 ){
-    pzErrMsg = sqlite3_mprintf("vector_distance_cos: vectors must have the same type: %d != %d", type1, type2);
+    pzErrMsg = sqlite3_mprintf("vector_distance: vectors must have the same type: %d != %d", type1, type2);
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
     goto out_free;
   }
   if( dims1 != dims2 ){
-    pzErrMsg = sqlite3_mprintf("vector_distance_cos: vectors must have the same length: %d != %d", dims1, dims2);
+    pzErrMsg = sqlite3_mprintf("vector_distance: vectors must have the same length: %d != %d", dims1, dims2);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( vectorDistance == vectorDistanceL2 && type1 == VECTOR_TYPE_FLOAT1BIT ){
+    pzErrMsg = sqlite3_mprintf("vector_distance: l2 distance is not supported for float1bit vectors", dims1, dims2);
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
     goto out_free;

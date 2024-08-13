@@ -62,6 +62,9 @@ do_execsql_test vector-1-func-valid {
 
   SELECT vector_distance_cos(vector8('[-20,-30,0,1,1.1,1.2,100]'), vector8('[-20,-30,0,1,1.1,1.2,10000]'));
   SELECT vector_distance_cos(vector32('[-20,-30,0,1,1.1,1.2,100]'), vector32('[-20,-30,0,1,1.1,1.2,10000]'));
+
+  SELECT vector_distance_l2(vector('[1,2,2,3,4,1,5]'), vector('[2,3,1,-1,2,4,5]'));
+  SELECT vector_distance_l2(vector8('[1,2,2,3,4,1,5]'), vector8('[2,3,1,-1,2,4,5]'));
 } {
   {[]} 
   {[]} 
@@ -84,6 +87,8 @@ do_execsql_test vector-1-func-valid {
   {-6.10352568486405e-09} {0.0}
   {0.000111237335659098} {0.000117244853754528}
   {0.0576796568930149} {0.0582110174000263}
+
+  {5.65685415267944} {5.65413522720337}
 }
 
 do_execsql_test vector-1-conversion {
@@ -158,6 +163,7 @@ do_test vector-1-func-errors {
   lappend ret [error_messages {SELECT vector(x'0000000000')}]
   lappend ret [error_messages {SELECT vector_distance_cos('[1,2,3]', '[1,2]')}]
   lappend ret [error_messages {SELECT vector_distance_cos(vector32('[1,2,3]'), vector64('[1,2,3]'))}]
+  lappend ret [error_messages {SELECT vector_distance_l2(vector1bit('[1,2,2,3,4,1,5]'), vector1bit('[2,3,1,-1,2,4,5]'))}]
 } [list {*}{
   {vector: unexpected value type: got FLOAT, expected TEXT or BLOB}
   {vector: unexpected value type: got INTEGER, expected TEXT or BLOB}
@@ -169,6 +175,7 @@ do_test vector-1-func-errors {
   {vector: invalid float at position 2: '1.1.1'}
   {vector: must end with ']'}
   {vector: unexpected binary type: 0}
-  {vector_distance_cos: vectors must have the same length: 3 != 2}
-  {vector_distance_cos: vectors must have the same type: 1 != 2}
+  {vector_distance: vectors must have the same length: 3 != 2}
+  {vector_distance: vectors must have the same type: 1 != 2}
+  {vector_distance: l2 distance is not supported for float1bit vectors}
 }]
