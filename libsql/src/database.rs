@@ -340,6 +340,16 @@ cfg_replication! {
             }
         }
 
+        /// Sync database from remote until it gets to a given replication_index or further,
+        /// and returns the committed frame_no after syncing, if applicable.
+        pub async fn sync_until(&self, replication_index: FrameNo) -> Result<crate::replication::Replicated> {
+            if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
+                db.sync_until(replication_index).await
+            } else {
+                Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
+            }
+        }
+
         /// Apply a set of frames to the database and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
