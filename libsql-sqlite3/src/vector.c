@@ -312,7 +312,7 @@ int vectorParseSqliteBlobWithType(
 
   if( nDataSize != vectorDataSize(pVector->type, pVector->dims) ){
     *pzErrMsg = sqlite3_mprintf(
-      "vector: unexpected data part size: type=%d, dims=%d, %ull != %ull",
+      "vector: unexpected data part size: type=%d, dims=%d, %u != %u",
       pVector->type,
       pVector->dims,
       nDataSize,
