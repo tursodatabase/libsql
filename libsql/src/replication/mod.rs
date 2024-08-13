@@ -36,8 +36,8 @@ pub(crate) mod remote_client;
 
 #[derive(Debug)]
 pub struct Replicated {
-    frame_no: Option<FrameNo>,
-    frames_synced: usize,
+    pub(crate) frame_no: Option<FrameNo>,
+    pub(crate) frames_synced: usize,
 }
 
 impl Replicated {

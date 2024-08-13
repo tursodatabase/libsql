@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 use std::sync::Arc;
-
+use std::sync::atomic::AtomicU64;
 use libsql_replication::rpc::proxy::{
     describe_result, query_result::RowResult, Cond, DescribeResult, ExecuteResults, NotCond,
     OkCond, Positional, Query, ResultRows, State as RemoteState, Step,
@@ -28,6 +28,7 @@ pub struct RemoteConnection {
     pub(self) local: LibsqlConnection,
     writer: Option<Writer>,
     inner: Arc<Mutex<Inner>>,
+    max_write_replication_index: Arc<AtomicU64>,
 }
 
 #[derive(Default, Debug)]
@@ -166,12 +167,25 @@ impl From<RemoteState> for State {
 }
 
 impl RemoteConnection {
-    pub(crate) fn new(local: LibsqlConnection, writer: Option<Writer>) -> Self {
+    pub(crate) fn new(local: LibsqlConnection, writer: Option<Writer>, max_write_replication_index: Arc<AtomicU64>) -> Self {
         let state = Arc::new(Mutex::new(Inner::default()));
         Self {
             local,
             writer,
             inner: state,
+            max_write_replication_index,
+        }
+    }
+
+    fn update_max_write_replication_index(&self, index: Option<u64>) {
+        if let Some(index) = index {
+            let mut current = self.max_write_replication_index.load(std::sync::atomic::Ordering::SeqCst);
+            while index > current {
+                match self.max_write_replication_index.compare_exchange(current, index, std::sync::atomic::Ordering::SeqCst, std::sync::atomic::Ordering::SeqCst) {
+                    Ok(_) => break,
+                    Err(new_current) => current = new_current,
+                }
+            }
         }
     }
 
@@ -201,6 +215,8 @@ impl RemoteConnection {
                 .into();
         }
 
+        self.update_max_write_replication_index(res.current_frame_no);
+
         if let Some(replicator) = writer.replicator() {
             replicator.sync_oneshot().await?;
         }
@@ -225,6 +241,8 @@ impl RemoteConnection {
                 .expect("Invalid state enum")
                 .into();
         }
+
+        self.update_max_write_replication_index(res.current_frame_no);
 
         if let Some(replicator) = writer.replicator() {
             replicator.sync_oneshot().await?;

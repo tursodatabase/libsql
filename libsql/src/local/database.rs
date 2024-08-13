@@ -278,6 +278,29 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
+    /// Sync with primary at least to a given replication index
+    pub async fn sync_until(&self, replication_index: FrameNo) -> Result<crate::replication::Replicated> {
+        if let Some(ctx) = &self.replication_ctx {
+            let mut frame_no: Option<FrameNo> = ctx.replicator.committed_frame_no().await;
+            let mut frames_synced: usize = 0;
+            while frame_no.unwrap_or(0) < replication_index {
+                let res = ctx.replicator.sync_oneshot().await?;
+                frame_no = res.frame_no();
+                frames_synced += res.frames_synced();
+            }
+            Ok(crate::replication::Replicated {
+                frame_no,
+                frames_synced,
+            })
+        } else {
+            Err(crate::errors::Error::Misuse(
+                "No replicator available. Use Database::with_replicator() to enable replication"
+                    .to_string(),
+            ))
+        }
+    }
+
+    #[cfg(feature = "replication")]
     pub async fn sync_frames(&self, frames: Frames) -> Result<Option<FrameNo>> {
         if let Some(ref ctx) = self.replication_ctx {
             ctx.replicator.sync_frames(frames).await
