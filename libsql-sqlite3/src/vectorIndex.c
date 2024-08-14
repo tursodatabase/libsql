@@ -373,14 +373,16 @@ void vectorOutRowsFree(sqlite3 *db, VectorOutRows *pRows) {
 */
 struct VectorColumnType {
   const char *zName;
-  int nBits;
+  int type;
 };
 
 static struct VectorColumnType VECTOR_COLUMN_TYPES[] = {
-  { "FLOAT32",  32 },
-  { "FLOAT64",  64 },
-  { "F32_BLOB", 32 },
-  { "F64_BLOB", 64 }
+  { "FLOAT32",    VECTOR_TYPE_FLOAT32 },
+  { "F32_BLOB",   VECTOR_TYPE_FLOAT32 },
+  { "FLOAT64",    VECTOR_TYPE_FLOAT64 },
+  { "F64_BLOB",   VECTOR_TYPE_FLOAT64 },
+  { "FLOAT1BIT",  VECTOR_TYPE_FLOAT1BIT },
+  { "F1BIT_BLOB", VECTOR_TYPE_FLOAT1BIT },
 };
 
 /*
@@ -396,10 +398,11 @@ struct VectorParamName {
 };
 
 static struct VectorParamName VECTOR_PARAM_NAMES[] = {
-  { "type",               VECTOR_INDEX_TYPE_PARAM_ID,         0, "diskann", VECTOR_INDEX_TYPE_DISKANN },
-  { "metric",             VECTOR_METRIC_TYPE_PARAM_ID,        0, "cosine",  VECTOR_METRIC_TYPE_COS },
-  { "metric",             VECTOR_METRIC_TYPE_PARAM_ID,        0, "l2",      VECTOR_METRIC_TYPE_L2 },
-  { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "1bit",    VECTOR_TYPE_1BIT },
+  { "type",               VECTOR_INDEX_TYPE_PARAM_ID,         0, "diskann",   VECTOR_INDEX_TYPE_DISKANN },
+  { "metric",             VECTOR_METRIC_TYPE_PARAM_ID,        0, "cosine",    VECTOR_METRIC_TYPE_COS },
+  { "metric",             VECTOR_METRIC_TYPE_PARAM_ID,        0, "l2",        VECTOR_METRIC_TYPE_L2 },
+  { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "float1bit", VECTOR_TYPE_FLOAT1BIT },
+  { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "float32",   VECTOR_TYPE_FLOAT32 },
   { "alpha",              VECTOR_PRUNING_ALPHA_PARAM_ID, 2, 0, 0 },
   { "search_l",           VECTOR_SEARCH_L_PARAM_ID,      1, 0, 0 },
   { "insert_l",           VECTOR_INSERT_L_PARAM_ID,      1, 0, 0 },
@@ -569,14 +572,7 @@ int vectorIdxParseColumnType(const char *zType, int *pType, int *pDims, const ch
     }
 
     *pDims = dimensions;
-    if( VECTOR_COLUMN_TYPES[i].nBits == 32 ) {
-      *pType = VECTOR_TYPE_FLOAT32;
-    } else if( VECTOR_COLUMN_TYPES[i].nBits == 64 ) {
-      *pType = VECTOR_TYPE_FLOAT64;
-    } else {
-      *pErrMsg = "unsupported vector type";
-      return -1;
-    }
+    *pType = VECTOR_COLUMN_TYPES[i].type;
     return 0;
   }
   *pErrMsg = "unexpected vector column type";
@@ -887,7 +883,6 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
     sqlite3ErrorMsg(pParse, "vector index: %s: %s", pzErrMsg, zEmbeddingColumnTypeName);
     return CREATE_FAIL;
   }
-
   // schema is locked while db is initializing and we need to just proceed here
   if( db->init.busy == 1 ){
     return CREATE_OK;
@@ -967,11 +962,8 @@ int vectorIndexSearch(
     rc = SQLITE_ERROR;
     goto out;
   }
-  if( type != VECTOR_TYPE_FLOAT32 ){
-    *pzErrMsg = sqlite3_mprintf("vector index(search): only f32 vectors are supported");
-    rc = SQLITE_ERROR;
-    goto out;
-  }
+  assert( type == VECTOR_TYPE_FLOAT32 || type == VECTOR_TYPE_FLOAT64 || type == VECTOR_TYPE_FLOAT1BIT );
+
   pVector = vectorAlloc(type, dims);
   if( pVector == NULL ){
     rc = SQLITE_NOMEM_BKPT;

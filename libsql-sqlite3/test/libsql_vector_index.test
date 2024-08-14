@@ -285,7 +285,7 @@ do_execsql_test vector-transaction {
 
 do_execsql_test vector-1bit {
   CREATE TABLE t_1bit( v FLOAT32(3) );
-  CREATE INDEX t_1bit_idx ON t_1bit( libsql_vector_idx(v, 'compress_neighbors=1bit') );
+  CREATE INDEX t_1bit_idx ON t_1bit( libsql_vector_idx(v, 'compress_neighbors=float1bit') );
   INSERT INTO t_1bit VALUES (vector('[-1,-1,1]'));
   INSERT INTO t_1bit VALUES (vector('[-1,1,-1.5]'));
   INSERT INTO t_1bit VALUES (vector('[1,-1,-1]'));
@@ -295,9 +295,16 @@ do_execsql_test vector-1bit {
 
 do_execsql_test vector-all-params {
   CREATE TABLE t_all_params ( emb FLOAT32(2) );
-  CREATE INDEX t_all_params_idx ON t_all_params(libsql_vector_idx(emb, 'type=diskann', 'metric=cos', 'alpha=1.2', 'search_l=200', 'insert_l=70', 'max_neighbors=6', 'compress_neighbors=1bit'));
+  CREATE INDEX t_all_params_idx ON t_all_params(libsql_vector_idx(emb, 'type=diskann', 'metric=cos', 'alpha=1.2', 'search_l=200', 'insert_l=70', 'max_neighbors=6', 'compress_neighbors=float1bit'));
   INSERT INTO t_all_params VALUES (vector('[1,2]')), (vector('[3,4]'));
   SELECT * FROM vector_top_k('t_all_params_idx', vector('[1,2]'), 2);
+} {1 2}
+
+do_execsql_test vector-f64-index {
+  CREATE TABLE t_f64 ( emb FLOAT64(2) );
+  CREATE INDEX t_f64_idx ON t_f64(libsql_vector_idx(emb));
+  INSERT INTO t_f64 VALUES (vector64('[1,2]')), (vector64('[3,4]'));
+  SELECT * FROM vector_top_k('t_f64_idx', vector64('[1,2]'), 2);
 } {1 2}
 
 do_execsql_test vector-partial {
@@ -329,6 +336,24 @@ do_execsql_test vector-partial {
   2 5 8  
   2 3 5 6 8 9
 }
+
+do_execsql_test vector-1bit-index {
+  CREATE TABLE t_1bit_table( v FLOAT1BIT(4) );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[1,-1,1,-1]') );
+  CREATE INDEX t_1bit_table_idx ON t_1bit_table( libsql_vector_idx(v) );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[-1,1,1,-1]') );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_1bit_table_idx', vector1bit('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f64-compress-f32 {
+  CREATE TABLE t_f64_f32( v FLOAT64(4) );
+  CREATE INDEX t_f64_f32_idx ON t_f64_f32( libsql_vector_idx(v, 'compress_neighbors=float32') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[1,-1,1,-1]') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[-1,1,1,-1]') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f64_f32_idx', vector64('[10,-10,-20,20]'), 4);
+} {3 1 2}
 
 proc error_messages {sql} {
   set ret ""
@@ -378,7 +403,7 @@ do_test vector-errors {
   {vector index: unsupported for tables without ROWID and composite primary key}
   {vector index(insert): dimensions are different: 1 != 4}
   {vector index(insert): dimensions are different: 5 != 4}
-  {vector index(insert): only f32 vectors are supported}
+  {vector index(insert): vector type differs from column type: 2 != 1}
   {vector index(search): dimensions are different: 2 != 4}
   {vector index(insert): dimensions are different: 1 != 3}
 }]

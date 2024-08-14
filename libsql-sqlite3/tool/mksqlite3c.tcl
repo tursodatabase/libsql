@@ -468,8 +468,8 @@ set flist {
 
    json.c
    vector.c
-   vector1bit.c
    vectordiskann.c
+   vectorfloat1bit.c
    vectorfloat32.c
    vectorfloat64.c
    vectorIndex.c

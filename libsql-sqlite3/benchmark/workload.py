@@ -10,10 +10,10 @@ def recall_uniform(dim, n, q):
     print(f'CREATE TABLE queries ( emb FLOAT32({dim}) );')
     print(f'BEGIN TRANSACTION;')
     for i in range(n):
-        vector = f"[{','.join(map(str, np.random.uniform(size=dim)))}]"
+        vector = f"[{','.join(map(str, np.random.uniform(-1, 1, size=dim)))}]"
         print(f'INSERT INTO data VALUES ({i}, vector(\'{vector}\'));')
     for i in range(q):
-        vector = f"[{','.join(map(str, np.random.uniform(size=dim)))}]"
+        vector = f"[{','.join(map(str, np.random.uniform(-1, 1, size=dim)))}]"
         print(f'INSERT INTO queries VALUES (vector(\'{vector}\'));')
     print(f'COMMIT;')
     print('---insert everything')
@@ -29,7 +29,7 @@ def recall_normal(dim, n, q):
         vector = f"[{','.join(map(str, np.random.uniform(size=64)))}]"
         print(f'INSERT INTO data VALUES ({i}, \'{vector}\');')
     for i in range(q):
-        vector = f"[{','.join(map(str, np.random.uniform(size=64)))}]"
+        vector = f"[{','.join(map(str, np.random.uniform(-1, 1, size=64)))}]"
         print(f'INSERT INTO queries VALUES (\'{vector}\');')
     print(f'COMMIT;')
     print('---insert everything')
@@ -40,7 +40,7 @@ def no_vectors(n, q):
     print('PRAGMA journal_mode=WAL;')
     print(f'CREATE TABLE x ( id INTEGER PRIMARY KEY, value TEXT );')
     for i in range(n):
-        vector = f"[{','.join(map(str, np.random.uniform(size=64)))}]"
+        vector = f"[{','.join(map(str, np.random.uniform(-1, 1, size=64)))}]"
         print(f'INSERT INTO x VALUES ({i}, \'{vector}\');')
     print('---inserts')
     for i in range(q):
@@ -54,11 +54,11 @@ def bruteforce(dim, n, q):
     print('PRAGMA journal_mode=WAL;')
     print(f'CREATE TABLE x ( id INTEGER PRIMARY KEY, embedding FLOAT32({dim}) );')
     for i in range(n):
-        vector = f"[{','.join(map(str, np.random.uniform(size=dim)))}]"
+        vector = f"[{','.join(map(str, np.random.uniform(-1, 1, size=dim)))}]"
         print(f'INSERT INTO x VALUES ({i}, vector(\'{vector}\'));')
     print('---inserts')
     for i in range(q):
-        vector = f"[{','.join(map(str, np.random.uniform(size=dim)))}]"
+        vector = f"[{','.join(map(str, np.random.uniform(-1, 1, size=dim)))}]"
         print(f'SELECT id FROM x ORDER BY vector_distance_cos(embedding, vector(\'{vector}\')) LIMIT 1;')
     print('---search')
 
@@ -68,13 +68,13 @@ def diskann(dim, n, q):
     q = int(q)
     print('PRAGMA journal_mode=WAL;')
     print(f'CREATE TABLE x ( id INTEGER PRIMARY KEY, embedding FLOAT32({dim}) );')
-    print(f'CREATE INDEX x_idx ON x( libsql_vector_idx(embedding) );')
+    print(f"CREATE INDEX x_idx ON x( libsql_vector_idx(embedding) );")
     for i in range(n):
-        vector = f"[{','.join(map(str, np.random.uniform(size=dim)))}]"
+        vector = f"[{','.join(map(str, np.random.uniform(-1, 1, size=dim)))}]"
         print(f'INSERT INTO x VALUES ({i}, vector(\'{vector}\'));')
     print('---inserts')
     for i in range(q):
-        vector = f"[{','.join(map(str, np.random.uniform(size=dim)))}]"
+        vector = f"[{','.join(map(str, np.random.uniform(-1, 1, size=dim)))}]"
         print(f'SELECT id FROM vector_top_k(\'x_idx\', vector(\'{vector}\'), 1);')
     print('---search')
 

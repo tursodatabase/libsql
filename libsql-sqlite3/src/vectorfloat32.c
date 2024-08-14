@@ -168,11 +168,6 @@ float vectorF32DistanceL2(const Vector *v1, const Vector *v2){
   return sqrt(sum);
 }
 
-void vectorF32InitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlobSize){
-  pVector->dims = nBlobSize / sizeof(float);
-  pVector->data = (void*)pBlob;
-}
-
 void vectorF32DeserializeFromBlob(
   Vector *pVector,
   const unsigned char *pBlob,

@@ -505,7 +505,7 @@ int diskAnnCreateIndex(
     }
   }
   neighbours = vectorIdxParamsGetU64(pParams, VECTOR_COMPRESS_NEIGHBORS_PARAM_ID);
-  if( neighbours == VECTOR_TYPE_1BIT && metric != VECTOR_METRIC_TYPE_COS ){
+  if( neighbours == VECTOR_TYPE_FLOAT1BIT && metric != VECTOR_METRIC_TYPE_COS ){
     *pzErrMsg = "1-bit compression available only for cosine metric";
     return SQLITE_ERROR;
   }
@@ -1428,12 +1428,12 @@ int diskAnnSearch(
     *pzErrMsg = sqlite3_mprintf("vector index(search): k must be a non-negative integer");
     return SQLITE_ERROR;
   }
-  if( pIndex->nVectorDims != pVector->dims ){
+  if( pVector->dims != pIndex->nVectorDims ){
     *pzErrMsg = sqlite3_mprintf("vector index(search): dimensions are different: %d != %d", pVector->dims, pIndex->nVectorDims);
     return SQLITE_ERROR;
   }
-  if( pVector->type != VECTOR_TYPE_FLOAT32 ){
-    *pzErrMsg = sqlite3_mprintf("vector index(search): only f32 vectors are supported");
+  if( pVector->type != pIndex->nNodeVectorType ){
+    *pzErrMsg = sqlite3_mprintf("vector index(search): vector type differs from column type: %d != %d", pVector->type, pIndex->nNodeVectorType);
     return SQLITE_ERROR;
   }
 
@@ -1498,8 +1498,8 @@ int diskAnnInsert(
     *pzErrMsg = sqlite3_mprintf("vector index(insert): dimensions are different: %d != %d", pVectorInRow->pVector->dims, pIndex->nVectorDims);
     return SQLITE_ERROR;
   }
-  if( pVectorInRow->pVector->type != VECTOR_TYPE_FLOAT32 ){
-    *pzErrMsg = sqlite3_mprintf("vector index(insert): only f32 vectors are supported");
+  if( pVectorInRow->pVector->type != pIndex->nNodeVectorType ){
+    *pzErrMsg = sqlite3_mprintf("vector index(insert): vector type differs from column type: %d != %d", pVectorInRow->pVector->type, pIndex->nNodeVectorType);
     return SQLITE_ERROR;
   }
 
@@ -1754,11 +1754,9 @@ int diskAnnOpenIndex(
   if( compressNeighbours == 0 ){
     pIndex->nEdgeVectorType = pIndex->nNodeVectorType;
     pIndex->nEdgeVectorSize = pIndex->nNodeVectorSize;
-  }else if( compressNeighbours == VECTOR_TYPE_1BIT ){
+  }else{
     pIndex->nEdgeVectorType = compressNeighbours;
     pIndex->nEdgeVectorSize = vectorDataSize(compressNeighbours, pIndex->nVectorDims);
-  }else{
-    return SQLITE_ERROR;
   }
 
   *ppIndex = pIndex;
