@@ -113,12 +113,7 @@ where
                     .absolute(metrics.io_driver_ready_count() as u64);
                 crate::metrics::TOKIO_RUNTIME_REMOTE_SCHEDULE_COUNT
                     .absolute(metrics.remote_schedule_count() as u64);
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            }
-        });
 
-        tokio::task::spawn(async move {
-            loop {
                 crate::metrics::SERVER_COUNT.set(1.0);
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
