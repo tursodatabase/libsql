@@ -363,11 +363,15 @@ pub fn check_program_auth(
             }
             StmtKind::Attach(ref ns) => {
                 ctx.auth.has_right(ns, Permission::AttachRead)?;
-                if !ctx.meta_store.handle(ns.clone()).get().allow_attach {
-                    return Err(Error::NotAuthorized(format!(
-                        "Namespace `{ns}` doesn't allow attach"
-                    )));
-                }
+                return tokio::runtime::Handle::current().block_on(async {
+                    if !ctx.meta_store.handle(ns.clone()).await.get().allow_attach {
+                        return Err(Error::NotAuthorized(format!(
+                            "Namespace `{ns}` doesn't allow attach"
+                        )));
+                    } else {
+                        Ok(())
+                    }
+                });
             }
             StmtKind::Detach => (),
         }

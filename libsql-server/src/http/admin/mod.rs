@@ -331,7 +331,7 @@ async fn handle_create_namespace<C: Connector>(
             ));
         }
         // TODO: move this check into meta store
-        if !app_state.namespaces.exists(&ns) {
+        if !app_state.namespaces.exists(&ns).await {
             return Err(Error::NamespaceDoesntExist(ns.to_string()));
         }
 
