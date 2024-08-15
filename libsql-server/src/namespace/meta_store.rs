@@ -495,11 +495,18 @@ impl MetaStore {
     pub fn remove(&self, namespace: NamespaceName) -> Result<Option<Arc<DatabaseConfig>>> {
         tracing::debug!("removing namespace `{}` from meta store", namespace);
 
+        // "configs" lock can be used in both async and sync contexts while "conn" lock always used
+        // in blocking context
+        //
+        // so, we better to acquire "conn" lock first in order to prevent situation when "configs"
+        // lock is taken but "conn" lock is not free (so, we potentially will block async tasks for
+        // indefinite amount of time while "conn" lock will be acquired by other thread)
+        let mut conn = self.inner.conn.blocking_lock();
+
         let mut configs = self.inner.configs.blocking_lock();
         let r = if let Some(sender) = configs.get(&namespace) {
             tracing::debug!("removed namespace `{}` from meta store", namespace);
             let config = sender.borrow().clone();
-            let mut conn = self.inner.conn.blocking_lock();
             let tx = conn.transaction()?;
             if config.config.is_shared_schema {
                 if crate::schema::db::schema_has_linked_dbs(&tx, &namespace)? {
