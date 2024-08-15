@@ -50,7 +50,7 @@ impl crate::connection::Connection for SchemaConnection {
 
             res
         } else {
-            check_program_auth(&ctx, &migration, &self.config.get())?;
+            check_program_auth(&ctx, &migration, &self.config.get()).await?;
             let connection = self.connection.clone();
             validate_migration(&mut migration)?;
             let migration = Arc::new(migration);

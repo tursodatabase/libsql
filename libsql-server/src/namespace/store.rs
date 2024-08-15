@@ -99,8 +99,8 @@ impl NamespaceStore {
         })
     }
 
-    pub fn exists(&self, namespace: &NamespaceName) -> bool {
-        self.inner.metadata.exists(namespace)
+    pub async fn exists(&self, namespace: &NamespaceName) -> bool {
+        self.inner.metadata.exists(namespace).await
     }
 
     pub async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()> {
@@ -173,7 +173,7 @@ impl NamespaceStore {
             ns.destroy().await?;
         }
 
-        let db_config = self.inner.metadata.handle(namespace.clone());
+        let db_config = self.inner.metadata.handle(namespace.clone()).await;
         // destroy on-disk database
         self.cleanup(
             &namespace,
@@ -226,7 +226,7 @@ impl NamespaceStore {
         }
 
         // check that the source namespace exists
-        if !self.inner.metadata.exists(&from) {
+        if !self.inner.metadata.exists(&from).await {
             return Err(crate::error::Error::NamespaceDoesntExist(from.to_string()));
         }
 
@@ -241,11 +241,11 @@ impl NamespaceStore {
         }
 
         // FIXME: we could potentially delete the namespace while trying to fork it
-        if !self.inner.metadata.exists(&from) {
+        if !self.inner.metadata.exists(&from).await {
             return Err(crate::Error::NamespaceDoesntExist(from.to_string()));
         }
 
-        let from_config = self.inner.metadata.handle(from.clone());
+        let from_config = self.inner.metadata.handle(from.clone()).await;
         let from_entry = self
             .load_namespace(&from, from_config.clone(), RestoreOption::Latest)
             .await?;
@@ -280,7 +280,7 @@ impl NamespaceStore {
             should_delete: true,
         };
 
-        let handle = self.inner.metadata.handle(to.clone());
+        let handle = self.inner.metadata.handle(to.clone()).await;
         handle
             .store_and_maybe_flush(Some(to_config.into()), false)
             .await?;
@@ -328,7 +328,7 @@ impl NamespaceStore {
         Fun: FnOnce(&Namespace) -> R,
     {
         if namespace != NamespaceName::default()
-            && !self.inner.metadata.exists(&namespace)
+            && !self.inner.metadata.exists(&namespace).await
             && !self.inner.allow_lazy_creation
         {
             return Err(Error::NamespaceDoesntExist(namespace.to_string()));
@@ -346,7 +346,7 @@ impl NamespaceStore {
             }
         };
 
-        let handle = self.inner.metadata.handle(namespace.to_owned());
+        let handle = self.inner.metadata.handle(namespace.to_owned()).await;
         f(self
             .load_namespace(&namespace, handle, RestoreOption::Latest)
             .await?)
@@ -440,12 +440,12 @@ impl NamespaceStore {
         // FIXME: move the default namespace check out of this function.
         if self.inner.allow_lazy_creation || namespace == NamespaceName::default() {
             tracing::trace!("auto-creating the namespace");
-        } else if self.inner.metadata.exists(&namespace) {
+        } else if self.inner.metadata.exists(&namespace).await {
             return Err(Error::NamespaceAlreadyExist(namespace.to_string()));
         }
 
         let db_config = Arc::new(db_config);
-        let handle = self.inner.metadata.handle(namespace.clone());
+        let handle = self.inner.metadata.handle(namespace.clone()).await;
         tracing::debug!("storing db config");
         handle.store(db_config).await?;
         tracing::debug!("completed storing db config, loading namespace");

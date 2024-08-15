@@ -482,6 +482,7 @@ mod test {
     async fn register_schema(meta_store: &MetaStore, schema: &'static str) {
         meta_store
             .handle(schema.into())
+            .await
             .store(DatabaseConfig {
                 is_shared_schema: true,
                 ..Default::default()
@@ -497,6 +498,7 @@ mod test {
     ) -> crate::Result<()> {
         meta_store
             .handle(name.into())
+            .await
             .store(DatabaseConfig {
                 shared_schema_name: Some(schema.into()),
                 ..Default::default()
@@ -561,6 +563,7 @@ mod test {
         // necessary checks beforehand, and return a nice error message.
         assert!(meta_store
             .handle("ns1".into())
+            .await
             .store(DatabaseConfig {
                 shared_schema_name: Some("schema1".into()),
                 ..Default::default()
