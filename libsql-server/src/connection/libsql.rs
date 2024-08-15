@@ -415,7 +415,8 @@ where
 
         PROGRAM_EXEC_COUNT.increment(1);
 
-        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
+        let config = self.inner.lock().config_store.get();
+        check_program_auth(&ctx, &pgm, &config).await?;
 
         // create the bomb right before spawning the blocking task.
         let mut bomb = Bomb {

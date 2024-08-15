@@ -341,7 +341,7 @@ fn value_size(val: &rusqlite::types::ValueRef) -> usize {
     }
 }
 
-pub fn check_program_auth(
+pub async fn check_program_auth(
     ctx: &RequestContext,
     pgm: &Program,
     config: &DatabaseConfig,
@@ -363,15 +363,11 @@ pub fn check_program_auth(
             }
             StmtKind::Attach(ref ns) => {
                 ctx.auth.has_right(ns, Permission::AttachRead)?;
-                return tokio::runtime::Handle::current().block_on(async {
-                    if !ctx.meta_store.handle(ns.clone()).await.get().allow_attach {
-                        return Err(Error::NotAuthorized(format!(
-                            "Namespace `{ns}` doesn't allow attach"
-                        )));
-                    } else {
-                        Ok(())
-                    }
-                });
+                if !ctx.meta_store.handle(ns.clone()).await.get().allow_attach {
+                    return Err(Error::NotAuthorized(format!(
+                        "Namespace `{ns}` doesn't allow attach"
+                    )));
+                }
             }
             StmtKind::Detach => (),
         }
