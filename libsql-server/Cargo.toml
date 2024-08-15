@@ -8,6 +8,9 @@ default-run = "sqld"
 name = "sqld"
 path = "src/main.rs"
 
+[build]
+rustflags = ["--cfg", "tokio_unstable"]
+
 [dependencies]
 anyhow = "1.0.66"
 async-lock = "2.6.0"
@@ -116,6 +119,7 @@ vergen = { version = "8", features = ["build", "git", "gitcl"] }
 
 [features]
 default = []
+tokio-metrics = []
 debug-tools = ["console-subscriber", "rusqlite/trace", "tokio/tracing"]
 wasm-udfs = ["rusqlite/libsql-wasm-experimental"]
 unix-excl-vfs = ["libsql-sys/unix-excl-vfs"]
