@@ -53,6 +53,18 @@ do_execsql_test vector-1-func-valid {
   SELECT vector_distance_cos(vector1bit('[10,-10]'), vector1bit('[-5,4]'));
   SELECT vector_distance_cos(vector1bit('[10,-10]'), vector1bit('[20,4]'));
   SELECT vector_distance_cos(vector1bit('[10,-10]'), vector1bit('[20,-2]'));
+
+  SELECT vector_distance_cos(vector8('[10,-10]'), vector8('[10,-10]'));
+  SELECT vector_distance_cos(vector32('[10,-10]'), vector32('[10,-10]'));
+
+  SELECT vector_distance_cos(vector8('[-21,-31,0,2,2.1,2.2,105]'), vector8('[-20,-30,0,1,1.1,1.2,100]'));
+  SELECT vector_distance_cos(vector32('[-21,-31,0,2,2.1,2.2,105]'), vector32('[-20,-30,0,1,1.1,1.2,100]'));
+
+  SELECT vector_distance_cos(vector8('[-20,-30,0,1,1.1,1.2,100]'), vector8('[-20,-30,0,1,1.1,1.2,10000]'));
+  SELECT vector_distance_cos(vector32('[-20,-30,0,1,1.1,1.2,100]'), vector32('[-20,-30,0,1,1.1,1.2,10000]'));
+
+  SELECT vector_distance_l2(vector('[1,2,2,3,4,1,5]'), vector('[2,3,1,-1,2,4,5]'));
+  SELECT vector_distance_l2(vector8('[1,2,2,3,4,1,5]'), vector8('[2,3,1,-1,2,4,5]'));
 } {
   {[]} 
   {[]} 
@@ -71,6 +83,12 @@ do_execsql_test vector-1-func-valid {
   {2.0}
   {1.0}
   {0.0}
+
+  {-6.10352568486405e-09} {0.0}
+  {0.000111237335659098} {0.000117244853754528}
+  {0.0576796568930149} {0.0582110174000263}
+
+  {5.65685415267944} {5.65413522720337}
 }
 
 do_execsql_test vector-1-conversion {
@@ -88,6 +106,15 @@ do_execsql_test vector-1-conversion {
   SELECT vector_extract(vector1bit(vector1bit('[-0.000001,1e-100,1e100,-1e10,1e-10,0,1.5]'))), hex(vector1bit(vector1bit('[-0.000001,1e-100,1e100,-1e10,1e-10,0,1.5]')));
   SELECT vector_extract(vector1bit(vector32('[-0.000001,1e-100,1e100,-1e10,1e-10,0,1.5]'))), hex(vector1bit(vector32('[-0.000001,1e-100,1e100,-1e10,1e-10,0,1.5]')));
   SELECT vector_extract(vector1bit(vector64('[-0.000001,1e-100,1e100,-1e10,1e-10,0,1.5]'))), hex(vector1bit(vector64('[-0.000001,1e-100,1e100,-1e10,1e-10,0,1.5]')));
+
+  SELECT vector_extract(vector8(vector1bit('[-20,-35.44,1,1.5,2,3,10,100,105,110]'))), hex(vector8(vector1bit('[-20,-35.44,1,1.5,2,3,10,100,105,110]')));
+  SELECT vector_extract(vector8(vector32('[-20,-35.44,1,1.5,2,3,10,100,105,110]'))), hex(vector8(vector32('[-20,-35.44,1,1.5,2,3,10,100,105,110]')));
+  SELECT vector_extract(vector8(vector64('[-20,-35.44,1,1.5,2,3,10,100,105,110]'))), hex(vector8(vector64('[-20,-35.44,1,1.5,2,3,10,100,105,110]')));
+  SELECT vector_extract(vector8(vector8('[-20,-35.44,1,1.5,2,3,10,100,105,110]'))), hex(vector8(vector8('[-20,-35.44,1,1.5,2,3,10,100,105,110]')));
+
+  SELECT vector_extract(vector1bit(vector8('[-20,-35.44,1,1.5,2,3,10,100,105,110]'))), hex(vector1bit(vector8('[-20,-35.44,1,1.5,2,3,10,100,105,110]')));
+  SELECT vector_extract(vector32(vector8('[-20,-35.44,1,1.5,2,3,10,100,105,110]'))), hex(vector32(vector8('[-20,-35.44,1,1.5,2,3,10,100,105,110]')));
+  SELECT vector_extract(vector64(vector8('[-20,-35.44,1,1.5,2,3,10,100,105,110]'))), hex(vector64(vector8('[-20,-35.44,1,1.5,2,3,10,100,105,110]')));
 } {
   {}
   02
@@ -103,6 +130,15 @@ do_execsql_test vector-1-conversion {
   {[-1,-1,1,-1,1,-1,1]} 540903
   {[-1,-1,1,-1,1,-1,1]} 540903
   {[-1,1,1,-1,1,-1,1]} 560903
+
+  {[-1,-1,1,1,1,1,1,1,1,1]} 0000FFFFFFFFFFFFFFFF00008180003C000080BF000204
+  {[-20.0405,-35.44,1.06259,1.63295,2.2033,2.77365,10.1882,99.7337,104.867,110]} 1B004041424350EDF6FF0000A702123F8FC20DC2000204
+  {[-20.0405,-35.44,1.06259,1.63295,2.2033,2.77365,10.1882,99.7337,104.867,110]} 1B004041424350EDF6FF0000A702123F8FC20DC2000204
+  {[-20.0405,-35.44,1.06259,1.63295,2.2033,2.77365,10.1882,99.7337,104.867,110]} 1B004041424350EDF6FF0000A702123F8FC20DC2000204
+
+  {[-1,-1,1,1,1,1,1,1,1,1]} FC03001603
+  {[-20.0405,-35.44,1.06259,1.63295,2.2033,2.77365,10.1882,99.7337,104.867,110]} E152A0C18FC20DC20003883F6004D13FD0020D408083314008032341A277C742D0BBD1420000DC42
+  {[-20.0405,-35.44,1.06259,1.63295,2.2033,2.77365,10.1882,99.7337,104.867,110]} 000000205C0A34C0000000E051B841C0000000006000F13F000000008C20FA3F000000005AA001400000000070300640000000006160244000000040F4EE5840000000007A375A400000000000805B4002
 }
 
 proc error_messages {sql} {
@@ -127,6 +163,7 @@ do_test vector-1-func-errors {
   lappend ret [error_messages {SELECT vector(x'0000000000')}]
   lappend ret [error_messages {SELECT vector_distance_cos('[1,2,3]', '[1,2]')}]
   lappend ret [error_messages {SELECT vector_distance_cos(vector32('[1,2,3]'), vector64('[1,2,3]'))}]
+  lappend ret [error_messages {SELECT vector_distance_l2(vector1bit('[1,2,2,3,4,1,5]'), vector1bit('[2,3,1,-1,2,4,5]'))}]
 } [list {*}{
   {vector: unexpected value type: got FLOAT, expected TEXT or BLOB}
   {vector: unexpected value type: got INTEGER, expected TEXT or BLOB}
@@ -138,6 +175,7 @@ do_test vector-1-func-errors {
   {vector: invalid float at position 2: '1.1.1'}
   {vector: must end with ']'}
   {vector: unexpected binary type: 0}
-  {vector_distance_cos: vectors must have the same length: 3 != 2}
-  {vector_distance_cos: vectors must have the same type: 1 != 2}
+  {vector_distance: vectors must have the same length: 3 != 2}
+  {vector_distance: vectors must have the same type: 1 != 2}
+  {vector_distance: l2 distance is not supported for float1bit vectors}
 }]

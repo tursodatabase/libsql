@@ -83,7 +83,7 @@ static inline double deserializeF64(const unsigned char *pBuf){
   return *(double *)&value;
 }
 
-size_t vectorF64SerializeToBlob(
+void vectorF64SerializeToBlob(
   const Vector *pVector,
   unsigned char *pBlob,
   size_t nBlobSize
@@ -94,12 +94,11 @@ size_t vectorF64SerializeToBlob(
 
   assert( pVector->type == VECTOR_TYPE_FLOAT64 );
   assert( pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= pVector->dims * sizeof(double) );
+  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   for (i = 0; i < pVector->dims; i++) {
     pPtr += serializeF64(pPtr, elems[i]);
   }
-  return sizeof(double) * pVector->dims;
 }
 
 #define SINGLE_DOUBLE_CHAR_LIMIT 32
@@ -185,7 +184,7 @@ void vectorF64DeserializeFromBlob(
 
   assert( pVector->type == VECTOR_TYPE_FLOAT64 );
   assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= pVector->dims * sizeof(double) );
+  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   for(i = 0; i < pVector->dims; i++){
     elems[i] = deserializeF64(pBlob);

@@ -472,6 +472,7 @@ set flist {
    vectorfloat1bit.c
    vectorfloat32.c
    vectorfloat64.c
+   vectorfloat8.c
    vectorIndex.c
    vectorvtab.c
    rtree.c

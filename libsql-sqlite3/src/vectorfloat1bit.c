@@ -52,7 +52,7 @@ void vector1BitDump(const Vector *pVec){
 ** Utility routines for vector serialization and deserialization
 **************************************************************************/
 
-size_t vector1BitSerializeToBlob(
+void vector1BitSerializeToBlob(
   const Vector *pVector,
   unsigned char *pBlob,
   size_t nBlobSize
@@ -63,12 +63,11 @@ size_t vector1BitSerializeToBlob(
 
   assert( pVector->type == VECTOR_TYPE_FLOAT1BIT );
   assert( pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= (pVector->dims + 7) / 8 );
+  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   for(i = 0; i < (pVector->dims + 7) / 8; i++){
     pPtr[i] = elems[i];
   }
-  return (pVector->dims + 7) / 8;
 }
 
 // [sum(map(int, bin(i)[2:])) for i in range(256)]
@@ -133,7 +132,7 @@ void vector1BitDeserializeFromBlob(
 
   assert( pVector->type == VECTOR_TYPE_FLOAT1BIT );
   assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= (pVector->dims + 7) / 8 );
+  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   memcpy(elems, pBlob, (pVector->dims + 7) / 8);
 }

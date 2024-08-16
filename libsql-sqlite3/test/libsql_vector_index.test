@@ -355,6 +355,33 @@ do_execsql_test vector-f64-compress-f32 {
   SELECT * FROM vector_top_k('t_f64_f32_idx', vector64('[10,-10,-20,20]'), 4);
 } {3 1 2}
 
+do_execsql_test vector-f32-compress-f8 {
+  CREATE TABLE t_f32_f8( v FLOAT32(4) );
+  CREATE INDEX t_f32_f8_idx ON t_f32_f8( libsql_vector_idx(v, 'compress_neighbors=float8') );
+  INSERT INTO t_f32_f8 VALUES ( vector('[1,-1,1,-1]') );
+  INSERT INTO t_f32_f8 VALUES ( vector('[-1,1,1,-1]') );
+  INSERT INTO t_f32_f8 VALUES ( vector('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f32_f8_idx', vector('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f8 {
+  CREATE TABLE t_f8( v FLOAT8(4) );
+  CREATE INDEX t_f8_idx ON t_f8( libsql_vector_idx(v) );
+  INSERT INTO t_f8 VALUES ( vector8('[1,-1,1,-1]') );
+  INSERT INTO t_f8 VALUES ( vector8('[-1,1,1,-1]') );
+  INSERT INTO t_f8 VALUES ( vector8('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f8_idx', vector8('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f8-compress-1bit {
+  CREATE TABLE t_f8_1bit( v FLOAT8(4) );
+  CREATE INDEX t_f8_1bit_idx ON t_f8_1bit( libsql_vector_idx(v, 'compress_neighbors=float1bit') );
+  INSERT INTO t_f8_1bit VALUES ( vector8('[1,-1,1,-1]') );
+  INSERT INTO t_f8_1bit VALUES ( vector8('[-1,1,1,-1]') );
+  INSERT INTO t_f8_1bit VALUES ( vector8('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f8_1bit_idx', vector8('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
 proc error_messages {sql} {
   set ret ""
   catch {
@@ -364,6 +391,8 @@ proc error_messages {sql} {
   } ret
   set ret [sqlite3_errmsg db]
 }
+
+reset_db
 
 do_test vector-errors {
   set ret [list]
