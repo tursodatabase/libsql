@@ -6,13 +6,19 @@ use crate::{
     namespace::{NamespaceName, NamespaceStore},
 };
 use axum::extract::State as AxumState;
-use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
-use axum::http::{HeaderValue, Uri};
-use axum::response::{IntoResponse, Redirect, Response};
-use axum_extra::{extract::Query, json_lines::JsonLines};
+use axum::http::Uri;
+use axum::response::{
+    sse::{Event, Sse},
+    IntoResponse, Redirect,
+};
+use axum_extra::extract::Query;
 use futures::{Stream, StreamExt};
 use hyper::HeaderMap;
 use serde::{Deserialize, Serialize};
+use std::boxed::Box;
+use std::convert::Infallible;
+use std::pin::Pin;
+use std::time::Duration;
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 
 use super::db_factory::namespace_from_headers;
@@ -33,16 +39,13 @@ pub struct ListenQuery {
     action: Option<Vec<Action>>,
 }
 
-const EVENT_STREAM: HeaderValue = HeaderValue::from_static("text/event-stream");
-const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
-
 pub(super) async fn handle_listen(
     auth: Authenticated,
     AxumState(state): AxumState<AppState>,
     headers: HeaderMap,
     uri: Uri,
     query: Query<ListenQuery>,
-) -> crate::Result<Response> {
+) -> crate::Result<impl IntoResponse> {
     let namespace = namespace_from_headers(
         &headers,
         state.disable_default_namespace,
@@ -55,10 +58,10 @@ pub(super) async fn handle_listen(
 
     if let Some(primary_url) = state.primary_url {
         let url = primary_url + uri.path_and_query().map_or("", |x| x.as_str());
-        return Ok(Redirect::temporary(&url).into_response());
+        return Ok(ListenResponse::Redirect(Redirect::temporary(&url)));
     }
 
-    let stream = listen_stream(
+    let stream = sse_stream(
         state.namespaces.clone(),
         namespace,
         query.table.clone(),
@@ -66,12 +69,13 @@ pub(super) async fn handle_listen(
     )
     .await;
 
-    let mut response = JsonLines::new(stream).into_response();
-    let headers = response.headers_mut();
-    headers.insert(CONTENT_TYPE, EVENT_STREAM);
-    headers.insert(CACHE_CONTROL, NO_CACHE);
-
-    Ok(response)
+    Ok(ListenResponse::SSE(
+        Sse::new(stream).keep_alive(
+            axum::response::sse::KeepAlive::new()
+                .interval(Duration::from_secs(15))
+                .text("keep-alive"),
+        ),
+    ))
 }
 
 static LAGGED_MSG: &str = "some changes were lost";
@@ -94,6 +98,27 @@ impl Drop for Subscription {
     fn drop(&mut self) {
         self.store.unsubscribe(self.namespace.clone(), &self.table);
     }
+}
+
+async fn sse_stream(
+    store: NamespaceStore,
+    namespace: NamespaceName,
+    table: String,
+    actions: Option<Vec<Action>>,
+) -> SseStream {
+    Box::pin(
+        listen_stream(store, namespace, table, actions)
+            .await
+            .map(|result| {
+                Ok(match result {
+                    Ok(AggregatorEvent::Error(msg)) => Event::default().event("error").data(msg),
+                    Ok(AggregatorEvent::Changes(msg)) => {
+                        Event::default().event("changes").json_data(msg).unwrap()
+                    }
+                    Err(e) => Event::default().event("error").data(e.to_string()),
+                })
+            }),
+    )
 }
 
 async fn listen_stream(
@@ -119,7 +144,7 @@ async fn listen_stream(
                 },
                 Err(BroadcastStreamRecvError::Lagged(n)) => {
                     LISTEN_EVENTS_DROPPED.increment(n as u64);
-                    yield AggregatorEvent::Error(&LAGGED_MSG);
+                    yield AggregatorEvent::Error(LAGGED_MSG);
                 },
             }
         }
@@ -128,17 +153,30 @@ async fn listen_stream(
 
 fn filter_actions(msg: &BroadcastMsg, actions: &Option<Vec<Action>>) -> bool {
     actions.as_ref().map_or(true, |actions| {
-        for action in actions {
+        actions.iter().any(|action| {
             let count = match action {
                 Action::DELETE => msg.delete,
                 Action::INSERT => msg.insert,
                 Action::UPDATE => msg.update,
                 Action::UNKNOWN => msg.unknown,
             };
-            if count > 0 {
-                return true;
-            }
-        }
-        false
+            count > 0
+        })
     })
+}
+
+type SseStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
+
+enum ListenResponse {
+    SSE(Sse<SseStream>),
+    Redirect(Redirect),
+}
+
+impl IntoResponse for ListenResponse {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            ListenResponse::SSE(sse) => sse.into_response(),
+            ListenResponse::Redirect(redirect) => redirect.into_response(),
+        }
+    }
 }
