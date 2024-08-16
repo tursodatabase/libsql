@@ -24,6 +24,12 @@ use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use super::db_factory::namespace_from_headers;
 use super::AppState;
 
+const LAGGED_MSG: &str = "some changes were lost";
+const KEEP_ALIVE_INTERVAL: Duration = Duration::from_secs(15);
+const KEEP_ALIVE_TEXT: &str = "keep-alive";
+
+type SseStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Action {
@@ -37,6 +43,28 @@ pub enum Action {
 pub struct ListenQuery {
     table: String,
     action: Option<Vec<Action>>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum AggregatorEvent {
+    Error(&'static str),
+    #[serde(untagged)]
+    Changes(BroadcastMsg),
+}
+
+enum ListenResponse {
+    SSE(Sse<SseStream>),
+    Redirect(Redirect),
+}
+
+impl IntoResponse for ListenResponse {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            ListenResponse::SSE(sse) => sse.into_response(),
+            ListenResponse::Redirect(redirect) => redirect.into_response(),
+        }
+    }
 }
 
 pub(super) async fn handle_listen(
@@ -56,8 +84,12 @@ pub(super) async fn handle_listen(
         return Err(Error::NamespaceDoesntExist(namespace.to_string()));
     }
 
-    if let Some(primary_url) = state.primary_url {
-        let url = primary_url + uri.path_and_query().map_or("", |x| x.as_str());
+    if let Some(primary_url) = state.primary_url.as_ref() {
+        let url = format!(
+            "{}{}",
+            primary_url,
+            uri.path_and_query().map_or("", |x| x.as_str())
+        );
         return Ok(ListenResponse::Redirect(Redirect::temporary(&url)));
     }
 
@@ -72,32 +104,10 @@ pub(super) async fn handle_listen(
     Ok(ListenResponse::SSE(
         Sse::new(stream).keep_alive(
             axum::response::sse::KeepAlive::new()
-                .interval(Duration::from_secs(15))
-                .text("keep-alive"),
+                .interval(KEEP_ALIVE_INTERVAL)
+                .text(KEEP_ALIVE_TEXT),
         ),
     ))
-}
-
-static LAGGED_MSG: &str = "some changes were lost";
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "snake_case")]
-enum AggregatorEvent {
-    Error(&'static str),
-    #[serde(untagged)]
-    Changes(BroadcastMsg),
-}
-
-struct Subscription {
-    store: NamespaceStore,
-    namespace: NamespaceName,
-    table: String,
-}
-
-impl Drop for Subscription {
-    fn drop(&mut self) {
-        self.store.unsubscribe(self.namespace.clone(), &self.table);
-    }
 }
 
 async fn sse_stream(
@@ -128,17 +138,12 @@ async fn listen_stream(
     actions: Option<Vec<Action>>,
 ) -> impl Stream<Item = crate::Result<AggregatorEvent>> {
     async_stream::try_stream! {
-        let _sub = Subscription {
-            store: store.clone(),
-            namespace: namespace.clone(),
-            table: table.clone(),
-        };
-
-        let mut stream = store.subscribe(namespace.clone(), table.clone());
+        let _sub = Subscription::new(store.clone(), namespace.clone(), table.clone());
+        let mut stream = store.subscribe(namespace, table);
 
         while let Some(item) = stream.next().await  {
             match item {
-                Ok(msg) => if filter_actions(&msg, &actions) {
+                Ok(msg) if filter_actions(&msg, &actions) => {
                     LISTEN_EVENTS_SENT.increment(1);
                     yield AggregatorEvent::Changes(msg);
                 },
@@ -146,6 +151,7 @@ async fn listen_stream(
                     LISTEN_EVENTS_DROPPED.increment(n as u64);
                     yield AggregatorEvent::Error(LAGGED_MSG);
                 },
+                _ => {}
             }
         }
     }
@@ -165,18 +171,24 @@ fn filter_actions(msg: &BroadcastMsg, actions: &Option<Vec<Action>>) -> bool {
     })
 }
 
-type SseStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
-
-enum ListenResponse {
-    SSE(Sse<SseStream>),
-    Redirect(Redirect),
+struct Subscription {
+    store: NamespaceStore,
+    namespace: NamespaceName,
+    table: String,
 }
 
-impl IntoResponse for ListenResponse {
-    fn into_response(self) -> axum::response::Response {
-        match self {
-            ListenResponse::SSE(sse) => sse.into_response(),
-            ListenResponse::Redirect(redirect) => redirect.into_response(),
+impl Subscription {
+    fn new(store: NamespaceStore, namespace: NamespaceName, table: String) -> Self {
+        Self {
+            store,
+            namespace,
+            table,
         }
+    }
+}
+
+impl Drop for Subscription {
+    fn drop(&mut self) {
+        self.store.unsubscribe(self.namespace.clone(), &self.table);
     }
 }
