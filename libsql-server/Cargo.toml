@@ -8,9 +8,6 @@ default-run = "sqld"
 name = "sqld"
 path = "src/main.rs"
 
-[build]
-rustflags = ["--cfg", "tokio_unstable"]
-
 [dependencies]
 anyhow = "1.0.66"
 async-lock = "2.6.0"
