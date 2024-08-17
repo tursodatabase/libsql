@@ -72,7 +72,7 @@ tag-namespace = "libsql-server"
 # Whether to install an updater program
 install-updater = false
 # additional setup steps
-github-build-setup = "libsql-server-release-build-setup.yml"
+github-build-setup = "../templates/libsql-server-release-build-setup.yml"
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
 

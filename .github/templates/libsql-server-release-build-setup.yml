@@ -1,3 +1,4 @@
 - name: Prepare env vars
+  run: "echo setup env vars"
   env:
     RUSTFLAGS: --cfg tokio_unstable
