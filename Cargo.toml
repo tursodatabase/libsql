@@ -66,7 +66,7 @@ publish-jobs = ["homebrew"]
 # Whether cargo-dist should create a Github Release or use an existing draft
 create-release = true
 # Which actions to run on pull requests
-pr-run-mode = "upload"
+pr-run-mode = "plan"
 # A prefix git tags must include for cargo-dist to care about them
 tag-namespace = "libsql-server"
 # Whether to install an updater program

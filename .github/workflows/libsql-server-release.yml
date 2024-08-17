@@ -117,10 +117,6 @@ jobs:
           submodules: recursive
       - name: "Prepare env vars"
         run: "echo \"RUSTFLAGS=--cfg tokio_unstable\" >> $GITHUB_ENV"
-      - uses: swatinem/rust-cache@v2
-        with:
-          key: ${{ join(matrix.targets, '-') }}
-          cache-provider: ${{ matrix.cache_provider }}
       - name: Install cargo-dist
         run: ${{ matrix.install_dist }}
       # Get the dist-manifest
