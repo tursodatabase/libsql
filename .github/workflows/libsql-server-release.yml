@@ -116,9 +116,7 @@ jobs:
         with:
           submodules: recursive
       - name: "Prepare env vars"
-        run: "echo setup env vars"
-        env:
-          "RUSTFLAGS": "--cfg tokio_unstable"
+        run: "echo \"RUSTFLAGS=--cfg tokio_unstable\" >> $GITHUB_ENV"
       - uses: swatinem/rust-cache@v2
         with:
           key: ${{ join(matrix.targets, '-') }}
