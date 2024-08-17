@@ -119,6 +119,10 @@ jobs:
         run: "echo setup env vars"
         env:
           "RUSTFLAGS": "--cfg tokio_unstable"
+      - uses: swatinem/rust-cache@v2
+        with:
+          key: ${{ join(matrix.targets, '-') }}
+          cache-provider: ${{ matrix.cache_provider }}
       - name: Install cargo-dist
         run: ${{ matrix.install_dist }}
       # Get the dist-manifest
