@@ -3,6 +3,7 @@ name = "libsql-server"
 version = "0.24.19"
 edition = "2021"
 default-run = "sqld"
+repository = "https://github.com/tursodatabase/libsql"
 
 [[bin]]
 name = "sqld"
