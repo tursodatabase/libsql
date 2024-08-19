@@ -1,5 +1,6 @@
 /*
- * BUILD: cc test_libsql_diskann.c -I ../ -L ../.libs -llibsql -o test_libsql_diskann
+ * GENERATE: python3 test_libsql_f16.py > test_libsql_f16_table.h
+ * BUILD: cc test_libsql_f16.c -I ../ -L ../.libs -llibsql -lm -o test_libsql_f16
  * RUN:   LD_LIBRARY_PATH=../.libs ./test_libsql_diskann
 */
 
