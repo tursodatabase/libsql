@@ -225,6 +225,20 @@ do_execsql_test vector-index-dont-affect-sql {
   SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[7,8]');
 } {4 1 1 2 3 4}
 
+do_execsql_test vector-partial-index-dont-affect-sql {
+  CREATE TABLE t_vector_other_sql_part ( emb FLOAT32(2), t TEXT );
+  INSERT INTO t_vector_other_sql_part VALUES (vector('[1,2]'), 'paper'), (vector('[3,4]'), 'journal');
+  CREATE INDEX t_vector_other_sql_part_idx ON t_vector_other_sql_part(libsql_vector_idx(emb));
+  INSERT INTO t_vector_other_sql_part VALUES (vector('[5,6]'), 'journal'), (vector('[7,8]'), 'paper');
+  SELECT COUNT(*) FROM t_vector_other_sql_part;
+  SELECT COUNT(*) FROM t_vector_other_sql_part WHERE emb = vector('[1,2]');
+  SELECT COUNT(*) FROM t_vector_other_sql_part WHERE t = 'paper';
+  SELECT rowid FROM t_vector_other_sql_part WHERE emb = vector('[1,2]');
+  SELECT rowid FROM t_vector_other_sql_part WHERE emb = vector('[3,4]');
+  SELECT rowid FROM t_vector_other_sql_part WHERE emb = vector('[5,6]');
+  SELECT rowid FROM t_vector_other_sql_part WHERE emb = vector('[7,8]');
+} {4 1 2 1 2 3 4}
+
 do_execsql_test vector-index-dont-affect-sql-pk {
   CREATE TABLE t_vector_other_sql_pk ( name TEXT PRIMARY KEY, emb FLOAT32(2) );
   INSERT INTO t_vector_other_sql_pk VALUES ('a', vector('[1,2]')), ('b', vector('[3,4]'));
@@ -306,6 +320,8 @@ do_execsql_test vector-f64-index {
   INSERT INTO t_f64 VALUES (vector64('[1,2]')), (vector64('[3,4]'));
   SELECT * FROM vector_top_k('t_f64_idx', vector64('[1,2]'), 2);
 } {1 2}
+
+reset_db
 
 do_execsql_test vector-partial {
   CREATE TABLE t_partial( name TEXT, type INT, v FLOAT32(3));
@@ -391,8 +407,6 @@ proc error_messages {sql} {
   } ret
   set ret [sqlite3_errmsg db]
 }
-
-reset_db
 
 do_test vector-errors {
   set ret [list]
