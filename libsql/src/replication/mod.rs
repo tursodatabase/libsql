@@ -149,15 +149,15 @@ impl EmbeddedReplicator {
         encryption_config: Option<EncryptionConfig>,
         perodic_sync: Option<Duration>,
     ) -> Result<Self> {
-        let replicator = Arc::new(Mutex::new(
+        let mut replicator =
             Replicator::new_sqlite(
                 Either::Left(client),
                 db_path,
                 auto_checkpoint,
                 encryption_config,
-            )
-            .await?,
-        ));
+            ).await?;
+        replicator.set_primary_handshake_retries(3);
+        let replicator = Arc::new(Mutex::new(replicator));
 
         let mut replicator = Self {
             replicator,
