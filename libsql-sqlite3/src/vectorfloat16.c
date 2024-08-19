@@ -23,6 +23,8 @@
 ******************************************************************************
 **
 ** 16-bit (FLOAT16) floating point vector format utilities.
+**
+** See https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 */
 #ifndef SQLITE_OMIT_VECTOR
 #include "sqliteInt.h"
@@ -40,7 +42,7 @@
 // f16: [ffffffffffeeeees]
 //       0123456789012345
 
-static float vectorF16ToFloat(u16 f16){
+float vectorF16ToFloat(u16 f16){
   u32 f32;
   // sng: [0000000000000000000000000000000s]
   u32 sgn = ((u32)f16 & 0x8000) << 16;   
@@ -72,7 +74,7 @@ static float vectorF16ToFloat(u16 f16){
   return *((float*)&f32);
 }
 
-static u16 vectorF16FromFloat(float f){
+u16 vectorF16FromFloat(float f){
   u32 i = *((u32*)&f);
 
   // sng: [000000000000000s]
@@ -160,7 +162,7 @@ float vectorF16DistanceL2(const Vector *v1, const Vector *v2){
   int i;
   float sum = 0;
   float value1, value2;
-  u8 *data1 = v1->data, *data2 = v2->data;
+  u16 *data1 = v1->data, *data2 = v2->data;
 
   assert( v1->dims == v2->dims );
   assert( v1->type == VECTOR_TYPE_FLOAT16 );

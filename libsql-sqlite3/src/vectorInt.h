@@ -150,6 +150,9 @@ void vector1BitDeserializeFromBlob(Vector *, const unsigned char *, size_t);
 void vectorInitStatic(Vector *, VectorType, VectorDims, void *);
 void vectorInitFromBlob(Vector *, const unsigned char *, size_t);
 
+u16 vectorF16FromFloat(float);
+float vectorF16ToFloat(u16);
+
 void vectorConvert(const Vector *, Vector *);
 
 /* Detect type and dimension of vector provided with first parameter of sqlite3_value * type */
