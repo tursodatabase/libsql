@@ -45,6 +45,8 @@ size_t vectorDataSize(VectorType type, VectorDims dims){
       return (dims + 7) / 8;
     case VECTOR_TYPE_FLOAT8:
       return ALIGN(dims, sizeof(float)) + sizeof(float) /* alpha */ + sizeof(float) /* shift */;
+    case VECTOR_TYPE_FLOAT16:
+      return dims * sizeof(u16);
     default:
       assert(0);
   }
