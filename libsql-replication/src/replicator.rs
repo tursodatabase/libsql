@@ -139,6 +139,7 @@ pub struct Replicator<C, I> {
     injector: I,
     state: ReplicatorState,
     frames_synced: usize,
+    max_handshake_retries: usize,
 }
 
 const INJECTOR_BUFFER_CAPACITY: usize = 10;
@@ -185,6 +186,7 @@ where
             injector,
             state: ReplicatorState::NeedHandshake,
             frames_synced: 0,
+            max_handshake_retries: HANDSHAKE_MAX_RETRIES,
         }
     }
 
@@ -208,7 +210,7 @@ where
 
     pub async fn try_perform_handshake(&mut self) -> Result<(), Error> {
         let mut error_printed = false;
-        for _ in 0..HANDSHAKE_MAX_RETRIES {
+        for _ in 0..self.max_handshake_retries {
             tracing::debug!("Attempting to perform handshake with primary.");
             match self.client.handshake().await {
                 Ok(_) => {
