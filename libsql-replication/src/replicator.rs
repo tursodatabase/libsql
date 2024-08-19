@@ -195,6 +195,11 @@ where
         self.state = ReplicatorState::NeedHandshake;
     }
 
+    /// configure number of handshake retries.
+    pub fn set_primary_handshake_retries(&mut self, retries: usize) {
+        self.max_handshake_retries = retries;
+    }
+
     pub fn client_mut(&mut self) -> &mut C {
         &mut self.client
     }
