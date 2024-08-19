@@ -190,7 +190,7 @@ where
         }
     }
 
-    /// for a handshake on next call to replicate.
+    /// force a handshake on next call to replicate.
     pub fn force_handshake(&mut self) {
         self.state = ReplicatorState::NeedHandshake;
     }
