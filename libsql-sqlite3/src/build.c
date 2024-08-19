@@ -4345,11 +4345,6 @@ void sqlite3CreateIndex(
     goto exit_create_index;
   }
   if( vectorIdxRc >= 1 ){
-    /*
-     * SQLite can use B-Tree indices in some optimizations (like SELECT COUNT(*) can use any full B-Tree index instead of PK index)
-     * But, SQLite pretty conservative about usage of unordered indices - that's what we need here
-    */
-    pIndex->bUnordered = 1;
     pIndex->idxIsVector = 1;
   }
   if( vectorIdxRc == 1 ){
