@@ -53,6 +53,7 @@ pub struct SharedWal<IO: Io> {
     pub(crate) checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     /// maximum size the segment is allowed to grow
     pub(crate) max_segment_size: AtomicUsize,
+    pub(crate) io: Arc<IO>,
 }
 
 impl<IO: Io> SharedWal<IO> {
@@ -301,7 +302,7 @@ impl<IO: Io> SharedWal<IO> {
             .current
             .load()
             .tail()
-            .checkpoint(&self.db_file, durable_frame_no)
+            .checkpoint(&self.db_file, durable_frame_no, self.log_id(), &self.io)
             .await?;
         if let Some(checkpointed_frame_no) = checkpointed_frame_no {
             self.checkpointed_frame_no

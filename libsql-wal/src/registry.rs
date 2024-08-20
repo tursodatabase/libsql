@@ -36,7 +36,7 @@ enum Slot<IO: Io> {
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
 pub struct WalRegistry<IO: Io, S> {
-    io: IO,
+    io: Arc<IO>,
     path: PathBuf,
     shutdown: AtomicBool,
     opened: DashMap<NamespaceName, Slot<IO>>,
@@ -63,7 +63,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
     ) -> Result<Self> {
         io.create_dir_all(&path)?;
         let registry = Self {
-            io,
+            io: io.into(),
             path,
             opened: Default::default(),
             shutdown: Default::default(),
@@ -340,6 +340,7 @@ where
             shutdown: false.into(),
             checkpoint_notifier: self.checkpoint_notifier.clone(),
             max_segment_size: 1000.into(),
+            io: self.io.clone(),
         });
 
         self.opened
