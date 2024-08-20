@@ -14,6 +14,12 @@ pub struct LibsqlInjector {
     injector: Injector<StdIO>,
 }
 
+impl LibsqlInjector {
+    pub fn new(injector: Injector<StdIO>) -> Self {
+        Self { injector }
+    }
+}
+
 impl super::Injector for LibsqlInjector {
     async fn inject_frame(&mut self, frame: RpcFrame) -> Result<Option<FrameNo>> {
         // this is a bit annoying be we want to read the frame, and it has to be aligned, so we
@@ -24,6 +30,7 @@ impl super::Injector for LibsqlInjector {
             todo!("invalid frame");
         }
         wal_frame.as_bytes_mut().copy_from_slice(&frame.data[..]);
+
         Ok(self
             .injector
             .insert_frame(wal_frame)
