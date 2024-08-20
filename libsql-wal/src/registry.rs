@@ -1,3 +1,4 @@
+use std::io;
 use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,6 +10,7 @@ use parking_lot::{Condvar, Mutex};
 use rand::Rng;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
+use uuid::Uuid;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::checkpointer::CheckpointMessage;
@@ -21,6 +23,7 @@ use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::{SharedWal, SwapLog};
 use crate::storage::{OnStoreCallback, Storage};
 use crate::transaction::TxGuard;
+use crate::{LibsqlFooter, LIBSQL_PAGE_SIZE};
 use libsql_sys::name::NamespaceName;
 
 enum Slot<IO: Io> {
@@ -115,6 +118,7 @@ where
             current.db_size(),
             current.tail().clone(),
             salt,
+            current.log_id(),
         )?;
         // sealing must the last fallible operation, because we don't want to end up in a situation
         // where the current log is sealed and it wasn't swapped.
@@ -271,6 +275,27 @@ where
         let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
         db_file.read_exact_at(header.as_bytes_mut(), 0)?;
 
+        let log_id = if db_file.len()? <= LIBSQL_PAGE_SIZE as u64 && tail.is_empty() {
+            // this is a new database
+            self.io.uuid()
+        } else if let Some(log_id) = tail.with_head(|h| h.header().log_id.get()) {
+            // there is a segment list, read the logid from there.
+            let log_id = Uuid::from_u128(log_id);
+            #[cfg(debug_assertions)]
+            {
+                // if the main db file has footer, then the logid must match that of the segment
+                if let Ok(db_log_id) =
+                    read_log_id_from_footer(&db_file, header.db_size.get() as u64)
+                {
+                    assert_eq!(db_log_id, log_id);
+                }
+            }
+
+            log_id
+        } else {
+            read_log_id_from_footer(&db_file, header.db_size.get() as u64)?
+        };
+
         let (db_size, next_frame_no) = tail
             .with_head(|segment| {
                 let header = segment.header();
@@ -294,6 +319,7 @@ where
             db_size,
             tail.into(),
             salt,
+            log_id,
         )?));
 
         let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
@@ -372,4 +398,14 @@ where
 
         Ok(())
     }
+}
+
+fn read_log_id_from_footer<F: FileExt>(db_file: &F, db_size: u64) -> io::Result<Uuid> {
+    let mut footer: LibsqlFooter = LibsqlFooter::new_zeroed();
+    let footer_offset = LIBSQL_PAGE_SIZE as u64 * db_size;
+    // FIXME: failing to read the footer here is a sign of corrupted database: either we
+    // have a tail to the segment list, or we have fully checkpointed the database. Can we
+    // recover from that?
+    db_file.read_exact_at(footer.as_bytes_mut(), footer_offset)?;
+    Ok(footer.log_id())
 }
