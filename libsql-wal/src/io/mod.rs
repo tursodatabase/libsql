@@ -30,11 +30,16 @@ pub trait Io: Send + Sync + 'static {
     // todo: create an async counterpart
     fn tempfile(&self) -> io::Result<Self::TempFile>;
     fn now(&self) -> DateTime<Utc>;
-    fn uuid(&self) -> Uuid;
     fn hard_link(&self, src: &Path, dst: &Path) -> io::Result<()>;
     fn with_rng<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&mut Self::Rng) -> R;
+    fn uuid(&self) -> uuid::Uuid {
+        self.with_rng(|rng| {
+            let n: u128 = rng.gen();
+            Uuid::from_u128(n)
+        })
+    }
 }
 
 #[derive(Default, Debug, Clone, Copy)]
