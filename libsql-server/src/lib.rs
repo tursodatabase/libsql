@@ -198,7 +198,76 @@ struct Services<A, P, S, C> {
     disable_default_namespace: bool,
     db_config: DbConfig,
     user_auth_strategy: Auth,
+}
+
+struct TaskManager {
+    join_set: JoinSet<anyhow::Result<()>>,
     shutdown: Arc<Notify>,
+}
+
+impl TaskManager {
+    /// pass a shutdown notifier to the task. The task must shutdown upon receiving a signal
+    pub fn spawn_with_shutdown_notify<F, Fut>(&mut self, f: F)
+    where
+        F: FnOnce(Arc<Notify>) -> Fut,
+        Fut: Future<Output = anyhow::Result<()>> + Send + 'static,
+    {
+        let fut = f(self.shutdown.clone());
+        self.join_set.spawn(fut);
+    }
+
+    pub fn spawn_until_shutdown<F>(&mut self, fut: F)
+    where
+        F: Future<Output = anyhow::Result<()>> + Send + 'static,
+    {
+        self.spawn_until_shutdown_with_teardown(fut, ready(Ok(())))
+    }
+
+    /// run the passed future until shutdown is called, then call the passed teardown future
+    #[track_caller]
+    pub fn spawn_until_shutdown_with_teardown<F, T>(&mut self, fut: F, teardown: T)
+    where
+        F: Future<Output = anyhow::Result<()>> + Send + 'static,
+        T: Future<Output = anyhow::Result<()>> + Send + 'static,
+    {
+        let shutdown = self.shutdown.clone();
+        self.join_set.spawn(async move {
+            tokio::select! {
+                _ = shutdown.notified() => {
+                    let ret = teardown.await;
+                    if let Err(ref e) = ret {
+                        let caller = std::panic::Location::caller();
+                        tracing::error!(caller = caller.to_string(), "task teardown returned an error: {e}");
+                    }
+                    ret
+                },
+                ret = fut => ret
+            }
+        });
+    }
+
+    fn new() -> Self {
+        Self {
+            join_set: JoinSet::new(),
+            shutdown: Arc::new(Notify::new()),
+        }
+    }
+
+    pub async fn shutdown(&mut self) -> anyhow::Result<()> {
+        self.shutdown.notify_waiters();
+        while let Some(ret) = self.join_set.join_next().await {
+            ret??
+        }
+
+        Ok(())
+    }
+
+    pub async fn join_next(&mut self) -> anyhow::Result<()> {
+        if let Some(ret) = self.join_set.join_next().await {
+            ret??;
+        }
+        Ok(())
+    }
 }
 
 impl<A, P, S, C> Services<A, P, S, C>
@@ -208,7 +277,7 @@ where
     S: ReplicationLog,
     C: Connector,
 {
-    fn configure(self, join_set: &mut JoinSet<anyhow::Result<()>>) {
+    fn configure(self, task_manager: &mut TaskManager) {
         let user_http = UserApi {
             http_acceptor: self.user_api_config.http_acceptor,
             hrana_ws_acceptor: self.user_api_config.hrana_ws_acceptor,
@@ -223,10 +292,9 @@ where
             enable_console: self.user_api_config.enable_http_console,
             self_url: self.user_api_config.self_url,
             primary_url: self.user_api_config.primary_url,
-            shutdown: self.shutdown.clone(),
         };
 
-        let user_http_service = user_http.configure(join_set);
+        let user_http_service = user_http.configure(task_manager);
 
         if let Some(AdminApiConfig {
             acceptor,
@@ -234,15 +302,16 @@ where
             disable_metrics,
         }) = self.admin_api_config
         {
-            let shutdown = self.shutdown.clone();
-            join_set.spawn(http::admin::run(
-                acceptor,
-                user_http_service,
-                self.namespace_store,
-                connector,
-                disable_metrics,
-                shutdown,
-            ));
+            task_manager.spawn_with_shutdown_notify(|shutdown| {
+                http::admin::run(
+                    acceptor,
+                    user_http_service,
+                    self.namespace_store,
+                    connector,
+                    disable_metrics,
+                    shutdown,
+                )
+            });
         }
     }
 }
@@ -344,7 +413,7 @@ where
 
     fn spawn_monitoring_tasks(
         &self,
-        join_set: &mut JoinSet<anyhow::Result<()>>,
+        task_manager: &mut TaskManager,
         stats_receiver: mpsc::Receiver<(NamespaceName, MetaStoreHandle, Weak<Stats>)>,
     ) -> anyhow::Result<()> {
         match self.heartbeat_config {
@@ -355,7 +424,7 @@ where
                     config.heartbeat_period,
                 );
 
-                self.spawn_until_shutdown_on(join_set, {
+                task_manager.spawn_until_shutdown({
                     let heartbeat_auth = config.heartbeat_auth.clone();
                     let heartbeat_period = config.heartbeat_period;
                     let heartbeat_url = if let Some(url) = &config.heartbeat_url {
@@ -392,7 +461,6 @@ where
         proxy_service: P,
         replication_service: L,
         user_auth_strategy: Auth,
-        shutdown: Arc<Notify>,
     ) -> Services<A, P, L, D> {
         Services {
             namespace_store,
@@ -405,13 +473,12 @@ where
             disable_default_namespace: self.disable_default_namespace,
             db_config: self.db_config,
             user_auth_strategy,
-            shutdown,
         }
     }
 
     pub async fn start(mut self) -> anyhow::Result<()> {
         static INIT: std::sync::Once = std::sync::Once::new();
-        let mut join_set = JoinSet::new();
+        let mut task_manager = TaskManager::new();
 
         if std::env::var("LIBSQL_SQLITE_MIMALLOC").is_ok() {
             setup_sqlite_alloc();
@@ -447,7 +514,7 @@ where
                 let (scripted_backup, script_backup_task) =
                     ScriptBackupManager::new(&self.path, CommandHandler::new(command.to_string()))
                         .await?;
-                self.spawn_until_shutdown_on(&mut join_set, script_backup_task.run());
+                task_manager.spawn_until_shutdown(script_backup_task.run());
                 Some(scripted_backup)
             }
             None => None,
@@ -477,7 +544,7 @@ where
             .make_configurators_and_replication_svc(
                 base_config,
                 client_config.clone(),
-                &mut join_set,
+                &mut task_manager,
                 scheduler_sender.into(),
                 scripted_backup,
             )
@@ -505,7 +572,7 @@ where
         )
         .await?;
 
-        self.spawn_monitoring_tasks(&mut join_set, stats_receiver)?;
+        self.spawn_monitoring_tasks(&mut task_manager, stats_receiver)?;
 
         // if namespaces are enabled, then bottomless must have set DB ID
         if !self.disable_namespaces {
@@ -521,7 +588,7 @@ where
             let proxy_service =
                 ProxyService::new(namespace_store.clone(), None, self.disable_namespaces);
             // Garbage collect proxy clients every 30 seconds
-            self.spawn_until_shutdown_on(&mut join_set, {
+            task_manager.spawn_until_shutdown({
                 let clients = proxy_service.clients();
                 async move {
                     loop {
@@ -531,22 +598,20 @@ where
                 }
             });
 
-            self.spawn_until_shutdown_on(
-                &mut join_set,
-                run_rpc_server(
-                    proxy_service,
-                    config.acceptor,
-                    config.tls_config,
-                    idle_shutdown_kicker.clone(),
-                    namespace_store.clone(),
-                    self.disable_namespaces,
-                ),
             let replication_service = make_replication_svc(
                 namespace_store.clone(),
                 None,
                 idle_shutdown_kicker.clone(),
                 false,
             );
+
+            task_manager.spawn_until_shutdown(run_rpc_server(
+                proxy_service,
+                config.acceptor,
+                config.tls_config,
+                idle_shutdown_kicker.clone(),
+                replication_service,
+            ));
         }
 
         let shutdown_timeout = self.shutdown_timeout.clone();
@@ -558,7 +623,7 @@ where
                 // The migration scheduler is only useful on the primary
                 let meta_conn = metastore_conn_maker()?;
                 let scheduler = Scheduler::new(namespace_store.clone(), meta_conn).await?;
-                self.spawn_until_shutdown_on(&mut join_set, async move {
+                task_manager.spawn_until_shutdown(async move {
                     scheduler.run(scheduler_receiver).await;
                     Ok(())
                 });
@@ -588,7 +653,7 @@ where
                 );
 
                 // Garbage collect proxy clients every 30 seconds
-                self.spawn_until_shutdown_on(&mut join_set, {
+                task_manager.spawn_until_shutdown({
                     let clients = proxy_svc.clients();
                     async move {
                         loop {
@@ -604,9 +669,8 @@ where
                     proxy_svc,
                     replication_svc,
                     user_auth_strategy.clone(),
-                    service_shutdown.clone(),
                 )
-                .configure(&mut join_set);
+                .configure(&mut task_manager);
             }
             DatabaseKind::Replica => {
                 let (channel, uri) = client_config.clone().unwrap();
@@ -625,16 +689,16 @@ where
                     proxy_svc,
                     replication_svc,
                     user_auth_strategy,
-                    service_shutdown.clone(),
                 )
-                .configure(&mut join_set);
+                .configure(&mut task_manager);
             }
         };
 
         tokio::select! {
             _ = shutdown.notified() => {
                 let shutdown = async {
-                    join_set.shutdown().await;
+                    task_manager.shutdown().await?;
+                    // join_set.shutdown().await;
                     service_shutdown.notify_waiters();
                     namespace_store.shutdown().await?;
 
@@ -656,8 +720,8 @@ where
 
                 }
             }
-            Some(res) = join_set.join_next() => {
-                res??;
+            res = task_manager.join_next() => {
+                res?;
             },
             else => (),
         }
@@ -669,7 +733,7 @@ where
         &self,
         base_config: BaseNamespaceConfig,
         client_config: Option<(Channel, Uri)>,
-        join_set: &mut JoinSet<anyhow::Result<()>>,
+        task_manager: &mut TaskManager,
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {

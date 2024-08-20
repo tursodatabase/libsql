@@ -51,6 +51,7 @@ use crate::rpc::proxy::rpc::proxy_server::{Proxy, ProxyServer};
 use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 use crate::version;
+use crate::{hrana, TaskManager};
 
 use self::db_factory::MakeConnectionExtractor;
 use self::result_builder::JsonHttpPayloadBuilder;
@@ -255,7 +256,6 @@ pub struct UserApi<A, P, S> {
     pub enable_console: bool,
     pub self_url: Option<String>,
     pub primary_url: Option<String>,
-    pub shutdown: Arc<Notify>,
 }
 
 impl<A, P, S> UserApi<A, P, S>
@@ -264,12 +264,12 @@ where
     P: Proxy,
     S: ReplicationLog,
 {
-    pub fn configure(self, join_set: &mut JoinSet<anyhow::Result<()>>) -> Arc<hrana::http::Server> {
+    pub fn configure(self, task_manager: &mut TaskManager) -> Arc<hrana::http::Server> {
         let (hrana_accept_tx, hrana_accept_rx) = mpsc::channel(8);
         let (hrana_upgrade_tx, hrana_upgrade_rx) = mpsc::channel(8);
         let hrana_http_srv = Arc::new(hrana::http::Server::new(self.self_url.clone()));
 
-        join_set.spawn({
+        task_manager.spawn_until_shutdown({
             let namespaces = self.namespaces.clone();
             let user_auth_strategy = self.user_auth_strategy.clone();
             let idle_kicker = self
@@ -295,7 +295,7 @@ where
             }
         });
 
-        join_set.spawn({
+        task_manager.spawn_until_shutdown({
             let server = hrana_http_srv.clone();
             async move {
                 server.run_expire().await;
@@ -304,7 +304,7 @@ where
         });
 
         if let Some(acceptor) = self.hrana_ws_acceptor {
-            join_set.spawn(async move {
+            task_manager.spawn_until_shutdown(async move {
                 hrana::ws::listen(acceptor, hrana_accept_tx).await;
                 Ok(())
             });
@@ -445,10 +445,10 @@ where
             let router = router.fallback(handle_fallback);
             let h2c = crate::h2c::H2cMaker::new(router);
 
-            join_set.spawn(async move {
+            task_manager.spawn_with_shutdown_notify(|shutdown| async move {
                 hyper::server::Server::builder(acceptor)
                     .serve(h2c)
-                    .with_graceful_shutdown(self.shutdown.notified())
+                    .with_graceful_shutdown(shutdown.notified())
                     .await
                     .context("http server")?;
                 Ok(())
