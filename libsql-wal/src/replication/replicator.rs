@@ -162,10 +162,10 @@ mod test {
                 .unwrap();
         }
 
-        let mut replicator = Replicator::new(shared.clone(), 1);
+        let replicator = Replicator::new(shared.clone(), 1);
 
         let tmp = NamedTempFile::new().unwrap();
-        let stream = replicator.frame_stream();
+        let stream = replicator.into_frame_stream();
         tokio::pin!(stream);
         let mut last_frame_no = 0;
         let mut size_after;
@@ -233,8 +233,8 @@ mod test {
         // replicate everything from scratch again
         {
             let tmp = NamedTempFile::new().unwrap();
-            let mut replicator = Replicator::new(shared.clone(), 1);
-            let stream = replicator.frame_stream();
+            let replicator = Replicator::new(shared.clone(), 1);
+            let stream = replicator.into_frame_stream();
 
             tokio::pin!(stream);
 
@@ -295,8 +295,8 @@ mod test {
 
         let db_content = std::fs::read(&env.db_path("test").join("data")).unwrap();
 
-        let mut replicator = Replicator::new(shared, 1);
-        let stream = replicator.frame_stream().take(3);
+        let replicator = Replicator::new(shared, 1);
+        let stream = replicator.into_frame_stream().take(3);
 
         tokio::pin!(stream);
 
