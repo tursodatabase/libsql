@@ -10,7 +10,7 @@ use serde::Deserialize;
 
 use crate::auth::Authenticated;
 use crate::connection::dump::exporter::export_dump;
-use crate::connection::MakeConnection;
+use crate::connection::Connection as _;
 use crate::error::Error;
 use crate::BLOCKING_RT;
 
@@ -98,7 +98,8 @@ pub(super) async fn handle_dump(
     let conn_maker = state
         .namespaces
         .with(namespace, |ns| {
-            ns.db.as_primary().unwrap().connection_maker()
+            assert!(ns.db.is_primary());
+            ns.db.connection_maker()
         })
         .await
         .unwrap();
