@@ -48,7 +48,7 @@ pub struct BaseNamespaceConfig {
 }
 
 #[derive(Clone)]
-pub struct PrimaryExtraConfig {
+pub struct PrimaryConfig {
     pub(crate) max_log_size: u64,
     pub(crate) max_log_duration: Option<Duration>,
     pub(crate) bottomless_replication: Option<bottomless::replicator::Options>,

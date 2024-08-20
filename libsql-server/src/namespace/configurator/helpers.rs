@@ -31,14 +31,14 @@ use crate::replication::{FrameNo, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
 
-use super::{BaseNamespaceConfig, PrimaryExtraConfig};
+use super::{BaseNamespaceConfig, PrimaryConfig};
 
 const WASM_TABLE_CREATE: &str =
     "CREATE TABLE libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID;";
 
 #[tracing::instrument(skip_all)]
 pub(super) async fn make_primary_connection_maker(
-    primary_config: &PrimaryExtraConfig,
+    primary_config: &PrimaryConfig,
     base_config: &BaseNamespaceConfig,
     meta_store_handle: &MetaStoreHandle,
     db_path: &Path,
@@ -422,7 +422,7 @@ async fn run_storage_monitor(
 
 pub(super) async fn cleanup_primary(
     base: &BaseNamespaceConfig,
-    primary_config: &PrimaryExtraConfig,
+    primary_config: &PrimaryConfig,
     namespace: &NamespaceName,
     db_config: &DatabaseConfig,
     prune_all: bool,

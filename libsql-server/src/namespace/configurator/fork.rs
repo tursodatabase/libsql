@@ -20,7 +20,7 @@ use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
 use super::helpers::make_bottomless_options;
-use super::{NamespaceName, NamespaceStore, PrimaryExtraConfig, RestoreOption};
+use super::{NamespaceName, NamespaceStore, PrimaryConfig, RestoreOption};
 
 type Result<T> = crate::Result<T, ForkError>;
 
@@ -31,7 +31,7 @@ pub(super) async fn fork(
     to_config: MetaStoreHandle,
     timestamp: Option<NaiveDateTime>,
     store: NamespaceStore,
-    primary_config: &PrimaryExtraConfig,
+    primary_config: &PrimaryConfig,
     base_path: Arc<Path>,
 ) -> crate::Result<Namespace> {
     let from_config = from_config.get();

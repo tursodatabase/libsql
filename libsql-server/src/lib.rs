@@ -972,7 +972,7 @@ where
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
     ) {
-        let primary_config = PrimaryExtraConfig {
+        let primary_config = PrimaryConfig {
             max_log_size: self.db_config.max_log_size,
             max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
             bottomless_replication: self.db_config.bottomless_replication.clone(),
