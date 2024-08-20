@@ -57,6 +57,7 @@ impl<IO: Io> Injector<IO> {
             .inject_frames(buffer, commit_data, &mut self.tx)
             .await?;
         self.buffer = buffer;
+        self.buffer.clear();
 
         Ok(())
     }
