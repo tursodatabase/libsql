@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::future::Future;
@@ -11,7 +10,6 @@ use chrono::{DateTime, Utc};
 use fst::Map;
 use hashbrown::HashMap;
 use libsql_sys::name::NamespaceName;
-use parking_lot::Mutex;
 use tempfile::{tempdir, TempDir};
 
 use crate::io::{FileExt, Io, StdIO};
@@ -204,7 +202,7 @@ impl Storage for NoStorage {
         &self,
         _namespace: &NamespaceName,
         _seg: Self::Segment,
-        _config: Option<Arc<Self::Config>>,
+        _config: Option<Self::Config>,
         _on_store: OnStoreCallback,
     ) {
     }
@@ -239,7 +237,7 @@ impl Storage for NoStorage {
         &self,
         _namespace: &NamespaceName,
         _frame_no: u64,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
         unimplemented!()
     }
@@ -248,7 +246,7 @@ impl Storage for NoStorage {
         &self,
         _namespace: &NamespaceName,
         _key: &SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<Map<Arc<[u8]>>> {
         unimplemented!()
     }
@@ -442,7 +440,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     }
 }
 
-pub struct StoreSegmentRequest<S> {
+pub struct StoreSegmentRequest<S, C> {
     namespace: NamespaceName,
     /// Path to the segment. Read-only for bottomless
     segment: S,
@@ -451,12 +449,12 @@ pub struct StoreSegmentRequest<S> {
 
     /// alternative configuration to use with the storage layer.
     /// e.g: S3 overrides
-    storage_config_override: Option<Arc<dyn Any + Send + Sync>>,
+    storage_config_override: Option<C>,
     /// Called after the segment was stored, with the new durable index
     on_store_callback: OnStoreCallback,
 }
 
-impl<S> fmt::Debug for StoreSegmentRequest<S>
+impl<S, C> fmt::Debug for StoreSegmentRequest<S, C>
 where
     S: fmt::Debug,
 {

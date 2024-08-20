@@ -1,7 +1,6 @@
 //! `AsyncStorage` is a `Storage` implementation that defer storage to a background thread. The
 //! durable frame_no is notified asynchronously.
 
-use std::any::Any;
 use std::sync::Arc;
 
 use chrono::Utc;
@@ -114,6 +113,7 @@ where
                 }
             }
         }
+
         tracing::info!("Storage shutdown");
         if let Some(notify) = notify_shutdown {
             let _ = notify.send(());
@@ -124,19 +124,12 @@ where
         &self,
         namespace: NamespaceName,
         ret: oneshot::Sender<super::Result<u64>>,
-        config_override: Option<Arc<dyn Any + Send + Sync>>,
+        config_override: Option<B::Config>,
     ) {
         let backend = self.backend.clone();
-        let config = match config_override
-            .map(|c| c.downcast::<B::Config>())
-            .transpose()
-        {
-            Ok(Some(config)) => config,
-            Ok(None) => backend.default_config(),
-            Err(_) => {
-                let _ = ret.send(Err(super::Error::InvalidConfigType));
-                return;
-            }
+        let config = match config_override {
+            Some(config) => config,
+            None => backend.default_config(),
         };
 
         tokio::spawn(async move {
@@ -167,7 +160,7 @@ enum StorageLoopMessage<S, C> {
     Shutdown(oneshot::Sender<()>),
 }
 
-pub struct AsyncStorage<B, S> {
+pub struct AsyncStorage<B: Backend, S> {
     /// send request to the main loop
     job_sender: mpsc::UnboundedSender<StorageLoopMessage<S, B::Config>>,
     force_shutdown: oneshot::Sender<()>,
@@ -195,15 +188,11 @@ where
         config_override: Option<Self::Config>,
         on_store_callback: OnStoreCallback,
     ) {
-        fn into_any<T: Sync + Send + 'static>(t: Arc<T>) -> Arc<dyn Any + Sync + Send> {
-            t
-        }
-
         let req = StoreSegmentRequest {
             namespace: namespace.clone(),
             segment,
             created_at: Utc::now(),
-            storage_config_override: config_override.map(into_any),
+            storage_config_override: config_override,
             on_store_callback,
         };
 
