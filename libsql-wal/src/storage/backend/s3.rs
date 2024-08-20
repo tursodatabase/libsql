@@ -64,7 +64,11 @@ impl<IO: Io> S3Backend<IO> {
         cluster_id: String,
         io: IO,
     ) -> Result<Self> {
-        let client = Client::new(&aws_config);
+        let config = aws_sdk_s3::Config::new(&aws_config)
+            .to_builder()
+            .force_path_style(true)
+            .build();
+        let client = Client::from_conf(config);
         let config = S3Config {
             bucket,
             cluster_id,
