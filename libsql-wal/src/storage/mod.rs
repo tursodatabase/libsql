@@ -10,6 +10,7 @@ use chrono::{DateTime, Utc};
 use fst::Map;
 use hashbrown::HashMap;
 use libsql_sys::name::NamespaceName;
+use libsql_sys::wal::either::Either;
 use tempfile::{tempdir, TempDir};
 
 use crate::io::{FileExt, Io, StdIO};
@@ -188,12 +189,135 @@ pub trait Storage: Send + Sync + 'static {
     fn shutdown(&self) -> impl Future<Output = ()> + Send {
         async { () }
     }
+}
+
+/// special zip function for Either storage implementation
+fn zip<A, B, C, D>(
+    x: &Either<A, B>,
+    y: Option<Either<C, D>>,
+) -> Either<(&A, Option<C>), (&B, Option<D>)> {
+    match (x, y) {
+        (Either::A(a), Some(Either::A(c))) => Either::A((a, Some(c))),
+        (Either::B(b), Some(Either::B(d))) => Either::B((b, Some(d))),
+        (Either::A(a), None) => Either::A((a, None)),
+        (Either::B(b), None) => Either::B((b, None)),
+        _ => panic!("incompatible options"),
+    }
+}
+
+impl<A, B, S> Storage for Either<A, B>
+where
+    A: Storage<Segment = S>,
+    B: Storage<Segment = S>,
+    S: Segment,
+{
+    type Segment = S;
+    type Config = Either<A::Config, B::Config>;
+
+    fn store(
+        &self,
+        namespace: &NamespaceName,
+        seg: Self::Segment,
+        config_override: Option<Self::Config>,
+        on_store: OnStoreCallback,
+    ) {
+        match zip(self, config_override) {
+            Either::A((s, c)) => s.store(namespace, seg, c, on_store),
+            Either::B((s, c)) => s.store(namespace, seg, c, on_store),
+        }
+    }
+
+    fn durable_frame_no_sync(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Self::Config>,
+    ) -> u64 {
+        match zip(self, config_override) {
+            Either::A((s, c)) => s.durable_frame_no_sync(namespace, c),
+            Either::B((s, c)) => s.durable_frame_no_sync(namespace, c),
+        }
+    }
+
+    async fn durable_frame_no(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Self::Config>,
+    ) -> u64 {
+        match zip(self, config_override) {
+            Either::A((s, c)) => s.durable_frame_no(namespace, c).await,
+            Either::B((s, c)) => s.durable_frame_no(namespace, c).await,
+        }
+    }
+
+    async fn restore(
+        &self,
+        file: impl FileExt,
+        namespace: &NamespaceName,
+        restore_options: RestoreOptions,
+        config_override: Option<Self::Config>,
+    ) -> Result<()> {
+        match zip(self, config_override) {
+            Either::A((s, c)) => s.restore(file, namespace, restore_options, c).await,
+            Either::B((s, c)) => s.restore(file, namespace, restore_options, c).await,
+        }
+    }
+
+    fn find_segment(
+        &self,
+        namespace: &NamespaceName,
+        frame_no: u64,
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<SegmentKey>> + Send {
+        async move {
+            match zip(self, config_override) {
+                Either::A((s, c)) => s.find_segment(namespace, frame_no, c).await,
+                Either::B((s, c)) => s.find_segment(namespace, frame_no, c).await,
+            }
+        }
+    }
+
     fn fetch_segment_index(
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
         config_override: Option<Self::Config>,
     ) -> impl Future<Output = Result<Map<Arc<[u8]>>>> + Send {
+        async move {
+            match zip(self, config_override) {
+                Either::A((s, c)) => s.fetch_segment_index(namespace, key, c).await,
+                Either::B((s, c)) => s.fetch_segment_index(namespace, key, c).await,
+            }
+        }
+    }
+
+    fn fetch_segment_data(
+        &self,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<CompactedSegment<impl FileExt>>> + Send {
+        async move {
+            match zip(self, config_override) {
+                Either::A((s, c)) => {
+                    let seg = s.fetch_segment_data(namespace, key, c).await?;
+                    let seg = seg.remap_file_type(Either::A);
+                    Ok(seg)
+                }
+                Either::B((s, c)) => {
+                    let seg = s.fetch_segment_data(namespace, key, c).await?;
+                    let seg = seg.remap_file_type(Either::B);
+                    Ok(seg)
+                }
+            }
+        }
+    }
+
+    async fn shutdown(&self) {
+        match self {
+            Either::A(a) => a.shutdown().await,
+            Either::B(b) => b.shutdown().await,
+        }
+    }
 }
 
 /// a placeholder storage that doesn't store segment

@@ -18,7 +18,7 @@ pub trait ReplicateFromStorage: Sync + Send + 'static {
         seen: &'a mut RoaringBitmap,
         current: u64,
         until: u64,
-    ) -> Pin<Box<dyn Stream<Item = Result<Box<Frame>>> + 'a>>;
+    ) -> Pin<Box<dyn Stream<Item = Result<Box<Frame>>> + 'a + Send>>;
 }
 
 pub struct StorageReplicator<S> {
@@ -41,7 +41,7 @@ where
         seen: &'a mut roaring::RoaringBitmap,
         mut current: u64,
         until: u64,
-    ) -> Pin<Box<dyn Stream<Item = Result<Box<Frame>>> + 'a>> {
+    ) -> Pin<Box<dyn Stream<Item = Result<Box<Frame>>> + Send + 'a>> {
         Box::pin(async_stream::try_stream! {
             loop {
                 let key = self.storage.find_segment(&self.namespace, current, None).await?;
