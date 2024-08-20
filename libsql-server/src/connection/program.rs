@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use metrics::{histogram, increment_counter};
@@ -14,14 +15,16 @@ use crate::query_result_builder::QueryResultBuilder;
 use super::config::DatabaseConfig;
 use super::RequestContext;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct Program {
-    pub steps: Vec<Step>,
+    pub steps: Arc<Vec<Step>>,
 }
 
 impl Program {
     pub fn new(steps: Vec<Step>) -> Self {
-        Self { steps }
+        Self {
+            steps: steps.into(),
+        }
     }
 
     pub fn is_read_only(&self) -> bool {
@@ -29,7 +32,11 @@ impl Program {
     }
 
     pub fn steps(&self) -> &[Step] {
-        self.steps.as_slice()
+        &self.steps
+    }
+
+    pub fn steps_mut(&mut self) -> Option<&mut Vec<Step>> {
+        Arc::get_mut(&mut self.steps)
     }
 
     #[cfg(test)]
