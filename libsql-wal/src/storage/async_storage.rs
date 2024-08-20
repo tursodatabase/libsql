@@ -192,7 +192,7 @@ where
         &self,
         namespace: &NamespaceName,
         segment: Self::Segment,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
         on_store_callback: OnStoreCallback,
     ) {
         fn into_any<T: Sync + Send + 'static>(t: Arc<T>) -> Arc<dyn Any + Sync + Send> {
@@ -215,7 +215,7 @@ where
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> u64 {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
         let meta = self.backend.meta(&config, namespace).await.unwrap();
@@ -227,7 +227,7 @@ where
         file: impl crate::io::FileExt,
         namespace: &NamespaceName,
         restore_options: RestoreOptions,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> super::Result<()> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
         self.backend
@@ -238,7 +238,7 @@ where
     fn durable_frame_no_sync(
         &self,
         namespace: &NamespaceName,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> u64 {
         tokio::runtime::Handle::current()
             .block_on(self.durable_frame_no(namespace, config_override))
@@ -248,7 +248,7 @@ where
         &self,
         namespace: &NamespaceName,
         frame_no: u64,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> super::Result<super::SegmentKey> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
         let key = self
@@ -262,7 +262,7 @@ where
         &self,
         namespace: &NamespaceName,
         key: &super::SegmentKey,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> super::Result<fst::Map<Arc<[u8]>>> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
         let index = self
@@ -276,7 +276,7 @@ where
         &self,
         namespace: &NamespaceName,
         key: &super::SegmentKey,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> super::Result<CompactedSegment<impl FileExt>> {
         // TODO: make async
         let config = config_override.unwrap_or_else(|| self.backend.default_config());

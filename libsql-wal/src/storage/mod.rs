@@ -133,7 +133,7 @@ pub type OnStoreCallback = Box<
 
 pub trait Storage: Send + Sync + 'static {
     type Segment: Segment;
-    type Config;
+    type Config: Clone + Send;
     /// store the passed segment for `namespace`. This function is called in a context where
     /// blocking is acceptable.
     /// returns a future that resolves when the segment is stored
@@ -142,20 +142,20 @@ pub trait Storage: Send + Sync + 'static {
         &self,
         namespace: &NamespaceName,
         seg: Self::Segment,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
         on_store: OnStoreCallback,
     );
 
     fn durable_frame_no_sync(
         &self,
         namespace: &NamespaceName,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> u64;
 
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> u64;
 
     async fn restore(
@@ -163,22 +163,23 @@ pub trait Storage: Send + Sync + 'static {
         file: impl FileExt,
         namespace: &NamespaceName,
         restore_options: RestoreOptions,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> Result<()>;
 
     async fn find_segment(
         &self,
         namespace: &NamespaceName,
         frame_no: u64,
-        config_override: Option<Arc<Self::Config>>,
     ) -> Result<SegmentKey>;
+        config_override: Option<Self::Config>,
 
     async fn fetch_segment_index(
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        config_override: Option<Arc<Self::Config>>,
     ) -> Result<Map<Arc<[u8]>>>;
+        config_override: Option<Self::Config>,
+        config_override: Option<Self::Config>,
 
     async fn fetch_segment_data(
     fn shutdown(&self) -> impl Future<Output = ()> + Send {
@@ -187,8 +188,8 @@ pub trait Storage: Send + Sync + 'static {
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        config_override: Option<Arc<Self::Config>>,
     ) -> Result<CompactedSegment<impl FileExt>>;
+        config_override: Option<Self::Config>,
 }
 
 /// a placeholder storage that doesn't store segment
@@ -211,7 +212,7 @@ impl Storage for NoStorage {
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
-        config: Option<Arc<Self::Config>>,
+        config: Option<Self::Config>,
     ) -> u64 {
         self.durable_frame_no_sync(namespace, config)
     }
@@ -221,7 +222,7 @@ impl Storage for NoStorage {
         _file: impl FileExt,
         _namespace: &NamespaceName,
         _restore_options: RestoreOptions,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<()> {
         panic!("can restore from no storage")
     }
@@ -229,7 +230,7 @@ impl Storage for NoStorage {
     fn durable_frame_no_sync(
         &self,
         _namespace: &NamespaceName,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> u64 {
         u64::MAX
     }
@@ -256,7 +257,7 @@ impl Storage for NoStorage {
         &self,
         _namespace: &NamespaceName,
         _key: &SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<CompactedSegment<impl FileExt>> {
         unimplemented!();
         #[allow(unreachable_code)]
@@ -321,7 +322,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         seg: Self::Segment,
-        _config: Option<Arc<Self::Config>>,
+        _config: Option<Self::Config>,
         on_store: OnStoreCallback,
     ) {
         let mut inner = self.inner.lock();
@@ -350,7 +351,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
-        config: Option<Arc<Self::Config>>,
+        config: Option<Self::Config>,
     ) -> u64 {
         self.durable_frame_no_sync(namespace, config)
     }
@@ -360,7 +361,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         _file: impl FileExt,
         _namespace: &NamespaceName,
         _restore_options: RestoreOptions,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<()> {
         todo!();
     }
@@ -368,7 +369,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     fn durable_frame_no_sync(
         &self,
         namespace: &NamespaceName,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> u64 {
         let inner = self.inner.lock();
         if inner.store {
@@ -385,7 +386,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         frame_no: u64,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
         let inner = self.inner.lock();
         if inner.store {
@@ -406,7 +407,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<Map<Arc<[u8]>>> {
         let inner = self.inner.lock();
         if inner.store {
@@ -423,7 +424,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<CompactedSegment<impl FileExt>> {
         let inner = self.inner.lock();
         if inner.store {
