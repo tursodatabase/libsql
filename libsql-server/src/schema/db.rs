@@ -9,6 +9,7 @@ use crate::namespace::NamespaceName;
 use crate::schema::status::{MigrationJobProgress, MigrationJobSummary};
 
 use super::status::MigrationProgress;
+use super::validate_migration;
 use super::{
     status::{MigrationJob, MigrationTask},
     Error, MigrationDetails, MigrationJobStatus, MigrationSummary, MigrationTaskStatus,
@@ -328,15 +329,17 @@ pub(super) fn get_next_pending_migration_job(
             |row| {
                 let job_id = row.get::<_, i64>(0)?;
                 let status = MigrationJobStatus::from_int(row.get::<_, u64>(1)?);
-                let migration = serde_json::from_str(row.get_ref(2)?.as_str()?).unwrap();
+                let mut migration = serde_json::from_str(row.get_ref(2)?.as_str()?).unwrap();
                 let schema = NamespaceName::from_string(row.get::<_, String>(3)?).unwrap();
+                let disable_foreign_key = validate_migration(&mut migration).unwrap();
                 Ok(MigrationJob {
                     schema,
                     job_id,
                     status,
-                    migration,
                     progress: Default::default(),
                     task_error: None,
+                    disable_foreign_key,
+                    migration: migration.into(),
                 })
             },
         )

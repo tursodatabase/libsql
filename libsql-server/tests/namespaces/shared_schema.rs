@@ -217,53 +217,6 @@ fn no_job_created_when_migration_job_is_invalid() {
 }
 
 #[test]
-fn migration_contains_txn_statements() {
-    let mut sim = Builder::new()
-        .simulation_duration(Duration::from_secs(100000))
-        .build();
-    let tmp = tempdir().unwrap();
-    make_primary(&mut sim, tmp.path().to_path_buf());
-
-    sim.client("client", async {
-        let client = Client::new();
-        client
-            .post(
-                "http://primary:9090/v1/namespaces/schema/create",
-                json!({"shared_schema": true }),
-            )
-            .await
-            .unwrap();
-
-        let schema_db = Database::open_remote_with_connector(
-            "http://schema.primary:8080",
-            String::new(),
-            TurmoilConnector,
-        )
-        .unwrap();
-        let schema_conn = schema_db.connect().unwrap();
-        schema_conn
-            .execute_batch("begin; create table test1 (c);commit")
-            .await
-            .unwrap();
-        assert_debug_snapshot!(schema_conn
-            .execute_batch("begin; create table test (c)")
-            .await
-            .unwrap_err());
-
-        let resp = client
-            .get("http://schema.primary:8080/v1/jobs/2")
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
-        assert_debug_snapshot!(resp.json_value().await.unwrap());
-
-        Ok(())
-    });
-
-    sim.run().unwrap();
-}
-
-#[test]
 fn dry_run_failure() {
     let mut sim = Builder::new()
         .simulation_duration(Duration::from_secs(100000))

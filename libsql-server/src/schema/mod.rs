@@ -47,37 +47,47 @@ pub use scheduler::Scheduler;
 pub use status::{MigrationDetails, MigrationJobStatus, MigrationSummary, MigrationTaskStatus};
 
 use crate::connection::program::Program;
-use crate::query::{Params, Query};
-use crate::query_analysis::{Statement, StmtKind};
+use crate::query_analysis::StmtKind;
 
-pub fn validate_migration(migration: &mut Program) -> Result<(), Error> {
-    if !migration.steps.is_empty()
-        && matches!(migration.steps[0].query.stmt.kind, StmtKind::TxnBegin)
-    {
-        if !matches!(
-            migration.steps.last().map(|s| &s.query.stmt.kind),
-            Some(&StmtKind::TxnEnd)
-        ) {
-            return Err(Error::MigrationContainsTransactionStatements);
+// validate program is valid for migration, and return whether foreign keys should be disabled
+pub fn validate_migration(migration: &mut Program) -> Result<bool, Error> {
+    let mut steps = migration.steps_mut().unwrap().iter_mut().peekable();
+    let mut explicit_tx = false;
+    let mut disable_foreign_key = false;
+    // skip pragmas prologue
+    while steps.next_if(|s| s.query.stmt.is_pragma()).is_some() {
+        disable_foreign_key = true;
+    }
+
+    // first step can be a BEGIN
+    if let Some(step) = steps.next() {
+        if matches!(step.query.stmt.kind, StmtKind::TxnBegin) {
+            // neutralize step
+            step.query.stmt.stmt = r#"SELECT 'neutralized txn begin'"#.into();
+            explicit_tx = true;
         }
-        migration.steps_mut().unwrap()[0].query = Query {
-            stmt: Statement::parse("PRAGMA max_page_count")
-                .next()
-                .unwrap()
-                .unwrap(),
-            params: Params::empty(),
-            want_rows: false,
-        };
-        while let Some(step) = migration.steps.last() {
-            if !matches!(step.query.stmt.kind, StmtKind::TxnEnd) {
-                break;
+    }
+
+    // skip all steps that are not tx items
+    while steps.next_if(|s| !s.query.stmt.kind.is_txn()).is_some() {}
+
+    // last stmt can be a tx commit
+    while let Some(step) = steps.next_if(|s| s.query.stmt.kind.is_txn()) {
+        if matches!(step.query.stmt.kind, StmtKind::TxnEnd) {
+            if !explicit_tx {
+                // transaction is closed but was never opened
+                return Err(Error::MigrationContainsTransactionStatements);
             }
-            migration.steps_mut().unwrap().pop();
+            // neutralize step
+            step.query.stmt.stmt = r#"SELECT 'neutralized txn component'"#.into();
         }
     }
-    if migration.steps().iter().any(|s| s.query.stmt.kind.is_txn()) {
-        Err(Error::MigrationContainsTransactionStatements)
-    } else {
-        Ok(())
+
+    // validate pragma epilogue
+    if steps.by_ref().any(|s| !s.query.stmt.is_pragma()) {
+        // only accept pragmas after tx end
+        return Err(Error::MigrationContainsTransactionStatements);
     }
+
+    Ok(disable_foreign_key)
 }

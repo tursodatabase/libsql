@@ -51,12 +51,15 @@ impl<C: crate::connection::Connection> crate::connection::Connection for SchemaC
         } else {
             check_program_auth(&ctx, &migration, &self.config.get()).await?;
             let connection = self.connection.clone();
-            validate_migration(&mut migration)?;
+            let disable_foreign_key = validate_migration(&mut migration)?;
             let migration = Arc::new(migration);
             let builder = tokio::task::spawn_blocking({
                 let migration = migration.clone();
                 move || {
                     let res = connection.with_raw(|conn| -> crate::Result<_> {
+                        if disable_foreign_key {
+                            conn.execute("PRAGMA foreign_keys=off", ())?;
+                        }
                         let mut txn = conn
                             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
                             .map_err(|_| {
@@ -73,6 +76,9 @@ impl<C: crate::connection::Connection> crate::connection::Connection for SchemaC
                             &QueryBuilderConfig::default(),
                         );
                         txn.rollback().unwrap();
+                        if disable_foreign_key {
+                            conn.execute("PRAGMA foreign_keys=on", ())?;
+                        }
                         Ok(ret?)
                     });
 

@@ -35,4 +35,5 @@ MigrationJob {
         0,
     ],
     task_error: None,
+    disable_foreign_key: false,
 }

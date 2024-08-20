@@ -406,6 +406,14 @@ impl Statement {
             StmtKind::Read | StmtKind::TxnEnd | StmtKind::TxnBegin
         )
     }
+
+    pub(crate) fn is_pragma(&self) -> bool {
+        // adding a flag to the program would break the serialization, so we do that instead
+        match self.stmt.split_whitespace().next() {
+            Some(s) => s.trim().eq_ignore_ascii_case("pragma"),
+            None => false,
+        }
+    }
 }
 
 /// Given a an initial state and an array of queries, attempts to predict what the final state will
