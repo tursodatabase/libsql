@@ -517,6 +517,10 @@ impl Connection for WriteProxyConnection<RpcStream> {
     fn diagnostics(&self) -> String {
         format!("{:?}", self.state)
     }
+
+    fn with_raw<R>(&self, f: impl FnOnce(&mut rusqlite::Connection) -> R) -> R {
+        self.read_conn.with_raw(f)
+    }
 }
 
 #[cfg(test)]

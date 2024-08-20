@@ -1,4 +1,5 @@
 use std::fmt;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use bottomless::replicator::Replicator;
@@ -174,6 +175,17 @@ impl crate::connection::Connection for Connection {
             Connection::LibsqlPrimary(conn) => conn.diagnostics(),
             Connection::LibsqlReplica(conn) => conn.diagnostics(),
             Connection::LibsqlSchema(conn) => conn.diagnostics(),
+        }
+    }
+
+    fn with_raw<R>(&self, f: impl FnOnce(&mut rusqlite::Connection) -> R) -> R {
+        match self {
+            Connection::Primary(c) => c.with_raw(f),
+            Connection::Replica(c) => c.with_raw(f),
+            Connection::Schema(c) => c.with_raw(f),
+            Connection::LibsqlPrimary(c) => c.with_raw(f),
+            Connection::LibsqlReplica(c) => c.with_raw(f),
+            Connection::LibsqlSchema(c) => c.with_raw(f),
         }
     }
 }
