@@ -54,6 +54,11 @@ where
         let segment_id = io.uuid();
         let tmp = io.tempfile()?;
 
+        tracing::debug!(
+            namespace = self.request.namespace.as_str(),
+            "sending segment to durable storage"
+        );
+
         let new_index = segment
             .compact(&tmp, segment_id)
             .await
@@ -73,6 +78,13 @@ where
             .unwrap_or_else(|| backend.default_config());
 
         backend.store(&config, meta, tmp, new_index).await?;
+
+        tracing::info!(
+            namespace = self.request.namespace.as_str(),
+            start_frame_no = segment.start_frame_no(),
+            end_frame_no = segment.last_committed(),
+            "stored segment"
+        );
 
         Ok(segment.last_committed())
     }
