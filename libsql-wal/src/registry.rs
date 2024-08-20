@@ -339,6 +339,7 @@ where
             )),
             shutdown: false.into(),
             checkpoint_notifier: self.checkpoint_notifier.clone(),
+            max_segment_size: 1000.into(),
         });
 
         self.opened

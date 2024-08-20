@@ -51,6 +51,8 @@ pub struct SharedWal<IO: Io> {
     pub(crate) stored_segments: Box<dyn ReplicateFromStorage>,
     pub(crate) shutdown: AtomicBool,
     pub(crate) checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
+    /// maximum size the segment is allowed to grow
+    pub(crate) max_segment_size: AtomicUsize,
 }
 
 impl<IO: Io> SharedWal<IO> {
@@ -264,7 +266,9 @@ impl<IO: Io> SharedWal<IO> {
         }
 
         // TODO: use config for max log size
-        if tx.is_commited() && current.count_committed() > 1000 {
+        if tx.is_commited()
+            && current.count_committed() > self.max_segment_size.load(Ordering::Relaxed)
+        {
             self.swap_current(&tx)?;
         }
 
