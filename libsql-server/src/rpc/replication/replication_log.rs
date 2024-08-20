@@ -20,8 +20,7 @@ use tonic::transport::server::TcpConnectInfo;
 use tonic::Status;
 use uuid::Uuid;
 
-use crate::auth::Jwt;
-use crate::auth::{parsers::parse_grpc_auth_header, Auth};
+use crate::auth::Auth;
 use crate::connection::config::DatabaseConfig;
 use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::replication::primary::frame_stream::FrameStream;
@@ -29,7 +28,7 @@ use crate::replication::{LogReadError, ReplicationLogger};
 use crate::stats::Stats;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
-use super::extract_namespace;
+use crate::rpc::extract_namespace;
 
 pub struct ReplicationLogService {
     namespaces: NamespaceStore,
@@ -72,38 +71,14 @@ impl ReplicationLogService {
         req: &tonic::Request<T>,
         namespace: NamespaceName,
     ) -> Result<(), Status> {
-        // todo dupe #auth
-        let namespace_jwt_keys = self
-            .namespaces
-            .with(namespace.clone(), |ns| ns.jwt_keys())
-            .await;
-
-        let auth = match namespace_jwt_keys {
-            Ok(Ok(Some(key))) => Some(Auth::new(Jwt::new(key))),
-            Ok(Ok(None)) => self.user_auth_strategy.clone(),
-            Err(e) => match e.as_ref() {
-                crate::error::Error::NamespaceDoesntExist(_) => self.user_auth_strategy.clone(),
-                _ => Err(Status::internal(format!(
-                    "Error fetching jwt key for a namespace: {}",
-                    e
-                )))?,
-            },
-            Ok(Err(e)) => Err(Status::internal(format!(
-                "Error fetching jwt key for a namespace: {}",
-                e
-            )))?,
-        };
-
-        if let Some(auth) = auth {
-            let context =
-                parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields())
-                    .map_err(|e| {
-                        tonic::Status::internal(format!("Error parsing auth header: {}", e))
-                    })?;
-            auth.authenticate(context)?;
-        }
-
-        Ok(())
+        super::auth::authenticate(
+            &self.namespaces,
+            req,
+            namespace,
+            &self.user_auth_strategy,
+            true,
+        )
+        .await
     }
 
     fn verify_session_token<R>(
@@ -263,7 +238,7 @@ impl ReplicationLog for ReplicationLogService {
         if let WalFlavor::Libsql = req.get_ref().wal_flavor() {
             return Err(Status::invalid_argument("libsql wal not supported"));
         }
-        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+        let namespace = super::super::extract_namespace(self.disable_namespaces, &req)?;
 
         self.authenticate(&req, namespace.clone()).await?;
 
@@ -311,7 +286,7 @@ impl ReplicationLog for ReplicationLogService {
         if let WalFlavor::Libsql = req.get_ref().wal_flavor() {
             return Err(Status::invalid_argument("libsql wal not supported"));
         }
-        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+        let namespace = super::super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
         let (logger, _, _, stats, _) = self.logger_from_namespace(namespace, &req, true).await?;
@@ -346,7 +321,7 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<HelloRequest>,
     ) -> Result<tonic::Response<HelloResponse>, Status> {
-        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+        let namespace = super::super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
         // legacy support
@@ -385,9 +360,7 @@ impl ReplicationLog for ReplicationLogService {
         if let WalFlavor::Libsql = req.get_ref().wal_flavor() {
             return Err(Status::invalid_argument("libsql wal not supported"));
         }
-
-        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
-
+        let namespace = super::super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
         let (logger, _, _, stats, _) = self.logger_from_namespace(namespace, &req, true).await?;

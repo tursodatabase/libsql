@@ -22,11 +22,13 @@ use axum_extra::middleware::option_layer;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use hyper::{header, Body, Request, Response, StatusCode};
+use libsql_replication::rpc::replication::replication_log_server::{
+    ReplicationLog, ReplicationLogServer,
+};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Number;
-use tokio::sync::{mpsc, oneshot, Notify};
-use tokio::task::JoinSet;
+use tokio::sync::{mpsc, oneshot};
 use tonic::transport::Server;
 
 use tower_http::compression::predicate::NotForContentType;
@@ -36,7 +38,6 @@ use tower_http::{compression::CompressionLayer, cors};
 use crate::auth::{Auth, AuthError, Authenticated, Jwt, Permission, UserAuthContext};
 use crate::connection::{Connection, RequestContext};
 use crate::error::Error;
-use crate::hrana;
 use crate::http::user::db_factory::MakeConnectionExtractorPath;
 use crate::http::user::timing::timings_middleware;
 use crate::http::user::types::HttpQuery;
@@ -47,8 +48,6 @@ use crate::query::{self, Query};
 use crate::query_analysis::{predict_final_state, Statement, TxnStatus};
 use crate::query_result_builder::QueryResultBuilder;
 use crate::rpc::proxy::rpc::proxy_server::{Proxy, ProxyServer};
-use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
-use crate::rpc::ReplicationLogServer;
 use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 use crate::version;

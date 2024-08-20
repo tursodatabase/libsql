@@ -17,9 +17,10 @@ use crate::pager::{make_pager, PAGER_CACHE_SIZE};
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
 use crate::rpc::proxy::ProxyService;
 use crate::rpc::replica_proxy::ReplicaProxyService;
-use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
-use crate::rpc::replication_log::ReplicationLogService;
-use crate::rpc::replication_log_proxy::ReplicationLogProxyService;
+use crate::rpc::replication::libsql_replicator::LibsqlReplicationService;
+use crate::rpc::replication::replication_log::rpc::replication_log_server::ReplicationLog;
+use crate::rpc::replication::replication_log::ReplicationLogService;
+use crate::rpc::replication::replication_log_proxy::ReplicationLogProxyService;
 use crate::rpc::run_rpc_server;
 use crate::schema::Scheduler;
 use crate::stats::Stats;
@@ -34,6 +35,7 @@ use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper::Uri;
 use hyper_rustls::HttpsConnector;
+use libsql_replication::rpc::replication::BoxReplicationService;
 #[cfg(feature = "durable-wal")]
 use libsql_storage::{DurableWalManager, LockManager};
 #[cfg(not(feature = "durable-wal"))]
@@ -114,6 +116,16 @@ pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 type StatsSender = mpsc::Sender<(NamespaceName, MetaStoreHandle, Weak<Stats>)>;
+type MakeReplicationSvc = Box<
+    dyn FnOnce(
+            NamespaceStore,
+            Option<Auth>,
+            Option<IdleShutdownKicker>,
+            bool,
+        ) -> BoxReplicationService
+        + Send
+        + 'static,
+>;
 
 // #[global_allocator]
 // static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -461,8 +473,8 @@ where
             encryption_config: self.db_config.encryption_config.clone(),
         };
 
-        let configurators = self
-            .make_configurators(
+        let (configurators, make_replication_svc) = self
+            .make_configurators_and_replication_svc(
                 base_config,
                 client_config.clone(),
                 &mut join_set,
@@ -529,6 +541,11 @@ where
                     namespace_store.clone(),
                     self.disable_namespaces,
                 ),
+            let replication_service = make_replication_svc(
+                namespace_store.clone(),
+                None,
+                idle_shutdown_kicker.clone(),
+                false,
             );
         }
 
@@ -648,14 +665,14 @@ where
         Ok(())
     }
 
-    async fn make_configurators(
+    async fn make_configurators_and_replication_svc(
         &self,
         base_config: BaseNamespaceConfig,
         client_config: Option<(Channel, Uri)>,
         join_set: &mut JoinSet<anyhow::Result<()>>,
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
-    ) -> anyhow::Result<NamespaceConfigurators> {
+    ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         let wal_path = base_config.base_path.join("wals");
         let enable_libsql_wal_test = {
             let is_primary = self.rpc_server_config.is_some();
@@ -776,7 +793,7 @@ where
         client_config: Option<(Channel, Uri)>,
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
-    ) -> anyhow::Result<NamespaceConfigurators> {
+    ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         tracing::info!("using durable wal");
         let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
         let namespace_resolver = |path: &Path| {
@@ -798,41 +815,28 @@ where
             self.storage_server_address.clone(),
         );
         let make_wal_manager = Arc::new(move || EitherWAL::C(wal.clone()));
-        self.configurators_common(
+        let configurators = self.configurators_common(
             base_config,
             client_config,
             make_wal_manager,
             migration_scheduler_handle,
             scripted_backup,
-        )
-    }
+        )?;
 
-    fn spawn_until_shutdown_on<F>(&self, join_set: &mut JoinSet<anyhow::Result<()>>, fut: F)
-    where
-        F: Future<Output = anyhow::Result<()>> + Send + 'static,
-    {
-        self.spawn_until_shutdown_with_teardown(join_set, fut, ready(Ok(())))
-    }
-
-    /// run the passed future until shutdown is called, then call the passed teardown future
-    fn spawn_until_shutdown_with_teardown<F, T>(
-        &self,
-        join_set: &mut JoinSet<anyhow::Result<()>>,
-        fut: F,
-        teardown: T,
-    ) where
-        F: Future<Output = anyhow::Result<()>> + Send + 'static,
-        T: Future<Output = anyhow::Result<()>> + Send + 'static,
-    {
-        let shutdown = self.shutdown.clone();
-        join_set.spawn(async move {
-            tokio::select! {
-                _ = shutdown.notified() => {
-                    teardown.await
-                },
-                ret = fut => ret
+        let make_replication_svc = Box::new({
+            let disable_namespaces = self.disable_namespaces;
+            move |store, client_auth, idle_shutdown, collect_stats| -> BoxReplicationService {
+                Box::new(ReplicationLogService::new(
+                    store,
+                    idle_shutdown,
+                    client_auth,
+                    disable_namespaces,
+                    collect_stats,
+                ))
             }
         });
+
+        Ok((configurators, make_replication_svc))
     }
 
     async fn legacy_configurators(
@@ -841,15 +845,30 @@ where
         client_config: Option<(Channel, Uri)>,
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
-    ) -> anyhow::Result<NamespaceConfigurators> {
+    ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         let make_wal_manager = Arc::new(|| EitherWAL::A(Sqlite3WalManager::default()));
-        self.configurators_common(
+        let configurators = self.configurators_common(
             base_config,
             client_config,
             make_wal_manager,
             migration_scheduler_handle,
             scripted_backup,
-        )
+        )?;
+
+        let make_replication_svc = Box::new({
+            let disable_namespaces = self.disable_namespaces;
+            move |store, client_auth, idle_shutdown, collect_stats| -> BoxReplicationService {
+                Box::new(ReplicationLogService::new(
+                    store,
+                    idle_shutdown,
+                    client_auth,
+                    disable_namespaces,
+                    collect_stats,
+                ))
+            }
+        });
+
+        Ok((configurators, make_replication_svc))
     }
 
     fn configurators_common(
