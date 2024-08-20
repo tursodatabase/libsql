@@ -14,7 +14,6 @@ use axum::response::{
 use axum_extra::extract::Query;
 use futures::{Stream, StreamExt};
 use hyper::HeaderMap;
-use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::boxed::Box;
 use std::convert::Infallible;
@@ -141,7 +140,7 @@ async fn listen_stream(
 ) -> impl Stream<Item = crate::Result<AggregatorEvent>> {
     async_stream::try_stream! {
         let _sub = Subscription::new(store.clone(), namespace.clone(), table.clone());
-        let mut stream = store.subscribe(namespace, table);
+        let mut stream = store.subscribe(namespace.clone(), table.clone());
 
         while let Some(item) = stream.next().await  {
             match item {
@@ -164,7 +163,7 @@ async fn listen_stream(
                         namespace = %namespace,
                         table = %table,
                         error = %e,
-                            "Unexpected error in listen stream"
+                        "Unexpected error in listen stream"
                     );
                 },
                 _ => {
