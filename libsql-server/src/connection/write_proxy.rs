@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use futures_core::future::BoxFuture;
@@ -8,7 +6,6 @@ use libsql_replication::rpc::proxy::proxy_client::ProxyClient;
 use libsql_replication::rpc::proxy::{
     exec_req, exec_resp, ExecReq, ExecResp, StreamDescribeReq, StreamProgramReq,
 };
-use libsql_sys::wal::wrapper::PassthroughWalWrapper;
 use libsql_sys::EncryptionConfig;
 use parking_lot::Mutex as PMutex;
 use tokio::sync::{mpsc, watch, Mutex};
@@ -19,72 +16,45 @@ use tonic::{Request, Streaming};
 use crate::connection::program::{DescribeCol, DescribeParam};
 use crate::error::Error;
 use crate::metrics::{REPLICA_LOCAL_EXEC_MISPREDICT, REPLICA_LOCAL_PROGRAM_EXEC};
-use crate::namespace::broadcasters::BroadcasterHandle;
-use crate::namespace::meta_store::MetaStoreHandle;
-use crate::namespace::ResolveNamespacePathFn;
 use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
-use super::connection_manager::InnerWalManager;
-use super::libsql::{LibSqlConnection, MakeLibSqlConn};
 use super::program::DescribeResponse;
 use super::{Connection, RequestContext};
 use super::{MakeConnection, Program};
 
 pub type RpcStream = Streaming<ExecResp>;
 
-pub struct MakeWriteProxyConn {
+pub struct MakeWriteProxyConn<M> {
     client: ProxyClient<Channel>,
     stats: Arc<Stats>,
     applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     max_response_size: u64,
     max_total_response_size: u64,
     primary_replication_index: Option<FrameNo>,
-    make_read_only_conn: MakeLibSqlConn<PassthroughWalWrapper>,
+    // make_read_only_conn: MakeLegacyConnection<PassthroughWalWrapper>,
+    make_read_only_conn: M,
     encryption_config: Option<EncryptionConfig>,
 }
 
-impl MakeWriteProxyConn {
+impl<M> MakeWriteProxyConn<M> {
     #[allow(clippy::too_many_arguments)]
-    pub async fn new(
-        db_path: PathBuf,
-        extensions: Arc<[PathBuf]>,
+    pub fn new(
         channel: Channel,
         uri: tonic::transport::Uri,
         stats: Arc<Stats>,
-        broadcaster: BroadcasterHandle,
-        config_store: MetaStoreHandle,
         applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         max_response_size: u64,
         max_total_response_size: u64,
         primary_replication_index: Option<FrameNo>,
         encryption_config: Option<EncryptionConfig>,
-        resolve_attach_path: ResolveNamespacePathFn,
-        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Send + Sync + 'static>,
-    ) -> crate::Result<Self> {
+        make_read_only_conn: M,
+    ) -> Self {
         let client = ProxyClient::with_origin(channel, uri);
-        let make_read_only_conn = MakeLibSqlConn::new(
-            db_path.clone(),
-            PassthroughWalWrapper,
-            stats.clone(),
-            broadcaster,
-            config_store.clone(),
-            extensions.clone(),
-            max_response_size,
-            max_total_response_size,
-            DEFAULT_AUTO_CHECKPOINT,
-            applied_frame_no_receiver.clone(),
-            encryption_config.clone(),
-            Arc::new(AtomicBool::new(false)), // this is always false for write proxy
-            resolve_attach_path,
-            make_wal_manager,
-        )
-        .await?;
-
-        Ok(Self {
+        Self {
             client,
             stats,
             applied_frame_no_receiver,
@@ -93,13 +63,16 @@ impl MakeWriteProxyConn {
             make_read_only_conn,
             primary_replication_index,
             encryption_config,
-        })
+        }
     }
 }
 
 #[async_trait::async_trait]
-impl MakeConnection for MakeWriteProxyConn {
-    type Connection = WriteProxyConnection<RpcStream>;
+impl<M> MakeConnection for MakeWriteProxyConn<M>
+where
+    M: MakeConnection,
+{
+    type Connection = WriteProxyConnection<RpcStream, M::Connection>;
     async fn create(&self) -> Result<Self::Connection> {
         Ok(WriteProxyConnection::new(
             self.client.clone(),
@@ -117,9 +90,9 @@ impl MakeConnection for MakeWriteProxyConn {
     }
 }
 
-pub struct WriteProxyConnection<R> {
+pub struct WriteProxyConnection<R, C> {
     /// Lazily initialized read connection
-    read_conn: LibSqlConnection<PassthroughWalWrapper>,
+    read_conn: C,
     write_proxy: ProxyClient<Channel>,
     state: Mutex<TxnStatus>,
     /// FrameNo of the last write performed by this connection on the primary.
@@ -136,7 +109,7 @@ pub struct WriteProxyConnection<R> {
     primary_replication_index: Option<FrameNo>,
 }
 
-impl WriteProxyConnection<RpcStream> {
+impl<C: Connection> WriteProxyConnection<RpcStream, C> {
     #[allow(clippy::too_many_arguments)]
     fn new(
         write_proxy: ProxyClient<Channel>,
@@ -144,7 +117,7 @@ impl WriteProxyConnection<RpcStream> {
         applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         builder_config: QueryBuilderConfig,
         primary_replication_index: Option<u64>,
-        read_conn: LibSqlConnection<PassthroughWalWrapper>,
+        read_conn: C,
     ) -> Result<Self> {
         Ok(Self {
             read_conn,
@@ -452,7 +425,7 @@ where
 }
 
 #[async_trait::async_trait]
-impl Connection for WriteProxyConnection<RpcStream> {
+impl<C: Connection> Connection for WriteProxyConnection<RpcStream, C> {
     async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
