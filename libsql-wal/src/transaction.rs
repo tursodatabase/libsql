@@ -155,21 +155,28 @@ pub struct WriteTransaction<F> {
 }
 
 pub struct TxGuardOwned<F> {
-    _lock: async_lock::MutexGuardArc<Option<u64>>,
-    inner: WriteTransaction<F>,
+    _lock: Option<async_lock::MutexGuardArc<Option<u64>>>,
+    inner: Option<WriteTransaction<F>>,
+}
+
+impl<F> Drop for TxGuardOwned<F> {
+    fn drop(&mut self) {
+        let _ = self._lock.take();
+        self.inner.take().expect("already dropped").downgrade();
+    }
 }
 
 impl<F> Deref for TxGuardOwned<F> {
     type Target = WriteTransaction<F>;
 
     fn deref(&self) -> &Self::Target {
-        &self.inner
+        self.inner.as_ref().expect("guard used after drop")
     }
 }
 
 impl<F> DerefMut for TxGuardOwned<F> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+        self.inner.as_mut().expect("guard used after drop")
     }
 }
 
@@ -238,8 +245,8 @@ impl<F> WriteTransaction<F> {
         match *g {
             // we still hold the lock, we can proceed
             Some(id) if self.id == id => TxGuardOwned {
-                _lock: g,
-                inner: self,
+                _lock: Some(g),
+                inner: Some(self),
             },
             // Somebody took the lock from us
             Some(_) => todo!("lock stolen"),
