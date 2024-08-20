@@ -283,6 +283,8 @@ impl<F> WriteTransaction<F> {
         let Self {
             wal_lock, read_tx, ..
         } = self;
+        // always acquire lock in this order: reserved, then tx_id
+        let mut reserved = wal_lock.reserved.lock();
         let mut lock = wal_lock.tx_id.lock_blocking();
         match *lock {
             Some(lock_id) if lock_id == read_tx.id => {
@@ -291,7 +293,7 @@ impl<F> WriteTransaction<F> {
             _ => (),
         }
 
-        if let Some(id) = *wal_lock.reserved.lock() {
+        if let Some(id) = *reserved {
             tracing::trace!("tx already reserved by {id}");
             return read_tx;
         }
@@ -304,7 +306,7 @@ impl<F> WriteTransaction<F> {
                 }
                 crossbeam::deque::Steal::Success((unparker, id)) => {
                     tracing::trace!("waking up {id}");
-                    wal_lock.reserved.lock().replace(id);
+                    reserved.replace(id);
                     unparker.unpark();
                     break;
                 }
