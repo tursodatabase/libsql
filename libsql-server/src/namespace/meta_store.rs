@@ -176,18 +176,13 @@ pub async fn metastore_connection_maker(
 }
 
 impl MetaStoreInner {
-    async fn new(
+    fn new(
         base_path: &Path,
         conn: MetaStoreConnection,
         wal_manager: MetaStoreWalManager,
         config: MetaStoreConfig,
     ) -> Result<Self> {
-        let conn = tokio::task::spawn_blocking(move || -> Result<_> {
-            setup_connection(&conn)?;
-            Ok(conn)
-        })
-        .await
-        .unwrap()?;
+        setup_connection(&conn)?;
 
         let mut this = MetaStoreInner {
             configs: Default::default(),
@@ -403,7 +398,15 @@ impl MetaStore {
 
         let destroy_on_error = config.destroy_on_error;
 
-        let inner = match MetaStoreInner::new(base_path, conn, wal_manager, config.clone()).await {
+        let maybe_inner = tokio::task::spawn_blocking({
+            let base_path = base_path.to_owned();
+            let config = config.clone();
+            move || MetaStoreInner::new(&base_path, conn, wal_manager, config.clone())
+        })
+        .await
+        .unwrap();
+
+        let inner = match maybe_inner {
             Ok(inner) => inner,
             Err(e) => {
                 if destroy_on_error {
@@ -440,7 +443,12 @@ impl MetaStore {
 
                     tracing::info!("recreating metastore and restoring with fresh data");
 
-                    let inner = MetaStoreInner::new(base_path, conn, wal, config).await?;
+                    let inner = tokio::task::spawn_blocking({
+                        let base_path = base_path.to_owned();
+                        move || MetaStoreInner::new(&base_path, conn, wal, config)
+                    })
+                    .await
+                    .unwrap()?;
 
                     tracing::info!("metastore destroy on error successful");
 
