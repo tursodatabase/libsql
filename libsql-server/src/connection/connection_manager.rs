@@ -15,27 +15,28 @@ use libsql_sys::wal::either::Either3;
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Sqlite3WalManager, Wal};
 use libsql_wal::io::StdIO;
-use libsql_wal::storage::NoStorage;
 use libsql_wal::wal::{LibsqlWal, LibsqlWalManager};
 use metrics::atomics::AtomicU64;
 use parking_lot::{Mutex, MutexGuard};
 use rusqlite::ErrorCode;
 
-use super::libsql::Connection;
+use crate::SqldStorage;
+
+use super::connection_core::CoreConnection;
 use super::TXN_TIMEOUT;
 
 pub type ConnId = u64;
 #[cfg(feature = "durable-wal")]
 
 pub type InnerWalManager =
-    Either3<Sqlite3WalManager, LibsqlWalManager<StdIO, NoStorage>, DurableWalManager>;
+    Either3<Sqlite3WalManager, LibsqlWalManager<StdIO, SqldStorage>, DurableWalManager>;
 #[cfg(feature = "durable-wal")]
 pub type InnerWal = Either3<Sqlite3Wal, LibsqlWal<StdIO>, DurableWal>;
-#[cfg(not(feature = "durable-wal"))]
 
-pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO, NoStorage>>;
 #[cfg(not(feature = "durable-wal"))]
+pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO, SqldStorage>>;
 
+#[cfg(not(feature = "durable-wal"))]
 pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO>>;
 pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, InnerWal>;
 
@@ -50,7 +51,7 @@ struct Slot {
 struct Abort(Arc<dyn Fn() + Send + Sync + 'static>);
 
 impl Abort {
-    fn from_conn<T: Wal + Send + 'static>(conn: &Arc<Mutex<Connection<T>>>) -> Self {
+    fn from_conn<T: Wal + Send + 'static>(conn: &Arc<Mutex<CoreConnection<T>>>) -> Self {
         let conn = Arc::downgrade(conn);
         Self(Arc::new(move || {
             conn.upgrade()
@@ -73,7 +74,7 @@ pub struct ConnectionManager {
 impl ConnectionManager {
     pub(super) fn register_connection<T: Wal + Send + Send + 'static>(
         &self,
-        conn: &Arc<Mutex<Connection<T>>>,
+        conn: &Arc<Mutex<CoreConnection<T>>>,
         id: ConnId,
     ) {
         let abort = Abort::from_conn(conn);

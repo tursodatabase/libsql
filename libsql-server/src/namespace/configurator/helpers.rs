@@ -8,7 +8,6 @@ use bottomless::replicator::Options;
 use bytes::Bytes;
 use enclose::enclose;
 use futures::Stream;
-use libsql_sys::wal::Sqlite3WalManager;
 use libsql_sys::EncryptionConfig;
 use tokio::io::AsyncBufReadExt as _;
 use tokio::sync::watch;
@@ -17,8 +16,8 @@ use tokio_util::io::StreamReader;
 
 use crate::connection::config::DatabaseConfig;
 use crate::connection::connection_manager::InnerWalManager;
-use crate::connection::libsql::{open_conn, MakeLibSqlConn};
-use crate::connection::{Connection as _, MakeConnection as _};
+use crate::connection::legacy::MakeLegacyConnection;
+use crate::connection::{Connection as _, MakeConnection};
 use crate::database::{PrimaryConnection, PrimaryConnectionMaker};
 use crate::error::LoadDumpError;
 use crate::namespace::broadcasters::BroadcasterHandle;
@@ -125,28 +124,30 @@ pub(super) async fn make_primary_connection_maker(
 
     tracing::debug!("Opening libsql connection");
 
-    let connection_maker = MakeLibSqlConn::new(
-        db_path.to_path_buf(),
-        wal_wrapper.clone(),
-        stats.clone(),
-        broadcaster,
-        meta_store_handle.clone(),
-        base_config.extensions.clone(),
-        base_config.max_response_size,
-        base_config.max_total_response_size,
-        auto_checkpoint,
-        logger.new_frame_notifier.subscribe(),
-        encryption_config,
-        block_writes,
-        resolve_attach_path,
-        make_wal_manager.clone(),
-    )
-    .await?
-    .throttled(
-        base_config.max_concurrent_connections.clone(),
-        Some(DB_CREATE_TIMEOUT),
-        base_config.max_total_response_size,
-        base_config.max_concurrent_requests,
+    let connection_maker = Arc::new(
+        MakeLegacyConnection::new(
+            db_path.to_path_buf(),
+            wal_wrapper.clone(),
+            stats.clone(),
+            broadcaster,
+            meta_store_handle.clone(),
+            base_config.extensions.clone(),
+            base_config.max_response_size,
+            base_config.max_total_response_size,
+            auto_checkpoint,
+            logger.new_frame_notifier.subscribe(),
+            encryption_config,
+            block_writes,
+            resolve_attach_path,
+            make_wal_manager.clone(),
+        )
+        .await?
+        .throttled(
+            base_config.max_concurrent_connections.clone(),
+            Some(DB_CREATE_TIMEOUT),
+            base_config.max_total_response_size,
+            base_config.max_concurrent_requests,
+        ),
     );
 
     tracing::debug!("Completed opening libsql connection");

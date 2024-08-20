@@ -1,20 +1,23 @@
 use std::pin::Pin;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use futures::Future;
 use hyper::Uri;
 use libsql_replication::rpc::replication::log_offset::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
+use libsql_sys::wal::wrapper::PassthroughWalWrapper;
 use tokio::task::JoinSet;
 use tonic::transport::Channel;
 
 use crate::connection::config::DatabaseConfig;
 use crate::connection::connection_manager::InnerWalManager;
+use crate::connection::legacy::MakeLegacyConnection;
 use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::MakeConnection;
 use crate::database::{Database, ReplicaDatabase};
 use crate::namespace::broadcasters::BroadcasterHandle;
-use crate::namespace::configurator::helpers::make_stats;
+use crate::namespace::configurator::helpers::{make_stats, run_storage_monitor};
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{Namespace, NamespaceBottomlessDbIdInit, RestoreOption};
 use crate::namespace::{NamespaceName, NamespaceStore, ResetCb, ResetOp, ResolveNamespacePathFn};
@@ -171,39 +174,55 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 self.base.stats_sender.clone(),
                 name.clone(),
                 applied_frame_no_receiver.clone(),
-                self.base.encryption_config.clone(),
             )
             .await?;
 
-            let connection_maker = MakeWriteProxyConn::new(
+            let connection_maker = MakeLegacyConnection::new(
                 db_path.clone(),
-                self.base.extensions.clone(),
-                channel.clone(),
-                uri.clone(),
+                PassthroughWalWrapper,
                 stats.clone(),
                 broadcaster,
                 meta_store_handle.clone(),
-                applied_frame_no_receiver,
+                self.base.extensions.clone(),
                 self.base.max_response_size,
                 self.base.max_total_response_size,
-                primary_current_replicatio_index,
-                None,
+                DEFAULT_AUTO_CHECKPOINT,
+                applied_frame_no_receiver.clone(),
+                self.base.encryption_config.clone(),
+                Arc::new(AtomicBool::new(false)), // this is always false for write proxy
                 resolve_attach_path,
                 self.make_wal_manager.clone(),
             )
-            .await?
-            .throttled(
-                self.base.max_concurrent_connections.clone(),
-                Some(DB_CREATE_TIMEOUT),
-                self.base.max_total_response_size,
-                self.base.max_concurrent_requests,
+            .await?;
+
+            let connection_maker = Arc::new(
+                MakeWriteProxyConn::new(
+                    channel.clone(),
+                    uri.clone(),
+                    stats.clone(),
+                    applied_frame_no_receiver,
+                    self.base.max_response_size,
+                    self.base.max_total_response_size,
+                    primary_current_replicatio_index,
+                    self.base.encryption_config.clone(),
+                    connection_maker,
+                )
+                .throttled(
+                    self.base.max_concurrent_connections.clone(),
+                    Some(DB_CREATE_TIMEOUT),
+                    self.base.max_total_response_size,
+                    self.base.max_concurrent_requests,
+                ),
             );
+
+            join_set.spawn(run_storage_monitor(
+                Arc::downgrade(&stats),
+                connection_maker.clone(),
+            ));
 
             Ok(Namespace {
                 tasks: join_set,
-                db: Database::Replica(ReplicaDatabase {
-                    connection_maker: Arc::new(connection_maker),
-                }),
+                db: Database::Replica(ReplicaDatabase { connection_maker }),
                 name: name.clone(),
                 stats,
                 db_config_store: meta_store_handle,

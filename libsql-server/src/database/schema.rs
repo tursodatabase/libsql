@@ -2,6 +2,8 @@
 
 use std::sync::Arc;
 
+use tokio::sync::watch::Receiver;
+
 use crate::connection::program::{check_program_auth, Program};
 use crate::connection::{MakeConnection, RequestContext};
 use crate::namespace::meta_store::MetaStoreHandle;
@@ -10,24 +12,21 @@ use crate::namespace::NamespaceName;
 use crate::query_result_builder::QueryBuilderConfig;
 use crate::schema::{perform_migration, validate_migration, MigrationJobStatus, SchedulerHandle};
 
-use super::primary::PrimaryConnectionMaker;
-use super::PrimaryConnection;
-
-pub struct SchemaConnection {
+pub struct SchemaConnection<C> {
     migration_scheduler: SchedulerHandle,
     schema: NamespaceName,
-    connection: Arc<PrimaryConnection>,
+    connection: Arc<C>,
     config: MetaStoreHandle,
 }
 
-impl SchemaConnection {
-    pub(crate) fn connection(&self) -> &PrimaryConnection {
+impl<C> SchemaConnection<C> {
+    pub(crate) fn connection(&self) -> &C {
         &self.connection
     }
 }
 
 #[async_trait::async_trait]
-impl crate::connection::Connection for SchemaConnection {
+impl<C: crate::connection::Connection> crate::connection::Connection for SchemaConnection<C> {
     async fn execute_program<B: crate::query_result_builder::QueryResultBuilder>(
         &self,
         mut migration: Program,
@@ -140,20 +139,37 @@ impl crate::connection::Connection for SchemaConnection {
     fn diagnostics(&self) -> String {
         self.connection.diagnostics()
     }
+
+    fn with_raw<R>(&self, f: impl FnOnce(&mut rusqlite::Connection) -> R) -> R {
+        self.connection().with_raw(f)
+    }
 }
 
-#[derive(Clone)]
-pub struct SchemaDatabase {
+pub struct SchemaDatabase<M> {
     migration_scheduler: SchedulerHandle,
     schema: NamespaceName,
-    connection_maker: Arc<PrimaryConnectionMaker>,
-    pub wal_wrapper: ReplicationWalWrapper,
+    connection_maker: Arc<M>,
+    pub wal_wrapper: Option<ReplicationWalWrapper>,
     config: MetaStoreHandle,
+    pub new_frame_notifier: Receiver<Option<u64>>,
+}
+
+impl<M> Clone for SchemaDatabase<M> {
+    fn clone(&self) -> Self {
+        Self {
+            migration_scheduler: self.migration_scheduler.clone(),
+            schema: self.schema.clone(),
+            connection_maker: self.connection_maker.clone(),
+            wal_wrapper: self.wal_wrapper.clone(),
+            config: self.config.clone(),
+            new_frame_notifier: self.new_frame_notifier.clone(),
+        }
+    }
 }
 
 #[async_trait::async_trait]
-impl MakeConnection for SchemaDatabase {
-    type Connection = SchemaConnection;
+impl<M: MakeConnection> MakeConnection for SchemaDatabase<M> {
+    type Connection = SchemaConnection<M::Connection>;
 
     async fn create(&self) -> crate::Result<Self::Connection, crate::error::Error> {
         let connection = Arc::new(self.connection_maker.create().await?);
@@ -166,34 +182,34 @@ impl MakeConnection for SchemaDatabase {
     }
 }
 
-impl SchemaDatabase {
+impl<M> SchemaDatabase<M> {
     pub fn new(
         migration_scheduler: SchedulerHandle,
         schema: NamespaceName,
-        connection_maker: PrimaryConnectionMaker,
-        wal_wrapper: ReplicationWalWrapper,
+        connection_maker: Arc<M>,
+        wal_wrapper: Option<ReplicationWalWrapper>,
         config: MetaStoreHandle,
+        new_frame_notifier: Receiver<Option<u64>>,
     ) -> Self {
         Self {
-            connection_maker: connection_maker.into(),
+            connection_maker,
             migration_scheduler,
             schema,
             wal_wrapper,
             config,
+            new_frame_notifier,
         }
     }
 
     pub(crate) async fn shutdown(self) -> Result<(), anyhow::Error> {
-        self.wal_wrapper
-            .wrapper()
-            .logger()
-            .closed_signal
-            .send_replace(true);
-        let wal_manager = self.wal_wrapper;
+        if let Some(wrapper) = self.wal_wrapper {
+            wrapper.wrapper().logger().closed_signal.send_replace(true);
+            let wal_manager = wrapper;
 
-        if let Some(maybe_replicator) = wal_manager.wrapped().as_ref() {
-            if let Some(mut replicator) = maybe_replicator.shutdown().await {
-                replicator.shutdown_gracefully().await?;
+            if let Some(maybe_replicator) = wal_manager.wrapped().as_ref() {
+                if let Some(mut replicator) = maybe_replicator.shutdown().await {
+                    replicator.shutdown_gracefully().await?;
+                }
             }
         }
 
@@ -201,11 +217,9 @@ impl SchemaDatabase {
     }
 
     pub(crate) fn destroy(&self) {
-        self.wal_wrapper
-            .wrapper()
-            .logger()
-            .closed_signal
-            .send_replace(true);
+        if let Some(ref wrapper) = self.wal_wrapper {
+            wrapper.wrapper().logger().closed_signal.send_replace(true);
+        }
     }
 
     pub(crate) fn connection_maker(&self) -> Self {
@@ -215,8 +229,10 @@ impl SchemaDatabase {
     pub(crate) fn replicator(
         &self,
     ) -> Option<Arc<tokio::sync::Mutex<Option<bottomless::replicator::Replicator>>>> {
-        if let Some(wal) = self.wal_wrapper.wrapped() {
-            return Some(wal.replicator());
+        if let Some(ref wrapper) = self.wal_wrapper {
+            if let Some(wal) = wrapper.wrapped() {
+                return Some(wal.replicator());
+            }
         }
         None
     }

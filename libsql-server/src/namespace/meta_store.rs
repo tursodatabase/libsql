@@ -24,7 +24,7 @@ use crate::config::BottomlessConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::{
-    config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint, error::Error, Result,
+    config::MetaStoreConfig, connection::legacy::open_conn_active_checkpoint, error::Error, Result,
 };
 
 use super::NamespaceName;

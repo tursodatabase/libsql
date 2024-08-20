@@ -152,7 +152,7 @@ mod test {
         );
 
         let wal_manager = ReplicationLoggerWalWrapper::new(logger.clone());
-        let db = crate::connection::libsql::open_conn_active_checkpoint(
+        let db = crate::connection::legacy::open_conn_active_checkpoint(
             tmp.path(),
             Sqlite3WalManager::default().wrap(wal_manager),
             None,

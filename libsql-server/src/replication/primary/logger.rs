@@ -882,7 +882,7 @@ mod test {
     use libsql_sys::wal::{Sqlite3WalManager, WalManager};
 
     use super::*;
-    use crate::connection::libsql::open_conn;
+    use crate::connection::legacy::open_conn;
     use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalWrapper;
     use crate::DEFAULT_AUTO_CHECKPOINT;
 

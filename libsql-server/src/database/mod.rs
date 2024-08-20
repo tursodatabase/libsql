@@ -45,7 +45,7 @@ pub type Result<T> = anyhow::Result<T>;
 pub enum Connection {
     Primary(PrimaryConnection),
     Replica(ReplicaConnection),
-    Schema(SchemaConnection),
+    Schema(SchemaConnection<PrimaryConnection>),
 }
 
 impl fmt::Debug for Connection {
@@ -142,7 +142,7 @@ impl crate::connection::Connection for Connection {
 pub enum Database {
     Primary(PrimaryDatabase),
     Replica(ReplicaDatabase),
-    Schema(SchemaDatabase),
+    Schema(SchemaDatabase<PrimaryConnectionMaker>),
 }
 
 impl fmt::Debug for Database {
@@ -150,7 +150,7 @@ impl fmt::Debug for Database {
         match self {
             Self::Primary(_) => write!(f, "Primary"),
             Self::Replica(_) => write!(f, "Replica"),
-            Database::Schema(_) => write!(f, "Schema"),
+            Self::Schema(_) => write!(f, "Schema"),
         }
     }
 }
@@ -184,7 +184,7 @@ impl Database {
         match self {
             Database::Primary(p) => Some(p.wal_wrapper.wrapper().logger()),
             Database::Replica(_) => None,
-            Database::Schema(s) => Some(s.wal_wrapper.wrapper().logger()),
+            Database::Schema(s) => Some(s.wal_wrapper.as_ref().unwrap().wrapper().logger()),
         }
     }
 
@@ -198,13 +198,7 @@ impl Database {
                     .subscribe(),
             ),
             Database::Replica(_) => None,
-            Database::Schema(s) => Some(
-                s.wal_wrapper
-                    .wrapper()
-                    .logger()
-                    .new_frame_notifier
-                    .subscribe(),
-            ),
+            Database::Schema(s) => Some(s.new_frame_notifier.clone()),
         }
     }
 

@@ -21,7 +21,6 @@ use super::{
 
 pub mod fork;
 mod helpers;
-// mod libsql_wal_replica;
 mod primary;
 mod replica;
 mod schema;

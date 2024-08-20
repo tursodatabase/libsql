@@ -240,7 +240,7 @@ mod test {
     use libsql_sys::wal::Sqlite3WalManager;
     use tempfile::tempdir;
 
-    use crate::connection::libsql::open_conn_active_checkpoint;
+    use crate::connection::legacy::open_conn_active_checkpoint;
     use crate::namespace::NamespaceName;
     use crate::schema::status::MigrationTask;
 
