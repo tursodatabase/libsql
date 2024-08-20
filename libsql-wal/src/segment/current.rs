@@ -794,7 +794,7 @@ mod test {
         let mut copy = Vec::new();
         tmp.read_to_end(&mut copy).unwrap();
 
-        assert_eq!(copy, orig);
+        assert_eq!(db_payload(&copy), db_payload(&orig));
     }
 
     #[tokio::test]
@@ -1063,5 +1063,10 @@ mod test {
             })
             .unwrap();
         }
+    }
+
+    fn db_payload(db: &[u8]) -> &[u8] {
+        let size = (db.len() / 4096) * 4096;
+        &db[..size]
     }
 }

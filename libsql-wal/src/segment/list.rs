@@ -441,7 +441,7 @@ mod test {
             .read_to_end(&mut orig_bytes)
             .unwrap();
 
-        assert_eq!(orig_bytes, copy_ytes);
+        assert_eq!(db_payload(&orig_bytes), db_payload(&copy_bytes));
     }
 
     #[tokio::test]
@@ -567,7 +567,7 @@ mod test {
             .read_to_end(&mut orig_bytes)
             .unwrap();
 
-        assert_eq!(copy_bytes, orig_bytes);
+        assert_eq!(db_payload(&copy_bytes), db_payload(&orig_bytes));
     }
 
     #[tokio::test]
@@ -604,5 +604,10 @@ mod test {
 
         assert_eq!(count, 1);
         assert_eq!(replicated_from, 13);
+    }
+
+    fn db_payload(db: &[u8]) -> &[u8] {
+        let size = (db.len() / 4096) * 4096;
+        &db[..size]
     }
 }

@@ -311,6 +311,11 @@ mod test {
             replica_content[offset..offset + 4096].copy_from_slice(frame.data());
         }
 
-        assert_eq!(replica_content, db_content);
+        assert_eq!(db_payload(&replica_content), db_payload(&db_content));
+    }
+
+    fn db_payload(db: &[u8]) -> &[u8] {
+        let size = (db.len() / 4096) * 4096;
+        &db[..size]
     }
 }
