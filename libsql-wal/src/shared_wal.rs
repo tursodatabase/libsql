@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -7,7 +7,8 @@ use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
 use parking_lot::{Mutex, MutexGuard};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
+use uuid::Uuid;
 
 use crate::checkpointer::CheckpointMessage;
 use crate::error::{Error, Result};
@@ -83,8 +84,16 @@ impl<IO: Io> SharedWal<IO> {
         Ok(())
     }
 
+    pub fn new_frame_notifier(&self) -> watch::Receiver<u64> {
+        self.new_frame_notifier.subscribe()
+    }
+
     pub fn db_size(&self) -> u32 {
         self.current.load().db_size()
+    }
+
+    pub fn log_id(&self) -> Uuid {
+        self.current.load().log_id()
     }
 
     #[tracing::instrument(skip_all)]
