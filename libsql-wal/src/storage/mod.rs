@@ -266,7 +266,7 @@ impl Storage for NoStorage {
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct TestStorage<IO = StdIO> {
-    inner: Arc<Mutex<TestStorageInner<IO>>>,
+    inner: Arc<async_lock::Mutex<TestStorageInner<IO>>>,
 }
 
 #[derive(Debug)]
@@ -323,7 +323,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         _config: Option<Self::Config>,
         on_store: OnStoreCallback,
     ) {
-        let mut inner = self.inner.lock();
+        let mut inner = self.inner.lock_blocking();
         if inner.store {
             let id = uuid::Uuid::new_v4();
             let out_path = inner.dir.path().join(id.to_string());
@@ -369,7 +369,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         namespace: &NamespaceName,
         _config_override: Option<Self::Config>,
     ) -> u64 {
-        let inner = self.inner.lock();
+        let inner = self.inner.lock_blocking();
         if inner.store {
             let Some(segs) = inner.stored.get(namespace) else {
                 return 0;
@@ -386,7 +386,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         frame_no: u64,
         _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
-        let inner = self.inner.lock();
+        let inner = self.inner.lock().await;
         if inner.store {
             if let Some(segs) = inner.stored.get(namespace) {
                 let Some((key, _path)) = segs.iter().find(|(k, _)| k.includes(frame_no)) else {
@@ -407,7 +407,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         key: &SegmentKey,
         _config_override: Option<Self::Config>,
     ) -> Result<Map<Arc<[u8]>>> {
-        let inner = self.inner.lock();
+        let inner = self.inner.lock().await;
         if inner.store {
             match inner.stored.get(namespace) {
                 Some(segs) => Ok(segs.get(&key).unwrap().1.clone()),
@@ -424,7 +424,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         key: &SegmentKey,
         _config_override: Option<Self::Config>,
     ) -> Result<CompactedSegment<impl FileExt>> {
-        let inner = self.inner.lock();
+        let inner = self.inner.lock().await;
         if inner.store {
             match inner.stored.get(namespace) {
                 Some(segs) => {

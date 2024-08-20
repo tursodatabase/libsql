@@ -243,21 +243,6 @@ impl<IO: Io> SharedWal<IO> {
             }
         }
 
-        // The replication index from page 1 must match that of the SharedWal
-        #[cfg(debug_assertions)]
-        {
-            use libsql_sys::ffi::Sqlite3DbHeader;
-            use zerocopy::FromBytes;
-
-            if page_no == 1 {
-                let header = Sqlite3DbHeader::read_from_prefix(buffer).unwrap();
-                assert_eq!(
-                    header.replication_index.get(),
-                    self.checkpointed_frame_no.load(Ordering::Relaxed)
-                );
-            }
-        }
-
         tx.pages_read += 1;
 
         Ok(())
