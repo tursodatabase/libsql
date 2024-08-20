@@ -21,10 +21,12 @@ use super::{
 
 pub mod fork;
 mod helpers;
+mod libsql_primary;
 mod primary;
 mod replica;
 mod schema;
 
+pub use libsql_primary::LibsqlPrimaryConfigurator;
 pub use primary::PrimaryConfigurator;
 pub use replica::ReplicaConfigurator;
 pub use schema::SchemaConfigurator;
