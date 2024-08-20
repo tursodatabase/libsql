@@ -166,7 +166,7 @@ where
         namespace: &NamespaceName,
     ) -> Result<Arc<SharedWal<IO>>> {
         if self.shutdown.load(Ordering::SeqCst) {
-            todo!("open after shutdown");
+            return Err(crate::error::Error::ShuttingDown);
         }
 
         loop {
