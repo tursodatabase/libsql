@@ -21,6 +21,7 @@ use zerocopy::AsBytes;
 use crate::error::{Error, Result};
 use crate::io::buf::IoBufMut;
 use crate::io::FileExt;
+use crate::io::Io;
 use crate::LIBSQL_MAGIC;
 use crate::LIBSQL_PAGE_SIZE;
 
@@ -167,6 +168,8 @@ pub trait Segment: Send + Sync + 'static {
     async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
     where
         B: IoBufMut + Send + 'static;
+
+    fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()>;
 }
 
 impl<T: Segment> Segment for Arc<T> {
@@ -207,6 +210,10 @@ impl<T: Segment> Segment for Arc<T> {
 
     fn size_after(&self) -> u32 {
         self.as_ref().size_after()
+    }
+
+    fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()> {
+        self.as_ref().destroy(io)
     }
 }
 
