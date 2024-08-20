@@ -14,12 +14,14 @@ use axum::response::{
 use axum_extra::extract::Query;
 use futures::{Stream, StreamExt};
 use hyper::HeaderMap;
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::boxed::Box;
 use std::convert::Infallible;
 use std::pin::Pin;
 use std::time::Duration;
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
+use tracing::{debug, warn};
 
 use super::db_factory::namespace_from_headers;
 use super::AppState;
@@ -149,9 +151,29 @@ async fn listen_stream(
                 },
                 Err(BroadcastStreamRecvError::Lagged(n)) => {
                     LISTEN_EVENTS_DROPPED.increment(n as u64);
+                    warn!(
+                        namespace = %namespace,
+                        table = %table,
+                        dropped_events = n,
+                        "Lagged event in listen stream"
+                    );
                     yield AggregatorEvent::Error(LAGGED_MSG);
                 },
-                _ => {}
+                Err(e) => {
+                    warn!(
+                        namespace = %namespace,
+                        table = %table,
+                        error = %e,
+                            "Unexpected error in listen stream"
+                    );
+                },
+                _ => {
+                    debug!(
+                        namespace = %namespace,
+                        table = %table,
+                        "Filtered out message in listen stream"
+                    );
+                }
             }
         }
     }
