@@ -158,14 +158,6 @@ async fn listen_stream(
                     );
                     yield AggregatorEvent::Error(LAGGED_MSG);
                 },
-                Err(e) => {
-                    warn!(
-                        namespace = %namespace,
-                        table = %table,
-                        error = %e,
-                        "Unexpected error in listen stream"
-                    );
-                },
                 _ => {
                     debug!(
                         namespace = %namespace,
