@@ -222,7 +222,7 @@ pub mod rpc {
     impl From<connection::program::Program> for Program {
         fn from(pgm: connection::program::Program) -> Self {
             Self {
-                steps: pgm.steps.into_iter().map(|s| s.into()).collect(),
+                steps: pgm.steps.iter().map(|s| s.clone().into()).collect(),
             }
         }
     }
