@@ -37,7 +37,7 @@ hyper-tungstenite = "0.11"
 itertools = "0.10.5"
 jsonwebtoken = "9"
 libsql = { path = "../libsql/", optional = true }
-libsql_replication = { path = "../libsql-replication" }
+libsql_replication = { path = "../libsql-replication", features = ["libsql_wal"] }
 libsql-wal = { path = "../libsql-wal/" }
 libsql-storage = { path = "../libsql-storage", optional = true }
 metrics = "0.21.1"
@@ -92,11 +92,12 @@ async-recursion = "1"
 mimalloc = "0.1.42"
 rheaper = { git = "https://github.com/MarinPostma/rheaper.git", tag = "v0.2.0", default-features = false, features = ["allocator"] }
 tar = "0.4.41"
+aws-config = "1"
+aws-sdk-s3 = "1"
+aws-smithy-runtime = "1.6.2"
 
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
-aws-config = "0.55"
-aws-sdk-s3 = "0.28"
 env_logger = "0.10"
 hyper = { workspace = true, features = ["client"] }
 insta = { version = "1.26.0", features = ["json"] }
