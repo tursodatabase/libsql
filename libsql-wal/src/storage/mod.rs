@@ -181,6 +181,9 @@ pub trait Storage: Send + Sync + 'static {
     ) -> Result<Map<Arc<[u8]>>>;
 
     async fn fetch_segment_data(
+    fn shutdown(&self) -> impl Future<Output = ()> + Send {
+        async { () }
+    }
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,

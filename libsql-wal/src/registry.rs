@@ -352,6 +352,7 @@ where
     // On shutdown, we checkpoint all the WALs. This require sealing the current segment, and when
     // checkpointing all the segments
     pub async fn shutdown(self: Arc<Self>) -> Result<()> {
+        tracing::info!("shutting down registry");
         self.shutdown.store(true, Ordering::SeqCst);
 
         let mut join_set = JoinSet::<Result<()>>::new();
@@ -391,12 +392,17 @@ where
 
         while join_set.join_next().await.is_some() {}
 
+        // we process any pending storage job, then checkpoint everything
+        self.storage.shutdown().await;
+
         // wait for checkpointer to exit
         let _ = self
             .checkpoint_notifier
             .send(CheckpointMessage::Shutdown)
             .await;
         self.checkpoint_notifier.closed().await;
+
+        tracing::info!("registry shutdown gracefully");
 
         Ok(())
     }

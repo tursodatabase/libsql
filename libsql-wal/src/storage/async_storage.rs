@@ -23,9 +23,9 @@ use super::{OnStoreCallback, RestoreOptions, Storage, StoreSegmentRequest};
 ///
 /// On shutdown, attempts to empty the queue, and flush the receiver. When the last handle of the
 /// receiver is dropped, and the queue is empty, exit.
-pub struct AsyncStorageLoop<B, IO: Io, S> {
-    receiver: mpsc::UnboundedReceiver<StorageLoopMessage<S>>,
-    scheduler: Scheduler<S>,
+pub struct AsyncStorageLoop<B: Backend, IO: Io, S> {
+    receiver: mpsc::UnboundedReceiver<StorageLoopMessage<S, B::Config>>,
+    scheduler: Scheduler<S, B::Config>,
     backend: Arc<B>,
     io: Arc<IO>,
     max_in_flight: usize,
@@ -50,6 +50,7 @@ where
     pub async fn run(mut self) {
         let mut shutting_down = false;
         let mut in_flight_futs = JoinSet::new();
+        let mut notify_shutdown = None;
         // run the loop until shutdown.
         loop {
             if shutting_down && self.scheduler.is_empty() {
@@ -92,6 +93,11 @@ where
                         Some(StorageLoopMessage::DurableFrameNoReq { namespace, ret, config_override }) => {
                             self.fetch_durable_frame_no_async(namespace, ret, config_override);
                         }
+                        Some(StorageLoopMessage::Shutdown(ret)) => {
+                            notify_shutdown.replace(ret);
+                            shutting_down = true;
+                            tracing::info!("Storage shutting down");
+                        }
                         None => {
                             shutting_down = true;
                         }
@@ -107,6 +113,10 @@ where
                     }
                 }
             }
+        }
+        tracing::info!("Storage shutdown");
+        if let Some(notify) = notify_shutdown {
+            let _ = notify.send(());
         }
     }
 
@@ -147,18 +157,19 @@ pub struct BottomlessConfig<C> {
     pub config: C,
 }
 
-enum StorageLoopMessage<S> {
-    StoreReq(StoreSegmentRequest<S>),
+enum StorageLoopMessage<S, C> {
+    StoreReq(StoreSegmentRequest<S, C>),
     DurableFrameNoReq {
         namespace: NamespaceName,
-        config_override: Option<Arc<dyn Any + Send + Sync>>,
+        config_override: Option<C>,
         ret: oneshot::Sender<super::Result<u64>>,
     },
+    Shutdown(oneshot::Sender<()>),
 }
 
 pub struct AsyncStorage<B, S> {
     /// send request to the main loop
-    job_sender: mpsc::UnboundedSender<StorageLoopMessage<S>>,
+    job_sender: mpsc::UnboundedSender<StorageLoopMessage<S, B::Config>>,
     force_shutdown: oneshot::Sender<()>,
     backend: Arc<B>,
 }
@@ -170,6 +181,12 @@ where
 {
     type Segment = S;
     type Config = B::Config;
+
+    async fn shutdown(&self) {
+        let (snd, rcv) = oneshot::channel();
+        let _ = self.job_sender.send(StorageLoopMessage::Shutdown(snd));
+        let _ = rcv.await;
+    }
 
     fn store(
         &self,
