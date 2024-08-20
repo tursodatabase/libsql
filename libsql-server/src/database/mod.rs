@@ -54,6 +54,7 @@ pub enum Connection {
     Schema(SchemaConnection<PrimaryConnection>),
     LibsqlPrimary(LibsqlPrimaryConnection),
     LibsqlReplica(LibsqlReplicaConnection),
+    LibsqlSchema(SchemaConnection<LibsqlPrimaryConnection>),
 }
 
 impl fmt::Debug for Connection {
@@ -64,6 +65,7 @@ impl fmt::Debug for Connection {
             Self::Schema(_) => write!(f, "Schema"),
             Self::LibsqlPrimary(_) => write!(f, "LibsqlPrimaryConnection"),
             Self::LibsqlReplica(_) => write!(f, "LibsqlReplicaConnection"),
+            Self::LibsqlSchema(_) => write!(f, "LibsqlSchema"),
         }
     }
 }
@@ -108,6 +110,10 @@ impl crate::connection::Connection for Connection {
                 conn.execute_program(pgm, ctx, response_builder, replication_index)
                     .await
             }
+            Connection::LibsqlSchema(conn) => {
+                conn.execute_program(pgm, ctx, response_builder, replication_index)
+                    .await
+            }
         }
     }
 
@@ -123,6 +129,7 @@ impl crate::connection::Connection for Connection {
             Connection::Schema(conn) => conn.describe(sql, ctx, replication_index).await,
             Connection::LibsqlPrimary(conn) => conn.describe(sql, ctx, replication_index).await,
             Connection::LibsqlReplica(conn) => conn.describe(sql, ctx, replication_index).await,
+            Connection::LibsqlSchema(conn) => conn.describe(sql, ctx, replication_index).await,
         }
     }
 
@@ -133,6 +140,7 @@ impl crate::connection::Connection for Connection {
             Connection::Schema(conn) => conn.is_autocommit().await,
             Connection::LibsqlPrimary(conn) => conn.is_autocommit().await,
             Connection::LibsqlReplica(conn) => conn.is_autocommit().await,
+            Connection::LibsqlSchema(conn) => conn.is_autocommit().await,
         }
     }
 
@@ -143,6 +151,7 @@ impl crate::connection::Connection for Connection {
             Connection::Schema(conn) => conn.checkpoint().await,
             Connection::LibsqlPrimary(conn) => conn.checkpoint().await,
             Connection::LibsqlReplica(conn) => conn.checkpoint().await,
+            Connection::LibsqlSchema(conn) => conn.checkpoint().await,
         }
     }
 
@@ -153,6 +162,7 @@ impl crate::connection::Connection for Connection {
             Connection::Schema(conn) => conn.vacuum_if_needed().await,
             Connection::LibsqlPrimary(conn) => conn.vacuum_if_needed().await,
             Connection::LibsqlReplica(conn) => conn.vacuum_if_needed().await,
+            Connection::LibsqlSchema(conn) => conn.vacuum_if_needed().await,
         }
     }
 
@@ -163,6 +173,7 @@ impl crate::connection::Connection for Connection {
             Connection::Schema(conn) => conn.diagnostics(),
             Connection::LibsqlPrimary(conn) => conn.diagnostics(),
             Connection::LibsqlReplica(conn) => conn.diagnostics(),
+            Connection::LibsqlSchema(conn) => conn.diagnostics(),
         }
     }
 }
@@ -173,6 +184,7 @@ pub enum Database {
     Schema(SchemaDatabase<PrimaryConnectionMaker>),
     LibsqlPrimary(LibsqlPrimaryDatabase),
     LibsqlReplica(LibsqlReplicaDatabase),
+    LibsqlSchema(SchemaDatabase<LibsqlPrimaryConnectionMaker>),
 }
 
 impl fmt::Debug for Database {
@@ -183,6 +195,7 @@ impl fmt::Debug for Database {
             Self::Schema(_) => write!(f, "Schema"),
             Self::LibsqlPrimary(_) => write!(f, "LibsqlPrimary"),
             Self::LibsqlReplica(_) => write!(f, "LibsqlReplica"),
+            Self::LibsqlSchema(_) => write!(f, "LibsqlSchema"),
         }
     }
 }
@@ -199,6 +212,9 @@ impl Database {
             Database::LibsqlReplica(db) => {
                 Arc::new(db.connection_maker().map(Connection::LibsqlReplica))
             }
+            Database::LibsqlSchema(db) => {
+                Arc::new(db.connection_maker().map(Connection::LibsqlSchema))
+            }
         }
     }
 
@@ -209,6 +225,7 @@ impl Database {
             Database::Schema(db) => db.destroy(),
             Database::LibsqlPrimary(db) => db.destroy(),
             Database::LibsqlReplica(db) => db.destroy(),
+            Database::LibsqlSchema(db) => db.destroy(),
         }
     }
 
@@ -219,6 +236,7 @@ impl Database {
             Database::Schema(db) => db.shutdown().await,
             Database::LibsqlPrimary(db) => db.shutdown().await,
             Database::LibsqlReplica(db) => db.shutdown().await,
+            Database::LibsqlSchema(db) => db.shutdown().await,
         }
     }
 
@@ -229,6 +247,10 @@ impl Database {
             Database::Schema(s) => Some(s.wal_wrapper.as_ref().unwrap().wrapper().logger()),
             Database::LibsqlPrimary(_) => None,
             Database::LibsqlReplica(_) => None,
+            Database::LibsqlSchema(s) => Some(s.wal_wrapper.as_ref().unwrap().wrapper().logger()),
+        }
+    }
+
     pub fn block_writes(&self) -> Option<Arc<AtomicBool>> {
         match self {
             Self::Primary(p) => Some(p.block_writes.clone()),
@@ -250,6 +272,7 @@ impl Database {
             Database::Schema(s) => Some(s.new_frame_notifier.clone()),
             Database::LibsqlPrimary(p) => Some(p.new_frame_notifier.clone()),
             Database::LibsqlReplica(_) => None,
+            Database::LibsqlSchema(s) => Some(s.new_frame_notifier.clone()),
         }
     }
 
@@ -260,11 +283,10 @@ impl Database {
         }
     }
 
-    pub(crate) fn as_schema(&self) -> Option<&SchemaDatabase> {
-        if let Self::Schema(v) = self {
-            Some(v)
-        } else {
-            None
+    pub(crate) fn is_schema(&self) -> bool {
+        match self {
+            Self::Schema(_) => true,
+            _ => false,
         }
     }
 
@@ -275,6 +297,7 @@ impl Database {
             Database::Schema(db) => db.replicator(),
             Database::LibsqlPrimary(_) => None,
             Database::LibsqlReplica(_) => None,
+            Database::LibsqlSchema(_) => None,
         }
     }
 }
