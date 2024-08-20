@@ -57,10 +57,20 @@ pub struct SharedWal<IO: Io> {
 }
 
 impl<IO: Io> SharedWal<IO> {
+    #[tracing::instrument(skip(self), fields(namespace = self.namespace.as_str()))]
     pub fn shutdown(&self) -> Result<()> {
+        tracing::info!("started namespace shutdown");
         self.shutdown.store(true, Ordering::SeqCst);
-        let mut tx = Transaction::Read(self.begin_read(u64::MAX));
-        self.upgrade(&mut tx)?;
+        // fixme: for infinite loop
+        let mut tx = loop {
+            let mut tx = Transaction::Read(self.begin_read(u64::MAX));
+            match self.upgrade(&mut tx) {
+                Ok(_) => break tx,
+                Err(Error::BusySnapshot) => continue,
+                Err(e) => return Err(e),
+            }
+        };
+
         {
             let mut tx = tx.as_write_mut().unwrap().lock();
             tx.commit();
@@ -69,6 +79,7 @@ impl<IO: Io> SharedWal<IO> {
         // The current segment will not be used anymore. It's empty, but we still seal it so that
         // the next startup doesn't find an unsealed segment.
         self.current.load().seal()?;
+        tracing::info!("namespace shutdown");
         Ok(())
     }
 
