@@ -164,30 +164,36 @@ pub trait Storage: Send + Sync + 'static {
         config_override: Option<Self::Config>,
     ) -> Result<()>;
 
-    async fn find_segment(
+    fn find_segment(
         &self,
         namespace: &NamespaceName,
         frame_no: u64,
-    ) -> Result<SegmentKey>;
         config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<SegmentKey>> + Send;
 
-    async fn fetch_segment_index(
+    fn fetch_segment_index(
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-    ) -> Result<Map<Arc<[u8]>>>;
         config_override: Option<Self::Config>,
-        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<Map<Arc<[u8]>>>> + Send;
 
-    async fn fetch_segment_data(
+    fn fetch_segment_data(
+        &self,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<CompactedSegment<impl FileExt>>> + Send;
+
     fn shutdown(&self) -> impl Future<Output = ()> + Send {
         async { () }
     }
+    fn fetch_segment_index(
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-    ) -> Result<CompactedSegment<impl FileExt>>;
         config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<Map<Arc<[u8]>>>> + Send {
 }
 
 /// a placeholder storage that doesn't store segment
