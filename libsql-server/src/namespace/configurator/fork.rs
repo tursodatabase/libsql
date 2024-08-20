@@ -55,7 +55,7 @@ pub(super) async fn fork(
 
     let logger = match &from_ns.db {
         Database::Primary(db) => db.wal_wrapper.wrapper().logger(),
-        Database::Schema(db) => db.wal_wrapper.wrapper().logger(),
+        Database::Schema(db) => db.wal_wrapper.as_ref().unwrap().wrapper().logger(),
         _ => {
             return Err(crate::Error::Fork(ForkError::Internal(anyhow::Error::msg(
                 "Invalid source database type for fork",
