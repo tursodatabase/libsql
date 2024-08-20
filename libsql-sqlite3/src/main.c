@@ -108,6 +108,7 @@ const char libsql_version[] = LIBSQL_VERSION;
 const char *sqlite3_libversion(void){ return sqlite3_version; }
 
 const char *libsql_libversion(void){ return LIBSQL_VERSION; }
+const char *libsql_sourceid(void){ return LIBSQL_SOURCE_ID; }
 
 /* IMPLEMENTATION-OF: R-25063-23286 The sqlite3_sourceid() function returns a
 ** pointer to a string constant whose value is the same as the

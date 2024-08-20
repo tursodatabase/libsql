@@ -1,0 +1,2 @@
+#!/bin/env sh
+echo "$(date -u +%Y-%m-%dT%H:%M:%S) $(git rev-parse HEAD)"

@@ -1007,6 +1007,32 @@ static void versionFunc(
 }
 
 /*
+** Implementation of the libsql_version() function.  The result is the version
+** of the LibSQL library that is running.
+*/
+static void libsqlVersionFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **NotUsed2
+){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  sqlite3_result_text(context, libsql_libversion(), -1, SQLITE_STATIC);
+}
+
+/*
+** Implementation of the libsql_version() function.  The result is the version
+** of the LibSQL library that is running.
+*/
+static void libsqlSourceidFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **NotUsed2
+){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  sqlite3_result_text(context, libsql_sourceid(), -1, SQLITE_STATIC);
+}
+
+/*
 ** Implementation of the sqlite_source_id() function. The result is a string
 ** that identifies the particular version of the source code used to build
 ** SQLite.
@@ -2783,7 +2809,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
+    DFUNCTION(libsql_version,    0, 0, 0, libsqlVersionFunc),
     DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
+    DFUNCTION(libsql_source_id,  0, 0, 0, libsqlSourceidFunc),
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     VFUNCTION(last_insert_rowid, 0, 0, 0, last_insert_rowid),

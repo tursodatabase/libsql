@@ -154,6 +154,7 @@ extern "C" {
 #define SQLITE_SOURCE_ID      "--SOURCE-ID--"
 
 #define LIBSQL_VERSION        "--LIBSQL-VERS--"
+#define LIBSQL_SOURCE_ID      "--LIBSQL-SOURCE-ID--"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -193,6 +194,7 @@ const char *sqlite3_sourceid(void);
 int sqlite3_libversion_number(void);
 
 const char *libsql_libversion(void);
+const char *libsql_sourceid(void);
 
 /*
 ** CAPI3REF: Run-Time Library Compilation Options Diagnostics
