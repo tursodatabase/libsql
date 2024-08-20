@@ -30,19 +30,6 @@ pub(crate) struct Job<T, C> {
     pub(crate) request: IndexedRequest<T, C>,
 }
 
-// #[repr(transparent)]
-// struct BytesLike<T>(pub T);
-//
-// impl<T> AsRef<[u8]> for BytesLike<T>
-// where
-//     T: AsBytes,
-// {
-//     fn as_ref(&self) -> &[u8] {
-//         self.0.as_bytes()
-//     }
-// }
-//
-impl<Seg> Job<Seg>
 impl<Seg, C> Job<Seg, C>
 where
     Seg: Segment,
