@@ -1,6 +1,6 @@
-use std::io;
 use std::path::Path;
 use std::sync::Arc;
+use std::{future::Future, io};
 
 use chrono::{DateTime, Utc};
 use rand::{rngs::ThreadRng, thread_rng, Rng};
@@ -40,6 +40,8 @@ pub trait Io: Send + Sync + 'static {
             Uuid::from_u128(n)
         })
     }
+
+    fn remove_file_async(&self, path: &Path) -> impl Future<Output = io::Result<()>> + Send;
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -90,6 +92,10 @@ impl Io for StdIO {
     {
         f(&mut thread_rng())
     }
+
+    async fn remove_file_async(&self, path: &Path) -> io::Result<()> {
+        tokio::fs::remove_file(path).await
+    }
 }
 
 impl<T: Io> Io for Arc<T> {
@@ -132,6 +138,10 @@ impl<T: Io> Io for Arc<T> {
         F: FnOnce(&mut Self::Rng) -> R,
     {
         self.as_ref().with_rng(f)
+    }
+
+    async fn remove_file_async(&self, path: &Path) -> io::Result<()> {
+        self.as_ref().remove_file_async(path).await
     }
 }
 

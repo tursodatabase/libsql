@@ -144,10 +144,6 @@ impl Io for FlakyIo {
         todo!()
     }
 
-    fn uuid(&self) -> uuid::Uuid {
-        todo!()
-    }
-
     fn hard_link(&self, _src: &Path, _dst: &Path) -> std::io::Result<()> {
         todo!()
     }
@@ -157,6 +153,13 @@ impl Io for FlakyIo {
         F: FnOnce(&mut Self::Rng) -> R,
     {
         f(&mut self.rng.lock())
+    }
+
+    fn remove_file_async(
+        &self,
+        path: &Path,
+    ) -> impl std::future::Future<Output = std::io::Result<()>> + Send {
+        async move { self.with_random_failure(|| std::fs::remove_file(path)) }
     }
 }
 

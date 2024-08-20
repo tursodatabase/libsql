@@ -1015,6 +1015,13 @@ mod test {
             {
                 f(&mut rand::thread_rng())
             }
+
+            fn remove_file_async(
+                &self,
+                path: &std::path::Path,
+            ) -> impl std::future::Future<Output = io::Result<()>> + Send {
+                async move { std::fs::remove_file(path) }
+            }
         }
 
         let tmp = Arc::new(tempdir().unwrap());
