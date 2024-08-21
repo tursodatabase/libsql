@@ -264,7 +264,6 @@ async fn list_bucket(bucket: &str) -> Vec<String> {
         .expect("failed to list objects");
     objects
         .contents()
-        .unwrap()
         .iter()
         .map(|x| String::from(x.key().unwrap()))
         .collect()
