@@ -432,7 +432,6 @@ async fn do_not_restore_from_corrupted_db() {
 
         tracing::info!("Ready to remove files from S3");
         let client = s3_client().await.expect("failed to create s3 client");
-        let mut i = 0;
         for key in list_bucket(BUCKET).await {
             // delete full snapshot files
             let should_delete =
@@ -502,23 +501,8 @@ async fn do_not_restore_from_corrupted_db() {
         let db_job = start_db(2, make_server().await);
         sleep(Duration::from_secs(2)).await;
 
-        let result = sql(&conn, ["SELECT COUNT(*) as cnt FROM t"]).await.unwrap();
-        let count = result
-            .first()
-            .unwrap()
-            .clone()
-            .into_result_set()
-            .unwrap()
-            .rows[0]
-            .cells["cnt"]
-            .clone();
-        if let Value::Integer(x) = count {
-            dbg!(x);
-            assert!(0 < x && x < 128);
-        } else {
-            assert!(false);
-        }
-        db_job.await.unwrap();
+        assert!(sql(&conn, ["SELECT COUNT(*) as cnt FROM t"]).await.is_err());
+        assert!(db_job.await.is_err());
         drop(cleaner);
     }
 }
