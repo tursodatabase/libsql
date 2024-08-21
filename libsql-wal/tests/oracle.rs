@@ -170,7 +170,8 @@ fn compare_db_files(sqlite: &Path, libsql: &Path) {
     let len1 = db1.metadata().unwrap().len();
     let len2 = db2.metadata().unwrap().len();
 
-    assert_eq!(len1, len2);
+    // sqlite file may contain a footer, compare only the data portions of the db files.
+    assert_eq!(len1, 4096 * (len2 / 4096));
 
     let n_pages = len1 / 4096;
     let mut buf1 = [0; 4096];

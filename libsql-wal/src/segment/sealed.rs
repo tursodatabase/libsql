@@ -183,6 +183,14 @@ where
     fn size_after(&self) -> u32 {
         self.header().size_after()
     }
+
+    fn destroy<IO: crate::io::Io>(&self, io: &IO) -> impl std::future::Future<Output = ()> {
+        async move {
+            if let Err(e) = io.remove_file_async(&self.path).await {
+                tracing::error!("failed to remove segment file {:?}: {e}", self.path);
+            }
+        }
+    }
 }
 
 impl<F: FileExt> SealedSegment<F> {

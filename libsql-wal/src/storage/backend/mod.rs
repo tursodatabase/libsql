@@ -31,7 +31,7 @@ pub struct DbMeta {
 
 pub trait Backend: Send + Sync + 'static {
     /// Config type associated with the Storage
-    type Config: Send + Sync + 'static;
+    type Config: Clone + Send + Sync + 'static;
 
     /// Store `segment_data` with its associated `meta`
     fn store(
@@ -42,19 +42,19 @@ pub trait Backend: Send + Sync + 'static {
         segment_index: Vec<u8>,
     ) -> impl Future<Output = Result<()>> + Send;
 
-    async fn find_segment(
+    fn find_segment(
         &self,
         config: &Self::Config,
         namespace: &NamespaceName,
         frame_no: u64,
-    ) -> Result<SegmentKey>;
+    ) -> impl Future<Output = Result<SegmentKey>> + Send;
 
-    async fn fetch_segment_index(
+    fn fetch_segment_index(
         &self,
         config: &Self::Config,
         namespace: &NamespaceName,
         key: &SegmentKey,
-    ) -> Result<Map<Arc<[u8]>>>;
+    ) -> impl Future<Output = Result<Map<Arc<[u8]>>>> + Send;
 
     /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
     async fn fetch_segment_data_to_file(
@@ -67,12 +67,12 @@ pub trait Backend: Send + Sync + 'static {
 
     // this method taking self: Arc<Self> is an infortunate consequence of rust type system making
     // impl FileExt variant with all the arguments, with no escape hatch...
-    async fn fetch_segment_data(
+    fn fetch_segment_data(
         self: Arc<Self>,
-        config: Arc<Self::Config>,
+        config: Self::Config,
         namespace: NamespaceName,
         key: SegmentKey,
-    ) -> Result<impl FileExt>;
+    ) -> impl Future<Output = Result<impl FileExt>> + Send;
 
     // /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
     async fn fetch_segment(
@@ -99,7 +99,7 @@ pub trait Backend: Send + Sync + 'static {
     ) -> Result<()>;
 
     /// Returns the default configuration for this storage
-    fn default_config(&self) -> Arc<Self::Config>;
+    fn default_config(&self) -> Self::Config;
 }
 
 impl<T: Backend> Backend for Arc<T> {
@@ -132,7 +132,7 @@ impl<T: Backend> Backend for Arc<T> {
         self.as_ref().meta(config, namespace).await
     }
 
-    fn default_config(&self) -> Arc<Self::Config> {
+    fn default_config(&self) -> Self::Config {
         self.as_ref().default_config()
     }
 
@@ -184,7 +184,7 @@ impl<T: Backend> Backend for Arc<T> {
 
     async fn fetch_segment_data(
         self: Arc<Self>,
-        config: Arc<Self::Config>,
+        config: Self::Config,
         namespace: NamespaceName,
         key: SegmentKey,
     ) -> Result<impl FileExt> {

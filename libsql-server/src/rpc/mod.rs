@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use hyper_rustls::TlsAcceptor;
-use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
+use libsql_replication::rpc::replication::replication_log_server::ReplicationLogServer;
+use libsql_replication::rpc::replication::{BoxReplicationService, NAMESPACE_METADATA_KEY};
 use rustls::server::AllowAnyAuthenticatedClient;
 use rustls::RootCertStore;
 use tonic::Status;
@@ -12,17 +13,14 @@ use tracing::Span;
 
 use crate::config::TlsConfig;
 use crate::metrics::CLIENT_VERSION;
-use crate::namespace::{NamespaceName, NamespaceStore};
+use crate::namespace::NamespaceName;
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
-pub use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
-use crate::rpc::replication_log::ReplicationLogService;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
 pub mod proxy;
 pub mod replica_proxy;
-pub mod replication_log;
-pub mod replication_log_proxy;
+pub mod replication;
 pub mod streaming_exec;
 
 pub async fn run_rpc_server<A: crate::net::Accept>(
@@ -30,17 +28,8 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
     acceptor: A,
     maybe_tls: Option<TlsConfig>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
-    namespaces: NamespaceStore,
-    disable_namespaces: bool,
+    service: BoxReplicationService,
 ) -> anyhow::Result<()> {
-    let logger_service = ReplicationLogService::new(
-        namespaces.clone(),
-        idle_shutdown_layer.clone(),
-        None,
-        disable_namespaces,
-        false,
-    );
-
     if let Some(tls_config) = maybe_tls {
         let cert_pem = tokio::fs::read_to_string(&tls_config.cert).await?;
         let certs = rustls_pemfile::certs(&mut cert_pem.as_bytes())?;
@@ -76,7 +65,7 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
         let router = tonic::transport::Server::builder()
             .layer(&option_layer(idle_shutdown_layer))
             .add_service(ProxyServer::new(proxy_service))
-            .add_service(ReplicationLogServer::new(logger_service))
+            .add_service(ReplicationLogServer::new(service))
             .into_router();
 
         let svc = ServiceBuilder::new()
@@ -96,7 +85,7 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
         hyper::server::Server::builder(acceptor).serve(h2c).await?;
     } else {
         let proxy = ProxyServer::new(proxy_service);
-        let replication = ReplicationLogServer::new(logger_service);
+        let replication = ReplicationLogServer::new(service);
 
         let router = tonic::transport::Server::builder()
             .layer(&option_layer(idle_shutdown_layer))

@@ -60,7 +60,7 @@ pub fn validate_migration(migration: &mut Program) -> Result<(), Error> {
         ) {
             return Err(Error::MigrationContainsTransactionStatements);
         }
-        migration.steps[0].query = Query {
+        migration.steps_mut().unwrap()[0].query = Query {
             stmt: Statement::parse("PRAGMA max_page_count")
                 .next()
                 .unwrap()
@@ -72,7 +72,7 @@ pub fn validate_migration(migration: &mut Program) -> Result<(), Error> {
             if !matches!(step.query.stmt.kind, StmtKind::TxnEnd) {
                 break;
             }
-            migration.steps.pop();
+            migration.steps_mut().unwrap().pop();
         }
     }
     if migration.steps().iter().any(|s| s.query.stmt.kind.is_txn()) {

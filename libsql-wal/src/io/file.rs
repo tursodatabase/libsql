@@ -2,6 +2,8 @@ use std::fs::File;
 use std::future::Future;
 use std::io::{self, ErrorKind, IoSlice, Result, Write};
 
+use libsql_sys::wal::either::Either;
+
 use super::buf::{IoBuf, IoBufMut};
 
 pub trait FileExt: Send + Sync + 'static {
@@ -71,6 +73,93 @@ pub trait FileExt: Send + Sync + 'static {
         buf: B,
         offset: u64,
     ) -> impl Future<Output = (B, Result<()>)> + Send;
+}
+
+impl<U, V> FileExt for Either<U, V>
+where
+    V: FileExt,
+    U: FileExt,
+{
+    fn len(&self) -> io::Result<u64> {
+        match self {
+            Either::A(x) => x.len(),
+            Either::B(x) => x.len(),
+        }
+    }
+
+    fn write_at_vectored(&self, bufs: &[IoSlice], offset: u64) -> Result<usize> {
+        match self {
+            Either::A(x) => x.write_at_vectored(bufs, offset),
+            Either::B(x) => x.write_at_vectored(bufs, offset),
+        }
+    }
+
+    fn write_at(&self, buf: &[u8], offset: u64) -> Result<usize> {
+        match self {
+            Either::A(x) => x.write_at(buf, offset),
+            Either::B(x) => x.write_at(buf, offset),
+        }
+    }
+
+    fn read_at(&self, buf: &mut [u8], offset: u64) -> Result<usize> {
+        match self {
+            Either::A(x) => x.read_at(buf, offset),
+            Either::B(x) => x.read_at(buf, offset),
+        }
+    }
+
+    fn sync_all(&self) -> Result<()> {
+        match self {
+            Either::A(x) => x.sync_all(),
+            Either::B(x) => x.sync_all(),
+        }
+    }
+
+    fn set_len(&self, len: u64) -> Result<()> {
+        match self {
+            Either::A(x) => x.set_len(len),
+            Either::B(x) => x.set_len(len),
+        }
+    }
+
+    fn read_exact_at_async<B: IoBufMut + Send + 'static>(
+        &self,
+        buf: B,
+        offset: u64,
+    ) -> impl Future<Output = (B, Result<()>)> + Send {
+        async move {
+            match self {
+                Either::A(x) => x.read_exact_at_async(buf, offset).await,
+                Either::B(x) => x.read_exact_at_async(buf, offset).await,
+            }
+        }
+    }
+
+    fn read_at_async<B: IoBufMut + Send + 'static>(
+        &self,
+        buf: B,
+        offset: u64,
+    ) -> impl Future<Output = (B, Result<usize>)> + Send {
+        async move {
+            match self {
+                Either::A(x) => x.read_at_async(buf, offset).await,
+                Either::B(x) => x.read_at_async(buf, offset).await,
+            }
+        }
+    }
+
+    fn write_all_at_async<B: IoBuf + Send + 'static>(
+        &self,
+        buf: B,
+        offset: u64,
+    ) -> impl Future<Output = (B, Result<()>)> + Send {
+        async move {
+            match self {
+                Either::A(x) => x.write_all_at_async(buf, offset).await,
+                Either::B(x) => x.write_all_at_async(buf, offset).await,
+            }
+        }
+    }
 }
 
 impl FileExt for File {

@@ -15,7 +15,8 @@ const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
 const LIBSQL_PAGE_SIZE: u16 = 4096;
 const LIBSQL_WAL_VERSION: u16 = 1;
 
-use zerocopy::byteorder::big_endian::{U16 as bu16, U64 as bu64};
+use uuid::Uuid;
+use zerocopy::byteorder::big_endian::{U128 as bu128, U16 as bu16, U64 as bu64};
 /// LibsqlFooter is located at the end of the libsql file. I contains libsql specific metadata,
 /// while remaining fully compatible with sqlite (which just ignores that footer)
 ///
@@ -29,6 +30,14 @@ pub struct LibsqlFooter {
     /// only valid if there are no outstanding segments to checkpoint, since a checkpoint could be
     /// partial.
     pub replication_index: bu64,
+    /// Id of the log for this this database
+    pub log_id: bu128,
+}
+
+impl LibsqlFooter {
+    pub fn log_id(&self) -> Uuid {
+        Uuid::from_u128(self.log_id.get())
+    }
 }
 
 #[cfg(any(debug_assertions, test))]

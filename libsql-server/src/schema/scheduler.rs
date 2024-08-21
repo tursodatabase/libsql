@@ -10,7 +10,6 @@ use tokio::task::JoinSet;
 
 use crate::connection::program::Program;
 use crate::connection::{Connection, MakeConnection};
-use crate::database::PrimaryConnectionMaker;
 use crate::namespace::meta_store::{MetaStore, MetaStoreConnection};
 use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::query_result_builder::{IgnoreResult, QueryBuilderConfig};
@@ -346,16 +345,20 @@ impl Scheduler {
 
         // enqueue some work
         if let Some(task) = self.current_batch.pop() {
-            let (connection_maker, block_writes) =
-                self.namespace_store
-                    .with(task.namespace(), move |ns| {
-                        let db = ns.db.as_primary().expect(
-                            "attempting to perform schema migration on non-primary database",
-                        );
-                        (db.connection_maker().clone(), db.block_writes.clone())
-                    })
-                    .await
-                    .map_err(|e| Error::NamespaceLoad(Box::new(e)))?;
+            let (connection_maker, block_writes) = self
+                .namespace_store
+                .with(task.namespace(), move |ns| {
+                    assert!(
+                        ns.db.is_primary(),
+                        "attempting to perform schema migration on non-primary database"
+                    );
+                    (
+                        ns.db.connection_maker().clone(),
+                        ns.db.block_writes().unwrap(),
+                    )
+                })
+                .await
+                .map_err(|e| Error::NamespaceLoad(Box::new(e)))?;
 
             // we block the writes before enqueuing the task, it makes testing predictable
             if *task.status() == MigrationTaskStatus::Enqueued {
@@ -426,7 +429,7 @@ async fn try_step_task(
     _permit: OwnedSemaphorePermit,
     namespace_store: NamespaceStore,
     migration_db: Arc<Mutex<MetaStoreConnection>>,
-    connection_maker: Arc<PrimaryConnectionMaker>,
+    connection_maker: Arc<dyn MakeConnection<Connection = crate::database::Connection>>,
     job_status: MigrationJobStatus,
     migration: Arc<Program>,
     mut task: MigrationTask,
@@ -477,7 +480,7 @@ async fn try_step_task(
 
 async fn try_step_task_inner(
     namespace_store: NamespaceStore,
-    connection_maker: Arc<PrimaryConnectionMaker>,
+    connection_maker: Arc<dyn MakeConnection<Connection = crate::database::Connection>>,
     job_status: MigrationJobStatus,
     migration: Arc<Program>,
     task: &MigrationTask,
@@ -739,11 +742,11 @@ async fn step_job_run_success(
         // TODO: check that all tasks actually reported success before migration
         let connection_maker = namespace_store
             .with(schema.clone(), |ns| {
-                ns.db
-                    .as_schema()
-                    .expect("expected database to be a schema database")
-                    .connection_maker()
-                    .clone()
+                assert!(
+                    ns.db.is_schema(),
+                    "expected database to be a schema database"
+                );
+                ns.db.connection_maker()
             })
             .await
             .map_err(|e| Error::NamespaceLoad(Box::new(e)))?;
@@ -753,30 +756,28 @@ async fn step_job_run_success(
             .await
             .map_err(|e| Error::FailedToConnect(schema.clone(), e.into()))?;
         tokio::task::spawn_blocking(move || -> Result<(), Error> {
-            connection
-                .connection()
-                .with_raw(|conn| -> Result<(), Error> {
-                    let mut txn = conn.transaction()?;
-                    let schema_version =
-                        txn.query_row("PRAGMA schema_version", (), |row| row.get::<_, i64>(0))?;
+            connection.with_raw(|conn| -> Result<(), Error> {
+                let mut txn = conn.transaction()?;
+                let schema_version =
+                    txn.query_row("PRAGMA schema_version", (), |row| row.get::<_, i64>(0))?;
 
-                    if schema_version != job_id {
-                        // todo: use proper builder and collect errors
-                        let (ret, _status) = perform_migration(
-                            &mut txn,
-                            &migration,
-                            false,
-                            IgnoreResult,
-                            &QueryBuilderConfig::default(),
-                        );
-                        let _error = ret.err().map(|e| e.to_string());
-                        txn.pragma_update(None, "schema_version", job_id)?;
-                        // update schema version to job_id?
-                        txn.commit()?;
-                    }
+                if schema_version != job_id {
+                    // todo: use proper builder and collect errors
+                    let (ret, _status) = perform_migration(
+                        &mut txn,
+                        &migration,
+                        false,
+                        IgnoreResult,
+                        &QueryBuilderConfig::default(),
+                    );
+                    let _error = ret.err().map(|e| e.to_string());
+                    txn.pragma_update(None, "schema_version", job_id)?;
+                    // update schema version to job_id?
+                    txn.commit()?;
+                }
 
-                    Ok(())
-                })
+                Ok(())
+            })
         })
         .await
         .expect("task panicked")?;
@@ -809,7 +810,7 @@ mod test {
     use crate::connection::config::DatabaseConfig;
     use crate::database::DatabaseKind;
     use crate::namespace::configurator::{
-        BaseNamespaceConfig, NamespaceConfigurators, PrimaryConfigurator, PrimaryExtraConfig,
+        BaseNamespaceConfig, NamespaceConfigurators, PrimaryConfig, PrimaryConfigurator,
         SchemaConfigurator,
     };
     use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
@@ -863,10 +864,8 @@ mod test {
 
         let (block_write, ns_conn_maker) = store
             .with("ns".into(), |ns| {
-                (
-                    ns.db.as_primary().unwrap().block_writes.clone(),
-                    ns.db.as_primary().unwrap().connection_maker(),
-                )
+                assert!(ns.db.is_primary());
+                (ns.db.block_writes().unwrap(), ns.db.connection_maker())
             })
             .await
             .unwrap();
@@ -920,7 +919,7 @@ mod test {
             encryption_config: None,
         };
 
-        let primary_config = PrimaryExtraConfig {
+        let primary_config = PrimaryConfig {
             max_log_size: 1000000000,
             max_log_duration: None,
             bottomless_replication: None,
@@ -989,10 +988,8 @@ mod test {
 
             let (block_write, ns_conn_maker) = store
                 .with("ns".into(), |ns| {
-                    (
-                        ns.db.as_primary().unwrap().block_writes.clone(),
-                        ns.db.as_primary().unwrap().connection_maker(),
-                    )
+                    assert!(ns.db.is_primary());
+                    (ns.db.block_writes().unwrap(), ns.db.connection_maker())
                 })
                 .await
                 .unwrap();
@@ -1040,11 +1037,11 @@ mod test {
 
         store
             .with("ns".into(), |ns| {
+                assert!(ns.db.is_primary());
                 assert!(ns
                     .db
-                    .as_primary()
+                    .block_writes()
                     .unwrap()
-                    .block_writes
                     .load(std::sync::atomic::Ordering::Relaxed));
             })
             .await

@@ -16,7 +16,7 @@ use tempfile::NamedTempFile;
 use uuid::Uuid;
 use zerocopy::{AsBytes, FromZeroes};
 
-use crate::connection::libsql::open_conn_active_checkpoint;
+use crate::connection::legacy::open_conn_active_checkpoint;
 use crate::namespace::NamespaceName;
 
 use super::FrameNo;

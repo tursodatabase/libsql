@@ -15,12 +15,13 @@ use std::mem::size_of;
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
-use zerocopy::byteorder::little_endian::{U16, U32, U64};
+use zerocopy::byteorder::little_endian::{U128, U16, U32, U64};
 use zerocopy::AsBytes;
 
 use crate::error::{Error, Result};
 use crate::io::buf::IoBufMut;
 use crate::io::FileExt;
+use crate::io::Io;
 use crate::LIBSQL_MAGIC;
 use crate::LIBSQL_PAGE_SIZE;
 
@@ -62,6 +63,7 @@ pub struct SegmentHeader {
     /// right now we only support 4096, but if se decided to support other sizes,
     /// we could do it without changing the header
     pub page_size: U16,
+    pub log_id: U128,
 
     /// checksum of the header fields, excluding the checksum itself. This field must be the last
     pub header_cheksum: U32,
@@ -167,6 +169,8 @@ pub trait Segment: Send + Sync + 'static {
     async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
     where
         B: IoBufMut + Send + 'static;
+
+    fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()>;
 }
 
 impl<T: Segment> Segment for Arc<T> {
@@ -207,6 +211,10 @@ impl<T: Segment> Segment for Arc<T> {
 
     fn size_after(&self) -> u32 {
         self.as_ref().size_after()
+    }
+
+    fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()> {
+        self.as_ref().destroy(io)
     }
 }
 

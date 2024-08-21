@@ -14,6 +14,7 @@ use fst::MapBuilder;
 use parking_lot::{Mutex, RwLock};
 use roaring::RoaringBitmap;
 use tokio_stream::Stream;
+use uuid::Uuid;
 use zerocopy::little_endian::U32;
 use zerocopy::{AsBytes, FromZeroes};
 
@@ -54,6 +55,7 @@ impl<F> CurrentSegment<F> {
         db_size: u32,
         tail: Arc<SegmentList<SealedSegment<F>>>,
         salt: u32,
+        log_id: Uuid,
     ) -> Result<Self>
     where
         F: FileExt,
@@ -70,6 +72,7 @@ impl<F> CurrentSegment<F> {
             version: LIBSQL_WAL_VERSION.into(),
             salt: salt.into(),
             page_size: LIBSQL_PAGE_SIZE.into(),
+            log_id: log_id.as_u128().into(),
         };
 
         header.recompute_checksum();
@@ -86,6 +89,10 @@ impl<F> CurrentSegment<F> {
             tail,
             current_checksum: salt.into(),
         })
+    }
+
+    pub fn log_id(&self) -> Uuid {
+        Uuid::from_u128(self.header.lock().log_id.get())
     }
 
     pub fn is_empty(&self) -> bool {
@@ -787,7 +794,7 @@ mod test {
         let mut copy = Vec::new();
         tmp.read_to_end(&mut copy).unwrap();
 
-        assert_eq!(copy, orig);
+        assert_eq!(db_payload(&copy), db_payload(&orig));
     }
 
     #[tokio::test]
@@ -1015,6 +1022,13 @@ mod test {
             {
                 f(&mut rand::thread_rng())
             }
+
+            fn remove_file_async(
+                &self,
+                path: &std::path::Path,
+            ) -> impl std::future::Future<Output = io::Result<()>> + Send {
+                async move { std::fs::remove_file(path) }
+            }
         }
 
         let tmp = Arc::new(tempdir().unwrap());
@@ -1049,5 +1063,10 @@ mod test {
             })
             .unwrap();
         }
+    }
+
+    fn db_payload(db: &[u8]) -> &[u8] {
+        let size = (db.len() / 4096) * 4096;
+        &db[..size]
     }
 }

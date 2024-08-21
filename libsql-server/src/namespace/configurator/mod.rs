@@ -21,11 +21,16 @@ use super::{
 
 pub mod fork;
 mod helpers;
-// mod libsql_wal_replica;
+mod libsql_primary;
+mod libsql_replica;
+mod libsql_schema;
 mod primary;
 mod replica;
 mod schema;
 
+pub use libsql_primary::LibsqlPrimaryConfigurator;
+pub use libsql_replica::LibsqlReplicaConfigurator;
+pub use libsql_schema::LibsqlSchemaConfigurator;
 pub use primary::PrimaryConfigurator;
 pub use replica::ReplicaConfigurator;
 pub use schema::SchemaConfigurator;
@@ -43,7 +48,7 @@ pub struct BaseNamespaceConfig {
 }
 
 #[derive(Clone)]
-pub struct PrimaryExtraConfig {
+pub struct PrimaryConfig {
     pub(crate) max_log_size: u64,
     pub(crate) max_log_duration: Option<Duration>,
     pub(crate) bottomless_replication: Option<bottomless::replicator::Options>,

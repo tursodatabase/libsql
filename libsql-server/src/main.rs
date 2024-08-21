@@ -651,6 +651,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
             .unwrap_or(Duration::from_secs(30)),
         use_custom_wal: config.use_custom_wal,
         storage_server_address: config.storage_server_address.clone(),
+        connector: Some(HttpConnector::new()),
     })
 }
 

@@ -135,6 +135,7 @@ where
 
     fn should_exit(&self) -> bool {
         self.shutting_down
+            && self.recv.is_empty()
             && self.scheduled.is_empty()
             && self.checkpointing.is_empty()
             && self.join_set.is_empty()
@@ -158,9 +159,11 @@ where
             notified = self.recv.recv(), if !self.shutting_down => {
                 match notified {
                     Some(CheckpointMessage::Namespace(namespace)) => {
+                        tracing::info!(namespace = namespace.as_str(), "notified for checkpoint");
                         self.scheduled.insert(namespace);
                     }
                     None | Some(CheckpointMessage::Shutdown) => {
+                        tracing::info!("checkpointed is shutting down. {} namespaces to checkpoint", self.checkpointing.len());
                         self.shutting_down = true;
                     }
                 }

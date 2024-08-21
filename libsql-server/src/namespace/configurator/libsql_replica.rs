@@ -1,57 +1,67 @@
+use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
-use futures::Future;
 use hyper::Uri;
+use libsql_replication::injector::LibsqlInjector;
+use libsql_replication::replicator::Replicator;
 use libsql_replication::rpc::replication::log_offset::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
-use libsql_sys::wal::wrapper::PassthroughWalWrapper;
+use libsql_sys::name::NamespaceResolver;
+use libsql_wal::io::StdIO;
+use libsql_wal::registry::WalRegistry;
+use libsql_wal::replication::injector::Injector;
+use libsql_wal::transaction::Transaction;
+use libsql_wal::wal::LibsqlWalManager;
 use tokio::task::JoinSet;
 use tonic::transport::Channel;
 
 use crate::connection::config::DatabaseConfig;
-use crate::connection::connection_manager::InnerWalManager;
-use crate::connection::legacy::MakeLegacyConnection;
+use crate::connection::libsql::{MakeLibsqlConnection, MakeLibsqlConnectionInner};
 use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::MakeConnection;
-use crate::database::{Database, ReplicaDatabase};
+use crate::database::{Database, LibsqlReplicaDatabase};
 use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::namespace::configurator::helpers::{make_stats, run_storage_monitor};
 use crate::namespace::meta_store::MetaStoreHandle;
-use crate::namespace::{Namespace, NamespaceBottomlessDbIdInit, RestoreOption};
-use crate::namespace::{NamespaceName, NamespaceStore, ResetCb, ResetOp, ResolveNamespacePathFn};
-use crate::{DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
+use crate::namespace::{
+    Namespace, NamespaceBottomlessDbIdInit, NamespaceName, NamespaceStore, ResetCb, ResetOp,
+    ResolveNamespacePathFn, RestoreOption,
+};
+use crate::{SqldStorage, DB_CREATE_TIMEOUT};
 
 use super::{BaseNamespaceConfig, ConfigureNamespace};
 
-pub struct ReplicaConfigurator {
+pub struct LibsqlReplicaConfigurator {
     base: BaseNamespaceConfig,
-    channel: Channel,
+    registry: Arc<WalRegistry<StdIO, SqldStorage>>,
     uri: Uri,
-    make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+    channel: Channel,
+    namespace_resolver: Arc<dyn NamespaceResolver>,
 }
 
-impl ReplicaConfigurator {
+impl LibsqlReplicaConfigurator {
     pub fn new(
         base: BaseNamespaceConfig,
-        channel: Channel,
+        registry: Arc<WalRegistry<StdIO, SqldStorage>>,
         uri: Uri,
-        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+        channel: Channel,
+        namespace_resolver: Arc<dyn NamespaceResolver>,
     ) -> Self {
         Self {
             base,
-            channel,
+            registry,
             uri,
-            make_wal_manager,
+            channel,
+            namespace_resolver,
         }
     }
 }
 
-impl ConfigureNamespace for ReplicaConfigurator {
+impl ConfigureNamespace for LibsqlReplicaConfigurator {
     fn setup<'a>(
         &'a self,
-        meta_store_handle: MetaStoreHandle,
+        db_config: MetaStoreHandle,
         restore_option: RestoreOption,
         name: &'a NamespaceName,
         reset: ResetCb,
@@ -61,28 +71,95 @@ impl ConfigureNamespace for ReplicaConfigurator {
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(async move {
             tracing::debug!("creating replica namespace");
+            let mut join_set = JoinSet::new();
             let db_path = self.base.base_path.join("dbs").join(name.as_str());
             let channel = self.channel.clone();
             let uri = self.uri.clone();
-
             let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
             let client = crate::replication::replicator_client::Client::new(
                 name.clone(),
                 rpc_client,
                 &db_path,
-                meta_store_handle.clone(),
+                db_config.clone(),
                 store.clone(),
-                WalFlavor::Sqlite,
+                WalFlavor::Libsql,
             )
             .await?;
             let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
-            let mut replicator = libsql_replication::replicator::Replicator::new_sqlite(
-                client,
-                db_path.join("data"),
-                DEFAULT_AUTO_CHECKPOINT,
-                None,
+            let stats = make_stats(
+                &db_path,
+                &mut join_set,
+                db_config.clone(),
+                self.base.stats_sender.clone(),
+                name.clone(),
+                applied_frame_no_receiver.clone(),
             )
             .await?;
+
+            let read_connection_maker = MakeLibsqlConnection {
+                inner: Arc::new(MakeLibsqlConnectionInner {
+                    db_path: db_path.clone().into(),
+                    stats: stats.clone(),
+                    broadcaster: broadcaster.clone(),
+                    config_store: db_config.clone(),
+                    extensions: self.base.extensions.clone(),
+                    max_response_size: self.base.max_response_size,
+                    max_total_response_size: self.base.max_total_response_size,
+                    auto_checkpoint: 0,
+                    current_frame_no_receiver: applied_frame_no_receiver.clone(),
+                    encryption_config: self.base.encryption_config.clone(),
+                    block_writes: Arc::new(true.into()),
+                    resolve_attach_path: resolve_attach_path.clone(),
+                    wal_manager: LibsqlWalManager::new(
+                        self.registry.clone(),
+                        self.namespace_resolver.clone(),
+                    ),
+                }),
+            };
+
+            let connection_maker = Arc::new(
+                MakeWriteProxyConn::new(
+                    channel.clone(),
+                    uri.clone(),
+                    stats.clone(),
+                    applied_frame_no_receiver.clone(),
+                    self.base.max_response_size,
+                    self.base.max_total_response_size,
+                    // FIXME: we need to fetch the primary index before
+                    None,
+                    self.base.encryption_config.clone(),
+                    read_connection_maker,
+                )
+                .throttled(
+                    self.base.max_concurrent_connections.clone(),
+                    Some(DB_CREATE_TIMEOUT),
+                    self.base.max_total_response_size,
+                    self.base.max_concurrent_requests,
+                ),
+            );
+
+            join_set.spawn(run_storage_monitor(
+                Arc::downgrade(&stats),
+                connection_maker.clone(),
+            ));
+
+            // FIXME: hack, this is necessary for the registry to open the SharedWal
+            let _ = connection_maker.create().await?;
+            let shared = self
+                .registry
+                .get_async(&(name.clone().into()))
+                .await
+                .unwrap();
+
+            let mut tx = Transaction::Read(shared.begin_read(u64::MAX));
+            shared.upgrade(&mut tx).unwrap();
+            let guard = tx
+                .into_write()
+                .unwrap_or_else(|_| panic!())
+                .into_lock_owned();
+            let injector = Injector::new(shared, guard, 10).unwrap();
+            let injector = LibsqlInjector::new(injector);
+            let mut replicator = Replicator::new(client, injector);
 
             tracing::debug!("try perform handshake");
             // force a handshake now, to retrieve the primary's current replication index
@@ -96,7 +173,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
                     std::fs::remove_dir_all(&db_path).unwrap();
                     return self
                         .setup(
-                            meta_store_handle,
+                            db_config,
                             restore_option,
                             name,
                             reset,
@@ -112,10 +189,6 @@ impl ConfigureNamespace for ReplicaConfigurator {
 
             tracing::debug!("done performing handshake");
 
-            let primary_current_replicatio_index =
-                replicator.client_mut().primary_replication_index;
-
-            let mut join_set = JoinSet::new();
             let namespace = name.clone();
             join_set.spawn(async move {
                 use libsql_replication::replicator::Error;
@@ -167,65 +240,12 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 }
             });
 
-            let stats = make_stats(
-                &db_path,
-                &mut join_set,
-                meta_store_handle.clone(),
-                self.base.stats_sender.clone(),
-                name.clone(),
-                applied_frame_no_receiver.clone(),
-            )
-            .await?;
-
-            let connection_maker = MakeLegacyConnection::new(
-                db_path.clone(),
-                PassthroughWalWrapper,
-                stats.clone(),
-                broadcaster,
-                meta_store_handle.clone(),
-                self.base.extensions.clone(),
-                self.base.max_response_size,
-                self.base.max_total_response_size,
-                DEFAULT_AUTO_CHECKPOINT,
-                applied_frame_no_receiver.clone(),
-                self.base.encryption_config.clone(),
-                Arc::new(AtomicBool::new(false)), // this is always false for write proxy
-                resolve_attach_path,
-                self.make_wal_manager.clone(),
-            )
-            .await?;
-
-            let connection_maker = Arc::new(
-                MakeWriteProxyConn::new(
-                    channel.clone(),
-                    uri.clone(),
-                    stats.clone(),
-                    applied_frame_no_receiver,
-                    self.base.max_response_size,
-                    self.base.max_total_response_size,
-                    primary_current_replicatio_index,
-                    self.base.encryption_config.clone(),
-                    connection_maker,
-                )
-                .throttled(
-                    self.base.max_concurrent_connections.clone(),
-                    Some(DB_CREATE_TIMEOUT),
-                    self.base.max_total_response_size,
-                    self.base.max_concurrent_requests,
-                ),
-            );
-
-            join_set.spawn(run_storage_monitor(
-                Arc::downgrade(&stats),
-                connection_maker.clone(),
-            ));
-
             Ok(Namespace {
                 tasks: join_set,
-                db: Database::Replica(ReplicaDatabase { connection_maker }),
+                db: Database::LibsqlReplica(LibsqlReplicaDatabase { connection_maker }),
                 name: name.clone(),
                 stats,
-                db_config_store: meta_store_handle,
+                db_config_store: db_config,
                 path: db_path.into(),
             })
         })

@@ -9,13 +9,13 @@ use crate::segment::Segment;
 
 /// A request, with an id
 #[derive(Debug)]
-pub(crate) struct IndexedRequest<T> {
-    pub(crate) request: StoreSegmentRequest<T>,
+pub(crate) struct IndexedRequest<T, C> {
+    pub(crate) request: StoreSegmentRequest<T, C>,
     pub(crate) id: u64,
 }
 
-impl<T> Deref for IndexedRequest<T> {
-    type Target = StoreSegmentRequest<T>;
+impl<T, C> Deref for IndexedRequest<T, C> {
+    type Target = StoreSegmentRequest<T, C>;
 
     fn deref(&self) -> &Self::Target {
         &self.request
@@ -24,32 +24,21 @@ impl<T> Deref for IndexedRequest<T> {
 
 /// A storage Job to be performed
 #[derive(Debug)]
-pub(crate) struct Job<T> {
+pub(crate) struct Job<T, C> {
     /// Segment to store.
     // TODO: implement request batching (merge segment and send).
-    pub(crate) request: IndexedRequest<T>,
+    pub(crate) request: IndexedRequest<T, C>,
 }
 
-// #[repr(transparent)]
-// struct BytesLike<T>(pub T);
-//
-// impl<T> AsRef<[u8]> for BytesLike<T>
-// where
-//     T: AsBytes,
-// {
-//     fn as_ref(&self) -> &[u8] {
-//         self.0.as_bytes()
-//     }
-// }
-//
-impl<Seg> Job<Seg>
+impl<Seg, C> Job<Seg, C>
 where
     Seg: Segment,
+    C: Clone,
 {
     /// Perform the job and return the JobResult. This is not allowed to panic.
-    pub(crate) async fn perform<B, IO>(self, backend: B, io: IO) -> JobResult<Seg>
+    pub(crate) async fn perform<B, IO>(self, backend: B, io: IO) -> JobResult<Seg, C>
     where
-        B: Backend,
+        B: Backend<Config = C>,
         IO: Io,
     {
         let result = self.try_perform(backend, io).await;
@@ -58,12 +47,17 @@ where
 
     async fn try_perform<B, IO>(&self, backend: B, io: IO) -> Result<u64>
     where
-        B: Backend,
+        B: Backend<Config = C>,
         IO: Io,
     {
         let segment = &self.request.segment;
         let segment_id = io.uuid();
         let tmp = io.tempfile()?;
+
+        tracing::debug!(
+            namespace = self.request.namespace.as_str(),
+            "sending segment to durable storage"
+        );
 
         let new_index = segment
             .compact(&tmp, segment_id)
@@ -81,21 +75,25 @@ where
             .request
             .storage_config_override
             .clone()
-            .map(|c| c.downcast::<B::Config>())
-            .transpose()
-            .map_err(|_| super::Error::InvalidConfigType)?
             .unwrap_or_else(|| backend.default_config());
 
         backend.store(&config, meta, tmp, new_index).await?;
+
+        tracing::info!(
+            namespace = self.request.namespace.as_str(),
+            start_frame_no = segment.start_frame_no(),
+            end_frame_no = segment.last_committed(),
+            "stored segment"
+        );
 
         Ok(segment.last_committed())
     }
 }
 
 #[derive(Debug)]
-pub(crate) struct JobResult<S> {
+pub(crate) struct JobResult<S, C> {
     /// The job that was performed
-    pub(crate) job: Job<S>,
+    pub(crate) job: Job<S, C>,
     /// The outcome of the job: the new durable index, or an error.
     pub(crate) result: Result<u64>,
 }
@@ -421,6 +419,10 @@ mod test {
             {
                 todo!()
             }
+
+            fn destroy<IO: Io>(&self, _io: &IO) -> impl std::future::Future<Output = ()> {
+                async move { todo!() }
+            }
         }
 
         struct TestBackend;
@@ -453,8 +455,8 @@ mod test {
                 todo!()
             }
 
-            fn default_config(&self) -> Arc<Self::Config> {
-                Arc::new(())
+            fn default_config(&self) -> Self::Config {
+                ()
             }
 
             async fn restore(
@@ -497,7 +499,7 @@ mod test {
 
             async fn fetch_segment_data(
                 self: Arc<Self>,
-                _config: Arc<Self::Config>,
+                _config: Self::Config,
                 _namespace: NamespaceName,
                 _key: SegmentKey,
             ) -> Result<impl FileExt> {

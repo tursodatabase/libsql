@@ -1,145 +1,130 @@
 use std::path::Path;
-use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use futures::prelude::Future;
-use libsql_sys::EncryptionConfig;
-use tokio::task::JoinSet;
+use libsql_sys::name::NamespaceResolver;
+use libsql_wal::io::StdIO;
+use libsql_wal::registry::WalRegistry;
 
 use crate::connection::config::DatabaseConfig;
-use crate::connection::connection_manager::InnerWalManager;
-use crate::connection::{Connection as _, MakeConnection};
-use crate::database::{Database, PrimaryDatabase};
+use crate::database::{Database, SchemaDatabase};
 use crate::namespace::broadcasters::BroadcasterHandle;
-use crate::namespace::configurator::helpers::make_primary_connection_maker;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{
-    Namespace, NamespaceBottomlessDbIdInit, NamespaceName, NamespaceStore, ResetCb,
-    ResolveNamespacePathFn, RestoreOption,
+    Namespace, NamespaceName, NamespaceStore, ResetCb, ResolveNamespacePathFn, RestoreOption,
 };
-use crate::run_periodic_checkpoint;
-use crate::schema::{has_pending_migration_task, setup_migration_table};
+use crate::schema::SchedulerHandle;
+use crate::SqldStorage;
 
 use super::helpers::cleanup_primary;
+use super::libsql_primary::{libsql_primary_common, LibsqlPrimaryCommon};
 use super::{BaseNamespaceConfig, ConfigureNamespace, PrimaryConfig};
 
-pub struct PrimaryConfigurator {
+pub struct LibsqlSchemaConfigurator {
     base: BaseNamespaceConfig,
     primary_config: PrimaryConfig,
-    make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+    migration_scheduler: SchedulerHandle,
+    registry: Arc<WalRegistry<StdIO, SqldStorage>>,
+    namespace_resolver: Arc<dyn NamespaceResolver>,
 }
 
-impl PrimaryConfigurator {
+impl LibsqlSchemaConfigurator {
     pub fn new(
         base: BaseNamespaceConfig,
         primary_config: PrimaryConfig,
-        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+        migration_scheduler: SchedulerHandle,
+        registry: Arc<WalRegistry<StdIO, SqldStorage>>,
+        namespace_resolver: Arc<dyn NamespaceResolver>,
     ) -> Self {
         Self {
             base,
             primary_config,
-            make_wal_manager,
+            migration_scheduler,
+            registry,
+            namespace_resolver,
         }
     }
 
     #[tracing::instrument(skip_all, fields(namespace))]
-    async fn try_new_primary(
+    async fn try_new_schema(
         &self,
         namespace: NamespaceName,
-        meta_store_handle: MetaStoreHandle,
-        restore_option: RestoreOption,
+        db_config: MetaStoreHandle,
+        _restore_option: RestoreOption,
         resolve_attach_path: ResolveNamespacePathFn,
         db_path: Arc<Path>,
         broadcaster: BroadcasterHandle,
-        encryption_config: Option<EncryptionConfig>,
     ) -> crate::Result<Namespace> {
-        let mut join_set = JoinSet::new();
-
-        tokio::fs::create_dir_all(&db_path).await?;
-
-        let block_writes = Arc::new(AtomicBool::new(false));
-        let (connection_maker, wal_wrapper, stats) = make_primary_connection_maker(
-            &self.primary_config,
+        let LibsqlPrimaryCommon {
+            stats,
+            connection_maker,
+            mut join_set,
+            mut notifier,
+            ..
+        } = libsql_primary_common(
+            db_path.clone(),
+            db_config.clone(),
             &self.base,
-            &meta_store_handle,
-            &db_path,
-            &namespace,
-            restore_option,
-            block_writes.clone(),
-            &mut join_set,
-            resolve_attach_path,
+            &self.primary_config,
+            namespace.clone(),
             broadcaster,
-            self.make_wal_manager.clone(),
-            encryption_config,
+            resolve_attach_path,
+            self.registry.clone(),
+            self.namespace_resolver.clone(),
         )
         .await?;
 
-        if meta_store_handle.get().shared_schema_name.is_some() {
-            let block_writes = block_writes.clone();
-            let conn = connection_maker.create().await?;
-            tokio::task::spawn_blocking(move || {
-                conn.with_raw(|conn| -> crate::Result<()> {
-                    setup_migration_table(conn)?;
-                    if has_pending_migration_task(conn)? {
-                        block_writes.store(true, Ordering::SeqCst);
-                    }
-                    Ok(())
-                })
-            })
-            .await
-            .unwrap()?;
-        }
+        let (notifier_sender, new_frame_notifier) = tokio::sync::watch::channel(None);
+        join_set.spawn(async move {
+            while let Ok(()) = notifier.changed().await {
+                let new = *notifier.borrow_and_update();
+                notifier_sender.send_replace(Some(new));
+            }
 
-        if let Some(checkpoint_interval) = self.primary_config.checkpoint_interval {
-            join_set.spawn(run_periodic_checkpoint(
-                connection_maker.clone(),
-                checkpoint_interval,
-                namespace.clone(),
-            ));
-        }
-
-        tracing::debug!("Done making new primary");
+            Ok(())
+        });
 
         Ok(Namespace {
             tasks: join_set,
-            db: Database::Primary(PrimaryDatabase {
-                wal_wrapper,
+            db: Database::LibsqlSchema(SchemaDatabase::new(
+                self.migration_scheduler.clone(),
+                namespace.clone(),
                 connection_maker,
-                block_writes,
-            }),
+                None,
+                db_config.clone(),
+                new_frame_notifier,
+            )),
             name: namespace,
             stats,
-            db_config_store: meta_store_handle,
+            db_config_store: db_config,
             path: db_path.into(),
         })
     }
 }
 
-impl ConfigureNamespace for PrimaryConfigurator {
+impl ConfigureNamespace for LibsqlSchemaConfigurator {
     fn setup<'a>(
         &'a self,
-        meta_store_handle: MetaStoreHandle,
+        db_config: MetaStoreHandle,
         restore_option: RestoreOption,
         name: &'a NamespaceName,
         _reset: ResetCb,
         resolve_attach_path: ResolveNamespacePathFn,
         _store: NamespaceStore,
         broadcaster: BroadcasterHandle,
-    ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
+    ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(async move {
             let db_path: Arc<Path> = self.base.base_path.join("dbs").join(name.as_str()).into();
             let fresh_namespace = !db_path.try_exists()?;
             // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
             match self
-                .try_new_primary(
+                .try_new_schema(
                     name.clone(),
-                    meta_store_handle,
+                    db_config,
                     restore_option,
                     resolve_attach_path,
                     db_path.clone(),
                     broadcaster,
-                    self.base.encryption_config.clone(),
                 )
                 .await
             {
@@ -163,8 +148,8 @@ impl ConfigureNamespace for PrimaryConfigurator {
         namespace: &'a NamespaceName,
         db_config: &'a DatabaseConfig,
         prune_all: bool,
-        bottomless_db_id_init: NamespaceBottomlessDbIdInit,
-    ) -> Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>> {
+        bottomless_db_id_init: crate::namespace::NamespaceBottomlessDbIdInit,
+    ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>> {
         Box::pin(async move {
             cleanup_primary(
                 &self.base,
@@ -186,7 +171,7 @@ impl ConfigureNamespace for PrimaryConfigurator {
         to_config: MetaStoreHandle,
         timestamp: Option<chrono::prelude::NaiveDateTime>,
         store: NamespaceStore,
-    ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
+    ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(super::fork::fork(
             from_ns,
             from_config,

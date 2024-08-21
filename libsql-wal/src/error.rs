@@ -17,6 +17,8 @@ pub enum Error {
     InvalidHeaderVersion,
     #[error("Invalid page size, only 4095 is supported")]
     InvalidPageSize,
+    #[error("Registry is shutting down")]
+    ShuttingDown,
 }
 
 impl Into<libsql_sys::ffi::Error> for Error {

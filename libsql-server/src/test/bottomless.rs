@@ -458,7 +458,6 @@ async fn remove_snapshots(bucket: &str) {
     if let Ok(out) = client.list_objects().bucket(bucket).send().await {
         let keys = out
             .contents()
-            .unwrap()
             .iter()
             .map(|o| {
                 let key = o.key().unwrap();
@@ -466,7 +465,7 @@ async fn remove_snapshots(bucket: &str) {
                 format!("{}/db.gz", prefix)
             })
             .unique()
-            .map(|key| ObjectIdentifier::builder().key(key).build())
+            .map(|key| ObjectIdentifier::builder().key(key).build().unwrap())
             .collect();
 
         client
@@ -476,7 +475,8 @@ async fn remove_snapshots(bucket: &str) {
                 Delete::builder()
                     .set_objects(Some(keys))
                     .quiet(true)
-                    .build(),
+                    .build()
+                    .unwrap(),
             )
             .send()
             .await
@@ -489,7 +489,7 @@ async fn remove_snapshots(bucket: &str) {
 async fn assert_bucket_occupancy(bucket: &str, expect_empty: bool) {
     let client = s3_client().await.unwrap();
     if let Ok(out) = client.list_objects().bucket(bucket).send().await {
-        let contents = out.contents().unwrap_or_default();
+        let contents = out.contents();
         if expect_empty {
             assert!(
                 contents.is_empty(),
@@ -545,17 +545,23 @@ impl S3BucketCleaner {
         let client = s3_client().await?;
         let objects = client.list_objects().bucket(bucket).send().await?;
         let mut delete_keys = Vec::new();
-        for o in objects.contents().unwrap_or_default() {
+        for o in objects.contents() {
             let id = ObjectIdentifier::builder()
                 .set_key(o.key().map(String::from))
-                .build();
+                .build()
+                .unwrap();
             delete_keys.push(id);
         }
 
         let _ = client
             .delete_objects()
             .bucket(bucket)
-            .delete(Delete::builder().set_objects(Some(delete_keys)).build())
+            .delete(
+                Delete::builder()
+                    .set_objects(Some(delete_keys))
+                    .build()
+                    .unwrap(),
+            )
             .send()
             .await?;
 

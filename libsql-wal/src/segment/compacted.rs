@@ -52,6 +52,18 @@ pub struct CompactedSegment<F> {
     file: F,
 }
 
+impl<F> CompactedSegment<F> {
+    pub fn remap_file_type<FN, T>(self, f: FN) -> CompactedSegment<T>
+    where
+        FN: FnOnce(F) -> T,
+    {
+        CompactedSegment {
+            header: self.header,
+            file: f(self.file),
+        }
+    }
+}
+
 impl<F: FileExt> CompactedSegment<F> {
     pub(crate) async fn open(file: F) -> Result<Self> {
         let buf = ZeroCopyBuf::new_uninit();

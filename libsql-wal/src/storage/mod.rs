@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::future::Future;
@@ -11,7 +10,7 @@ use chrono::{DateTime, Utc};
 use fst::Map;
 use hashbrown::HashMap;
 use libsql_sys::name::NamespaceName;
-use parking_lot::Mutex;
+use libsql_sys::wal::either::Either;
 use tempfile::{tempdir, TempDir};
 
 use crate::io::{FileExt, Io, StdIO};
@@ -133,7 +132,7 @@ pub type OnStoreCallback = Box<
 
 pub trait Storage: Send + Sync + 'static {
     type Segment: Segment;
-    type Config;
+    type Config: Clone + Send;
     /// store the passed segment for `namespace`. This function is called in a context where
     /// blocking is acceptable.
     /// returns a future that resolves when the segment is stored
@@ -142,20 +141,20 @@ pub trait Storage: Send + Sync + 'static {
         &self,
         namespace: &NamespaceName,
         seg: Self::Segment,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
         on_store: OnStoreCallback,
     );
 
     fn durable_frame_no_sync(
         &self,
         namespace: &NamespaceName,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> u64;
 
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> u64;
 
     async fn restore(
@@ -163,29 +162,162 @@ pub trait Storage: Send + Sync + 'static {
         file: impl FileExt,
         namespace: &NamespaceName,
         restore_options: RestoreOptions,
-        config_override: Option<Arc<Self::Config>>,
+        config_override: Option<Self::Config>,
     ) -> Result<()>;
 
-    async fn find_segment(
+    fn find_segment(
         &self,
         namespace: &NamespaceName,
         frame_no: u64,
-        config_override: Option<Arc<Self::Config>>,
-    ) -> Result<SegmentKey>;
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<SegmentKey>> + Send;
 
-    async fn fetch_segment_index(
+    fn fetch_segment_index(
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        config_override: Option<Arc<Self::Config>>,
-    ) -> Result<Map<Arc<[u8]>>>;
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<Map<Arc<[u8]>>>> + Send;
 
-    async fn fetch_segment_data(
+    fn fetch_segment_data(
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        config_override: Option<Arc<Self::Config>>,
-    ) -> Result<CompactedSegment<impl FileExt>>;
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<CompactedSegment<impl FileExt>>> + Send;
+
+    fn shutdown(&self) -> impl Future<Output = ()> + Send {
+        async { () }
+    }
+}
+
+/// special zip function for Either storage implementation
+fn zip<A, B, C, D>(
+    x: &Either<A, B>,
+    y: Option<Either<C, D>>,
+) -> Either<(&A, Option<C>), (&B, Option<D>)> {
+    match (x, y) {
+        (Either::A(a), Some(Either::A(c))) => Either::A((a, Some(c))),
+        (Either::B(b), Some(Either::B(d))) => Either::B((b, Some(d))),
+        (Either::A(a), None) => Either::A((a, None)),
+        (Either::B(b), None) => Either::B((b, None)),
+        _ => panic!("incompatible options"),
+    }
+}
+
+impl<A, B, S> Storage for Either<A, B>
+where
+    A: Storage<Segment = S>,
+    B: Storage<Segment = S>,
+    S: Segment,
+{
+    type Segment = S;
+    type Config = Either<A::Config, B::Config>;
+
+    fn store(
+        &self,
+        namespace: &NamespaceName,
+        seg: Self::Segment,
+        config_override: Option<Self::Config>,
+        on_store: OnStoreCallback,
+    ) {
+        match zip(self, config_override) {
+            Either::A((s, c)) => s.store(namespace, seg, c, on_store),
+            Either::B((s, c)) => s.store(namespace, seg, c, on_store),
+        }
+    }
+
+    fn durable_frame_no_sync(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Self::Config>,
+    ) -> u64 {
+        match zip(self, config_override) {
+            Either::A((s, c)) => s.durable_frame_no_sync(namespace, c),
+            Either::B((s, c)) => s.durable_frame_no_sync(namespace, c),
+        }
+    }
+
+    async fn durable_frame_no(
+        &self,
+        namespace: &NamespaceName,
+        config_override: Option<Self::Config>,
+    ) -> u64 {
+        match zip(self, config_override) {
+            Either::A((s, c)) => s.durable_frame_no(namespace, c).await,
+            Either::B((s, c)) => s.durable_frame_no(namespace, c).await,
+        }
+    }
+
+    async fn restore(
+        &self,
+        file: impl FileExt,
+        namespace: &NamespaceName,
+        restore_options: RestoreOptions,
+        config_override: Option<Self::Config>,
+    ) -> Result<()> {
+        match zip(self, config_override) {
+            Either::A((s, c)) => s.restore(file, namespace, restore_options, c).await,
+            Either::B((s, c)) => s.restore(file, namespace, restore_options, c).await,
+        }
+    }
+
+    fn find_segment(
+        &self,
+        namespace: &NamespaceName,
+        frame_no: u64,
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<SegmentKey>> + Send {
+        async move {
+            match zip(self, config_override) {
+                Either::A((s, c)) => s.find_segment(namespace, frame_no, c).await,
+                Either::B((s, c)) => s.find_segment(namespace, frame_no, c).await,
+            }
+        }
+    }
+
+    fn fetch_segment_index(
+        &self,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<Map<Arc<[u8]>>>> + Send {
+        async move {
+            match zip(self, config_override) {
+                Either::A((s, c)) => s.fetch_segment_index(namespace, key, c).await,
+                Either::B((s, c)) => s.fetch_segment_index(namespace, key, c).await,
+            }
+        }
+    }
+
+    fn fetch_segment_data(
+        &self,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        config_override: Option<Self::Config>,
+    ) -> impl Future<Output = Result<CompactedSegment<impl FileExt>>> + Send {
+        async move {
+            match zip(self, config_override) {
+                Either::A((s, c)) => {
+                    let seg = s.fetch_segment_data(namespace, key, c).await?;
+                    let seg = seg.remap_file_type(Either::A);
+                    Ok(seg)
+                }
+                Either::B((s, c)) => {
+                    let seg = s.fetch_segment_data(namespace, key, c).await?;
+                    let seg = seg.remap_file_type(Either::B);
+                    Ok(seg)
+                }
+            }
+        }
+    }
+
+    async fn shutdown(&self) {
+        match self {
+            Either::A(a) => a.shutdown().await,
+            Either::B(b) => b.shutdown().await,
+        }
+    }
 }
 
 /// a placeholder storage that doesn't store segment
@@ -200,7 +332,7 @@ impl Storage for NoStorage {
         &self,
         _namespace: &NamespaceName,
         _seg: Self::Segment,
-        _config: Option<Arc<Self::Config>>,
+        _config: Option<Self::Config>,
         _on_store: OnStoreCallback,
     ) {
     }
@@ -208,7 +340,7 @@ impl Storage for NoStorage {
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
-        config: Option<Arc<Self::Config>>,
+        config: Option<Self::Config>,
     ) -> u64 {
         self.durable_frame_no_sync(namespace, config)
     }
@@ -218,7 +350,7 @@ impl Storage for NoStorage {
         _file: impl FileExt,
         _namespace: &NamespaceName,
         _restore_options: RestoreOptions,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<()> {
         panic!("can restore from no storage")
     }
@@ -226,7 +358,7 @@ impl Storage for NoStorage {
     fn durable_frame_no_sync(
         &self,
         _namespace: &NamespaceName,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> u64 {
         u64::MAX
     }
@@ -235,7 +367,7 @@ impl Storage for NoStorage {
         &self,
         _namespace: &NamespaceName,
         _frame_no: u64,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
         unimplemented!()
     }
@@ -244,7 +376,7 @@ impl Storage for NoStorage {
         &self,
         _namespace: &NamespaceName,
         _key: &SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<Map<Arc<[u8]>>> {
         unimplemented!()
     }
@@ -253,7 +385,7 @@ impl Storage for NoStorage {
         &self,
         _namespace: &NamespaceName,
         _key: &SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<CompactedSegment<impl FileExt>> {
         unimplemented!();
         #[allow(unreachable_code)]
@@ -264,7 +396,7 @@ impl Storage for NoStorage {
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct TestStorage<IO = StdIO> {
-    inner: Arc<Mutex<TestStorageInner<IO>>>,
+    inner: Arc<async_lock::Mutex<TestStorageInner<IO>>>,
 }
 
 #[derive(Debug)]
@@ -318,10 +450,10 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         seg: Self::Segment,
-        _config: Option<Arc<Self::Config>>,
+        _config: Option<Self::Config>,
         on_store: OnStoreCallback,
     ) {
-        let mut inner = self.inner.lock();
+        let mut inner = self.inner.lock_blocking();
         if inner.store {
             let id = uuid::Uuid::new_v4();
             let out_path = inner.dir.path().join(id.to_string());
@@ -347,7 +479,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
-        config: Option<Arc<Self::Config>>,
+        config: Option<Self::Config>,
     ) -> u64 {
         self.durable_frame_no_sync(namespace, config)
     }
@@ -357,7 +489,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
         _file: impl FileExt,
         _namespace: &NamespaceName,
         _restore_options: RestoreOptions,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<()> {
         todo!();
     }
@@ -365,9 +497,9 @@ impl<IO: Io> Storage for TestStorage<IO> {
     fn durable_frame_no_sync(
         &self,
         namespace: &NamespaceName,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> u64 {
-        let inner = self.inner.lock();
+        let inner = self.inner.lock_blocking();
         if inner.store {
             let Some(segs) = inner.stored.get(namespace) else {
                 return 0;
@@ -382,9 +514,9 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         frame_no: u64,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
-        let inner = self.inner.lock();
+        let inner = self.inner.lock().await;
         if inner.store {
             if let Some(segs) = inner.stored.get(namespace) {
                 let Some((key, _path)) = segs.iter().find(|(k, _)| k.includes(frame_no)) else {
@@ -403,9 +535,9 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<Map<Arc<[u8]>>> {
-        let inner = self.inner.lock();
+        let inner = self.inner.lock().await;
         if inner.store {
             match inner.stored.get(namespace) {
                 Some(segs) => Ok(segs.get(&key).unwrap().1.clone()),
@@ -420,9 +552,9 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        _config_override: Option<Arc<Self::Config>>,
+        _config_override: Option<Self::Config>,
     ) -> Result<CompactedSegment<impl FileExt>> {
-        let inner = self.inner.lock();
+        let inner = self.inner.lock().await;
         if inner.store {
             match inner.stored.get(namespace) {
                 Some(segs) => {
@@ -438,7 +570,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     }
 }
 
-pub struct StoreSegmentRequest<S> {
+pub struct StoreSegmentRequest<S, C> {
     namespace: NamespaceName,
     /// Path to the segment. Read-only for bottomless
     segment: S,
@@ -447,12 +579,12 @@ pub struct StoreSegmentRequest<S> {
 
     /// alternative configuration to use with the storage layer.
     /// e.g: S3 overrides
-    storage_config_override: Option<Arc<dyn Any + Send + Sync>>,
+    storage_config_override: Option<C>,
     /// Called after the segment was stored, with the new durable index
     on_store_callback: OnStoreCallback,
 }
 
-impl<S> fmt::Debug for StoreSegmentRequest<S>
+impl<S, C> fmt::Debug for StoreSegmentRequest<S, C>
 where
     S: fmt::Debug,
 {

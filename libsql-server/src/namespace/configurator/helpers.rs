@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Weak;
 use std::sync::{atomic::AtomicBool, Arc};
 use std::time::Duration;
@@ -8,7 +8,6 @@ use bottomless::replicator::Options;
 use bytes::Bytes;
 use enclose::enclose;
 use futures::Stream;
-use libsql_sys::wal::Sqlite3WalManager;
 use libsql_sys::EncryptionConfig;
 use tokio::io::AsyncBufReadExt as _;
 use tokio::sync::watch;
@@ -17,8 +16,8 @@ use tokio_util::io::StreamReader;
 
 use crate::connection::config::DatabaseConfig;
 use crate::connection::connection_manager::InnerWalManager;
-use crate::connection::libsql::{open_conn, MakeLibSqlConn};
-use crate::connection::{Connection as _, MakeConnection as _};
+use crate::connection::legacy::MakeLegacyConnection;
+use crate::connection::{Connection as _, MakeConnection};
 use crate::database::{PrimaryConnection, PrimaryConnectionMaker};
 use crate::error::LoadDumpError;
 use crate::namespace::broadcasters::BroadcasterHandle;
@@ -32,14 +31,14 @@ use crate::replication::{FrameNo, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
 
-use super::{BaseNamespaceConfig, PrimaryExtraConfig};
+use super::{BaseNamespaceConfig, PrimaryConfig};
 
 const WASM_TABLE_CREATE: &str =
     "CREATE TABLE libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID;";
 
 #[tracing::instrument(skip_all)]
 pub(super) async fn make_primary_connection_maker(
-    primary_config: &PrimaryExtraConfig,
+    primary_config: &PrimaryConfig,
     base_config: &BaseNamespaceConfig,
     meta_store_handle: &MetaStoreHandle,
     db_path: &Path,
@@ -51,7 +50,11 @@ pub(super) async fn make_primary_connection_maker(
     broadcaster: BroadcasterHandle,
     make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
     encryption_config: Option<EncryptionConfig>,
-) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalWrapper, Arc<Stats>)> {
+) -> crate::Result<(
+    Arc<PrimaryConnectionMaker>,
+    ReplicationWalWrapper,
+    Arc<Stats>,
+)> {
     let db_config = meta_store_handle.get();
     let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
     // FIXME: figure how to to it per-db
@@ -116,7 +119,6 @@ pub(super) async fn make_primary_connection_maker(
         base_config.stats_sender.clone(),
         name.clone(),
         logger.new_frame_notifier.subscribe(),
-        base_config.encryption_config.clone(),
     )
     .await?;
 
@@ -125,31 +127,38 @@ pub(super) async fn make_primary_connection_maker(
 
     tracing::debug!("Opening libsql connection");
 
-    let connection_maker = MakeLibSqlConn::new(
-        db_path.to_path_buf(),
-        wal_wrapper.clone(),
-        stats.clone(),
-        broadcaster,
-        meta_store_handle.clone(),
-        base_config.extensions.clone(),
-        base_config.max_response_size,
-        base_config.max_total_response_size,
-        auto_checkpoint,
-        logger.new_frame_notifier.subscribe(),
-        encryption_config,
-        block_writes,
-        resolve_attach_path,
-        make_wal_manager.clone(),
-    )
-    .await?
-    .throttled(
-        base_config.max_concurrent_connections.clone(),
-        Some(DB_CREATE_TIMEOUT),
-        base_config.max_total_response_size,
-        base_config.max_concurrent_requests,
+    let connection_maker = Arc::new(
+        MakeLegacyConnection::new(
+            db_path.to_path_buf(),
+            wal_wrapper.clone(),
+            stats.clone(),
+            broadcaster,
+            meta_store_handle.clone(),
+            base_config.extensions.clone(),
+            base_config.max_response_size,
+            base_config.max_total_response_size,
+            auto_checkpoint,
+            logger.new_frame_notifier.subscribe(),
+            encryption_config,
+            block_writes,
+            resolve_attach_path,
+            make_wal_manager.clone(),
+        )
+        .await?
+        .throttled(
+            base_config.max_concurrent_connections.clone(),
+            Some(DB_CREATE_TIMEOUT),
+            base_config.max_total_response_size,
+            base_config.max_concurrent_requests,
+        ),
     );
 
     tracing::debug!("Completed opening libsql connection");
+
+    join_set.spawn(run_storage_monitor(
+        Arc::downgrade(&stats),
+        connection_maker.clone(),
+    ));
 
     // this must happen after we create the connection maker. The connection maker old on a
     // connection to ensure that no other connection is closing while we try to open the dump.
@@ -335,7 +344,6 @@ pub(super) async fn make_stats(
     stats_sender: StatsSender,
     name: NamespaceName,
     mut current_frame_no: watch::Receiver<Option<FrameNo>>,
-    encryption_config: Option<EncryptionConfig>,
 ) -> anyhow::Result<Arc<Stats>> {
     tracing::debug!("creating stats type");
     let stats = Stats::new(name.clone(), db_path, join_set).await?;
@@ -362,12 +370,6 @@ pub(super) async fn make_stats(
         }
     });
 
-    join_set.spawn(run_storage_monitor(
-        db_path.into(),
-        Arc::downgrade(&stats),
-        encryption_config,
-    ));
-
     tracing::debug!("done sending stats, and creating bg tasks");
 
     Ok(stats)
@@ -376,44 +378,48 @@ pub(super) async fn make_stats(
 // Periodically check the storage used by the database and save it in the Stats structure.
 // TODO: Once we have a separate fiber that does WAL checkpoints, running this routine
 // right after checkpointing is exactly where it should be done.
-async fn run_storage_monitor(
-    db_path: PathBuf,
+pub(crate) async fn run_storage_monitor<M: MakeConnection>(
     stats: Weak<Stats>,
-    encryption_config: Option<EncryptionConfig>,
+    connection_maker: Arc<M>,
 ) -> anyhow::Result<()> {
     // on initialization, the database file doesn't exist yet, so we wait a bit for it to be
     // created
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let duration = tokio::time::Duration::from_secs(60);
-    let db_path: Arc<Path> = db_path.into();
     loop {
-        let db_path = db_path.clone();
         let Some(stats) = stats.upgrade() else {
             return Ok(());
         };
 
-        let encryption_config = encryption_config.clone();
-        let _ = tokio::task::spawn_blocking(move || {
-            // because closing the last connection interferes with opening a new one, we lazily
-            // initialize a connection here, and keep it alive for the entirety of the program. If we
-            // fail to open it, we wait for `duration` and try again later.
-            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), encryption_config) {
-                Ok(mut conn) => {
-                    if let Ok(tx) = conn.transaction() {
-                        let page_count = tx.query_row("pragma page_count;", [], |row| { row.get::<usize, u64>(0) });
-                        let freelist_count = tx.query_row("pragma freelist_count;", [], |row| { row.get::<usize, u64>(0) });
-                        if let (Ok(page_count), Ok(freelist_count)) = (page_count, freelist_count) {
-                            let storage_bytes_used = (page_count - freelist_count) * 4096;
-                            stats.set_storage_bytes_used(storage_bytes_used);
-                        }
-                    }
-                },
-                Err(e) => {
-                    tracing::warn!("failed to open connection for storager monitor: {e}, trying again in {duration:?}");
-                },
+        match connection_maker.create().await {
+            Ok(conn) => {
+                let _ = BLOCKING_RT
+                    .spawn_blocking(move || {
+                        conn.with_raw(|conn| {
+                            if let Ok(tx) = conn.transaction() {
+                                let page_count = tx.query_row("pragma page_count;", [], |row| {
+                                    row.get::<usize, u64>(0)
+                                });
+                                let freelist_count =
+                                    tx.query_row("pragma freelist_count;", [], |row| {
+                                        row.get::<usize, u64>(0)
+                                    });
+                                if let (Ok(page_count), Ok(freelist_count)) =
+                                    (page_count, freelist_count)
+                                {
+                                    let storage_bytes_used = (page_count - freelist_count) * 4096;
+                                    stats.set_storage_bytes_used(storage_bytes_used);
+                                }
+                            }
+                        })
+                    })
+                    .await;
             }
-        }).await;
+            Err(e) => {
+                tracing::warn!("failed to open connection for storager monitor: {e}, trying again in {duration:?}");
+            }
+        }
 
         tokio::time::sleep(duration).await;
     }
@@ -421,7 +427,7 @@ async fn run_storage_monitor(
 
 pub(super) async fn cleanup_primary(
     base: &BaseNamespaceConfig,
-    primary_config: &PrimaryExtraConfig,
+    primary_config: &PrimaryConfig,
     namespace: &NamespaceName,
     db_config: &DatabaseConfig,
     prune_all: bool,

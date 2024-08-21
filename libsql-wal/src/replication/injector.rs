@@ -57,6 +57,7 @@ impl<IO: Io> Injector<IO> {
             .inject_frames(buffer, commit_data, &mut self.tx)
             .await?;
         self.buffer = buffer;
+        self.buffer.clear();
 
         Ok(())
     }
@@ -82,8 +83,8 @@ mod test {
         let primary_conn = primary_env.open_conn("test");
         let primary_shared = primary_env.shared("test");
 
-        let mut replicator = Replicator::new(primary_shared.clone(), 1);
-        let stream = replicator.frame_stream();
+        let replicator = Replicator::new(primary_shared.clone(), 1);
+        let stream = replicator.into_frame_stream();
 
         tokio::pin!(stream);
 

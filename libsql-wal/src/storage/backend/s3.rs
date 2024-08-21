@@ -64,7 +64,11 @@ impl<IO: Io> S3Backend<IO> {
         cluster_id: String,
         io: IO,
     ) -> Result<Self> {
-        let client = Client::new(&aws_config);
+        let config = aws_sdk_s3::Config::new(&aws_config)
+            .to_builder()
+            .force_path_style(true)
+            .build();
+        let client = Client::from_conf(config);
         let config = S3Config {
             bucket,
             cluster_id,
@@ -334,7 +338,7 @@ impl<IO> Backend for S3Backend<IO>
 where
     IO: Io,
 {
-    type Config = S3Config;
+    type Config = Arc<S3Config>;
 
     async fn store(
         &self,
@@ -425,7 +429,7 @@ where
         })
     }
 
-    fn default_config(&self) -> Arc<Self::Config> {
+    fn default_config(&self) -> Self::Config {
         self.default_config.clone()
     }
 
@@ -489,7 +493,7 @@ where
 
     async fn fetch_segment_data(
         self: Arc<Self>,
-        config: Arc<Self::Config>,
+        config: Self::Config,
         namespace: NamespaceName,
         key: SegmentKey,
     ) -> Result<impl FileExt> {
@@ -650,11 +654,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let (aws_config, _s3) = setup(&dir);
 
-        let s3_config = S3Config {
+        let s3_config = Arc::new(S3Config {
             bucket: "testbucket".into(),
             aws_config: aws_config.clone(),
             cluster_id: "123456789".into(),
-        };
+        });
 
         let storage = S3Backend::from_sdk_config_with_io(
             aws_config,

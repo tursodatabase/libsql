@@ -40,20 +40,20 @@ impl<IO: Io> Replicator<IO> {
     ///
     /// In a single replication step, the replicator guarantees that a minimal set of frames is
     /// sent to the replica.
-    pub fn frame_stream(&mut self) -> impl Stream<Item = Result<Box<Frame>>> + '_ {
+    pub fn into_frame_stream(mut self) -> impl Stream<Item = Result<Box<Frame>>> + Send {
         async_stream::try_stream! {
             loop {
                 // First we decide up to what frame_no we want to replicate in this step. If we are
                 // already up to date, wait for something to happen
                 let most_recent_frame_no = *self
                     .new_frame_notifier
-                    .wait_for(|fno| *fno > self.next_frame_no)
+                    .wait_for(|fno| *fno >= self.next_frame_no)
                     .await
                     .expect("channel cannot be closed because we hold a ref to the sending end");
 
                 let mut commit_frame_no = 0;
                 // we have stuff to replicate
-                if most_recent_frame_no > self.next_frame_no {
+                if most_recent_frame_no >= self.next_frame_no {
                     // first replicate the most recent version of each page from the current
                     // segment. We also return how far we have replicated from the current log
                     let current = self.shared.current.load();
@@ -162,10 +162,10 @@ mod test {
                 .unwrap();
         }
 
-        let mut replicator = Replicator::new(shared.clone(), 1);
+        let replicator = Replicator::new(shared.clone(), 1);
 
         let tmp = NamedTempFile::new().unwrap();
-        let stream = replicator.frame_stream();
+        let stream = replicator.into_frame_stream();
         tokio::pin!(stream);
         let mut last_frame_no = 0;
         let mut size_after;
@@ -233,8 +233,8 @@ mod test {
         // replicate everything from scratch again
         {
             let tmp = NamedTempFile::new().unwrap();
-            let mut replicator = Replicator::new(shared.clone(), 1);
-            let stream = replicator.frame_stream();
+            let replicator = Replicator::new(shared.clone(), 1);
+            let stream = replicator.into_frame_stream();
 
             tokio::pin!(stream);
 
@@ -295,8 +295,8 @@ mod test {
 
         let db_content = std::fs::read(&env.db_path("test").join("data")).unwrap();
 
-        let mut replicator = Replicator::new(shared, 1);
-        let stream = replicator.frame_stream().take(3);
+        let replicator = Replicator::new(shared, 1);
+        let stream = replicator.into_frame_stream().take(3);
 
         tokio::pin!(stream);
 
@@ -311,6 +311,11 @@ mod test {
             replica_content[offset..offset + 4096].copy_from_slice(frame.data());
         }
 
-        assert_eq!(replica_content, db_content);
+        assert_eq!(db_payload(&replica_content), db_payload(&db_content));
+    }
+
+    fn db_payload(db: &[u8]) -> &[u8] {
+        let size = (db.len() / 4096) * 4096;
+        &db[..size]
     }
 }
