@@ -378,7 +378,11 @@ impl Replicator {
                             .send()
                             .await
                         {
-                            utils::caution!("Failed to send {} to S3: {} (this will lead to gaps in frame ranges)", fpath, e);
+                            utils::caution!(
+                                "Failed to send {} to S3: {} (this will lead to gaps in frame ranges)",
+                                fpath,
+                                e,
+                            );
                         } else {
                             tokio::fs::remove_file(&fpath).await.unwrap();
                             let elapsed = Instant::now() - start;
@@ -704,7 +708,7 @@ impl Replicator {
                     "Failed to store dependency between generations {} -> {}: {} (this will lead to broken dependency chain)",
                     prev,
                     curr,
-                    e
+                    e,
                 );
             } else {
                 tracing::trace!(
@@ -1467,15 +1471,6 @@ impl Replicator {
             unsafe { v.set_len(page_size) };
             v
         };
-        let db_path_str = db_path
-            .to_str()
-            .ok_or(anyhow!("failed to convert db path to string"))?;
-        let cleanup = || async move {
-            let _ = self
-                .remove_wal_files(&db_path_str)
-                .await
-                .inspect_err(|e| tracing::error!("unable to remove wal files: {}", e));
-        };
 
         let mut next_marker = None;
         let mut applied_wal_frame = false;
@@ -1540,6 +1535,12 @@ impl Replicator {
                     );
                     break;
                 } else if first_frame_no != last_seen_frame_no + 1 {
+                    // there can be the case that bottomless has several overlapping frame ranges
+                    // but one of them is empty - so we will ignore it (as it has no frames)
+                    // for example:
+                    // 9 bytes (empty zstd frame) .../000000000001-000000000001-1724236016.zstd
+                    // 878 bytes                  .../000000000001-000000000001-1724236022.zstd
+                    // but it's good to detect such cases
                     utils::caution!(
                         "detected series of non-consecutive frames: last_seen_frame_no={}, first_frame_no={}: db_name={}, generation={} (this can lead to inconsistent restore)",
                         last_seen_frame_no,
@@ -1566,7 +1567,12 @@ impl Replicator {
                             }
                         }
                         _ => {
-                            utils::caution!("Couldn't parse requested frame batch {} timestamp. Stopping recovery.", key);
+                            utils::caution!(
+                                "Couldn't parse requested frame batch {} timestamp. Stopping recovery: db_name={}, generation={}",
+                                &self.db_name,
+                                &generation,
+                                key
+                            );
                             break 'restore_wal;
                         }
                     }
@@ -1627,6 +1633,9 @@ impl Replicator {
         // WAL checkpoint of the DB
         drop(injector);
 
+        let db_path_str = db_path
+            .to_str()
+            .ok_or(anyhow!("failed to convert db path to string"))?;
         let db_wal_file_path = format!("{}-wal", &db_path_str);
         let db_wal_index_path = format!("{}-shm", &db_path_str);
         let has_wal_file = tokio::fs::try_exists(&db_wal_file_path).await?;
@@ -1638,7 +1647,10 @@ impl Replicator {
                 &self.db_name,
                 &generation
             );
-            cleanup().await;
+            let _ = self
+                .remove_wal_files(&db_path_str)
+                .await
+                .inspect_err(|e| tracing::error!("unable to remove wal files: {}", e));
             return Err(anyhow!("WAL wasn't transferred completely"));
         }
         Ok(applied_wal_frame)
@@ -1736,7 +1748,11 @@ impl Replicator {
                             .send()
                             .await
                         {
-                            utils::caution!("Failed to send {} to S3: {} (this will lead to gaps in the frame ranges)", key, e);
+                            utils::caution!(
+                                "Failed to send {} to S3: {} (this will lead to gaps in the frame ranges)",
+                                key,
+                                e,
+                            );
                         } else {
                             tokio::fs::remove_file(&fpath).await.unwrap();
                             tracing::trace!("Uploaded to S3: {}", key);
