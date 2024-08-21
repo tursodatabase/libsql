@@ -20,7 +20,6 @@ use std::convert::Infallible;
 use std::pin::Pin;
 use std::time::Duration;
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
-use tracing::{debug, warn};
 
 use super::db_factory::namespace_from_headers;
 use super::AppState;
@@ -142,29 +141,16 @@ async fn listen_stream(
         let _sub = Subscription::new(store.clone(), namespace.clone(), table.clone());
         let mut stream = store.subscribe(namespace.clone(), table.clone());
 
-        while let Some(item) = stream.next().await  {
+        while let Some(item) = stream.next().await {
             match item {
-                Ok(msg) if filter_actions(&msg, &actions) => {
+                Ok(msg) => if filter_actions(&msg, &actions) {
                     LISTEN_EVENTS_SENT.increment(1);
                     yield AggregatorEvent::Changes(msg);
                 },
                 Err(BroadcastStreamRecvError::Lagged(n)) => {
                     LISTEN_EVENTS_DROPPED.increment(n as u64);
-                    warn!(
-                        namespace = %namespace,
-                        table = %table,
-                        dropped_events = n,
-                        "Lagged event in listen stream"
-                    );
                     yield AggregatorEvent::Error(LAGGED_MSG);
                 },
-                _ => {
-                    debug!(
-                        namespace = %namespace,
-                        table = %table,
-                        "Filtered out message in listen stream"
-                    );
-                }
             }
         }
     }
