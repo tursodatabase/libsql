@@ -1467,6 +1467,7 @@ impl Replicator {
         };
         let mut next_marker = None;
         let mut applied_wal_frame = false;
+        let mut last_received_frame_no = 0;
         'restore_wal: loop {
             let mut list_request = self.list_objects().prefix(&prefix);
             if let Some(marker) = next_marker {
@@ -1481,7 +1482,6 @@ impl Replicator {
                 break;
             }
 
-            let mut last_received_frame_no = 0;
             for obj in objs {
                 let key = obj
                     .key()
