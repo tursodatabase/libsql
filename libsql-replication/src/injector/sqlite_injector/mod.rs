@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::{collections::VecDeque, path::PathBuf};
 
 use parking_lot::Mutex;
+use rusqlite::ffi::SQLITE_ERROR;
 use rusqlite::OpenFlags;
 use tokio::task::spawn_blocking;
 
@@ -65,6 +66,10 @@ impl SqliteInjector {
             inner: Arc::new(Mutex::new(inner)),
         })
     }
+
+    pub fn validate_integrity(&mut self) -> Result<()> {
+        self.inner.lock().validate_integrity()
+    }
 }
 
 pub(in super::super) struct SqliteInjectorInner {
@@ -122,6 +127,23 @@ impl SqliteInjectorInner {
             encryption_config,
             auto_checkpoint,
         })
+    }
+
+    pub fn validate_integrity(&mut self) -> Result<()> {
+        self.connection
+            .lock()
+            .pragma_query(None, "integrity_check", |row| {
+                let row: String = row.get(0)?;
+                if row != "ok" {
+                    Err(rusqlite::Error::SqliteFailure(
+                        rusqlite::ffi::Error::new(SQLITE_ERROR),
+                        Some(format!("found integrity issues: {row}")),
+                    ))
+                } else {
+                    Ok(())
+                }
+            })?;
+        Ok(())
     }
 
     /// Inject a frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).

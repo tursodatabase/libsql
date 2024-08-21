@@ -7,4 +7,4 @@ macro_rules! caution {
     };
 }
 
-pub (crate) use caution;
+pub(crate) use caution;

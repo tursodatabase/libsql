@@ -62,6 +62,7 @@ pub struct Replicator {
     pub page_size: usize,
     generation: Arc<ArcSwapOption<Uuid>>,
     verify_crc: bool,
+    validate_integrity: bool,
     pub bucket: String,
     pub db_path: String,
     pub db_name: String,
@@ -94,6 +95,8 @@ pub struct Options {
     /// If `true` when restoring, frames checksums will be verified prior their pages being flushed
     /// into the main database file.
     pub verify_crc: bool,
+    /// If `true` when restoring, db integrity will be verified before finishing the process
+    pub validate_integrity: bool,
     /// Kind of compression algorithm used on the WAL frames to be sent to S3.
     pub use_compression: CompressionKind,
     pub encryption_config: Option<EncryptionConfig>,
@@ -217,6 +220,17 @@ impl Options {
                 other
             ),
         };
+        let validate_integrity = match env_var_or("LIBSQL_BOTTOMLESS_VALIDATE_INTEGRITY", true)
+            .to_lowercase()
+            .as_ref()
+        {
+            "yes" | "true" | "1" | "y" | "t" => true,
+            "no" | "false" | "0" | "n" | "f" => false,
+            other => bail!(
+                "Invalid LIBSQL_BOTTOMLESS_VALIDATE_INTEGRITY environment variable: {}",
+                other
+            ),
+        };
         let skip_snapshot = match env_var_or("LIBSQL_BOTTOMLESS_SKIP_SNAPSHOT", false)
             .to_lowercase()
             .as_ref()
@@ -241,6 +255,7 @@ impl Options {
             db_id,
             create_bucket_if_not_exists: true,
             verify_crc,
+            validate_integrity,
             use_compression,
             encryption_config,
             max_batch_interval,
@@ -410,6 +425,7 @@ impl Replicator {
             flush_trigger: Some(flush_trigger),
             last_committed_frame_no,
             verify_crc: options.verify_crc,
+            validate_integrity: options.validate_integrity,
             db_path,
             db_name,
             snapshot_waiter,
@@ -1627,6 +1643,12 @@ impl Replicator {
             if next_marker.is_none() {
                 tracing::trace!("Restored DB from S3 backup using generation {}", generation);
                 break;
+            }
+        }
+        if self.validate_integrity {
+            if let Err(e) = injector.validate_integrity() {
+                utils::caution!("found integrity issues: {}, db_name={}, generation={}", e, &self.db_name, &generation);
+                return Err(anyhow!("DB is not correct"));
             }
         }
         // drop of injector will cause drop&close of last DB connection which will perform final

@@ -2,13 +2,13 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 #![allow(improper_ctypes)]
 
-mod utils;
 mod backup;
 pub mod bottomless_wal;
 mod completion_progress;
 pub mod read;
 pub mod replicator;
 pub mod transaction_cache;
+mod utils;
 pub mod uuid_utils;
 mod wal;
 

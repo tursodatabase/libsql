@@ -275,9 +275,9 @@ async fn restore_from_partial_db() {
 
     start_s3_server().await;
 
-    const DB_ID: &str = "malformedbackup";
-    const BUCKET: &str = "malformedbackup";
-    const PATH: &str = "malformedbackup.sqld";
+    const DB_ID: &str = "partialbackup";
+    const BUCKET: &str = "partialbackup";
+    const PATH: &str = "partialbackup.sqld";
     const PORT: u16 = 15003;
 
     let _ = S3BucketCleaner::new(BUCKET).await;
@@ -301,7 +301,7 @@ async fn restore_from_partial_db() {
     let make_server = || async { configure_server(&options, listener_addr, PATH).await };
     {
         tracing::info!(
-            "---STEP 1: create db, write rows, remove random S3 files to corrupt backup---"
+            "---STEP 1: create db, write rows, remove random S3 files to create effect of partial backup---"
         );
         let cleaner = DbFileCleaner::new(PATH);
         let db_job = start_db(1, make_server().await);
@@ -368,6 +368,152 @@ async fn restore_from_partial_db() {
             .cells["cnt"]
             .clone();
         if let Value::Integer(x) = count {
+            assert!(0 < x && x < 128);
+        } else {
+            assert!(false);
+        }
+        db_job.await.unwrap();
+        drop(cleaner);
+    }
+}
+
+#[tokio::test]
+async fn do_not_restore_from_corrupted_db() {
+    let _ = tracing_subscriber::fmt::try_init();
+
+    start_s3_server().await;
+
+    const DB_ID: &str = "corruptedbackup";
+    const BUCKET: &str = "corruptedbackup";
+    const PATH: &str = "corruptedbackup.sqld";
+    const PORT: u16 = 15004;
+
+    let _ = S3BucketCleaner::new(BUCKET).await;
+    assert_bucket_occupancy(BUCKET, true).await;
+
+    let listener_addr = format!("0.0.0.0:{}", PORT)
+        .to_socket_addrs()
+        .unwrap()
+        .next()
+        .unwrap();
+    let conn = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
+    let options = bottomless::replicator::Options {
+        db_id: Some(DB_ID.to_string()),
+        create_bucket_if_not_exists: true,
+        verify_crc: false,
+        validate_integrity: true,
+        use_compression: bottomless::replicator::CompressionKind::None,
+        bucket_name: BUCKET.to_string(),
+        max_batch_interval: Duration::from_millis(10),
+        ..bottomless::replicator::Options::from_env().unwrap()
+    };
+    let make_server = || async { configure_server(&options, listener_addr, PATH).await };
+    {
+        tracing::info!("---STEP 1: create db, write rows, corrupt random S3 files ---");
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(1, make_server().await);
+
+        sleep(Duration::from_secs(2)).await;
+
+        let _ = sql(
+            &conn,
+            ["CREATE TABLE IF NOT EXISTS t(id INT PRIMARY KEY, name TEXT, payload BLOB);"],
+        )
+        .await
+        .unwrap();
+        for i in 0..128 {
+            sql(
+                &conn,
+                [format!("INSERT INTO t VALUES({i}, '{i}', zeroblob(128))")],
+            )
+            .await
+            .expect("SQL query failed");
+        }
+
+        tracing::info!("Ready to remove files from S3");
+        let client = s3_client().await.expect("failed to create s3 client");
+        let mut i = 0;
+        for key in list_bucket(BUCKET).await {
+            // delete full snapshot files
+            let should_delete =
+                key.ends_with(".changecounter") || key.ends_with(".dep") || key.ends_with("db.raw");
+            if should_delete {
+                client
+                    .delete_object()
+                    .bucket(BUCKET)
+                    .key(&key)
+                    .send()
+                    .await
+                    .expect("failed to delete object");
+            } else if key.ends_with(".raw") {
+                tracing::info!("corrupt frame range: {key}");
+                // corrupt random wal frame range
+                let response = client
+                    .get_object()
+                    .bucket(BUCKET)
+                    .key(&key)
+                    .send()
+                    .await
+                    .expect("failed to read object");
+                let mut bytes: Vec<u8> = response
+                    .body
+                    .collect()
+                    .await
+                    .expect("failed to read body")
+                    .into_bytes()
+                    .into();
+                let single_frame_size = 24 + 4096;
+                assert!(bytes.len() % single_frame_size == 0);
+                for frame in 0..bytes.len() / single_frame_size {
+                    let page_number = u32::from_be_bytes(
+                        bytes[frame * single_frame_size..frame * single_frame_size + 4]
+                            .try_into()
+                            .unwrap(),
+                    );
+                    if page_number <= 1 {
+                        continue;
+                    }
+                    tracing::info!("corrupting page {page_number}");
+                    for b in frame * single_frame_size + 24..(frame + 1) * single_frame_size {
+                        bytes[b] = 255;
+                    }
+                }
+                client
+                    .put_object()
+                    .bucket(BUCKET)
+                    .key(&key)
+                    .body(bytes.into())
+                    .send()
+                    .await
+                    .expect("failed to put body");
+            }
+            i += 1;
+        }
+
+        db_job.await.unwrap();
+        drop(cleaner);
+    }
+
+    {
+        sleep(Duration::from_secs(2)).await;
+
+        tracing::info!("---STEP 2: recreate database, check that it is unable to start ---");
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(2, make_server().await);
+        sleep(Duration::from_secs(2)).await;
+
+        let result = sql(&conn, ["SELECT COUNT(*) as cnt FROM t"]).await.unwrap();
+        let count = result
+            .first()
+            .unwrap()
+            .clone()
+            .into_result_set()
+            .unwrap()
+            .rows[0]
+            .cells["cnt"]
+            .clone();
+        if let Value::Integer(x) = count {
+            dbg!(x);
             assert!(0 < x && x < 128);
         } else {
             assert!(false);
