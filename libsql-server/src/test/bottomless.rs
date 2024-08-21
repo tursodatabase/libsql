@@ -270,7 +270,7 @@ async fn list_bucket(bucket: &str) -> Vec<String> {
 }
 
 #[tokio::test]
-async fn do_not_restore_malformed_db() {
+async fn restore_from_partial_db() {
     let _ = tracing_subscriber::fmt::try_init();
 
     start_s3_server().await;
@@ -357,11 +357,14 @@ async fn do_not_restore_malformed_db() {
         let db_job = start_db(2, make_server().await);
         sleep(Duration::from_secs(2)).await;
 
-        assert!(sql(&conn, ["SELECT COUNT(*) FROM t"]).await.is_err());
-        assert!(db_job
-            .await
-            .inspect_err(|e| tracing::error!("db process failed: {}", e))
-            .is_err());
+        let result = sql(&conn, ["SELECT COUNT(*) as cnt FROM t"]).await.unwrap();
+        let count = result.first().unwrap().clone().into_result_set().unwrap().rows[0].cells["cnt"].clone();
+        if let Value::Integer(x) = count {
+            assert!(0 < x && x < 128);
+        } else {
+            assert!(false);
+        }
+        db_job.await.unwrap();
         drop(cleaner);
     }
 }
