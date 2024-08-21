@@ -37,8 +37,7 @@ do_execsql_test vector-pragmas {
   PRAGMA integrity_check;
   PRAGMA index_list='t_pragmas';
 } {
-  {row 1 missing from index t_pragmas_idx}
-  {wrong # of entries in index t_pragmas_idx}
+  {ok}
   0 t_pragmas_idx 0 c 0
 }
 

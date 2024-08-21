@@ -2023,6 +2023,7 @@ void sqlite3Pragma(
             int kk;
             int ckUniq = sqlite3VdbeMakeLabel(pParse);
             if( pPk==pIdx ) continue;
+            if( IsVectorIndex(pIdx) ) continue;
             r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 0, &jmp3,
                                          pPrior, r1);
             pPrior = pIdx;
@@ -2107,6 +2108,7 @@ void sqlite3Pragma(
           sqlite3VdbeLoadString(v, 2, "wrong # of entries in index ");
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
             if( pPk==pIdx ) continue;
+            if( IsVectorIndex(pIdx) ) continue;
             sqlite3VdbeAddOp2(v, OP_Count, iIdxCur+j, 3);
             addr = sqlite3VdbeAddOp3(v, OP_Eq, 8+j, 0, 3); VdbeCoverage(v);
             sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
