@@ -1222,7 +1222,7 @@ impl Replicator {
                 let elapsed = Instant::now() - start_ts;
                 tracing::info!("Finished database restoration in {:?}", elapsed);
                 tokio::fs::rename(&restore_path, &self.db_path).await?;
-                let _ = self.remove_wal_files().await; // best effort, WAL files may not exists
+                let _ = self.remove_wal_files(&self.db_name).await; // best effort, WAL files may not exists
                 Ok(result)
             }
             Err(e) => {
@@ -1465,6 +1465,16 @@ impl Replicator {
             unsafe { v.set_len(page_size) };
             v
         };
+        let db_path_str = db_path
+            .to_str()
+            .ok_or(anyhow!("failed to convert db path to string"))?;
+        let cleanup = || async move {
+            let _ = self
+                .remove_wal_files(&db_path_str)
+                .await
+                .inspect_err(|e| tracing::error!("unable to remove wal files: {}", e));
+        };
+
         let mut next_marker = None;
         let mut applied_wal_frame = false;
         let mut last_received_frame_no = 0;
@@ -1493,6 +1503,7 @@ impl Replicator {
                         Some(result) => result,
                         None => {
                             if !key.ends_with(".gz")
+                                && !key.ends_with(".raw")
                                 && !key.ends_with(".zstd")
                                 && !key.ends_with(".db")
                                 && !key.ends_with(".meta")
@@ -1505,15 +1516,27 @@ impl Replicator {
                         }
                     };
                 if first_frame_no != last_received_frame_no + 1 {
-                    tracing::warn!("Missing series of consecutive frames. Last applied frame: {}, next found: {}. Stopping the restoration process",
-                            last_received_frame_no, first_frame_no);
-                    break;
+                    tracing::error!(
+                        "Missing series of consecutive frames. Last applied frame: {}, next found: {}. Stopping the restoration process: db_name={}, generation={}",
+                        last_received_frame_no,
+                        first_frame_no,
+                        &self.db_name,
+                        &generation
+                    );
+                    cleanup().await;
+                    return Err(anyhow!("WAL frame series is inconsistent"));
                 }
                 if let Some(frame) = last_consistent_frame {
                     if last_frame_no > frame {
-                        tracing::warn!("Remote log contains frame {} larger than last consistent frame ({}), stopping the restoration process",
-                                last_frame_no, frame);
-                        break;
+                        tracing::error!(
+                            "Remote log contains frame {} larger than last consistent frame ({}), stopping the restoration process: db_name={}, generation={}",
+                            last_frame_no,
+                            frame,
+                            &self.db_name,
+                            &generation
+                        );
+                        cleanup().await;
+                        return Err(anyhow!("WAL frame is larget than last consistent frame"));
                     }
                 }
                 if let Some(threshold) = utc_time.as_ref() {
@@ -1581,24 +1604,27 @@ impl Replicator {
         // WAL checkpoint of the DB
         drop(injector);
 
-        let db_path_str = db_path.to_str().ok_or(anyhow!("failed to convert db path to string"))?;
         let db_wal_file_path = format!("{}-wal", &db_path_str);
         let db_wal_index_path = format!("{}-shm", &db_path_str);
         let has_wal_file = tokio::fs::try_exists(&db_wal_file_path).await?;
         let has_wal_index = tokio::fs::try_exists(&db_wal_index_path).await?;
         if has_wal_file || has_wal_index {
-            let _ = tokio::fs::remove_file(db_wal_file_path).await.inspect_err(|e| tracing::error!("unable to remove wal file: {}", e));
-            let _ = tokio::fs::remove_file(db_wal_index_path).await.inspect_err(|e| tracing::error!("unable to remove wal index file: {}", e));
             // restore process was not finished successfully as WAL wasn't transferred completely
+            tracing::error!(
+                "WAL wasn't transferred completely during restoration: db_name={}, generation={}",
+                &self.db_name,
+                &generation
+            );
+            cleanup().await;
             return Err(anyhow!("WAL wasn't transferred completely"));
         }
         Ok(applied_wal_frame)
     }
 
-    async fn remove_wal_files(&self) -> Result<()> {
-        tracing::debug!("Overwriting any existing WAL file: {}-wal", &self.db_path);
-        tokio::fs::remove_file(&format!("{}-wal", &self.db_path)).await?;
-        tokio::fs::remove_file(&format!("{}-shm", &self.db_path)).await?;
+    async fn remove_wal_files(&self, db_path: &str) -> Result<()> {
+        tracing::debug!("Remove any existing WAL file: {}-wal", &db_path);
+        tokio::fs::remove_file(&format!("{}-wal", &db_path)).await?;
+        tokio::fs::remove_file(&format!("{}-shm", &db_path)).await?;
         Ok(())
     }
 
