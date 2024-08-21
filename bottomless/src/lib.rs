@@ -2,6 +2,7 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 #![allow(improper_ctypes)]
 
+mod utils;
 mod backup;
 pub mod bottomless_wal;
 mod completion_progress;
