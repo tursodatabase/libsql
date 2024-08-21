@@ -1647,7 +1647,12 @@ impl Replicator {
         }
         if self.validate_integrity {
             if let Err(e) = injector.validate_integrity() {
-                utils::caution!("found integrity issues: {}, db_name={}, generation={}", e, &self.db_name, &generation);
+                utils::caution!(
+                    "found integrity issues: {}, db_name={}, generation={}",
+                    e,
+                    &self.db_name,
+                    &generation
+                );
                 return Err(anyhow!("DB is not correct"));
             }
         }
