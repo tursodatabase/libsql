@@ -486,7 +486,6 @@ async fn do_not_restore_from_corrupted_db() {
                     .await
                     .expect("failed to put body");
             }
-            i += 1;
         }
 
         db_job.await.unwrap();
