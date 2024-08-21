@@ -358,7 +358,15 @@ async fn restore_from_partial_db() {
         sleep(Duration::from_secs(2)).await;
 
         let result = sql(&conn, ["SELECT COUNT(*) as cnt FROM t"]).await.unwrap();
-        let count = result.first().unwrap().clone().into_result_set().unwrap().rows[0].cells["cnt"].clone();
+        let count = result
+            .first()
+            .unwrap()
+            .clone()
+            .into_result_set()
+            .unwrap()
+            .rows[0]
+            .cells["cnt"]
+            .clone();
         if let Value::Integer(x) = count {
             assert!(0 < x && x < 128);
         } else {
