@@ -195,7 +195,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo userauth.lo upsert.lo util.lo vacuum.lo \
-         vector.lo vectorfloat32.lo vectorfloat64.lo vectorfloat1bit.lo vectorfloat8.lo \
+         vector.lo vectorfloat32.lo vectorfloat64.lo vectorfloat1bit.lo vectorfloat8.lo vectorfloat16.lo \
          vectorIndex.lo vectordiskann.lo vectorvtab.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo vdbevtab.lo \
@@ -304,6 +304,7 @@ SRC = \
   $(TOP)/src/vector.c \
   $(TOP)/src/vectorInt.h \
   $(TOP)/src/vectorfloat1bit.c \
+  $(TOP)/src/vectorfloat16.c \
   $(TOP)/src/vectorfloat32.c \
   $(TOP)/src/vectorfloat64.c \
   $(TOP)/src/vectorfloat8.c \
@@ -1142,6 +1143,9 @@ vector.lo:	$(TOP)/src/vector.c $(HDR)
 
 vectorfloat1bit.lo:	$(TOP)/src/vectorfloat1bit.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectorfloat1bit.c
+
+vectorfloat16.lo:	$(TOP)/src/vectorfloat16.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectorfloat16.c
 
 vectorfloat32.lo:	$(TOP)/src/vectorfloat32.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectorfloat32.c
