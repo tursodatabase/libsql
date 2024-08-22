@@ -22,7 +22,7 @@
 **
 ******************************************************************************
 **
-** 16-bit brain float (BFLOAT16) floating point vector format utilities.
+** 16-bit brain floating point vector format utilities.
 **
 ** See https://en.wikipedia.org/wiki/Bfloat16_floating-point_format
 */
@@ -37,54 +37,54 @@
 ** Utility routines for vector serialization and deserialization
 **************************************************************************/
 
-float vectorBF16ToFloat(u16 f16){
+float vectorFB16ToFloat(u16 f16){
   u32 f32 = (u32)f16 << 16;
   return *((float*)&f32);
 }
 
-u16 vectorBF16FromFloat(float f){
+u16 vectorFB16FromFloat(float f){
   u32 f32 = *((u32*)&f);
   return (u16)(f32 >> 16);
 }
 
-void vectorBF16Dump(const Vector *pVec){
+void vectorFB16Dump(const Vector *pVec){
   u16 *elems = pVec->data;
   unsigned i;
 
-  assert( pVec->type == VECTOR_TYPE_BFLOAT16 );
+  assert( pVec->type == VECTOR_TYPE_FLOATB16 );
 
-  printf("bf16: [");
+  printf("fb16: [");
   for(i = 0; i < pVec->dims; i++){
-    printf("%s%f", i == 0 ? "" : ", ", vectorBF16ToFloat(elems[i]));
+    printf("%s%f", i == 0 ? "" : ", ", vectorFB16ToFloat(elems[i]));
   }
   printf("]\n");
 }
 
-void vectorBF16SerializeToBlob(
+void vectorFB16SerializeToBlob(
   const Vector *pVector,
   unsigned char *pBlob,
   size_t nBlobSize
 ){
-  assert( pVector->type == VECTOR_TYPE_BFLOAT16 );
+  assert( pVector->type == VECTOR_TYPE_FLOATB16 );
   assert( pVector->dims <= MAX_VECTOR_SZ );
   assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   memcpy(pBlob, pVector->data, pVector->dims * sizeof(u16));
 }
 
-float vectorBF16DistanceCos(const Vector *v1, const Vector *v2){
+float vectorFB16DistanceCos(const Vector *v1, const Vector *v2){
   int i;
   float dot = 0, norm1 = 0, norm2 = 0;
   float value1, value2;
   u16 *data1 = v1->data, *data2 = v2->data;
 
   assert( v1->dims == v2->dims );
-  assert( v1->type == VECTOR_TYPE_BFLOAT16 );
-  assert( v2->type == VECTOR_TYPE_BFLOAT16 );
+  assert( v1->type == VECTOR_TYPE_FLOATB16 );
+  assert( v2->type == VECTOR_TYPE_FLOATB16 );
 
   for(i = 0; i < v1->dims; i++){
-    value1 = vectorBF16ToFloat(data1[i]);
-    value2 = vectorBF16ToFloat(data2[i]);
+    value1 = vectorFB16ToFloat(data1[i]);
+    value2 = vectorFB16ToFloat(data2[i]);
     dot += value1*value2;
     norm1 += value1*value1;
     norm2 += value2*value2;
@@ -93,31 +93,31 @@ float vectorBF16DistanceCos(const Vector *v1, const Vector *v2){
   return 1.0 - (dot / sqrt(norm1 * norm2));
 }
 
-float vectorBF16DistanceL2(const Vector *v1, const Vector *v2){
+float vectorFB16DistanceL2(const Vector *v1, const Vector *v2){
   int i;
   float sum = 0;
   float value1, value2;
   u16 *data1 = v1->data, *data2 = v2->data;
 
   assert( v1->dims == v2->dims );
-  assert( v1->type == VECTOR_TYPE_BFLOAT16 );
-  assert( v2->type == VECTOR_TYPE_BFLOAT16 );
+  assert( v1->type == VECTOR_TYPE_FLOATB16 );
+  assert( v2->type == VECTOR_TYPE_FLOATB16 );
 
   for(i = 0; i < v1->dims; i++){
-    value1 = vectorBF16ToFloat(data1[i]);
-    value2 = vectorBF16ToFloat(data2[i]);
+    value1 = vectorFB16ToFloat(data1[i]);
+    value2 = vectorFB16ToFloat(data2[i]);
     float d = (value1 - value2);
     sum += d*d;
   }
   return sqrt(sum);
 }
 
-void vectorBF16DeserializeFromBlob(
+void vectorFB16DeserializeFromBlob(
   Vector *pVector,
   const unsigned char *pBlob,
   size_t nBlobSize
 ){
-  assert( pVector->type == VECTOR_TYPE_BFLOAT16 );
+  assert( pVector->type == VECTOR_TYPE_FLOATB16 );
   assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
   assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 

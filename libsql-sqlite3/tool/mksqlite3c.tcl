@@ -469,12 +469,12 @@ set flist {
    json.c
    vector.c
    vectordiskann.c
-   vectorbfloat16.c
    vectorfloat1bit.c
    vectorfloat32.c
    vectorfloat64.c
    vectorfloat8.c
    vectorfloat16.c
+   vectorfloatb16.c
    vectorIndex.c
    vectorvtab.c
    rtree.c

@@ -377,7 +377,7 @@ do_execsql_test vector-f32-compress-f16 {
 
 do_execsql_test vector-f32-compress-bf16 {
   CREATE TABLE t_f32_bf16( v FLOAT32(4) );
-  CREATE INDEX t_f32_bf16_idx ON t_f32_bf16( libsql_vector_idx(v, 'compress_neighbors=bfloat16') );
+  CREATE INDEX t_f32_bf16_idx ON t_f32_bf16( libsql_vector_idx(v, 'compress_neighbors=floatb16') );
   INSERT INTO t_f32_bf16 VALUES ( vector('[1,-1,1,-1]') );
   INSERT INTO t_f32_bf16 VALUES ( vector('[-1,1,1,-1]') );
   INSERT INTO t_f32_bf16 VALUES ( vector('[1,-1,-1,1]') );
@@ -403,7 +403,7 @@ do_execsql_test vector-f16 {
 } {3 1 2}
 
 do_execsql_test vector-bf16 {
-  CREATE TABLE t_bf16( v BFLOAT16(4) );
+  CREATE TABLE t_bf16( v FLOATB16(4) );
   CREATE INDEX t_bf16_idx ON t_bf16( libsql_vector_idx(v) );
   INSERT INTO t_bf16 VALUES ( vectorb16('[1,-1,1,-1]') );
   INSERT INTO t_bf16 VALUES ( vectorb16('[-1,1,1,-1]') );
@@ -430,7 +430,7 @@ do_execsql_test vector-f16-compress-1bit {
 } {3 1 2}
 
 do_execsql_test vector-bf16-compress-1bit {
-  CREATE TABLE t_bf16_1bit( v BFLOAT16(4) );
+  CREATE TABLE t_bf16_1bit( v FLOATB16(4) );
   CREATE INDEX t_bf16_1bit_idx ON t_bf16_1bit( libsql_vector_idx(v, 'compress_neighbors=float1bit') );
   INSERT INTO t_bf16_1bit VALUES ( vectorb16('[1,-1,1,-1]') );
   INSERT INTO t_bf16_1bit VALUES ( vectorb16('[-1,1,1,-1]') );
