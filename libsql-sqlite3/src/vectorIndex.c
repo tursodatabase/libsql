@@ -387,6 +387,8 @@ static struct VectorColumnType VECTOR_COLUMN_TYPES[] = {
   { "F8_BLOB",    VECTOR_TYPE_FLOAT8 },
   { "FLOAT16",    VECTOR_TYPE_FLOAT16 },
   { "F16_BLOB",   VECTOR_TYPE_FLOAT16 },
+  { "BFLOAT16",   VECTOR_TYPE_BFLOAT16 },
+  { "BF16_BLOB",  VECTOR_TYPE_BFLOAT16 },
 };
 
 /*
@@ -408,6 +410,7 @@ static struct VectorParamName VECTOR_PARAM_NAMES[] = {
   { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "float1bit", VECTOR_TYPE_FLOAT1BIT },
   { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "float8",    VECTOR_TYPE_FLOAT8 },
   { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "float16",   VECTOR_TYPE_FLOAT16 },
+  { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "bfloat16",  VECTOR_TYPE_BFLOAT16 },
   { "compress_neighbors", VECTOR_COMPRESS_NEIGHBORS_PARAM_ID, 0, "float32",   VECTOR_TYPE_FLOAT32 },
   { "alpha",              VECTOR_PRUNING_ALPHA_PARAM_ID, 2, 0, 0 },
   { "search_l",           VECTOR_SEARCH_L_PARAM_ID,      1, 0, 0 },
