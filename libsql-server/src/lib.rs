@@ -820,7 +820,14 @@ where
             }
 
             let config = aws_config::load_defaults(BehaviorVersion::latest()).await;
-            let http_client = HyperClientBuilder::new().build(self.connector.clone().unwrap());
+
+            let https_connector = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_native_roots()
+                .https_or_http()
+                .enable_all_versions()
+                .wrap_connector(self.connector.clone().unwrap());
+
+            let http_client = HyperClientBuilder::new().build(https_connector);
             let mut builder = config.into_builder();
             builder.set_http_client(Some(http_client));
             builder.set_endpoint_url(opt.aws_endpoint.clone());
