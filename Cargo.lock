@@ -949,6 +949,7 @@ dependencies = [
  "futures-core",
  "libsql-sys",
  "libsql_replication",
+ "metrics",
  "rand",
  "serde",
  "tokio",

@@ -41,11 +41,11 @@ impl WalCopier {
         }
     }
 
-    pub async fn flush(&mut self, frames: Range<u32>) -> Result<u32> {
+    pub async fn flush(&mut self, frames: Range<u32>) -> Result<(u32, u32)> {
         tracing::trace!("flushing frames [{}..{})", frames.start, frames.end);
         if frames.is_empty() {
             tracing::trace!("Trying to flush empty frame range");
-            return Ok(frames.start - 1);
+            return Ok((frames.start - 1, 0));
         }
         let mut wal = match WalFileReader::open(&self.wal_path).await? {
             Some(wal) => wal,
@@ -82,6 +82,7 @@ impl WalCopier {
         }
         tracing::trace!("Flushing {} frames locally.", frames.len());
 
+        let mut ready_ranges = 0;
         for start in frames.clone().step_by(self.max_frames_per_batch) {
             let period_start = Instant::now();
             let timestamp = chrono::Utc::now().timestamp() as u64;
@@ -131,10 +132,11 @@ impl WalCopier {
                     "WAL local cloning ended prematurely. Last cloned frame no.: {}",
                     end - 1
                 );
-                return Ok(end - 1);
+                return Ok((end - 1, ready_ranges));
             }
+            ready_ranges += 1;
         }
-        Ok(frames.end - 1)
+        Ok((frames.end - 1, ready_ranges))
     }
 }
 
