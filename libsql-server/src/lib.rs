@@ -170,6 +170,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub use_custom_wal: Option<CustomWAL>,
     pub storage_server_address: String,
     pub connector: Option<D>,
+    pub migrate_bottomless: bool,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -194,6 +195,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             use_custom_wal: None,
             storage_server_address: Default::default(),
             connector: None,
+            migrate_bottomless: false,
         }
     }
 }
