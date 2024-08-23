@@ -54,6 +54,7 @@ typedef u32 VectorDims;
 #define VECTOR_TYPE_FLOAT1BIT 3
 #define VECTOR_TYPE_FLOAT8    4
 #define VECTOR_TYPE_FLOAT16   5
+#define VECTOR_TYPE_FLOATB16  6
 
 #define VECTOR_FLAGS_STATIC 1
 
@@ -82,6 +83,7 @@ void vectorInit(Vector *, VectorType, VectorDims, void *);
 void vectorDump    (const Vector *v);
 void vectorF8Dump  (const Vector *v);
 void vectorF16Dump (const Vector *v);
+void vectorFB16Dump(const Vector *v);
 void vectorF32Dump (const Vector *v);
 void vectorF64Dump (const Vector *v);
 void vector1BitDump(const Vector *v);
@@ -102,6 +104,7 @@ void vectorF64MarshalToText(sqlite3_context *, const Vector *);
 void vectorSerializeToBlob    (const Vector *, unsigned char *, size_t);
 void vectorF8SerializeToBlob  (const Vector *, unsigned char *, size_t);
 void vectorF16SerializeToBlob (const Vector *, unsigned char *, size_t);
+void vectorFB16SerializeToBlob(const Vector *, unsigned char *, size_t);
 void vectorF32SerializeToBlob (const Vector *, unsigned char *, size_t);
 void vectorF64SerializeToBlob (const Vector *, unsigned char *, size_t);
 void vector1BitSerializeToBlob(const Vector *, unsigned char *, size_t);
@@ -112,6 +115,7 @@ void vector1BitSerializeToBlob(const Vector *, unsigned char *, size_t);
 float vectorDistanceCos    (const Vector *, const Vector *);
 float vectorF8DistanceCos  (const Vector *, const Vector *);
 float vectorF16DistanceCos (const Vector *, const Vector *);
+float vectorFB16DistanceCos(const Vector *, const Vector *);
 float vectorF32DistanceCos (const Vector *, const Vector *);
 double vectorF64DistanceCos(const Vector *, const Vector *);
 
@@ -126,6 +130,7 @@ int vector1BitDistanceHamming(const Vector *, const Vector *);
 float vectorDistanceL2    (const Vector *, const Vector *);
 float vectorF8DistanceL2  (const Vector *, const Vector *);
 float vectorF16DistanceL2 (const Vector *, const Vector *);
+float vectorFB16DistanceL2(const Vector *, const Vector *);
 float vectorF32DistanceL2 (const Vector *, const Vector *);
 double vectorF64DistanceL2(const Vector *, const Vector *);
 
@@ -143,6 +148,7 @@ int vectorParseSqliteBlobWithType(sqlite3_value *, Vector *, char **);
 
 void vectorF8DeserializeFromBlob  (Vector *, const unsigned char *, size_t);
 void vectorF16DeserializeFromBlob (Vector *, const unsigned char *, size_t);
+void vectorFB16DeserializeFromBlob(Vector *, const unsigned char *, size_t);
 void vectorF32DeserializeFromBlob (Vector *, const unsigned char *, size_t);
 void vectorF64DeserializeFromBlob (Vector *, const unsigned char *, size_t);
 void vector1BitDeserializeFromBlob(Vector *, const unsigned char *, size_t);
@@ -152,6 +158,9 @@ void vectorInitFromBlob(Vector *, const unsigned char *, size_t);
 
 u16 vectorF16FromFloat(float);
 float vectorF16ToFloat(u16);
+
+u16 vectorFB16FromFloat(float);
+float vectorFB16ToFloat(u16);
 
 void vectorConvert(const Vector *, Vector *);
 

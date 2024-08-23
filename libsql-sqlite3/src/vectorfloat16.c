@@ -128,8 +128,6 @@ void vectorF16SerializeToBlob(
   unsigned char *pBlob,
   size_t nBlobSize
 ){
-  float alpha, shift;
-
   assert( pVector->type == VECTOR_TYPE_FLOAT16 );
   assert( pVector->dims <= MAX_VECTOR_SZ );
   assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
