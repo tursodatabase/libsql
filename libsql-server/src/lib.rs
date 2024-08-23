@@ -556,16 +556,6 @@ where
             encryption_config: self.db_config.encryption_config.clone(),
         };
 
-        let (configurators, make_replication_svc) = self
-            .make_configurators_and_replication_svc(
-                base_config,
-                client_config.clone(),
-                &mut task_manager,
-                scheduler_sender.into(),
-                scripted_backup,
-            )
-            .await?;
-
         let (metastore_conn_maker, meta_store_wal_manager) =
             metastore_connection_maker(self.meta_store_config.bottomless.clone(), &self.path)
                 .await?;
@@ -577,6 +567,17 @@ where
             meta_store_wal_manager,
         )
         .await?;
+
+        let (configurators, make_replication_svc) = self
+            .make_configurators_and_replication_svc(
+                base_config,
+                client_config.clone(),
+                &mut task_manager,
+                scheduler_sender.into(),
+                scripted_backup,
+            )
+            .await?;
+
 
         let namespace_store: NamespaceStore = NamespaceStore::new(
             db_kind.is_replica(),
