@@ -821,7 +821,7 @@ where
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         tracing::info!("using libsql wal");
         let (sender, receiver) = tokio::sync::mpsc::channel(64);
-        let storage = if let Some(ref opt) = self.db_config.bottomless_replication {
+        let storage: Arc<_> = if let Some(ref opt) = self.db_config.bottomless_replication {
             if client_config.is_some() {
                 anyhow::bail!("bottomless cannot be enabled on replicas");
             }
@@ -865,9 +865,10 @@ where
             Either::A(storage)
         } else {
             Either::B(NoStorage)
+        }.into();
         };
 
-        if self.rpc_server_config.is_some() && matches!(storage, Either::B(_)) {
+        if self.rpc_server_config.is_some() && matches!(*storage, Either::B(_)) {
             anyhow::bail!("replication without bottomless not supported yet");
         }
 

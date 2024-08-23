@@ -47,7 +47,7 @@ pub struct WalRegistry<IO: Io, S> {
 impl<S> WalRegistry<StdIO, S> {
     pub fn new(
         path: PathBuf,
-        storage: S,
+        storage: Arc<S>,
         checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     ) -> Result<Self> {
         Self::new_with_io(StdIO(()), path, storage, checkpoint_notifier)
@@ -58,7 +58,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
     pub fn new_with_io(
         io: IO,
         path: PathBuf,
-        storage: S,
+        storage: Arc<S>,
         checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     ) -> Result<Self> {
         io.create_dir_all(&path)?;
@@ -67,7 +67,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
             path,
             opened: Default::default(),
             shutdown: Default::default(),
-            storage: storage.into(),
+            storage,
             checkpoint_notifier,
         };
 

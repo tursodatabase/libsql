@@ -99,7 +99,7 @@ pub mod test {
                 WalRegistry::new_with_io(
                     io.clone(),
                     tmp.path().join("test/wals"),
-                    TestStorage::new_io(store, io),
+                    TestStorage::new_io(store, io).into(),
                     sender,
                 )
                 .unwrap(),
