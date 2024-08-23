@@ -2699,10 +2699,11 @@ int sqlite3OpenTableAndIndices(
        * As vector index creates empty B-tree index - it's safe to issue
        * OP_OpenRead command for it
        *
-       * TODO: with current implementation, integrity_check will output error
-       * for vector index as rows will be missed in it
-       * It's better to remove this error in future - but for now it's unclear
-       * how to do that with minimal code changes
+       * In order to not produce integrity check errors we skip vector indices
+       * from integrity checks in pragma.c implementation
+       *
+       * Note, that it's dangerous to skip some indices in this code as sqlite3 rely
+       * on the fact that cursors will be opened for every index in order
        */
 #ifndef SQLITE_OMIT_VECTOR
       if( IsVectorIndex(pIdx) && op == OP_OpenWrite ){
