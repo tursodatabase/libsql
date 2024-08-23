@@ -971,7 +971,6 @@ int vectorIndexSearch(
     rc = SQLITE_ERROR;
     goto out;
   }
-  assert( type == VECTOR_TYPE_FLOAT32 || type == VECTOR_TYPE_FLOAT64 || type == VECTOR_TYPE_FLOAT1BIT );
 
   pVector = vectorAlloc(type, dims);
   if( pVector == NULL ){

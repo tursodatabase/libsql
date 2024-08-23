@@ -8423,6 +8423,7 @@ int sqlite3Select(
             if( pIdx->bUnordered==0
              && pIdx->szIdxRow<pTab->szTabRow
              && pIdx->pPartIdxWhere==0
+             && pIdx->idxIsVector==0
              && (!pBest || pIdx->szIdxRow<pBest->szIdxRow)
             ){
               pBest = pIdx;
