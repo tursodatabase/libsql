@@ -46,6 +46,7 @@ impl NamespaceName {
 
     fn validate(s: &str) -> crate::Result<()> {
         if s.is_empty() {
+            tracing::warn!("invalid namespace: empty namespace");
             return Err(crate::error::Error::InvalidNamespace);
         }
 
