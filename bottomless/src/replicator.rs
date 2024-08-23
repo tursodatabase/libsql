@@ -1540,6 +1540,7 @@ impl Replicator {
         };
         let mut next_marker = None;
         let mut applied_wal_frame = false;
+        let mut last_injected_frame_no = 0;
         'restore_wal: loop {
             let mut list_request = self.list_objects().prefix(&prefix);
             if let Some(marker) = next_marker {
@@ -1554,7 +1555,6 @@ impl Replicator {
                 break;
             }
 
-            let mut last_received_frame_no = 0;
             for obj in objs {
                 let key = obj
                     .key()
@@ -1577,9 +1577,9 @@ impl Replicator {
                             continue;
                         }
                     };
-                if first_frame_no != last_received_frame_no + 1 {
+                if first_frame_no != last_injected_frame_no + 1 {
                     tracing::warn!("Missing series of consecutive frames. Last applied frame: {}, next found: {}. Stopping the restoration process",
-                            last_received_frame_no, first_frame_no);
+                            last_injected_frame_no, first_frame_no);
                     break;
                 }
                 if let Some(frame) = last_consistent_frame {
@@ -1612,7 +1612,7 @@ impl Replicator {
                 );
 
                 while let Some(frame) = reader.next_frame_header().await? {
-                    last_received_frame_no = reader.next_frame_no();
+                    last_injected_frame_no = reader.next_frame_no();
                     reader.next_page(&mut page_buf).await?;
                     if self.verify_crc {
                         checksum = frame.verify(checksum, &page_buf)?;
@@ -1621,7 +1621,7 @@ impl Replicator {
                     let checksum = (crc1 as u64) << 32 | crc2 as u64;
                     let frame_to_inject = libsql_replication::frame::Frame::from_parts(
                         &libsql_replication::frame::FrameHeader {
-                            frame_no: (last_received_frame_no as u64).into(),
+                            frame_no: (last_injected_frame_no as u64).into(),
                             checksum: checksum.into(),
                             page_no: frame.pgno().into(),
                             size_after: frame.size_after().into(),
