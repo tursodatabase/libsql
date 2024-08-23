@@ -866,7 +866,22 @@ where
         } else {
             Either::B(NoStorage)
         }.into();
+
+        let primary_config = PrimaryConfig {
+            max_log_size: self.db_config.max_log_size,
+            max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
+            bottomless_replication: self.db_config.bottomless_replication.clone(),
+            scripted_backup,
+            checkpoint_interval: self.db_config.checkpoint_interval,
         };
+
+        // perform migration before creating the actual registry creation
+        self.maybe_migrate_bottomless(
+            meta_store,
+            storage.clone(),
+            &base_config,
+            &primary_config,
+        ).await?;
 
         if self.rpc_server_config.is_some() && matches!(*storage, Either::B(_)) {
             anyhow::bail!("replication without bottomless not supported yet");
@@ -930,13 +945,6 @@ where
             }
             // configure primary
             None => {
-                let primary_config = PrimaryConfig {
-                    max_log_size: self.db_config.max_log_size,
-                    max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
-                    bottomless_replication: self.db_config.bottomless_replication.clone(),
-                    scripted_backup,
-                    checkpoint_interval: self.db_config.checkpoint_interval,
-                };
                 let primary_configurator = LibsqlPrimaryConfigurator::new(
                     base_config.clone(),
                     primary_config.clone(),
