@@ -528,6 +528,10 @@ impl Replicator {
         tracing::info!("bottomless replicator: shutting down...");
         // 1. wait for all committed WAL frames to be committed locally
         let last_frame_no = self.last_known_frame();
+// force flush in order to not wait for periodic wake up of local back up process
+        if let Some(tx) = &self.flush_trigger {
+            let _ = tx.send(());
+        }
         self.wait_until_committed(last_frame_no).await?;
         // 2. wait for snapshot upload to S3 to finish
         self.wait_until_snapshotted().await?;
