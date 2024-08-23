@@ -69,6 +69,7 @@ use tonic::transport::Channel;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
+use self::bottomless_migrate::bottomless_migrate;
 use self::config::MetaStoreConfig;
 use self::connection::connection_manager::InnerWalManager;
 use self::namespace::configurator::{
@@ -110,6 +111,7 @@ mod stats;
 #[cfg(test)]
 mod test;
 mod utils;
+mod bottomless_migrate;
 
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
@@ -1157,6 +1159,7 @@ where
             && is_libsql_wal;
 
         if should_attempt_migration {
+            bottomless_migrate(meta_store, storage, base_config.clone(), primary_config.clone()).await?;
         }
 
         Ok(())
