@@ -56,6 +56,7 @@ pub struct Replicator {
     /// Always: [last_committed_frame_no] <= [last_sent_frame_no].
     last_committed_frame_no: Receiver<Result<u32>>,
     flush_trigger: Option<Sender<()>>,
+    shutdown_trigger: Option<tokio::sync::watch::Sender<()>>,
     snapshot_waiter: Receiver<Result<Option<Uuid>>>,
     snapshot_notifier: Arc<Sender<Result<Option<Uuid>>>>,
 
@@ -350,6 +351,7 @@ impl Replicator {
 
         let mut join_set = JoinSet::new();
 
+        let (shutdown_trigger, shutdown_watch) = tokio::sync::watch::channel(());
         let (frames_outbox, mut frames_inbox) = tokio::sync::mpsc::unbounded_channel();
         let _local_backup = {
             let mut copier = WalCopier::new(
@@ -414,6 +416,7 @@ impl Replicator {
             let max_parallelism = options.s3_upload_max_parallelism;
             let upload_progress = upload_progress.clone();
             let db_name = db_name.clone();
+            let shutdown_watch = Arc::new(shutdown_watch);
             join_set.spawn(async move {
                 let sem = Arc::new(tokio::sync::Semaphore::new(max_parallelism));
                 let mut join_set = JoinSet::new();
@@ -432,6 +435,7 @@ impl Replicator {
                     Self::set_s3_queue_size(&db_name, frames_inbox.len());
 
                     let db_name = db_name.clone();
+                    let shutdown_watch = shutdown_watch.clone();
                     join_set.spawn(async move {
                         let fpath = format!("{}/{}", &bucket, &req.path);
                         loop {
@@ -445,16 +449,15 @@ impl Replicator {
                                 .send()
                                 .await;
                             Self::record_s3_write_time(&db_name, start_time.elapsed());
-                            if let Err(e) = response {
-                                tracing::error!(
-                                    "Failed to send {} to S3: {}, will retry after 1 second",
-                                    fpath,
-                                    e
-                                );
-                                tokio::time::sleep(Duration::from_millis(1000)).await;
-                            } else {
+                            if response.is_ok() {
                                 break;
                             }
+                            tracing::error!("Failed to send {} to S3: {}, will retry after 1 second", fpath, response.err().unwrap());
+                            if shutdown_watch.has_changed().is_err() {
+                                tracing::error!("stop retry for failed S3 frames upload because shutdown was requested");
+                                return
+                            }
+                            tokio::time::sleep(Duration::from_millis(1000)).await;
                         }
                         tokio::fs::remove_file(&fpath).await.unwrap();
                         let elapsed = Instant::now() - start;
@@ -480,6 +483,7 @@ impl Replicator {
             next_frame_no,
             last_sent_frame_no,
             flush_trigger: Some(flush_trigger),
+            shutdown_trigger: Some(shutdown_trigger),
             last_committed_frame_no,
             verify_crc: options.verify_crc,
             db_path,
@@ -528,17 +532,25 @@ impl Replicator {
         tracing::info!("bottomless replicator: shutting down...");
         // 1. wait for all committed WAL frames to be committed locally
         let last_frame_no = self.last_known_frame();
-// force flush in order to not wait for periodic wake up of local back up process
+        // force flush in order to not wait for periodic wake up of local back up process
         if let Some(tx) = &self.flush_trigger {
             let _ = tx.send(());
         }
         self.wait_until_committed(last_frame_no).await?;
+        tracing::info!(
+            "bottomless replicator: local backup replicated frames until {}",
+            last_frame_no
+        );
         // 2. wait for snapshot upload to S3 to finish
         self.wait_until_snapshotted().await?;
+        tracing::info!("bottomless replicator: snapshot succesfully uploaded to S3");
         // 3. drop flush trigger, which will cause WAL upload loop to close. Since this action will
         // close the channel used by wait_until_committed, it must happen after wait_until_committed
         // has finished. If trigger won't be dropped, tasks from join_set will never finish.
         self.flush_trigger.take();
+        // 4. drop shutdown trigger which will notify S3 upload process to stop all retry attempts
+        // and finish upload process
+        self.shutdown_trigger.take();
         while let Some(t) = self.join_set.join_next().await {
             // one of the tasks we're waiting for is upload of local WAL segment from pt.1 to S3
             // this should ensure that all WAL frames are one S3
