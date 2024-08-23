@@ -5,13 +5,13 @@ use arc_swap::ArcSwapOption;
 use std::ops::{Range, RangeInclusive};
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
-use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::UnboundedSender;
 use tokio::time::Instant;
 use uuid::Uuid;
 
 #[derive(Debug)]
 pub(crate) struct WalCopier {
-    outbox: Sender<SendReq>,
+    outbox: UnboundedSender<SendReq>,
     use_compression: CompressionKind,
     max_frames_per_batch: usize,
     wal_path: String,
@@ -28,7 +28,7 @@ impl WalCopier {
         db_path: &str,
         max_frames_per_batch: usize,
         use_compression: CompressionKind,
-        outbox: Sender<SendReq>,
+        outbox: UnboundedSender<SendReq>,
     ) -> Self {
         WalCopier {
             bucket,
@@ -76,7 +76,7 @@ impl WalCopier {
             meta_file.write_all(buf.as_ref()).await?;
             meta_file.flush().await?;
             let msg = format!("{}-{}/.meta", self.db_name, generation);
-            if self.outbox.send(SendReq::new(msg)).await.is_err() {
+            if self.outbox.send(SendReq::new(msg)).is_err() {
                 return Err(anyhow!("couldn't initialize local backup dir: {}", dir));
             }
         }
@@ -125,7 +125,6 @@ impl WalCopier {
             if self
                 .outbox
                 .send(SendReq::wal_segment(fdesc, start, end - 1))
-                .await
                 .is_err()
             {
                 tracing::warn!(

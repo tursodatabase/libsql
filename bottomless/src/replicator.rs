@@ -350,7 +350,7 @@ impl Replicator {
 
         let mut join_set = JoinSet::new();
 
-        let (frames_outbox, mut frames_inbox) = tokio::sync::mpsc::channel(64);
+        let (frames_outbox, mut frames_inbox) = tokio::sync::mpsc::unbounded_channel();
         let _local_backup = {
             let mut copier = WalCopier::new(
                 bucket.clone(),
@@ -433,24 +433,28 @@ impl Replicator {
 
                     let db_name = db_name.clone();
                     join_set.spawn(async move {
-                        let fpath = format!("{}/{}", bucket, req.path);
-                        let body = ByteStream::from_path(&fpath).await.unwrap();
-                        let start_time = Instant::now();
-                        let response = client
-                            .put_object()
-                            .bucket(bucket)
-                            .key(req.path)
-                            .body(body)
-                            .send()
-                            .await;
-                        Self::record_s3_write_time(&db_name, start_time.elapsed());
-                        if let Err(e) = response {
-                            tracing::error!("Failed to send {} to S3: {}", fpath, e);
-                        } else {
-                            tokio::fs::remove_file(&fpath).await.unwrap();
-                            let elapsed = Instant::now() - start;
-                            tracing::debug!("Uploaded to S3: {} in {:?}", fpath, elapsed);
+                        let fpath = format!("{}/{}", &bucket, &req.path);
+                        loop {
+                            let start_time = Instant::now();
+                            let body = ByteStream::from_path(&fpath).await.unwrap();
+                            let response = client
+                                .put_object()
+                                .bucket(&bucket)
+                                .key(&req.path)
+                                .body(body)
+                                .send()
+                                .await;
+                            Self::record_s3_write_time(&db_name, start_time.elapsed());
+                            if let Err(e) = response {
+                                tracing::error!("Failed to send {} to S3: {}, will retry after 1 second", fpath, e);
+                                tokio::time::sleep(Duration::from_millis(1000)).await;
+                            } else {
+                                break;
+                            }
                         }
+                        tokio::fs::remove_file(&fpath).await.unwrap();
+                        let elapsed = Instant::now() - start;
+                        tracing::debug!("Uploaded to S3: {} in {:?}", fpath, elapsed);
                         if let Some(frames) = req.frames {
                             let mut up = upload_progress.lock().await;
                             up.update(*frames.start(), *frames.end());
