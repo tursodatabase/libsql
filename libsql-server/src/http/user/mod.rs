@@ -558,6 +558,7 @@ async fn handle_get_migrations(
             .await?;
         let config = (*store.get()).clone();
         if !config.is_shared_schema {
+            tracing::warn!("invalid namespace: target is not a shared schema");
             return Err(Error::InvalidNamespace);
         }
     }
@@ -584,6 +585,7 @@ async fn handle_get_migration_details(
             .await?;
         let config = (*store.get()).clone();
         if !config.is_shared_schema {
+            tracing::warn!("invalid namespace: target is not a shared schema");
             return Err(Error::InvalidNamespace);
         }
     }
