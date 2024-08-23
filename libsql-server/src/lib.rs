@@ -54,7 +54,7 @@ use libsql_wal::registry::WalRegistry;
 use libsql_wal::segment::sealed::SealedSegment;
 use libsql_wal::storage::async_storage::{AsyncStorage, AsyncStorageInitConfig};
 use libsql_wal::storage::backend::s3::S3Backend;
-use libsql_wal::storage::NoStorage;
+use libsql_wal::storage::{NoStorage, Storage};
 use namespace::meta_store::MetaStoreHandle;
 use namespace::NamespaceName;
 use net::Connector;
@@ -1118,6 +1118,47 @@ where
             Some(ref config) => Ok(Some(config.configure().await?)),
             None => Ok(None),
         }
+    }
+
+    /// perform migration from bottomless_wal to libsql_wal if necessary. This only happens if
+    /// all:
+    /// - bottomless is enabled
+    /// - this is a primary
+    /// - we are operating in libsql-wal mode
+    /// - migrate_bottomless flag is raised
+    /// - there hasn't been a previous successfull migration (wals directory is either absent,
+    /// or emtpy)
+    async fn maybe_migrate_bottomless<S>(
+        &self,
+        meta_store: MetaStore,
+        storage: Arc<S>,
+        base_config: &BaseNamespaceConfig,
+        primary_config: &PrimaryConfig,
+        ) -> anyhow::Result<()>
+        where S: Storage<Segment = SealedSegment<std::fs::File>>,
+    {
+        let is_previous_migration_successful = self.check_previous_migration_success()?;
+        let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
+        let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
+        let is_primary = self.rpc_client_config.is_none();
+        let should_attempt_migration = self.migrate_bottomless 
+            && is_primary
+            && is_bottomless_enabled
+            && !is_previous_migration_successful
+            && is_libsql_wal;
+
+        if should_attempt_migration {
+        }
+
+        Ok(())
+    }
+
+    fn check_previous_migration_success(&self) -> anyhow::Result<bool> {
+        let wals_path = self.path.join("wals");
+        let dir = std::fs::read_dir(&wals_path)?;
+
+        // wals dir exist and is not empty
+        Ok(wals_path.try_exists()? && dir.count() != 0)
     }
 }
 
