@@ -575,6 +575,7 @@ where
                 &mut task_manager,
                 scheduler_sender.into(),
                 scripted_backup,
+                meta_store.clone(),
             )
             .await?;
 
@@ -753,6 +754,7 @@ where
         task_manager: &mut TaskManager,
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
+        meta_store: MetaStore,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         let wal_path = base_config.base_path.join("wals");
         let enable_libsql_wal_test = {
@@ -784,6 +786,7 @@ where
                     migration_scheduler_handle,
                     scripted_backup,
                     wal_path,
+                    meta_store,
                 )
                 .await
             }
@@ -814,6 +817,7 @@ where
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
         wal_path: PathBuf,
+        meta_store: MetaStore,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         tracing::info!("using libsql wal");
         let (sender, receiver) = tokio::sync::mpsc::channel(64);
