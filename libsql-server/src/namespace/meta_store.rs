@@ -114,6 +114,7 @@ pub async fn metastore_connection_maker(
             let options = bottomless::replicator::Options {
                 create_bucket_if_not_exists: true,
                 verify_crc: true,
+                validate_integrity: false,
                 use_compression: CompressionKind::None,
                 encryption_config: None,
                 aws_endpoint: Some(config.bucket_endpoint),

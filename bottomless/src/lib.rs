@@ -8,6 +8,7 @@ mod completion_progress;
 pub mod read;
 pub mod replicator;
 pub mod transaction_cache;
+mod utils;
 pub mod uuid_utils;
 mod wal;
 

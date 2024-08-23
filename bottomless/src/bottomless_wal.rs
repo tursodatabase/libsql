@@ -74,6 +74,7 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
 
         let num_frames =
             wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
+        let new_valid_valid_frame_index = wrapped.frames_in_wal();
 
         let mut guard = self.replicator.blocking_lock();
         match &mut *guard {
@@ -83,11 +84,11 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
                     std::process::abort()
                 }
                 replicator.register_last_valid_frame(last_valid_frame);
-                let new_valid_valid_frame_index = wrapped.frames_in_wal();
                 replicator.submit_frames(new_valid_valid_frame_index - last_valid_frame);
             }
             None => return Err(Error::new(SQLITE_IOERR_WRITE)),
         }
+        tracing::debug!("inserted {num_frames} with size_after={size_after}, is_commit={is_commit} ({last_valid_frame} -> {new_valid_valid_frame_index})");
 
         Ok(num_frames)
     }
