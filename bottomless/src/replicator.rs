@@ -446,7 +446,11 @@ impl Replicator {
                                 .await;
                             Self::record_s3_write_time(&db_name, start_time.elapsed());
                             if let Err(e) = response {
-                                tracing::error!("Failed to send {} to S3: {}, will retry after 1 second", fpath, e);
+                                tracing::error!(
+                                    "Failed to send {} to S3: {}, will retry after 1 second",
+                                    fpath,
+                                    e
+                                );
                                 tokio::time::sleep(Duration::from_millis(1000)).await;
                             } else {
                                 break;
