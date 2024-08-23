@@ -735,4 +735,8 @@ impl MetaStoreHandle {
 
         Ok(())
     }
+
+    pub fn namespace(&self) -> &NamespaceName {
+        &self.namespace
+    }
 }
