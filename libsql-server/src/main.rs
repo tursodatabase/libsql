@@ -627,6 +627,16 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         }
     });
 
+    let mut http = HttpConnector::new();
+    http.enforce_http(false);
+    http.set_nodelay(true);
+
+    let https = hyper_rustls::HttpsConnectorBuilder::new()
+        .with_native_roots()
+        .https_or_http()
+        .enable_all_versions()
+        .wrap_connector(http);
+
     Ok(Server {
         path: config.db_path.clone().into(),
         db_config,
@@ -651,7 +661,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
             .unwrap_or(Duration::from_secs(30)),
         use_custom_wal: config.use_custom_wal,
         storage_server_address: config.storage_server_address.clone(),
-        connector: Some(HttpConnector::new()),
+        connector: Some(https),
     })
 }
 
