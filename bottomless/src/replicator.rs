@@ -1126,7 +1126,7 @@ impl Replicator {
             }
             let _ = snapshot_notifier.send(Ok(Some(generation)));
             let elapsed = Instant::now() - start;
-            tracing::debug!("Snapshot upload finished (took {:?})", elapsed);
+            tracing::info!("Snapshot upload finished (took {:?})", elapsed);
             Self::record_snapshot_upload_time(&db_name, elapsed);
             // cleanup gzip/zstd database snapshot if exists
             for suffix in &["gz", "zstd"] {
