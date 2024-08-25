@@ -1,8 +1,10 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use aws_sdk_s3::Client;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
 use clap::{Parser, Subcommand};
+use libsql_sys::{connection::NO_AUTOCHECKPOINT, wal::Sqlite3WalManager};
+use rusqlite::params;
 use std::path::PathBuf;
 
 mod replicator_extras;
@@ -29,6 +31,18 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    #[clap(about = "Copy bottomless generation locally")]
+    Copy {
+        #[clap(long, short, long_help = "Generation to copy (latest by default)")]
+        generation: Option<uuid::Uuid>,
+        #[clap(long, short, long_help = "Target local directory")]
+        to_dir: String,
+    },
+    #[clap(about = "Create new generation from database")]
+    Create {
+        #[clap(long, short, long_help = "Path to the source database file")]
+        source_db_path: String,
+    },
     #[clap(about = "List available generations")]
     Ls {
         #[clap(long, short, long_help = "List details about single generation")]
@@ -220,6 +234,47 @@ async fn run() -> Result<()> {
     let mut client = Replicator::new(database.clone()).await?;
 
     match options.command {
+        Commands::Create { source_db_path } => {
+            let db_path = PathBuf::from(client.db_path.clone());
+            let db_dir = db_path.parent().unwrap();
+            if db_dir.exists() {
+                return Err(anyhow!("directory for fresh generation must be empty"));
+            }
+            if options.namespace.is_none() {
+                return Err(anyhow!("namespace must be specified explicitly"));
+            }
+            std::fs::create_dir_all(db_dir)?;
+            tracing::info!(
+                "created temporary directory for fresh generation: {}",
+                db_dir.to_str().unwrap()
+            );
+            let options = bottomless::replicator::Options::from_env()?;
+            if options.encryption_config.is_some() {
+                return Err(anyhow!("creation from encrypted DB is not supported"));
+            }
+            let connection = libsql_sys::Connection::open(
+                format!("file:{}?mode=ro", source_db_path),
+                rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY
+                    | rusqlite::OpenFlags::SQLITE_OPEN_URI
+                    | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+                Sqlite3WalManager::new(),
+                NO_AUTOCHECKPOINT,
+                None,
+            )?;
+            tracing::info!(
+                "read to VACUUM source database file {} from read-only connection to the DB {}",
+                &source_db_path,
+                &client.db_path
+            );
+            let _ = connection.execute("VACUUM INTO ?", params![&client.db_path])?;
+            let _ = client.new_generation().await;
+            tracing::info!("set generation {} for replicator", client.generation()?);
+            client.snapshot_main_db_file(true).await?;
+            client.wait_until_snapshotted().await?;
+            println!("snapshot uploaded for generation: {}", client.generation()?);
+            return Ok(());
+        }
+        Commands::Copy { generation, to_dir } => client.copy(generation, to_dir).await?,
         Commands::Ls {
             generation,
             limit,

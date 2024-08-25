@@ -29,7 +29,7 @@ use std::sync::Arc;
 use tokio::fs::{File, OpenOptions};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::watch::{channel, Receiver, Sender};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Semaphore};
 use tokio::task::JoinHandle;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
@@ -70,7 +70,7 @@ pub struct Replicator {
     use_compression: CompressionKind,
     encryption_config: Option<EncryptionConfig>,
     max_frames_per_batch: usize,
-    s3_upload_max_parallelism: usize,
+    s3_max_parallelism: usize,
     join_set: JoinSet<()>,
     upload_progress: Arc<Mutex<CompletionProgress>>,
     last_uploaded_frame_no: Receiver<u32>,
@@ -117,7 +117,7 @@ pub struct Options {
     /// checkpoint never commits.
     pub max_batch_interval: Duration,
     /// Maximum number of S3 file upload requests that may happen in parallel.
-    pub s3_upload_max_parallelism: usize,
+    pub s3_max_parallelism: usize,
     /// Max number of retries for S3 operations
     pub s3_max_retries: u32,
     /// Skip snapshot upload per checkpoint.
@@ -198,7 +198,7 @@ impl Options {
         let region = env_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION").ok();
         let max_frames_per_batch =
             env_var_or("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES", 10000).parse::<usize>()?;
-        let s3_upload_max_parallelism =
+        let s3_max_parallelism =
             env_var_or("LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX", 32).parse::<usize>()?;
         let use_compression =
             CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "zstd"))
@@ -246,7 +246,7 @@ impl Options {
             encryption_config,
             max_batch_interval,
             max_frames_per_batch,
-            s3_upload_max_parallelism,
+            s3_max_parallelism,
             aws_endpoint,
             access_key_id,
             secret_access_key,
@@ -413,7 +413,7 @@ impl Replicator {
         let _s3_upload = {
             let client = client.clone();
             let bucket = options.bucket_name.clone();
-            let max_parallelism = options.s3_upload_max_parallelism;
+            let max_parallelism = options.s3_max_parallelism;
             let upload_progress = upload_progress.clone();
             let db_name = db_name.clone();
             let shutdown_watch = Arc::new(shutdown_watch);
@@ -493,7 +493,7 @@ impl Replicator {
             use_compression: options.use_compression,
             encryption_config: options.encryption_config,
             max_frames_per_batch: options.max_frames_per_batch,
-            s3_upload_max_parallelism: options.s3_upload_max_parallelism,
+            s3_max_parallelism: options.s3_max_parallelism,
             skip_snapshot: options.skip_snapshot,
             join_set,
             upload_progress,
@@ -1278,17 +1278,13 @@ impl Replicator {
         timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
         tracing::debug!("restoring from");
-        if let Some(tombstone) = self.get_tombstone().await? {
-            if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
-                if tombstone.and_utc().timestamp() as u64 >= timestamp.to_unix().0 {
-                    bail!(
-                        "Couldn't restore from generation {}. Database '{}' has been tombstoned at {}.",
-                        generation,
-                        self.db_name,
-                        tombstone
-                    );
-                }
-            }
+        if let Some(tombstoned_at) = self.is_tombstoned(generation).await? {
+            bail!(
+                "Couldn't restore from generation {}. Database '{}' has been tombstoned at {}.",
+                generation,
+                self.db_name,
+                tombstoned_at
+            );
         }
 
         let start_ts = Instant::now();
@@ -1684,6 +1680,94 @@ impl Replicator {
         Ok(())
     }
 
+    pub async fn copy(&mut self, generation: Option<Uuid>, to_dir: String) -> Result<()> {
+        let generation = self
+            .choose_generation(generation, None)
+            .await
+            .ok_or(anyhow!("generation not found"))?;
+
+        if let Some(tombstoned_at) = self.is_tombstoned(generation).await? {
+            tracing::warn!("generation was tombstoned at {tombstoned_at}");
+        }
+        std::fs::create_dir_all(PathBuf::from(&to_dir))?;
+
+        let prefix = format!("{}-{}/", self.db_name, generation);
+        let mut marker: Option<String> = None;
+        tracing::info!(
+            "ready to copy S3 content from directory {} to local directory {} (parallelism: {})",
+            &prefix,
+            &to_dir,
+            self.s3_max_parallelism
+        );
+        loop {
+            let mut list_request = self.list_objects().prefix(&prefix);
+            if let Some(marker) = marker.take() {
+                list_request = list_request.marker(marker);
+            }
+            let semaphore = Arc::new(Semaphore::new(self.s3_max_parallelism));
+            let mut group = JoinSet::new();
+            let list_response = list_request.send().await?;
+            for entry in list_response.contents() {
+                let key = String::from(entry.key().unwrap());
+                marker = Some(key.clone());
+
+                let request = self
+                    .client
+                    .get_object()
+                    .bucket(&self.bucket)
+                    .key(key.clone());
+                let to_dir = to_dir.clone();
+                let entry_size = entry.size().unwrap_or(0);
+                let semaphore = semaphore.clone();
+                group.spawn(async move {
+                    let acquired = semaphore.acquire().await.unwrap();
+                    if let Ok(response) = request.send().await {
+                        tracing::debug!(
+                            "start copy of entry {} (size {} bytes)",
+                            &key,
+                            entry_size,
+                        );
+                        let entry_name = key.split("/").last().unwrap();
+                        let mut entry_path = PathBuf::from(&to_dir);
+                        entry_path.push(entry_name);
+
+                        let mut entry_file = OpenOptions::new()
+                            .create(true)
+                            .write(true)
+                            .read(true)
+                            .truncate(true)
+                            .open(entry_path)
+                            .await
+                            .unwrap();
+                        let mut body_reader = response.body.into_async_read();
+                        tokio::io::copy(&mut body_reader, &mut entry_file).await.unwrap();
+                        tracing::debug!("finish copy of entry {}", &key);
+                    }
+                    drop(acquired);
+                });
+            }
+            while let Some(_) = group.join_next().await {}
+            if !marker.is_some() {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    async fn choose_generation(
+        &mut self,
+        generation: Option<Uuid>,
+        timestamp: Option<NaiveDateTime>,
+    ) -> Option<Uuid> {
+        match generation {
+            Some(gen) => Some(gen),
+            None => match self.latest_generation_before(timestamp.as_ref()).await {
+                Some(gen) => Some(gen),
+                None => None,
+            },
+        }
+    }
+
     /// Restores the database state from newest remote generation
     /// On success, returns the RestoreAction, and whether the database was recovered from backup.
     pub async fn restore(
@@ -1692,15 +1776,12 @@ impl Replicator {
         timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
         tracing::debug!("restoring with {generation:?} at {timestamp:?}");
-        let generation = match generation {
-            Some(gen) => gen,
-            None => match self.latest_generation_before(timestamp.as_ref()).await {
-                Some(gen) => gen,
-                None => {
-                    tracing::debug!("No generation found, nothing to restore");
-                    return Ok((RestoreAction::SnapshotMainDbFile, false));
-                }
-            },
+        let generation = match self.choose_generation(generation, timestamp).await {
+            Some(generation) => generation,
+            None => {
+                tracing::debug!("No generation found, nothing to restore");
+                return Ok((RestoreAction::SnapshotMainDbFile, false));
+            }
         };
 
         let (action, recovered) = self.restore_from(generation, timestamp).await?;
@@ -1750,7 +1831,7 @@ impl Replicator {
         let dir = format!("{}/{}-{}", self.bucket, self.db_name, generation);
         if tokio::fs::try_exists(&dir).await? {
             let mut files = tokio::fs::read_dir(&dir).await?;
-            let sem = Arc::new(tokio::sync::Semaphore::new(self.s3_upload_max_parallelism));
+            let sem = Arc::new(tokio::sync::Semaphore::new(self.s3_max_parallelism));
             while let Some(file) = files.next_entry().await? {
                 let fpath = file.path();
                 if let Some(key) = Self::fpath_to_key(&fpath, &prefix) {
@@ -1779,9 +1860,7 @@ impl Replicator {
                 }
             }
             // wait for all started upload tasks to finish
-            let _ = sem
-                .acquire_many(self.s3_upload_max_parallelism as u32)
-                .await?;
+            let _ = sem.acquire_many(self.s3_max_parallelism as u32).await?;
             if let Err(e) = tokio::fs::remove_dir(&dir).await {
                 tracing::warn!("Couldn't remove backed up directory {}: {}", dir, e);
             }
@@ -1873,6 +1952,17 @@ impl Replicator {
             threshold,
         );
         Ok(delete_task)
+    }
+
+    pub async fn is_tombstoned(&self, generation: Uuid) -> Result<Option<NaiveDateTime>> {
+        if let Some(tombstone) = self.get_tombstone().await? {
+            if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
+                if (tombstone.and_utc().timestamp() as u64) >= timestamp.to_unix().0 {
+                    return Ok(Some(tombstone));
+                };
+            }
+        }
+        Ok(None)
     }
 
     /// Checks if current replicator database has been marked as deleted.

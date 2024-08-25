@@ -125,7 +125,7 @@ pub async fn metastore_connection_maker(
                 bucket_name: config.bucket_name,
                 max_frames_per_batch: 10_000,
                 max_batch_interval: config.backup_interval,
-                s3_upload_max_parallelism: 32,
+                s3_max_parallelism: 32,
                 s3_max_retries: 10,
                 skip_snapshot: false,
             };
