@@ -1087,6 +1087,7 @@ impl Replicator {
         let snapshot_notifier = self.snapshot_notifier.clone();
         let compression = self.use_compression;
         let db_path = PathBuf::from(self.db_path.clone());
+        let db_name = self.db_name.clone();
         let handle = tokio::spawn(async move {
             tracing::trace!("Start snapshotting generation {}", generation);
             let start = Instant::now();
@@ -1125,14 +1126,14 @@ impl Replicator {
             }
             let _ = snapshot_notifier.send(Ok(Some(generation)));
             let elapsed = Instant::now() - start;
-            tracing::debug!("Snapshot upload finished (took {:?})", elapsed);
+            tracing::info!("Snapshot upload finished (took {:?})", elapsed);
+            Self::record_snapshot_upload_time(&db_name, elapsed);
             // cleanup gzip/zstd database snapshot if exists
             for suffix in &["gz", "zstd"] {
                 let _ = tokio::fs::remove_file(Self::db_compressed_path(&db_path, suffix)).await;
             }
         });
         let elapsed = Instant::now() - start_ts;
-        Self::record_snapshot_upload_time(&self.db_name, elapsed);
         tracing::debug!("Scheduled DB snapshot {} (took {:?})", generation, elapsed);
 
         Ok(Some(handle))
