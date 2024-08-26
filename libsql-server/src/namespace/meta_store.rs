@@ -611,7 +611,7 @@ impl MetaStore {
     }
 
     /// returns an iterator over all manespaces config handles
-    pub(crate) fn namespaces(&self) -> impl Stream<Item = MetaStoreHandle> + '_  {
+    pub(crate) fn namespaces(&self) -> impl Stream<Item = MetaStoreHandle> + '_ {
         async_stream::stream! {
             let lock = self.inner.configs.lock().await;
             for (ns, sender) in lock.iter() {

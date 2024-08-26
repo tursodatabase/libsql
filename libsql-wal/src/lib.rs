@@ -41,11 +41,11 @@ impl LibsqlFooter {
 
     fn validate(&self) -> error::Result<()> {
         if self.magic.get() != LIBSQL_MAGIC {
-            return Err(error::Error::InvalidFooterMagic)
+            return Err(error::Error::InvalidFooterMagic);
         }
 
         if self.version.get() != LIBSQL_WAL_VERSION {
-            return Err(error::Error::InvalidFooterVersion)
+            return Err(error::Error::InvalidFooterVersion);
         }
 
         Ok(())

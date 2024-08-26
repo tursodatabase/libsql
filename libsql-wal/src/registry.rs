@@ -284,20 +284,20 @@ where
         let footer = self.try_read_footer(&db_file)?;
 
         let log_id = match footer {
-            Some(footer) if tail.is_empty() => {
-                footer.log_id()
-            }
-            None if tail.is_empty() => {
-                self.io.uuid()
-            }
+            Some(footer) if tail.is_empty() => footer.log_id(),
+            None if tail.is_empty() => self.io.uuid(),
             Some(footer) => {
-                let log_id = tail.with_head(|h| h.header().log_id.get()).expect("non-empty list should have a head");
+                let log_id = tail
+                    .with_head(|h| h.header().log_id.get())
+                    .expect("non-empty list should have a head");
                 let log_id = Uuid::from_u128(log_id);
                 assert_eq!(log_id, footer.log_id());
                 log_id
             }
             None => {
-                let log_id = tail.with_head(|h| h.header().log_id.get()).expect("non-empty list should have a head");
+                let log_id = tail
+                    .with_head(|h| h.header().log_id.get())
+                    .expect("non-empty list should have a head");
                 Uuid::from_u128(log_id)
             }
         };
@@ -307,15 +307,13 @@ where
                 let header = segment.header();
                 (header.size_after(), header.next_frame_no())
             })
-            .unwrap_or_else(||  {
-                match header {
-                    Some(header) => (
-                        header.db_size.get(),
-                        NonZeroU64::new(header.replication_index.get() + 1)
+            .unwrap_or_else(|| match header {
+                Some(header) => (
+                    header.db_size.get(),
+                    NonZeroU64::new(header.replication_index.get() + 1)
                         .unwrap_or(NonZeroU64::new(1).unwrap()),
-                    ),
-                    None => (0, NonZeroU64::new(1).unwrap())
-                }
+                ),
+                None => (0, NonZeroU64::new(1).unwrap()),
             });
 
         let current_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
@@ -327,13 +325,9 @@ where
             // if there is a tail, then the latest checkpointed frame_no is one before the the
             // start frame_no of the tail. We must read it from the tail, because a partial
             // checkpoint may have occured before a crash.
-            Some(last) => {
-                (last.start_frame_no() - 1).max(1)
-            }
+            Some(last) => (last.start_frame_no() - 1).max(1),
             // otherwise, we read the it from the footer.
-            None => {
-                footer.map(|f| f.replication_index.get()).unwrap_or(0)
-            }
+            None => footer.map(|f| f.replication_index.get()).unwrap_or(0),
         };
 
         let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
@@ -373,7 +367,7 @@ where
         return Ok(shared);
     }
 
-    fn try_read_footer(&self, db_file: &impl FileExt) -> Result<Option<LibsqlFooter>>{
+    fn try_read_footer(&self, db_file: &impl FileExt) -> Result<Option<LibsqlFooter>> {
         let len = db_file.len()?;
         if len as usize % LIBSQL_PAGE_SIZE as usize == size_of::<LibsqlFooter>() {
             let mut footer: LibsqlFooter = LibsqlFooter::new_zeroed();
@@ -381,11 +375,10 @@ where
             db_file.read_exact_at(footer.as_bytes_mut(), footer_offset)?;
             footer.validate()?;
             Ok(Some(footer))
-        } else  {
+        } else {
             Ok(None)
         }
     }
-
 
     // On shutdown, we checkpoint all the WALs. This require sealing the current segment, and when
     // checkpointing all the segments

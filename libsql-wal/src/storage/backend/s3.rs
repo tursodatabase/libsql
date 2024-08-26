@@ -314,7 +314,11 @@ struct FolderKey<'a> {
 
 impl fmt::Display for FolderKey<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "v2/clusters/{}/namespaces/{}", self.cluster_id, self.namespace)
+        write!(
+            f,
+            "v2/clusters/{}/namespaces/{}",
+            self.cluster_id, self.namespace
+        )
     }
 }
 

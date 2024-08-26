@@ -99,7 +99,8 @@ where
     match &cli.subcommand {
         Subcommand::Shell { db_path } => {
             let (sender, receiver) = tokio::sync::mpsc::channel(64);
-            let registry = Arc::new(WalRegistry::new(db_path.clone(), storage.into(), sender).unwrap());
+            let registry =
+                Arc::new(WalRegistry::new(db_path.clone(), storage.into(), sender).unwrap());
             let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 64);
             join_set.spawn(checkpointer.run());
             run_shell(

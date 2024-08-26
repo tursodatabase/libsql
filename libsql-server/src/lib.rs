@@ -93,6 +93,7 @@ pub mod version;
 
 pub use hrana::proto as hrana_proto;
 
+mod bottomless_migrate;
 mod database;
 mod error;
 mod h2c;
@@ -112,7 +113,6 @@ mod stats;
 #[cfg(test)]
 mod test;
 mod utils;
-mod bottomless_migrate;
 
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
@@ -582,7 +582,6 @@ where
             )
             .await?;
 
-
         let namespace_store: NamespaceStore = NamespaceStore::new(
             db_kind.is_replica(),
             self.db_config.snapshot_at_shutdown,
@@ -868,7 +867,8 @@ where
             Either::A(storage)
         } else {
             Either::B(NoStorage)
-        }.into();
+        }
+        .into();
 
         let primary_config = PrimaryConfig {
             max_log_size: self.db_config.max_log_size,
@@ -879,17 +879,13 @@ where
         };
 
         // perform migration before creating the actual registry creation
-        let did_migrate = self.maybe_migrate_bottomless(
-            meta_store.clone(),
-            &base_config,
-            &primary_config,
-        ).await?;
-
+        let did_migrate = self
+            .maybe_migrate_bottomless(meta_store.clone(), &base_config, &primary_config)
+            .await?;
 
         if self.rpc_server_config.is_some() && matches!(*storage, Either::B(_)) {
             anyhow::bail!("replication without bottomless not supported yet");
         }
-
 
         let registry = Arc::new(WalRegistry::new(wal_path, storage, sender)?);
         let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
@@ -908,12 +904,11 @@ where
                 let registry = registry.clone();
                 let namespace = conf.namespace().clone();
                 let path = dbs_path.join(namespace.as_str()).join("data");
-                tokio::task::spawn_blocking(move || {
-                    registry.open(&path, &namespace.into())
-                }).await.unwrap()?;
+                tokio::task::spawn_blocking(move || registry.open(&path, &namespace.into()))
+                    .await
+                    .unwrap()?;
             }
         }
-
 
         let namespace_resolver = Arc::new(|path: &Path| {
             NamespaceName::from_string(
@@ -1164,12 +1159,12 @@ where
         meta_store: MetaStore,
         base_config: &BaseNamespaceConfig,
         primary_config: &PrimaryConfig,
-        ) -> anyhow::Result<bool> {
+    ) -> anyhow::Result<bool> {
         let is_previous_migration_successful = self.check_previous_migration_success()?;
         let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
         let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
         let is_primary = self.rpc_client_config.is_none();
-        let should_attempt_migration = self.migrate_bottomless 
+        let should_attempt_migration = self.migrate_bottomless
             && is_primary
             && is_bottomless_enabled
             && !is_previous_migration_successful
@@ -1195,7 +1190,7 @@ where
     fn check_previous_migration_success(&self) -> anyhow::Result<bool> {
         let wals_path = self.path.join("wals");
         if !wals_path.try_exists()? {
-            return Ok(false)
+            return Ok(false);
         }
 
         let dir = std::fs::read_dir(&wals_path)?;

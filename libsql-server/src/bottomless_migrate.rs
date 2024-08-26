@@ -4,14 +4,14 @@ use std::sync::Arc;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::io::StdIO;
+use libsql_wal::registry::WalRegistry;
 use libsql_wal::replication::injector::Injector;
 use libsql_wal::segment::{Frame, FrameHeader};
 use libsql_wal::storage::NoStorage;
-use libsql_wal::registry::WalRegistry;
 use tempfile::TempDir;
 use tokio::io::AsyncReadExt;
 use tokio_stream::StreamExt;
-use zerocopy::{FromZeroes, FromBytes};
+use zerocopy::{FromBytes, FromZeroes};
 
 #[cfg(not(feature = "durable-wal"))]
 use libsql_sys::wal::either::Either as EitherWAL;
@@ -35,8 +35,7 @@ pub async fn bottomless_migrate(
     meta_store: MetaStore,
     base_config: BaseNamespaceConfig,
     primary_config: PrimaryConfig,
-) -> anyhow::Result<()>
-{
+) -> anyhow::Result<()> {
     let base_dbs_dir = base_config.base_path.join("dbs");
     let base_dbs_dir_tmp = base_config.base_path.join("_dbs");
     // the previous migration failed. The _dbs is still present, but the wals is not. In this case
@@ -62,15 +61,17 @@ pub async fn bottomless_migrate(
     tokio::spawn(async move {
         loop {
             match rcv.recv().await {
-                Some(libsql_wal::checkpointer::CheckpointMessage::Shutdown) | None => {
-                    break
-                }
+                Some(libsql_wal::checkpointer::CheckpointMessage::Shutdown) | None => break,
                 Some(_) => (),
             }
         }
     });
 
-    let tmp_registry = Arc::new(WalRegistry::new(tmp.path().join("wals"), NoStorage.into(), sender)?);
+    let tmp_registry = Arc::new(WalRegistry::new(
+        tmp.path().join("wals"),
+        NoStorage.into(),
+        sender,
+    )?);
 
     let mut configurators = NamespaceConfigurators::default();
 
@@ -129,8 +130,7 @@ async fn migrate_one(
     tmp: &Path,
     tmp_registry: Arc<WalRegistry<StdIO, NoStorage>>,
     base_path: &Path,
-) -> anyhow::Result<()>
-{
+) -> anyhow::Result<()> {
     let broadcasters = BroadcasterRegistry::default();
     // TODO: check if we already have a backup for this db from storage
     tracing::info!("started namespace migration");
@@ -150,18 +150,17 @@ async fn migrate_one(
         )
         .await?;
 
-    let db_dir = tmp
-        .join("dbs")
-        .join(config.namespace().as_str());
+    let db_dir = tmp.join("dbs").join(config.namespace().as_str());
     tokio::fs::create_dir_all(&db_dir).await?;
     let db_path = db_dir.join("data");
     let registry = tmp_registry.clone();
     let namespace = config.namespace().clone();
     let shared = tokio::task::spawn_blocking({
         let registry = registry.clone();
-        move || registry.open(&db_path, &namespace.into()) })
-        .await
-        .unwrap()?;
+        move || registry.open(&db_path, &namespace.into())
+    })
+    .await
+    .unwrap()?;
 
     let mut tx = shared.begin_read(0).into();
     shared.upgrade(&mut tx).unwrap();
@@ -200,9 +199,9 @@ async fn migrate_one(
 
     drop(injector);
 
-    tokio::task::spawn_blocking(move || {
-        shared.seal_current()
-    }).await.unwrap()?;
+    tokio::task::spawn_blocking(move || shared.seal_current())
+        .await
+        .unwrap()?;
 
     tracing::info!("sucessfull migration");
 

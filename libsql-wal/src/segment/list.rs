@@ -267,17 +267,18 @@ where
     }
 
     pub(crate) fn last(&self) -> Option<Seg>
-        where Seg: Clone,
+    where
+        Seg: Clone,
     {
         let mut current = self.list.head.load().clone();
         loop {
             match current.as_ref() {
                 Some(c) => {
                     if c.next.load().is_none() {
-                        return Some(c.item.clone())
+                        return Some(c.item.clone());
                     }
                     current = c.next.load().clone();
-                },
+                }
                 None => return None,
             }
         }
