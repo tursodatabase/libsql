@@ -19,6 +19,11 @@ pub enum Error {
     InvalidPageSize,
     #[error("Registry is shutting down")]
     ShuttingDown,
+
+    #[error("invalid db footer magic")]
+    InvalidFooterMagic,
+    #[error("invalid db footer version")]
+    InvalidFooterVersion,
 }
 
 impl Into<libsql_sys::ffi::Error> for Error {

@@ -19,6 +19,7 @@ use crate::io::file::FileExt;
 use crate::io::{Io, StdIO};
 use crate::replication::storage::StorageReplicator;
 use crate::segment::list::SegmentList;
+use crate::segment::Segment;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::{SharedWal, SwapLog};
 use crate::storage::{OnStoreCallback, Storage};
@@ -271,29 +272,34 @@ where
         }
 
         let db_file = self.io.open(false, true, true, db_path)?;
-
-        let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
-        db_file.read_exact_at(header.as_bytes_mut(), 0)?;
-
-        let log_id = if db_file.len()? <= LIBSQL_PAGE_SIZE as u64 && tail.is_empty() {
-            // this is a new database
-            self.io.uuid()
-        } else if let Some(log_id) = tail.with_head(|h| h.header().log_id.get()) {
-            // there is a segment list, read the logid from there.
-            let log_id = Uuid::from_u128(log_id);
-            #[cfg(debug_assertions)]
-            {
-                // if the main db file has footer, then the logid must match that of the segment
-                if let Ok(db_log_id) =
-                    read_log_id_from_footer(&db_file, header.db_size.get() as u64)
-                {
-                    assert_eq!(db_log_id, log_id);
-                }
-            }
-
-            log_id
+        let db_file_len = db_file.len()?;
+        let header = if db_file_len > 0 {
+            let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
+            db_file.read_exact_at(header.as_bytes_mut(), 0)?;
+            Some(header)
         } else {
-            read_log_id_from_footer(&db_file, header.db_size.get() as u64)?
+            None
+        };
+
+        let footer = self.try_read_footer(&db_file)?;
+
+        let log_id = match footer {
+            Some(footer) if tail.is_empty() => {
+                footer.log_id()
+            }
+            None if tail.is_empty() => {
+                self.io.uuid()
+            }
+            Some(footer) => {
+                let log_id = tail.with_head(|h| h.header().log_id.get()).expect("non-empty list should have a head");
+                let log_id = Uuid::from_u128(log_id);
+                assert_eq!(log_id, footer.log_id());
+                log_id
+            }
+            None => {
+                let log_id = tail.with_head(|h| h.header().log_id.get()).expect("non-empty list should have a head");
+                Uuid::from_u128(log_id)
+            }
         };
 
         let (db_size, next_frame_no) = tail
@@ -301,16 +307,34 @@ where
                 let header = segment.header();
                 (header.size_after(), header.next_frame_no())
             })
-            .unwrap_or((
-                header.db_size.get(),
-                NonZeroU64::new(header.replication_index.get() + 1)
-                    .unwrap_or(NonZeroU64::new(1).unwrap()),
-            ));
+            .unwrap_or_else(||  {
+                match header {
+                    Some(header) => (
+                        header.db_size.get(),
+                        NonZeroU64::new(header.replication_index.get() + 1)
+                        .unwrap_or(NonZeroU64::new(1).unwrap()),
+                    ),
+                    None => (0, NonZeroU64::new(1).unwrap())
+                }
+            });
 
         let current_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
 
         let segment_file = self.io.open(true, true, true, &current_path)?;
         let salt = self.io.with_rng(|rng| rng.gen());
+
+        let checkpointed_frame_no = match tail.last() {
+            // if there is a tail, then the latest checkpointed frame_no is one before the the
+            // start frame_no of the tail. We must read it from the tail, because a partial
+            // checkpoint may have occured before a crash.
+            Some(last) => {
+                (last.start_frame_no() - 1).max(1)
+            }
+            // otherwise, we read the it from the footer.
+            None => {
+                footer.map(|f| f.replication_index.get()).unwrap_or(0)
+            }
+        };
 
         let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
             segment_file,
@@ -330,7 +354,7 @@ where
             db_file,
             registry: self.clone(),
             namespace: namespace.clone(),
-            checkpointed_frame_no: header.replication_index.get().into(),
+            checkpointed_frame_no: checkpointed_frame_no.into(),
             new_frame_notifier,
             durable_frame_no,
             stored_segments: Box::new(StorageReplicator::new(
@@ -348,6 +372,20 @@ where
 
         return Ok(shared);
     }
+
+    fn try_read_footer(&self, db_file: &impl FileExt) -> Result<Option<LibsqlFooter>>{
+        let len = db_file.len()?;
+        if len as usize % LIBSQL_PAGE_SIZE as usize == size_of::<LibsqlFooter>() {
+            let mut footer: LibsqlFooter = LibsqlFooter::new_zeroed();
+            let footer_offset = LIBSQL_PAGE_SIZE as u64 * len;
+            db_file.read_exact_at(footer.as_bytes_mut(), footer_offset)?;
+            footer.validate()?;
+            Ok(Some(footer))
+        } else  {
+            Ok(None)
+        }
+    }
+
 
     // On shutdown, we checkpoint all the WALs. This require sealing the current segment, and when
     // checkpointing all the segments

@@ -64,10 +64,11 @@ impl Io for StdIO {
         path: &Path,
     ) -> io::Result<Self::File> {
         std::fs::OpenOptions::new()
-            .create_new(create_new)
-            .read(read)
-            .write(write)
-            .open(path)
+         .create_new(create_new)
+         .create(write)
+         .read(read)
+         .write(write)
+         .open(path)
     }
 
     fn tempfile(&self) -> io::Result<Self::TempFile> {
