@@ -161,8 +161,7 @@ async fn migrate_one(
         let registry = registry.clone();
         move || registry.open(&db_path, &namespace.into()) })
         .await
-        .unwrap()
-        .unwrap();
+        .unwrap()?;
 
     let mut tx = shared.begin_read(0).into();
     shared.upgrade(&mut tx).unwrap();
