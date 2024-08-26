@@ -155,7 +155,7 @@ pub trait Storage: Send + Sync + 'static {
         &self,
         namespace: &NamespaceName,
         config_override: Option<Self::Config>,
-    ) -> u64;
+    ) -> Result<u64>;
 
     async fn restore(
         &self,
@@ -242,7 +242,7 @@ where
         &self,
         namespace: &NamespaceName,
         config_override: Option<Self::Config>,
-    ) -> u64 {
+    ) -> Result<u64> {
         match zip(self, config_override) {
             Either::A((s, c)) => s.durable_frame_no(namespace, c).await,
             Either::B((s, c)) => s.durable_frame_no(namespace, c).await,
@@ -341,8 +341,8 @@ impl Storage for NoStorage {
         &self,
         namespace: &NamespaceName,
         config: Option<Self::Config>,
-    ) -> u64 {
-        self.durable_frame_no_sync(namespace, config)
+    ) -> Result<u64> {
+        Ok(self.durable_frame_no_sync(namespace, config))
     }
 
     async fn restore(
@@ -486,8 +486,8 @@ impl<IO: Io> Storage for TestStorage<IO> {
         &self,
         namespace: &NamespaceName,
         config: Option<Self::Config>,
-    ) -> u64 {
-        self.durable_frame_no_sync(namespace, config)
+    ) -> Result<u64> {
+        Ok(self.durable_frame_no_sync(namespace, config))
     }
 
     async fn restore(
