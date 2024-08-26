@@ -27,6 +27,8 @@ struct Cli {
     namespace: Option<String>,
     #[clap(long)]
     encryption_key: Option<Bytes>,
+    #[clap(long)]
+    db_name: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -231,9 +233,35 @@ async fn run() -> Result<()> {
             std::str::from_utf8(encryption_key)?,
         );
     }
-    let namespace = options.namespace.as_deref().unwrap_or("ns-default");
-    std::env::set_var("LIBSQL_BOTTOMLESS_DATABASE_ID", namespace);
-
+    let namespace_init = std::env::var("LIBSQL_BOTTOMLESS_DATABASE_ID").unwrap_or(String::new());
+    if options.db_name.is_some() && options.namespace.is_some() {
+        return Err(anyhow!(
+            "only one of the arguments --db-name or --namespace is expected to be set"
+        ));
+    }
+    if let Some(ref db_name) = options.db_name {
+        if namespace_init != "" {
+            std::env::set_var(
+                "LIBSQL_BOTTOMLESS_DATABASE_ID",
+                format!("ns-{}:{}", &namespace_init, db_name),
+            );
+        } else {
+            return Err(anyhow!(
+                "db_name can be set only if LIBSQL_BOTTOMLESS_DATABASE_ID env var has namespace ID"
+            ));
+        }
+    } else {
+        let namespace = options.namespace.as_deref().unwrap_or("ns-default");
+        std::env::set_var("LIBSQL_BOTTOMLESS_DATABASE_ID", namespace);
+    }
+    let namespace = std::env::var("LIBSQL_BOTTOMLESS_DATABASE_ID").unwrap();
+    if namespace_init != namespace {
+        tracing::info!(
+            "LIBSQL_BOTTOMLESS_DATABASE_ID env var were updated: '{}' -> '{}'",
+            namespace_init,
+            namespace
+        );
+    }
     match options.command {
         Commands::Create { ref source_db_path } => {
             let mut client =
