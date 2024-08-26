@@ -231,14 +231,28 @@ where
         namespace: &NamespaceName,
         db_path: &Path,
     ) -> Result<Arc<SharedWal<IO>>> {
+        let db_file = self.io.open(false, true, true, db_path)?;
+        let db_file_len = db_file.len()?;
+        let header = if db_file_len > 0 {
+            let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
+            db_file.read_exact_at(header.as_bytes_mut(), 0)?;
+            Some(header)
+        } else {
+            None
+        };
+
+        let footer = self.try_read_footer(&db_file)?;
+
+        let mut checkpointed_frame_no = footer.map(|f| f.replication_index.get()).unwrap_or(0);
+
         let path = self.path.join(namespace.as_str());
         self.io.create_dir_all(&path)?;
         // TODO: handle that with abstract io
         let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
 
-        // TODO: pass config override here
-        let max_frame_no = self.storage.durable_frame_no_sync(&namespace, None);
-        let durable_frame_no = Arc::new(Mutex::new(max_frame_no));
+        // we only checkpoint durable frame_no so this is a good first estimate without an actual
+        // network call.
+        let durable_frame_no = Arc::new(Mutex::new(checkpointed_frame_no));
 
         let tail = SegmentList::default();
         for entry in dir {
@@ -270,18 +284,6 @@ where
                 tail.push(sealed);
             }
         }
-
-        let db_file = self.io.open(false, true, true, db_path)?;
-        let db_file_len = db_file.len()?;
-        let header = if db_file_len > 0 {
-            let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
-            db_file.read_exact_at(header.as_bytes_mut(), 0)?;
-            Some(header)
-        } else {
-            None
-        };
-
-        let footer = self.try_read_footer(&db_file)?;
 
         let log_id = match footer {
             Some(footer) if tail.is_empty() => footer.log_id(),
@@ -316,23 +318,21 @@ where
                 None => (0, NonZeroU64::new(1).unwrap()),
             });
 
-        let current_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
+        let current_segment_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
 
-        let segment_file = self.io.open(true, true, true, &current_path)?;
+        let segment_file = self.io.open(true, true, true, &current_segment_path)?;
         let salt = self.io.with_rng(|rng| rng.gen());
 
-        let checkpointed_frame_no = match tail.last() {
-            // if there is a tail, then the latest checkpointed frame_no is one before the the
-            // start frame_no of the tail. We must read it from the tail, because a partial
-            // checkpoint may have occured before a crash.
-            Some(last) => (last.start_frame_no() - 1).max(1),
-            // otherwise, we read the it from the footer.
-            None => footer.map(|f| f.replication_index.get()).unwrap_or(0),
-        };
+        // if there is a tail, then the latest checkpointed frame_no is one before the the
+        // start frame_no of the tail. We must read it from the tail, because a partial
+        // checkpoint may have occured before a crash.
+        if let Some(last) = tail.last() {
+            checkpointed_frame_no = (last.start_frame_no() - 1).max(1)
+        }
 
         let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
             segment_file,
-            current_path,
+            current_segment_path,
             next_frame_no,
             db_size,
             tail.into(),
