@@ -9,7 +9,6 @@ use s3s::auth::SimpleAuth;
 use s3s::service::S3ServiceBuilder;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::PathBuf;
-use std::sync::Once;
 use tokio::task::JoinError;
 use tokio::time::sleep;
 use tokio::time::Duration;
@@ -24,41 +23,45 @@ use crate::Server;
 
 const S3_URL: &str = "http://localhost:9000/";
 
-static S3_SERVER: Once = Once::new();
-
-async fn start_s3_server() {
+fn start_s3_server() -> impl Future<Output = ()> {
     std::env::set_var("LIBSQL_BOTTOMLESS_ENDPOINT", "http://localhost:9000");
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY", "foo");
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID", "bar");
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION", "us-east-1");
     std::env::set_var("LIBSQL_BOTTOMLESS_BUCKET", "my-bucket");
 
-    S3_SERVER.call_once(|| {
-        let tmp = std::env::temp_dir().join(format!("s3s-{}", Uuid::new_v4().as_simple()));
+    let tmp = std::env::temp_dir().join(format!("s3s-{}", Uuid::new_v4().as_simple()));
 
-        std::fs::create_dir_all(&tmp).unwrap();
+    std::fs::create_dir_all(&tmp).unwrap();
 
-        tracing::info!("starting mock s3 server with path: {}", tmp.display());
+    tracing::info!("starting mock s3 server with path: {}", tmp.display());
 
-        let s3_impl = s3s_fs::FileSystem::new(tmp).unwrap();
+    let s3_impl = s3s_fs::FileSystem::new(tmp).unwrap();
 
-        let key = std::env::var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").unwrap();
-        let secret = std::env::var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").unwrap();
+    let key = std::env::var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").unwrap();
+    let secret = std::env::var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").unwrap();
 
-        let auth = SimpleAuth::from_single(key, secret);
+    let auth = SimpleAuth::from_single(key, secret);
 
-        let mut s3 = S3ServiceBuilder::new(s3_impl);
-        s3.set_auth(auth);
-        let s3 = s3.build().into_shared().into_make_service();
+    let mut s3 = S3ServiceBuilder::new(s3_impl);
+    s3.set_auth(auth);
+    let s3 = s3.build().into_shared().into_make_service();
 
-        tokio::spawn(async move {
-            let addr = ([127, 0, 0, 1], 9000).into();
+    let addr = ([127, 0, 0, 1], 9000).into();
 
-            hyper::Server::bind(&addr).serve(s3).await.unwrap();
+    let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+    let server = hyper::Server::bind(&addr)
+        .serve(s3)
+        .with_graceful_shutdown(async {
+            rx.await.ok();
         });
+    tokio::spawn(async move {
+        server.await.unwrap();
     });
-
-    tokio::time::sleep(Duration::from_millis(500)).await;
+    async move {
+        let _ = tx.send(());
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
 }
 
 /// returns a future that once polled will shutdown the server and wait for cleanup
@@ -121,11 +124,10 @@ async fn configure_server(
 }
 
 #[tokio::test]
-#[ignore]
 async fn backup_restore() {
     let _ = tracing_subscriber::fmt::try_init();
 
-    start_s3_server().await;
+    let s3 = start_s3_server();
 
     const DB_ID: &str = "testbackuprestore";
     const BUCKET: &str = "testbackuprestore";
@@ -251,6 +253,8 @@ async fn backup_restore() {
         db_job.await.unwrap();
         drop(cleaner);
     }
+
+    s3.await;
 }
 
 async fn list_bucket(bucket: &str) -> Vec<String> {
@@ -273,7 +277,7 @@ async fn list_bucket(bucket: &str) -> Vec<String> {
 async fn restore_from_partial_db() {
     let _ = tracing_subscriber::fmt::try_init();
 
-    start_s3_server().await;
+    let s3 = start_s3_server();
 
     const DB_ID: &str = "partialbackup";
     const BUCKET: &str = "partialbackup";
@@ -375,13 +379,14 @@ async fn restore_from_partial_db() {
         db_job.await.unwrap();
         drop(cleaner);
     }
+    s3.await;
 }
 
 #[tokio::test]
 async fn do_not_restore_from_corrupted_db() {
     let _ = tracing_subscriber::fmt::try_init();
 
-    start_s3_server().await;
+    let s3 = start_s3_server();
 
     const DB_ID: &str = "corruptedbackup";
     const BUCKET: &str = "corruptedbackup";
@@ -503,13 +508,14 @@ async fn do_not_restore_from_corrupted_db() {
         assert!(db_job.await.is_err());
         drop(cleaner);
     }
+    s3.await;
 }
 
 #[tokio::test]
 async fn rollback_restore() {
     let _ = tracing_subscriber::fmt::try_init();
 
-    start_s3_server().await;
+    let s3 = start_s3_server();
 
     const DB_ID: &str = "testrollbackrestore";
     const BUCKET: &str = "testrollbackrestore";
@@ -625,6 +631,7 @@ async fn rollback_restore() {
         db_job.await.unwrap();
         drop(cleaner);
     }
+    s3.await;
 }
 
 async fn perform_updates(connection_addr: &Url, row_count: usize, ops_count: usize, update: &str) {
