@@ -58,14 +58,14 @@ pub async fn bottomless_migrate(
 
     let (sender, mut rcv) = tokio::sync::mpsc::channel(1);
 
+    // we are not checkpointing anything, be we want to drain the receiver
     tokio::spawn(async move {
         loop {
             match rcv.recv().await {
-                Some(libsql_wal::checkpointer::CheckpointMessage::Shutdown) => {
+                Some(libsql_wal::checkpointer::CheckpointMessage::Shutdown) | None => {
                     break
                 }
                 Some(_) => (),
-                None => break,
             }
         }
     });
