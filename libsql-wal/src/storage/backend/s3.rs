@@ -80,7 +80,9 @@ impl<IO: Io> S3Backend<IO> {
         };
 
         let bucket_config = CreateBucketConfiguration::builder()
-            .location_constraint(aws_sdk_s3::types::BucketLocationConstraint::from_str(&region.to_string()).unwrap())
+            .location_constraint(
+                aws_sdk_s3::types::BucketLocationConstraint::from_str(&region.to_string()).unwrap(),
+            )
             .build();
 
         // TODO: we may need to create the bucket for config overrides. Maybe try lazy bucket
