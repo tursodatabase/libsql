@@ -377,7 +377,7 @@ where
         let len = db_file.len()?;
         if len as usize % LIBSQL_PAGE_SIZE as usize == size_of::<LibsqlFooter>() {
             let mut footer: LibsqlFooter = LibsqlFooter::new_zeroed();
-            let footer_offset = LIBSQL_PAGE_SIZE as u64 * len;
+            let footer_offset = (len / LIBSQL_PAGE_SIZE as u64) * LIBSQL_PAGE_SIZE as u64;
             db_file.read_exact_at(footer.as_bytes_mut(), footer_offset)?;
             footer.validate()?;
             Ok(Some(footer))
