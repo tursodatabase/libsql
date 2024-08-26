@@ -54,7 +54,7 @@ use libsql_wal::registry::WalRegistry;
 use libsql_wal::segment::sealed::SealedSegment;
 use libsql_wal::storage::async_storage::{AsyncStorage, AsyncStorageInitConfig};
 use libsql_wal::storage::backend::s3::S3Backend;
-use libsql_wal::storage::{NoStorage, Storage};
+use libsql_wal::storage::NoStorage;
 use namespace::meta_store::MetaStoreHandle;
 use namespace::NamespaceName;
 use net::Connector;
@@ -65,6 +65,7 @@ use tokio::runtime::Runtime;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::Duration;
+use tokio_stream::StreamExt as _;
 use tonic::transport::Channel;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
@@ -878,16 +879,17 @@ where
         };
 
         // perform migration before creating the actual registry creation
-        self.maybe_migrate_bottomless(
-            meta_store,
-            storage.clone(),
+        let did_migrate = self.maybe_migrate_bottomless(
+            meta_store.clone(),
             &base_config,
             &primary_config,
         ).await?;
 
+
         if self.rpc_server_config.is_some() && matches!(*storage, Either::B(_)) {
             anyhow::bail!("replication without bottomless not supported yet");
         }
+
 
         let registry = Arc::new(WalRegistry::new(wal_path, storage, sender)?);
         let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
@@ -895,6 +897,23 @@ where
             checkpointer.run().await;
             Ok(())
         });
+
+        // If we have performed the migration, load all shared wals to force flush to storage with
+        // the new registry
+        if did_migrate {
+            let dbs_path = base_config.base_path.join("dbs");
+            let stream = meta_store.namespaces();
+            tokio::pin!(stream);
+            while let Some(conf) = stream.next().await {
+                let registry = registry.clone();
+                let namespace = conf.namespace().clone();
+                let path = dbs_path.join(namespace.as_str()).join("data");
+                tokio::task::spawn_blocking(move || {
+                    registry.open(&path, &namespace.into())
+                }).await.unwrap()?;
+            }
+        }
+
 
         let namespace_resolver = Arc::new(|path: &Path| {
             NamespaceName::from_string(
@@ -1139,15 +1158,13 @@ where
     /// - migrate_bottomless flag is raised
     /// - there hasn't been a previous successfull migration (wals directory is either absent,
     /// or emtpy)
-    async fn maybe_migrate_bottomless<S>(
+    /// returns whether the migration was performed
+    async fn maybe_migrate_bottomless(
         &self,
         meta_store: MetaStore,
-        storage: Arc<S>,
         base_config: &BaseNamespaceConfig,
         primary_config: &PrimaryConfig,
-        ) -> anyhow::Result<()>
-        where S: Storage<Segment = SealedSegment<std::fs::File>>,
-    {
+        ) -> anyhow::Result<bool> {
         let is_previous_migration_successful = self.check_previous_migration_success()?;
         let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
         let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
@@ -1159,18 +1176,24 @@ where
             && is_libsql_wal;
 
         if should_attempt_migration {
-            bottomless_migrate(meta_store, storage, base_config.clone(), primary_config.clone()).await?;
+            bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
+            Ok(true)
+        } else {
+            tracing::info!("bottomless already migrated, skipping...");
+            Ok(false)
         }
-
-        Ok(())
     }
 
     fn check_previous_migration_success(&self) -> anyhow::Result<bool> {
         let wals_path = self.path.join("wals");
+        if !wals_path.try_exists()? {
+            return Ok(false)
+        }
+
         let dir = std::fs::read_dir(&wals_path)?;
 
         // wals dir exist and is not empty
-        Ok(wals_path.try_exists()? && dir.count() != 0)
+        Ok(dir.count() != 0)
     }
 }
 
