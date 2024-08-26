@@ -1,5 +1,6 @@
 // TODO(lucio): Move this to `remote/mod.rs`
 
+use std::path::Path;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
