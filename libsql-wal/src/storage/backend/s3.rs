@@ -314,7 +314,7 @@ struct FolderKey<'a> {
 
 impl fmt::Display for FolderKey<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ns-{}:{}-v2", self.cluster_id, self.namespace)
+        write!(f, "v2/clusters/{}/namespaces/{}", self.cluster_id, self.namespace)
     }
 }
 
@@ -328,10 +328,6 @@ fn s3_segment_index_key(folder_key: &FolderKey, segment_key: &SegmentKey) -> Str
 
 fn s3_segment_index_lookup_key(folder_key: &FolderKey, frame_no: u64) -> String {
     format!("{folder_key}/indexes/{:019}", u64::MAX - frame_no)
-}
-
-fn s3_folder_key(cluster_id: &str, ns: &NamespaceName) -> String {
-    format!("ns-{}:{}-v2", cluster_id, ns)
 }
 
 impl<IO> Backend for S3Backend<IO>
