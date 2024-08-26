@@ -127,6 +127,34 @@ enum Commands {
     },
 }
 
+async fn detect_database(options: &Cli, namespace: &str) -> Result<(String, String)> {
+    let database = match options.database.clone() {
+        Some(db) => db,
+        None => {
+            let client = Client::from_conf({
+                let mut loader = aws_config::defaults(aws_config::BehaviorVersion::latest());
+                if let Some(endpoint) = options.endpoint.clone() {
+                    loader = loader.endpoint_url(endpoint);
+                }
+                aws_sdk_s3::config::Builder::from(&loader.load().await)
+                    .force_path_style(true)
+                    .build()
+            });
+            let bucket = options.bucket.as_deref().unwrap_or("bottomless");
+            match detect_db(&client, bucket, namespace).await {
+                Some(db) => db,
+                None => {
+                    return Err(anyhow!("Could not autodetect the database. Please pass it explicitly with -d option"));
+                }
+            }
+        }
+    };
+    let database_dir = database + "/dbs/" + namespace.strip_prefix("ns-").unwrap();
+    let database = database_dir.clone() + "/data";
+    tracing::info!("Database: '{}' (namespace: {})", database, namespace);
+    return Ok((database, database_dir));
+}
+
 async fn run() -> Result<()> {
     tracing_subscriber::fmt::init();
     let mut options = Cli::parse();
@@ -205,36 +233,12 @@ async fn run() -> Result<()> {
     }
     let namespace = options.namespace.as_deref().unwrap_or("ns-default");
     std::env::set_var("LIBSQL_BOTTOMLESS_DATABASE_ID", namespace);
-    let database = match options.database.clone() {
-        Some(db) => db,
-        None => {
-            let client = Client::from_conf({
-                let mut loader = aws_config::defaults(aws_config::BehaviorVersion::latest());
-                if let Some(endpoint) = options.endpoint.clone() {
-                    loader = loader.endpoint_url(endpoint);
-                }
-                aws_sdk_s3::config::Builder::from(&loader.load().await)
-                    .force_path_style(true)
-                    .build()
-            });
-            let bucket = options.bucket.as_deref().unwrap_or("bottomless");
-            match detect_db(&client, bucket, namespace).await {
-                Some(db) => db,
-                None => {
-                    println!("Could not autodetect the database. Please pass it explicitly with -d option");
-                    return Ok(());
-                }
-            }
-        }
-    };
-    let database_dir = database + "/dbs/" + namespace.strip_prefix("ns-").unwrap();
-    let database = database_dir.clone() + "/data";
-    tracing::info!("Database: '{}' (namespace: {})", database, namespace);
-
-    let mut client = Replicator::new(database.clone()).await?;
 
     match options.command {
-        Commands::Create { source_db_path } => {
+        Commands::Create { ref source_db_path } => {
+            let mut client =
+                Replicator::new(detect_database(&options, &namespace).await?.0).await?;
+
             let db_path = PathBuf::from(client.db_path.clone());
             let db_dir = db_path.parent().unwrap();
             if db_dir.exists() {
@@ -274,26 +278,36 @@ async fn run() -> Result<()> {
             println!("snapshot uploaded for generation: {}", client.generation()?);
             return Ok(());
         }
-        Commands::Copy { generation, to_dir } => client.copy(generation, to_dir).await?,
+        Commands::Copy { generation, to_dir } => {
+            let temp = std::env::temp_dir().join("bottomless-copy-temp-dir");
+            let mut client = Replicator::new(temp.display().to_string()).await?;
+            client.copy(generation, to_dir).await?;
+        }
         Commands::Ls {
             generation,
             limit,
             older_than,
             newer_than,
             verbose,
-        } => match generation {
-            Some(gen) => client.list_generation(gen).await?,
-            None => {
-                client
-                    .list_generations(limit, older_than, newer_than, verbose)
-                    .await?
+        } => {
+            let temp = std::env::temp_dir().join("bottomless-ls-temp-dir");
+            let client = Replicator::new(temp.display().to_string()).await?;
+            match generation {
+                Some(gen) => client.list_generation(gen).await?,
+                None => {
+                    client
+                        .list_generations(limit, older_than, newer_than, verbose)
+                        .await?
+                }
             }
-        },
+        }
         Commands::Restore {
             generation,
             utc_time,
             ..
         } => {
+            let (database, database_dir) = detect_database(&options, &namespace).await?;
+            let mut client = Replicator::new(database.clone()).await?;
             tokio::fs::create_dir_all(&database_dir).await?;
             client.restore(generation, utc_time).await?;
             let db_path = PathBuf::from(&database);
@@ -307,9 +321,15 @@ async fn run() -> Result<()> {
             generation,
             utc_time,
         } => {
-            let temp = std::env::temp_dir().join("bottomless-verification-do-not-touch");
+            let temp: PathBuf = std::env::temp_dir().join("bottomless-verify-temp-dir");
             let mut client = Replicator::new(temp.display().to_string()).await?;
             let _ = tokio::fs::remove_file(&temp).await;
+            tracing::info!(
+                "ready to restore DB from generation '{}'",
+                &generation
+                    .map(|x| x.to_string())
+                    .unwrap_or(String::from(""))
+            );
             client.restore(generation, utc_time).await?;
             let size = tokio::fs::metadata(&temp).await?.len();
             println!("Snapshot size: {size}");
@@ -325,15 +345,23 @@ async fn run() -> Result<()> {
             generation,
             older_than,
             verbose,
-        } => match (generation, older_than) {
-            (None, Some(older_than)) => client.remove_many(older_than, verbose).await?,
-            (Some(generation), None) => client.remove(generation, verbose).await?,
-            (Some(_), Some(_)) => unreachable!(),
-            (None, None) => println!(
-                "rm command cannot be run without parameters; see -h or --help for details"
-            ),
-        },
+        } => {
+            let (database, _) = detect_database(&options, &namespace).await?;
+            let client = Replicator::new(database.clone()).await?;
+
+            match (generation, older_than) {
+                (None, Some(older_than)) => client.remove_many(older_than, verbose).await?,
+                (Some(generation), None) => client.remove(generation, verbose).await?,
+                (Some(_), Some(_)) => unreachable!(),
+                (None, None) => println!(
+                    "rm command cannot be run without parameters; see -h or --help for details"
+                ),
+            }
+        }
         Commands::Snapshot { generation } => {
+            let (database, database_dir) = detect_database(&options, &namespace).await?;
+            let mut client = Replicator::new(database.clone()).await?;
+
             tokio::fs::create_dir_all(&database_dir).await?;
             let generation = if let Some(gen) = generation {
                 gen
