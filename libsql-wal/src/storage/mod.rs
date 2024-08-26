@@ -473,6 +473,12 @@ impl<IO: Io> Storage for TestStorage<IO> {
                 .or_default()
                 .insert(key, (out_path, index));
             tokio::runtime::Handle::current().block_on(on_store(end_frame_no));
+        } else {
+            // HACK: we need to spawn because many tests just call this method indirectly in
+            // async context. That makes tests easier to write.
+            tokio::task::spawn_blocking(move || {
+                tokio::runtime::Handle::current().block_on(on_store(u64::MAX));
+            });
         }
     }
 
