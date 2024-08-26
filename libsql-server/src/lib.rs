@@ -1179,6 +1179,14 @@ where
             bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
             Ok(true)
         } else {
+            // the wals directory is present and so is the _dbs. This means that a crash occured
+            // before we could remove it. clean it up now. see code in `migrate_bottomless.rs`
+            let tmp_dbs_path = base_config.base_path.join("_dbs");
+            if tmp_dbs_path.try_exists()? {
+                tracing::info!("removed dangling `_dbs` folder");
+                tokio::fs::remove_dir_all(&tmp_dbs_path).await?;
+            }
+
             tracing::info!("bottomless already migrated, skipping...");
             Ok(false)
         }

@@ -26,13 +26,26 @@ use crate::namespace::meta_store::{MetaStore, MetaStoreHandle};
 use crate::namespace::NamespaceStore;
 
 /// The process for migrating from bottomless to libsql wal is simple:
-/// 1) iteratate over all namespaces, and make sure that they   
+/// 1) iteratate over all namespaces, and make sure that they are up to date with bottomless by
+///    loading them
+/// 2) with a dummy registry, in a temp directory, with no storage, and no checkpointer, inject all the pages from the
+///    original db into a new temp db
+/// 3) when all namspace have been successfully migrated, make the dbs and wals folders permanent
 pub async fn bottomless_migrate(
     meta_store: MetaStore,
     base_config: BaseNamespaceConfig,
     primary_config: PrimaryConfig,
 ) -> anyhow::Result<()>
 {
+    let base_dbs_dir = base_config.base_path.join("dbs");
+    let base_dbs_dir_tmp = base_config.base_path.join("_dbs");
+    // the previous migration failed. The _dbs is still present, but the wals is not. In this case
+    // we delete the current dbs if it exists and replace it with _dbs, and attempt migration again
+    if base_dbs_dir_tmp.try_exists()? {
+        tokio::fs::remove_dir_all(&base_dbs_dir).await?;
+        tokio::fs::rename(&base_dbs_dir_tmp, &base_dbs_dir).await?;
+    }
+
     tracing::info!("attempting bottomless migration to libsql-wal");
 
     let tmp = TempDir::new()?;
@@ -90,11 +103,14 @@ pub async fn bottomless_migrate(
 
     tmp_registry.shutdown().await?;
 
-    // FIXME: this is not atomic!!
-    tokio::fs::remove_dir_all(base_config.base_path.join("dbs")).await?;
-    tokio::fs::rename(tmp.path().join("dbs"), base_config.base_path.join("dbs")).await?;
+    // unix prevents atomically renaming directories with mv, so we first rename dbs to _dbs, then
+    // move the new dbs and wals, then remove old dbs.
+    // when we perform a check form migration, whe verify if _dbs exists. If it exists, and wals
+    // doesn't exist, then we restore it, otherwise, we delete it.
+    tokio::fs::rename(&base_dbs_dir, &base_dbs_dir_tmp).await?;
+    tokio::fs::rename(tmp.path().join("dbs"), base_dbs_dir).await?;
     tokio::fs::rename(tmp.path().join("wals"), base_config.base_path.join("wals")).await?;
-
+    tokio::fs::remove_dir_all(base_config.base_path.join("_dbs")).await?;
 
     Ok(())
 }
