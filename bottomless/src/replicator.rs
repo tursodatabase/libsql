@@ -1677,28 +1677,10 @@ impl Replicator {
         }
         // drop of injector will cause drop&close of last DB connection which will perform final
         // WAL checkpoint of the DB
+        injector
+            .checkpoint()
+            .map_err(|e| anyhow!("unable to apply WAL after restore procedure: {e}"))?;
         drop(injector);
-
-        let db_path_str = db_path
-            .to_str()
-            .ok_or(anyhow!("failed to convert db path to string"))?;
-        let db_wal_file_path = format!("{}-wal", &db_path_str);
-        let db_wal_index_path = format!("{}-shm", &db_path_str);
-        let has_wal_file = tokio::fs::try_exists(&db_wal_file_path).await?;
-        let has_wal_index = tokio::fs::try_exists(&db_wal_index_path).await?;
-        if has_wal_file || has_wal_index {
-            // restore process was not finished successfully as WAL wasn't transferred completely
-            tracing::error!(
-                "WAL wasn't transferred completely during restoration: db_name={}, generation={}",
-                &self.db_name,
-                &generation
-            );
-            let _ = self
-                .remove_wal_files(&db_path_str)
-                .await
-                .inspect_err(|e| tracing::error!("unable to remove wal files: {}", e));
-            return Err(anyhow!("WAL wasn't transferred completely"));
-        }
         Ok(applied_wal_frame)
     }
 

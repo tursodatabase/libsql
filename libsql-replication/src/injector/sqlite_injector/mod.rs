@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::{collections::VecDeque, path::PathBuf};
 
 use parking_lot::Mutex;
-use rusqlite::OpenFlags;
+use rusqlite::{params, OpenFlags};
 use tokio::task::spawn_blocking;
 
 use crate::frame::{Frame, FrameNo};
@@ -23,6 +23,13 @@ pub type FrameBuffer = Arc<Mutex<VecDeque<Frame>>>;
 
 pub struct SqliteInjector {
     pub(in super::super) inner: Arc<Mutex<SqliteInjectorInner>>,
+}
+
+impl SqliteInjector {
+    pub fn checkpoint(&mut self) -> Result<()> {
+        let inner = self.inner.clone();
+        return inner.lock().checkpoint();
+    }
 }
 
 impl Injector for SqliteInjector {
@@ -122,6 +129,12 @@ impl SqliteInjectorInner {
             encryption_config,
             auto_checkpoint,
         })
+    }
+
+    pub fn checkpoint(&mut self) -> Result<()> {
+        let conn = self.connection.lock();
+        let _ = conn.query_row("PRAGMA wal_checkpoint(TRUNCATE)", params![], |_| Ok(()))?;
+        Ok(())
     }
 
     /// Inject a frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).
