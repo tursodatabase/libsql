@@ -520,6 +520,14 @@ impl Conn for RemoteConnection {
     }
 
     async fn reset(&self) {}
+
+    fn enable_load_extension(&self, onoff: bool) -> Result<()> {
+        self.local.enable_load_extension(onoff)
+    }
+
+    fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
+        self.local.load_extension(dylib_path, entry_point)
+    }
 }
 
 pub struct ColumnMeta {
