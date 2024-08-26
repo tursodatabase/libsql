@@ -145,17 +145,11 @@ pub trait Storage: Send + Sync + 'static {
         on_store: OnStoreCallback,
     );
 
-    fn durable_frame_no_sync(
+    fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
         config_override: Option<Self::Config>,
-    ) -> u64;
-
-    async fn durable_frame_no(
-        &self,
-        namespace: &NamespaceName,
-        config_override: Option<Self::Config>,
-    ) -> Result<u64>;
+    ) -> impl Future<Output = Result<u64>> + Send;
 
     async fn restore(
         &self,
@@ -224,17 +218,6 @@ where
         match zip(self, config_override) {
             Either::A((s, c)) => s.store(namespace, seg, c, on_store),
             Either::B((s, c)) => s.store(namespace, seg, c, on_store),
-        }
-    }
-
-    fn durable_frame_no_sync(
-        &self,
-        namespace: &NamespaceName,
-        config_override: Option<Self::Config>,
-    ) -> u64 {
-        match zip(self, config_override) {
-            Either::A((s, c)) => s.durable_frame_no_sync(namespace, c),
-            Either::B((s, c)) => s.durable_frame_no_sync(namespace, c),
         }
     }
 
@@ -339,10 +322,10 @@ impl Storage for NoStorage {
 
     async fn durable_frame_no(
         &self,
-        namespace: &NamespaceName,
-        config: Option<Self::Config>,
+        _namespace: &NamespaceName,
+        _config: Option<Self::Config>,
     ) -> Result<u64> {
-        Ok(self.durable_frame_no_sync(namespace, config))
+        Ok(u64::MAX)
     }
 
     async fn restore(
@@ -353,14 +336,6 @@ impl Storage for NoStorage {
         _config_override: Option<Self::Config>,
     ) -> Result<()> {
         panic!("can restore from no storage")
-    }
-
-    fn durable_frame_no_sync(
-        &self,
-        _namespace: &NamespaceName,
-        _config_override: Option<Self::Config>,
-    ) -> u64 {
-        u64::MAX
     }
 
     async fn find_segment(
@@ -484,10 +459,10 @@ impl<IO: Io> Storage for TestStorage<IO> {
 
     async fn durable_frame_no(
         &self,
-        namespace: &NamespaceName,
-        config: Option<Self::Config>,
+        _namespace: &NamespaceName,
+        _config: Option<Self::Config>,
     ) -> Result<u64> {
-        Ok(self.durable_frame_no_sync(namespace, config))
+        Ok(u64::MAX)
     }
 
     async fn restore(
@@ -498,22 +473,6 @@ impl<IO: Io> Storage for TestStorage<IO> {
         _config_override: Option<Self::Config>,
     ) -> Result<()> {
         todo!();
-    }
-
-    fn durable_frame_no_sync(
-        &self,
-        namespace: &NamespaceName,
-        _config_override: Option<Self::Config>,
-    ) -> u64 {
-        let inner = self.inner.lock_blocking();
-        if inner.store {
-            let Some(segs) = inner.stored.get(namespace) else {
-                return 0;
-            };
-            segs.keys().map(|k| k.end_frame_no).max().unwrap_or(0)
-        } else {
-            u64::MAX
-        }
     }
 
     async fn find_segment(

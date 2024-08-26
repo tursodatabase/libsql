@@ -380,6 +380,18 @@ where
         }
     }
 
+    /// Attempts to sync all loaded dbs with durable storage
+    pub async fn sync_all(&self) -> Result<()>
+        where S: Storage,
+    {
+        for entry in self.opened.iter() {
+            let Slot::Wal(shared) = entry.value() else { panic!("all wals should already be opened") };
+            sync_one(shared, self.storage.as_ref()).await?;
+        }
+
+        Ok(())
+    }
+
     // On shutdown, we checkpoint all the WALs. This require sealing the current segment, and when
     // checkpointing all the segments
     pub async fn shutdown(self: Arc<Self>) -> Result<()> {
@@ -437,6 +449,23 @@ where
 
         Ok(())
     }
+}
+
+#[tracing::instrument(skip_all, fields(namespace = shared.namespace.as_str()))]
+async fn sync_one<IO, S>(shared: &SharedWal<IO>, storage: &S) -> Result<()>
+where IO: Io,
+      S: Storage
+{
+    let remote_durable_frame_no = storage.durable_frame_no(&shared.namespace, None).await.map_err(Box::new)?;
+    let local_current_frame_no = shared.current.load().next_frame_no().get() - 1;
+
+    if remote_durable_frame_no >= local_current_frame_no {
+        tracing::info!(remote_durable_frame_no, local_current_frame_no, "remote storage has newer segments");
+    } else {
+        tracing::info!("local database is up to date");
+    }
+
+    Ok(())
 }
 
 fn read_log_id_from_footer<F: FileExt>(db_file: &F, db_size: u64) -> io::Result<Uuid> {

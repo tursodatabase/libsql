@@ -26,7 +26,7 @@ pub enum Error {
     InvalidFooterVersion,
 
     #[error("storage error: {0}")]
-    Storage(#[from] crate::storage::Error),
+    Storage(#[from] Box<crate::storage::Error>),
 }
 
 impl Into<libsql_sys::ffi::Error> for Error {

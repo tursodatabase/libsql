@@ -224,15 +224,6 @@ where
             .await
     }
 
-    fn durable_frame_no_sync(
-        &self,
-        namespace: &NamespaceName,
-        config_override: Option<Self::Config>,
-    ) -> u64 {
-        tokio::runtime::Handle::current()
-            .block_on(self.durable_frame_no(namespace, config_override)).unwrap()
-    }
-
     async fn find_segment(
         &self,
         namespace: &NamespaceName,
