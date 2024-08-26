@@ -30,7 +30,7 @@ use crate::namespace::NamespaceStore;
 ///    loading them
 /// 2) with a dummy registry, in a temp directory, with no storage, and no checkpointer, inject all the pages from the
 ///    original db into a new temp db
-/// 3) when all namspace have been successfully migrated, make the dbs and wals folders permanent
+/// 3) when all namespace have been successfully migrated, make the dbs and wals folders permanent
 pub async fn bottomless_migrate(
     meta_store: MetaStore,
     base_config: BaseNamespaceConfig,

@@ -1180,7 +1180,7 @@ where
             Ok(true)
         } else {
             // the wals directory is present and so is the _dbs. This means that a crash occured
-            // before we could remove it. clean it up now. see code in `migrate_bottomless.rs`
+            // before we could remove it. clean it up now. see code in `bottomless_migrate.rs`
             let tmp_dbs_path = base_config.base_path.join("_dbs");
             if tmp_dbs_path.try_exists()? {
                 tracing::info!("removed dangling `_dbs` folder");
