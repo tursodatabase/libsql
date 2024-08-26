@@ -1316,7 +1316,7 @@ impl Replicator {
         {
             Ok(result) => {
                 tokio::fs::rename(&restore_path, &self.db_path).await?;
-                let _ = self.remove_wal_files().await; // best effort, WAL files may not exists
+                let _ = self.remove_wal_files(&self.db_path).await; // best effort, WAL files may not exists
 
                 let elapsed = Instant::now() - start_ts;
                 tracing::info!("Finished database restoration in {:?}", elapsed);
@@ -1675,13 +1675,37 @@ impl Replicator {
                 break;
             }
         }
+        // drop of injector will cause drop&close of last DB connection which will perform final
+        // WAL checkpoint of the DB
+        drop(injector);
+
+        let db_path_str = db_path
+            .to_str()
+            .ok_or(anyhow!("failed to convert db path to string"))?;
+        let db_wal_file_path = format!("{}-wal", &db_path_str);
+        let db_wal_index_path = format!("{}-shm", &db_path_str);
+        let has_wal_file = tokio::fs::try_exists(&db_wal_file_path).await?;
+        let has_wal_index = tokio::fs::try_exists(&db_wal_index_path).await?;
+        if has_wal_file || has_wal_index {
+            // restore process was not finished successfully as WAL wasn't transferred completely
+            tracing::error!(
+                "WAL wasn't transferred completely during restoration: db_name={}, generation={}",
+                &self.db_name,
+                &generation
+            );
+            let _ = self
+                .remove_wal_files(&db_path_str)
+                .await
+                .inspect_err(|e| tracing::error!("unable to remove wal files: {}", e));
+            return Err(anyhow!("WAL wasn't transferred completely"));
+        }
         Ok(applied_wal_frame)
     }
 
-    async fn remove_wal_files(&self) -> Result<()> {
-        tracing::debug!("Overwriting any existing WAL file: {}-wal", &self.db_path);
-        tokio::fs::remove_file(&format!("{}-wal", &self.db_path)).await?;
-        tokio::fs::remove_file(&format!("{}-shm", &self.db_path)).await?;
+    async fn remove_wal_files(&self, db_path: &str) -> Result<()> {
+        tracing::debug!("Remove any existing WAL file: {}-wal", &db_path);
+        tokio::fs::remove_file(&format!("{}-wal", &db_path)).await?;
+        tokio::fs::remove_file(&format!("{}-shm", &db_path)).await?;
         Ok(())
     }
 
