@@ -304,31 +304,31 @@ where
             }
         };
 
+        // if there is a tail, then the latest checkpointed frame_no is one before the the
+        // start frame_no of the tail. We must read it from the tail, because a partial
+        // checkpoint may have occured before a crash.
+        if let Some(last) = list.last() {
+            checkpointed_frame_no = (last.start_frame_no() - 1).max(1)
+        }
+
         let (db_size, next_frame_no) = list
             .with_head(|segment| {
-                let header = segment.header();
+                let header = dbg!(segment.header());
                 (header.size_after(), header.next_frame_no())
             })
-            .unwrap_or_else(|| match header {
-                Some(header) => (
-                    header.db_size.get(),
-                    NonZeroU64::new(header.replication_index.get() + 1)
-                        .unwrap_or(NonZeroU64::new(1).unwrap()),
-                ),
-                None => (0, NonZeroU64::new(1).unwrap()),
-            });
+        .unwrap_or_else(|| match header {
+            Some(header) => (
+                header.db_size.get(),
+                NonZeroU64::new(checkpointed_frame_no + 1)
+                .unwrap_or(NonZeroU64::new(1).unwrap()),
+            ),
+            None => (0, NonZeroU64::new(1).unwrap()),
+        });
 
         let current_segment_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
 
         let segment_file = self.io.open(true, true, true, &current_segment_path)?;
         let salt = self.io.with_rng(|rng| rng.gen());
-
-        // if there is a tail, then the latest checkpointed frame_no is one before the the
-        // start frame_no of the tail. We must read it from the tail, because a partial
-        // checkpoint may have occured before a crash.
-        if let Some(last) = tail.last() {
-            checkpointed_frame_no = (last.start_frame_no() - 1).max(1)
-        }
 
         let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
             segment_file,
