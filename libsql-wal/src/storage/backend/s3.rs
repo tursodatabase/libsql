@@ -4,6 +4,7 @@ use std::fmt;
 use std::mem::size_of;
 use std::path::Path;
 use std::pin::Pin;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::task::Poll;
 
@@ -68,6 +69,9 @@ impl<IO: Io> S3Backend<IO> {
             .to_builder()
             .force_path_style(true)
             .build();
+
+        let region = config.region().expect("region must be configured").clone();
+
         let client = Client::from_conf(config);
         let config = S3Config {
             bucket,
@@ -76,8 +80,9 @@ impl<IO: Io> S3Backend<IO> {
         };
 
         let bucket_config = CreateBucketConfiguration::builder()
-            // TODO: get location from config
-            .location_constraint(aws_sdk_s3::types::BucketLocationConstraint::UsWest2)
+            .location_constraint(
+                aws_sdk_s3::types::BucketLocationConstraint::from_str(&region.to_string()).unwrap(),
+            )
             .build();
 
         // TODO: we may need to create the bucket for config overrides. Maybe try lazy bucket
