@@ -973,6 +973,7 @@ dependencies = [
  "chrono",
  "clap 4.5.9",
  "libsql-rusqlite",
+ "libsql-sys",
  "tokio",
  "tracing",
  "tracing-subscriber",
