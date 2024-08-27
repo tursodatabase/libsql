@@ -65,6 +65,7 @@ impl Io for StdIO {
     ) -> io::Result<Self::File> {
         std::fs::OpenOptions::new()
             .create_new(create_new)
+            .create(write)
             .read(read)
             .write(write)
             .open(path)

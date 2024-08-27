@@ -213,7 +213,7 @@ async fn flaky_fs() {
         WalRegistry::new_with_io(
             io.clone(),
             tmp.path().join("test/wals"),
-            TestStorage::new_io(false, io),
+            TestStorage::new_io(false, io).into(),
             sender,
         )
         .unwrap(),

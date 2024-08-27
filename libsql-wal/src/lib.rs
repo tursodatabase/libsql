@@ -38,6 +38,18 @@ impl LibsqlFooter {
     pub fn log_id(&self) -> Uuid {
         Uuid::from_u128(self.log_id.get())
     }
+
+    fn validate(&self) -> error::Result<()> {
+        if self.magic.get() != LIBSQL_MAGIC {
+            return Err(error::Error::InvalidFooterMagic);
+        }
+
+        if self.version.get() != LIBSQL_WAL_VERSION {
+            return Err(error::Error::InvalidFooterVersion);
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(any(debug_assertions, test))]
@@ -99,7 +111,7 @@ pub mod test {
                 WalRegistry::new_with_io(
                     io.clone(),
                     tmp.path().join("test/wals"),
-                    TestStorage::new_io(store, io),
+                    TestStorage::new_io(store, io).into(),
                     sender,
                 )
                 .unwrap(),

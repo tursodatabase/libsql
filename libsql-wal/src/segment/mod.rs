@@ -221,9 +221,9 @@ impl<T: Segment> Segment for Arc<T> {
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
 pub struct FrameHeader {
-    page_no: U32,
-    size_after: U32,
-    frame_no: U64,
+    pub page_no: U32,
+    pub size_after: U32,
+    pub frame_no: U64,
 }
 
 impl FrameHeader {
@@ -302,6 +302,10 @@ impl Frame {
     pub(crate) fn size_after(&self) -> Option<u32> {
         let size_after = self.header().size_after.get();
         (size_after != 0).then_some(size_after)
+    }
+
+    pub fn data_mut(&mut self) -> &mut [u8] {
+        &mut self.data
     }
 }
 

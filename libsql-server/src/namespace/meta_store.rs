@@ -6,6 +6,7 @@ use std::{collections::HashMap, fs::read_dir};
 use bottomless::bottomless_wal::BottomlessWalWrapper;
 use bottomless::replicator::CompressionKind;
 use bottomless::SavepointTracker;
+use futures::Stream;
 use futures_core::Future;
 use libsql_replication::rpc::metadata;
 use libsql_sys::wal::{
@@ -608,6 +609,24 @@ impl MetaStore {
         }
         None
     }
+
+    /// returns an iterator over all manespaces config handles
+    pub(crate) fn namespaces(&self) -> impl Stream<Item = MetaStoreHandle> + '_ {
+        async_stream::stream! {
+            let lock = self.inner.configs.lock().await;
+            for (ns, sender) in lock.iter() {
+                let change_tx = self.changes_tx.clone();
+
+
+                let handle = MetaStoreHandle {
+                    namespace: ns.clone(),
+                    inner: HandleState::External(change_tx, sender.subscribe()),
+                };
+
+                yield handle;
+            }
+        }
+    }
 }
 
 impl MetaStoreHandle {
@@ -715,5 +734,9 @@ impl MetaStoreHandle {
         };
 
         Ok(())
+    }
+
+    pub fn namespace(&self) -> &NamespaceName {
+        &self.namespace
     }
 }

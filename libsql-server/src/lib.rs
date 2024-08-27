@@ -65,10 +65,12 @@ use tokio::runtime::Runtime;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::Duration;
+use tokio_stream::StreamExt as _;
 use tonic::transport::Channel;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
+use self::bottomless_migrate::bottomless_migrate;
 use self::config::MetaStoreConfig;
 use self::connection::connection_manager::InnerWalManager;
 use self::namespace::configurator::{
@@ -91,6 +93,7 @@ pub mod version;
 
 pub use hrana::proto as hrana_proto;
 
+mod bottomless_migrate;
 mod database;
 mod error;
 mod h2c;
@@ -170,6 +173,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub use_custom_wal: Option<CustomWAL>,
     pub storage_server_address: String,
     pub connector: Option<D>,
+    pub migrate_bottomless: bool,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -194,6 +198,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             use_custom_wal: None,
             storage_server_address: Default::default(),
             connector: None,
+            migrate_bottomless: false,
         }
     }
 }
@@ -554,16 +559,6 @@ where
             encryption_config: self.db_config.encryption_config.clone(),
         };
 
-        let (configurators, make_replication_svc) = self
-            .make_configurators_and_replication_svc(
-                base_config,
-                client_config.clone(),
-                &mut task_manager,
-                scheduler_sender.into(),
-                scripted_backup,
-            )
-            .await?;
-
         let (metastore_conn_maker, meta_store_wal_manager) =
             metastore_connection_maker(self.meta_store_config.bottomless.clone(), &self.path)
                 .await?;
@@ -575,6 +570,17 @@ where
             meta_store_wal_manager,
         )
         .await?;
+
+        let (configurators, make_replication_svc) = self
+            .make_configurators_and_replication_svc(
+                base_config,
+                client_config.clone(),
+                &mut task_manager,
+                scheduler_sender.into(),
+                scripted_backup,
+                meta_store.clone(),
+            )
+            .await?;
 
         let namespace_store: NamespaceStore = NamespaceStore::new(
             db_kind.is_replica(),
@@ -750,6 +756,7 @@ where
         task_manager: &mut TaskManager,
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
+        meta_store: MetaStore,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         let wal_path = base_config.base_path.join("wals");
         let enable_libsql_wal_test = {
@@ -781,6 +788,7 @@ where
                     migration_scheduler_handle,
                     scripted_backup,
                     wal_path,
+                    meta_store,
                 )
                 .await
             }
@@ -811,10 +819,11 @@ where
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
         wal_path: PathBuf,
+        meta_store: MetaStore,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         tracing::info!("using libsql wal");
         let (sender, receiver) = tokio::sync::mpsc::channel(64);
-        let storage = if let Some(ref opt) = self.db_config.bottomless_replication {
+        let storage: Arc<_> = if let Some(ref opt) = self.db_config.bottomless_replication {
             if client_config.is_some() {
                 anyhow::bail!("bottomless cannot be enabled on replicas");
             }
@@ -858,9 +867,23 @@ where
             Either::A(storage)
         } else {
             Either::B(NoStorage)
+        }
+        .into();
+
+        let primary_config = PrimaryConfig {
+            max_log_size: self.db_config.max_log_size,
+            max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
+            bottomless_replication: self.db_config.bottomless_replication.clone(),
+            scripted_backup,
+            checkpoint_interval: self.db_config.checkpoint_interval,
         };
 
-        if self.rpc_server_config.is_some() && matches!(storage, Either::B(_)) {
+        // perform migration before creating the actual registry creation
+        let did_migrate = self
+            .maybe_migrate_bottomless(meta_store.clone(), &base_config, &primary_config)
+            .await?;
+
+        if self.rpc_server_config.is_some() && matches!(*storage, Either::B(_)) {
             anyhow::bail!("replication without bottomless not supported yet");
         }
 
@@ -870,6 +893,22 @@ where
             checkpointer.run().await;
             Ok(())
         });
+
+        // If we have performed the migration, load all shared wals to force flush to storage with
+        // the new registry
+        if did_migrate {
+            let dbs_path = base_config.base_path.join("dbs");
+            let stream = meta_store.namespaces();
+            tokio::pin!(stream);
+            while let Some(conf) = stream.next().await {
+                let registry = registry.clone();
+                let namespace = conf.namespace().clone();
+                let path = dbs_path.join(namespace.as_str()).join("data");
+                tokio::task::spawn_blocking(move || registry.open(&path, &namespace.into()))
+                    .await
+                    .unwrap()?;
+            }
+        }
 
         let namespace_resolver = Arc::new(|path: &Path| {
             NamespaceName::from_string(
@@ -922,13 +961,6 @@ where
             }
             // configure primary
             None => {
-                let primary_config = PrimaryConfig {
-                    max_log_size: self.db_config.max_log_size,
-                    max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
-                    bottomless_replication: self.db_config.bottomless_replication.clone(),
-                    scripted_backup,
-                    checkpoint_interval: self.db_config.checkpoint_interval,
-                };
                 let primary_configurator = LibsqlPrimaryConfigurator::new(
                     base_config.clone(),
                     primary_config.clone(),
@@ -1111,6 +1143,60 @@ where
             Some(ref config) => Ok(Some(config.configure().await?)),
             None => Ok(None),
         }
+    }
+
+    /// perform migration from bottomless_wal to libsql_wal if necessary. This only happens if
+    /// all:
+    /// - bottomless is enabled
+    /// - this is a primary
+    /// - we are operating in libsql-wal mode
+    /// - migrate_bottomless flag is raised
+    /// - there hasn't been a previous successfull migration (wals directory is either absent,
+    /// or emtpy)
+    /// returns whether the migration was performed
+    async fn maybe_migrate_bottomless(
+        &self,
+        meta_store: MetaStore,
+        base_config: &BaseNamespaceConfig,
+        primary_config: &PrimaryConfig,
+    ) -> anyhow::Result<bool> {
+        let is_previous_migration_successful = self.check_previous_migration_success()?;
+        let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
+        let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
+        let is_primary = self.rpc_client_config.is_none();
+        let should_attempt_migration = self.migrate_bottomless
+            && is_primary
+            && is_bottomless_enabled
+            && !is_previous_migration_successful
+            && is_libsql_wal;
+
+        if should_attempt_migration {
+            bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
+            Ok(true)
+        } else {
+            // the wals directory is present and so is the _dbs. This means that a crash occured
+            // before we could remove it. clean it up now. see code in `bottomless_migrate.rs`
+            let tmp_dbs_path = base_config.base_path.join("_dbs");
+            if tmp_dbs_path.try_exists()? {
+                tracing::info!("removed dangling `_dbs` folder");
+                tokio::fs::remove_dir_all(&tmp_dbs_path).await?;
+            }
+
+            tracing::info!("bottomless already migrated, skipping...");
+            Ok(false)
+        }
+    }
+
+    fn check_previous_migration_success(&self) -> anyhow::Result<bool> {
+        let wals_path = self.path.join("wals");
+        if !wals_path.try_exists()? {
+            return Ok(false);
+        }
+
+        let dir = std::fs::read_dir(&wals_path)?;
+
+        // wals dir exist and is not empty
+        Ok(dir.count() != 0)
     }
 }
 
