@@ -2,11 +2,13 @@
 
 use std::sync::Arc;
 
+use tokio_stream::{Stream, StreamExt};
+
 use crate::error::Result;
 use crate::io::Io;
 use crate::segment::Frame;
 use crate::shared_wal::SharedWal;
-use crate::transaction::TxGuardOwned;
+use crate::transaction::{Transaction, TxGuardOwned};
 
 /// The injector takes frames and injects them in the wal.
 pub struct Injector<IO: Io> {
@@ -22,9 +24,11 @@ pub struct Injector<IO: Io> {
 impl<IO: Io> Injector<IO> {
     pub fn new(
         wal: Arc<SharedWal<IO>>,
-        tx: TxGuardOwned<IO::File>,
         buffer_capacity: usize,
     ) -> Result<Self> {
+        let mut tx = Transaction::Read(wal.begin_read(u64::MAX));
+        wal.upgrade(&mut tx)?;
+        let tx = tx.into_write().unwrap_or_else(|_| unreachable!()).into_lock_owned();
         Ok(Self {
             wal,
             buffer: Vec::with_capacity(buffer_capacity),
@@ -93,13 +97,7 @@ mod test {
         let replica_conn = replica_env.open_conn("test");
         let replica_shared = replica_env.shared("test");
 
-        let mut tx = crate::transaction::Transaction::Read(replica_shared.begin_read(42));
-        replica_shared.upgrade(&mut tx).unwrap();
-        let guard = tx
-            .into_write()
-            .unwrap_or_else(|_| panic!())
-            .into_lock_owned();
-        let mut injector = Injector::new(replica_shared.clone(), guard, 10).unwrap();
+        let mut injector = Injector::new(replica_shared.clone(), 10).unwrap();
 
         primary_conn.execute("create table test (x)", ()).unwrap();
 

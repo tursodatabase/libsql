@@ -11,7 +11,6 @@ use libsql_sys::name::NamespaceResolver;
 use libsql_wal::io::StdIO;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::replication::injector::Injector;
-use libsql_wal::transaction::Transaction;
 use libsql_wal::wal::LibsqlWalManager;
 use tokio::task::JoinSet;
 use tonic::transport::Channel;
@@ -151,13 +150,7 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
                 .await
                 .unwrap();
 
-            let mut tx = Transaction::Read(shared.begin_read(u64::MAX));
-            shared.upgrade(&mut tx).unwrap();
-            let guard = tx
-                .into_write()
-                .unwrap_or_else(|_| panic!())
-                .into_lock_owned();
-            let injector = Injector::new(shared, guard, 10).unwrap();
+            let injector = Injector::new(shared, 10).unwrap();
             let injector = LibsqlInjector::new(injector);
             let mut replicator = Replicator::new(client, injector);
 

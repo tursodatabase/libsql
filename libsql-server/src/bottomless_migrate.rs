@@ -162,13 +162,7 @@ async fn migrate_one(
     .await
     .unwrap()?;
 
-    let mut tx = shared.begin_read(0).into();
-    shared.upgrade(&mut tx).unwrap();
-    let guard = tx
-        .into_write()
-        .unwrap_or_else(|_| panic!("should be a write txn"))
-        .into_lock_owned();
-    let mut injector = Injector::new(shared.clone(), guard, 10)?;
+    let mut injector = Injector::new(shared.clone(), 10)?;
     let orig_db_path = base_path
         .join("dbs")
         .join(config.namespace().as_str())

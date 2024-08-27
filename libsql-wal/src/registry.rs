@@ -384,6 +384,7 @@ where
     pub async fn sync_all(&self) -> Result<()>
         where S: Storage,
     {
+        tracing::info!("syncing {} namespaces", self.opened.len());
         for entry in self.opened.iter() {
             let Slot::Wal(shared) = entry.value() else { panic!("all wals should already be opened") };
             sync_one(shared, self.storage.as_ref()).await?;
