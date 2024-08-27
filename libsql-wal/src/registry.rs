@@ -254,7 +254,7 @@ where
         // network call.
         let durable_frame_no = Arc::new(Mutex::new(checkpointed_frame_no));
 
-        let tail = SegmentList::default();
+        let list = SegmentList::default();
         for entry in dir {
             let entry = entry.map_err(|e| e.into_io_error().unwrap())?;
             if entry
@@ -281,15 +281,15 @@ where
                 });
                 // TODO: pass config override here
                 self.storage.store(&namespace, sealed.clone(), None, cb);
-                tail.push(sealed);
+                list.push(sealed);
             }
         }
 
         let log_id = match footer {
-            Some(footer) if tail.is_empty() => footer.log_id(),
-            None if tail.is_empty() => self.io.uuid(),
+            Some(footer) if list.is_empty() => footer.log_id(),
+            None if list.is_empty() => self.io.uuid(),
             Some(footer) => {
-                let log_id = tail
+                let log_id = list
                     .with_head(|h| h.header().log_id.get())
                     .expect("non-empty list should have a head");
                 let log_id = Uuid::from_u128(log_id);
@@ -297,14 +297,14 @@ where
                 log_id
             }
             None => {
-                let log_id = tail
+                let log_id = list
                     .with_head(|h| h.header().log_id.get())
                     .expect("non-empty list should have a head");
                 Uuid::from_u128(log_id)
             }
         };
 
-        let (db_size, next_frame_no) = tail
+        let (db_size, next_frame_no) = list
             .with_head(|segment| {
                 let header = segment.header();
                 (header.size_after(), header.next_frame_no())
@@ -335,7 +335,7 @@ where
             current_segment_path,
             next_frame_no,
             db_size,
-            tail.into(),
+            list.into(),
             salt,
             log_id,
         )?));
