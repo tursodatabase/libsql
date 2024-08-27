@@ -14,7 +14,7 @@ where
     R: AsyncRead + Unpin,
 {
     let mut dst_offset = 0u64;
-    let mut buffer = BytesMut::zeroed(4096);
+    let mut buffer = BytesMut::with_capacity(4096);
     loop {
         let n = src.read_buf(&mut buffer).await?;
         if n == 0 {
@@ -22,7 +22,7 @@ where
         }
         let (b, ret) = dst.write_all_at_async(buffer, dst_offset).await;
         ret?;
-        dst_offset += b.len() as u64;
+        dst_offset += n as u64;
         buffer = b;
         buffer.clear();
     }
