@@ -304,6 +304,8 @@ impl<F: FileExt> SealedSegment<F> {
         header.index_size = index_size.into();
         header.last_commited_frame_no = last_committed.into();
         header.size_after = size_after.into();
+        let flags = header.flags();
+        header.set_flags(flags | SegmentFlags::SEALED);
         header.recompute_checksum();
         file.write_all_at(header.as_bytes(), 0)?;
         let index = Map::new(index_bytes.into()).unwrap();
