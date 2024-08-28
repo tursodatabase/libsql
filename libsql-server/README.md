@@ -96,21 +96,9 @@ LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID=               # ... to set up auth, regions
 LIBSQL_BOTTOMLESS_AWS_REGION=                      # .
 ```
 
-### bottomless-cli
+### Bottomless CLI
 
-Replicated snapshots can be inspected and managed with the official command-line
-interface.
-
-The tool can be installed via `cargo`:
-
-```bash
-RUSTFLAGS='--cfg uuid_unstable' cargo install bottomless-cli
-```
-
-For usage examples and description, refer to the [bottomless-cli
-documentation].
-
-[bottomless-cli documentation]: ../bottomless#cli
+[See dedicated CLI's documentation]: ../bottomless-cli/README.md
 
 ## License
 
