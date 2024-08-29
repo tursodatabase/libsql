@@ -48,7 +48,10 @@ fn main() {
         );
 
         println!("cargo:rerun-if-changed=../libsql-sqlite3/");
-        println!("cargo:rustc-link-search={}", out_dir.join("lib/").to_str().unwrap());
+        println!(
+            "cargo:rustc-link-search={}",
+            out_dir.join("lib/").to_str().unwrap()
+        );
         println!("cargo:rustc-link-lib=static=sqlite3");
 
         return;
