@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 use std::future::Future;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -84,6 +84,28 @@ impl Ord for SegmentKey {
 impl SegmentKey {
     pub(crate) fn includes(&self, frame_no: u64) -> bool {
         (self.start_frame_no..=self.end_frame_no).contains(&frame_no)
+    }
+
+    #[tracing::instrument]
+    fn validate_from_path(mut path: &Path, ns: &NamespaceName) -> Option<Self> {
+        // path in the form "v2/clusters/{cluster-id}/namespaces/{namespace}/indexes/{index-key}"
+        let key: Self = path.file_name()?.to_str()?.parse().ok()?;
+
+        path = path.parent()?;
+
+        if path.file_name()? != "indexes" {
+            tracing::debug!("invalid key, ignoring");
+            return None;
+        }
+
+        path = path.parent()?;
+
+        if path.file_name()? != ns.as_str() {
+            tracing::debug!("invalid namespace for key");
+            return None;
+        }
+
+        Some(key)
     }
 }
 
