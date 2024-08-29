@@ -1251,31 +1251,33 @@ where
         base_config: &BaseNamespaceConfig,
         primary_config: &PrimaryConfig,
     ) -> anyhow::Result<bool> {
-        let is_previous_migration_successful = self.check_previous_migration_success()?;
-        let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
-        let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
         let is_primary = self.rpc_client_config.is_none();
-        let should_attempt_migration = self.migrate_bottomless
-            && is_primary
-            && is_bottomless_enabled
-            && !is_previous_migration_successful
-            && is_libsql_wal;
+        if self.migrate_bottomless && is_primary {
+            let is_previous_migration_successful = self.check_previous_migration_success()?;
+            let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
+            let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
+            let should_attempt_migration = is_bottomless_enabled
+                && !is_previous_migration_successful
+                && is_libsql_wal;
 
-        if should_attempt_migration {
-            bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
-            Ok(true)
-        } else {
-            // the wals directory is present and so is the _dbs. This means that a crash occured
-            // before we could remove it. clean it up now. see code in `bottomless_migrate.rs`
-            let tmp_dbs_path = base_config.base_path.join("_dbs");
-            if tmp_dbs_path.try_exists()? {
-                tracing::info!("removed dangling `_dbs` folder");
-                tokio::fs::remove_dir_all(&tmp_dbs_path).await?;
+            if should_attempt_migration {
+                bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
+                return Ok(true);
+            } else {
+                // the wals directory is present and so is the _dbs. This means that a crash occured
+                // before we could remove it. clean it up now. see code in `bottomless_migrate.rs`
+                let tmp_dbs_path = base_config.base_path.join("_dbs");
+                if tmp_dbs_path.try_exists()? {
+                    tracing::info!("removed dangling `_dbs` folder");
+                    tokio::fs::remove_dir_all(&tmp_dbs_path).await?;
+                }
+
+                tracing::info!("bottomless already migrated, skipping...");
             }
 
-            tracing::info!("bottomless already migrated, skipping...");
-            Ok(false)
         }
+
+        Ok(false)
     }
 
     fn check_previous_migration_success(&self) -> anyhow::Result<bool> {
