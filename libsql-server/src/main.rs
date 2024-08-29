@@ -42,6 +42,8 @@ struct Cli {
 
     #[clap(long, default_value = "127.0.0.1:8080", env = "SQLD_HTTP_LISTEN_ADDR")]
     http_listen_addr: SocketAddr,
+
+    /// Enable a web-based http console served at the /console route.
     #[clap(long)]
     enable_http_console: bool,
 
@@ -144,7 +146,7 @@ struct Cli {
     #[clap(long, env = "SQLD_HEARTBEAT_URL")]
     heartbeat_url: Option<String>,
 
-    /// The HTTP "Authornization" header to include in the a server heartbeat
+    /// The HTTP "Authorization" header to include in the a server heartbeat
     /// `POST` request.
     /// By default, the server doesn't send a heartbeat.
     #[clap(long, env = "SQLD_HEARTBEAT_AUTH")]
@@ -227,6 +229,13 @@ struct Cli {
     #[clap(long, env = "SQLD_META_STORE_BUCKET_ENDPOINT")]
     meta_store_bucket_endpoint: Option<String>,
 
+    #[clap(
+        long,
+        env = "SQLD_META_STORE_DESTROY_ON_ERROR",
+        default_value = "false"
+    )]
+    meta_store_destroy_on_error: bool,
+
     /// encryption_key for encryption at rest
     #[clap(long, env = "SQLD_ENCRYPTION_KEY")]
     encryption_key: Option<bytes::Bytes>,
@@ -255,6 +264,14 @@ struct Cli {
         default_value = "http://0.0.0.0:5002"
     )]
     storage_server_address: String,
+
+    /// Enable bottomless to libsql_wal migration. Bottomless replication must be enabled.
+    #[clap(
+        long,
+        env = "LIBSQL_MIGRATE_BOTTOMLESS",
+        requires = "enable_bottomless_replication"
+    )]
+    migrate_bottomless: bool,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -586,6 +603,7 @@ fn make_meta_store_config(config: &Cli) -> anyhow::Result<MetaStoreConfig> {
     Ok(MetaStoreConfig {
         bottomless,
         allow_recover_from_fs: config.allow_metastore_recovery,
+        destroy_on_error: config.meta_store_destroy_on_error,
     })
 }
 
@@ -617,6 +635,16 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         }
     });
 
+    let mut http = HttpConnector::new();
+    http.enforce_http(false);
+    http.set_nodelay(true);
+
+    let https = hyper_rustls::HttpsConnectorBuilder::new()
+        .with_native_roots()
+        .https_or_http()
+        .enable_all_versions()
+        .wrap_connector(http);
+
     Ok(Server {
         path: config.db_path.clone().into(),
         db_config,
@@ -641,6 +669,8 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
             .unwrap_or(Duration::from_secs(30)),
         use_custom_wal: config.use_custom_wal,
         storage_server_address: config.storage_server_address.clone(),
+        connector: Some(https),
+        migrate_bottomless: config.migrate_bottomless,
     })
 }
 

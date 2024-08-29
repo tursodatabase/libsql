@@ -1,6 +1,6 @@
 [package]
 name = "libsql-sqlite3-parser"
-version = "0.12.0"
+version = "0.13.0"
 edition = "2021"
 authors = ["gwenn"]
 description = "SQL parser (as understood by SQLite) (libsql fork)"
@@ -30,7 +30,6 @@ phf = { version = "0.11", features = ["uncased"] }
 log = "0.4"
 memchr = "2.0"
 fallible-iterator = "0.3"
-smallvec = ">=1.6.1"
 bitflags = "2.0"
 uncased = "0.9"
 indexmap = "2.0"

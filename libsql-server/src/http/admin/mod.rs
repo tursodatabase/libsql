@@ -93,9 +93,29 @@ where
 
         tokio::task::spawn(async move {
             loop {
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                let runtime = tokio::runtime::Handle::current();
+                let metrics = runtime.metrics();
+                crate::metrics::TOKIO_RUNTIME_BLOCKING_QUEUE_DEPTH
+                    .set(metrics.blocking_queue_depth() as f64);
+                crate::metrics::TOKIO_RUNTIME_INJECTION_QUEUE_DEPTH
+                    .set(metrics.injection_queue_depth() as f64);
+                crate::metrics::TOKIO_RUNTIME_NUM_BLOCKING_THREADS
+                    .set(metrics.num_blocking_threads() as f64);
+                crate::metrics::TOKIO_RUNTIME_NUM_IDLE_BLOCKING_THREADS
+                    .set(metrics.num_idle_blocking_threads() as f64);
+                crate::metrics::TOKIO_RUNTIME_NUM_WORKERS.set(metrics.num_workers() as f64);
+
+                crate::metrics::TOKIO_RUNTIME_IO_DRIVER_FD_DEREGISTERED_COUNT
+                    .absolute(metrics.io_driver_fd_deregistered_count() as u64);
+                crate::metrics::TOKIO_RUNTIME_IO_DRIVER_FD_REGISTERED_COUNT
+                    .absolute(metrics.io_driver_fd_registered_count() as u64);
+                crate::metrics::TOKIO_RUNTIME_IO_DRIVER_READY_COUNT
+                    .absolute(metrics.io_driver_ready_count() as u64);
+                crate::metrics::TOKIO_RUNTIME_REMOTE_SCHEDULE_COUNT
+                    .absolute(metrics.remote_schedule_count() as u64);
 
                 crate::metrics::SERVER_COUNT.set(1.0);
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
         });
 
@@ -331,7 +351,7 @@ async fn handle_create_namespace<C: Connector>(
             ));
         }
         // TODO: move this check into meta store
-        if !app_state.namespaces.exists(&ns) {
+        if !app_state.namespaces.exists(&ns).await {
             return Err(Error::NamespaceDoesntExist(ns.to_string()));
         }
 

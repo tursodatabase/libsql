@@ -17,6 +17,10 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
+#ifndef SQLITE_OMIT_VECTOR
+#include "vectorIndexInt.h"
+#endif
+
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 
 /*
@@ -294,6 +298,27 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   db->init.iDb = 0;
 
+#ifndef SQLITE_OMIT_VECTOR
+  // shadow tables for vector index will be populated automatically during CREATE INDEX command
+  // so we must skip them at this step
+  if( sqlite3FindTable(db, VECTOR_INDEX_GLOBAL_META_TABLE, zDbMain) != NULL ){
+    rc = execSqlF(db, pzErrMsg,
+        "SELECT'INSERT INTO vacuum_db.'||quote(name)"
+        "||' SELECT*FROM\"%w\".'||quote(name)"
+        "FROM vacuum_db.sqlite_schema "
+        "WHERE type='table'AND coalesce(rootpage,1)>0 AND name NOT IN (SELECT name||'_shadow' FROM " VECTOR_INDEX_GLOBAL_META_TABLE ")",
+        zDbMain
+    );
+  }else{
+    rc = execSqlF(db, pzErrMsg,
+        "SELECT'INSERT INTO vacuum_db.'||quote(name)"
+        "||' SELECT*FROM\"%w\".'||quote(name)"
+        "FROM vacuum_db.sqlite_schema "
+        "WHERE type='table'AND coalesce(rootpage,1)>0",
+        zDbMain
+    );
+  }
+#else
   /* Loop through the tables in the main database. For each, do
   ** an "INSERT INTO vacuum_db.xxx SELECT * FROM main.xxx;" to copy
   ** the contents to the temporary database.
@@ -305,6 +330,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
       "WHERE type='table'AND coalesce(rootpage,1)>0",
       zDbMain
   );
+#endif
   assert( (db->mDbFlags & DBFLAG_Vacuum)!=0 );
   db->mDbFlags &= ~DBFLAG_Vacuum;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;

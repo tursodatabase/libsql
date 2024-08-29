@@ -153,3 +153,62 @@ pub static LISTEN_EVENTS_DROPPED: Lazy<Counter> = Lazy::new(|| {
     describe_counter!(NAME, "Number of listen events dropped");
     register_counter!(NAME)
 });
+pub static QUERY_CANCELED: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_query_canceled";
+    describe_counter!(NAME, "Number of canceled queries");
+    register_counter!(NAME)
+});
+
+pub static TOKIO_RUNTIME_BLOCKING_QUEUE_DEPTH: Lazy<Gauge> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_blocking_queue_depth";
+    describe_gauge!(NAME, "tokio runtime blocking_queue_depth");
+    register_gauge!(NAME)
+});
+
+pub static TOKIO_RUNTIME_INJECTION_QUEUE_DEPTH: Lazy<Gauge> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_injection_queue_depth";
+    describe_gauge!(NAME, "tokio runtime injection_queue_depth");
+    register_gauge!(NAME)
+});
+
+pub static TOKIO_RUNTIME_NUM_BLOCKING_THREADS: Lazy<Gauge> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_num_blocking_threads";
+    describe_gauge!(NAME, "tokio runtime num_blocking_threads");
+    register_gauge!(NAME)
+});
+
+pub static TOKIO_RUNTIME_NUM_IDLE_BLOCKING_THREADS: Lazy<Gauge> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_num_idle_blocking_threads";
+    describe_gauge!(NAME, "tokio runtime num_idle_blocking_threads");
+    register_gauge!(NAME)
+});
+
+pub static TOKIO_RUNTIME_NUM_WORKERS: Lazy<Gauge> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_num_workers";
+    describe_gauge!(NAME, "tokio runtime num_workers");
+    register_gauge!(NAME)
+});
+
+pub static TOKIO_RUNTIME_IO_DRIVER_FD_DEREGISTERED_COUNT: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_io_driver_fd_deregistered_count";
+    describe_counter!(NAME, "tokio runtime io_driver_fd_deregistered_count");
+    register_counter!(NAME)
+});
+
+pub static TOKIO_RUNTIME_IO_DRIVER_FD_REGISTERED_COUNT: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_io_driver_fd_registered_count";
+    describe_counter!(NAME, "tokio runtime io_driver_fd_registered_count");
+    register_counter!(NAME)
+});
+
+pub static TOKIO_RUNTIME_IO_DRIVER_READY_COUNT: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_io_driver_ready_count";
+    describe_counter!(NAME, "tokio runtime io_driver_ready_count");
+    register_counter!(NAME)
+});
+
+pub static TOKIO_RUNTIME_REMOTE_SCHEDULE_COUNT: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "tokio_runtime_remote_schedule_count";
+    describe_gauge!(NAME, "tokio runtime remote_schedule_count");
+    register_counter!(NAME)
+});

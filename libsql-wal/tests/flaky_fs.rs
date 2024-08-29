@@ -82,6 +82,18 @@ impl FileExt for FlakyFile {
         #[allow(unreachable_code)]
         ready((_buf, Ok(())))
     }
+
+    fn read_at(&self, _buf: &mut [u8], _offset: u64) -> std::io::Result<usize> {
+        todo!()
+    }
+
+    async fn read_at_async<B: libsql_wal::io::buf::IoBufMut + Send + 'static>(
+        &self,
+        _buf: B,
+        _offset: u64,
+    ) -> (B, std::io::Result<usize>) {
+        todo!()
+    }
 }
 
 impl FlakyIo {
@@ -98,6 +110,7 @@ impl FlakyIo {
 impl Io for FlakyIo {
     type File = FlakyFile;
     type TempFile = FlakyFile;
+    type Rng = rand_chacha::ChaCha8Rng;
 
     fn create_dir_all(&self, path: &std::path::Path) -> std::io::Result<()> {
         self.with_random_failure(|| std::fs::create_dir_all(path))
@@ -131,12 +144,22 @@ impl Io for FlakyIo {
         todo!()
     }
 
-    fn uuid(&self) -> uuid::Uuid {
+    fn hard_link(&self, _src: &Path, _dst: &Path) -> std::io::Result<()> {
         todo!()
     }
 
-    fn hard_link(&self, _src: &Path, _dst: &Path) -> std::io::Result<()> {
-        todo!()
+    fn with_rng<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&mut Self::Rng) -> R,
+    {
+        f(&mut self.rng.lock())
+    }
+
+    fn remove_file_async(
+        &self,
+        path: &Path,
+    ) -> impl std::future::Future<Output = std::io::Result<()>> + Send {
+        async move { self.with_random_failure(|| std::fs::remove_file(path)) }
     }
 }
 
@@ -169,13 +192,13 @@ fn enable_libsql_logging() {
     });
 }
 
-#[test]
-fn flaky_fs() {
+#[tokio::test]
+async fn flaky_fs() {
     enable_libsql_logging();
     let seed = rand::thread_rng().gen();
     println!("seed: {seed}");
     let enabled = Arc::new(AtomicBool::new(false));
-    let fs = FlakyIo {
+    let io = FlakyIo {
         p_failure: 0.1,
         rng: Arc::new(Mutex::new(ChaCha8Rng::seed_from_u64(seed))),
         enabled: enabled.clone(),
@@ -185,11 +208,13 @@ fn flaky_fs() {
         let name = path.file_name().unwrap().to_str().unwrap();
         NamespaceName::from_string(name.to_string())
     };
+    let (sender, _receiver) = tokio::sync::mpsc::channel(64);
     let registry = Arc::new(
         WalRegistry::new_with_io(
-            fs,
+            io.clone(),
             tmp.path().join("test/wals"),
-            TestStorage::<FlakyFile>::new(),
+            TestStorage::new_io(false, io).into(),
+            sender,
         )
         .unwrap(),
     );

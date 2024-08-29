@@ -103,7 +103,6 @@ fn multiple_concurrent_transactions() {
     sim.run().unwrap();
 }
 
-#[ignore = "FIXME: running a connection on a different runtime causes it to timeout early"]
 #[test]
 fn transaction_timeout() {
     let mut sim = turmoil::Builder::new()
@@ -134,7 +133,7 @@ fn transaction_timeout() {
         assert!(rows.next().await?.is_none());
 
         // Sleep to trigger stream expiration
-        tokio::time::sleep(Duration::from_secs(300)).await;
+        tokio::time::sleep(Duration::from_secs(11)).await;
 
         tx.rollback().await.unwrap_err();
 

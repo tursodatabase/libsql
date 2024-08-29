@@ -27,6 +27,21 @@ typedef struct libsql_stmt libsql_stmt;
 
 typedef const libsql_database *libsql_database_t;
 
+typedef struct {
+  int frame_no;
+  int frames_synced;
+} replicated;
+
+typedef struct {
+  const char *db_path;
+  const char *primary_url;
+  const char *auth_token;
+  char read_your_writes;
+  const char *encryption_key;
+  int sync_interval;
+  char with_webpki;
+} libsql_config;
+
 typedef const libsql_connection *libsql_connection_t;
 
 typedef const libsql_stmt *libsql_stmt_t;
@@ -48,6 +63,8 @@ extern "C" {
 
 int libsql_sync(libsql_database_t db, const char **out_err_msg);
 
+int libsql_sync2(libsql_database_t db, replicated *out_replicated, const char **out_err_msg);
+
 int libsql_open_sync(const char *db_path,
                      const char *primary_url,
                      const char *auth_token,
@@ -64,6 +81,8 @@ int libsql_open_sync_with_webpki(const char *db_path,
                                  libsql_database_t *out_db,
                                  const char **out_err_msg);
 
+int libsql_open_sync_with_config(libsql_config config, libsql_database_t *out_db, const char **out_err_msg);
+
 int libsql_open_ext(const char *url, libsql_database_t *out_db, const char **out_err_msg);
 
 int libsql_open_file(const char *url, libsql_database_t *out_db, const char **out_err_msg);
@@ -78,6 +97,11 @@ int libsql_open_remote_with_webpki(const char *url,
 void libsql_close(libsql_database_t db);
 
 int libsql_connect(libsql_database_t db, libsql_connection_t *out_conn, const char **out_err_msg);
+
+int libsql_load_extension(libsql_connection_t conn,
+                          const char *path,
+                          const char *entry_point,
+                          const char **out_err_msg);
 
 int libsql_reset(libsql_connection_t conn, const char **out_err_msg);
 

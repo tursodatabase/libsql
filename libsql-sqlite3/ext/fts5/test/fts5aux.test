@@ -334,4 +334,47 @@ do_execsql_test 11.2 {
   SELECT fts5_hitcount(x1) FROM x1('one') LIMIT 1;
 } {5}
 
+#-------------------------------------------------------------------------
+# Test that xColumnText returns SQLITE_RANGE when it should.
+#
+reset_db
+fts5_aux_test_functions db
+do_execsql_test 12.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
+  INSERT INTO t1 VALUES('one', 'two', 'three');
+  INSERT INTO t1 VALUES('one', 'one', 'one');
+  INSERT INTO t1 VALUES('two', 'two', 'two');
+  INSERT INTO t1 VALUES('three', 'three', 'three');
+}
+
+do_catchsql_test 12.1.1 {
+  SELECT fts5_columntext(t1, -1) FROM t1('two');
+} {1 SQLITE_RANGE}
+do_catchsql_test 12.1.2 {
+  SELECT fts5_columntext(t1, 3) FROM t1('two');
+} {1 SQLITE_RANGE}
+do_catchsql_test 12.1.2 {
+  SELECT fts5_columntext(t1, 1) FROM t1('one AND two');
+} {0 two}
+
+do_catchsql_test 12.2.1 {
+  SELECT fts5_queryphrase(t1, -1) FROM t1('one AND two');
+} {1 SQLITE_RANGE}
+do_catchsql_test 12.2.2 {
+  SELECT fts5_queryphrase(t1, 2) FROM t1('one AND two');
+} {1 SQLITE_RANGE}
+do_catchsql_test 12.2.3 {
+  SELECT fts5_queryphrase(t1, 1) FROM t1('one AND two');
+} {0 {{1 2 1}}}
+
+do_catchsql_test 12.3.1 {
+  SELECT fts5_collist(t1, -1) FROM t1('one AND two');
+} {1 SQLITE_RANGE}
+do_catchsql_test 12.3.2 {
+  SELECT fts5_collist(t1, 2) FROM t1('one AND two');
+} {1 SQLITE_RANGE}
+do_catchsql_test 12.3.3 {
+  SELECT fts5_collist(t1, 1) FROM t1('one AND two');
+} {0 1}
+
 finish_test

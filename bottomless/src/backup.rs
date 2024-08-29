@@ -5,13 +5,13 @@ use arc_swap::ArcSwapOption;
 use std::ops::{Range, RangeInclusive};
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
-use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::UnboundedSender;
 use tokio::time::Instant;
 use uuid::Uuid;
 
 #[derive(Debug)]
 pub(crate) struct WalCopier {
-    outbox: Sender<SendReq>,
+    outbox: UnboundedSender<SendReq>,
     use_compression: CompressionKind,
     max_frames_per_batch: usize,
     wal_path: String,
@@ -28,7 +28,7 @@ impl WalCopier {
         db_path: &str,
         max_frames_per_batch: usize,
         use_compression: CompressionKind,
-        outbox: Sender<SendReq>,
+        outbox: UnboundedSender<SendReq>,
     ) -> Self {
         WalCopier {
             bucket,
@@ -41,11 +41,11 @@ impl WalCopier {
         }
     }
 
-    pub async fn flush(&mut self, frames: Range<u32>) -> Result<u32> {
+    pub async fn flush(&mut self, frames: Range<u32>) -> Result<(u32, u32)> {
         tracing::trace!("flushing frames [{}..{})", frames.start, frames.end);
         if frames.is_empty() {
             tracing::trace!("Trying to flush empty frame range");
-            return Ok(frames.start - 1);
+            return Ok((frames.start - 1, 0));
         }
         let mut wal = match WalFileReader::open(&self.wal_path).await? {
             Some(wal) => wal,
@@ -76,12 +76,13 @@ impl WalCopier {
             meta_file.write_all(buf.as_ref()).await?;
             meta_file.flush().await?;
             let msg = format!("{}-{}/.meta", self.db_name, generation);
-            if self.outbox.send(SendReq::new(msg)).await.is_err() {
+            if self.outbox.send(SendReq::new(msg)).is_err() {
                 return Err(anyhow!("couldn't initialize local backup dir: {}", dir));
             }
         }
         tracing::trace!("Flushing {} frames locally.", frames.len());
 
+        let mut ready_ranges = 0;
         for start in frames.clone().step_by(self.max_frames_per_batch) {
             let period_start = Instant::now();
             let timestamp = chrono::Utc::now().timestamp() as u64;
@@ -124,17 +125,17 @@ impl WalCopier {
             if self
                 .outbox
                 .send(SendReq::wal_segment(fdesc, start, end - 1))
-                .await
                 .is_err()
             {
                 tracing::warn!(
                     "WAL local cloning ended prematurely. Last cloned frame no.: {}",
                     end - 1
                 );
-                return Ok(end - 1);
+                return Ok((end - 1, ready_ranges));
             }
+            ready_ranges += 1;
         }
-        Ok(frames.end - 1)
+        Ok((frames.end - 1, ready_ranges))
     }
 }
 

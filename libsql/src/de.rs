@@ -68,7 +68,7 @@ impl<'de> Deserializer<'de> for RowDeserializer<'de> {
 
         visitor.visit_map(RowMapAccess {
             row: self.row,
-            idx: 0..self.row.inner.column_count(),
+            idx: 0..(self.row.inner.column_count() as usize),
             value: None,
         })
     }

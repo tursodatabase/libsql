@@ -4,11 +4,13 @@ use std::pin::Pin;
 use std::time::{Duration, Instant};
 
 use bytes::Bytes;
-use futures::StreamExt as _;
-use libsql_replication::frame::{Frame, FrameHeader, FrameNo};
+use futures::{StreamExt as _, TryStreamExt};
+use libsql_replication::frame::{FrameHeader, FrameNo};
 use libsql_replication::meta::WalIndexMeta;
-use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
-use libsql_replication::rpc::replication::{verify_session_token, Frames, HelloRequest, LogOffset, SESSION_TOKEN_KEY, HelloResponse};
+use libsql_replication::replicator::{Error, ReplicatorClient};
+use libsql_replication::rpc::replication::{
+    Frame as RpcFrame, verify_session_token, Frames, HelloRequest, HelloResponse, LogOffset, SESSION_TOKEN_KEY,
+};
 use tokio_stream::Stream;
 use tonic::metadata::AsciiMetadataValue;
 use tonic::{Response, Status};
@@ -81,7 +83,10 @@ impl RemoteClient {
         self.last_handshake_replication_index
     }
 
-    async fn handle_handshake_response(&mut self, hello:Result<Response<HelloResponse>, Status>) -> Result<bool, Error> {
+    async fn handle_handshake_response(
+        &mut self,
+        hello: Result<Response<HelloResponse>, Status>,
+    ) -> Result<bool, Error> {
         let hello = hello?.into_inner();
         verify_session_token(&hello.session_token).map_err(Error::Client)?;
         let new_session = self.session_token != Some(hello.session_token.clone());
@@ -114,6 +119,7 @@ impl RemoteClient {
         let hello_req = self.make_request(HelloRequest::new());
         let log_offset_req = self.make_request(LogOffset {
             next_offset: self.next_offset(),
+            wal_flavor: None,
         });
         let mut client_clone = self.remote.clone();
         let hello_fut = time(async {
@@ -130,7 +136,9 @@ impl RemoteClient {
             (hello_fut.await, None)
         };
         self.prefetched_batch_log_entries = if let Ok(true) = hello.0 {
-            tracing::warn!("Frames prefetching failed because of new session token returned by handshake");
+            tracing::debug!(
+                "Frames prefetching failed because of new session token returned by handshake"
+            );
             None
         } else {
             frames
@@ -139,7 +147,10 @@ impl RemoteClient {
         hello
     }
 
-    async fn handle_next_frames_response(&mut self, frames: Result<Response<Frames>, Status>) -> Result<<Self as ReplicatorClient>::FrameStream, Error> {
+    async fn handle_next_frames_response(
+        &mut self,
+        frames: Result<Response<Frames>, Status>,
+    ) -> Result<<Self as ReplicatorClient>::FrameStream, Error> {
         let frames = frames?.into_inner().frames;
 
         if let Some(f) = frames.last() {
@@ -150,19 +161,25 @@ impl RemoteClient {
 
         let frames_iter = frames
             .into_iter()
-            .map(|f| Frame::try_from(&*f.data).map_err(|e| Error::Client(e.into())));
+            .map(Ok);
 
         let stream = tokio_stream::iter(frames_iter);
 
         Ok(Box::pin(stream))
     }
 
-    async fn do_next_frames(&mut self) -> (Result<<Self as ReplicatorClient>::FrameStream, Error>, Duration) {
+    async fn do_next_frames(
+        &mut self,
+    ) -> (
+        Result<<Self as ReplicatorClient>::FrameStream, Error>,
+        Duration,
+    ) {
         let (frames, time) = match self.prefetched_batch_log_entries.take() {
             Some((result, time)) => (result, time),
             None => {
                 let req = self.make_request(LogOffset {
                     next_offset: self.next_offset(),
+                    wal_flavor: None,
                 });
                 time(self.remote.replication.batch_log_entries(req)).await
             }
@@ -174,6 +191,7 @@ impl RemoteClient {
     async fn do_snapshot(&mut self) -> Result<<Self as ReplicatorClient>::FrameStream, Error> {
         let req = self.make_request(LogOffset {
             next_offset: self.next_offset(),
+            wal_flavor: None,
         });
         let mut frames = self
             .remote
@@ -181,7 +199,7 @@ impl RemoteClient {
             .snapshot(req)
             .await?
             .into_inner()
-            .map(map_frame_err)
+            .map_err(|e| e.into())
             .peekable();
 
         {
@@ -189,7 +207,8 @@ impl RemoteClient {
 
             // the first frame is the one with the highest frame_no in the snapshot
             if let Some(Ok(f)) = frames.peek().await {
-                self.last_received = Some(f.header().frame_no.get());
+                let header: FrameHeader = FrameHeader::read_from_prefix(&f.data[..]).unwrap();
+                self.last_received = Some(header.frame_no.get());
             }
         }
 
@@ -197,7 +216,13 @@ impl RemoteClient {
     }
 }
 
-fn maybe_log<T>(time: Duration, sum: &mut Duration, count: &mut u128, result: &Result<T, Error>, op_name: &str) {
+fn maybe_log<T>(
+    time: Duration,
+    sum: &mut Duration,
+    count: &mut u128,
+    result: &Result<T, Error>,
+    op_name: &str,
+) {
     if let Err(e) = &result {
         tracing::warn!("Failed {} in {} ms: {:?}", op_name, time.as_millis(), e);
     } else {
@@ -206,26 +231,43 @@ fn maybe_log<T>(time: Duration, sum: &mut Duration, count: &mut u128, result: &R
         let avg = (*sum).as_millis() / *count;
         let time = time.as_millis();
         if *count > 10 && time > 2 * avg {
-            tracing::warn!("Unusually long {}. Took {} ms, average {} ms", op_name, time, avg);
+            tracing::warn!(
+                "Unusually long {}. Took {} ms, average {} ms",
+                op_name,
+                time,
+                avg
+            );
         }
     }
 }
 
 #[async_trait::async_trait]
 impl ReplicatorClient for RemoteClient {
-    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+    type FrameStream = Pin<Box<dyn Stream<Item = Result<RpcFrame, Error>> + Send + 'static>>;
 
     /// Perform handshake with remote
     async fn handshake(&mut self) -> Result<(), Error> {
         let (result, time) = self.do_handshake_with_prefetch().await;
-        maybe_log(time, &mut self.handshake_latency_sum, &mut self.handshake_latency_count, &result, "handshake");
+        maybe_log(
+            time,
+            &mut self.handshake_latency_sum,
+            &mut self.handshake_latency_count,
+            &result,
+            "handshake",
+        );
         result.map(|_| ())
     }
 
     /// Return a stream of frames to apply to the database
     async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
         let (result, time) = self.do_next_frames().await;
-        maybe_log(time, &mut self.frames_latency_sum, &mut self.frames_latency_count, &result, "frames fetch");
+        maybe_log(
+            time,
+            &mut self.frames_latency_sum,
+            &mut self.frames_latency_count,
+            &result,
+            "frames fetch",
+        );
         result
     }
 
@@ -233,7 +275,13 @@ impl ReplicatorClient for RemoteClient {
     /// NeedSnapshot error
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
         let (snapshot, time) = time(self.do_snapshot()).await;
-        maybe_log(time, &mut self.snapshot_latency_sum, &mut self.snapshot_latency_count, &snapshot, "snapshot fetch");
+        maybe_log(
+            time,
+            &mut self.snapshot_latency_sum,
+            &mut self.snapshot_latency_count,
+            &snapshot,
+            "snapshot fetch",
+        );
         snapshot
     }
 

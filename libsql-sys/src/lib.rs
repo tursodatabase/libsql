@@ -6,6 +6,7 @@ pub mod ffi {
     use zerocopy::byteorder::big_endian::{U16 as bu16, U32 as bu32, U64 as bu64};
 
     /// Patched database header file, in use by libsql
+    #[allow(dead_code)] // <- false positive
     #[repr(C)]
     #[derive(Clone, Copy, zerocopy::FromBytes, zerocopy::FromZeroes, zerocopy::AsBytes, Debug)]
     pub struct Sqlite3DbHeader {

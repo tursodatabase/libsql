@@ -184,6 +184,9 @@ Select *sqlite3SelectNew(
 void sqlite3SelectDelete(sqlite3 *db, Select *p){
   if( OK_IF_ALWAYS_TRUE(p) ) clearSelect(db, p, 1);
 }
+void sqlite3SelectDeleteGeneric(sqlite3 *db, void *p){
+  if( ALWAYS(p) ) clearSelect(db, (Select*)p, 1);
+}
 
 /*
 ** Return a pointer to the right-most SELECT statement in a compound.
@@ -1512,6 +1515,8 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
     p->enc = ENC(db);
     p->db = db;
     p->nRef = 1;
+    p->zIndexName = NULL;
+    p->zDbSName = NULL;
     memset(&p[1], 0, nExtra);
   }else{
     return (KeyInfo*)sqlite3OomFault(db);
@@ -1527,7 +1532,15 @@ void sqlite3KeyInfoUnref(KeyInfo *p){
     assert( p->db!=0 );
     assert( p->nRef>0 );
     p->nRef--;
-    if( p->nRef==0 ) sqlite3DbNNFreeNN(p->db, p);
+    if( p->nRef==0 ){
+      if( p->zIndexName != NULL ){
+        sqlite3DbFree(p->db, p->zIndexName);
+      }
+      if( p->zDbSName != NULL ){
+        sqlite3DbFree(p->db, p->zDbSName);
+      }
+      sqlite3DbNNFreeNN(p->db, p);
+    }
   }
 }
 
@@ -2319,7 +2332,8 @@ void sqlite3SubqueryColumnTypes(
   NameContext sNC;
 
   assert( pSelect!=0 );
-  assert( (pSelect->selFlags & SF_Resolved)!=0 );
+  testcase( (pSelect->selFlags & SF_Resolved)==0 );
+  assert( (pSelect->selFlags & SF_Resolved)!=0 || IN_RENAME_OBJECT );
   assert( pTab->nCol==pSelect->pEList->nExpr || pParse->nErr>0 );
   assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
   if( db->mallocFailed || IN_RENAME_OBJECT ) return;
@@ -3203,9 +3217,7 @@ multi_select_end:
   pDest->iSdst = dest.iSdst;
   pDest->nSdst = dest.nSdst;
   if( pDelete ){
-    sqlite3ParserAddCleanup(pParse,
-        (void(*)(sqlite3*,void*))sqlite3SelectDelete,
-        pDelete);
+    sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pDelete);
   }
   return rc;
 }
@@ -3756,8 +3768,7 @@ static int multiSelectOrderBy(
   /* Make arrangements to free the 2nd and subsequent arms of the compound
   ** after the parse has finished */
   if( pSplit->pPrior ){
-    sqlite3ParserAddCleanup(pParse,
-       (void(*)(sqlite3*,void*))sqlite3SelectDelete, pSplit->pPrior);
+    sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pSplit->pPrior);
   }
   pSplit->pPrior = pPrior;
   pPrior->pNext = pSplit;
@@ -4578,9 +4589,7 @@ static int flattenSubquery(
     Table *pTabToDel = pSubitem->pTab;
     if( pTabToDel->nTabRef==1 ){
       Parse *pToplevel = sqlite3ParseToplevel(pParse);
-      sqlite3ParserAddCleanup(pToplevel,
-         (void(*)(sqlite3*,void*))sqlite3DeleteTable,
-         pTabToDel);
+      sqlite3ParserAddCleanup(pToplevel, sqlite3DeleteTableGeneric, pTabToDel);
       testcase( pToplevel->earlyCleanup );
     }else{
       pTabToDel->nTabRef--;
@@ -5627,8 +5636,7 @@ static struct Cte *searchWith(
 With *sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
   if( pWith ){
     if( bFree ){
-      pWith = (With*)sqlite3ParserAddCleanup(pParse,
-                      (void(*)(sqlite3*,void*))sqlite3WithDelete,
+      pWith = (With*)sqlite3ParserAddCleanup(pParse, sqlite3WithDeleteGeneric,
                       pWith);
       if( pWith==0 ) return 0;
     }
@@ -6372,10 +6380,11 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   SrcList *pTabList;
   SrcItem *pFrom;
 
-  assert( p->selFlags & SF_Resolved );
   if( p->selFlags & SF_HasTypeInfo ) return;
   p->selFlags |= SF_HasTypeInfo;
   pParse = pWalker->pParse;
+  testcase( (p->selFlags & SF_Resolved)==0 );
+  assert( (p->selFlags & SF_Resolved) || IN_RENAME_OBJECT );
   pTabList = p->pSrc;
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
     Table *pTab = pFrom->pTab;
@@ -6660,6 +6669,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
       assert( pFunc->pFExpr->pLeft!=0 );
       assert( pFunc->pFExpr->pLeft->op==TK_ORDER );
       assert( ExprUseXList(pFunc->pFExpr->pLeft) );
+      assert( pFunc->pFunc!=0 );
       pOBList = pFunc->pFExpr->pLeft->x.pList;
       if( !pFunc->bOBUnique ){
         nExtra++;  /* One extra column for the OP_Sequence */
@@ -6667,6 +6677,9 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
       if( pFunc->bOBPayload ){
         /* extra columns for the function arguments */
         assert( ExprUseXList(pFunc->pFExpr) );
+        nExtra += pFunc->pFExpr->x.pList->nExpr;
+      }
+      if( pFunc->bUseSubtype ){
         nExtra += pFunc->pFExpr->x.pList->nExpr;
       }
       pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pOBList, 0, nExtra);
@@ -6695,16 +6708,17 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
     assert( ExprUseXList(pF->pFExpr) );
     pList = pF->pFExpr->x.pList;
     if( pF->iOBTab>=0 ){
-      /* For an ORDER BY aggregate, calls to OP_AggStep where deferred and
-      ** all content was stored in emphermal table pF->iOBTab.  Extract that
-      ** content now (in ORDER BY order) and make all calls to OP_AggStep
+      /* For an ORDER BY aggregate, calls to OP_AggStep were deferred.  Inputs
+      ** were stored in emphermal table pF->iOBTab.  Here, we extract those
+      ** inputs (in ORDER BY order) and make all calls to OP_AggStep
       ** before doing the OP_AggFinal call. */
       int iTop;        /* Start of loop for extracting columns */
       int nArg;        /* Number of columns to extract */
       int nKey;        /* Key columns to be skipped */
       int regAgg;      /* Extract into this array */
       int j;           /* Loop counter */
-      
+     
+      assert( pF->pFunc!=0 );
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
 
@@ -6720,6 +6734,15 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
       iTop = sqlite3VdbeAddOp1(v, OP_Rewind, pF->iOBTab); VdbeCoverage(v);
       for(j=nArg-1; j>=0; j--){
         sqlite3VdbeAddOp3(v, OP_Column, pF->iOBTab, nKey+j, regAgg+j);
+      }
+      if( pF->bUseSubtype ){
+        int regSubtype = sqlite3GetTempReg(pParse);
+        int iBaseCol = nKey + nArg + (pF->bOBPayload==0 && pF->bOBUnique==0);
+        for(j=nArg-1; j>=0; j--){
+          sqlite3VdbeAddOp3(v, OP_Column, pF->iOBTab, iBaseCol+j, regSubtype);
+          sqlite3VdbeAddOp2(v, OP_SetSubtype, regSubtype, regAgg+j);
+        }
+        sqlite3ReleaseTempReg(pParse, regSubtype);
       }
       sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
       sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
@@ -6775,6 +6798,7 @@ static void updateAccumulator(
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     assert( !IsWindowFunc(pF->pFExpr) );
+    assert( pF->pFunc!=0 );
     pList = pF->pFExpr->x.pList;
     if( ExprHasProperty(pF->pFExpr, EP_WinFunc) ){
       Expr *pFilter = pF->pFExpr->y.pWin->pFilter;
@@ -6819,6 +6843,9 @@ static void updateAccumulator(
       if( pF->bOBPayload ){
         regAggSz += nArg;
       }
+      if( pF->bUseSubtype ){
+        regAggSz += nArg;
+      }
       regAggSz++;  /* One extra register to hold result of MakeRecord */
       regAgg = sqlite3GetTempRange(pParse, regAggSz);
       regDistinct = regAgg;
@@ -6831,6 +6858,14 @@ static void updateAccumulator(
       if( pF->bOBPayload ){
         regDistinct = regAgg+jj;
         sqlite3ExprCodeExprList(pParse, pList, regDistinct, 0, SQLITE_ECEL_DUP);
+        jj += nArg;
+      }
+      if( pF->bUseSubtype ){
+        int kk;
+        int regBase = pF->bOBPayload ? regDistinct : regAgg;
+        for(kk=0; kk<nArg; kk++, jj++){
+          sqlite3VdbeAddOp2(v, OP_GetSubtype, regBase+kk, regAgg+jj);
+        }
       }
     }else if( pList ){
       nArg = pList->nExpr;
@@ -7035,7 +7070,8 @@ static SrcItem *isSelfJoinView(
 /*
 ** Deallocate a single AggInfo object
 */
-static void agginfoFree(sqlite3 *db, AggInfo *p){
+static void agginfoFree(sqlite3 *db, void *pArg){
+  AggInfo *p = (AggInfo*)pArg;
   sqlite3DbFree(db, p->aCol);
   sqlite3DbFree(db, p->aFunc);
   sqlite3DbFreeNN(db, p);
@@ -7109,7 +7145,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     pSub->selFlags |= SF_Aggregate;
     pSub->selFlags &= ~SF_Compound;
     pSub->nSelectRow = 0;
-    sqlite3ExprListDelete(db, pSub->pEList);
+    sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric, pSub->pEList);
     pTerm = pPrior ? sqlite3ExprDup(db, pCount, 0) : pCount;
     pSub->pEList = sqlite3ExprListAppend(pParse, 0, pTerm);
     pTerm = sqlite3PExpr(pParse, TK_SELECT, 0, 0);
@@ -7289,9 +7325,8 @@ int sqlite3Select(
         sqlite3TreeViewExprList(0, p->pOrderBy, 0, "ORDERBY");
       }
 #endif   
-      sqlite3ParserAddCleanup(pParse,
-        (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
-        p->pOrderBy);
+      sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric,
+                              p->pOrderBy);
       testcase( pParse->earlyCleanup );
       p->pOrderBy = 0;
     }
@@ -7397,6 +7432,7 @@ int sqlite3Select(
           TREETRACE(0x1000,pParse,p,
                     ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
           pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
+          unsetJoinExpr(p->pWhere, pItem->iCursor, 0);
         }
       }
       if( pItem->fg.jointype & JT_LTORJ ){
@@ -7411,17 +7447,15 @@ int sqlite3Select(
               TREETRACE(0x1000,pParse,p,
                         ("RIGHT-JOIN simplifies to JOIN on term %d\n",j));
               pI2->fg.jointype &= ~(JT_RIGHT|JT_OUTER);
+              unsetJoinExpr(p->pWhere, pI2->iCursor, 1);
             }
           }
         }
-        for(j=pTabList->nSrc-1; j>=i; j--){
+        for(j=pTabList->nSrc-1; j>=0; j--){
           pTabList->a[j].fg.jointype &= ~JT_LTORJ;
           if( pTabList->a[j].fg.jointype & JT_RIGHT ) break;
         }
       }
-      assert( pItem->iCursor>=0 );
-      unsetJoinExpr(p->pWhere, pItem->iCursor,
-                    pTabList->a[0].fg.jointype & JT_LTORJ);
     }
 
     /* No further action if this term of the FROM clause is not a subquery */
@@ -7484,9 +7518,8 @@ int sqlite3Select(
     ){
       TREETRACE(0x800,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
-      sqlite3ParserAddCleanup(pParse,
-         (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
-         pSub->pOrderBy);
+      sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric,
+                              pSub->pOrderBy);
       pSub->pOrderBy = 0;
     }
 
@@ -8015,8 +8048,7 @@ int sqlite3Select(
     */
     pAggInfo = sqlite3DbMallocZero(db, sizeof(*pAggInfo) );
     if( pAggInfo ){
-      sqlite3ParserAddCleanup(pParse,
-          (void(*)(sqlite3*,void*))agginfoFree, pAggInfo);
+      sqlite3ParserAddCleanup(pParse, agginfoFree, pAggInfo);
       testcase( pParse->earlyCleanup );
     }
     if( db->mallocFailed ){
@@ -8391,6 +8423,7 @@ int sqlite3Select(
             if( pIdx->bUnordered==0
              && pIdx->szIdxRow<pTab->szTabRow
              && pIdx->pPartIdxWhere==0
+             && pIdx->idxIsVector==0
              && (!pBest || pIdx->szIdxRow<pBest->szIdxRow)
             ){
               pBest = pIdx;

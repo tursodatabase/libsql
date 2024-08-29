@@ -26,6 +26,7 @@ uuid = "1.4.1"
 rand = "0.8.5"
 futures-core = "0.3.29"
 serde = { version = "1.0.196", features = ["derive"] }
+metrics = "0.21.1"
 
 [features]
 default = []

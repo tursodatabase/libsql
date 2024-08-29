@@ -135,6 +135,7 @@ cfg_core! {
                 let db = crate::local::Database::open(":memory:", crate::OpenFlags::default())?;
                 Database {
                     db_type: DbType::Memory { db } ,
+                    max_write_replication_index: Default::default(),
                 }
             } else {
                 let path = self
@@ -150,6 +151,7 @@ cfg_core! {
                         flags: self.inner.flags,
                         encryption_config: self.inner.encryption_config,
                     },
+                    max_write_replication_index: Default::default(),
                 }
             };
 
@@ -291,6 +293,7 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
             })
         }
     }
@@ -360,6 +363,7 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
             })
         }
     }
@@ -414,6 +418,7 @@ cfg_remote! {
                     connector,
                     version,
                 },
+                max_write_replication_index: Default::default(),
             })
         }
     }

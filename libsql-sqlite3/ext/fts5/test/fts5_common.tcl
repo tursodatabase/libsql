@@ -61,12 +61,22 @@ proc fts5_test_collist {cmd} {
   set res
 }
 
+proc fts5_collist {cmd iPhrase} {
+  set res [list]
+  $cmd xPhraseColumnForeach $iPhrase c { lappend res $c }
+  set res
+}
+
 proc fts5_test_columnsize {cmd} {
   set res [list]
   for {set i 0} {$i < [$cmd xColumnCount]} {incr i} {
     lappend res [$cmd xColumnSize $i]
   }
   set res
+}
+
+proc fts5_columntext {cmd iCol} {
+  $cmd xColumnText $iCol
 }
 
 proc fts5_test_columntext {cmd} {
@@ -125,6 +135,13 @@ proc fts5_test_queryphrase {cmd} {
   set res
 }
 
+proc fts5_queryphrase {cmd iPhrase} {
+  set cnt [list]
+  for {set j 0} {$j < [$cmd xColumnCount]} {incr j} { lappend cnt 0 }
+  $cmd xQueryPhrase $iPhrase [list test_queryphrase_cb cnt]
+  set cnt
+}
+
 proc fts5_test_phrasecount {cmd} {
   $cmd xPhraseCount
 }
@@ -154,6 +171,9 @@ proc fts5_aux_test_functions {db} {
 
     fts5_test_queryphrase
     fts5_test_phrasecount
+    fts5_columntext
+    fts5_queryphrase
+    fts5_collist
   } {
     sqlite3_fts5_create_function $db $f $f
   }
@@ -438,6 +458,20 @@ proc detail_is_none {} { detail_check ; expr {$::detail == "none"} }
 proc detail_is_col {}  { detail_check ; expr {$::detail == "col" } }
 proc detail_is_full {} { detail_check ; expr {$::detail == "full"} }
 
+proc foreach_tokenizer_mode {prefix script} {
+  set saved $::testprefix
+  foreach {d mapping} {
+    ""              {}
+    "-origintext"   {, tokenize="origintext unicode61", tokendata=1}
+  } {
+    set s [string map [list %TOKENIZER% $mapping] $script]
+    set ::testprefix "$prefix$d"
+    reset_db
+    sqlite3_fts5_register_origintext db
+    uplevel $s
+  }
+  set ::testprefix $saved
+}
 
 #-------------------------------------------------------------------------
 # Convert a poslist of the type returned by fts5_test_poslist() to a 

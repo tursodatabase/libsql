@@ -5,11 +5,13 @@ extern crate lazy_static;
 
 mod types;
 
+use crate::types::libsql_config;
+use libsql::{errors, LoadExtensionGuard};
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
     libsql_row_t, libsql_rows, libsql_rows_future_t, libsql_rows_t, libsql_stmt, libsql_stmt_t,
-    stmt,
+    replicated, stmt,
 };
 
 lazy_static! {
@@ -45,6 +47,29 @@ pub unsafe extern "C" fn libsql_sync(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_sync2(
+    db: libsql_database_t,
+    out_replicated: *mut replicated,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let db = db.get_ref();
+    match RT.block_on(db.sync()) {
+        Ok(replicated) => {
+            if !out_replicated.is_null() {
+                (*out_replicated).frame_no = replicated.frame_no().unwrap_or(0) as i32;
+                (*out_replicated).frames_synced = replicated.frames_synced() as i32;
+            }
+
+            0
+        }
+        Err(e) => {
+            set_err_msg(format!("Error syncing database: {e}"), out_err_msg);
+            1
+        }
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_open_sync(
     db_path: *const std::ffi::c_char,
     primary_url: *const std::ffi::c_char,
@@ -54,16 +79,16 @@ pub unsafe extern "C" fn libsql_open_sync(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    libsql_open_sync_internal(
+    let config = libsql_config {
         db_path,
         primary_url,
         auth_token,
         read_your_writes,
         encryption_key,
-        false,
-        out_db,
-        out_err_msg,
-    )
+        sync_interval: 0,
+        with_webpki: 0,
+    };
+    libsql_open_sync_with_config(config, out_db, out_err_msg)
 }
 
 #[no_mangle]
@@ -76,29 +101,25 @@ pub unsafe extern "C" fn libsql_open_sync_with_webpki(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    libsql_open_sync_internal(
+    let config = libsql_config {
         db_path,
         primary_url,
         auth_token,
         read_your_writes,
         encryption_key,
-        true,
-        out_db,
-        out_err_msg,
-    )
+        sync_interval: 0,
+        with_webpki: 1,
+    };
+    libsql_open_sync_with_config(config, out_db, out_err_msg)
 }
 
-unsafe fn libsql_open_sync_internal(
-    db_path: *const std::ffi::c_char,
-    primary_url: *const std::ffi::c_char,
-    auth_token: *const std::ffi::c_char,
-    read_your_writes: std::ffi::c_char,
-    encryption_key: *const std::ffi::c_char,
-    with_webpki: bool,
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_sync_with_config(
+    config: libsql_config,
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    let db_path = unsafe { std::ffi::CStr::from_ptr(db_path) };
+    let db_path = unsafe { std::ffi::CStr::from_ptr(config.db_path) };
     let db_path = match db_path.to_str() {
         Ok(url) => url,
         Err(e) => {
@@ -106,7 +127,7 @@ unsafe fn libsql_open_sync_internal(
             return 1;
         }
     };
-    let primary_url = unsafe { std::ffi::CStr::from_ptr(primary_url) };
+    let primary_url = unsafe { std::ffi::CStr::from_ptr(config.primary_url) };
     let primary_url = match primary_url.to_str() {
         Ok(url) => url,
         Err(e) => {
@@ -114,7 +135,7 @@ unsafe fn libsql_open_sync_internal(
             return 2;
         }
     };
-    let auth_token = unsafe { std::ffi::CStr::from_ptr(auth_token) };
+    let auth_token = unsafe { std::ffi::CStr::from_ptr(config.auth_token) };
     let auth_token = match auth_token.to_str() {
         Ok(token) => token,
         Err(e) => {
@@ -127,7 +148,7 @@ unsafe fn libsql_open_sync_internal(
         primary_url.to_string(),
         auth_token.to_string(),
     );
-    if with_webpki {
+    if config.with_webpki != 0 {
         let https = hyper_rustls::HttpsConnectorBuilder::new()
             .with_webpki_roots()
             .https_or_http()
@@ -135,21 +156,29 @@ unsafe fn libsql_open_sync_internal(
             .build();
         builder = builder.connector(https);
     }
-    let builder = builder.read_your_writes(read_your_writes != 0);
-    let builder = if encryption_key.is_null() {
-        builder
-    } else {
-        let key = unsafe { std::ffi::CStr::from_ptr(encryption_key) };
+    if config.sync_interval > 0 {
+        let interval = match config.sync_interval.try_into() {
+            Ok(d) => d,
+            Err(e) => {
+                set_err_msg(format!("Wrong periodic sync interval: {e}"), out_err_msg);
+                return 4;
+            }
+        };
+        builder = builder.sync_interval(std::time::Duration::from_secs(interval));
+    }
+    builder = builder.read_your_writes(config.read_your_writes != 0);
+    if !config.encryption_key.is_null() {
+        let key = unsafe { std::ffi::CStr::from_ptr(config.encryption_key) };
         let key = match key.to_str() {
             Ok(k) => k,
             Err(e) => {
                 set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
-                return 4;
+                return 5;
             }
         };
         let key = bytes::Bytes::copy_from_slice(key.as_bytes());
         let config = libsql::EncryptionConfig::new(libsql::Cipher::Aes256Cbc, key);
-        builder.encryption_config(config)
+        builder = builder.encryption_config(config)
     };
     match RT.block_on(builder.build()) {
         Ok(db) => {
@@ -162,7 +191,7 @@ unsafe fn libsql_open_sync_internal(
                 format!("Error opening db path {db_path}, primary url {primary_url}: {e}"),
                 out_err_msg,
             );
-            5
+            6
         }
     }
 }
@@ -293,6 +322,55 @@ pub unsafe extern "C" fn libsql_connect(
     };
     let conn = Box::leak(Box::new(libsql_connection { conn }));
     *out_conn = libsql_connection_t::from(conn);
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_load_extension(
+    conn: libsql_connection_t,
+    path: *const std::ffi::c_char,
+    entry_point: *const std::ffi::c_char,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if path.is_null() {
+        set_err_msg("Null path".to_string(), out_err_msg);
+        return 1;
+    }
+    let path = unsafe { std::ffi::CStr::from_ptr(path) };
+    let path = match path.to_str() {
+        Ok(path) => path,
+        Err(e) => {
+            set_err_msg(format!("Wrong path: {}", e), out_err_msg);
+            return 2;
+        }
+    };
+    let mut entry_point_option = None;
+    if !entry_point.is_null() {
+        let entry_point = unsafe { std::ffi::CStr::from_ptr(entry_point) };
+        entry_point_option = match entry_point.to_str() {
+            Ok(entry_point) => Some(entry_point),
+            Err(e) => {
+                set_err_msg(format!("Wrong entry point: {}", e), out_err_msg);
+                return 4;
+            }
+        };
+    }
+    if conn.is_null() {
+        set_err_msg("Null connection".to_string(), out_err_msg);
+        return 5;
+    }
+    let conn = conn.get_ref();
+    match RT.block_on(async move {
+        let _guard = LoadExtensionGuard::new(conn)?;
+        conn.load_extension(path, entry_point_option)?;
+        Ok::<(), errors::Error>(())
+    }) {
+        Ok(()) => {}
+        Err(e) => {
+            set_err_msg(format!("Error loading extension: {}", e), out_err_msg);
+            return 6;
+        }
+    };
     0
 }
 

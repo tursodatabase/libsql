@@ -8,6 +8,7 @@ use crate::connection::program::Program;
 use crate::namespace::NamespaceName;
 use crate::schema::status::{MigrationJobProgress, MigrationJobSummary};
 
+use super::status::MigrationProgress;
 use super::{
     status::{MigrationJob, MigrationTask},
     Error, MigrationDetails, MigrationJobStatus, MigrationSummary, MigrationTaskStatus,
@@ -354,9 +355,42 @@ pub(super) fn get_next_pending_migration_job(
             Ok(())
         })?
         .collect::<Result<(), rusqlite::Error>>()?;
+
+        // if a crash happened before we could update the job status, we need to update the job
+        // status
+        let actual_status = status_from_progress(&job.progress);
+        if actual_status != *job.status() {
+            *job.status_mut() = actual_status;
+        }
     }
 
     Ok(job)
+}
+
+/// infer the status from the migration progress
+fn status_from_progress(progress: &MigrationProgress) -> MigrationJobStatus {
+    use MigrationTaskStatus::*;
+    if progress[DryRunFailure as usize] != 0 {
+        return MigrationJobStatus::DryRunFailure;
+    }
+
+    if progress[Failure as usize] != 0 {
+        return MigrationJobStatus::RunFailure;
+    }
+
+    if progress[Enqueued as usize] != 0 {
+        return MigrationJobStatus::WaitingDryRun;
+    }
+
+    if progress[DryRunSuccess as usize] != 0 || progress[Run as usize] != 0 {
+        return MigrationJobStatus::WaitingRun;
+    }
+
+    if progress[Success as usize] != 0 {
+        return MigrationJobStatus::RunSuccess;
+    }
+
+    MigrationJobStatus::WaitingDryRun
 }
 
 pub fn get_migration_details(
@@ -448,6 +482,7 @@ mod test {
     async fn register_schema(meta_store: &MetaStore, schema: &'static str) {
         meta_store
             .handle(schema.into())
+            .await
             .store(DatabaseConfig {
                 is_shared_schema: true,
                 ..Default::default()
@@ -463,6 +498,7 @@ mod test {
     ) -> crate::Result<()> {
         meta_store
             .handle(name.into())
+            .await
             .store(DatabaseConfig {
                 shared_schema_name: Some(schema.into()),
                 ..Default::default()
@@ -527,6 +563,7 @@ mod test {
         // necessary checks beforehand, and return a nice error message.
         assert!(meta_store
             .handle("ns1".into())
+            .await
             .store(DatabaseConfig {
                 shared_schema_name: Some("schema1".into()),
                 ..Default::default()

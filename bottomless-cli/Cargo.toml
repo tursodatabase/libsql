@@ -19,6 +19,7 @@ bottomless = { version = "0", path = "../bottomless" }
 bytes = "1"
 chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }
+libsql-sys = { path = "../libsql-sys" }
 tokio = { version = "1.23.0", features = ["macros", "rt", "rt-multi-thread"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.16"

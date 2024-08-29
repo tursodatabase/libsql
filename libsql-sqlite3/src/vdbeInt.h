@@ -59,11 +59,20 @@ typedef struct AuxData AuxData;
 /* A cache of large TEXT or BLOB values in a VdbeCursor */
 typedef struct VdbeTxtBlbCache VdbeTxtBlbCache;
 
+#ifndef SQLITE_OMIT_VECTOR
+/* Opaque type used in code in vectorIndex.c */
+typedef struct VectorIdxCursor VectorIdxCursor;
+#endif
+
 /* Types of VDBE cursors */
 #define CURTYPE_BTREE       0
 #define CURTYPE_SORTER      1
 #define CURTYPE_VTAB        2
 #define CURTYPE_PSEUDO      3
+
+#ifndef SQLITE_OMIT_VECTOR
+#define CURTYPE_VECTOR_IDX  64
+#endif
 
 /*
 ** A VdbeCursor is an superclass (a wrapper) for various cursor objects:
@@ -89,6 +98,7 @@ struct VdbeCursor {
   Bool isEphemeral:1;     /* True for an ephemeral table */
   Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
   Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
+  Bool isTracked:1;       /* True if cursor created for virtual table which track reads/writes */
   Bool noReuse:1;         /* OpenEphemeral may not reuse this cursor */
   Bool colCache:1;        /* pCache pointer is initialized and non-NULL */
   u16 seekHit;            /* See the OP_SeekHit and OP_IfNoHope opcodes */
@@ -117,6 +127,9 @@ struct VdbeCursor {
     BtCursor *pCursor;          /* CURTYPE_BTREE or _PSEUDO.  Btree cursor */
     sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.              Vtab cursor */
     VdbeSorter *pSorter;        /* CURTYPE_SORTER.            Sorter object */
+#ifndef SQLITE_OMIT_VECTOR
+    VectorIdxCursor *pVecIdx;   /* CURTYPE_VECTOR_IDX.        Vector index cursor */
+#endif
   } uc;
   KeyInfo *pKeyInfo;      /* Info about index keys needed by index cursors */
   u32 iHdrOffset;         /* Offset to next unparsed byte of the header */
@@ -517,6 +530,8 @@ struct Vdbe {
 #endif
 };
 
+void libsql_inc_row_read(Vdbe *p, int count);
+void libsql_inc_row_written(Vdbe *p, int count);
 /*
 ** The following are allowed values for Vdbe.eVdbeState
 */

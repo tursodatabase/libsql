@@ -2,14 +2,15 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task;
 
-use axum::extract::State as AxumState;
+use axum::extract::{Query, State as AxumState};
 use futures::StreamExt;
 use hyper::HeaderMap;
 use pin_project_lite::pin_project;
+use serde::Deserialize;
 
 use crate::auth::Authenticated;
 use crate::connection::dump::exporter::export_dump;
-use crate::connection::MakeConnection;
+use crate::connection::Connection as _;
 use crate::error::Error;
 use crate::BLOCKING_RT;
 
@@ -72,10 +73,16 @@ where
     }
 }
 
+#[derive(Deserialize)]
+pub struct DumpQuery {
+    preserve_row_ids: Option<bool>,
+}
+
 pub(super) async fn handle_dump(
     auth: Authenticated,
     AxumState(state): AxumState<AppState>,
     headers: HeaderMap,
+    query: Query<DumpQuery>,
 ) -> crate::Result<axum::body::StreamBody<impl futures::Stream<Item = Result<bytes::Bytes, Error>>>>
 {
     let namespace = namespace_from_headers(
@@ -91,7 +98,8 @@ pub(super) async fn handle_dump(
     let conn_maker = state
         .namespaces
         .with(namespace, |ns| {
-            ns.db.as_primary().unwrap().connection_maker()
+            assert!(ns.db.is_primary());
+            ns.db.connection_maker()
         })
         .await
         .unwrap();
@@ -102,7 +110,9 @@ pub(super) async fn handle_dump(
 
     let join_handle = BLOCKING_RT.spawn_blocking(move || {
         let writer = tokio_util::io::SyncIoBridge::new(writer);
-        conn.with_raw(|conn| export_dump(conn, writer).map_err(Into::into))
+        conn.with_raw(|conn| {
+            export_dump(conn, writer, query.preserve_row_ids.unwrap_or(false)).map_err(Into::into)
+        })
     });
 
     let stream = tokio_util::io::ReaderStream::new(reader);

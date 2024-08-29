@@ -7,9 +7,10 @@ pub use builder::Builder;
 #[cfg(feature = "core")]
 pub use libsql_sys::{Cipher, EncryptionConfig};
 
-use std::fmt;
-
 use crate::{Connection, Result};
+use std::fmt;
+use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
 
 cfg_core! {
     bitflags::bitflags! {
@@ -76,6 +77,9 @@ impl fmt::Debug for DbType {
 /// not do much work until the [`Database::connect`] fn is called.
 pub struct Database {
     db_type: DbType,
+    /// The maximum replication index returned from a write performed using any connection created using this Database object.
+    #[allow(dead_code)]
+    max_write_replication_index: Arc<AtomicU64>,
 }
 
 cfg_core! {
@@ -87,6 +91,7 @@ cfg_core! {
 
             Ok(Database {
                 db_type: DbType::Memory { db },
+                max_write_replication_index: Default::default(),
             })
         }
 
@@ -105,6 +110,7 @@ cfg_core! {
                     flags,
                     encryption_config: None,
                 },
+                max_write_replication_index: Default::default(),
             })
         }
     }
@@ -130,6 +136,7 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
             })
         }
 
@@ -191,6 +198,7 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
             })
         }
 
@@ -317,15 +325,26 @@ cfg_replication! {
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
+                max_write_replication_index: Default::default(),
             })
         }
 
 
         /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
-        pub async fn sync(&self) -> Result<Option<FrameNo>> {
+        pub async fn sync(&self) -> Result<crate::replication::Replicated> {
             if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.sync().await
+            } else {
+                Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
+            }
+        }
+
+        /// Sync database from remote until it gets to a given replication_index or further,
+        /// and returns the committed frame_no after syncing, if applicable.
+        pub async fn sync_until(&self, replication_index: FrameNo) -> Result<crate::replication::Replicated> {
+            if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
+                db.sync_until(replication_index).await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
             }
@@ -372,11 +391,24 @@ cfg_replication! {
                DbType::Sync { db, .. } => {
                    let path = db.path().to_string();
                    Ok(Database {
-                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None}
+                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None},
+                       max_write_replication_index: Default::default(),
                    })
                }
                t => Err(Error::FreezeNotSupported(format!("{:?}", t)))
            }
+        }
+
+        /// Get the maximum replication index returned from a write performed using any connection created using this Database object.
+        pub fn max_write_replication_index(&self) -> Option<FrameNo> {
+            let index = self
+                .max_write_replication_index
+                .load(std::sync::atomic::Ordering::SeqCst);
+            if index == 0 {
+                None
+            } else {
+                Some(index)
+            }
         }
     }
 }
@@ -445,6 +477,7 @@ cfg_remote! {
                     connector: crate::util::ConnectorService::new(svc),
                     version,
                 },
+                max_write_replication_index: Default::default(),
             })
         }
     }
@@ -552,7 +585,11 @@ impl Database {
 
                 let local = LibsqlConnection { conn };
                 let writer = local.conn.new_connection_writer();
-                let remote = crate::replication::RemoteConnection::new(local, writer);
+                let remote = crate::replication::RemoteConnection::new(
+                    local,
+                    writer,
+                    self.max_write_replication_index.clone(),
+                );
                 let conn = std::sync::Arc::new(remote);
 
                 Ok(Connection { conn })

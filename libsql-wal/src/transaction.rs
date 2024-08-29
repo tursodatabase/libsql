@@ -3,8 +3,10 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::time::Instant;
 
-use parking_lot::{ArcMutexGuard, RawMutex};
+use libsql_sys::name::NamespaceName;
+use tokio::sync::mpsc;
 
+use crate::checkpointer::CheckpointMessage;
 use crate::segment::current::{CurrentSegment, SegmentIndex};
 use crate::shared_wal::WalLock;
 
@@ -25,6 +27,14 @@ impl<F> Transaction<F> {
             Some(v)
         } else {
             None
+        }
+    }
+
+    pub fn into_write(self) -> Result<WriteTransaction<F>, Self> {
+        if let Self::Write(v) = self {
+            Ok(v)
+        } else {
+            Err(self)
         }
     }
 
@@ -77,8 +87,11 @@ pub struct ReadTransaction<F> {
     /// number of pages read by this transaction. This is used to determine whether a write lock
     /// will be re-acquired.
     pub pages_read: usize,
+    pub namespace: NamespaceName,
+    pub checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
 }
 
+// fixme: clone should probably not be implemented for this type, figure a way to do it
 impl<F> Clone for ReadTransaction<F> {
     fn clone(&self) -> Self {
         self.current.inc_reader_count();
@@ -90,20 +103,28 @@ impl<F> Clone for ReadTransaction<F> {
             created_at: self.created_at,
             conn_id: self.conn_id,
             pages_read: self.pages_read,
+            namespace: self.namespace.clone(),
+            checkpoint_notifier: self.checkpoint_notifier.clone(),
         }
     }
 }
 
 impl<F> Drop for ReadTransaction<F> {
     fn drop(&mut self) {
-        // FIXME: if the count drops to 0, register for compaction.
-        self.current.dec_reader_count();
+        // FIXME: it would be more approriate to wait till the segment is stored before notfying,
+        // because we are not waiting for read to be released before that
+        if self.current.dec_reader_count() && self.current.is_sealed() {
+            let _: Result<_, _> = self
+                .checkpoint_notifier
+                .try_send(self.namespace.clone().into());
+        }
     }
 }
 
 pub struct Savepoint {
     pub next_offset: u32,
     pub next_frame_no: u64,
+    pub current_checksum: u32,
     pub index: BTreeMap<u32, u32>,
 }
 
@@ -125,12 +146,42 @@ pub struct WriteTransaction<F> {
     pub savepoints: Vec<Savepoint>,
     pub next_frame_no: u64,
     pub next_offset: u32,
+    pub current_checksum: u32,
     pub is_commited: bool,
     pub read_tx: ReadTransaction<F>,
+    /// if transaction overwrote frames, then the running checksum needs to be recomputed.
+    /// We store here the lowest segment offset at which a frame was overwritten
+    pub recompute_checksum: Option<u32>,
+}
+
+pub struct TxGuardOwned<F> {
+    _lock: Option<async_lock::MutexGuardArc<Option<u64>>>,
+    inner: Option<WriteTransaction<F>>,
+}
+
+impl<F> Drop for TxGuardOwned<F> {
+    fn drop(&mut self) {
+        let _ = self._lock.take();
+        self.inner.take().expect("already dropped").downgrade();
+    }
+}
+
+impl<F> Deref for TxGuardOwned<F> {
+    type Target = WriteTransaction<F>;
+
+    fn deref(&self) -> &Self::Target {
+        self.inner.as_ref().expect("guard used after drop")
+    }
+}
+
+impl<F> DerefMut for TxGuardOwned<F> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.inner.as_mut().expect("guard used after drop")
+    }
 }
 
 pub struct TxGuard<'a, F> {
-    _lock: ArcMutexGuard<RawMutex, Option<u64>>,
+    _lock: async_lock::MutexGuardArc<Option<u64>>,
     inner: &'a mut WriteTransaction<F>,
 }
 
@@ -160,6 +211,7 @@ impl<F> WriteTransaction<F> {
             next_offset: self.next_offset,
             next_frame_no: self.next_frame_no,
             index: BTreeMap::new(),
+            current_checksum: self.current_checksum,
         });
         savepoint_id
     }
@@ -170,12 +222,31 @@ impl<F> WriteTransaction<F> {
             todo!("txn has already been commited");
         }
 
-        let g = self.wal_lock.tx_id.lock_arc();
+        let g = self.wal_lock.tx_id.lock_arc_blocking();
         match *g {
             // we still hold the lock, we can proceed
             Some(id) if self.id == id => TxGuard {
                 _lock: g,
                 inner: self,
+            },
+            // Somebody took the lock from us
+            Some(_) => todo!("lock stolen"),
+            None => todo!("not a transaction"),
+        }
+    }
+
+    pub fn into_lock_owned(self) -> TxGuardOwned<F> {
+        if self.is_commited {
+            tracing::error!("transaction already commited");
+            todo!("txn has already been commited");
+        }
+
+        let g = self.wal_lock.tx_id.lock_arc_blocking();
+        match *g {
+            // we still hold the lock, we can proceed
+            Some(id) if self.id == id => TxGuardOwned {
+                _lock: Some(g),
+                inner: Some(self),
             },
             // Somebody took the lock from us
             Some(_) => todo!("lock stolen"),
@@ -212,7 +283,9 @@ impl<F> WriteTransaction<F> {
         let Self {
             wal_lock, read_tx, ..
         } = self;
-        let mut lock = wal_lock.tx_id.lock();
+        // always acquire lock in this order: reserved, then tx_id
+        let mut reserved = wal_lock.reserved.lock();
+        let mut lock = wal_lock.tx_id.lock_blocking();
         match *lock {
             Some(lock_id) if lock_id == read_tx.id => {
                 lock.take();
@@ -220,7 +293,7 @@ impl<F> WriteTransaction<F> {
             _ => (),
         }
 
-        if let Some(id) = *wal_lock.reserved.lock() {
+        if let Some(id) = *reserved {
             tracing::trace!("tx already reserved by {id}");
             return read_tx;
         }
@@ -233,7 +306,7 @@ impl<F> WriteTransaction<F> {
                 }
                 crossbeam::deque::Steal::Success((unparker, id)) => {
                     tracing::trace!("waking up {id}");
-                    wal_lock.reserved.lock().replace(id);
+                    reserved.replace(id);
                     unparker.unpark();
                     break;
                 }
@@ -263,6 +336,10 @@ impl<F> WriteTransaction<F> {
 
     pub(crate) fn commit(&mut self) {
         self.is_commited = true;
+    }
+
+    pub(crate) fn current_checksum(&self) -> u32 {
+        self.savepoints.last().unwrap().current_checksum
     }
 }
 

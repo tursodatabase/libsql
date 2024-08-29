@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use futures::StreamExt;
 use insta::assert_json_snapshot;
 use libsql::{params, Database};
 use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
@@ -310,6 +311,91 @@ fn stats_legacy() {
         }
 
         assert_json_snapshot!(json);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn stream() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table t(x text)", ()).await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+
+        let rows = conn
+            .query("select * from t where x = ?", params!["hello"])
+            .await?
+            .into_stream();
+
+        let rows = rows.collect::<Vec<_>>().await;
+
+        assert_eq!(rows.len(), 4);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn reindex_statement() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table t(x text)", ()).await?;
+        conn.execute("create index t_idx on t(x)", ()).await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+        conn.execute("insert into t(x) values(?)", params!["hello"])
+            .await?;
+        conn.execute("reindex t_idx", ()).await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn test_simulate_vector_index_load_from_dump() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE t ( v FLOAT32(2) );", ()).await?;
+        conn.execute("CREATE TABLE t_idx_shadow(index_key  INTEGER , data BLOB, PRIMARY KEY (index_key));", ()).await?;
+        conn.execute("CREATE TABLE libsql_vector_meta_shadow ( name TEXT PRIMARY KEY, metadata BLOB ) WITHOUT ROWID", ()).await?;
+        conn.execute("INSERT INTO libsql_vector_meta_shadow VALUES ('t_idx', x'');", ()).await?;
+        conn.execute("INSERT INTO t VALUES (vector('[1,2]')), (vector('[2,3]'));", ()).await?;
+        conn.execute("CREATE INDEX t_idx ON t (libsql_vector_idx(v));", ()).await?;
 
         Ok(())
     });

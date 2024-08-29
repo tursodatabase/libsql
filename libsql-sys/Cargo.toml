@@ -1,6 +1,6 @@
 [package]
 name = "libsql-sys"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 license = "MIT"
 description = "Native bindings to libSQL"
@@ -12,7 +12,7 @@ categories = ["external-ffi-bindings"]
 
 [dependencies]
 bytes = "1.5.0"
-libsql-ffi = { version = "0.3", path = "../libsql-ffi/", features = ["zig-build"] }
+libsql-ffi = { version = "0.4", path = "../libsql-ffi/" }
 once_cell = "1.18.0"
 rusqlite = { workspace = true, features = ["trace"], optional = true }
 tracing = "0.1.37"
@@ -25,5 +25,6 @@ wal = []
 rusqlite = ["dep:rusqlite"]
 wasmtime-bindings = ["libsql-ffi/wasmtime-bindings"]
 unix-excl-vfs = []
+zig-build = ["libsql-ffi/zig-build"]
 encryption = ["libsql-ffi/multiple-ciphers"]
 

@@ -23,6 +23,9 @@
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
 #include "ext/udf/wasm_bindings.h"
 #endif
+#ifndef SQLITE_OMIT_VECTOR
+#include "vectorIndexInt.h"
+#endif
 
 /*
 ** Invoke this macro on memory cells just prior to changing the
@@ -135,11 +138,12 @@ int sqlite3_found_count = 0;
 **   sqlite3CantopenError(lineno)
 */
 static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
-  static int n = 0;
+  static u64 n = 0;
   (void)pc;
   (void)pOp;
   (void)v;
   n++;
+  if( n==LARGEST_UINT64 ) abort(); /* So that n is used, preventing a warning */
 }
 #endif
 
@@ -238,6 +242,9 @@ static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
 
 /* Return true if the cursor was opened using the OP_OpenSorter opcode. */
 #define isSorter(x) ((x)->eCurType==CURTYPE_SORTER)
+
+/* Return true if the cursor is of type CURYTPE_VECTOR_IDX. */
+#define isVectorCursor(x) ((x)->eCurType==CURTYPE_VECTOR_IDX)
 
 /*
 ** Allocate VdbeCursor number iCur.  Return a pointer to it.  Return NULL
@@ -809,12 +816,12 @@ static u32 saturating_add(u32 lhs, u32 rhs) {
     return (u32)MIN(0xFFFFFFFF, sum);
 }
 
-static void inc_row_read(Vdbe *p, int count) {
+void libsql_inc_row_read(Vdbe *p, int count) {
     u32 *read = &p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE];
     *read = saturating_add(*read, count);
 }
 
-static void inc_row_written(Vdbe *p, int count) {
+void libsql_inc_row_written(Vdbe *p, int count) {
     u32 *write = &p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE];
     *write = saturating_add(*write, count);
 }
@@ -2056,7 +2063,7 @@ case OP_AddImm: {            /* in1 */
   pIn1 = &aMem[pOp->p1];
   memAboutToChange(p, pIn1);
   sqlite3VdbeMemIntegerify(pIn1);
-  pIn1->u.i += pOp->p2;
+  *(u64*)&pIn1->u.i += (u64)pOp->p2;
   break;
 }
 
@@ -3734,7 +3741,7 @@ case OP_Count: {         /* out2 */
     nEntry = 0;  /* Not needed.  Only used to silence a warning. */
     i64 nPages = 0;
     rc = sqlite3BtreeCount(db, pCrsr, &nEntry, &nPages);
-    inc_row_read(p, nPages);
+    libsql_inc_row_read(p, nPages);
     if( rc ) goto abort_due_to_error;
   }
   pOut = out2Prerelease(p, pOp);
@@ -4206,6 +4213,48 @@ case OP_SetCookie: {
   if( rc ) goto abort_due_to_error;
   break;
 }
+
+#ifndef SQLITE_OMIT_VECTOR
+/* Opcode: OpenVectorIdx
+** Synopsis: root=P2 iDb=P3
+*/
+case OP_OpenVectorIdx: {
+  KeyInfo *pKeyInfo = NULL;
+  VectorIdxCursor* cursor;
+  int nField = 0;
+  if( pOp->p4type==P4_KEYINFO ){
+    pKeyInfo = pOp->p4.pKeyInfo;
+    assert( pKeyInfo->enc==ENC(db) );
+    assert( pKeyInfo->db==db );
+    nField = pKeyInfo->nAllField;
+  }else if( pOp->p4type==P4_INT32 ){
+    nField = pOp->p4.i;
+  }
+  assert( pKeyInfo->zDbSName != NULL );
+  if( pOp->p5 == OPFLAG_FORDELETE ){
+    rc = vectorIndexClear(db, pKeyInfo->zDbSName, pKeyInfo->zIndexName);
+    if( rc ){
+      goto abort_due_to_error;
+    }
+  }
+  rc = vectorIndexCursorInit(db, pKeyInfo->zDbSName, pKeyInfo->zIndexName, &cursor);
+  if( rc ) {
+    goto abort_due_to_error;
+  }
+  // After we will allocate cursor Vdbe will record it and will try to close it at the disposal
+  // So, we need to ensure that no errors will occurred after successful cursor allocation
+  VdbeCursor *pCur = allocateCursor(p, pOp->p1, nField, CURTYPE_VECTOR_IDX);
+  if( pCur==0 ) goto no_mem;
+  pCur->iDb = pOp->p3;
+  pCur->nullRow = 1;
+  pCur->isOrdered = 1;
+  pCur->pgnoRoot = pOp->p2;
+  pCur->pKeyInfo = pKeyInfo;
+  pCur->isTable = 0;
+  pCur->uc.pVecIdx = cursor;
+  break;
+}
+#endif
 
 /* Opcode: OpenRead P1 P2 P3 P4 P5
 ** Synopsis: root=P2 iDb=P3
@@ -4894,7 +4943,7 @@ case OP_SeekGT: {       /* jump, in3, group, ncycle */
       goto seek_not_found;
     }
   }
-  inc_row_read(p, 1);
+  libsql_inc_row_read(p, 1);
 #ifdef SQLITE_TEST
   sqlite3_search_count++;
 #endif
@@ -5464,7 +5513,7 @@ notExistsWithKey:
   pC->deferredMoveto = 0;
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
-  inc_row_read(p, 1);
+  libsql_inc_row_read(p, 1);
   if( res!=0 ){
     assert( rc==SQLITE_OK );
     if( pOp->p2==0 ){
@@ -5766,7 +5815,7 @@ case OP_Insert: {
 #endif
 
   assert( (pOp->p5 & OPFLAG_LASTROWID)==0 || (pOp->p5 & OPFLAG_NCHANGE)!=0 );
-  if (!pC->isEphemeral) inc_row_written(p, 1);
+  if (!pC->isEphemeral) libsql_inc_row_written(p, 1);
   
   if( pOp->p5 & OPFLAG_NCHANGE ){
     p->nChange++;
@@ -5961,7 +6010,7 @@ case OP_Delete: {
 
   /* Invoke the update-hook if required. */
   if( opflags & OPFLAG_NCHANGE ){
-    if (!pC->isEphemeral) inc_row_written(p, 1);
+    if (!pC->isEphemeral) libsql_inc_row_written(p, 1);
     p->nChange++;
     if( db->xUpdateCallback && ALWAYS(pTab!=0) && HasRowid(pTab) ){
       db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,
@@ -6249,7 +6298,7 @@ case OP_Last: {              /* jump, ncycle */
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
   if( rc ) goto abort_due_to_error;
-  inc_row_read(p, 1);
+  libsql_inc_row_read(p, 1);
   if( pOp->p2>0 ){
     VdbeBranchTaken(res!=0,2);
     if( res ) goto jump_to_p2;
@@ -6359,7 +6408,7 @@ case OP_Rewind: {        /* jump, ncycle */
   }
   if( rc ) goto abort_due_to_error;
   pC->nullRow = (u8)res;
-  inc_row_read(p, 1);
+  libsql_inc_row_read(p, 1);
   if( pOp->p2>0 ){
     VdbeBranchTaken(res!=0,2);
     if( res ) goto jump_to_p2;
@@ -6465,7 +6514,7 @@ next_tail:
   if( rc==SQLITE_OK ){
     pC->nullRow = 0;
     p->aCounter[pOp->p5]++;
-  inc_row_read(p, 1);
+  libsql_inc_row_read(p, 1);
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
@@ -6517,7 +6566,46 @@ case OP_IdxInsert: {        /* in2 */
   pIn2 = &aMem[pOp->p2];
   assert( (pIn2->flags & MEM_Blob) || (pOp->p5 & OPFLAG_PREFORMAT) );
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
-  if (!pC->isEphemeral) inc_row_written(p, 1);
+  if (!pC->isEphemeral) libsql_inc_row_written(p, 1);
+#ifndef SQLITE_OMIT_VECTOR
+  if( isVectorCursor(pC) ) {
+    UnpackedRecord idxKeyStatic;
+    UnpackedRecord *pIdxKey = NULL;
+    int i;
+    rc = ExpandBlob(pIn2);
+    if( rc ) goto abort_due_to_error;
+    x.nKey = pIn2->n;
+    x.pKey = pIn2->z;
+    x.aMem = aMem + pOp->p3;
+    x.nMem = (u16)pOp->p4.i;
+    /*
+     * Key can be provided in packed format (only pKey and nKey are set) to the
+     * btree (for example, during the REINDEX) So we need to unpack it in some
+     * cases (x.nMem == 0 condition branch)
+     */
+    assert( x.nMem > 0 || x.nKey > 0 );
+    if( x.nMem == 0 ){
+      pIdxKey = sqlite3VdbeAllocUnpackedRecord(pC->pKeyInfo);
+      if( pIdxKey==0 ) goto no_mem;
+      sqlite3VdbeRecordUnpack(pC->pKeyInfo, x.nKey, x.pKey, pIdxKey);
+      rc = vectorIndexInsert(pC->uc.pVecIdx, pIdxKey, &p->zErrMsg);
+      /* 
+       * vectorIndexInsert can allocate additional memory for sqlite3_value (usually during sqlite3_value_text/sqlite3_value_blob calls)
+       * so, we need to explicitly clear it before freeing whole UnpackedRecord with single free(...) call
+      */
+      for(i = 0; i < pIdxKey->nField; i++){
+        sqlite3VdbeMemRelease(pIdxKey->aMem + i);
+      }
+      sqlite3DbFreeNN(db, pIdxKey);
+    }else {
+      idxKeyStatic.nField = x.nMem;
+      idxKeyStatic.aMem = x.aMem;
+      rc = vectorIndexInsert(pC->uc.pVecIdx, &idxKeyStatic, &p->zErrMsg);
+    }
+    if( rc ) goto abort_due_to_error;
+    break;
+  }
+#endif
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->isTable==0 );
   rc = ExpandBlob(pIn2);
@@ -6587,6 +6675,18 @@ case OP_IdxDelete: {
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+#ifndef SQLITE_OMIT_VECTOR
+  if( isVectorCursor(pC) ) {
+    sqlite3VdbeIncrWriteCounter(p, pC);
+    r.pKeyInfo = pC->pKeyInfo;
+    r.nField = (u16)pOp->p3;
+    r.default_rc = 0;
+    r.aMem = &aMem[pOp->p2];
+    rc = vectorIndexDelete(pC->uc.pVecIdx, &r, &p->zErrMsg);
+    if( rc ) goto abort_due_to_error;
+    break;
+  }
+#endif
   assert( pC->eCurType==CURTYPE_BTREE );
   sqlite3VdbeIncrWriteCounter(p, pC);
   pCrsr = pC->uc.pCursor;
@@ -6918,7 +7018,7 @@ case OP_Clear: {
   rc = sqlite3BtreeClearTable(db->aDb[pOp->p2].pBt, (u32)pOp->p1, &nChange);
   if( pOp->p3 ){
     p->nChange += nChange;
-    inc_row_written(p, nChange);
+    libsql_inc_row_written(p, nChange);
     if( pOp->p3>0 ){
       assert( memIsValid(&aMem[pOp->p3]) );
       memAboutToChange(p, &aMem[pOp->p3]);
@@ -8231,6 +8331,11 @@ case OP_VOpen: {             /* ncycle */
   if( pCur ){
     pCur->uc.pVCur = pVCur;
     pVtab->nRef++;
+#ifndef SQLITE_OMIT_VECTOR
+    if( sqlite3StrICmp(pOp->p4.pVtab->pMod->zName, VECTOR_INDEX_VTAB_NAME) == 0 ){
+      pCur->isTracked = 1;
+    }
+#endif
   }else{
     assert( db->mallocFailed );
     pModule->xClose(pVCur);
@@ -8258,24 +8363,23 @@ case OP_VCheck: {             /* out2 */
 
   pOut = &aMem[pOp->p2];
   sqlite3VdbeMemSetNull(pOut);  /* Innocent until proven guilty */
-  assert( pOp->p4type==P4_TABLE );
+  assert( pOp->p4type==P4_TABLEREF );
   pTab = pOp->p4.pTab;
   assert( pTab!=0 );
+  assert( pTab->nTabRef>0 );
   assert( IsVirtual(pTab) );
-  assert( pTab->u.vtab.p!=0 );
+  if( pTab->u.vtab.p==0 ) break;
   pVtab = pTab->u.vtab.p->pVtab;
   assert( pVtab!=0 );
   pModule = pVtab->pModule;
   assert( pModule!=0 );
   assert( pModule->iVersion>=4 );
   assert( pModule->xIntegrity!=0 );
-  pTab->nTabRef++;
   sqlite3VtabLock(pTab->u.vtab.p);
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   rc = pModule->xIntegrity(pVtab, db->aDb[pOp->p1].zDbSName, pTab->zName,
                            pOp->p3, &zErr);
   sqlite3VtabUnlock(pTab->u.vtab.p);
-  sqlite3DeleteTable(db, pTab);
   if( rc ){
     sqlite3_free(zErr);
     goto abort_due_to_error;
@@ -8433,6 +8537,7 @@ case OP_VColumn: {           /* ncycle */
   const sqlite3_module *pModule;
   Mem *pDest;
   sqlite3_context sContext;
+  FuncDef nullFunc;
 
   VdbeCursor *pCur = p->apCsr[pOp->p1];
   assert( pCur!=0 );
@@ -8450,6 +8555,9 @@ case OP_VColumn: {           /* ncycle */
   memset(&sContext, 0, sizeof(sContext));
   sContext.pOut = pDest;
   sContext.enc = encoding;
+  nullFunc.pUserData = 0;
+  nullFunc.funcFlags = SQLITE_RESULT_SUBTYPE;
+  sContext.pFunc = &nullFunc;
   assert( pOp->p5==OPFLAG_NOCHNG || pOp->p5==0 );
   if( pOp->p5 & OPFLAG_NOCHNG ){
     sqlite3VdbeMemSetNull(pDest);
@@ -8505,7 +8613,7 @@ case OP_VNext: {   /* jump, ncycle */
   rc = pModule->xNext(pCur->uc.pVCur);
   sqlite3VtabImportErrmsg(p, pVtab);
   if( rc ) goto abort_due_to_error;
-  inc_row_read(p, 1);
+  libsql_inc_row_read(p, 1);
   res = pModule->xEof(pCur->uc.pVCur);
   VdbeBranchTaken(!res,2);
   if( !res ){
@@ -8627,7 +8735,7 @@ case OP_VUpdate: {
         p->errorAction = ((pOp->p5==OE_Replace) ? OE_Abort : pOp->p5);
       }
     }else{
-        inc_row_written(p, 1);
+        libsql_inc_row_written(p, 1);
         p->nChange++;
     }
     if( rc ) goto abort_due_to_error;
@@ -8781,6 +8889,42 @@ case OP_Function: {            /* group */
 case OP_ClrSubtype: {   /* in1 */
   pIn1 = &aMem[pOp->p1];
   pIn1->flags &= ~MEM_Subtype;
+  break;
+}
+
+/* Opcode: GetSubtype P1 P2 * * *
+** Synopsis:  r[P2] = r[P1].subtype
+**
+** Extract the subtype value from register P1 and write that subtype
+** into register P2.  If P1 has no subtype, then P1 gets a NULL.
+*/
+case OP_GetSubtype: {   /* in1 out2 */
+  pIn1 = &aMem[pOp->p1];
+  pOut = &aMem[pOp->p2];
+  if( pIn1->flags & MEM_Subtype ){
+    sqlite3VdbeMemSetInt64(pOut, pIn1->eSubtype);
+  }else{
+    sqlite3VdbeMemSetNull(pOut);
+  }
+  break;
+}
+
+/* Opcode: SetSubtype P1 P2 * * *
+** Synopsis:  r[P2].subtype = r[P1]
+**
+** Set the subtype value of register P2 to the integer from register P1.
+** If P1 is NULL, clear the subtype from p2.
+*/
+case OP_SetSubtype: {   /* in1 out2 */
+  pIn1 = &aMem[pOp->p1];
+  pOut = &aMem[pOp->p2];
+  if( pIn1->flags & MEM_Null ){
+    pOut->flags &= ~MEM_Subtype;
+  }else{
+    assert( pIn1->flags & MEM_Int );
+    pOut->flags |= MEM_Subtype;
+    pOut->eSubtype = (u8)(pIn1->u.i & 0xff);
+  }
   break;
 }
 

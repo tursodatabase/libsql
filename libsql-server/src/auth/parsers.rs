@@ -47,12 +47,22 @@ pub(crate) fn parse_grpc_auth_header(
 ) -> Result<UserAuthContext> {
     let mut context = UserAuthContext::empty();
 
+    let mut auth_header_seen = false;
+
+    if required_fields.is_empty() {
+        return Ok(context);
+    }
+
     for field in required_fields.iter() {
-        metadata
-            .get(*field)
-            .ok_or_else(|| AuthError::AuthHeaderNotFound)
-            .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
-            .map(|v| context.add_field(field, v.into()))?;
+        if let Some(h) = metadata.get(*field) {
+            let v = h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii)?;
+            context.add_field(field, v.into());
+            auth_header_seen = true;
+        }
+    }
+
+    if !auth_header_seen {
+        return Err(AuthError::AuthHeaderNotFound.into());
     }
 
     Ok(context)
@@ -98,6 +108,19 @@ mod tests {
         let mut map = tonic::metadata::MetadataMap::new();
         map.insert(GRPC_AUTH_HEADER, "bearer 123".parse().unwrap());
         let required_fields = vec!["x-authorization".into()];
+        let context = parse_grpc_auth_header(&map, &required_fields).unwrap();
+
+        assert_eq!(
+            context.get_field("x-authorization"),
+            Some(&"bearer 123".to_string())
+        );
+    }
+
+    #[test]
+    fn parse_grpc_auth_header_with_multiple_required_fields() {
+        let mut map = tonic::metadata::MetadataMap::new();
+        map.insert(GRPC_AUTH_HEADER, "bearer 123".parse().unwrap());
+        let required_fields = vec!["authorization".into(), "x-authorization".into()];
         let context = parse_grpc_auth_header(&map, &required_fields).unwrap();
 
         assert_eq!(

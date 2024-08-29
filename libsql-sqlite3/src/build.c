@@ -23,6 +23,9 @@
 **     ROLLBACK
 */
 #include "sqliteInt.h"
+#ifndef SQLITE_OMIT_VECTOR
+#include "vectorIndexInt.h"
+#endif
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
@@ -720,7 +723,7 @@ void sqlite3ColumnSetExpr(
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
-  if( NEVER(!IsOrdinaryTable(pTab)) ) return 0;
+  if( !IsOrdinaryTable(pTab) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
   return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
@@ -872,6 +875,9 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   if( !pTable ) return;
   if( db->pnBytesFreed==0 && (--pTable->nTabRef)>0 ) return;
   deleteTable(db, pTable);
+}
+void sqlite3DeleteTableGeneric(sqlite3 *db, void *pTable){
+  sqlite3DeleteTable(db, (Table*)pTable);
 }
 
 
@@ -1410,7 +1416,8 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 /*
 ** Clean up the data structures associated with the RETURNING clause.
 */
-static void sqlite3DeleteReturning(sqlite3 *db, Returning *pRet){
+static void sqlite3DeleteReturning(sqlite3 *db, void *pArg){
+  Returning *pRet = (Returning*)pArg;
   Hash *pHash;
   pHash = &(db->aDb[1].pSchema->trigHash);
   sqlite3HashInsert(pHash, pRet->zName, 0);
@@ -1452,8 +1459,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pParse->u1.pReturning = pRet;
   pRet->pParse = pParse;
   pRet->pReturnEL = pList;
-  sqlite3ParserAddCleanup(pParse,
-     (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
+  sqlite3ParserAddCleanup(pParse, sqlite3DeleteReturning, pRet);
   testcase( pParse->earlyCleanup );
   if( db->mallocFailed ) return;
   sqlite3_snprintf(sizeof(pRet->zName), pRet->zName,
@@ -1652,7 +1658,8 @@ char sqlite3AffinityType(const char *zIn, Column *pCol){
 
   assert( zIn!=0 );
   while( zIn[0] ){
-    h = (h<<8) + sqlite3UpperToLower[(*zIn)&0xff];
+    u8 x = *(u8*)zIn;
+    h = (h<<8) + sqlite3UpperToLower[x];
     zIn++;
     if( h==(('c'<<24)+('h'<<16)+('a'<<8)+'r') ){             /* CHAR */
       aff = SQLITE_AFF_TEXT;
@@ -1887,7 +1894,7 @@ void sqlite3AddPrimaryKey(
 #endif
   }else{
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0,
-                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY);
+                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY, 0);
     pList = 0;
   }
 
@@ -2388,7 +2395,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     assert( pParse->pNewTable==pTab );
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
-                       SQLITE_IDXTYPE_PRIMARYKEY);
+                       SQLITE_IDXTYPE_PRIMARYKEY, 0);
     if( pParse->nErr ){
       pTab->tabFlags &= ~TF_WithoutRowid;
       return;
@@ -3319,6 +3326,30 @@ static void destroyTable(Parse *pParse, Table *pTab){
   */
   Pgno iTab = pTab->tnum;
   Pgno iDestroyed = 0;
+  Index *pIdx;
+  int iDb;
+
+#ifndef SQLITE_OMIT_VECTOR
+  /*
+   * There are several places to delete vector index:
+   * 1. We can add this capability in the OP_Destroy op code. The problem is
+   * that it operates with root pages and we will need to do additional lookups
+   * to resolve page number to index name
+   * 2. We can add this capability in the OP_DropIndex op code. The problem is
+   * that db schema is locked at this moment and we will not be able to execute
+   * sqlite3_exec required for vectorIndexDrop
+   * 3. Delete index during the parsing stage (implemented variant) - it's hacky
+   * and bit dirty but seems to me as pretty safe and easy way to delete index
+   */
+  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    if( IsVectorIndex(pIdx) ){
+      assert( 0 <= iDb && iDb < pParse->db->nDb );
+      vectorIndexDrop(pParse->db, pParse->db->aDb[iDb].zDbSName, pIdx->zName);
+    }
+  }
+#endif
 
   while( 1 ){
     Index *pIdx;
@@ -3808,9 +3839,22 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1); VdbeCoverage(v);
   sqlite3VdbeJumpHere(v, addr1);
   if( memRootPage<0 ) sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
-  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, (int)tnum, iDb,
-                    (char *)pKey, P4_KEYINFO);
+#ifndef SQLITE_OMIT_VECTOR
+  /*
+   * Emit OP_OpenVectorIdx op code and set P5 to OPFLAG_FORDELETE if we are in
+   * the REINDEX phase and need to clear previous index
+   */
+  if( IsVectorIndex(pIndex) ){
+    sqlite3VdbeAddOp4(v, OP_OpenVectorIdx, iIdx, (int)tnum, iDb, (char *)pKey, P4_KEYINFO);
+    sqlite3VdbeChangeP5(v, (memRootPage<0)?OPFLAG_FORDELETE:0);
+  }else{
+    sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, (int)tnum, iDb, (char *)pKey, P4_KEYINFO);
+    sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
+  }
+#else
+  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, (int)tnum, iDb, (char *)pKey, P4_KEYINFO);
   sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
+#endif
 
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0); VdbeCoverage(v);
   if( IsUniqueIndex(pIndex) ){
@@ -3841,7 +3885,15 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     ** a different order from the main table.
     ** See ticket: https://www.sqlite.org/src/info/bba7b69f9849b5bf
     */
-    sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+#ifndef SQLITE_OMIT_VECTOR
+    // optimization have no sense for vector index - so we didn't implement
+    // OP_SeekEnd op code for vector index and should omit it
+    if( !IsVectorIndex(pIndex) ){
+      sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+    }
+#else
+      sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+#endif
   }
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
@@ -3933,7 +3985,8 @@ void sqlite3CreateIndex(
   Expr *pPIWhere,    /* WHERE clause for partial indices */
   int sortOrder,     /* Sort order of primary key when pList==NULL */
   int ifNotExist,    /* Omit error if index already exists */
-  u8 idxType         /* The index type */
+  u8 idxType,        /* The index type */
+  IdList *pUsing     /* Using clause (DEPRECATED, preserved for backward compatibility only) */
 ){
   Table *pTab = 0;     /* Table to be indexed */
   Index *pIndex = 0;   /* The index to be created */
@@ -3951,6 +4004,7 @@ void sqlite3CreateIndex(
   int nExtraCol;                   /* Number of extra columns needed */
   char *zExtra = 0;                /* Extra space after the Index object */
   Index *pPk = 0;      /* PRIMARY KEY index for WITHOUT ROWID tables */
+  int vectorIdxRc = 0, skipRefill = 0;
 
   assert( db->pParse==pParse );
   if( pParse->nErr ){
@@ -4284,6 +4338,20 @@ void sqlite3CreateIndex(
   sqlite3DefaultRowEst(pIndex);
   if( pParse->pNewTable==0 ) estimateIndexWidth(pIndex);
 
+#ifndef SQLITE_OMIT_VECTOR
+  // we want to have complete information about index columns before invocation of vectorIndexCreate method
+  vectorIdxRc = vectorIndexCreate(pParse, pIndex, db->aDb[iDb].zDbSName, pUsing);
+  if( vectorIdxRc < 0 ){
+    goto exit_create_index;
+  }
+  if( vectorIdxRc >= 1 ){
+    pIndex->idxIsVector = 1;
+  }
+  if( vectorIdxRc == 1 ){
+    skipRefill = 1;
+  }
+#endif
+
   /* If this index contains every column of its table, then mark
   ** it as a covering index */
   assert( HasRowid(pTab)
@@ -4458,7 +4526,9 @@ void sqlite3CreateIndex(
       ** to invalidate all pre-compiled statements.
       */
       if( pTblName ){
-        sqlite3RefillIndex(pParse, pIndex, iMem);
+        if( !skipRefill ){
+          sqlite3RefillIndex(pParse, pIndex, iMem);
+        }
         sqlite3ChangeCookie(pParse, iDb);
         sqlite3VdbeAddParseSchemaOp(v, iDb,
             sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName), 0);
@@ -4610,6 +4680,22 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
     goto exit_drop_index;
   }
   iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
+#ifndef SQLITE_OMIT_VECTOR
+  /*
+   * There are several places to delete vector index:
+   * 1. We can add this capability in the OP_Destroy op code. The problem is
+   * that it operates with root pages and we will need to do additional lookups
+   * to resolve page number to index name
+   * 2. We can add this capability in the OP_DropIndex op code. The problem is
+   * that db schema is locked at this moment and we will not be able to execute
+   * sqlite3_exec required for vectorIndexDrop
+   * 3. Delete index during the parsing stage (implemented variant) - it's hacky
+   * and bit dirty but seems to me as pretty safe and easy way to delete index
+   */
+  if( IsVectorIndex(pIndex) ){
+    vectorIndexDrop(pParse->db, pParse->db->aDb[iDb].zDbSName, pIndex->zName);
+  }
+#endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_INDEX;
@@ -5526,7 +5612,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   if( iDb<0 ) return;
   z = sqlite3NameFromToken(db, pObjName);
   if( z==0 ) return;
-  zDb = db->aDb[iDb].zDbSName;
+  zDb = pName2->n ? db->aDb[iDb].zDbSName : 0;
   pTab = sqlite3FindTable(db, z, zDb);
   if( pTab ){
     reindexTable(pParse, pTab, 0);
@@ -5536,6 +5622,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   pIndex = sqlite3FindIndex(db, z, zDb);
   sqlite3DbFree(db, z);
   if( pIndex ){
+    iDb = sqlite3SchemaToIndex(db, pIndex->pTable->pSchema);
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3RefillIndex(pParse, pIndex, -1);
     return;
@@ -5551,7 +5638,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 ** when it has finished using it.
 */
 KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
-  int i;
+  int i, iDb;
   int nCol = pIdx->nColumn;
   int nKey = pIdx->nKeyCol;
   KeyInfo *pKey;
@@ -5563,6 +5650,19 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   }
   if( pKey ){
     assert( sqlite3KeyInfoIsWriteable(pKey) );
+
+    iDb = sqlite3SchemaToIndex(pParse->db, pIdx->pSchema);
+    if( 0 <= iDb && iDb < pParse->db->nDb ){
+      pKey->zDbSName = sqlite3DbStrDup(pParse->db, pParse->db->aDb[iDb].zDbSName);
+      if( pKey->zDbSName == NULL ){
+        goto out_nomem;
+      }
+    }
+    pKey->zIndexName = sqlite3DbStrDup(pParse->db, pIdx->zName);
+    if( pKey->zIndexName == NULL ){
+      goto out_nomem;
+    }
+
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
@@ -5588,6 +5688,11 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     }
   }
   return pKey;
+out_nomem:
+  if( pKey != NULL ){
+    sqlite3KeyInfoUnref(pKey);
+  }
+  return sqlite3OomFault(pParse->db);
 }
 
 #ifndef SQLITE_OMIT_CTE
@@ -5700,6 +5805,9 @@ void sqlite3WithDelete(sqlite3 *db, With *pWith){
     }
     sqlite3DbFree(db, pWith);
   }
+}
+void sqlite3WithDeleteGeneric(sqlite3 *db, void *pWith){
+  sqlite3WithDelete(db, (With*)pWith);
 }
 #endif /* !defined(SQLITE_OMIT_CTE) */
 

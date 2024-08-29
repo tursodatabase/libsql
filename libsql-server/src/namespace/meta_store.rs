@@ -6,6 +6,7 @@ use std::{collections::HashMap, fs::read_dir};
 use bottomless::bottomless_wal::BottomlessWalWrapper;
 use bottomless::replicator::CompressionKind;
 use bottomless::SavepointTracker;
+use futures::Stream;
 use futures_core::Future;
 use libsql_replication::rpc::metadata;
 use libsql_sys::wal::{
@@ -24,7 +25,7 @@ use crate::config::BottomlessConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::{
-    config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint, error::Error, Result,
+    config::MetaStoreConfig, connection::legacy::open_conn_active_checkpoint, error::Error, Result,
 };
 
 use super::NamespaceName;
@@ -70,8 +71,8 @@ struct MetaStoreInner {
     // TODO(lucio): Use a concurrent hashmap so we don't block connection creation
     // when we are updating the config. The config si already synced via the watch
     // channel.
-    configs: Mutex<HashMap<NamespaceName, Sender<InnerConfig>>>,
-    conn: Mutex<MetaStoreConnection>,
+    configs: tokio::sync::Mutex<HashMap<NamespaceName, Sender<InnerConfig>>>,
+    conn: tokio::sync::Mutex<MetaStoreConnection>,
     wal_manager: MetaStoreWalManager,
 }
 
@@ -125,7 +126,7 @@ pub async fn metastore_connection_maker(
                 bucket_name: config.bucket_name,
                 max_frames_per_batch: 10_000,
                 max_batch_interval: config.backup_interval,
-                s3_upload_max_parallelism: 32,
+                s3_max_parallelism: 32,
                 s3_max_retries: 10,
                 skip_snapshot: false,
             };
@@ -176,18 +177,13 @@ pub async fn metastore_connection_maker(
 }
 
 impl MetaStoreInner {
-    async fn new(
+    fn new(
         base_path: &Path,
         conn: MetaStoreConnection,
         wal_manager: MetaStoreWalManager,
         config: MetaStoreConfig,
     ) -> Result<Self> {
-        let conn = tokio::task::spawn_blocking(move || -> Result<_> {
-            setup_connection(&conn)?;
-            Ok(conn)
-        })
-        .await
-        .unwrap()?;
+        setup_connection(&conn)?;
 
         let mut this = MetaStoreInner {
             configs: Default::default(),
@@ -291,6 +287,7 @@ impl MetaStoreInner {
 
                 Err(e) => {
                     tracing::error!("meta store restore failed: {}", e);
+
                     return Err(Error::from(e));
                 }
             }
@@ -312,7 +309,7 @@ fn process(msg: ChangeMsg, inner: Arc<MetaStoreInner>) {
         } else {
             Ok(())
         };
-        let mut configs = inner.configs.lock();
+        let mut configs = inner.configs.blocking_lock();
         if let Some(config_watch) = configs.get_mut(&namespace) {
             let new_version = config_watch.borrow().version.wrapping_add(1);
 
@@ -329,7 +326,7 @@ fn process(msg: ChangeMsg, inner: Arc<MetaStoreInner>) {
         let _ = ret_chan.send(ret);
     } else {
         let ret = if flush {
-            let mut configs = inner.configs.lock();
+            let mut configs = inner.configs.blocking_lock();
             if let Some(config_watch) = configs.get_mut(&namespace) {
                 let config = config_watch.subscribe().borrow().clone();
                 try_process(&inner, &namespace, &config.config)
@@ -350,7 +347,7 @@ fn try_process(
 ) -> Result<()> {
     let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
 
-    let mut conn = inner.conn.lock();
+    let mut conn = inner.conn.blocking_lock();
     if let Some(schema) = config.shared_schema_name.as_ref() {
         let tx = conn.transaction()?;
         if let Some(ref schema) = config.shared_schema_name {
@@ -399,7 +396,71 @@ impl MetaStore {
         wal_manager: MetaStoreWalManager,
     ) -> Result<Self> {
         let (changes_tx, mut changes_rx) = mpsc::channel(256);
-        let inner = Arc::new(MetaStoreInner::new(base_path, conn, wal_manager, config).await?);
+
+        let destroy_on_error = config.destroy_on_error;
+
+        let maybe_inner = tokio::task::spawn_blocking({
+            let base_path = base_path.to_owned();
+            let config = config.clone();
+            move || MetaStoreInner::new(&base_path, conn, wal_manager, config.clone())
+        })
+        .await
+        .unwrap();
+
+        let inner = match maybe_inner {
+            Ok(inner) => inner,
+            Err(e) => {
+                if destroy_on_error {
+                    let db_path = base_path.join("metastore");
+
+                    tracing::info!(
+                        "meta store set to destroy on restore error, removing metastore db path folder ({:?})", db_path
+                    );
+
+                    if let Err(e) = std::fs::remove_dir_all(&db_path) {
+                        tracing::error!("failed to remove base path({:?}): {}", &db_path, e);
+                    }
+
+                    if let Err(e) = std::fs::create_dir_all(&db_path) {
+                        tracing::error!(
+                            "failed to create meta store base path: {:?} with {}",
+                            &db_path,
+                            e
+                        );
+                    }
+
+                    if let Err(e) = std::fs::File::create(db_path.join("data")) {
+                        tracing::error!(
+                            "failed to create `data` file in {:?} with: {}",
+                            &db_path,
+                            e
+                        );
+                    }
+
+                    let (maker, wal) =
+                        metastore_connection_maker(config.bottomless.clone(), base_path).await?;
+
+                    let conn = maker()?;
+
+                    tracing::info!("recreating metastore and restoring with fresh data");
+
+                    let inner = tokio::task::spawn_blocking({
+                        let base_path = base_path.to_owned();
+                        move || MetaStoreInner::new(&base_path, conn, wal, config)
+                    })
+                    .await
+                    .unwrap()?;
+
+                    tracing::info!("metastore destroy on error successful");
+
+                    inner
+                } else {
+                    return Err(e);
+                }
+            }
+        };
+
+        let inner = Arc::new(inner);
 
         tokio::spawn({
             let inner = inner.clone();
@@ -418,11 +479,11 @@ impl MetaStore {
         Ok(Self { changes_tx, inner })
     }
 
-    pub fn handle(&self, namespace: NamespaceName) -> MetaStoreHandle {
+    pub async fn handle(&self, namespace: NamespaceName) -> MetaStoreHandle {
         tracing::debug!("getting meta store handle");
         let change_tx = self.changes_tx.clone();
 
-        let mut configs = self.inner.configs.lock();
+        let mut configs = self.inner.configs.lock().await;
         let sender = configs.entry(namespace.clone()).or_insert_with(|| {
             // TODO(lucio): if no entry exists we need to ensure we send the update to
             // the bg channel.
@@ -443,11 +504,18 @@ impl MetaStore {
     pub fn remove(&self, namespace: NamespaceName) -> Result<Option<Arc<DatabaseConfig>>> {
         tracing::debug!("removing namespace `{}` from meta store", namespace);
 
-        let mut configs = self.inner.configs.lock();
+        // "configs" lock can be used in both async and sync contexts while "conn" lock always used
+        // in blocking context
+        //
+        // so, we better to acquire "conn" lock first in order to prevent situation when "configs"
+        // lock is taken but "conn" lock is not free (so, we potentially will block async tasks for
+        // indefinite amount of time while "conn" lock will be acquired by other thread)
+        let mut conn = self.inner.conn.blocking_lock();
+
+        let mut configs = self.inner.configs.blocking_lock();
         let r = if let Some(sender) = configs.get(&namespace) {
             tracing::debug!("removed namespace `{}` from meta store", namespace);
             let config = sender.borrow().clone();
-            let mut conn = self.inner.conn.lock();
             let tx = conn.transaction()?;
             if config.config.is_shared_schema {
                 if crate::schema::db::schema_has_linked_dbs(&tx, &namespace)? {
@@ -483,8 +551,8 @@ impl MetaStore {
     // TODO: we need to either make sure that the metastore is restored
     // before we start accepting connections or we need to contact bottomless
     // here to check if a namespace exists. Preferably the former.
-    pub fn exists(&self, namespace: &NamespaceName) -> bool {
-        self.inner.configs.lock().contains_key(namespace)
+    pub async fn exists(&self, namespace: &NamespaceName) -> bool {
+        self.inner.configs.lock().await.contains_key(namespace)
     }
 
     pub(crate) async fn shutdown(&self) -> crate::Result<()> {
@@ -507,7 +575,7 @@ impl MetaStore {
     ) -> crate::Result<MigrationSummary> {
         let inner = self.inner.clone();
         let summary = tokio::task::spawn_blocking(move || {
-            let mut conn = inner.conn.lock();
+            let mut conn = inner.conn.blocking_lock();
             crate::schema::get_migrations_summary(&mut conn, schema)
         })
         .await
@@ -522,7 +590,7 @@ impl MetaStore {
     ) -> crate::Result<Option<MigrationDetails>> {
         let inner = self.inner.clone();
         let details = tokio::task::spawn_blocking(move || {
-            let mut conn = inner.conn.lock();
+            let mut conn = inner.conn.blocking_lock();
             crate::schema::get_migration_details(&mut conn, schema, job_id)
         })
         .await
@@ -540,6 +608,24 @@ impl MetaStore {
             };
         }
         None
+    }
+
+    /// returns an iterator over all manespaces config handles
+    pub(crate) fn namespaces(&self) -> impl Stream<Item = MetaStoreHandle> + '_ {
+        async_stream::stream! {
+            let lock = self.inner.configs.lock().await;
+            for (ns, sender) in lock.iter() {
+                let change_tx = self.changes_tx.clone();
+
+
+                let handle = MetaStoreHandle {
+                    namespace: ns.clone(),
+                    inner: HandleState::External(change_tx, sender.subscribe()),
+                };
+
+                yield handle;
+            }
+        }
     }
 }
 
@@ -648,5 +734,9 @@ impl MetaStoreHandle {
         };
 
         Ok(())
+    }
+
+    pub fn namespace(&self) -> &NamespaceName {
+        &self.namespace
     }
 }

@@ -4,7 +4,7 @@ use tonic::metadata::errors::InvalidMetadataValueBytes;
 
 use crate::{
     auth::AuthError,
-    namespace::{ForkError, NamespaceName},
+    namespace::{configurator::fork::ForkError, NamespaceName},
     query_result_builder::QueryResultBuilderError,
 };
 

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use metrics::{histogram, increment_counter};
@@ -14,14 +15,16 @@ use crate::query_result_builder::QueryResultBuilder;
 use super::config::DatabaseConfig;
 use super::RequestContext;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct Program {
-    pub steps: Vec<Step>,
+    pub steps: Arc<Vec<Step>>,
 }
 
 impl Program {
     pub fn new(steps: Vec<Step>) -> Self {
-        Self { steps }
+        Self {
+            steps: steps.into(),
+        }
     }
 
     pub fn is_read_only(&self) -> bool {
@@ -29,7 +32,11 @@ impl Program {
     }
 
     pub fn steps(&self) -> &[Step] {
-        self.steps.as_slice()
+        &self.steps
+    }
+
+    pub fn steps_mut(&mut self) -> Option<&mut Vec<Step>> {
+        Arc::get_mut(&mut self.steps)
     }
 
     #[cfg(test)]
@@ -341,7 +348,7 @@ fn value_size(val: &rusqlite::types::ValueRef) -> usize {
     }
 }
 
-pub fn check_program_auth(
+pub async fn check_program_auth(
     ctx: &RequestContext,
     pgm: &Program,
     config: &DatabaseConfig,
@@ -363,7 +370,7 @@ pub fn check_program_auth(
             }
             StmtKind::Attach(ref ns) => {
                 ctx.auth.has_right(ns, Permission::AttachRead)?;
-                if !ctx.meta_store.handle(ns.clone()).get().allow_attach {
+                if !ctx.meta_store.handle(ns.clone()).await.get().allow_attach {
                     return Err(Error::NotAuthorized(format!(
                         "Namespace `{ns}` doesn't allow attach"
                     )));

@@ -188,6 +188,7 @@ foreach hdr {
    sqliteLimit.h
    vdbe.h
    vdbeInt.h
+   vectorIndexInt.h
    vectorInt.h
    vxworks.h
    wal.h
@@ -467,8 +468,15 @@ set flist {
 
    json.c
    vector.c
+   vectordiskann.c
+   vectorfloat1bit.c
    vectorfloat32.c
    vectorfloat64.c
+   vectorfloat8.c
+   vectorfloat16.c
+   vectorfloatb16.c
+   vectorIndex.c
+   vectorvtab.c
    rtree.c
    icu.c
    fts3_icu.c

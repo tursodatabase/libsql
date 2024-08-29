@@ -8,18 +8,22 @@
 //! head segment at the moment it was created.
 #![allow(dead_code)]
 use std::future::Future;
+use std::hash::Hasher as _;
 use std::io;
 use std::mem::offset_of;
 use std::mem::size_of;
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
-use zerocopy::byteorder::little_endian::{U32, U64};
+use zerocopy::byteorder::little_endian::{U128, U16, U32, U64};
 use zerocopy::AsBytes;
 
 use crate::error::{Error, Result};
 use crate::io::buf::IoBufMut;
 use crate::io::FileExt;
+use crate::io::Io;
+use crate::LIBSQL_MAGIC;
+use crate::LIBSQL_PAGE_SIZE;
 
 pub(crate) mod compacted;
 pub mod current;
@@ -32,37 +36,59 @@ bitflags::bitflags! {
         /// This is true for a segment created by a primary, but a replica may insert frames in any
         /// order, as long as commit boundaries are preserved.
         const FRAME_UNORDERED = 1 << 0;
+        /// The segment is sealed. If this flag is set, then
+        const SEALED          = 1 << 1;
     }
 }
 
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes, Clone, Copy)]
 pub struct SegmentHeader {
+    /// Set to LIBSQL_MAGIC
+    pub magic: U64,
+    /// header version
+    pub version: U16,
     pub start_frame_no: U64,
     pub last_commited_frame_no: U64,
     /// size of the database in pages, after applying the segment.
     pub size_after: U32,
     /// byte offset of the index. If 0, then the index wasn't written, and must be recovered.
     /// If non-0, the segment is sealed, and must not be written to anymore
+    /// the index is followed by its checksum
     pub index_offset: U64,
     pub index_size: U64,
-    /// checksum of the header fields, excluding the checksum itself. This field must be the last
-    pub header_cheksum: U64,
     pub flags: U32,
+    /// salt for the segment checksum
+    pub salt: U32,
+    /// right now we only support 4096, but if se decided to support other sizes,
+    /// we could do it without changing the header
+    pub page_size: U16,
+    pub log_id: U128,
+
+    /// checksum of the header fields, excluding the checksum itself. This field must be the last
+    pub header_cheksum: U32,
 }
 
 impl SegmentHeader {
-    fn checksum(&self) -> u64 {
+    fn checksum(&self) -> u32 {
         let field_bytes: &[u8] = &self.as_bytes()[..offset_of!(SegmentHeader, header_cheksum)];
-        let checksum = field_bytes
-            .iter()
-            .map(|x| *x as u64)
-            .reduce(|a, b| a ^ b)
-            .unwrap_or(0);
+        let checksum = crc32fast::hash(field_bytes);
         checksum
     }
 
     fn check(&self) -> Result<()> {
+        if self.page_size.get() != LIBSQL_PAGE_SIZE {
+            return Err(Error::InvalidPageSize);
+        }
+
+        if self.magic.get() != LIBSQL_MAGIC {
+            return Err(Error::InvalidHeaderChecksum);
+        }
+
+        if self.version.get() != 1 {
+            return Err(Error::InvalidHeaderVersion);
+        }
+
         let computed = self.checksum();
         if computed == self.header_cheksum.get() {
             return Ok(());
@@ -143,6 +169,8 @@ pub trait Segment: Send + Sync + 'static {
     async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
     where
         B: IoBufMut + Send + 'static;
+
+    fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()>;
 }
 
 impl<T: Segment> Segment for Arc<T> {
@@ -184,14 +212,18 @@ impl<T: Segment> Segment for Arc<T> {
     fn size_after(&self) -> u32 {
         self.as_ref().size_after()
     }
+
+    fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()> {
+        self.as_ref().destroy(io)
+    }
 }
 
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
 pub struct FrameHeader {
-    page_no: U32,
-    size_after: U32,
-    frame_no: U64,
+    pub page_no: U32,
+    pub size_after: U32,
+    pub frame_no: U64,
 }
 
 impl FrameHeader {
@@ -218,16 +250,43 @@ impl FrameHeader {
     pub fn set_size_after(&mut self, size_after: u32) {
         self.size_after = size_after.into();
     }
+
+    pub fn is_commit(&self) -> bool {
+        self.size_after() != 0
+    }
+}
+
+/// A page with a running runnign checksum prepended.
+/// `checksum` is computed by taking the checksum of the previous frame and crc32'ing it with frame
+/// data (header and page content). The first page is hashed with the segment header salt.
+#[repr(C)]
+#[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
+pub struct CheckedFrame {
+    checksum: U32,
+    // frame should always be the last field
+    frame: Frame,
+}
+
+impl CheckedFrame {
+    pub(crate) const fn offset_of_frame() -> usize {
+        offset_of!(Self, frame)
+    }
 }
 
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
 pub struct Frame {
     header: FrameHeader,
-    data: [u8; 4096],
+    data: [u8; LIBSQL_PAGE_SIZE as usize],
 }
 
 impl Frame {
+    pub(crate) fn checksum(&self, previous_checksum: u32) -> u32 {
+        let mut digest = crc32fast::Hasher::new_with_initial(previous_checksum);
+        digest.write(self.as_bytes());
+        digest.finalize()
+    }
+
     pub fn data(&self) -> &[u8] {
         &self.data
     }
@@ -244,12 +303,43 @@ impl Frame {
         let size_after = self.header().size_after.get();
         (size_after != 0).then_some(size_after)
     }
+
+    pub fn data_mut(&mut self) -> &mut [u8] {
+        &mut self.data
+    }
 }
 
+/// offset of the CheckedFrame in a current of sealed segment
+#[inline]
+fn checked_frame_offset(offset: u32) -> u64 {
+    (size_of::<SegmentHeader>() + (offset as usize) * size_of::<CheckedFrame>()) as u64
+}
+/// offset of a Frame in a current or sealed segment.
+#[inline]
 fn frame_offset(offset: u32) -> u64 {
-    (size_of::<SegmentHeader>() + (offset as usize) * size_of::<Frame>()) as u64
+    checked_frame_offset(offset) + CheckedFrame::offset_of_frame() as u64
 }
 
+/// offset of a frame's page in a current or sealed segment.
+#[inline]
 fn page_offset(offset: u32) -> u64 {
     frame_offset(offset) + size_of::<FrameHeader>() as u64
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn offsets() {
+        assert_eq!(checked_frame_offset(0) as usize, size_of::<SegmentHeader>());
+        assert_eq!(
+            frame_offset(0) as usize,
+            size_of::<SegmentHeader>() + CheckedFrame::offset_of_frame()
+        );
+        assert_eq!(
+            page_offset(0) as usize,
+            size_of::<SegmentHeader>() + CheckedFrame::offset_of_frame() + size_of::<FrameHeader>()
+        );
+    }
 }

@@ -67,6 +67,16 @@ message DestroyRequest {
 
 message DestroyResponse {}
 
+enum ErrorCode {
+  INTERNAL_ERROR = 0;
+  WRITE_CONFLICT = 1;
+}
+
+message ErrorDetails {
+  ErrorCode code = 1;
+  string message = 2;
+}
+
 service Storage {
   rpc InsertFrames(InsertFramesRequest) returns (InsertFramesResponse) {}
   rpc FindFrame(FindFrameRequest) returns (FindFrameResponse) {}

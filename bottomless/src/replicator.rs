@@ -17,7 +17,10 @@ use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use libsql_replication::injector::Injector as _;
+use libsql_replication::rpc::replication::Frame as RpcFrame;
 use libsql_sys::{Cipher, EncryptionConfig};
+use metrics::{counter, gauge, histogram};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -26,7 +29,7 @@ use std::sync::Arc;
 use tokio::fs::{File, OpenOptions};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::watch::{channel, Receiver, Sender};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Semaphore};
 use tokio::task::JoinHandle;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
@@ -53,6 +56,7 @@ pub struct Replicator {
     /// Always: [last_committed_frame_no] <= [last_sent_frame_no].
     last_committed_frame_no: Receiver<Result<u32>>,
     flush_trigger: Option<Sender<()>>,
+    shutdown_trigger: Option<tokio::sync::watch::Sender<()>>,
     snapshot_waiter: Receiver<Result<Option<Uuid>>>,
     snapshot_notifier: Arc<Sender<Result<Option<Uuid>>>>,
 
@@ -66,7 +70,7 @@ pub struct Replicator {
     use_compression: CompressionKind,
     encryption_config: Option<EncryptionConfig>,
     max_frames_per_batch: usize,
-    s3_upload_max_parallelism: usize,
+    s3_max_parallelism: usize,
     join_set: JoinSet<()>,
     upload_progress: Arc<Mutex<CompletionProgress>>,
     last_uploaded_frame_no: Receiver<u32>,
@@ -113,7 +117,7 @@ pub struct Options {
     /// checkpoint never commits.
     pub max_batch_interval: Duration,
     /// Maximum number of S3 file upload requests that may happen in parallel.
-    pub s3_upload_max_parallelism: usize,
+    pub s3_max_parallelism: usize,
     /// Max number of retries for S3 operations
     pub s3_max_retries: u32,
     /// Skip snapshot upload per checkpoint.
@@ -194,7 +198,7 @@ impl Options {
         let region = env_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION").ok();
         let max_frames_per_batch =
             env_var_or("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES", 10000).parse::<usize>()?;
-        let s3_upload_max_parallelism =
+        let s3_max_parallelism =
             env_var_or("LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX", 32).parse::<usize>()?;
         let use_compression =
             CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "zstd"))
@@ -242,7 +246,7 @@ impl Options {
             encryption_config,
             max_batch_interval,
             max_frames_per_batch,
-            s3_upload_max_parallelism,
+            s3_max_parallelism,
             aws_endpoint,
             access_key_id,
             secret_access_key,
@@ -260,6 +264,52 @@ impl Replicator {
 
     pub async fn new<S: Into<String>>(db_path: S) -> Result<Self> {
         Self::with_options(db_path, Options::from_env()?).await
+    }
+
+    fn set_local_last_frame_no(db_name: &str, last_frame_no: u32) {
+        let db_name = db_name.to_string();
+        gauge!("bottomless_local_last_frame_no", last_frame_no as f64, "db_name" => db_name);
+    }
+
+    fn increment_local_ready_frame_ranges(db_name: &str, ready_ranges: u32) {
+        let db_name = db_name.to_string();
+        counter!("bottomless_local_ready_frame_ranges", ready_ranges as u64, "db_name" => db_name);
+    }
+
+    fn record_local_flush_time(db_name: &str, duration: Duration) {
+        let db_name = db_name.to_string();
+        histogram!("bottomless_local_flush_time", duration.as_secs_f64(), "db_name" => db_name);
+    }
+
+    fn record_s3_write_time(db_name: &str, duration: Duration) {
+        let db_name = db_name.to_string();
+        histogram!("bottomless_s3_write_time", duration.as_secs_f64(), "db_name" => db_name);
+    }
+
+    fn increment_s3_processed_frame_ranges(db_name: &str, processed: u64) {
+        let db_name = db_name.to_string();
+        counter!("bottomless_s3_processed_frame_ranges", processed, "db_name" => db_name);
+    }
+
+    fn record_snapshot_upload_time(db_name: &str, duration: Duration) {
+        let db_name = db_name.to_string();
+        histogram!("bottomless_snapshot_upload_time", duration.as_secs_f64(), "db_name" => db_name);
+    }
+    fn record_restore_upload_files_time(db_name: &str, duration: Duration) {
+        let db_name = db_name.to_string();
+        histogram!("bottomless_restore_upload_files_time", duration.as_secs_f64(), "db_name" => db_name);
+    }
+    fn record_restore_time(db_name: &str, duration: Duration) {
+        let db_name = db_name.to_string();
+        histogram!("bottomless_restore_time", duration.as_secs_f64(), "db_name" => db_name);
+    }
+    fn set_s3_processing_frame_no(db_name: &str, frame_no: u32) {
+        let db_name = db_name.to_string();
+        gauge!("bottomless_s3_processing_frame_no", frame_no as f64, "db_name" => db_name);
+    }
+    fn set_s3_queue_size(db_name: &str, size: usize) {
+        let db_name = db_name.to_string();
+        gauge!("bottomless_s3_queue_size", size as f64, "db_name" => db_name);
     }
 
     pub async fn with_options<S: Into<String>>(db_path: S, options: Options) -> Result<Self> {
@@ -301,7 +351,8 @@ impl Replicator {
 
         let mut join_set = JoinSet::new();
 
-        let (frames_outbox, mut frames_inbox) = tokio::sync::mpsc::channel(64);
+        let (shutdown_trigger, shutdown_watch) = tokio::sync::watch::channel(());
+        let (frames_outbox, mut frames_inbox) = tokio::sync::mpsc::unbounded_channel();
         let _local_backup = {
             let mut copier = WalCopier::new(
                 bucket.clone(),
@@ -315,6 +366,7 @@ impl Replicator {
             let next_frame_no = next_frame_no.clone();
             let last_sent_frame_no = last_sent_frame_no.clone();
             let batch_interval = options.max_batch_interval;
+            let db_name = db_name.clone();
             join_set.spawn(async move {
                 loop {
                     let timeout = Instant::now() + batch_interval;
@@ -334,8 +386,18 @@ impl Replicator {
                         let frames = (last_sent_frame + 1)..next_frame;
 
                         if !frames.is_empty() {
+                            let start_time = Instant::now();
                             let res = copier.flush(frames).await;
-                            if last_committed_frame_no_sender.send(res).is_err() {
+                            Self::record_local_flush_time(&db_name, start_time.elapsed());
+
+                            if let Ok((last_frame_no, ready_ranges)) = res {
+                                Self::set_local_last_frame_no(&db_name, last_frame_no);
+                                Self::increment_local_ready_frame_ranges(&db_name, ready_ranges);
+                            }
+                            if last_committed_frame_no_sender
+                                .send(res.map(|r| r.0))
+                                .is_err()
+                            {
                                 // Replicator was probably dropped and therefore corresponding
                                 // receiver has been closed
                                 return;
@@ -351,8 +413,10 @@ impl Replicator {
         let _s3_upload = {
             let client = client.clone();
             let bucket = options.bucket_name.clone();
-            let max_parallelism = options.s3_upload_max_parallelism;
+            let max_parallelism = options.s3_max_parallelism;
             let upload_progress = upload_progress.clone();
+            let db_name = db_name.clone();
+            let shutdown_watch = Arc::new(shutdown_watch);
             join_set.spawn(async move {
                 let sem = Arc::new(tokio::sync::Semaphore::new(max_parallelism));
                 let mut join_set = JoinSet::new();
@@ -364,26 +428,44 @@ impl Replicator {
                     let client = client.clone();
                     let bucket = bucket.clone();
                     let upload_progress = upload_progress.clone();
+
+                    if let Some(ref frames) = req.frames {
+                        Self::set_s3_processing_frame_no(&db_name, *frames.end());
+                    }
+                    Self::set_s3_queue_size(&db_name, frames_inbox.len());
+
+                    let db_name = db_name.clone();
+                    let shutdown_watch = shutdown_watch.clone();
                     join_set.spawn(async move {
-                        let fpath = format!("{}/{}", bucket, req.path);
-                        let body = ByteStream::from_path(&fpath).await.unwrap();
-                        if let Err(e) = client
-                            .put_object()
-                            .bucket(bucket)
-                            .key(req.path)
-                            .body(body)
-                            .send()
-                            .await
-                        {
-                            tracing::error!("Failed to send {} to S3: {}", fpath, e);
-                        } else {
-                            tokio::fs::remove_file(&fpath).await.unwrap();
-                            let elapsed = Instant::now() - start;
-                            tracing::debug!("Uploaded to S3: {} in {:?}", fpath, elapsed);
+                        let fpath = format!("{}/{}", &bucket, &req.path);
+                        loop {
+                            let start_time = Instant::now();
+                            let body = ByteStream::from_path(&fpath).await.unwrap();
+                            let response = client
+                                .put_object()
+                                .bucket(&bucket)
+                                .key(&req.path)
+                                .body(body)
+                                .send()
+                                .await;
+                            Self::record_s3_write_time(&db_name, start_time.elapsed());
+                            if response.is_ok() {
+                                break;
+                            }
+                            tracing::error!("Failed to send {} to S3: {}, will retry after 1 second", fpath, response.err().unwrap());
+                            if shutdown_watch.has_changed().is_err() {
+                                tracing::error!("stop retry for failed S3 frames upload because shutdown was requested");
+                                return
+                            }
+                            tokio::time::sleep(Duration::from_millis(1000)).await;
                         }
+                        tokio::fs::remove_file(&fpath).await.unwrap();
+                        let elapsed = Instant::now() - start;
+                        tracing::debug!("Uploaded to S3: {} in {:?}", fpath, elapsed);
                         if let Some(frames) = req.frames {
                             let mut up = upload_progress.lock().await;
                             up.update(*frames.start(), *frames.end());
+                            Self::increment_s3_processed_frame_ranges(&db_name, 1);
                         }
                         drop(permit);
                     });
@@ -401,6 +483,7 @@ impl Replicator {
             next_frame_no,
             last_sent_frame_no,
             flush_trigger: Some(flush_trigger),
+            shutdown_trigger: Some(shutdown_trigger),
             last_committed_frame_no,
             verify_crc: options.verify_crc,
             db_path,
@@ -410,7 +493,7 @@ impl Replicator {
             use_compression: options.use_compression,
             encryption_config: options.encryption_config,
             max_frames_per_batch: options.max_frames_per_batch,
-            s3_upload_max_parallelism: options.s3_upload_max_parallelism,
+            s3_max_parallelism: options.s3_max_parallelism,
             skip_snapshot: options.skip_snapshot,
             join_set,
             upload_progress,
@@ -449,13 +532,25 @@ impl Replicator {
         tracing::info!("bottomless replicator: shutting down...");
         // 1. wait for all committed WAL frames to be committed locally
         let last_frame_no = self.last_known_frame();
+        // force flush in order to not wait for periodic wake up of local back up process
+        if let Some(tx) = &self.flush_trigger {
+            let _ = tx.send(());
+        }
         self.wait_until_committed(last_frame_no).await?;
+        tracing::info!(
+            "bottomless replicator: local backup replicated frames until {}",
+            last_frame_no
+        );
         // 2. wait for snapshot upload to S3 to finish
         self.wait_until_snapshotted().await?;
+        tracing::info!("bottomless replicator: snapshot succesfully uploaded to S3");
         // 3. drop flush trigger, which will cause WAL upload loop to close. Since this action will
         // close the channel used by wait_until_committed, it must happen after wait_until_committed
         // has finished. If trigger won't be dropped, tasks from join_set will never finish.
         self.flush_trigger.take();
+        // 4. drop shutdown trigger which will notify S3 upload process to stop all retry attempts
+        // and finish upload process
+        self.shutdown_trigger.take();
         while let Some(t) = self.join_set.join_next().await {
             // one of the tasks we're waiting for is upload of local WAL segment from pt.1 to S3
             // this should ensure that all WAL frames are one S3
@@ -992,6 +1087,7 @@ impl Replicator {
         let snapshot_notifier = self.snapshot_notifier.clone();
         let compression = self.use_compression;
         let db_path = PathBuf::from(self.db_path.clone());
+        let db_name = self.db_name.clone();
         let handle = tokio::spawn(async move {
             tracing::trace!("Start snapshotting generation {}", generation);
             let start = Instant::now();
@@ -1030,7 +1126,8 @@ impl Replicator {
             }
             let _ = snapshot_notifier.send(Ok(Some(generation)));
             let elapsed = Instant::now() - start;
-            tracing::debug!("Snapshot upload finished (took {:?})", elapsed);
+            tracing::info!("Snapshot upload finished (took {:?})", elapsed);
+            Self::record_snapshot_upload_time(&db_name, elapsed);
             // cleanup gzip/zstd database snapshot if exists
             for suffix in &["gz", "zstd"] {
                 let _ = tokio::fs::remove_file(Self::db_compressed_path(&db_path, suffix)).await;
@@ -1182,23 +1279,20 @@ impl Replicator {
         timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
         tracing::debug!("restoring from");
-        if let Some(tombstone) = self.get_tombstone().await? {
-            if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
-                if tombstone.and_utc().timestamp() as u64 >= timestamp.to_unix().0 {
-                    bail!(
-                        "Couldn't restore from generation {}. Database '{}' has been tombstoned at {}.",
-                        generation,
-                        self.db_name,
-                        tombstone
-                    );
-                }
-            }
+        if let Some(tombstoned_at) = self.is_tombstoned(generation).await? {
+            bail!(
+                "Couldn't restore from generation {}. Database '{}' has been tombstoned at {}.",
+                generation,
+                self.db_name,
+                tombstoned_at
+            );
         }
 
         let start_ts = Instant::now();
         // first check if there are any remaining files that we didn't manage to upload
         // on time in the last run
         self.upload_remaining_files(&generation).await?;
+        Self::record_restore_upload_files_time(&self.db_name, start_ts.elapsed());
 
         tracing::debug!("done uploading remaining files");
 
@@ -1217,10 +1311,12 @@ impl Replicator {
             .await
         {
             Ok(result) => {
-                let elapsed = Instant::now() - start_ts;
-                tracing::info!("Finished database restoration in {:?}", elapsed);
                 tokio::fs::rename(&restore_path, &self.db_path).await?;
                 let _ = self.remove_wal_files().await; // best effort, WAL files may not exists
+
+                let elapsed = Instant::now() - start_ts;
+                tracing::info!("Finished database restoration in {:?}", elapsed);
+                Self::record_restore_time(&self.db_name, elapsed);
                 Ok(result)
             }
             Err(e) => {
@@ -1449,12 +1545,13 @@ impl Replicator {
         db_path: &Path,
     ) -> Result<bool> {
         let encryption_config = self.encryption_config.clone();
-        let mut injector = libsql_replication::injector::Injector::new(
-            db_path,
+        let mut injector = libsql_replication::injector::SqliteInjector::new(
+            db_path.to_path_buf(),
             4096,
             libsql_sys::connection::NO_AUTOCHECKPOINT,
             encryption_config,
-        )?;
+        )
+        .await?;
         let prefix = format!("{}-{}/", self.db_name, generation);
         let mut page_buf = {
             let mut v = Vec::with_capacity(page_size);
@@ -1464,6 +1561,7 @@ impl Replicator {
         };
         let mut next_marker = None;
         let mut applied_wal_frame = false;
+        let mut last_injected_frame_no = 0;
         'restore_wal: loop {
             let mut list_request = self.list_objects().prefix(&prefix);
             if let Some(marker) = next_marker {
@@ -1478,7 +1576,6 @@ impl Replicator {
                 break;
             }
 
-            let mut last_received_frame_no = 0;
             for obj in objs {
                 let key = obj
                     .key()
@@ -1501,9 +1598,9 @@ impl Replicator {
                             continue;
                         }
                     };
-                if first_frame_no != last_received_frame_no + 1 {
+                if first_frame_no != last_injected_frame_no + 1 {
                     tracing::warn!("Missing series of consecutive frames. Last applied frame: {}, next found: {}. Stopping the restoration process",
-                            last_received_frame_no, first_frame_no);
+                            last_injected_frame_no, first_frame_no);
                     break;
                 }
                 if let Some(frame) = last_consistent_frame {
@@ -1536,7 +1633,7 @@ impl Replicator {
                 );
 
                 while let Some(frame) = reader.next_frame_header().await? {
-                    last_received_frame_no = reader.next_frame_no();
+                    last_injected_frame_no = reader.next_frame_no();
                     reader.next_page(&mut page_buf).await?;
                     if self.verify_crc {
                         checksum = frame.verify(checksum, &page_buf)?;
@@ -1545,14 +1642,18 @@ impl Replicator {
                     let checksum = (crc1 as u64) << 32 | crc2 as u64;
                     let frame_to_inject = libsql_replication::frame::Frame::from_parts(
                         &libsql_replication::frame::FrameHeader {
-                            frame_no: (last_received_frame_no as u64).into(),
+                            frame_no: (last_injected_frame_no as u64).into(),
                             checksum: checksum.into(),
                             page_no: frame.pgno().into(),
                             size_after: frame.size_after().into(),
                         },
                         page_buf.as_slice(),
                     );
-                    injector.inject_frame(frame_to_inject)?;
+                    let frame = RpcFrame {
+                        data: frame_to_inject.bytes(),
+                        timestamp: None,
+                    };
+                    injector.inject_frame(frame).await?;
                     applied_wal_frame = true;
                 }
             }
@@ -1580,6 +1681,94 @@ impl Replicator {
         Ok(())
     }
 
+    pub async fn copy(&mut self, generation: Option<Uuid>, to_dir: String) -> Result<()> {
+        let generation = self
+            .choose_generation(generation, None)
+            .await
+            .ok_or(anyhow!("generation not found"))?;
+
+        if let Some(tombstoned_at) = self.is_tombstoned(generation).await? {
+            tracing::warn!("generation was tombstoned at {tombstoned_at}");
+        }
+        std::fs::create_dir_all(PathBuf::from(&to_dir))?;
+
+        let prefix = format!("{}-{}/", self.db_name, generation);
+        let mut marker: Option<String> = None;
+        tracing::info!(
+            "ready to copy S3 content from directory {} to local directory {} (parallelism: {})",
+            &prefix,
+            &to_dir,
+            self.s3_max_parallelism
+        );
+        loop {
+            let mut list_request = self.list_objects().prefix(&prefix);
+            if let Some(marker) = marker.take() {
+                list_request = list_request.marker(marker);
+            }
+            let semaphore = Arc::new(Semaphore::new(self.s3_max_parallelism));
+            let mut group = JoinSet::new();
+            let list_response = list_request.send().await?;
+            for entry in list_response.contents() {
+                let key = String::from(entry.key().unwrap());
+                marker = Some(key.clone());
+
+                let request = self
+                    .client
+                    .get_object()
+                    .bucket(&self.bucket)
+                    .key(key.clone());
+                let to_dir = to_dir.clone();
+                let entry_size = entry.size().unwrap_or(0);
+                let semaphore = semaphore.clone();
+                group.spawn(async move {
+                    let acquired = semaphore.acquire().await.unwrap();
+                    if let Ok(response) = request.send().await {
+                        tracing::debug!(
+                            "start copy of entry {} (size {} bytes)",
+                            &key,
+                            entry_size,
+                        );
+                        let entry_name = key.split("/").last().unwrap();
+                        let mut entry_path = PathBuf::from(&to_dir);
+                        entry_path.push(entry_name);
+
+                        let mut entry_file = OpenOptions::new()
+                            .create(true)
+                            .write(true)
+                            .read(true)
+                            .truncate(true)
+                            .open(entry_path)
+                            .await
+                            .unwrap();
+                        let mut body_reader = response.body.into_async_read();
+                        tokio::io::copy(&mut body_reader, &mut entry_file).await.unwrap();
+                        tracing::debug!("finish copy of entry {}", &key);
+                    }
+                    drop(acquired);
+                });
+            }
+            while let Some(_) = group.join_next().await {}
+            if !marker.is_some() {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    async fn choose_generation(
+        &mut self,
+        generation: Option<Uuid>,
+        timestamp: Option<NaiveDateTime>,
+    ) -> Option<Uuid> {
+        match generation {
+            Some(gen) => Some(gen),
+            None => match self.latest_generation_before(timestamp.as_ref()).await {
+                Some(gen) => Some(gen),
+                None => None,
+            },
+        }
+    }
+
     /// Restores the database state from newest remote generation
     /// On success, returns the RestoreAction, and whether the database was recovered from backup.
     pub async fn restore(
@@ -1588,15 +1777,12 @@ impl Replicator {
         timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
         tracing::debug!("restoring with {generation:?} at {timestamp:?}");
-        let generation = match generation {
-            Some(gen) => gen,
-            None => match self.latest_generation_before(timestamp.as_ref()).await {
-                Some(gen) => gen,
-                None => {
-                    tracing::debug!("No generation found, nothing to restore");
-                    return Ok((RestoreAction::SnapshotMainDbFile, false));
-                }
-            },
+        let generation = match self.choose_generation(generation, timestamp).await {
+            Some(generation) => generation,
+            None => {
+                tracing::debug!("No generation found, nothing to restore");
+                return Ok((RestoreAction::SnapshotMainDbFile, false));
+            }
         };
 
         let (action, recovered) = self.restore_from(generation, timestamp).await?;
@@ -1646,7 +1832,7 @@ impl Replicator {
         let dir = format!("{}/{}-{}", self.bucket, self.db_name, generation);
         if tokio::fs::try_exists(&dir).await? {
             let mut files = tokio::fs::read_dir(&dir).await?;
-            let sem = Arc::new(tokio::sync::Semaphore::new(self.s3_upload_max_parallelism));
+            let sem = Arc::new(tokio::sync::Semaphore::new(self.s3_max_parallelism));
             while let Some(file) = files.next_entry().await? {
                 let fpath = file.path();
                 if let Some(key) = Self::fpath_to_key(&fpath, &prefix) {
@@ -1675,9 +1861,7 @@ impl Replicator {
                 }
             }
             // wait for all started upload tasks to finish
-            let _ = sem
-                .acquire_many(self.s3_upload_max_parallelism as u32)
-                .await?;
+            let _ = sem.acquire_many(self.s3_max_parallelism as u32).await?;
             if let Err(e) = tokio::fs::remove_dir(&dir).await {
                 tracing::warn!("Couldn't remove backed up directory {}: {}", dir, e);
             }
@@ -1769,6 +1953,17 @@ impl Replicator {
             threshold,
         );
         Ok(delete_task)
+    }
+
+    pub async fn is_tombstoned(&self, generation: Uuid) -> Result<Option<NaiveDateTime>> {
+        if let Some(tombstone) = self.get_tombstone().await? {
+            if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
+                if (tombstone.and_utc().timestamp() as u64) >= timestamp.to_unix().0 {
+                    return Ok(Some(tombstone));
+                };
+            }
+        }
+        Ok(None)
     }
 
     /// Checks if current replicator database has been marked as deleted.

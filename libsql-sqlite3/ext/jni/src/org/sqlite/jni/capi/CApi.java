@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file declares JNI bindings for the sqlite3 C API.
+** This file declares the main JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni.capi;
 import java.nio.charset.StandardCharsets;
@@ -31,15 +31,6 @@ import java.util.Arrays;
   }</pre>
 
   <p>The C-side part can be found in sqlite3-jni.c.
-
-  <p>This class is package-private in order to keep Java clients from
-  having direct access to the low-level C-style APIs, a design
-  decision made by Java developers based on the C-style API being
-  riddled with opportunities for Java developers to proverbially shoot
-  themselves in the foot with. Third-party copies of this code may
-  eliminate that guard by simply changing this class from
-  package-private to public. Its methods which are intended to be
-  exposed that way are all public.
 
   <p>Only functions which materially differ from their C counterparts
   are documented here, and only those material differences are
@@ -78,7 +69,7 @@ import java.util.Arrays;
   NUL-terminated, and conversion to a Java byte array must sometimes
   be careful to add one. Functions which take a length do not require
   this so long as the length is provided. Search the CApi class
-  for "\0" for many examples.
+  for "\0" for examples.
 
   </ul>
 
@@ -128,9 +119,37 @@ public final class CApi {
      <p>This routine returns false without side effects if the current
      JNIEnv is not cached, else returns true, but this information is
      primarily for testing of the JNI bindings and is not information
-     which client-level code can use to make any informed decisions.
+     which client-level code can use to make any informed
+     decisions. Its return type and semantics are not considered
+     stable and may change at any time.
   */
   public static native boolean sqlite3_java_uncache_thread();
+
+  /**
+     Returns true if this JVM has JNI-level support for C-level direct
+     memory access using java.nio.ByteBuffer, else returns false.
+  */
+  @Experimental
+  public static native boolean sqlite3_jni_supports_nio();
+
+  /**
+     For internal use only. Sets the given db's error code and
+     (optionally) string. If rc is 0, it defaults to SQLITE_ERROR.
+
+     On success it returns rc. On error it may return a more serious
+     code, such as SQLITE_NOMEM. Returns SQLITE_MISUSE if db is null.
+  */
+  static native int sqlite3_jni_db_error(@NotNull sqlite3 db,
+                                         int rc, @Nullable String msg);
+
+  /**
+     Convenience overload which uses e.toString() as the error
+     message.
+  */
+  static int sqlite3_jni_db_error(@NotNull sqlite3 db,
+                                  int rc, @NotNull Exception e){
+    return sqlite3_jni_db_error(db, rc, e.toString());
+  }
 
   //////////////////////////////////////////////////////////////////////
   // Maintenance reminder: please keep the sqlite3_.... functions
@@ -173,13 +192,13 @@ public final class CApi {
   */
   public static native int sqlite3_auto_extension(@NotNull AutoExtensionCallback callback);
 
-  static native int sqlite3_backup_finish(@NotNull long ptrToBackup);
+  private static native int sqlite3_backup_finish(@NotNull long ptrToBackup);
 
   public static int sqlite3_backup_finish(@NotNull sqlite3_backup b){
-    return sqlite3_backup_finish(b.clearNativePointer());
+    return null==b ? 0 : sqlite3_backup_finish(b.clearNativePointer());
   }
 
-  static native sqlite3_backup sqlite3_backup_init(
+  private static native sqlite3_backup sqlite3_backup_init(
     @NotNull long ptrToDbDest, @NotNull String destTableName,
     @NotNull long ptrToDbSrc, @NotNull String srcTableName
   );
@@ -192,25 +211,25 @@ public final class CApi {
                                 dbSrc.getNativePointer(), srcTableName );
   }
 
-  static native int sqlite3_backup_pagecount(@NotNull long ptrToBackup);
+  private static native int sqlite3_backup_pagecount(@NotNull long ptrToBackup);
 
   public static int sqlite3_backup_pagecount(@NotNull sqlite3_backup b){
     return sqlite3_backup_pagecount(b.getNativePointer());
   }
 
-  static native int sqlite3_backup_remaining(@NotNull long ptrToBackup);
+  private static native int sqlite3_backup_remaining(@NotNull long ptrToBackup);
 
   public static int sqlite3_backup_remaining(@NotNull sqlite3_backup b){
     return sqlite3_backup_remaining(b.getNativePointer());
   }
 
-  static native int sqlite3_backup_step(@NotNull long ptrToBackup, int nPage);
+  private static native int sqlite3_backup_step(@NotNull long ptrToBackup, int nPage);
 
   public static int sqlite3_backup_step(@NotNull sqlite3_backup b, int nPage){
     return sqlite3_backup_step(b.getNativePointer(), nPage);
   }
 
-  static native int sqlite3_bind_blob(
+  private static native int sqlite3_bind_blob(
     @NotNull long ptrToStmt, int ndx, @Nullable byte[] data, int n
   );
 
@@ -218,7 +237,7 @@ public final class CApi {
      If n is negative, SQLITE_MISUSE is returned. If n>data.length
      then n is silently truncated to data.length.
   */
-  static int sqlite3_bind_blob(
+  public static int sqlite3_bind_blob(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int n
   ){
     return sqlite3_bind_blob(stmt.getNativePointer(), ndx, data, n);
@@ -232,7 +251,31 @@ public final class CApi {
       : sqlite3_bind_blob(stmt.getNativePointer(), ndx, data, data.length);
   }
 
-  static native int sqlite3_bind_double(
+  /**
+     Convenience overload which is a simple proxy for
+     sqlite3_bind_nio_buffer().
+  */
+  @Experimental
+  /*public*/ static int sqlite3_bind_blob(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data,
+    int begin, int n
+  ){
+    return sqlite3_bind_nio_buffer(stmt, ndx, data, begin, n);
+  }
+
+  /**
+     Convenience overload which is equivalant to passing its arguments
+     to sqlite3_bind_nio_buffer() with the values 0 and -1 for the
+     final two arguments.
+  */
+  @Experimental
+  /*public*/ static int sqlite3_bind_blob(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data
+  ){
+    return sqlite3_bind_nio_buffer(stmt, ndx, data, 0, -1);
+  }
+
+  private static native int sqlite3_bind_double(
     @NotNull long ptrToStmt, int ndx, double v
   );
 
@@ -242,7 +285,7 @@ public final class CApi {
     return sqlite3_bind_double(stmt.getNativePointer(), ndx, v);
   }
 
-  static native int sqlite3_bind_int(
+  private static native int sqlite3_bind_int(
     @NotNull long ptrToStmt, int ndx, int v
   );
 
@@ -252,7 +295,7 @@ public final class CApi {
     return sqlite3_bind_int(stmt.getNativePointer(), ndx, v);
   }
 
-  static native int sqlite3_bind_int64(
+  private static native int sqlite3_bind_int64(
     @NotNull long ptrToStmt, int ndx, long v
   );
 
@@ -260,9 +303,64 @@ public final class CApi {
     return sqlite3_bind_int64( stmt.getNativePointer(), ndx, v );
   }
 
-  static native int sqlite3_bind_java_object(
+  private static native int sqlite3_bind_java_object(
     @NotNull long ptrToStmt, int ndx, @Nullable Object o
   );
+
+  /**
+     Binds the contents of the given buffer object as a blob.
+
+     The byte range of the buffer may be restricted by providing a
+     start index and a number of bytes. beginPos may not be negative.
+     Negative howMany is interpretated as the remainder of the buffer
+     past the given start position, up to the buffer's limit() (as
+     opposed its capacity()).
+
+     If beginPos+howMany would extend past the limit() of the buffer
+     then SQLITE_ERROR is returned.
+
+     If any of the following are true, this function behaves like
+     sqlite3_bind_null(): the buffer is null, beginPos is at or past
+     the end of the buffer, howMany is 0, or the calculated slice of
+     the blob has a length of 0.
+
+     If ndx is out of range, it returns SQLITE_RANGE, as documented
+     for sqlite3_bind_blob().  If beginPos is negative or if
+     sqlite3_jni_supports_nio() returns false then SQLITE_MISUSE is
+     returned.  Note that this function is bound (as it were) by the
+     SQLITE_LIMIT_LENGTH constraint and SQLITE_TOOBIG is returned if
+     the resulting slice of the buffer exceeds that limit.
+
+     This function does not modify the buffer's streaming-related
+     cursors.
+
+     If the buffer is modified in a separate thread while this
+     operation is running, results are undefined and will likely
+     result in corruption of the bound data or a segmentation fault.
+
+     Design note: this function should arguably take a java.nio.Buffer
+     instead of ByteBuffer, but it can only operate on "direct"
+     buffers and the only such class offered by Java is (apparently)
+     ByteBuffer.
+
+     @see https://docs.oracle.com/javase/8/docs/api/java/nio/Buffer.html
+  */
+  @Experimental
+  /*public*/ static native int sqlite3_bind_nio_buffer(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data,
+    int beginPos, int howMany
+  );
+
+  /**
+     Convenience overload which binds the given buffer's entire
+     contents, up to its limit() (as opposed to its capacity()).
+  */
+  @Experimental
+  /*public*/ static int sqlite3_bind_nio_buffer(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data
+  ){
+    return sqlite3_bind_nio_buffer(stmt, ndx, data, 0, -1);
+  }
 
   /**
      Binds the given object at the given index. If o is null then this behaves like
@@ -276,13 +374,13 @@ public final class CApi {
     return sqlite3_bind_java_object(stmt.getNativePointer(), ndx, o);
   }
 
-  static native int sqlite3_bind_null(@NotNull long ptrToStmt, int ndx);
+  private static native int sqlite3_bind_null(@NotNull long ptrToStmt, int ndx);
 
   public static int sqlite3_bind_null(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_bind_null(stmt.getNativePointer(), ndx);
   }
 
-  static native int sqlite3_bind_parameter_count(@NotNull long ptrToStmt);
+  private static native int sqlite3_bind_parameter_count(@NotNull long ptrToStmt);
 
   public static int sqlite3_bind_parameter_count(@NotNull sqlite3_stmt stmt){
     return sqlite3_bind_parameter_count(stmt.getNativePointer());
@@ -309,7 +407,7 @@ public final class CApi {
     return null==utf8 ? 0 : sqlite3_bind_parameter_index(stmt.getNativePointer(), utf8);
   }
 
-  static native String sqlite3_bind_parameter_name(
+  private static native String sqlite3_bind_parameter_name(
     @NotNull long ptrToStmt, int index
   );
 
@@ -317,7 +415,7 @@ public final class CApi {
     return sqlite3_bind_parameter_name(stmt.getNativePointer(), index);
   }
 
-  static native int sqlite3_bind_text(
+  private static native int sqlite3_bind_text(
     @NotNull long ptrToStmt, int ndx, @Nullable byte[] utf8, int maxBytes
   );
 
@@ -361,7 +459,7 @@ public final class CApi {
       : sqlite3_bind_text(stmt.getNativePointer(), ndx, utf8, utf8.length);
   }
 
-  static native int sqlite3_bind_text16(
+  private static native int sqlite3_bind_text16(
     @NotNull long ptrToStmt, int ndx, @Nullable byte[] data, int maxBytes
   );
 
@@ -402,7 +500,7 @@ public final class CApi {
       : sqlite3_bind_text16(stmt.getNativePointer(), ndx, data, data.length);
   }
 
-  static native int sqlite3_bind_value(@NotNull long ptrToStmt, int ndx, long ptrToValue);
+  private static native int sqlite3_bind_value(@NotNull long ptrToStmt, int ndx, long ptrToValue);
 
   /**
      Functions like the C-level sqlite3_bind_value(), or
@@ -413,13 +511,13 @@ public final class CApi {
                               null==val ? 0L : val.getNativePointer());
   }
 
-  static native int sqlite3_bind_zeroblob(@NotNull long ptrToStmt, int ndx, int n);
+  private static native int sqlite3_bind_zeroblob(@NotNull long ptrToStmt, int ndx, int n);
 
   public static int sqlite3_bind_zeroblob(@NotNull sqlite3_stmt stmt, int ndx, int n){
     return sqlite3_bind_zeroblob(stmt.getNativePointer(), ndx, n);
   }
 
-  static native int sqlite3_bind_zeroblob64(
+  private static native int sqlite3_bind_zeroblob64(
     @NotNull long ptrToStmt, int ndx, long n
   );
 
@@ -427,19 +525,19 @@ public final class CApi {
     return sqlite3_bind_zeroblob64(stmt.getNativePointer(), ndx, n);
   }
 
-  static native int sqlite3_blob_bytes(@NotNull long ptrToBlob);
+  private static native int sqlite3_blob_bytes(@NotNull long ptrToBlob);
 
   public static int sqlite3_blob_bytes(@NotNull sqlite3_blob blob){
     return sqlite3_blob_bytes(blob.getNativePointer());
   }
 
-  static native int sqlite3_blob_close(@Nullable long ptrToBlob);
+  private static native int sqlite3_blob_close(@Nullable long ptrToBlob);
 
   public static int sqlite3_blob_close(@Nullable sqlite3_blob blob){
-    return sqlite3_blob_close(blob.clearNativePointer());
+    return null==blob ? 0 : sqlite3_blob_close(blob.clearNativePointer());
   }
 
-  static native int sqlite3_blob_open(
+  private static native int sqlite3_blob_open(
     @NotNull long ptrToDb, @NotNull String dbName,
     @NotNull String tableName, @NotNull String columnName,
     long iRow, int flags, @NotNull OutputPointer.sqlite3_blob out
@@ -467,17 +565,125 @@ public final class CApi {
     return out.take();
   };
 
-  static native int sqlite3_blob_read(
-    @NotNull long ptrToBlob, @NotNull byte[] target, int iOffset
+  private static native int sqlite3_blob_read(
+    @NotNull long ptrToBlob, @NotNull byte[] target, int srcOffset
   );
 
+  /**
+     As per C's sqlite3_blob_read(), but writes its output to the
+     given byte array. Note that the final argument is the offset of
+     the source buffer, not the target array.
+   */
   public static int sqlite3_blob_read(
-    @NotNull sqlite3_blob b, @NotNull byte[] target, int iOffset
+    @NotNull sqlite3_blob src, @NotNull byte[] target, int srcOffset
   ){
-    return sqlite3_blob_read(b.getNativePointer(), target, iOffset);
+    return sqlite3_blob_read(src.getNativePointer(), target, srcOffset);
   }
 
-  static native int sqlite3_blob_reopen(
+  /**
+     An internal level of indirection.
+  */
+  @Experimental
+  private static native int sqlite3_blob_read_nio_buffer(
+    @NotNull long ptrToBlob, int srcOffset,
+    @NotNull java.nio.ByteBuffer tgt, int tgtOffset, int howMany
+  );
+
+  /**
+     Reads howMany bytes from offset srcOffset of src into position
+     tgtOffset of tgt.
+
+     Returns SQLITE_MISUSE if src is null, tgt is null, or
+     sqlite3_jni_supports_nio() returns false. Returns SQLITE_ERROR if
+     howMany or either offset are negative.  If argument validation
+     succeeds, it returns the result of the underlying call to
+     sqlite3_blob_read() (0 on success).
+  */
+  @Experimental
+  /*public*/ static int sqlite3_blob_read_nio_buffer(
+    @NotNull sqlite3_blob src, int srcOffset,
+    @NotNull java.nio.ByteBuffer tgt, int tgtOffset, int howMany
+  ){
+    return (JNI_SUPPORTS_NIO && src!=null && tgt!=null)
+      ? sqlite3_blob_read_nio_buffer(
+        src.getNativePointer(), srcOffset, tgt, tgtOffset, howMany
+      )
+      : SQLITE_MISUSE;
+  }
+
+  /**
+     Convenience overload which reads howMany bytes from position
+     srcOffset of src and returns the result as a new ByteBuffer.
+
+     srcOffset may not be negative. If howMany is negative, it is
+     treated as all bytes following srcOffset.
+
+     Returns null if sqlite3_jni_supports_nio(), any arguments are
+     invalid, if the number of bytes to read is 0 or is larger than
+     the src blob, or the underlying call to sqlite3_blob_read() fails
+     for any reason.
+  */
+  @Experimental
+  /*public*/ static java.nio.ByteBuffer sqlite3_blob_read_nio_buffer(
+    @NotNull sqlite3_blob src, int srcOffset, int howMany
+  ){
+    if( !JNI_SUPPORTS_NIO || src==null ) return null;
+    else if( srcOffset<0 ) return null;
+    final int nB = sqlite3_blob_bytes(src);
+    if( srcOffset>=nB ) return null;
+    else if( howMany<0 ) howMany = nB - srcOffset;
+    if( srcOffset + howMany > nB ) return null;
+    final java.nio.ByteBuffer tgt =
+      java.nio.ByteBuffer.allocateDirect(howMany);
+    final int rc = sqlite3_blob_read_nio_buffer(
+      src.getNativePointer(), srcOffset, tgt, 0, howMany
+    );
+    return 0==rc ? tgt : null;
+  }
+
+  /**
+     Overload alias for sqlite3_blob_read_nio_buffer().
+  */
+  @Experimental
+  /*public*/ static int sqlite3_blob_read(
+    @NotNull sqlite3_blob src, int srcOffset,
+    @NotNull java.nio.ByteBuffer tgt,
+    int tgtOffset, int howMany
+  ){
+    return sqlite3_blob_read_nio_buffer(
+      src, srcOffset, tgt, tgtOffset, howMany
+    );
+  }
+
+  /**
+     Convenience overload which uses 0 for both src and tgt offsets
+     and reads a number of bytes equal to the smaller of
+     sqlite3_blob_bytes(src) and tgt.limit().
+
+     On success it sets tgt.limit() to the number of bytes read. On
+     error, tgt.limit() is not modified.
+
+     Returns 0 on success. Returns SQLITE_MISUSE is either argument is
+     null or sqlite3_jni_supports_nio() returns false. Else it returns
+     the result of the underlying call to sqlite3_blob_read().
+  */
+  @Experimental
+  /*public*/ static int sqlite3_blob_read(
+    @NotNull sqlite3_blob src,
+    @NotNull java.nio.ByteBuffer tgt
+  ){
+    if(!JNI_SUPPORTS_NIO || src==null || tgt==null) return SQLITE_MISUSE;
+    final int nSrc = sqlite3_blob_bytes(src);
+    final int nTgt = tgt.limit();
+    final int nRead = nTgt<nSrc ? nTgt : nSrc;
+    final int rc = sqlite3_blob_read_nio_buffer(
+      src.getNativePointer(), 0, tgt, 0, nRead
+    );
+    if( 0==rc && nTgt!=nRead ) tgt.limit( nRead );
+    return rc;
+  }
+
+  private static native int sqlite3_blob_reopen(
     @NotNull long ptrToBlob, long newRowId
   );
 
@@ -485,7 +691,7 @@ public final class CApi {
     return sqlite3_blob_reopen(b.getNativePointer(), newRowId);
   }
 
-  static native int sqlite3_blob_write(
+  private static native int sqlite3_blob_write(
     @NotNull long ptrToBlob, @NotNull byte[] bytes, int iOffset
   );
 
@@ -495,7 +701,85 @@ public final class CApi {
     return sqlite3_blob_write(b.getNativePointer(), bytes, iOffset);
   }
 
-  static native int sqlite3_busy_handler(
+  /**
+     An internal level of indirection.
+  */
+  @Experimental
+  private static native int sqlite3_blob_write_nio_buffer(
+    @NotNull long ptrToBlob, int tgtOffset,
+    @NotNull java.nio.ByteBuffer src,
+    int srcOffset, int howMany
+  );
+
+  /**
+     Writes howMany bytes of memory from offset srcOffset of the src
+     buffer at position tgtOffset of b.
+
+     If howMany is negative then it's equivalent to the number of
+     bytes remaining starting at srcOffset.
+
+     Returns SQLITE_MISUSE if tgt is null or sqlite3_jni_supports_nio()
+     returns false.
+
+     Returns SQLITE_MISUSE if src is null or
+     sqlite3_jni_supports_nio() returns false. Returns SQLITE_ERROR if
+     either offset is negative.  If argument validation succeeds, it
+     returns the result of the underlying call to sqlite3_blob_read().
+  */
+  @Experimental
+  /*public*/ static int sqlite3_blob_write_nio_buffer(
+    @NotNull sqlite3_blob tgt, int tgtOffset,
+    @NotNull java.nio.ByteBuffer src,
+    int srcOffset, int howMany
+  ){
+    return sqlite3_blob_write_nio_buffer(
+      tgt.getNativePointer(), tgtOffset, src, srcOffset, howMany
+    );
+  }
+
+  /**
+     Overload alias for sqlite3_blob_write_nio_buffer().
+  */
+  @Experimental
+  public static int sqlite3_blob_write(
+    @NotNull sqlite3_blob tgt, int tgtOffset,
+    @NotNull java.nio.ByteBuffer src,
+    int srcOffset, int howMany
+  ){
+    return sqlite3_blob_write_nio_buffer(
+      tgt.getNativePointer(), tgtOffset, src, srcOffset, howMany
+    );
+  }
+
+  /**
+     Convenience overload which writes all of src to the given offset
+     of b.
+  */
+  @Experimental
+  /*public*/ static int sqlite3_blob_write(
+    @NotNull sqlite3_blob tgt, int tgtOffset,
+    @NotNull java.nio.ByteBuffer src
+  ){
+    return sqlite3_blob_write_nio_buffer(
+      tgt.getNativePointer(), tgtOffset, src, 0, -1
+    );
+  }
+
+  /**
+     Convenience overload which writes all of src to offset 0
+     of tgt.
+   */
+  @Experimental
+  /*public*/ static int sqlite3_blob_write(
+    @NotNull sqlite3_blob tgt,
+    @NotNull java.nio.ByteBuffer src
+  ){
+    return sqlite3_blob_write_nio_buffer(
+      tgt.getNativePointer(), 0, src, 0, -1
+    );
+  }
+
+  private static native int sqlite3_busy_handler(
     @NotNull long ptrToDb, @Nullable BusyHandlerCallback handler
   );
 
@@ -510,7 +794,7 @@ public final class CApi {
     return sqlite3_busy_handler(db.getNativePointer(), handler);
   }
 
-  static native int sqlite3_busy_timeout(@NotNull long ptrToDb, int ms);
+  private static native int sqlite3_busy_timeout(@NotNull long ptrToDb, int ms);
 
   public static int sqlite3_busy_timeout(@NotNull sqlite3 db, int ms){
     return sqlite3_busy_timeout(db.getNativePointer(), ms);
@@ -520,64 +804,68 @@ public final class CApi {
     @NotNull AutoExtensionCallback ax
   );
 
-  static native int sqlite3_changes(@NotNull long ptrToDb);
+  private static native int sqlite3_changes(@NotNull long ptrToDb);
 
   public static int sqlite3_changes(@NotNull sqlite3 db){
     return sqlite3_changes(db.getNativePointer());
   }
 
-  static native long sqlite3_changes64(@NotNull long ptrToDb);
+  private static native long sqlite3_changes64(@NotNull long ptrToDb);
 
   public static long sqlite3_changes64(@NotNull sqlite3 db){
     return sqlite3_changes64(db.getNativePointer());
   }
 
-  static native int sqlite3_clear_bindings(@NotNull long ptrToStmt);
+  private static native int sqlite3_clear_bindings(@NotNull long ptrToStmt);
 
   public static int sqlite3_clear_bindings(@NotNull sqlite3_stmt stmt){
     return sqlite3_clear_bindings(stmt.getNativePointer());
   }
 
-  static native int sqlite3_close(@Nullable long ptrToDb);
+  private static native int sqlite3_close(@Nullable long ptrToDb);
 
   public static int sqlite3_close(@Nullable sqlite3 db){
-    int rc = 0;
-    if( null!=db ){
-      rc = sqlite3_close(db.getNativePointer());
-      if( 0==rc ) db.clearNativePointer();
-    }
-    return rc;
+    return null==db ? 0 : sqlite3_close(db.clearNativePointer());
   }
 
-  static native int sqlite3_close_v2(@Nullable long ptrToDb);
+  private static native int sqlite3_close_v2(@Nullable long ptrToDb);
 
   public static int sqlite3_close_v2(@Nullable sqlite3 db){
-    return db==null ? 0 : sqlite3_close_v2(db.clearNativePointer());
+    return null==db ? 0 : sqlite3_close_v2(db.clearNativePointer());
   }
 
   public static native byte[] sqlite3_column_blob(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  static native int sqlite3_column_bytes(@NotNull long ptrToStmt, int ndx);
+  private static native int sqlite3_column_bytes(@NotNull long ptrToStmt, int ndx);
 
   public static int sqlite3_column_bytes(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_bytes(stmt.getNativePointer(), ndx);
   }
 
-  static native int sqlite3_column_bytes16(@NotNull long ptrToStmt, int ndx);
+  private static native int sqlite3_column_bytes16(@NotNull long ptrToStmt, int ndx);
 
   public static int sqlite3_column_bytes16(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_bytes16(stmt.getNativePointer(), ndx);
   }
 
-  static native int sqlite3_column_count(@NotNull long ptrToStmt);
+  private static native int sqlite3_column_count(@NotNull long ptrToStmt);
 
   public static int sqlite3_column_count(@NotNull sqlite3_stmt stmt){
     return sqlite3_column_count(stmt.getNativePointer());
   }
 
-  static native String sqlite3_column_decltype(@NotNull long ptrToStmt, int ndx);
+  private static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
+
+  /**
+     Only available if built with SQLITE_ENABLE_COLUMN_METADATA.
+  */
+  public static String sqlite3_column_database_name(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_database_name(stmt.getNativePointer(), ndx);
+  }
+
+  private static native String sqlite3_column_decltype(@NotNull long ptrToStmt, int ndx);
 
   public static String sqlite3_column_decltype(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_decltype(stmt.getNativePointer(), ndx);
@@ -595,26 +883,67 @@ public final class CApi {
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  static native String sqlite3_column_name(@NotNull long ptrToStmt, int ndx);
+  private static native Object sqlite3_column_java_object(
+    @NotNull long ptrToStmt, int ndx
+  );
+
+  /**
+     If the given result column was bound with
+     sqlite3_bind_java_object() or sqlite3_result_java_object() then
+     that object is returned, else null is returned. This routine
+     requires locking the owning database's mutex briefly in order to
+     extract the object in a thread-safe way.
+  */
+  public static Object sqlite3_column_java_object(
+    @NotNull sqlite3_stmt stmt, int ndx
+  ){
+    return sqlite3_column_java_object( stmt.getNativePointer(), ndx );
+  }
+
+  /**
+     If the two-parameter overload of sqlite3_column_java_object()
+     returns non-null and the returned value is an instance of T then
+     that object is returned, else null is returned.
+  */
+  @SuppressWarnings("unchecked")
+  public static <T> T sqlite3_column_java_object(
+    @NotNull sqlite3_stmt stmt, int ndx, @NotNull Class<T> type
+  ){
+    final Object o = sqlite3_column_java_object(stmt, ndx);
+    return type.isInstance(o) ? (T)o : null;
+  }
+
+  private static native String sqlite3_column_name(@NotNull long ptrToStmt, int ndx);
 
   public static String sqlite3_column_name(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_name(stmt.getNativePointer(), ndx);
   }
 
-  static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
+  /**
+     A variant of sqlite3_column_blob() which returns the blob as a
+     ByteBuffer object. Returns null if its argument is null, if
+     sqlite3_jni_supports_nio() is false, or if sqlite3_column_blob()
+     would return null for the same inputs.
+  */
+  @Experimental
+  /*public*/ static native java.nio.ByteBuffer sqlite3_column_nio_buffer(
+    @NotNull sqlite3_stmt stmt, int ndx
+  );
 
-  public static String sqlite3_column_database_name(@NotNull sqlite3_stmt stmt, int ndx){
-    return sqlite3_column_database_name(stmt.getNativePointer(), ndx);
-  }
+  private static native String sqlite3_column_origin_name(@NotNull long ptrToStmt, int ndx);
 
-  static native String sqlite3_column_origin_name(@NotNull long ptrToStmt, int ndx);
-
+  /**
+     Only available if built with SQLITE_ENABLE_COLUMN_METADATA.
+  */
   public static String sqlite3_column_origin_name(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_origin_name(stmt.getNativePointer(), ndx);
   }
 
-  static native String sqlite3_column_table_name(@NotNull long ptrToStmt, int ndx);
+  private static native String sqlite3_column_table_name(@NotNull long ptrToStmt, int ndx);
 
+  /**
+     Only available if built with SQLITE_ENABLE_COLUMN_METADATA.
+  */
   public static String sqlite3_column_table_name(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_table_name(stmt.getNativePointer(), ndx);
   }
@@ -672,7 +1001,7 @@ public final class CApi {
   //   return rv;
   // }
 
-  static native int sqlite3_column_type(@NotNull long ptrToStmt, int ndx);
+  private static native int sqlite3_column_type(@NotNull long ptrToStmt, int ndx);
 
   public static int sqlite3_column_type(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_type(stmt.getNativePointer(), ndx);
@@ -682,7 +1011,7 @@ public final class CApi {
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  static native int sqlite3_collation_needed(
+  private static native int sqlite3_collation_needed(
     @NotNull long ptrToDb, @Nullable CollationNeededCallback callback
   );
 
@@ -696,7 +1025,7 @@ public final class CApi {
     return sqlite3_collation_needed(db.getNativePointer(), callback);
   }
 
-  static native CommitHookCallback sqlite3_commit_hook(
+  private static native CommitHookCallback sqlite3_commit_hook(
     @NotNull long ptrToDb, @Nullable CommitHookCallback hook
   );
 
@@ -726,6 +1055,24 @@ public final class CApi {
     return sqlite3_complete( nulTerminateUtf8(sql) );
   }
 
+  /**
+     Internal level of indirection for sqlite3_config(int).
+  */
+  private static native int sqlite3_config__enable(int op);
+
+  /**
+     Internal level of indirection for sqlite3_config(ConfigLogCallback).
+  */
+  private static native int sqlite3_config__CONFIG_LOG(
+    @Nullable ConfigLogCallback logger
+  );
+
+  /**
+     Internal level of indirection for sqlite3_config(ConfigSqlLogCallback).
+  */
+  private static native int sqlite3_config__SQLLOG(
+    @Nullable ConfigSqlLogCallback logger
+  );
 
   /**
      <p>Works like in the C API with the exception that it only supports
@@ -742,12 +1089,14 @@ public final class CApi {
      the rest of the library. This must not be called when any other
      library APIs are being called.
   */
-  public static native int sqlite3_config(int op);
+  public static int sqlite3_config(int op){
+    return sqlite3_config__enable(op);
+  }
 
   /**
      If the native library was built with SQLITE_ENABLE_SQLLOG defined
      then this acts as a proxy for C's
-     sqlite3_config(SQLITE_ENABLE_SQLLOG,...). This sets or clears the
+     sqlite3_config(SQLITE_CONFIG_SQLLOG,...). This sets or clears the
      logger. If installation of a logger fails, any previous logger is
      retained.
 
@@ -758,13 +1107,17 @@ public final class CApi {
      the rest of the library. This must not be called when any other
      library APIs are being called.
   */
-  public static native int sqlite3_config( @Nullable ConfigSqllogCallback logger );
+  public static int sqlite3_config( @Nullable ConfigSqlLogCallback logger ){
+    return sqlite3_config__SQLLOG(logger);
+  }
 
   /**
      The sqlite3_config() overload for handling the SQLITE_CONFIG_LOG
      option.
   */
-  public static native int sqlite3_config( @Nullable ConfigLogCallback logger );
+  public static int sqlite3_config( @Nullable ConfigLogCallback logger ){
+    return sqlite3_config__CONFIG_LOG(logger);
+  }
 
   /**
      Unlike the C API, this returns null if its argument is
@@ -795,7 +1148,7 @@ public final class CApi {
     int nArg, int eTextRep, @NotNull SQLFunction func
   );
 
-  static native int sqlite3_data_count(@NotNull long ptrToStmt);
+  private static native int sqlite3_data_count(@NotNull long ptrToStmt);
 
   public static int sqlite3_data_count(@NotNull sqlite3_stmt stmt){
     return sqlite3_data_count(stmt.getNativePointer());
@@ -807,7 +1160,7 @@ public final class CApi {
      SQLITE_DBCONFIG_... options which uses this call form.
 
      <p>Unlike the C API, this returns SQLITE_MISUSE if its db argument
-     are null (as opposed to invoking UB).
+     is null (as opposed to invoking UB).
   */
   public static native int sqlite3_db_config(
     @NotNull sqlite3 db, int op, int onOff, @Nullable OutputPointer.Int32 out
@@ -830,7 +1183,6 @@ public final class CApi {
     return null==db ? null : sqlite3_db_name(db.getNativePointer(), ndx);
   }
 
-
   public static native String sqlite3_db_filename(
     @NotNull sqlite3 db, @NotNull String dbName
   );
@@ -850,7 +1202,7 @@ public final class CApi {
 
   public static native String sqlite3_errmsg(@NotNull sqlite3 db);
 
-  static native int sqlite3_error_offset(@NotNull long ptrToDb);
+  private static native int sqlite3_error_offset(@NotNull long ptrToDb);
 
   /**
      Note that the returned byte offset values assume UTF-8-encoded
@@ -864,17 +1216,17 @@ public final class CApi {
 
   public static native String sqlite3_expanded_sql(@NotNull sqlite3_stmt stmt);
 
-  static native int sqlite3_extended_errcode(@NotNull long ptrToDb);
+  private static native int sqlite3_extended_errcode(@NotNull long ptrToDb);
 
   public static int sqlite3_extended_errcode(@NotNull sqlite3 db){
     return sqlite3_extended_errcode(db.getNativePointer());
   }
 
-  public static native boolean sqlite3_extended_result_codes(
-    @NotNull sqlite3 db, boolean onoff
+  public static native int sqlite3_extended_result_codes(
+    @NotNull sqlite3 db, boolean on
   );
 
-  static native boolean sqlite3_get_autocommit(@NotNull long ptrToDb);
+  private static native boolean sqlite3_get_autocommit(@NotNull long ptrToDb);
 
   public static boolean sqlite3_get_autocommit(@NotNull sqlite3 db){
     return sqlite3_get_autocommit(db.getNativePointer());
@@ -884,7 +1236,7 @@ public final class CApi {
     @NotNull sqlite3_context cx, int n
   );
 
-  static native int sqlite3_finalize(long ptrToStmt);
+  private static native int sqlite3_finalize(long ptrToStmt);
 
   public static int sqlite3_finalize(@NotNull sqlite3_stmt stmt){
     return null==stmt ? 0 : sqlite3_finalize(stmt.clearNativePointer());
@@ -1166,9 +1518,13 @@ public final class CApi {
      array.  It loops over the input bytes looking for
      statements. Each one it finds is passed to p.call(), passing
      ownership of it to that function. If p.call() returns 0, looping
-     continues, else the loop stops.
+     continues, else the loop stops and p.call()'s result code is
+     returned. If preparation of any given segment fails, looping
+     stops and that result code is returned.
 
-     <p>If p.call() throws, the exception is propagated.
+     <p>If p.call() throws, the exception is converted to a db-level
+     error and a non-0 code is returned, in order to retain the
+     C-style error semantics of the API.
 
      <p>How each statement is handled, including whether it is finalized
      or not, is up to the callback object. e.g. the callback might
@@ -1178,29 +1534,33 @@ public final class CApi {
   */
   public static int sqlite3_prepare_multi(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
-    int preFlags,
+    int prepFlags,
     @NotNull PrepareMultiCallback p){
     final OutputPointer.Int32 oTail = new OutputPointer.Int32();
     int pos = 0, n = 1;
     byte[] sqlChunk = sqlUtf8;
     int rc = 0;
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
-    while(0==rc && pos<sqlChunk.length){
+    while( 0==rc && pos<sqlChunk.length ){
       sqlite3_stmt stmt = null;
-      if(pos > 0){
+      if( pos>0 ){
         sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
                                       sqlChunk.length);
       }
       if( 0==sqlChunk.length ) break;
-      rc = sqlite3_prepare_v3(db, sqlChunk, preFlags, outStmt, oTail);
+      rc = sqlite3_prepare_v3(db, sqlChunk, prepFlags, outStmt, oTail);
       if( 0!=rc ) break;
       pos = oTail.value;
       stmt = outStmt.take();
-      if( null == stmt ){
-        // empty statement was parsed.
+      if( null==stmt ){
+        // empty statement (whitespace/comments)
         continue;
       }
-      rc = p.call(stmt);
+      try{
+        rc = p.call(stmt);
+      }catch(Exception e){
+        rc = sqlite3_jni_db_error( db, SQLITE_ERROR, e );
+      }
     }
     return rc;
   }
@@ -1256,7 +1616,7 @@ public final class CApi {
     return sqlite3_prepare_multi(db, sql, 0, p);
   }
 
-  static native int sqlite3_preupdate_blobwrite(@NotNull long ptrToDb);
+  private static native int sqlite3_preupdate_blobwrite(@NotNull long ptrToDb);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
@@ -1267,7 +1627,7 @@ public final class CApi {
     return sqlite3_preupdate_blobwrite(db.getNativePointer());
   }
 
-  static native int sqlite3_preupdate_count(@NotNull long ptrToDb);
+  private static native int sqlite3_preupdate_count(@NotNull long ptrToDb);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
@@ -1278,7 +1638,7 @@ public final class CApi {
     return sqlite3_preupdate_count(db.getNativePointer());
   }
 
-  static native int sqlite3_preupdate_depth(@NotNull long ptrToDb);
+  private static native int sqlite3_preupdate_depth(@NotNull long ptrToDb);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
@@ -1289,7 +1649,7 @@ public final class CApi {
     return sqlite3_preupdate_depth(db.getNativePointer());
   }
 
-  static native PreupdateHookCallback sqlite3_preupdate_hook(
+  private static native PreupdateHookCallback sqlite3_preupdate_hook(
     @NotNull long ptrToDb, @Nullable PreupdateHookCallback hook
   );
 
@@ -1304,13 +1664,22 @@ public final class CApi {
     return sqlite3_preupdate_hook(db.getNativePointer(), hook);
   }
 
-  static native int sqlite3_preupdate_new(@NotNull long ptrToDb, int col,
+  private static native int sqlite3_preupdate_new(@NotNull long ptrToDb, int col,
                                                  @NotNull OutputPointer.sqlite3_value out);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined,
      this acts as a proxy for C's sqlite3_preupdate_new(), else it
      returns SQLITE_MISUSE with no side effects.
+
+     WARNING: client code _must not_ hold a reference to the returned
+     sqlite3_value object beyond the scope of the preupdate hook in
+     which this function is called. Doing so will leave the client
+     holding a stale pointer, the address of which could point to
+     anything at all after the pre-update hook is complete. This API
+     has no way to record such objects and clear/invalidate them at
+     the end of a pre-update hook. We "could" add infrastructure to do
+     so, but would require significant levels of bookkeeping.
   */
   public static int sqlite3_preupdate_new(@NotNull sqlite3 db, int col,
                                           @NotNull OutputPointer.sqlite3_value out){
@@ -1327,13 +1696,16 @@ public final class CApi {
     return out.take();
   }
 
-  static native int sqlite3_preupdate_old(@NotNull long ptrToDb, int col,
+  private static native int sqlite3_preupdate_old(@NotNull long ptrToDb, int col,
                                                  @NotNull OutputPointer.sqlite3_value out);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined,
      this acts as a proxy for C's sqlite3_preupdate_old(), else it
      returns SQLITE_MISUSE with no side effects.
+
+     WARNING: see warning in sqlite3_preupdate_new() regarding the
+     potential for stale sqlite3_value handles.
   */
   public static int sqlite3_preupdate_old(@NotNull sqlite3 db, int col,
                                           @NotNull OutputPointer.sqlite3_value out){
@@ -1378,7 +1750,7 @@ public final class CApi {
      results in the C-level sqlite3_result_error() being called with a
      complaint about the invalid argument.
   */
-  static native void sqlite3_result_error(
+  private static native void sqlite3_result_error(
     @NotNull sqlite3_context cx, @NotNull byte[] msg, int eTextRep
   );
 
@@ -1432,10 +1804,6 @@ public final class CApi {
     @NotNull sqlite3_context cx, int c
   );
 
-  public static native void sqlite3_result_null(
-    @NotNull sqlite3_context cx
-  );
-
   public static native void sqlite3_result_int(
     @NotNull sqlite3_context cx, int v
   );
@@ -1454,14 +1822,50 @@ public final class CApi {
      cross-language semantic mismatch and (B) Java doesn't need that
      argument for its intended purpose (type safety).
 
-     <p>Note that there is no sqlite3_column_java_object(), as the
-     C-level API has no sqlite3_column_pointer() to proxy.
-
      @see #sqlite3_value_java_object
      @see #sqlite3_bind_java_object
   */
   public static native void sqlite3_result_java_object(
     @NotNull sqlite3_context cx, @NotNull Object o
+  );
+
+  /**
+     Similar to sqlite3_bind_nio_buffer(), this works like
+     sqlite3_result_blob() but accepts a java.nio.ByteBuffer as its
+     input source. See sqlite3_bind_nio_buffer() for the semantics of
+     the second and subsequent arguments.
+
+     If cx is null then this function will silently fail. If
+     sqlite3_jni_supports_nio() returns false or iBegin is negative,
+     an error result is set. If (begin+n) extends beyond the end of
+     the buffer, it is silently truncated to fit.
+
+     If any of the following apply, this function behaves like
+     sqlite3_result_null(): the blob is null, the resulting slice of
+     the blob is empty.
+
+     If the resulting slice of the buffer exceeds SQLITE_LIMIT_LENGTH
+     then this function behaves like sqlite3_result_error_toobig().
+  */
+  @Experimental
+  /*public*/ static native void sqlite3_result_nio_buffer(
+    @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob,
+    int begin, int n
+  );
+
+  /**
+     Convenience overload which uses the whole input object
+     as the result blob content.
+  */
+  @Experimental
+  /*public*/ static void sqlite3_result_nio_buffer(
+    @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob
+  ){
+    sqlite3_result_nio_buffer(cx, blob, 0, -1);
+  }
+
+  public static native void sqlite3_result_null(
+    @NotNull sqlite3_context cx
   );
 
   public static void sqlite3_result_set(
@@ -1524,6 +1928,10 @@ public final class CApi {
     else sqlite3_result_blob(cx, blob, blob.length);
   }
 
+  public static native void sqlite3_result_subtype(
+    @NotNull sqlite3_context cx, int val
+  );
+
   public static native void sqlite3_result_value(
     @NotNull sqlite3_context cx, @NotNull sqlite3_value v
   );
@@ -1548,6 +1956,29 @@ public final class CApi {
     @NotNull sqlite3_context cx, @Nullable byte[] blob
   ){
     sqlite3_result_blob(cx, blob, (int)(null==blob ? 0 : blob.length));
+  }
+
+  /**
+     Convenience overload which behaves like
+     sqlite3_result_nio_buffer().
+  */
+  @Experimental
+  /*public*/ static void sqlite3_result_blob(
+    @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob,
+    int begin, int n
+  ){
+    sqlite3_result_nio_buffer(cx, blob, begin, n);
+  }
+
+  /**
+     Convenience overload which behaves like the two-argument overload of
+     sqlite3_result_nio_buffer().
+  */
+  @Experimental
+  /*public*/ static void sqlite3_result_blob(
+    @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob
+  ){
+    sqlite3_result_nio_buffer(cx, blob);
   }
 
   /**
@@ -1607,7 +2038,8 @@ public final class CApi {
 
      <ul>
 
-     <li>text is null: translates to a call to sqlite3_result_null()</li>
+     <li>text is null: translates to a call to {@link
+     #sqlite3_result_null}</li>
 
      <li>text is too large: translates to a call to
      {@link #sqlite3_result_error_toobig}</li>
@@ -1651,7 +2083,7 @@ public final class CApi {
     }
   }
 
-  static native RollbackHookCallback sqlite3_rollback_hook(
+  private static native RollbackHookCallback sqlite3_rollback_hook(
     @NotNull long ptrToDb, @Nullable RollbackHookCallback hook
   );
 
@@ -1703,20 +2135,24 @@ public final class CApi {
     @NotNull OutputPointer.Int64 pHighwater, boolean reset
   );
 
-  public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
+  private static native int sqlite3_step(@NotNull long ptrToStmt);
+
+  public static int sqlite3_step(@NotNull sqlite3_stmt stmt){
+    return null==stmt ? SQLITE_MISUSE : sqlite3_step(stmt.getNativePointer());
+  }
 
   public static native boolean sqlite3_stmt_busy(@NotNull sqlite3_stmt stmt);
 
-  static native int sqlite3_stmt_explain(@NotNull long ptrToStmt, int op);
+  private static native int sqlite3_stmt_explain(@NotNull long ptrToStmt, int op);
 
   public static int sqlite3_stmt_explain(@NotNull sqlite3_stmt stmt, int op){
-    return sqlite3_stmt_explain(stmt.getNativePointer(), op);
+    return null==stmt ? SQLITE_MISUSE : sqlite3_stmt_explain(stmt.getNativePointer(), op);
   }
 
-  static native int sqlite3_stmt_isexplain(@NotNull long ptrToStmt);
+  private static native int sqlite3_stmt_isexplain(@NotNull long ptrToStmt);
 
   public static int sqlite3_stmt_isexplain(@NotNull sqlite3_stmt stmt){
-    return sqlite3_stmt_isexplain(stmt.getNativePointer());
+    return null==stmt ? 0 : sqlite3_stmt_isexplain(stmt.getNativePointer());
   }
 
   public static native boolean sqlite3_stmt_readonly(@NotNull sqlite3_stmt stmt);
@@ -1737,7 +2173,7 @@ public final class CApi {
      signature is the public-facing one.
   */
   private static native int sqlite3_strglob(
-    @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8
+    @NotNull byte[] glob, @NotNull byte[] nulTerminatedUtf8
   );
 
   public static int sqlite3_strglob(
@@ -1751,7 +2187,7 @@ public final class CApi {
      The LIKE counterpart of the private sqlite3_strglob() method.
   */
   private static native int sqlite3_strlike(
-    @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8,
+    @NotNull byte[] glob, @NotNull byte[] nulTerminatedUtf8,
     int escChar
   );
 
@@ -1763,7 +2199,7 @@ public final class CApi {
                            (int)escChar);
   }
 
-  static native int sqlite3_system_errno(@NotNull long ptrToDb);
+  private static native int sqlite3_system_errno(@NotNull long ptrToDb);
 
   public static int sqlite3_system_errno(@NotNull sqlite3 db){
     return sqlite3_system_errno(db.getNativePointer());
@@ -1809,13 +2245,13 @@ public final class CApi {
 
   public static native int sqlite3_threadsafe();
 
-  static native int sqlite3_total_changes(@NotNull long ptrToDb);
+  private static native int sqlite3_total_changes(@NotNull long ptrToDb);
 
   public static int sqlite3_total_changes(@NotNull sqlite3 db){
     return sqlite3_total_changes(db.getNativePointer());
   }
 
-  static native long sqlite3_total_changes64(@NotNull long ptrToDb);
+  private static native long sqlite3_total_changes64(@NotNull long ptrToDb);
 
   public static long sqlite3_total_changes64(@NotNull sqlite3 db){
     return sqlite3_total_changes64(db.getNativePointer());
@@ -1838,7 +2274,7 @@ public final class CApi {
     @NotNull sqlite3 db, @Nullable String zSchema
   );
 
-  static native UpdateHookCallback sqlite3_update_hook(
+  private static native UpdateHookCallback sqlite3_update_hook(
     @NotNull long ptrToDb, @Nullable UpdateHookCallback hook
   );
 
@@ -1858,67 +2294,67 @@ public final class CApi {
      sqlite3_create_function().
   */
 
-  static native byte[] sqlite3_value_blob(@NotNull long ptrToValue);
+  private static native byte[] sqlite3_value_blob(@NotNull long ptrToValue);
 
   public static byte[] sqlite3_value_blob(@NotNull sqlite3_value v){
     return sqlite3_value_blob(v.getNativePointer());
   }
 
-  static native int sqlite3_value_bytes(@NotNull long ptrToValue);
+  private static native int sqlite3_value_bytes(@NotNull long ptrToValue);
 
   public static int sqlite3_value_bytes(@NotNull sqlite3_value v){
     return sqlite3_value_bytes(v.getNativePointer());
   }
 
-  static native int sqlite3_value_bytes16(@NotNull long ptrToValue);
+  private static native int sqlite3_value_bytes16(@NotNull long ptrToValue);
 
   public static int sqlite3_value_bytes16(@NotNull sqlite3_value v){
     return sqlite3_value_bytes16(v.getNativePointer());
   }
 
-  static native double sqlite3_value_double(@NotNull long ptrToValue);
+  private static native double sqlite3_value_double(@NotNull long ptrToValue);
 
   public static double sqlite3_value_double(@NotNull sqlite3_value v){
     return sqlite3_value_double(v.getNativePointer());
   }
 
-  static native sqlite3_value sqlite3_value_dup(@NotNull long ptrToValue);
+  private static native sqlite3_value sqlite3_value_dup(@NotNull long ptrToValue);
 
   public static sqlite3_value sqlite3_value_dup(@NotNull sqlite3_value v){
     return sqlite3_value_dup(v.getNativePointer());
   }
 
-  static native int sqlite3_value_encoding(@NotNull long ptrToValue);
+  private static native int sqlite3_value_encoding(@NotNull long ptrToValue);
 
   public static int sqlite3_value_encoding(@NotNull sqlite3_value v){
     return sqlite3_value_encoding(v.getNativePointer());
   }
 
-  static native void sqlite3_value_free(@Nullable long ptrToValue);
+  private static native void sqlite3_value_free(@Nullable long ptrToValue);
 
   public static void sqlite3_value_free(@Nullable sqlite3_value v){
-    sqlite3_value_free(v.getNativePointer());
+    if( null!=v ) sqlite3_value_free(v.clearNativePointer());
   }
 
-  static native boolean sqlite3_value_frombind(@NotNull long ptrToValue);
+  private static native boolean sqlite3_value_frombind(@NotNull long ptrToValue);
 
   public static boolean sqlite3_value_frombind(@NotNull sqlite3_value v){
     return sqlite3_value_frombind(v.getNativePointer());
   }
 
-  static native int sqlite3_value_int(@NotNull long ptrToValue);
+  private static native int sqlite3_value_int(@NotNull long ptrToValue);
 
   public static int sqlite3_value_int(@NotNull sqlite3_value v){
     return sqlite3_value_int(v.getNativePointer());
   }
 
-  static native long sqlite3_value_int64(@NotNull long ptrToValue);
+  private static native long sqlite3_value_int64(@NotNull long ptrToValue);
 
   public static long sqlite3_value_int64(@NotNull sqlite3_value v){
     return sqlite3_value_int64(v.getNativePointer());
   }
 
-  static native Object sqlite3_value_java_object(@NotNull long ptrToValue);
+  private static native Object sqlite3_value_java_object(@NotNull long ptrToValue);
 
   /**
      If the given value was set using {@link
@@ -1938,31 +2374,42 @@ public final class CApi {
      given Class, else it returns null.
   */
   @SuppressWarnings("unchecked")
-  public static <T> T sqlite3_value_java_casted(@NotNull sqlite3_value v,
+  public static <T> T sqlite3_value_java_object(@NotNull sqlite3_value v,
                                                 @NotNull Class<T> type){
     final Object o = sqlite3_value_java_object(v);
     return type.isInstance(o) ? (T)o : null;
   }
 
-  static native int sqlite3_value_nochange(@NotNull long ptrToValue);
+  /**
+     A variant of sqlite3_column_blob() which returns the blob as a
+     ByteBuffer object. Returns null if its argument is null, if
+     sqlite3_jni_supports_nio() is false, or if sqlite3_value_blob()
+     would return null for the same input.
+  */
+  @Experimental
+  /*public*/ static native java.nio.ByteBuffer sqlite3_value_nio_buffer(
+    @NotNull sqlite3_value v
+  );
+
+  private static native int sqlite3_value_nochange(@NotNull long ptrToValue);
 
   public static int sqlite3_value_nochange(@NotNull sqlite3_value v){
     return sqlite3_value_nochange(v.getNativePointer());
   }
 
-  static native int sqlite3_value_numeric_type(@NotNull long ptrToValue);
+  private static native int sqlite3_value_numeric_type(@NotNull long ptrToValue);
 
   public static int sqlite3_value_numeric_type(@NotNull sqlite3_value v){
     return sqlite3_value_numeric_type(v.getNativePointer());
   }
 
-  static native int sqlite3_value_subtype(@NotNull long ptrToValue);
+  private static native int sqlite3_value_subtype(@NotNull long ptrToValue);
 
   public static int sqlite3_value_subtype(@NotNull sqlite3_value v){
     return sqlite3_value_subtype(v.getNativePointer());
   }
 
-  static native byte[] sqlite3_value_text(@NotNull long ptrToValue);
+  private static native byte[] sqlite3_value_text(@NotNull long ptrToValue);
 
   /**
      Functions identially to the C API, and this note is just to
@@ -1974,13 +2421,13 @@ public final class CApi {
     return sqlite3_value_text(v.getNativePointer());
   }
 
-  static native String sqlite3_value_text16(@NotNull long ptrToValue);
+  private static native String sqlite3_value_text16(@NotNull long ptrToValue);
 
   public static String sqlite3_value_text16(@NotNull sqlite3_value v){
     return sqlite3_value_text16(v.getNativePointer());
   }
 
-  static native int sqlite3_value_type(@NotNull long ptrToValue);
+  private static native int sqlite3_value_type(@NotNull long ptrToValue);
 
   public static int sqlite3_value_type(@NotNull sqlite3_value v){
     return sqlite3_value_type(v.getNativePointer());
@@ -2255,7 +2702,6 @@ public final class CApi {
 
   // prepare flags
   public static final int SQLITE_PREPARE_PERSISTENT = 1;
-  public static final int SQLITE_PREPARE_NORMALIZE = 2;
   public static final int SQLITE_PREPARE_NO_VTAB = 4;
 
   // result codes
@@ -2411,9 +2857,11 @@ public final class CApi {
   public static final int SQLITE_TXN_WRITE = 2;
 
   // udf flags
-  public static final int SQLITE_DETERMINISTIC = 0x000000800;
-  public static final int SQLITE_DIRECTONLY    = 0x000080000;
-  public static final int SQLITE_INNOCUOUS     = 0x000200000;
+  public static final int SQLITE_DETERMINISTIC =  0x000000800;
+  public static final int SQLITE_DIRECTONLY    =  0x000080000;
+  public static final int SQLITE_SUBTYPE =        0x000100000;
+  public static final int SQLITE_INNOCUOUS     =  0x000200000;
+  public static final int SQLITE_RESULT_SUBTYPE = 0x001000000;
 
   // virtual tables
   public static final int SQLITE_INDEX_SCAN_UNIQUE = 1;
@@ -2442,8 +2890,8 @@ public final class CApi {
   public static final int SQLITE_FAIL = 3;
   public static final int SQLITE_REPLACE = 5;
   static {
-    // This MUST come after the SQLITE_MAX_... values or else
-    // attempting to modify them silently fails.
     init();
   }
+  /* Must come after static init(). */
+  private static final boolean JNI_SUPPORTS_NIO = sqlite3_jni_supports_nio();
 }

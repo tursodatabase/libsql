@@ -18,7 +18,7 @@ jobs:
     if: github.repository == 'tursodatabase/libsql'
     name: Run Nemesis Tests
     env:
-      RUSTFLAGS: -D warnings
+      RUSTFLAGS: -D warnings --cfg tokio_unstable
     steps:
       - uses: hecrj/setup-rust-action@v2
 
@@ -75,9 +75,9 @@ jobs:
           token: ${{ secrets.ACCESS_TOKEN_TURSO_TEST }}
 
       - name: Build nemesis test
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '>=1.21.4'
+          go-version-file: nemesis-tests/go.mod
       - run: |
           cd nemesis-tests
           go build -o ../tursotests cmd/tursotest/main.go

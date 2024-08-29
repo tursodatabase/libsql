@@ -6,8 +6,9 @@ mod listen;
 mod result_builder;
 mod trace;
 mod types;
+#[macro_use]
+pub mod timing;
 
-use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -16,25 +17,29 @@ use axum::http::request::Parts;
 use axum::http::HeaderValue;
 use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
-use axum::Router;
+use axum::{middleware, Router};
 use axum_extra::middleware::option_layer;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use hyper::{header, Body, Request, Response, StatusCode};
+use libsql_replication::rpc::replication::replication_log_server::{
+    ReplicationLog, ReplicationLogServer,
+};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Number;
-use tokio::sync::{mpsc, oneshot, Notify};
-use tokio::task::JoinSet;
+use tokio::sync::{mpsc, oneshot};
 use tonic::transport::Server;
 
+use tower_http::compression::predicate::NotForContentType;
+use tower_http::compression::{DefaultPredicate, Predicate};
 use tower_http::{compression::CompressionLayer, cors};
 
 use crate::auth::{Auth, AuthError, Authenticated, Jwt, Permission, UserAuthContext};
 use crate::connection::{Connection, RequestContext};
 use crate::error::Error;
-use crate::hrana;
 use crate::http::user::db_factory::MakeConnectionExtractorPath;
+use crate::http::user::timing::timings_middleware;
 use crate::http::user::types::HttpQuery;
 use crate::metrics::LEGACY_HTTP_CALL;
 use crate::namespace::NamespaceStore;
@@ -43,11 +48,10 @@ use crate::query::{self, Query};
 use crate::query_analysis::{predict_final_state, Statement, TxnStatus};
 use crate::query_result_builder::QueryResultBuilder;
 use crate::rpc::proxy::rpc::proxy_server::{Proxy, ProxyServer};
-use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
-use crate::rpc::ReplicationLogServer;
 use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 use crate::version;
+use crate::{hrana, TaskManager};
 
 use self::db_factory::MakeConnectionExtractor;
 use self::result_builder::JsonHttpPayloadBuilder;
@@ -252,8 +256,6 @@ pub struct UserApi<A, P, S> {
     pub enable_console: bool,
     pub self_url: Option<String>,
     pub primary_url: Option<String>,
-    pub path: Arc<Path>,
-    pub shutdown: Arc<Notify>,
 }
 
 impl<A, P, S> UserApi<A, P, S>
@@ -262,12 +264,12 @@ where
     P: Proxy,
     S: ReplicationLog,
 {
-    pub fn configure(self, join_set: &mut JoinSet<anyhow::Result<()>>) -> Arc<hrana::http::Server> {
+    pub fn configure(self, task_manager: &mut TaskManager) -> Arc<hrana::http::Server> {
         let (hrana_accept_tx, hrana_accept_rx) = mpsc::channel(8);
         let (hrana_upgrade_tx, hrana_upgrade_rx) = mpsc::channel(8);
         let hrana_http_srv = Arc::new(hrana::http::Server::new(self.self_url.clone()));
 
-        join_set.spawn({
+        task_manager.spawn_until_shutdown({
             let namespaces = self.namespaces.clone();
             let user_auth_strategy = self.user_auth_strategy.clone();
             let idle_kicker = self
@@ -293,7 +295,7 @@ where
             }
         });
 
-        join_set.spawn({
+        task_manager.spawn_until_shutdown({
             let server = hrana_http_srv.clone();
             async move {
                 server.run_expire().await;
@@ -302,7 +304,7 @@ where
         });
 
         if let Some(acceptor) = self.hrana_ws_acceptor {
-            join_set.spawn(async move {
+            task_manager.spawn_until_shutdown(async move {
                 hrana::ws::listen(acceptor, hrana_accept_tx).await;
                 Ok(())
             });
@@ -405,6 +407,7 @@ where
                 )
                 .route("/v1/jobs", get(handle_get_migrations))
                 .route("/v1/jobs/:job_id", get(handle_get_migration_details))
+                .layer(middleware::from_fn(timings_middleware))
                 .with_state(state);
 
             // Merge the grpc based axum router into our regular http router
@@ -428,7 +431,10 @@ where
                         .on_response(trace::response)
                         .on_failure(trace::failure),
                 )
-                .layer(CompressionLayer::new())
+                .layer(CompressionLayer::new().compress_when(
+                    // TODO: remove this when we upgrade tower-http to 0.5.3
+                    DefaultPredicate::new().and(NotForContentType::new("text/event-stream")),
+                ))
                 .layer(
                     cors::CorsLayer::new()
                         .allow_methods(cors::AllowMethods::any())
@@ -439,10 +445,10 @@ where
             let router = router.fallback(handle_fallback);
             let h2c = crate::h2c::H2cMaker::new(router);
 
-            join_set.spawn(async move {
+            task_manager.spawn_with_shutdown_notify(|shutdown| async move {
                 hyper::server::Server::builder(acceptor)
                     .serve(h2c)
-                    .with_graceful_shutdown(self.shutdown.notified())
+                    .with_graceful_shutdown(shutdown.notified())
                     .await
                     .context("http server")?;
                 Ok(())
@@ -552,6 +558,7 @@ async fn handle_get_migrations(
             .await?;
         let config = (*store.get()).clone();
         if !config.is_shared_schema {
+            tracing::warn!("invalid namespace: target is not a shared schema");
             return Err(Error::InvalidNamespace);
         }
     }
@@ -578,6 +585,7 @@ async fn handle_get_migration_details(
             .await?;
         let config = (*store.get()).clone();
         if !config.is_shared_schema {
+            tracing::warn!("invalid namespace: target is not a shared schema");
             return Err(Error::InvalidNamespace);
         }
     }

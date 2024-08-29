@@ -1,6 +1,6 @@
 [package]
 name = "libsql-ffi"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 build = "build.rs"
 license = "MIT"
@@ -22,3 +22,10 @@ zig-build = []
 session = []
 wasmtime-bindings = ["dep:libsql-wasmtime-bindings"]
 multiple-ciphers = []
+bundled-sqlcipher = []
+bundled-sqlcipher-vendored-openssl = []
+with-asan = []
+wasm32-wasi-vfs = []
+unlock_notify = []
+preupdate_hook = []
+sqlcipher = []

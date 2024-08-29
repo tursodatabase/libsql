@@ -8,5 +8,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 js-sys = "0.3"
-libsql = { path = "../../libsql", default_features = false, features = ["core"] }
+libsql = { path = "../../libsql", default-features = false, features = ["core"] }
 wasm-bindgen = "0.2"

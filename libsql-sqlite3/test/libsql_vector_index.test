@@ -1,0 +1,507 @@
+# 2024-06-12
+#
+# Copyright 2024 the libSQL authors
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+#***********************************************************************
+# This file implements regression tests for libSQL library.  The
+# focus of this file is vector search.
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix vector
+
+sqlite3_db_config_lookaside db 0 0 0
+
+do_execsql_test vector-pragmas {
+  CREATE TABLE t_pragmas( v FLOAT32(3) );
+  CREATE INDEX t_pragmas_idx ON t_pragmas( libsql_vector_idx(v) );
+  INSERT INTO t_pragmas VALUES (vector('[1,2,3]'));
+  PRAGMA integrity_check;
+  PRAGMA index_list='t_pragmas';
+} {
+  {ok}
+  0 t_pragmas_idx 0 c 0
+}
+
+do_execsql_test vector-typename {
+  CREATE TABLE t_type_spaces( v FLOAT32  (   3   ) );
+  CREATE INDEX t_type_spaces_idx ON t_type_spaces( libsql_vector_idx(v) );
+  INSERT INTO t_type_spaces VALUES (vector('[1,2,3]'));
+} {}
+
+do_execsql_test vector-backfill {
+  CREATE TABLE t_backfill( v FLOAT32(3) );
+  INSERT INTO t_backfill VALUES (vector('[1,2,3]'));
+  INSERT INTO t_backfill VALUES (vector('[2,3,4]'));
+  INSERT INTO t_backfill VALUES (vector('[3,4,5]'));
+  INSERT INTO t_backfill VALUES (vector('[4,5,6]'));
+  CREATE INDEX t_backfill_idx ON t_backfill( libsql_vector_idx(v) );
+  SELECT rowid FROM vector_top_k('t_backfill_idx', vector('[3,4,5]'), 4);
+} {3 4 2 1}
+
+do_execsql_test vector-reindex {
+  CREATE TABLE t_reindex( v FLOAT32(3) );
+  CREATE INDEX t_reindex_idx ON t_reindex( libsql_vector_idx(v) );
+  INSERT INTO t_reindex VALUES (vector('[1,2,3]'));
+  INSERT INTO t_reindex VALUES (vector('[2,3,4]'));
+  INSERT INTO t_reindex VALUES (vector('[3,4,5]'));
+  INSERT INTO t_reindex VALUES (vector('[4,5,6]'));
+  REINDEX t_reindex_idx;
+  SELECT rowid FROM vector_top_k('t_reindex_idx', vector('[3,4,5]'), 4);
+} {3 4 2 1}
+
+do_execsql_test vector-text-pk {
+  CREATE TABLE t_text_pk( email TEXT PRIMARY KEY, v FLOAT32(3) );
+  CREATE INDEX t_text_pk_idx ON t_text_pk( libsql_vector_idx(v) );
+  INSERT INTO t_text_pk VALUES ('e-1', vector('[1,2,3]'));
+  INSERT INTO t_text_pk VALUES ('e-2', vector('[2,3,4]'));
+  INSERT INTO t_text_pk VALUES ('e-3', vector('[3,4,5]'));
+  INSERT INTO t_text_pk VALUES ('e-4', vector('[4,5,6]'));
+  SELECT id FROM vector_top_k('t_text_pk_idx', vector('[3,4,5]'), 4);
+} {3 4 2 1}
+
+do_execsql_test vector-text-pk-norow {
+  CREATE TABLE t_text_pk_norow( v1, v2, v3, email TEXT PRIMARY KEY, v FLOAT32(3) ) WITHOUT ROWID;
+  CREATE INDEX t_text_pk_norow_idx ON t_text_pk_norow( libsql_vector_idx(v) );
+  INSERT INTO t_text_pk_norow VALUES (1, 1, 1, 'e-1', vector('[1,2,3]'));
+  INSERT INTO t_text_pk_norow VALUES (1, 1, 1, 'e-2', vector('[2,3,4]'));
+  INSERT INTO t_text_pk_norow VALUES (1, 1, 1, 'e-3', vector('[3,4,5]'));
+  INSERT INTO t_text_pk_norow VALUES (1, 1, 1, 'e-4', vector('[4,5,6]'));
+  SELECT id FROM vector_top_k('t_text_pk_norow_idx', vector('[3,4,5]'), 4);
+} {e-3 e-4 e-2 e-1}
+
+do_execsql_test vector-delete {
+  CREATE TABLE t_delete( id INTEGER PRIMARY KEY, v FLOAT32(3) );
+  CREATE INDEX t_delete_idx ON t_delete( libsql_vector_idx(v) );
+  INSERT INTO t_delete VALUES (10, vector('[1,1,1]'));
+  INSERT INTO t_delete VALUES (20, vector('[-1,-1,-1]'));
+  SELECT rowid FROM vector_top_k('t_delete_idx', vector('[1,1,1]'), 1);
+  DELETE FROM t_delete WHERE id = 10;
+  SELECT rowid FROM vector_top_k('t_delete_idx', vector('[1,1,1]'), 1);
+} {10 20}
+
+do_execsql_test vector-update {
+  CREATE TABLE t_update( id INTEGER PRIMARY KEY, v FLOAT32(3) );
+  CREATE INDEX t_update_idx ON t_update( libsql_vector_idx(v) );
+  INSERT INTO t_update VALUES (10, vector('[1,1,1]'));
+  INSERT INTO t_update VALUES (20, vector('[-1,-1,-1]'));
+  UPDATE t_update SET v = vector('[-1,-1,-1]') WHERE id = 10;
+  UPDATE t_update SET v = vector('[1,1,1]') WHERE id = 20;
+  SELECT rowid FROM vector_top_k('t_update_idx', vector('[1,1,1]'), 2);
+} {20 10}
+
+do_execsql_test vector-simple {
+  CREATE TABLE t_simple( v FLOAT32(3));
+  CREATE INDEX t_simple_idx ON t_simple( libsql_vector_idx(v) );
+  INSERT INTO t_simple VALUES(vector('[1,2,3]'));
+  INSERT INTO t_simple VALUES(vector('[2,3,4]'));
+  INSERT INTO t_simple VALUES(vector('[5,6,7]'));
+  SELECT * FROM vector_top_k('t_simple_idx', '[1,2,3]', 1);
+  SELECT * FROM vector_top_k('t_simple_idx', '[5,6,7]', 1);
+  SELECT * FROM vector_top_k('t_simple_idx', vector('[1,2,3]'), 1);
+} {{1} {3} {1}}
+
+do_execsql_test vector-empty {
+  CREATE TABLE t_empty( v FLOAT32(3));
+  CREATE INDEX t_empty_idx ON t_empty( libsql_vector_idx(v) );
+  SELECT * FROM vector_top_k('t_empty_idx', '[1,2,3]', 1);
+  INSERT INTO t_empty VALUES(vector('[1,2,3]'));
+  DELETE FROM t_empty WHERE rowid = 1;
+  SELECT * FROM vector_top_k('t_empty_idx', '[5,6,7]', 1);
+} {}
+
+
+do_execsql_test vector-null {
+  CREATE TABLE t_null( v FLOAT32(2));
+  CREATE INDEX t_null_idx ON t_null( libsql_vector_idx(v) );
+  INSERT INTO t_null VALUES(vector('[1,-1]'));
+  INSERT INTO t_null VALUES(NULL);
+  INSERT INTO t_null VALUES(vector('[-2,1]'));
+  SELECT * FROM vector_top_k('t_null_idx', '[1,1]', 2);
+  UPDATE t_null SET v = vector('[1,1]') WHERE rowid = 2;
+  SELECT rowid FROM vector_top_k('t_null_idx', vector('[1,1]'), 3);
+  UPDATE t_null SET v = NULL WHERE rowid = 3;
+  SELECT rowid FROM vector_top_k('t_null_idx', vector('[1,1]'), 3);
+  UPDATE t_null SET v = NULL;
+  SELECT rowid FROM vector_top_k('t_null_idx', vector('[1,1]'), 3);
+} {
+  1 3
+  2 1 3
+  2 1
+}
+
+do_execsql_test vector-sql {
+  CREATE TABLE t_sql( v FLOAT32(3));
+  CREATE INDEX t_sql_idx ON t_sql( libsql_vector_idx(v) );
+  INSERT INTO t_sql VALUES(vector('[1,2,3]')), (vector('[2,3,4]'));
+  SELECT sql FROM sqlite_master WHERE name LIKE '%t_sql%';
+  SELECT name FROM libsql_vector_meta_shadow WHERE name = 't_sql_idx';
+} {{CREATE TABLE t_sql( v FLOAT32(3))} {CREATE TABLE t_sql_idx_shadow (index_key  INTEGER , data BLOB, PRIMARY KEY (index_key))} {CREATE INDEX t_sql_idx_shadow_idx ON t_sql_idx_shadow (index_key)} {CREATE INDEX t_sql_idx ON t_sql( libsql_vector_idx(v) )} {t_sql_idx}}
+
+do_execsql_test vector-drop-index {
+  CREATE TABLE t_index_drop( v FLOAT32(3));
+  CREATE INDEX t_index_drop_idx ON t_index_drop( libsql_vector_idx(v) );
+  INSERT INTO t_index_drop VALUES(vector('[1,2,3]')), (vector('[2,3,4]'));
+  DROP INDEX t_index_drop_idx;
+  SELECT sql FROM sqlite_master WHERE name LIKE '%t_index_drop%';
+  SELECT name FROM libsql_vector_meta_shadow WHERE name = 't_index_drop_idx';
+} {{CREATE TABLE t_index_drop( v FLOAT32(3))}}
+
+do_execsql_test vector-drop-table {
+  CREATE TABLE t_table_drop( v FLOAT32(3));
+  CREATE INDEX t_table_drop_idx ON t_table_drop( libsql_vector_idx(v) );
+  INSERT INTO t_table_drop VALUES(vector('[1,2,3]')), (vector('[2,3,4]'));
+  DROP table t_table_drop;
+  SELECT sql FROM sqlite_master WHERE name LIKE '%t_table_drop%';
+  SELECT name FROM libsql_vector_meta_shadow WHERE name = 't_table_drop_idx';
+} {}
+
+do_execsql_test vector-mixed-format {
+  CREATE TABLE t_mixed( v FLOAT32(3));
+  INSERT INTO t_mixed VALUES('[1,2,3]');
+  INSERT INTO t_mixed VALUES(vector('[2,3,4]'));
+  INSERT INTO t_mixed VALUES('[5,6,7]');
+  CREATE INDEX t_mixed_idx ON t_mixed( libsql_vector_idx(v) );
+  SELECT * FROM vector_top_k('t_mixed_idx', '[1,2,3]', 1);
+  SELECT * FROM vector_top_k('t_mixed_idx', '[5,6,7]', 1);
+  SELECT * FROM vector_top_k('t_mixed_idx', vector('[1,2,3]'), 1);
+} {1 3 1}
+
+do_execsql_test vector-alter-column {
+  CREATE TABLE t_vec_alter( v BLOB );
+  INSERT INTO t_vec_alter VALUES('[1,2,3]');
+  INSERT INTO t_vec_alter VALUES(vector('[2,3,4]'));
+  INSERT INTO t_vec_alter VALUES('[5,6,7]');
+  ALTER TABLE t_vec_alter ALTER COLUMN v TO v FLOAT32(3);
+  CREATE INDEX t_vec_alter_idx ON t_vec_alter( libsql_vector_idx(v) );
+  SELECT * FROM vector_top_k('t_vec_alter_idx', '[1,2,3]', 1);
+  SELECT * FROM vector_top_k('t_vec_alter_idx', '[5,6,7]', 1);
+  SELECT * FROM vector_top_k('t_vec_alter_idx', vector('[1,2,3]'), 1);
+} {1 3 1}
+
+do_execsql_test vector-create-as {
+  CREATE TABLE t_text_origin( v TEXT );
+  INSERT INTO t_text_origin VALUES('[1,2,3]');
+  INSERT INTO t_text_origin VALUES('[2,3,4]');
+  INSERT INTO t_text_origin VALUES('[5,6,7]');
+  CREATE TABLE t_blob_dup AS SELECT vector(v) as v FROM t_text_origin;
+  ALTER TABLE t_blob_dup ALTER COLUMN v TO v FLOAT32(3); 
+  CREATE INDEX t_blob_dup_idx ON t_blob_dup( libsql_vector_idx(v) );
+
+  SELECT * FROM vector_top_k('t_blob_dup_idx', vector('[1,2,3]'), 1);
+  SELECT * FROM vector_top_k('t_blob_dup_idx', vector('[5,6,7]'), 1);
+  SELECT * FROM vector_top_k('t_blob_dup_idx', vector('[1,2,3]'), 1);
+} {1 3 1}
+
+do_execsql_test vector-index-dont-affect-sql {
+  CREATE TABLE t_vector_other_sql ( emb FLOAT32(2) );
+  INSERT INTO t_vector_other_sql VALUES (vector('[1,2]')), (vector('[3,4]'));
+  CREATE INDEX t_vector_other_sql_idx ON t_vector_other_sql(libsql_vector_idx(emb));
+  INSERT INTO t_vector_other_sql VALUES (vector('[5,6]')), (vector('[7,8]'));
+  SELECT COUNT(*) FROM t_vector_other_sql;
+  SELECT COUNT(*) FROM t_vector_other_sql WHERE emb = vector('[1,2]');
+  SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[1,2]');
+  SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[3,4]');
+  SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[5,6]');
+  SELECT rowid FROM t_vector_other_sql WHERE emb = vector('[7,8]');
+} {4 1 1 2 3 4}
+
+do_execsql_test vector-partial-index-dont-affect-sql {
+  CREATE TABLE t_vector_other_sql_part ( emb FLOAT32(2), t TEXT );
+  INSERT INTO t_vector_other_sql_part VALUES (vector('[1,2]'), 'paper'), (vector('[3,4]'), 'journal');
+  CREATE INDEX t_vector_other_sql_part_idx ON t_vector_other_sql_part(libsql_vector_idx(emb));
+  INSERT INTO t_vector_other_sql_part VALUES (vector('[5,6]'), 'journal'), (vector('[7,8]'), 'paper');
+  SELECT COUNT(*) FROM t_vector_other_sql_part;
+  SELECT COUNT(*) FROM t_vector_other_sql_part WHERE emb = vector('[1,2]');
+  SELECT COUNT(*) FROM t_vector_other_sql_part WHERE t = 'paper';
+  SELECT rowid FROM t_vector_other_sql_part WHERE emb = vector('[1,2]');
+  SELECT rowid FROM t_vector_other_sql_part WHERE emb = vector('[3,4]');
+  SELECT rowid FROM t_vector_other_sql_part WHERE emb = vector('[5,6]');
+  SELECT rowid FROM t_vector_other_sql_part WHERE emb = vector('[7,8]');
+} {4 1 2 1 2 3 4}
+
+do_execsql_test vector-index-dont-affect-sql-pk {
+  CREATE TABLE t_vector_other_sql_pk ( name TEXT PRIMARY KEY, emb FLOAT32(2) );
+  INSERT INTO t_vector_other_sql_pk VALUES ('a', vector('[1,2]')), ('b', vector('[3,4]'));
+  CREATE INDEX t_vector_other_sql_pk_idx ON t_vector_other_sql_pk(libsql_vector_idx(emb));
+  INSERT INTO t_vector_other_sql_pk VALUES ('c', vector('[5,6]')), ('d', vector('[7,8]'));
+  SELECT COUNT(*) FROM t_vector_other_sql_pk;
+  SELECT COUNT(*) FROM t_vector_other_sql_pk WHERE emb = vector('[1,2]');
+  SELECT rowid FROM t_vector_other_sql_pk WHERE emb = vector('[1,2]');
+  SELECT rowid FROM t_vector_other_sql_pk WHERE emb = vector('[3,4]');
+  SELECT rowid FROM t_vector_other_sql_pk WHERE emb = vector('[5,6]');
+  SELECT rowid FROM t_vector_other_sql_pk WHERE emb = vector('[7,8]');
+} {4 1 1 2 3 4}
+
+do_execsql_test vector-attach {
+  CREATE TABLE t_attach ( emb FLOAT32(2) );
+  INSERT INTO t_attach VALUES (vector('[1,2]')), (vector('[3,4]'));
+  CREATE INDEX t_attach_idx ON t_attach(libsql_vector_idx(emb));
+  ATTACH ':memory:' as "q u o t e "" h e r e ";
+  CREATE TABLE "q u o t e "" h e r e ".t_attach ( emb FLOAT32(2) );
+  INSERT INTO "q u o t e "" h e r e ".t_attach VALUES (vector('[5,6]')), (vector('[7,8]'));
+  CREATE INDEX "q u o t e "" h e r e ".t_attach_idx ON t_attach(libsql_vector_idx(emb));
+  SELECT rowid FROM vector_top_k('t_attach_idx', vector('[5,6]'), 4);
+} {2 1}
+
+do_execsql_test vector-vacuum {
+  CREATE TABLE t_vacuum ( emb FLOAT32(2) );
+  INSERT INTO t_vacuum VALUES (vector('[1,2]')), (vector('[3,4]')), (vector('[5,6]'));
+  CREATE INDEX t_vacuum_idx ON t_vacuum(libsql_vector_idx(emb));
+  VACUUM;
+  SELECT COUNT(*) FROM t_vacuum;
+  SELECT COUNT(*) FROM t_vacuum_idx_shadow;
+  DELETE FROM t_vacuum WHERE rowid = 2;
+  VACUUM;
+  SELECT * FROM vector_top_k('t_vacuum_idx', vector('[1,2]'), 3);
+  SELECT * FROM vector_top_k('t_vacuum_idx', vector('[5,6]'), 3);
+  SELECT * FROM vector_top_k('t_vacuum_idx', vector('[3,4]'), 3);
+} {3 3 1 2 2 1 2 1}
+
+do_execsql_test vector-many-columns {
+  CREATE TABLE t_many ( i INTEGER PRIMARY KEY, e1 FLOAT32(2), e2 FLOAT32(2) );
+  CREATE INDEX t_many_1_idx ON t_many(libsql_vector_idx(e1));
+  CREATE INDEX t_many_2_idx ON t_many(libsql_vector_idx(e2));
+  INSERT INTO t_many VALUES (1, vector('[1,1]'), vector('[-1,-1]')), (2, vector('[-1,-1]'), vector('[1,1]'));
+  SELECT * FROM vector_top_k('t_many_1_idx', vector('[1,1]'), 2);
+  SELECT * FROM vector_top_k('t_many_2_idx', vector('[1,1]'), 2);
+} {1 2 2 1}
+
+do_execsql_test vector-transaction {
+  CREATE TABLE t_transaction ( i INTEGER PRIMARY KEY, e FLOAT32(2) );
+  CREATE INDEX t_transaction_idx ON t_transaction(libsql_vector_idx(e));
+  INSERT INTO t_transaction VALUES (1, vector('[1,2]')), (2, vector('[3,4]'));
+  BEGIN;
+  INSERT INTO t_transaction VALUES (3, vector('[4,5]')), (4, vector('[5,6]'));
+  SELECT * FROM vector_top_k('t_transaction_idx', vector('[4,5]'), 2);
+  ROLLBACK;
+  SELECT * FROM vector_top_k('t_transaction_idx', vector('[1,2]'), 2);
+} {3 4 1 2}
+
+do_execsql_test vector-1bit {
+  CREATE TABLE t_1bit( v FLOAT32(3) );
+  CREATE INDEX t_1bit_idx ON t_1bit( libsql_vector_idx(v, 'compress_neighbors=float1bit') );
+  INSERT INTO t_1bit VALUES (vector('[-1,-1,1]'));
+  INSERT INTO t_1bit VALUES (vector('[-1,1,-1.5]'));
+  INSERT INTO t_1bit VALUES (vector('[1,-1,-1]'));
+  INSERT INTO t_1bit VALUES (vector('[-1,-1,-1]'));
+  SELECT rowid FROM vector_top_k('t_1bit_idx', vector('[1,-1,-1]'), 4);
+} {3 4 2 1}
+
+do_execsql_test vector-all-params {
+  CREATE TABLE t_all_params ( emb FLOAT32(2) );
+  CREATE INDEX t_all_params_idx ON t_all_params(libsql_vector_idx(emb, 'type=diskann', 'metric=cos', 'alpha=1.2', 'search_l=200', 'insert_l=70', 'max_neighbors=6', 'compress_neighbors=float1bit'));
+  INSERT INTO t_all_params VALUES (vector('[1,2]')), (vector('[3,4]'));
+  SELECT * FROM vector_top_k('t_all_params_idx', vector('[1,2]'), 2);
+} {1 2}
+
+do_execsql_test vector-f64-index {
+  CREATE TABLE t_f64 ( emb FLOAT64(2) );
+  CREATE INDEX t_f64_idx ON t_f64(libsql_vector_idx(emb));
+  INSERT INTO t_f64 VALUES (vector64('[1,2]')), (vector64('[3,4]'));
+  SELECT * FROM vector_top_k('t_f64_idx', vector64('[1,2]'), 2);
+} {1 2}
+
+reset_db
+
+do_execsql_test vector-partial {
+  CREATE TABLE t_partial( name TEXT, type INT, v FLOAT32(3));
+  INSERT INTO t_partial VALUES ( 'a', 0, vector('[1,2,3]') );
+  INSERT INTO t_partial VALUES ( 'b', 1, vector('[3,4,5]') );
+  INSERT INTO t_partial VALUES ( 'c', 2, vector('[4,5,6]') );
+  INSERT INTO t_partial VALUES ( 'd', 0, vector('[5,6,7]') );
+  INSERT INTO t_partial VALUES ( 'e', 1, vector('[6,7,8]') );
+  INSERT INTO t_partial VALUES ( 'f', 2, vector('[7,8,9]') );
+  CREATE INDEX t_partial_idx_0 ON t_partial( libsql_vector_idx(v) ) WHERE type = 0;
+  CREATE INDEX t_partial_idx_1 ON t_partial( libsql_vector_idx(v) ) WHERE type = 1;
+  CREATE INDEX t_partial_idx_not_0 ON t_partial( libsql_vector_idx(v) ) WHERE type != 0;
+  SELECT id FROM vector_top_k('t_partial_idx_0', vector('[1,2,3]'), 10);
+  SELECT id FROM vector_top_k('t_partial_idx_1', vector('[1,2,3]'), 10);
+  SELECT id FROM vector_top_k('t_partial_idx_not_0', vector('[1,2,3]'), 10);
+  INSERT INTO t_partial VALUES ( 'g', 0, vector('[8,9,10]') );
+  INSERT INTO t_partial VALUES ( 'h', 1, vector('[9,10,11]') );
+  INSERT INTO t_partial VALUES ( 'i', 2, vector('[10,11,12]') );
+  SELECT id FROM vector_top_k('t_partial_idx_0', vector('[1,2,3]'), 10);
+  SELECT id FROM vector_top_k('t_partial_idx_1', vector('[1,2,3]'), 10);
+  SELECT id FROM vector_top_k('t_partial_idx_not_0', vector('[1,2,3]'), 10);
+} {
+  1 4  
+  2 5  
+  2 3 5 6  
+
+  1 4 7  
+  2 5 8  
+  2 3 5 6 8 9
+}
+
+reset_db
+
+do_execsql_test vector-1bit-index {
+  CREATE TABLE t_1bit_table( v FLOAT1BIT(4) );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[1,-1,1,-1]') );
+  CREATE INDEX t_1bit_table_idx ON t_1bit_table( libsql_vector_idx(v) );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[-1,1,1,-1]') );
+  INSERT INTO t_1bit_table VALUES ( vector1bit('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_1bit_table_idx', vector1bit('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f64-compress-f32 {
+  CREATE TABLE t_f64_f32( v FLOAT64(4) );
+  CREATE INDEX t_f64_f32_idx ON t_f64_f32( libsql_vector_idx(v, 'compress_neighbors=float32') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[1,-1,1,-1]') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[-1,1,1,-1]') );
+  INSERT INTO t_f64_f32 VALUES ( vector64('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f64_f32_idx', vector64('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f32-compress-f8 {
+  CREATE TABLE t_f32_f8( v FLOAT32(4) );
+  CREATE INDEX t_f32_f8_idx ON t_f32_f8( libsql_vector_idx(v, 'compress_neighbors=float8') );
+  INSERT INTO t_f32_f8 VALUES ( vector('[1,-1,1,-1]') );
+  INSERT INTO t_f32_f8 VALUES ( vector('[-1,1,1,-1]') );
+  INSERT INTO t_f32_f8 VALUES ( vector('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f32_f8_idx', vector('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f32-compress-f16 {
+  CREATE TABLE t_f32_f16( v FLOAT32(4) );
+  CREATE INDEX t_f32_f16_idx ON t_f32_f16( libsql_vector_idx(v, 'compress_neighbors=float16') );
+  INSERT INTO t_f32_f16 VALUES ( vector('[1,-1,1,-1]') );
+  INSERT INTO t_f32_f16 VALUES ( vector('[-1,1,1,-1]') );
+  INSERT INTO t_f32_f16 VALUES ( vector('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f32_f16_idx', vector('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f32-compress-bf16 {
+  CREATE TABLE t_f32_bf16( v FLOAT32(4) );
+  CREATE INDEX t_f32_bf16_idx ON t_f32_bf16( libsql_vector_idx(v, 'compress_neighbors=floatb16') );
+  INSERT INTO t_f32_bf16 VALUES ( vector('[1,-1,1,-1]') );
+  INSERT INTO t_f32_bf16 VALUES ( vector('[-1,1,1,-1]') );
+  INSERT INTO t_f32_bf16 VALUES ( vector('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f32_bf16_idx', vector('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f8 {
+  CREATE TABLE t_f8( v FLOAT8(4) );
+  CREATE INDEX t_f8_idx ON t_f8( libsql_vector_idx(v) );
+  INSERT INTO t_f8 VALUES ( vector8('[1,-1,1,-1]') );
+  INSERT INTO t_f8 VALUES ( vector8('[-1,1,1,-1]') );
+  INSERT INTO t_f8 VALUES ( vector8('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f8_idx', vector8('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f16 {
+  CREATE TABLE t_f16( v FLOAT16(4) );
+  CREATE INDEX t_f16_idx ON t_f16( libsql_vector_idx(v) );
+  INSERT INTO t_f16 VALUES ( vector16('[1,-1,1,-1]') );
+  INSERT INTO t_f16 VALUES ( vector16('[-1,1,1,-1]') );
+  INSERT INTO t_f16 VALUES ( vector16('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f16_idx', vector16('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-bf16 {
+  CREATE TABLE t_bf16( v FLOATB16(4) );
+  CREATE INDEX t_bf16_idx ON t_bf16( libsql_vector_idx(v) );
+  INSERT INTO t_bf16 VALUES ( vectorb16('[1,-1,1,-1]') );
+  INSERT INTO t_bf16 VALUES ( vectorb16('[-1,1,1,-1]') );
+  INSERT INTO t_bf16 VALUES ( vectorb16('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_bf16_idx', vectorb16('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f8-compress-1bit {
+  CREATE TABLE t_f8_1bit( v FLOAT8(4) );
+  CREATE INDEX t_f8_1bit_idx ON t_f8_1bit( libsql_vector_idx(v, 'compress_neighbors=float1bit') );
+  INSERT INTO t_f8_1bit VALUES ( vector8('[1,-1,1,-1]') );
+  INSERT INTO t_f8_1bit VALUES ( vector8('[-1,1,1,-1]') );
+  INSERT INTO t_f8_1bit VALUES ( vector8('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f8_1bit_idx', vector8('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-f16-compress-1bit {
+  CREATE TABLE t_f16_1bit( v FLOAT16(4) );
+  CREATE INDEX t_f16_1bit_idx ON t_f16_1bit( libsql_vector_idx(v, 'compress_neighbors=float1bit') );
+  INSERT INTO t_f16_1bit VALUES ( vector16('[1,-1,1,-1]') );
+  INSERT INTO t_f16_1bit VALUES ( vector16('[-1,1,1,-1]') );
+  INSERT INTO t_f16_1bit VALUES ( vector16('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_f16_1bit_idx', vector16('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+do_execsql_test vector-bf16-compress-1bit {
+  CREATE TABLE t_bf16_1bit( v FLOATB16(4) );
+  CREATE INDEX t_bf16_1bit_idx ON t_bf16_1bit( libsql_vector_idx(v, 'compress_neighbors=float1bit') );
+  INSERT INTO t_bf16_1bit VALUES ( vectorb16('[1,-1,1,-1]') );
+  INSERT INTO t_bf16_1bit VALUES ( vectorb16('[-1,1,1,-1]') );
+  INSERT INTO t_bf16_1bit VALUES ( vectorb16('[1,-1,-1,1]') );
+  SELECT * FROM vector_top_k('t_bf16_1bit_idx', vectorb16('[10,-10,-20,20]'), 4);
+} {3 1 2}
+
+proc error_messages {sql} {
+  set ret ""
+  catch {
+    set stmt [sqlite3_prepare db $sql -1 dummy]
+    sqlite3_step $stmt
+    sqlite3_finalize $stmt
+  } ret
+  set ret [sqlite3_errmsg db]
+}
+
+do_test vector-errors {
+  set ret [list]
+  lappend ret [error_messages {CREATE INDEX t_no_idx ON t_no( libsql_vector_idx(v) )}]
+  sqlite3_exec db { CREATE TABLE t_err ( a INTEGER, b BLOB, c FLOAT32(-1), d FLOAT32(0), e FLOAT32(1) ) }
+  sqlite3_exec db { CREATE TABLE t_err2 ( a, b, v FLOAT32(4), PRIMARY KEY (a, b) ) WITHOUT ROWID }
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(v) )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector(e) )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(a) )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(b) )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(c) )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(d) )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(e, 'a=1') )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(e, 'metric=unknown') )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err( libsql_vector_idx(e, 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine', 'metric=cosine') )}]
+  lappend ret [error_messages {CREATE INDEX t_err_idx ON t_err2( libsql_vector_idx(v) )}]
+  sqlite3_exec db { CREATE TABLE t_err3 ( e FLOAT32(4) ) }
+  sqlite3_exec db { CREATE INDEX t_err3_idx ON t_err3 (libsql_vector_idx(e)) }
+  lappend ret [error_messages {INSERT INTO t_err3 VALUES (vector('[1]'))}]
+  lappend ret [error_messages {INSERT INTO t_err3 VALUES (vector('[1, 2, 3, 4, 5]'))}]
+  lappend ret [error_messages {INSERT INTO t_err3 VALUES (vector64('[1,2,3,4]'))}]
+  lappend ret [error_messages {SELECT * FROM vector_top_k('t_err3_idx', vector('[1,2]'), 2)}]
+  sqlite3_exec db { CREATE TABLE t_mixed_t( v FLOAT32(3)); }
+  sqlite3_exec db { INSERT INTO t_mixed_t VALUES('[1]'); }
+  lappend ret [error_messages {CREATE INDEX t_mixed_t_idx ON t_mixed_t( libsql_vector_idx(v) )}]
+} [list {*}{
+  {no such table: main.t_no}
+  {no such column: v}
+  {no such function: libsql_vector}
+  {vector index: unexpected vector column type: INTEGER}
+  {vector index: unexpected vector column type: BLOB}
+  {vector index: non digit symbol in vector column parameter: FLOAT32(-1)}
+  {vector index: vector column must have non-zero dimension for index: FLOAT32(0)}
+  {vector index: invalid vector index parameter 'a=1': invalid parameter}
+  {vector index: invalid vector index parameter 'metric=unknown': invalid parameter}
+  {vector index: invalid vector index parameter 'metric=cosine': unable to serialize vector index parameter}
+  {vector index: unsupported for tables without ROWID and composite primary key}
+  {vector index(insert): dimensions are different: 1 != 4}
+  {vector index(insert): dimensions are different: 5 != 4}
+  {vector index(insert): vector type differs from column type: 2 != 1}
+  {vector index(search): dimensions are different: 2 != 4}
+  {vector index(insert): dimensions are different: 1 != 3}
+}]

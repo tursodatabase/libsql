@@ -6,23 +6,23 @@ use crate::error::Result;
 use crate::io::Io;
 use crate::segment::Frame;
 use crate::shared_wal::SharedWal;
-use crate::transaction::TxGuard;
+use crate::transaction::TxGuardOwned;
 
 /// The injector takes frames and injects them in the wal.
-pub struct Injector<'a, IO: Io> {
+pub struct Injector<IO: Io> {
     // The wal to which we are injecting
     wal: Arc<SharedWal<IO>>,
     buffer: Vec<Box<Frame>>,
     /// capacity of the frame buffer
     capacity: usize,
-    tx: TxGuard<'a, IO::File>,
+    tx: TxGuardOwned<IO::File>,
     max_tx_frame_no: u64,
 }
 
-impl<'a, IO: Io> Injector<'a, IO> {
+impl<IO: Io> Injector<IO> {
     pub fn new(
         wal: Arc<SharedWal<IO>>,
-        tx: TxGuard<'a, IO::File>,
+        tx: TxGuardOwned<IO::File>,
         buffer_capacity: usize,
     ) -> Result<Self> {
         Ok(Self {
@@ -34,7 +34,7 @@ impl<'a, IO: Io> Injector<'a, IO> {
         })
     }
 
-    pub async fn insert_frame(&mut self, frame: Box<Frame>) -> Result<()> {
+    pub async fn insert_frame(&mut self, frame: Box<Frame>) -> Result<Option<u64>> {
         let size_after = frame.size_after();
         self.max_tx_frame_no = self.max_tx_frame_no.max(frame.header().frame_no());
         self.buffer.push(frame);
@@ -43,10 +43,10 @@ impl<'a, IO: Io> Injector<'a, IO> {
             self.flush(size_after).await?;
         }
 
-        Ok(())
+        Ok(size_after.map(|_| self.max_tx_frame_no))
     }
 
-    async fn flush(&mut self, size_after: Option<u32>) -> Result<()> {
+    pub async fn flush(&mut self, size_after: Option<u32>) -> Result<()> {
         let buffer = std::mem::take(&mut self.buffer);
         let current = self.wal.current.load();
         let commit_data = size_after.map(|size| (size, self.max_tx_frame_no));
@@ -54,11 +54,17 @@ impl<'a, IO: Io> Injector<'a, IO> {
             self.max_tx_frame_no = 0;
         }
         let buffer = current
-            .insert_frames(buffer, commit_data, &mut self.tx)
+            .inject_frames(buffer, commit_data, &mut self.tx)
             .await?;
         self.buffer = buffer;
+        self.buffer.clear();
 
         Ok(())
+    }
+
+    pub fn rollback(&mut self) {
+        self.buffer.clear();
+        self.tx.reset(0);
     }
 }
 
@@ -77,8 +83,8 @@ mod test {
         let primary_conn = primary_env.open_conn("test");
         let primary_shared = primary_env.shared("test");
 
-        let mut replicator = Replicator::new(primary_shared.clone(), 1);
-        let stream = replicator.frame_stream();
+        let replicator = Replicator::new(primary_shared.clone(), 1);
+        let stream = replicator.into_frame_stream();
 
         tokio::pin!(stream);
 
@@ -89,7 +95,10 @@ mod test {
 
         let mut tx = crate::transaction::Transaction::Read(replica_shared.begin_read(42));
         replica_shared.upgrade(&mut tx).unwrap();
-        let guard = tx.as_write_mut().unwrap().lock();
+        let guard = tx
+            .into_write()
+            .unwrap_or_else(|_| panic!())
+            .into_lock_owned();
         let mut injector = Injector::new(replica_shared.clone(), guard, 10).unwrap();
 
         primary_conn.execute("create table test (x)", ()).unwrap();
@@ -97,7 +106,7 @@ mod test {
         primary_shared.last_committed_frame_no();
         for _ in 0..2 {
             let frame = stream.next().await.unwrap().unwrap();
-            injector.insert_frame(Box::new(frame)).await.unwrap();
+            injector.insert_frame(frame).await.unwrap();
         }
 
         replica_conn
@@ -118,7 +127,7 @@ mod test {
             .unwrap();
 
         let frame = stream.next().await.unwrap().unwrap();
-        injector.insert_frame(Box::new(frame)).await.unwrap();
+        injector.insert_frame(frame).await.unwrap();
 
         replica_conn
             .query_row("select count(*) from test", (), |r| {

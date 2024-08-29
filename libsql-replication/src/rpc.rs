@@ -23,8 +23,14 @@ pub mod proxy {
 
 pub mod replication {
     #![allow(clippy::all)]
+    use std::pin::Pin;
 
+    use tokio_stream::Stream;
     use uuid::Uuid;
+
+    pub type BoxStream<'a, T> = Pin<Box<dyn Stream<Item = T> + Send + 'a>>;
+
+    use self::replication_log_server::ReplicationLog;
     include!("generated/wal_log.rs");
 
     pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
@@ -50,6 +56,47 @@ pub mod replication {
             Self {
                 handshake_version: Some(1),
             }
+        }
+    }
+
+    pub type BoxReplicationService = Box<
+        dyn ReplicationLog<
+            LogEntriesStream = BoxStream<'static, Result<Frame, tonic::Status>>,
+            SnapshotStream = BoxStream<'static, Result<Frame, tonic::Status>>,
+        >,
+    >;
+
+    #[tonic::async_trait]
+    impl ReplicationLog for BoxReplicationService {
+        type LogEntriesStream = BoxStream<'static, Result<Frame, tonic::Status>>;
+        type SnapshotStream = BoxStream<'static, Result<Frame, tonic::Status>>;
+
+        async fn log_entries(
+            &self,
+            req: tonic::Request<LogOffset>,
+        ) -> Result<tonic::Response<Self::LogEntriesStream>, tonic::Status> {
+            self.as_ref().log_entries(req).await
+        }
+
+        async fn batch_log_entries(
+            &self,
+            req: tonic::Request<LogOffset>,
+        ) -> Result<tonic::Response<Frames>, tonic::Status> {
+            self.as_ref().batch_log_entries(req).await
+        }
+
+        async fn hello(
+            &self,
+            req: tonic::Request<HelloRequest>,
+        ) -> Result<tonic::Response<HelloResponse>, tonic::Status> {
+            self.as_ref().hello(req).await
+        }
+
+        async fn snapshot(
+            &self,
+            req: tonic::Request<LogOffset>,
+        ) -> Result<tonic::Response<Self::SnapshotStream>, tonic::Status> {
+            self.as_ref().snapshot(req).await
         }
     }
 }

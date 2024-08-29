@@ -83,7 +83,7 @@ impl Database {
         encryption_config: Option<EncryptionConfig>,
         sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
-        namespace: Option<String>
+        namespace: Option<String>,
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -260,8 +260,8 @@ impl Database {
     #[cfg(feature = "replication")]
     /// Perform a sync step, returning the new replication index, or None, if the nothing was
     /// replicated yet
-    pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {
-        if let Some(ref ctx) = self.replication_ctx {
+    pub async fn sync_oneshot(&self) -> Result<crate::replication::Replicated> {
+        if let Some(ctx) = &self.replication_ctx {
             ctx.replicator.sync_oneshot().await
         } else {
             Err(crate::errors::Error::Misuse(
@@ -273,8 +273,31 @@ impl Database {
 
     #[cfg(feature = "replication")]
     /// Sync with primary
-    pub async fn sync(&self) -> Result<Option<FrameNo>> {
+    pub async fn sync(&self) -> Result<crate::replication::Replicated> {
         Ok(self.sync_oneshot().await?)
+    }
+
+    #[cfg(feature = "replication")]
+    /// Sync with primary at least to a given replication index
+    pub async fn sync_until(&self, replication_index: FrameNo) -> Result<crate::replication::Replicated> {
+        if let Some(ctx) = &self.replication_ctx {
+            let mut frame_no: Option<FrameNo> = ctx.replicator.committed_frame_no().await;
+            let mut frames_synced: usize = 0;
+            while frame_no.unwrap_or(0) < replication_index {
+                let res = ctx.replicator.sync_oneshot().await?;
+                frame_no = res.frame_no();
+                frames_synced += res.frames_synced();
+            }
+            Ok(crate::replication::Replicated {
+                frame_no,
+                frames_synced,
+            })
+        } else {
+            Err(crate::errors::Error::Misuse(
+                "No replicator available. Use Database::with_replicator() to enable replication"
+                    .to_string(),
+            ))
+        }
     }
 
     #[cfg(feature = "replication")]

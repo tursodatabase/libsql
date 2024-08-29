@@ -1,17 +1,17 @@
 #![allow(dead_code)]
-use std::future::Future;
-use std::path::Path;
 use std::sync::Arc;
+use std::{future::Future, path::Path};
 
 use chrono::{DateTime, Utc};
-use tokio::io::AsyncWrite;
+use fst::Map;
 use uuid::Uuid;
 
-use super::Result;
+use super::{RestoreOptions, Result, SegmentKey};
 use crate::io::file::FileExt;
 use libsql_sys::name::NamespaceName;
 
-pub mod fs;
+// pub mod fs;
+#[cfg(feature = "s3")]
 pub mod s3;
 
 #[derive(Debug)]
@@ -25,20 +25,13 @@ pub struct SegmentMeta {
 
 pub struct RestoreRequest {}
 
-pub struct RestoreOptions {
-    /// Namespace to restore
-    namespace: NamespaceName,
-    /// If provided, will restore up to the most recent segment lesser or equal to `before`
-    before: Option<DateTime<Utc>>,
-}
-
 pub struct DbMeta {
     pub max_frame_no: u64,
 }
 
 pub trait Backend: Send + Sync + 'static {
     /// Config type associated with the Storage
-    type Config: Send + Sync + 'static;
+    type Config: Clone + Send + Sync + 'static;
 
     /// Store `segment_data` with its associated `meta`
     fn store(
@@ -49,45 +42,64 @@ pub trait Backend: Send + Sync + 'static {
         segment_index: Vec<u8>,
     ) -> impl Future<Output = Result<()>> + Send;
 
-    /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
-    async fn fetch_segment(
+    fn find_segment(
         &self,
-        _config: &Self::Config,
-        _namespace: NamespaceName,
-        _frame_no: u64,
-        _dest_path: &Path,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        frame_no: u64,
+    ) -> impl Future<Output = Result<SegmentKey>> + Send;
+
+    fn fetch_segment_index(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+    ) -> impl Future<Output = Result<Map<Arc<[u8]>>>> + Send;
+
+    /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
+    async fn fetch_segment_data_to_file(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        file: &impl FileExt,
     ) -> Result<()>;
 
+    // this method taking self: Arc<Self> is an infortunate consequence of rust type system making
+    // impl FileExt variant with all the arguments, with no escape hatch...
+    fn fetch_segment_data(
+        self: Arc<Self>,
+        config: Self::Config,
+        namespace: NamespaceName,
+        key: SegmentKey,
+    ) -> impl Future<Output = Result<impl FileExt>> + Send;
+
+    // /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
+    async fn fetch_segment(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        frame_no: u64,
+        dest_path: &Path,
+    ) -> Result<Map<Arc<[u8]>>>;
+
     /// Fetch meta for `namespace`
-    async fn meta(&self, _config: &Self::Config, _namespace: NamespaceName) -> Result<DbMeta>;
-
-    /// Fetch meta batch
-    /// implemented in terms of `meta`, can be specialized if implementation is able to query a
-    /// batch more efficiently.
-    async fn meta_batch(
+    fn meta(
         &self,
-        _config: &Self::Config,
-        _namespaces: Vec<NamespaceName>,
-    ) -> Result<Vec<DbMeta>> {
-        todo!()
-    }
+        config: &Self::Config,
+        namespace: &NamespaceName,
+    ) -> impl Future<Output = Result<DbMeta>> + Send;
 
-    /// Restore namespace, and return the frame index.
-    /// The default implementation is implemented in terms of fetch_segment, but it can be
-    /// overridden for a more specific implementation if available; for example, a remote storage
-    /// server could directly stream the necessary pages, rather than fetching segments until
-    /// fully restored.
-    fn restore(
+    async fn restore(
         &self,
-        _config: &Self::Config,
-        _restore_options: RestoreOptions,
-        _dest: impl AsyncWrite,
-    ) -> Result<u64> {
-        todo!("provide default restore implementation")
-    }
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        restore_options: RestoreOptions,
+        dest: impl FileExt,
+    ) -> Result<()>;
 
     /// Returns the default configuration for this storage
-    fn default_config(&self) -> Arc<Self::Config>;
+    fn default_config(&self) -> Self::Config;
 }
 
 impl<T: Backend> Backend for Arc<T> {
@@ -107,20 +119,79 @@ impl<T: Backend> Backend for Arc<T> {
     async fn fetch_segment(
         &self,
         config: &Self::Config,
-        namespace: NamespaceName,
+        namespace: &NamespaceName,
         frame_no: u64,
         dest_path: &Path,
-    ) -> Result<()> {
+    ) -> Result<fst::Map<Arc<[u8]>>> {
         self.as_ref()
             .fetch_segment(config, namespace, frame_no, dest_path)
             .await
     }
 
-    async fn meta(&self, config: &Self::Config, namespace: NamespaceName) -> Result<DbMeta> {
+    async fn meta(&self, config: &Self::Config, namespace: &NamespaceName) -> Result<DbMeta> {
         self.as_ref().meta(config, namespace).await
     }
 
-    fn default_config(&self) -> Arc<Self::Config> {
+    fn default_config(&self) -> Self::Config {
         self.as_ref().default_config()
+    }
+
+    async fn restore(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        restore_options: RestoreOptions,
+        dest: impl FileExt,
+    ) -> Result<()> {
+        self.as_ref()
+            .restore(config, namespace, restore_options, dest)
+            .await
+    }
+
+    async fn find_segment(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        frame_no: u64,
+    ) -> Result<SegmentKey> {
+        self.as_ref()
+            .find_segment(config, namespace, frame_no)
+            .await
+    }
+
+    async fn fetch_segment_index(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+    ) -> Result<Map<Arc<[u8]>>> {
+        self.as_ref()
+            .fetch_segment_index(config, namespace, key)
+            .await
+    }
+
+    async fn fetch_segment_data_to_file(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        file: &impl FileExt,
+    ) -> Result<()> {
+        self.as_ref()
+            .fetch_segment_data_to_file(config, namespace, key, file)
+            .await
+    }
+
+    async fn fetch_segment_data(
+        self: Arc<Self>,
+        config: Self::Config,
+        namespace: NamespaceName,
+        key: SegmentKey,
+    ) -> Result<impl FileExt> {
+        // this implementation makes no sense (Arc<Arc<T>>)
+        self.as_ref()
+            .clone()
+            .fetch_segment_data(config, namespace, key)
+            .await
     }
 }

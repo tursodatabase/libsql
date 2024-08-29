@@ -11,7 +11,20 @@ use crate::registry::WalRegistry;
 
 pub(crate) type NotifyCheckpointer = mpsc::Sender<NamespaceName>;
 
-type LibsqlCheckpointer<IO, S> = Checkpointer<WalRegistry<IO, S>>;
+pub enum CheckpointMessage {
+    /// notify that a namespace may be checkpointable
+    Namespace(NamespaceName),
+    /// shutdown initiated
+    Shutdown,
+}
+
+impl From<NamespaceName> for CheckpointMessage {
+    fn from(value: NamespaceName) -> Self {
+        Self::Namespace(value)
+    }
+}
+
+pub type LibsqlCheckpointer<IO, S> = Checkpointer<WalRegistry<IO, S>>;
 
 impl<IO, S> LibsqlCheckpointer<IO, S>
 where
@@ -19,8 +32,8 @@ where
     S: Sync + Send + 'static,
 {
     pub fn new(
-        registry: WalRegistry<IO, S>,
-        notifier: mpsc::Receiver<NamespaceName>,
+        registry: Arc<WalRegistry<IO, S>>,
+        notifier: mpsc::Receiver<CheckpointMessage>,
         max_checkpointing_conccurency: usize,
     ) -> Self {
         Self::new_with_performer(registry, notifier, max_checkpointing_conccurency)
@@ -70,12 +83,14 @@ pub struct Checkpointer<P> {
     checkpointing: HashSet<NamespaceName>,
     /// the checkpointer is notifier whenever there is a change to a namespage that could trigger a
     /// checkpoint
-    recv: mpsc::Receiver<NamespaceName>,
+    recv: mpsc::Receiver<CheckpointMessage>,
     max_checkpointing_conccurency: usize,
     shutting_down: bool,
     join_set: JoinSet<(NamespaceName, crate::error::Result<()>)>,
     processing: Vec<NamespaceName>,
     errors: usize,
+    /// previous iteration of the loop resulted in no work being enqueued
+    no_work: bool,
 }
 
 #[allow(private_bounds)]
@@ -84,12 +99,12 @@ where
     P: PerformCheckpoint + Send + Sync + 'static,
 {
     fn new_with_performer(
-        perform_checkpoint: P,
-        notifier: mpsc::Receiver<NamespaceName>,
+        perform_checkpoint: Arc<P>,
+        notifier: mpsc::Receiver<CheckpointMessage>,
         max_checkpointing_conccurency: usize,
     ) -> Self {
         Self {
-            perform_checkpoint: Arc::new(perform_checkpoint),
+            perform_checkpoint,
             scheduled: Default::default(),
             checkpointing: Default::default(),
             recv: notifier,
@@ -98,6 +113,7 @@ where
             join_set: JoinSet::new(),
             processing: Vec::new(),
             errors: 0,
+            no_work: false,
         }
     }
 
@@ -119,6 +135,7 @@ where
 
     fn should_exit(&self) -> bool {
         self.shutting_down
+            && self.recv.is_empty()
             && self.scheduled.is_empty()
             && self.checkpointing.is_empty()
             && self.join_set.is_empty()
@@ -141,27 +158,31 @@ where
             }
             notified = self.recv.recv(), if !self.shutting_down => {
                 match notified {
-                    Some(namespace) => {
+                    Some(CheckpointMessage::Namespace(namespace)) => {
+                        tracing::info!(namespace = namespace.as_str(), "notified for checkpoint");
                         self.scheduled.insert(namespace);
                     }
-                    None => {
+                    None | Some(CheckpointMessage::Shutdown) => {
+                        tracing::info!("checkpointed is shutting down. {} namespaces to checkpoint", self.checkpointing.len());
                         self.shutting_down = true;
                     }
                 }
             }
             // don't wait if there is stuff to enqueue
             _ = std::future::ready(()), if !self.scheduled.is_empty()
-                && self.join_set.len() < self.max_checkpointing_conccurency => (),
+                && self.join_set.len() < self.max_checkpointing_conccurency && !self.no_work => (),
         }
 
         let n_available = self.max_checkpointing_conccurency - self.join_set.len();
         if n_available > 0 {
+            self.no_work = true;
             for namespace in self
                 .scheduled
                 .difference(&self.checkpointing)
                 .take(n_available)
                 .cloned()
             {
+                self.no_work = false;
                 self.processing.push(namespace.clone());
                 let perform_checkpoint = self.perform_checkpoint.clone();
                 self.join_set.spawn(async move {
@@ -201,10 +222,11 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
         let ns = NamespaceName::from("test");
 
-        sender.send(ns.clone()).await.unwrap();
+        sender.send(ns.clone().into()).await.unwrap();
 
         checkpointer.step().await;
 
@@ -233,10 +255,11 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
         let ns = NamespaceName::from("test");
 
-        sender.send(ns.clone()).await.unwrap();
+        sender.send(ns.clone().into()).await.unwrap();
 
         checkpointer.step().await;
         assert_eq!(checkpointer.errors, 0);
@@ -264,7 +287,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
 
         drop(sender);
 
@@ -290,7 +314,8 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
 
         drop(sender);
 
@@ -323,12 +348,13 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
 
         let ns: NamespaceName = "test".into();
 
-        sender.send(ns.clone()).await.unwrap();
-        sender.send(ns.clone()).await.unwrap();
+        sender.send(ns.clone().into()).await.unwrap();
+        sender.send(ns.clone().into()).await.unwrap();
 
         checkpointer.step().await;
 
@@ -355,13 +381,14 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 5);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 5);
 
         let ns1: NamespaceName = "test1".into();
         let ns2: NamespaceName = "test2".into();
 
-        sender.send(ns1.clone()).await.unwrap();
-        sender.send(ns2.clone()).await.unwrap();
+        sender.send(ns1.clone().into()).await.unwrap();
+        sender.send(ns2.clone().into()).await.unwrap();
 
         checkpointer.step().await;
 
@@ -390,15 +417,16 @@ mod test {
         }
 
         let (sender, receiver) = mpsc::channel(8);
-        let mut checkpointer = Checkpointer::new_with_performer(TestPerformCheckoint, receiver, 2);
+        let mut checkpointer =
+            Checkpointer::new_with_performer(TestPerformCheckoint.into(), receiver, 2);
 
         let ns1: NamespaceName = "test1".into();
         let ns2: NamespaceName = "test2".into();
         let ns3: NamespaceName = "test3".into();
 
-        sender.send(ns1.clone()).await.unwrap();
-        sender.send(ns2.clone()).await.unwrap();
-        sender.send(ns3.clone()).await.unwrap();
+        sender.send(ns1.clone().into()).await.unwrap();
+        sender.send(ns2.clone().into()).await.unwrap();
+        sender.send(ns3.clone().into()).await.unwrap();
 
         checkpointer.step().await;
         checkpointer.step().await;

@@ -1,0 +1,297 @@
+# 2014 Jan 08
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focused on phrase queries.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5origintext
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+foreach_detail_mode $testprefix {
+
+sqlite3_fts5_register_origintext db
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize="origintext unicode61", detail=%DETAIL%
+  );
+  CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO ft VALUES('Hello world');
+}
+
+do_execsql_test 1.2 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+proc b {x} { string map [list "\0" "."] $x }
+db func b b
+
+do_execsql_test 1.3 {
+  select b(term) from vocab;
+} {
+  hello.Hello
+  world
+}
+
+do_execsql_test 1.4 {
+  SELECT rowid FROM ft('Hello');
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+
+# Return a random integer between 0 and n-1.
+#
+proc random {n} {
+  expr {abs(int(rand()*$n))}
+}
+
+proc select_one {list} {
+  set n [llength $list]
+  lindex $list [random $n]
+}
+
+proc term {} {
+  set first_letter {
+    a b c d e f g h i j k l m n o p q r s t u v w x y z
+    A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+  }
+
+  set term [select_one $first_letter]
+  append term [random 100]
+}
+
+proc document {} {
+  set nTerm [expr [random 5] + 5]
+  set doc ""
+  for {set ii 0} {$ii < $nTerm} {incr ii} {
+    lappend doc [term]
+  }
+  set doc
+}
+db func document document
+
+sqlite3_fts5_register_origintext db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize="origintext unicode61", detail=%DETAIL%
+  );
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 128);
+  CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
+}
+
+do_test 2.1 {
+  for {set ii 0} {$ii < 500} {incr ii} {
+    execsql { INSERT INTO ft VALUES( document() ) }
+  }
+} {}
+
+do_execsql_test 2.2 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+do_execsql_test 2.3 {
+  INSERT INTO ft(ft, rank) VALUES('merge', 16);
+}
+
+do_execsql_test 2.4 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+do_execsql_test 2.5 {
+  INSERT INTO ft(ft) VALUES('optimize');
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+sqlite3_fts5_register_origintext db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize="origintext unicode61", detail=%DETAIL%
+  );
+  CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
+
+  INSERT INTO ft(rowid, x) VALUES(1, 'hello');
+  INSERT INTO ft(rowid, x) VALUES(2, 'Hello');
+  INSERT INTO ft(rowid, x) VALUES(3, 'HELLO');
+}
+
+#proc b {x} { string map [list "\0" "."] $x }
+#db func b b
+#execsql_pp { SELECT b(term) FROM vocab }
+
+do_execsql_test 3.1.1 { SELECT rowid FROM ft('hello') } 1
+do_execsql_test 3.1.2 { SELECT rowid FROM ft('Hello') } 2
+do_execsql_test 3.1.3 { SELECT rowid FROM ft('HELLO') } 3
+
+do_execsql_test 3.2 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(x, 
+      tokenize="origintext unicode61", 
+      tokendata=1,
+      detail=%DETAIL%
+  );
+  CREATE VIRTUAL TABLE vocab2 USING fts5vocab(ft2, instance);
+
+  INSERT INTO ft2(rowid, x) VALUES(1, 'hello');
+  INSERT INTO ft2(rowid, x) VALUES(2, 'Hello');
+  INSERT INTO ft2(rowid, x) VALUES(3, 'HELLO');
+
+  INSERT INTO ft2(rowid, x) VALUES(10, 'helloooo');
+}
+
+#proc b {x} { string map [list "\0" "."] $x }
+#db func b b
+#execsql_pp { SELECT b(term) FROM vocab }
+
+do_execsql_test 3.3.1 { SELECT rowid FROM ft2('hello') } {1 2 3}
+do_execsql_test 3.3.2 { SELECT rowid FROM ft2('Hello') } {1 2 3}
+do_execsql_test 3.3.3 { SELECT rowid FROM ft2('HELLO') } {1 2 3}
+
+do_execsql_test 3.3.4 { SELECT rowid FROM ft2('hello*') } {1 2 3 10}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+sqlite3_fts5_register_origintext db
+proc querytoken {cmd iPhrase iToken} { 
+  set txt [$cmd xQueryToken $iPhrase $iToken]
+  string map [list "\0" "."] $txt
+}
+sqlite3_fts5_create_function db querytoken querytoken
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize='origintext unicode61', tokendata=1, detail=%DETAIL%
+  );
+  INSERT INTO ft VALUES('one two three four');
+}
+
+do_execsql_test 4.1 {
+  SELECT rowid, querytoken(ft, 0, 0) FROM ft('TwO')
+} {1 two.TwO}
+do_execsql_test 4.2 {
+  SELECT rowid, querytoken(ft, 0, 0) FROM ft('one TWO ThreE')
+} {1 one}
+do_execsql_test 4.3 {
+  SELECT rowid, querytoken(ft, 1, 0) FROM ft('one TWO ThreE')
+} {1 two.TWO}
+
+if {"%DETAIL%"=="full"} {
+  # Phrase queries are only supported for detail=full.
+  #
+  do_execsql_test 4.4 {
+    SELECT rowid, querytoken(ft, 0, 2) FROM ft('"one TWO ThreE"')
+  } {1 three.ThreE}
+  do_catchsql_test 4.5 {
+    SELECT rowid, querytoken(ft, 0, 3) FROM ft('"one TWO ThreE"')
+  } {1 SQLITE_RANGE}
+  do_catchsql_test 4.6 {
+    SELECT rowid, querytoken(ft, 1, 0) FROM ft('"one TWO ThreE"')
+  } {1 SQLITE_RANGE}
+  do_catchsql_test 4.7 {
+    SELECT rowid, querytoken(ft, -1, 0) FROM ft('"one TWO ThreE"')
+  } {1 SQLITE_RANGE}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+sqlite3_fts5_register_origintext db
+proc insttoken {cmd iIdx iToken} { 
+  set txt [$cmd xInstToken $iIdx $iToken]
+  string map [list "\0" "."] $txt
+}
+sqlite3_fts5_create_function db insttoken insttoken
+fts5_aux_test_functions db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize='origintext unicode61', tokendata=1, detail=%DETAIL%
+  );
+  INSERT INTO ft VALUES('one ONE One oNe oNE one');
+}
+
+do_execsql_test 5.1 {
+  SELECT insttoken(ft, 0, 0), 
+         insttoken(ft, 1, 0),
+         insttoken(ft, 2, 0),
+         insttoken(ft, 3, 0),
+         insttoken(ft, 4, 0),
+         insttoken(ft, 5, 0)
+  FROM ft('one');
+} {
+  one one.ONE one.One one.oNe one.oNE one
+}
+
+do_execsql_test 5.2 {
+  SELECT insttoken(ft, 1, 0) FROM ft('one');
+} {
+  one.ONE
+}
+
+do_execsql_test 5.3 {
+  SELECT fts5_test_poslist(ft) FROM ft('one');
+} {
+  {0.0.0 0.0.1 0.0.2 0.0.3 0.0.4 0.0.5}
+}
+
+#-------------------------------------------------------------------------
+# Test the xInstToken() API with:
+#
+#   * a non tokendata=1 table.
+#   * prefix queries.
+#
+reset_db
+sqlite3_fts5_register_origintext db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, y, tokenize='origintext unicode61', detail=%DETAIL%
+  );
+
+  INSERT INTO ft VALUES('One Two', 'Three two');
+  INSERT INTO ft VALUES('three Three', 'one One');
+}
+proc tokens {cmd} { 
+  set ret [list]
+  for {set iTok 0} {$iTok < [$cmd xInstCount]} {incr iTok} {
+    set txt [$cmd xInstToken $iTok 0]
+    set txt [string map [list "\0" "."] $txt]
+    lappend ret $txt
+  }
+  set ret
+}
+sqlite3_fts5_create_function db tokens tokens
+
+do_execsql_test 6.1 {
+  SELECT rowid, tokens(ft) FROM ft('One');
+} {1 one.One 2 one.One}
+
+do_execsql_test 6.2 {
+  SELECT rowid, tokens(ft) FROM ft('on*');
+} {1 {{}} 2 {{} {}}}
+
+do_execsql_test 6.3 {
+  SELECT rowid, tokens(ft) FROM ft('Three*');
+} {1 {{}} 2 {{}}}
+
+}
+
+finish_test
+

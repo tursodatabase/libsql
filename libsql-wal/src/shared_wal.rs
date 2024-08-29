@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -7,17 +7,21 @@ use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
 use parking_lot::{Mutex, MutexGuard};
+use tokio::sync::{mpsc, watch};
+use uuid::Uuid;
 
+use crate::checkpointer::CheckpointMessage;
 use crate::error::{Error, Result};
 use crate::io::file::FileExt;
 use crate::io::Io;
+use crate::replication::storage::ReplicateFromStorage;
 use crate::segment::current::CurrentSegment;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 use libsql_sys::name::NamespaceName;
 
 #[derive(Default)]
 pub struct WalLock {
-    pub(crate) tx_id: Arc<Mutex<Option<u64>>>,
+    pub(crate) tx_id: Arc<async_lock::Mutex<Option<u64>>>,
     /// When a writer is popped from the write queue, its write transaction may not be reading from the most recent
     /// snapshot. In this case, we return `SQLITE_BUSY_SNAPHSOT` to the caller. If no reads were performed
     /// with that transaction before upgrading, then the caller will call us back immediately after re-acquiring
@@ -43,13 +47,53 @@ pub struct SharedWal<IO: Io> {
     #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
     /// max frame_no acknoledged by the durable storage
-    pub(crate) durable_frame_no: AtomicU64,
+    pub(crate) durable_frame_no: Arc<Mutex<u64>>,
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
+    pub(crate) stored_segments: Box<dyn ReplicateFromStorage>,
+    pub(crate) shutdown: AtomicBool,
+    pub(crate) checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
+    /// maximum size the segment is allowed to grow
+    pub(crate) max_segment_size: AtomicUsize,
+    pub(crate) io: Arc<IO>,
 }
 
 impl<IO: Io> SharedWal<IO> {
+    #[tracing::instrument(skip(self), fields(namespace = self.namespace.as_str()))]
+    pub fn shutdown(&self) -> Result<()> {
+        tracing::info!("started namespace shutdown");
+        self.shutdown.store(true, Ordering::SeqCst);
+        // fixme: for infinite loop
+        let mut tx = loop {
+            let mut tx = Transaction::Read(self.begin_read(u64::MAX));
+            match self.upgrade(&mut tx) {
+                Ok(_) => break tx,
+                Err(Error::BusySnapshot) => continue,
+                Err(e) => return Err(e),
+            }
+        };
+
+        {
+            let mut tx = tx.as_write_mut().unwrap().lock();
+            tx.commit();
+            self.registry.swap_current(self, &tx)?;
+        }
+        // The current segment will not be used anymore. It's empty, but we still seal it so that
+        // the next startup doesn't find an unsealed segment.
+        self.current.load().seal()?;
+        tracing::info!("namespace shutdown");
+        Ok(())
+    }
+
+    pub fn new_frame_notifier(&self) -> watch::Receiver<u64> {
+        self.new_frame_notifier.subscribe()
+    }
+
     pub fn db_size(&self) -> u32 {
         self.current.load().db_size()
+    }
+
+    pub fn log_id(&self) -> Uuid {
+        self.current.load().log_id()
     }
 
     #[tracing::instrument(skip_all)]
@@ -69,6 +113,8 @@ impl<IO: Io> SharedWal<IO> {
             created_at: Instant::now(),
             conn_id,
             pages_read: 0,
+            namespace: self.namespace.clone(),
+            checkpoint_notifier: self.checkpoint_notifier.clone(),
         }
     }
 
@@ -78,41 +124,38 @@ impl<IO: Io> SharedWal<IO> {
             match tx {
                 Transaction::Write(_) => unreachable!("already in a write transaction"),
                 Transaction::Read(read_tx) => {
-                    {
-                        let mut reserved = self.wal_lock.reserved.lock();
-                        match *reserved {
-                            // we have already reserved the slot, go ahead and try to acquire
-                            Some(id) if id == read_tx.conn_id => {
-                                tracing::trace!("taking reserved slot");
-                                reserved.take();
-                                let lock = self.wal_lock.tx_id.lock();
+                    let mut reserved = self.wal_lock.reserved.lock();
+                    match *reserved {
+                        // we have already reserved the slot, go ahead and try to acquire
+                        Some(id) if id == read_tx.conn_id => {
+                            tracing::trace!("taking reserved slot");
+                            reserved.take();
+                            let lock = self.wal_lock.tx_id.lock_blocking();
+                            assert!(lock.is_none());
+                            let write_tx = self.acquire_write(read_tx, lock, reserved)?;
+                            *tx = Transaction::Write(write_tx);
+                            return Ok(());
+                        }
+                        None => {
+                            let lock = self.wal_lock.tx_id.lock_blocking();
+                            if lock.is_none() && self.wal_lock.waiters.is_empty() {
                                 let write_tx = self.acquire_write(read_tx, lock, reserved)?;
                                 *tx = Transaction::Write(write_tx);
                                 return Ok(());
                             }
-                            _ => (),
                         }
+                        _ => (),
                     }
 
-                    let lock = self.wal_lock.tx_id.lock();
-                    match *lock {
-                        None if self.wal_lock.waiters.is_empty() => {
-                            let write_tx =
-                                self.acquire_write(read_tx, lock, self.wal_lock.reserved.lock())?;
-                            *tx = Transaction::Write(write_tx);
-                            return Ok(());
-                        }
-                        Some(_) | None => {
-                            tracing::trace!(
-                                "txn currently held by another connection, registering to wait queue"
-                            );
-                            let parker = crossbeam::sync::Parker::new();
-                            let unparker = parker.unparker().clone();
-                            self.wal_lock.waiters.push((unparker, read_tx.conn_id));
-                            drop(lock);
-                            parker.park();
-                        }
-                    }
+                    tracing::trace!(
+                        "txn currently held by another connection, registering to wait queue"
+                    );
+
+                    let parker = crossbeam::sync::Parker::new();
+                    let unparker = parker.unparker().clone();
+                    self.wal_lock.waiters.push((unparker, read_tx.conn_id));
+                    drop(reserved);
+                    parker.park();
                 }
             }
         }
@@ -121,9 +164,11 @@ impl<IO: Io> SharedWal<IO> {
     fn acquire_write(
         &self,
         read_tx: &ReadTransaction<IO::File>,
-        mut tx_id_lock: MutexGuard<Option<u64>>,
+        mut tx_id_lock: async_lock::MutexGuard<Option<u64>>,
         mut reserved: MutexGuard<Option<u64>>,
     ) -> Result<WriteTransaction<IO::File>> {
+        assert!(reserved.is_none() || *reserved == Some(read_tx.conn_id));
+        assert!(tx_id_lock.is_none());
         // we read two fields in the header. There is no risk that a transaction commit in
         // between the two reads because this would require that:
         // 1) there would be a running txn
@@ -146,18 +191,22 @@ impl<IO: Io> SharedWal<IO> {
         let next_offset = current.count_committed() as u32;
         let next_frame_no = current.next_frame_no().get();
         *tx_id_lock = Some(read_tx.id);
+        let current_checksum = current.current_checksum();
 
         Ok(WriteTransaction {
             wal_lock: self.wal_lock.clone(),
             savepoints: vec![Savepoint {
+                current_checksum,
                 next_offset,
                 next_frame_no,
                 index: BTreeMap::new(),
             }],
             next_frame_no,
             next_offset,
+            current_checksum,
             is_commited: false,
             read_tx: read_tx.clone(),
+            recompute_checksum: None,
         })
     }
 
@@ -203,21 +252,6 @@ impl<IO: Io> SharedWal<IO> {
             }
         }
 
-        // The replication index from page 1 must match that of the SharedWal
-        #[cfg(debug_assertions)]
-        {
-            use libsql_sys::ffi::Sqlite3DbHeader;
-            use zerocopy::FromBytes;
-
-            if page_no == 1 {
-                let header = Sqlite3DbHeader::read_from_prefix(buffer).unwrap();
-                assert_eq!(
-                    header.replication_index.get(),
-                    self.checkpointed_frame_no.load(Ordering::Relaxed)
-                );
-            }
-        }
-
         tx.pages_read += 1;
 
         Ok(())
@@ -237,9 +271,25 @@ impl<IO: Io> SharedWal<IO> {
         }
 
         // TODO: use config for max log size
-        if tx.is_commited() && current.count_committed() > 1000 {
+        if tx.is_commited()
+            && current.count_committed() > self.max_segment_size.load(Ordering::Relaxed)
+        {
             self.swap_current(&tx)?;
         }
+
+        Ok(())
+    }
+
+    /// Cut the current log, and register it for storage
+    pub fn seal_current(&self) -> Result<()> {
+        let mut tx = self.begin_read(u64::MAX).into();
+        self.upgrade(&mut tx)?;
+        {
+            let mut guard = tx.as_write_mut().unwrap().lock();
+            guard.commit();
+            self.swap_current(&mut guard)?;
+        }
+        tx.end();
 
         Ok(())
     }
@@ -251,12 +301,12 @@ impl<IO: Io> SharedWal<IO> {
     }
 
     pub async fn checkpoint(&self) -> Result<Option<u64>> {
-        let durable_frame_no = self.durable_frame_no.load(Ordering::SeqCst);
+        let durable_frame_no = *self.durable_frame_no.lock();
         let checkpointed_frame_no = self
             .current
             .load()
             .tail()
-            .checkpoint(&self.db_file, durable_frame_no)
+            .checkpoint(&self.db_file, durable_frame_no, self.log_id(), &self.io)
             .await?;
         if let Some(checkpointed_frame_no) = checkpointed_frame_no {
             self.checkpointed_frame_no
@@ -298,7 +348,7 @@ mod test {
 
         seal_current_segment(&shared);
 
-        shared.durable_frame_no.store(99999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
 
         let frame_no = shared.checkpoint().await.unwrap().unwrap();
         assert_eq!(frame_no, 4);

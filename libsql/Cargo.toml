@@ -1,6 +1,6 @@
 [package]
 name = "libsql"
-version = "0.5.0-alpha.2"
+version = "0.5.1"
 edition = "2021"
 description = "libSQL library: the main gateway for interacting with the database"
 repository = "https://github.com/tursodatabase/libsql"
@@ -11,20 +11,20 @@ tracing = { version = "0.1.37", default-features = false }
 thiserror = "1.0.40"
 
 futures = { version = "0.3.28", optional = true }
-libsql-sys = { version = "0.6", path = "../libsql-sys", optional = true }
+libsql-sys = { version = "0.7", path = "../libsql-sys", optional = true }
 libsql-hrana = { version = "0.2", path = "../libsql-hrana", optional = true }
 tokio = { version = "1.29.1", features = ["sync"], optional = true }
 tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
-hyper = { version = "0.14", features = ["client", "stream"], optional = true }
+hyper = { workspace = true, features = ["client", "stream"], optional = true }
 hyper-rustls = { version = "0.25", features = ["webpki-roots"], optional = true }
 base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
-serde_json = { version = "1", optional = true }
+serde_json = { version = "1", features = ["float_roundtrip"], optional = true }
 async-trait = "0.1"
 bitflags = { version = "2.4.0", optional = true }
-tower = { version = "0.4", features = ["util"], optional = true }
-worker = { version = "0.0.18", optional = true }
+tower = { workspace = true, features = ["util"], optional = true }
+worker = { version = "0.2.0", optional = true }
 
 bincode = { version = "1", optional = true }
 anyhow = { version = "1.0.71", optional = true }
@@ -37,10 +37,10 @@ tower-http = { version = "0.4.4", features = ["trace", "set-header", "util"], op
 http = { version = "0.2", optional = true }
 zerocopy = { version = "0.7.28", optional = true }
 
-sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", version = "0.12", optional = true }
+sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", version = "0.13", optional = true }
 fallible-iterator = { version = "0.3", optional = true }
 
-libsql_replication = { version = "0.4", path = "../libsql-replication", optional = true }
+libsql_replication = { version = "0.5", path = "../libsql-replication", optional = true }
 async-stream = { version = "0.3.5", optional = true }
 
 [dev-dependencies]
@@ -50,6 +50,7 @@ tokio = { version = "1.29.1", features = ["full"] }
 tokio-test = "0.4"
 tracing-subscriber = "0.3"
 tempfile = { version = "3.7.0" }
+rand = "0.8.5"
 
 [features]
 default = ["core", "replication", "remote"]
@@ -87,7 +88,6 @@ replication = [
   "dep:tonic",
   "dep:tonic-web",
   "dep:tower-http",
-  "dep:tower",
   "dep:hyper-rustls",
   "dep:futures",
   "dep:libsql_replication",
@@ -113,7 +113,6 @@ remote = [
   "dep:tokio",
   "dep:futures",
   "dep:bitflags",
-  "dep:tower",
   "dep:hyper-rustls",
 ]
 wasm = ["hrana"]

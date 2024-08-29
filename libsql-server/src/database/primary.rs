@@ -1,14 +1,15 @@
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
-use crate::connection::libsql::{LibSqlConnection, MakeLibSqlConn};
+use crate::connection::legacy::{LegacyConnection, MakeLegacyConnection};
 use crate::connection::{MakeThrottledConnection, TrackedConnection};
 use crate::namespace::replication_wal::ReplicationWalWrapper;
 
 use super::Result;
 
-pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWalWrapper>>;
-pub type PrimaryConnectionMaker = MakeThrottledConnection<MakeLibSqlConn<ReplicationWalWrapper>>;
+pub type PrimaryConnection = TrackedConnection<LegacyConnection<ReplicationWalWrapper>>;
+pub type PrimaryConnectionMaker =
+    MakeThrottledConnection<MakeLegacyConnection<ReplicationWalWrapper>>;
 
 pub struct PrimaryDatabase {
     pub wal_wrapper: ReplicationWalWrapper,

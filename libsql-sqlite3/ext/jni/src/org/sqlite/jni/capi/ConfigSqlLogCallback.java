@@ -16,10 +16,10 @@ package org.sqlite.jni.capi;
 /**
    A callback for use with sqlite3_config().
 */
-public interface ConfigSqllogCallback {
+public interface ConfigSqlLogCallback {
   /**
      Must function as described for a C-level callback for
-     {@link CApi#sqlite3_config(ConfigSqllogCallback)}, with the slight signature change.
+     {@link CApi#sqlite3_config(ConfigSqlLogCallback)}, with the slight signature change.
   */
   void call(sqlite3 db, String msg, int msgType );
 }

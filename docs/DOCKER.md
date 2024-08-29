@@ -3,7 +3,7 @@
 ## Launch a primary instance
 
 ```
-docker run --name some-sqld -p 8080:8080 -ti \ 
+docker run --name some-sqld -p 8080:8080 -ti \
     -e SQLD_NODE=primary \
     ghcr.io/tursodatabase/libsql-server:latest
 ```
@@ -11,7 +11,7 @@ docker run --name some-sqld -p 8080:8080 -ti \
 ## Launch a replica instance
 
 ```
-docker run --name some-sqld-replica -p 8081:8080 -ti 
+docker run --name some-sqld-replica -p 8081:8080 -ti
     -e SQLD_NODE=replica \
     -e SQLD_PRIMARY_URL=https://<host>:<port> \
     ghcr.io/tursodatabase/libsql-server:lastest
@@ -20,7 +20,7 @@ docker run --name some-sqld-replica -p 8081:8080 -ti
 ## Running on Apple Silicon
 
 ```
-docker run --name some-sqld  -p 8080:8080 -ti \ 
+docker run --name some-sqld  -p 8080:8080 -ti \
     -e SQLD_NODE=primary \
     --platform linux/amd64 \
     ghcr.io/tursodatabase/libsql-server:latest
@@ -44,10 +44,36 @@ mount on your local disk.
 
 ```
 docker run --name some-sqld -ti \
-    -v ./.data/libsql \
-    -e SQLD_NODE=primary \ 
+    -v $(pwd)/sqld-data:/var/lib/sqld \ # you can mount local path
+    -e SQLD_NODE=primary \
+    ghcr.io/tursodatabase/libsql-server:latest
+
+docker run --name some-sqld -ti \
+    -v sqld-data:/var/lib/sqld \ # or create named volume
+    -e SQLD_NODE=primary \
+    ghcr.io/tursodatabase/libsql-server:latest
+
+docker run --name some-sqld -ti \
+    -v sqld-data:/data/sqld \ # to mount data in different directory set SQLD_DB_PATH env var
+    -e SQLD_NODE=primary \
+    -e SQLD_DB_PATH=/data/sqld \
     ghcr.io/tursodatabase/libsql-server:latest
 ```
+
+## Authentication
+
+### `SQLD_HTTP_AUTH`
+
+Specifies legacy HTTP basic authentication. The argument must be in format `basic:$PARAM`,
+where `$PARAM` is base64-encoded string `$USERNAME:$PASSWORD`.
+
+### `SQLD_AUTH_JWT_KEY_FILE`
+
+Path to a file with a JWT decoding key used to authenticate clients in the Hrana and HTTP
+APIs. The key is either a PKCS#8-encoded Ed25519 public key in PEM, or just plain bytes of
+the Ed25519 public key in URL-safe base64.
+
+You can also pass the key directly in the env variable SQLD_AUTH_JWT_KEY.
 
 ## Environment variables
 
@@ -88,7 +114,6 @@ container networking level.
 
 Defines the GRPC listen address and port for sqld. Primarily used for
 inter-node communication. Recommended to leave this on default.
-
 
 ## Docker Compose
 

@@ -1,10 +1,12 @@
 //! Utilities used when using a replicated version of libsql.
 
 use std::path::PathBuf;
+use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 use std::time::Duration;
 
 pub use libsql_replication::frame::{Frame, FrameNo};
+use libsql_replication::injector::SqliteInjector;
 use libsql_replication::replicator::{Either, Replicator};
 pub use libsql_replication::snapshot::SnapshotFile;
 
@@ -31,6 +33,28 @@ pub(crate) mod client;
 mod connection;
 pub(crate) mod local_client;
 pub(crate) mod remote_client;
+
+#[derive(Debug)]
+pub struct Replicated {
+    pub(crate) frame_no: Option<FrameNo>,
+    pub(crate) frames_synced: usize,
+}
+
+impl Replicated {
+    /// The currently synced frame number. This can be used to track
+    /// where in the log you might be. Beware that this value can be reset to a lower value by the
+    /// server in certain situations. Please use `frames_synced` if you want to track the amount of
+    /// work a sync has done.
+    pub fn frame_no(&self) -> Option<FrameNo> {
+        self.frame_no
+    }
+
+    /// The count of frames synced during this call of `sync`. A frame is a 4kB frame from the
+    /// libsql write ahead log.
+    pub fn frames_synced(&self) -> usize {
+        self.frames_synced
+    }
+}
 
 /// A set of rames to be injected via `sync_frames`.
 pub enum Frames {
@@ -75,10 +99,7 @@ impl Writer {
         self.execute_steps(steps).await
     }
 
-    pub(crate) async fn execute_steps(
-        &self,
-        steps: Vec<Step>,
-    ) -> anyhow::Result<ExecuteResults> {
+    pub(crate) async fn execute_steps(&self, steps: Vec<Step>) -> anyhow::Result<ExecuteResults> {
         self.client
             .execute_program(ProgramReq {
                 client_id: self.client.client_id(),
@@ -109,8 +130,9 @@ impl Writer {
 
 #[derive(Clone)]
 pub(crate) struct EmbeddedReplicator {
-    replicator: Arc<Mutex<Replicator<Either<RemoteClient, LocalClient>>>>,
+    replicator: Arc<Mutex<Replicator<Either<RemoteClient, LocalClient>, SqliteInjector>>>,
     bg_abort: Option<Arc<DropAbort>>,
+    last_frames_synced: Arc<AtomicUsize>,
 }
 
 impl From<libsql_replication::replicator::Error> for errors::Error {
@@ -127,19 +149,20 @@ impl EmbeddedReplicator {
         encryption_config: Option<EncryptionConfig>,
         perodic_sync: Option<Duration>,
     ) -> Result<Self> {
-        let replicator = Arc::new(Mutex::new(
-            Replicator::new(
+        let mut replicator =
+            Replicator::new_sqlite(
                 Either::Left(client),
                 db_path,
                 auto_checkpoint,
                 encryption_config,
-            )
-            .await?,
-        ));
+            ).await?;
+        replicator.set_primary_handshake_retries(3);
+        let replicator = Arc::new(Mutex::new(replicator));
 
         let mut replicator = Self {
             replicator,
             bg_abort: None,
+            last_frames_synced: Arc::new(AtomicUsize::new(0)),
         };
 
         if let Some(sync_duration) = perodic_sync {
@@ -171,7 +194,7 @@ impl EmbeddedReplicator {
         encryption_config: Option<EncryptionConfig>,
     ) -> Result<Self> {
         let replicator = Arc::new(Mutex::new(
-            Replicator::new(
+            Replicator::new_sqlite(
                 Either::Right(client),
                 db_path,
                 auto_checkpoint,
@@ -183,10 +206,11 @@ impl EmbeddedReplicator {
         Ok(Self {
             replicator,
             bg_abort: None,
+            last_frames_synced: Arc::new(AtomicUsize::new(0)),
         })
     }
 
-    pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {
+    pub async fn sync_oneshot(&self) -> Result<Replicated> {
         use libsql_replication::replicator::ReplicatorClient;
 
         let mut replicator = self.replicator.lock().await;
@@ -218,7 +242,10 @@ impl EmbeddedReplicator {
                         unreachable!()
                     };
                     let Some(primary_index) = client.last_handshake_replication_index() else {
-                        return Ok(None);
+                        return Ok(Replicated {
+                            frame_no: None,
+                            frames_synced: 0,
+                        });
                     };
                     if let Some(replica_index) = replicator.client_mut().committed_frame_no() {
                         if replica_index >= primary_index {
@@ -229,7 +256,20 @@ impl EmbeddedReplicator {
             }
         }
 
-        Ok(replicator.client_mut().committed_frame_no())
+        let last_frames_synced = self.last_frames_synced.fetch_add(
+            replicator.frames_synced(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+
+        let frames_synced =
+            ((replicator.frames_synced() as i64 - last_frames_synced as i64).abs()) as usize;
+
+        let replicated = Replicated {
+            frame_no: replicator.client_mut().committed_frame_no(),
+            frames_synced,
+        };
+
+        Ok(replicated)
     }
 
     pub async fn sync_frames(&self, frames: Frames) -> Result<Option<FrameNo>> {

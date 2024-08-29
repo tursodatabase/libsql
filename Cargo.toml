@@ -34,7 +34,7 @@ codegen-units = 1
 panic = "unwind"
 
 [workspace.dependencies]
-rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.31", default-features = false, features = [
+rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.32", default-features = false, features = [
     "libsql-experimental",
     "column_decltype",
     "load_extension",
@@ -43,11 +43,14 @@ rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = 
     "limits",
     "hooks",
 ] }
+hyper = { version = "0.14" }
+tower = { version = "0.4.13" }
+zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.14.1"
+cargo-dist-version = "0.21.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -62,12 +65,16 @@ targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-da
 publish-jobs = ["homebrew"]
 # Whether cargo-dist should create a Github Release or use an existing draft
 create-release = true
-# Publish jobs to run in CI
+# Which actions to run on pull requests
 pr-run-mode = "plan"
 # A prefix git tags must include for cargo-dist to care about them
 tag-namespace = "libsql-server"
 # Whether to install an updater program
 install-updater = false
+# additional setup steps
+github-build-setup = "../templates/libsql-server-release-build-setup.yml"
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
 
 [workspace.metadata.dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"

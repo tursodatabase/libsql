@@ -4,16 +4,18 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use arc_swap::ArcSwapOption;
-use fst::map::{OpBuilder, Union};
 use fst::raw::IndexedValue;
 use fst::Streamer;
 use roaring::RoaringBitmap;
 use tokio_stream::Stream;
+use uuid::Uuid;
+use zerocopy::FromZeroes;
 
 use crate::error::Result;
-use crate::io::buf::ZeroCopyBuf;
-use crate::io::FileExt;
+use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
+use crate::io::{FileExt, Io};
 use crate::segment::Frame;
+use crate::{LibsqlFooter, LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::Segment;
 
@@ -76,10 +78,20 @@ where
 
     /// Checkpoints as many segments as possible to the main db file, and return the checkpointed
     /// frame_no, if anything was checkpointed
-    pub async fn checkpoint<F>(&self, db_file: &F, until_frame_no: u64) -> Result<Option<u64>>
-    where
-        F: FileExt,
-    {
+    pub async fn checkpoint<IO: Io>(
+        &self,
+        db_file: &IO::File,
+        until_frame_no: u64,
+        log_id: Uuid,
+        io: &IO,
+    ) -> Result<Option<u64>> {
+        struct Guard<'a>(&'a AtomicBool);
+        impl<'a> Drop for Guard<'a> {
+            fn drop(&mut self) {
+                self.0.store(false, Ordering::SeqCst);
+            }
+        }
+
         if self
             .checkpointing
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
@@ -87,12 +99,11 @@ where
         {
             return Ok(None);
         }
+
+        let _g = Guard(&self.checkpointing);
+
         let mut segs = Vec::new();
         let mut current = self.head.load();
-        // This is the last element in the list that is not part of the segments to be
-        // checkpointed. All the folowing segments will be checkpointed. After checkpoint, we set
-        // this link's next to None.
-        let mut last_untaken = None;
         // find the longest chain of segments that can be checkpointed, iow, segments that do not have
         // readers pointing to them
         while let Some(segment) = &*current {
@@ -100,7 +111,6 @@ where
             if segment.last_committed() <= until_frame_no {
                 if !segment.is_checkpointable() {
                     segs.clear();
-                    last_untaken = current.clone();
                 } else {
                     segs.push(segment.clone());
                 }
@@ -115,24 +125,13 @@ where
 
         let size_after = segs.first().unwrap().size_after();
 
-        let union = segs
-            .iter()
-            .map(|s| s.index())
-            .collect::<OpBuilder>()
-            .union();
+        let index_iter = segs.iter().map(|s| s.index());
 
-        /// Safety: Union contains a Box<dyn trait> that doesn't require Send, to it's not send.
-        /// That's an issue for us, but all the indexes we have are safe to send, so we're good.
-        /// FIXME: we could implement union ourselves.
-        unsafe impl Send for SendUnion<'_> {}
-        unsafe impl Sync for SendUnion<'_> {}
-        struct SendUnion<'a>(Union<'a>);
-
-        let mut union = SendUnion(union);
+        let mut union = send_fst_ops::SendUnion::from_index_iter(index_iter);
 
         let mut buf = ZeroCopyBuf::<Frame>::new_uninit();
         let mut last_replication_index = 0;
-        while let Some((k, v)) = union.0.next() {
+        while let Some((k, v)) = union.next() {
             let page_no = u32::from_be_bytes(k.try_into().unwrap());
             let v = v.iter().min_by_key(|i| i.index).unwrap();
             let offset = v.value as u32;
@@ -151,45 +150,72 @@ where
             buf = read_buf.into_inner();
         }
 
-        //// todo: make async
+        // update the footer at the end of the db file.
+        let footer = LibsqlFooter {
+            magic: LIBSQL_MAGIC.into(),
+            version: LIBSQL_WAL_VERSION.into(),
+            replication_index: last_replication_index.into(),
+            log_id: log_id.as_u128().into(),
+        };
+
+        db_file.set_len(size_after as u64 * LIBSQL_PAGE_SIZE as u64)?;
+
+        let footer_offset = size_after as usize * LIBSQL_PAGE_SIZE as usize;
+        let (_, ret) = db_file
+            .write_all_at_async(ZeroCopyBuf::new_init(footer), footer_offset as u64)
+            .await;
+        ret?;
+
+        // todo: truncate if necessary
+        //// TODO: make async
         db_file.sync_all()?;
 
-        match last_untaken {
-            Some(link) => {
-                assert!(Arc::ptr_eq(&link.next.load().as_ref().unwrap(), &segs[0]));
-                link.next.swap(None);
-            }
-            // everything up to head was checkpointed
-            None => {
-                assert!(Arc::ptr_eq(&*self.head.load().as_ref().unwrap(), &segs[0]));
-                self.head.swap(None);
+        for seg in segs.iter() {
+            seg.destroy(io).await;
+        }
+
+        let mut current = self.head.compare_and_swap(&segs[0], None);
+        if Arc::ptr_eq(&segs[0], current.as_ref().unwrap()) {
+            // nothing to do
+        } else {
+            loop {
+                let next = current
+                    .as_ref()
+                    .unwrap()
+                    .next
+                    .compare_and_swap(&segs[0], None);
+                if Arc::ptr_eq(&segs[0], next.as_ref().unwrap()) {
+                    break;
+                } else {
+                    current = next;
+                }
             }
         }
 
         self.len.fetch_sub(segs.len(), Ordering::Relaxed);
 
-        db_file.set_len(size_after as u64 * 4096)?;
-
-        self.checkpointing.store(false, Ordering::SeqCst);
-
         Ok(Some(last_replication_index))
     }
 
-    /// returnsstream pages from the sealed segment list, and what's the lowest replication index
+    /// returns a stream of pages from the sealed segment list, and what's the lowest replication index
     /// that was covered. If the returned index is less than start frame_no, the missing frames
     /// must be read somewhere else.
     pub async fn stream_pages_from<'a>(
         &self,
-        start_frame_no: u64,
+        current_fno: u64,
+        until_fno: u64,
         seen: &'a mut RoaringBitmap,
-    ) -> (impl Stream<Item = crate::error::Result<Frame>> + 'a, u64) {
+    ) -> (
+        impl Stream<Item = crate::error::Result<Box<Frame>>> + 'a,
+        u64,
+    ) {
         // collect all the segments we need to read from to be up to date.
         // We keep a reference to them so that they are not discarded while we read them.
         let mut segments = Vec::new();
         let mut current = self.list.head.load();
         while current.is_some() {
             let current_ref = current.as_ref().unwrap();
-            if current_ref.item.last_committed() >= start_frame_no {
+            if current_ref.item.last_committed() >= until_fno {
                 segments.push(current_ref.clone());
                 current = current_ref.next.load();
             } else {
@@ -197,14 +223,22 @@ where
             }
         }
 
-        let new_start_frame_no = segments
+        if segments.is_empty() {
+            return (
+                tokio_util::either::Either::Left(tokio_stream::empty()),
+                current_fno,
+            );
+        }
+
+        let new_current = segments
             .last()
             .map(|s| s.start_frame_no())
-            .unwrap_or(start_frame_no)
-            .max(start_frame_no);
+            .unwrap()
+            .max(until_fno);
 
         let stream = async_stream::try_stream! {
-            let mut union = fst::map::OpBuilder::from_iter(segments.iter().map(|s| s.index())).union();
+            let index_iter = segments.iter().map(|s| s.index());
+            let mut union = send_fst_ops::SendUnion::from_index_iter(index_iter);
             while let Some((key_bytes, indexes)) = union.next() {
                 let page_no = u32::from_be_bytes(key_bytes.try_into().unwrap());
                 // we already have a more recent version of this page.
@@ -215,11 +249,11 @@ where
                 let segment = &segments[*segment_offset];
 
                 // we can ignore any frame with a replication index less than start_frame_no
-                if segment.start_frame_no() + frame_offset < start_frame_no {
+                if segment.start_frame_no() + frame_offset < until_fno {
                     continue
                 }
 
-                let buf = ZeroCopyBuf::<Frame>::new_uninit();
+                let buf = ZeroCopyBoxIoBuf::new(Frame::new_box_zeroed());
                 let (buf, ret) = segment.read_frame_offset_async(*frame_offset as u32, buf).await;
                 ret?;
                 let mut frame = buf.into_inner();
@@ -229,7 +263,25 @@ where
             }
         };
 
-        (stream, new_start_frame_no)
+        (tokio_util::either::Either::Right(stream), new_current)
+    }
+
+    pub(crate) fn last(&self) -> Option<Seg>
+    where
+        Seg: Clone,
+    {
+        let mut current = self.list.head.load().clone();
+        loop {
+            match current.as_ref() {
+                Some(c) => {
+                    if c.next.load().is_none() {
+                        return Some(c.item.clone());
+                    }
+                    current = c.next.load().clone();
+                }
+                None => return None,
+            }
+        }
     }
 }
 
@@ -291,8 +343,52 @@ impl<T> List<T> {
         head.as_ref().map(|link| f(&link.item))
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.len.load(Ordering::Relaxed)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+mod send_fst_ops {
+    use std::ops::{Deref, DerefMut};
+    use std::sync::Arc;
+
+    use fst::map::{OpBuilder, Union};
+
+    /// Safety: Union contains a Box<dyn trait> that doesn't require Send, to it's not send.
+    /// That's an issue for us, but all the indexes we have are safe to send, so we're good.
+    /// FIXME: we could implement union ourselves.
+    unsafe impl Send for SendUnion<'_> {}
+    unsafe impl Sync for SendUnion<'_> {}
+
+    #[repr(transparent)]
+    pub(super) struct SendUnion<'a>(Union<'a>);
+
+    impl<'a> SendUnion<'a> {
+        pub fn from_index_iter<I>(iter: I) -> Self
+        where
+            I: Iterator<Item = &'a fst::map::Map<Arc<[u8]>>>,
+        {
+            let op = iter.collect::<OpBuilder>().union();
+            Self(op)
+        }
+    }
+
+    impl<'a> Deref for SendUnion<'a> {
+        type Target = Union<'a>;
+
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+
+    impl<'a> DerefMut for SendUnion<'a> {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.0
+        }
     }
 }
 
@@ -332,7 +428,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, _) = segment_list.stream_pages_from(0, &mut seen).await;
+        let (stream, _) = segment_list.stream_pages_from(0, 0, &mut seen).await;
         tokio::pin!(stream);
 
         let mut file = NamedTempFile::new().unwrap();
@@ -349,11 +445,11 @@ mod test {
 
         drop(tx);
 
-        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
         shared.checkpoint().await.unwrap();
         file.seek(std::io::SeekFrom::Start(0)).unwrap();
-        let mut copy_ytes = Vec::new();
-        file.read_to_end(&mut copy_ytes).unwrap();
+        let mut copy_bytes = Vec::new();
+        file.read_to_end(&mut copy_bytes).unwrap();
 
         let mut orig_bytes = Vec::new();
         shared
@@ -363,7 +459,7 @@ mod test {
             .read_to_end(&mut orig_bytes)
             .unwrap();
 
-        assert_eq!(orig_bytes, copy_ytes);
+        assert_eq!(db_payload(&orig_bytes), db_payload(&copy_bytes));
     }
 
     #[tokio::test]
@@ -383,7 +479,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list.stream_pages_from(10, &mut seen).await;
+        let (stream, replicated_until) = segment_list.stream_pages_from(0, 10, &mut seen).await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, 10);
@@ -411,7 +507,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::from_sorted_iter([1]).unwrap();
-        let (stream, replicated_until) = segment_list.stream_pages_from(1, &mut seen).await;
+        let (stream, replicated_until) = segment_list.stream_pages_from(0, 1, &mut seen).await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, 1);
@@ -439,7 +535,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list.stream_pages_from(1, &mut seen).await;
+        let (stream, replicated_until) = segment_list.stream_pages_from(0, 1, &mut seen).await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, 1);
@@ -461,8 +557,9 @@ mod test {
         seal_current_segment(&shared);
 
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) =
-            segment_list.stream_pages_from(last_offset, &mut seen).await;
+        let (stream, replicated_until) = segment_list
+            .stream_pages_from(0, last_offset, &mut seen)
+            .await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, last_offset);
@@ -473,7 +570,7 @@ mod test {
             tmp.write_all_at(frame.data(), offset as u64).unwrap();
         }
 
-        shared.durable_frame_no.store(99999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
 
         shared.checkpoint().await.unwrap();
         tmp.seek(std::io::SeekFrom::Start(0)).unwrap();
@@ -488,7 +585,7 @@ mod test {
             .read_to_end(&mut orig_bytes)
             .unwrap();
 
-        assert_eq!(copy_bytes, orig_bytes);
+        assert_eq!(db_payload(&copy_bytes), db_payload(&orig_bytes));
     }
 
     #[tokio::test]
@@ -504,7 +601,7 @@ mod test {
         }
 
         seal_current_segment(&shared);
-        shared.durable_frame_no.store(999999, Ordering::Relaxed);
+        *shared.durable_frame_no.lock() = 999999;
         shared.checkpoint().await.unwrap();
 
         for _ in 0..10 {
@@ -515,7 +612,7 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_from) = segment_list.stream_pages_from(0, &mut seen).await;
+        let (stream, replicated_from) = segment_list.stream_pages_from(0, 0, &mut seen).await;
         tokio::pin!(stream);
 
         let mut count = 0;
@@ -525,5 +622,10 @@ mod test {
 
         assert_eq!(count, 1);
         assert_eq!(replicated_from, 13);
+    }
+
+    fn db_payload(db: &[u8]) -> &[u8] {
+        let size = (db.len() / 4096) * 4096;
+        &db[..size]
     }
 }

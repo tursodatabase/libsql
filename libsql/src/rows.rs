@@ -38,14 +38,8 @@ impl Column<'_> {
 }
 
 #[async_trait::async_trait]
-pub(crate) trait RowsInner {
+pub(crate) trait RowsInner: ColumnsInner {
     async fn next(&mut self) -> Result<Option<Row>>;
-
-    fn column_count(&self) -> i32;
-
-    fn column_name(&self, idx: i32) -> Option<&str>;
-
-    fn column_type(&self, idx: i32) -> Result<ValueType>;
 }
 
 /// A set of rows returned from a connection.
@@ -128,6 +122,11 @@ impl Row {
     /// is not of the `TEXT`.
     pub fn get_str(&self, idx: i32) -> Result<&str> {
         self.inner.column_str(idx)
+    }
+
+    /// Get the count of columns in this set of rows.
+    pub fn column_count(&self) -> i32 {
+        self.inner.column_count()
     }
 
     /// Fetch the name of the column at the provided index.
@@ -279,13 +278,15 @@ where
 }
 impl<T> Sealed for Option<T> {}
 
-pub(crate) trait RowInner: fmt::Debug {
-    fn column_value(&self, idx: i32) -> Result<Value>;
-    fn column_str(&self, idx: i32) -> Result<&str>;
+pub(crate) trait ColumnsInner {
     fn column_name(&self, idx: i32) -> Option<&str>;
     fn column_type(&self, idx: i32) -> Result<ValueType>;
-    #[allow(dead_code)]
-    fn column_count(&self) -> usize;
+    fn column_count(&self) -> i32;
+}
+
+pub(crate) trait RowInner: ColumnsInner + fmt::Debug {
+    fn column_value(&self, idx: i32) -> Result<Value>;
+    fn column_str(&self, idx: i32) -> Result<&str>;
 }
 
 mod sealed {

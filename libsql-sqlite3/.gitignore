@@ -67,3 +67,5 @@ zig-out/
 testdir*/
 testrunner.db
 testrunner.log
+test_libsql_f16_table.h
+test_libsql_f16

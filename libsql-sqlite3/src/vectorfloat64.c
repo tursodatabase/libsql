@@ -38,10 +38,14 @@
 void vectorF64Dump(const Vector *pVec){
   double *elems = pVec->data;
   unsigned i;
+
+  assert( pVec->type == VECTOR_TYPE_FLOAT64 );
+
+  printf("f64: [");
   for(i = 0; i < pVec->dims; i++){
-    printf("%lf ", elems[i]);
+    printf("%s%lf", i == 0 ? "" : ", ", elems[i]);
   }
-  printf("\n");
+  printf("]\n");
 }
 
 /**************************************************************************
@@ -79,7 +83,7 @@ static inline double deserializeF64(const unsigned char *pBuf){
   return *(double *)&value;
 }
 
-size_t vectorF64SerializeToBlob(
+void vectorF64SerializeToBlob(
   const Vector *pVector,
   unsigned char *pBlob,
   size_t nBlobSize
@@ -90,63 +94,11 @@ size_t vectorF64SerializeToBlob(
 
   assert( pVector->type == VECTOR_TYPE_FLOAT64 );
   assert( pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= pVector->dims * sizeof(double) );
+  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   for (i = 0; i < pVector->dims; i++) {
     pPtr += serializeF64(pPtr, elems[i]);
   }
-  return sizeof(double) * pVector->dims;
-}
-
-size_t vectorF64DeserializeFromBlob(
-  Vector *pVector,
-  const unsigned char *pBlob,
-  size_t nBlobSize
-){
-  double *elems = pVector->data;
-  unsigned i;
-  pVector->type = VECTOR_TYPE_FLOAT64;
-  pVector->dims = nBlobSize / sizeof(double);
-
-  assert( pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize % 2 == 1 && pBlob[nBlobSize - 1] == VECTOR_TYPE_FLOAT64 );
-
-  for(i = 0; i < pVector->dims; i++){
-    elems[i] = deserializeF64(pBlob);
-    pBlob += sizeof(double);
-  }
-  return vectorDataSize(pVector->type, pVector->dims);
-}
-
-void vectorF64Serialize(
-  sqlite3_context *context,
-  const Vector *pVector
-){
-  double *elems = pVector->data;
-  unsigned char *pBlob;
-  size_t nBlobSize;
-
-  assert( pVector->type == VECTOR_TYPE_FLOAT64 );
-  assert( pVector->dims <= MAX_VECTOR_SZ );
-
-  // allocate one extra trailing byte with vector blob type metadata
-  nBlobSize = vectorDataSize(pVector->type, pVector->dims) + 1;
-
-  if( nBlobSize == 0 ){
-    sqlite3_result_zeroblob(context, 0);
-    return;
-  }
-
-  pBlob = sqlite3_malloc64(nBlobSize);
-  if( pBlob == NULL ){
-    sqlite3_result_error_nomem(context);
-    return;
-  }
-
-  vectorF64SerializeToBlob(pVector, pBlob, nBlobSize - 1);
-  pBlob[nBlobSize - 1] = VECTOR_TYPE_FLOAT64;
-
-  sqlite3_result_blob(context, (char*)pBlob, nBlobSize, sqlite3_free);
 }
 
 #define SINGLE_DOUBLE_CHAR_LIMIT 32
@@ -205,41 +157,39 @@ double vectorF64DistanceCos(const Vector *v1, const Vector *v2){
   return 1.0 - (dot / sqrt(norm1 * norm2));
 }
 
-void vectorF64InitFromBlob(Vector *pVector, const unsigned char *pBlob, size_t nBlobSize){
-  pVector->dims = nBlobSize / sizeof(double);
-  pVector->data = (void*)pBlob;
+double vectorF64DistanceL2(const Vector *v1, const Vector *v2){
+  double sum = 0;
+  double *e1 = v1->data;
+  double *e2 = v2->data;
+  int i;
+
+  assert( v1->dims == v2->dims );
+  assert( v1->type == VECTOR_TYPE_FLOAT64 );
+  assert( v2->type == VECTOR_TYPE_FLOAT64 );
+
+  for(i = 0; i < v1->dims; i++){
+    double d = e1[i]-e2[i];
+    sum += d*d;
+  }
+  return sqrt(sum);
 }
 
-int vectorF64ParseSqliteBlob(
-  sqlite3_value *arg,
+void vectorF64DeserializeFromBlob(
   Vector *pVector,
-  char **pzErr
+  const unsigned char *pBlob,
+  size_t nBlobSize
 ){
-  const unsigned char *pBlob;
   double *elems = pVector->data;
   unsigned i;
 
   assert( pVector->type == VECTOR_TYPE_FLOAT64 );
   assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
-
-  if( sqlite3_value_type(arg) != SQLITE_BLOB ){
-    *pzErr = sqlite3_mprintf("invalid f64 vector: not a blob type");
-    goto error;
-  }
-
-  pBlob = sqlite3_value_blob(arg);
-  if( sqlite3_value_bytes(arg) < sizeof(double) * pVector->dims ){
-    *pzErr = sqlite3_mprintf("invalid f64 vector: not enough bytes for all dimensions");
-    goto error;
-  }
+  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
   for(i = 0; i < pVector->dims; i++){
     elems[i] = deserializeF64(pBlob);
     pBlob += sizeof(double);
   }
-  return 0;
-error:
-  return -1;
 }
 
 #endif /* !defined(SQLITE_OMIT_VECTOR) */
