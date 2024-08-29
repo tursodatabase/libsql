@@ -68,6 +68,10 @@ impl<IO: Io> Injector<IO> {
         self.buffer.clear();
         self.tx.reset(0);
     }
+
+    pub(crate) fn into_guard(self) -> TxGuardOwned<IO::File> {
+        self.tx
+    }
 }
 
 #[cfg(test)]
