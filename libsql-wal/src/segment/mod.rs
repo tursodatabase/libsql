@@ -50,6 +50,8 @@ pub struct SegmentHeader {
     pub version: U16,
     pub start_frame_no: U64,
     pub last_commited_frame_no: U64,
+    /// number of frames in the segment
+    pub frame_count: U64,
     /// size of the database in pages, after applying the segment.
     pub size_after: U32,
     /// byte offset of the index. If 0, then the index wasn't written, and must be recovered.
@@ -120,14 +122,11 @@ impl SegmentHeader {
     }
 
     fn is_empty(&self) -> bool {
-        self.last_commited_frame_no.get() == 0
+        self.frame_count() == 0
     }
 
-    fn count_committed(&self) -> usize {
-        self.last_commited_frame_no
-            .get()
-            .checked_sub(self.start_frame_no.get() - 1)
-            .unwrap_or(0) as usize
+    pub fn frame_count(&self) -> usize {
+        self.frame_count.get() as usize
     }
 
     pub fn last_committed(&self) -> u64 {

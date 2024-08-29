@@ -73,6 +73,7 @@ impl<F> CurrentSegment<F> {
             salt: salt.into(),
             page_size: LIBSQL_PAGE_SIZE.into(),
             log_id: log_id.as_u128().into(),
+            frame_count: 0.into(),
         };
 
         header.recompute_checksum();
@@ -96,7 +97,7 @@ impl<F> CurrentSegment<F> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.count_committed() == 0
+        self.header.lock().is_empty()
     }
 
     pub fn with_header<R>(&self, f: impl FnOnce(&SegmentHeader) -> R) -> R {
@@ -113,7 +114,7 @@ impl<F> CurrentSegment<F> {
     }
 
     pub fn count_committed(&self) -> usize {
-        self.header.lock().count_committed()
+        self.header.lock().frame_count()
     }
 
     pub fn db_size(&self) -> u32 {
@@ -398,7 +399,7 @@ impl<F> CurrentSegment<F> {
         F: FileExt,
     {
         let mut header = self.header.lock();
-        let index_offset = header.count_committed() as u32;
+        let index_offset = header.frame_count() as u32;
         let index_byte_offset = checked_frame_offset(index_offset);
         let mut cursor = self.file.cursor(index_byte_offset);
         let writer = BufWriter::new(&mut cursor);
