@@ -15,7 +15,7 @@ pub use parsers::{parse_http_auth_header, parse_http_basic_auth_arg, parse_jwt_k
 pub use permission::Permission;
 pub use user_auth_strategies::{Disabled, HttpBasic, Jwt, UserAuthContext, UserAuthStrategy};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Auth {
     pub user_strategy: Arc<dyn UserAuthStrategy + Send + Sync>,
 }

@@ -5,6 +5,7 @@ use crate::auth::{
 
 use super::{UserAuthContext, UserAuthStrategy};
 
+#[derive(Debug)]
 pub struct HttpBasic {
     credential: String,
 }
