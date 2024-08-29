@@ -151,7 +151,7 @@ fn maybe_store_segment<S: Storage>(
     notifier: &tokio::sync::mpsc::Sender<CheckpointMessage>,
     namespace: &NamespaceName,
     durable_frame_no: &Arc<Mutex<u64>>,
-    seg: S::Segment
+    seg: S::Segment,
 ) {
     if seg.is_storable() {
         let cb: OnStoreCallback = Box::new({
@@ -339,14 +339,14 @@ where
                 let header = segment.header();
                 (header.size_after(), header.next_frame_no())
             })
-        .unwrap_or_else(|| match header {
-            Some(header) => (
-                header.db_size.get(),
-                NonZeroU64::new(checkpointed_frame_no + 1)
-                .unwrap_or(NonZeroU64::new(1).unwrap()),
-            ),
-            None => (0, NonZeroU64::new(1).unwrap()),
-        });
+            .unwrap_or_else(|| match header {
+                Some(header) => (
+                    header.db_size.get(),
+                    NonZeroU64::new(checkpointed_frame_no + 1)
+                        .unwrap_or(NonZeroU64::new(1).unwrap()),
+                ),
+                None => (0, NonZeroU64::new(1).unwrap()),
+            });
 
         let current_segment_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
 
@@ -405,7 +405,8 @@ where
 
     /// Attempts to sync all loaded dbs with durable storage
     pub async fn sync_all(&self, conccurency: usize) -> Result<()>
-        where S: Storage,
+    where
+        S: Storage,
     {
         let mut join_set = JoinSet::new();
         tracing::info!("syncing {} namespaces", self.opened.len());
@@ -413,7 +414,9 @@ where
         let before_sync = Instant::now();
         let sem = Arc::new(Semaphore::new(conccurency));
         for entry in self.opened.iter() {
-            let Slot::Wal(shared) = entry.value() else { panic!("all wals should already be opened") };
+            let Slot::Wal(shared) = entry.value() else {
+                panic!("all wals should already be opened")
+            };
             let storage = self.storage.clone();
             let shared = shared.clone();
             let sem = sem.clone();
@@ -499,14 +502,22 @@ where
 
 #[tracing::instrument(skip_all, fields(namespace = shared.namespace().as_str()))]
 async fn sync_one<IO, S>(shared: Arc<SharedWal<IO>>, storage: Arc<S>) -> Result<()>
-where IO: Io,
-      S: Storage
+where
+    IO: Io,
+    S: Storage,
 {
-    let remote_durable_frame_no = storage.durable_frame_no(shared.namespace(), None).await.map_err(Box::new)?;
+    let remote_durable_frame_no = storage
+        .durable_frame_no(shared.namespace(), None)
+        .await
+        .map_err(Box::new)?;
     let local_current_frame_no = shared.current.load().next_frame_no().get() - 1;
 
     if remote_durable_frame_no > local_current_frame_no {
-        tracing::info!(remote_durable_frame_no, local_current_frame_no, "remote storage has newer segments");
+        tracing::info!(
+            remote_durable_frame_no,
+            local_current_frame_no,
+            "remote storage has newer segments"
+        );
         let mut seen = RoaringBitmap::new();
         let replicator = StorageReplicator::new(storage, shared.namespace().clone());
         let stream = replicator
@@ -523,7 +534,7 @@ where IO: Io,
                         frame.header_mut().frame_no();
                         frame.header_mut().set_size_after(seen.len() as _);
                         injector.insert_frame(frame).await?;
-                        break
+                        break;
                     } else {
                         injector.insert_frame(frame).await?;
                     }

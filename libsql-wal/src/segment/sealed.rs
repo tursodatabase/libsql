@@ -201,7 +201,10 @@ where
         // - in a replica: no need for storage
         // - in a primary, on recovery from storage: we don't want to override remote
         // segment.
-        !self.header().flags().contains(SegmentFlags::FRAME_UNORDERED)
+        !self
+            .header()
+            .flags()
+            .contains(SegmentFlags::FRAME_UNORDERED)
     }
 }
 

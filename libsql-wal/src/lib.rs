@@ -179,7 +179,7 @@ pub mod test {
         loop {
             {
                 if *shared.durable_frame_no.lock() >= current {
-                    break
+                    break;
                 }
             }
 

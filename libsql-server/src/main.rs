@@ -285,14 +285,13 @@ struct Cli {
     #[clap(
         long,
         env = "LIBSQL_SYNC_FROM_STORAGE",
-        requires = "enable_bottomless_replication",
+        requires = "enable_bottomless_replication"
     )]
     sync_from_storage: bool,
     /// Whether to force loading all WAL at startup, with libsql-wal
     /// By default, WALs are loaded lazily, as the databases are openned.
-    #[clap(
-        long,
-    )]
+    /// Whether to force loading all wal at startup
+    #[clap(long)]
     force_load_wals: bool,
     /// Sync conccurency
     #[clap(

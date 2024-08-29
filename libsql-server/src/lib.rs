@@ -979,10 +979,12 @@ where
                 let namespace = conf.namespace().clone();
                 let path = dbs_path.join(namespace.as_str());
                 tokio::fs::create_dir_all(&path).await?;
-                tokio::task::spawn_blocking(move || registry.open(&path.join("data"), &namespace.into()))
-                    .await
-                    .unwrap()?;
-                }
+                tokio::task::spawn_blocking(move || {
+                    registry.open(&path.join("data"), &namespace.into())
+                })
+                .await
+                .unwrap()?;
+            }
 
             if self.should_sync_from_storage {
                 registry.sync_all(self.sync_conccurency).await?;
@@ -1256,9 +1258,8 @@ where
             let is_previous_migration_successful = self.check_previous_migration_success()?;
             let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
             let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
-            let should_attempt_migration = is_bottomless_enabled
-                && !is_previous_migration_successful
-                && is_libsql_wal;
+            let should_attempt_migration =
+                is_bottomless_enabled && !is_previous_migration_successful && is_libsql_wal;
 
             if should_attempt_migration {
                 bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
@@ -1274,7 +1275,6 @@ where
 
                 tracing::info!("bottomless already migrated, skipping...");
             }
-
         }
 
         Ok(false)

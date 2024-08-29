@@ -20,13 +20,13 @@ pub struct Injector<IO: Io> {
 }
 
 impl<IO: Io> Injector<IO> {
-    pub fn new(
-        wal: Arc<SharedWal<IO>>,
-        buffer_capacity: usize,
-    ) -> Result<Self> {
+    pub fn new(wal: Arc<SharedWal<IO>>, buffer_capacity: usize) -> Result<Self> {
         let mut tx = Transaction::Read(wal.begin_read(u64::MAX));
         wal.upgrade(&mut tx)?;
-        let tx = tx.into_write().unwrap_or_else(|_| unreachable!()).into_lock_owned();
+        let tx = tx
+            .into_write()
+            .unwrap_or_else(|_| unreachable!())
+            .into_lock_owned();
         Ok(Self {
             wal,
             buffer: Vec::with_capacity(buffer_capacity),
