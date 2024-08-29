@@ -1481,7 +1481,7 @@ fn replicate_auth() {
 
         assert!(db.sync().await.is_err());
 
-        // auth 
+        // auth
         let tmp = tempdir().unwrap();
         let db = Database::open_with_remote_sync_connector(
             tmp.path().join("embedded").to_str().unwrap(),

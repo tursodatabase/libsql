@@ -1025,7 +1025,12 @@ where
 
         let make_replication_svc = Box::new({
             let disable_namespaces = self.disable_namespaces;
-            move |store, client_auth, idle_shutdown, collect_stats, is_internal| -> BoxReplicationService {
+            move |store,
+                  client_auth,
+                  idle_shutdown,
+                  collect_stats,
+                  is_internal|
+                  -> BoxReplicationService {
                 Box::new(ReplicationLogService::new(
                     store,
                     idle_shutdown,
@@ -1058,7 +1063,12 @@ where
 
         let make_replication_svc = Box::new({
             let disable_namespaces = self.disable_namespaces;
-            move |store, client_auth, idle_shutdown, collect_stats, is_internal| -> BoxReplicationService {
+            move |store,
+                  client_auth,
+                  idle_shutdown,
+                  collect_stats,
+                  is_internal|
+                  -> BoxReplicationService {
                 Box::new(ReplicationLogService::new(
                     store,
                     idle_shutdown,

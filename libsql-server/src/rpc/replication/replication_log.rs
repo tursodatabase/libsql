@@ -76,7 +76,9 @@ impl ReplicationLogService {
         req: &tonic::Request<T>,
         namespace: NamespaceName,
     ) -> Result<(), Status> {
-        if self.service_internal && req.metadata().get("libsql-proxied").is_some() || !self.service_internal {
+        if self.service_internal && req.metadata().get("libsql-proxied").is_some()
+            || !self.service_internal
+        {
             super::auth::authenticate(
                 &self.namespaces,
                 req,
@@ -84,7 +86,7 @@ impl ReplicationLogService {
                 &self.user_auth_strategy,
                 true,
             )
-                .await
+            .await
         } else {
             Ok(())
         }
