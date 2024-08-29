@@ -787,10 +787,10 @@ where
         tokio::select! {
             _ = shutdown.notified() => {
                 let shutdown = async {
+                    namespace_store.shutdown().await?;
                     task_manager.shutdown().await?;
                     // join_set.shutdown().await;
                     service_shutdown.notify_waiters();
-                    namespace_store.shutdown().await?;
 
                     Ok::<_, crate::Error>(())
                 };
