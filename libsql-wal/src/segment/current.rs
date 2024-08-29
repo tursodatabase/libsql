@@ -193,6 +193,10 @@ impl<F> CurrentSegment<F> {
                     // set frames unordered because there are no guarantees that we received frames
                     // in order.
                     header.set_flags(header.flags().union(SegmentFlags::FRAME_UNORDERED));
+                    {
+                        let savepoint = tx.savepoints.first().unwrap();
+                        header.frame_count = (header.frame_count.get() + (tx.next_offset - savepoint.next_offset) as u64).into();
+                    }
                     header.recompute_checksum();
 
                     let (header, ret) = self
@@ -299,6 +303,7 @@ impl<F> CurrentSegment<F> {
             }
         }
 
+        // commit
         if let Some(size_after) = size_after {
             if tx.not_empty() {
                 let new_checksum = if let Some(offset) = tx.recompute_checksum {
@@ -326,6 +331,11 @@ impl<F> CurrentSegment<F> {
                 let mut header = { *self.header.lock() };
                 header.last_commited_frame_no = last_frame_no.into();
                 header.size_after = size_after.into();
+                // count how many frames were appeneded: basically last appeneded offset - initial
+                // offset
+                let tx = tx.deref_mut();
+                let savepoint = tx.savepoints.first().unwrap();
+                header.frame_count = (header.frame_count.get() + (tx.next_offset - savepoint.next_offset) as u64).into();
                 header.recompute_checksum();
 
                 self.file.write_all_at(header.as_bytes(), 0)?;
