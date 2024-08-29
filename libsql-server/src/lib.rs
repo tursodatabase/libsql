@@ -73,6 +73,7 @@ use utils::services::idle_shutdown::IdleShutdownKicker;
 use self::bottomless_migrate::bottomless_migrate;
 use self::config::MetaStoreConfig;
 use self::connection::connection_manager::InnerWalManager;
+use self::connection::MakeThrottledConnection;
 use self::namespace::configurator::{
     BaseNamespaceConfig, LibsqlPrimaryConfigurator, LibsqlReplicaConfigurator,
     LibsqlSchemaConfigurator, NamespaceConfigurators, PrimaryConfig, PrimaryConfigurator,
@@ -337,7 +338,7 @@ pub type SqldStorage =
 
 #[tracing::instrument(skip(connection_maker))]
 async fn run_periodic_checkpoint<C>(
-    connection_maker: Arc<C>,
+    connection_maker: Arc<MakeThrottledConnection<C>>,
     period: Duration,
     namespace_name: NamespaceName,
 ) -> anyhow::Result<()>
@@ -361,7 +362,7 @@ where
         } else {
             interval.tick().await;
         }
-        retry = match connection_maker.create().await {
+        retry = match connection_maker.untracked().await {
             Ok(conn) => {
                 if let Err(e) = conn.vacuum_if_needed().await {
                     tracing::warn!("vacuum failed: {}", e);
