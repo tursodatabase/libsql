@@ -144,16 +144,21 @@ where
     async fn step(&mut self) {
         tokio::select! {
             biased;
-            // fixme: we should probably handle a panic in the checkpointing task somehow
-            Some(Ok((namespace, result))) = self.join_set.join_next(), if !self.join_set.is_empty() => {
-                self.checkpointing.remove(&namespace);
-                if let Err(e) = result {
-                    self.errors += 1;
-                    tracing::error!("error checkpointing ns {namespace}: {e}, rescheduling");
-                    // reschedule
-                    self.scheduled.insert(namespace);
-                } else {
-                    self.errors = 0;
+            result = self.join_set.join_next(), if !self.join_set.is_empty() => {
+                match result {
+                    Some(Ok((namespace, result))) => {
+                        self.checkpointing.remove(&namespace);
+                        if let Err(e) = result {
+                            self.errors += 1;
+                            tracing::error!("error checkpointing ns {namespace}: {e}, rescheduling");
+                            // reschedule
+                            self.scheduled.insert(namespace);
+                        } else {
+                            self.errors = 0;
+                        }
+                    }
+                    Some(Err(e)) => panic!("checkoint task panicked: {e}"),
+                    None => unreachable!("got None, but join set is not empty")
                 }
             }
             notified = self.recv.recv(), if !self.shutting_down => {
