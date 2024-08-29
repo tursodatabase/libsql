@@ -39,6 +39,10 @@ impl CompactedSegmentDataHeader {
 
         Ok(())
     }
+
+    pub fn size_after(&self) -> u32 {
+        self.size_after.get()
+    }
 }
 
 #[derive(Debug, AsBytes, FromZeroes, FromBytes)]
@@ -61,6 +65,10 @@ impl<F> CompactedSegment<F> {
             header: self.header,
             file: f(self.file),
         }
+    }
+
+    pub fn header(&self) -> &CompactedSegmentDataHeader {
+        &self.header
     }
 }
 
