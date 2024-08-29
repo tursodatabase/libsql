@@ -284,14 +284,19 @@ impl<IO: Io> SharedWal<IO> {
     pub fn seal_current(&self) -> Result<()> {
         let mut tx = self.begin_read(u64::MAX).into();
         self.upgrade(&mut tx)?;
-        {
+
+        let ret = {
             let mut guard = tx.as_write_mut().unwrap().lock();
             guard.commit();
-            self.swap_current(&mut guard)?;
-        }
+            self.swap_current(&mut guard)
+        };
+        // make sure the tx is always ended before it's dropped!
+        // FIXME: this is an issue with this design, since downgrade consume self, we can't have a
+        // drop implementation. The should probably have a Option<WriteTxnInner>, to that we can
+        // take &mut Self instead.
         tx.end();
 
-        Ok(())
+        ret
     }
 
     /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
