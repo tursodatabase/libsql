@@ -177,6 +177,9 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub connector: Option<D>,
     pub migrate_bottomless: bool,
     pub enable_deadlock_monitor: bool,
+    pub should_sync_from_storage: bool,
+    pub force_load_wals: bool,
+    pub sync_conccurency: usize,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -203,6 +206,9 @@ impl<C, A, D> Default for Server<C, A, D> {
             connector: None,
             migrate_bottomless: false,
             enable_deadlock_monitor: false,
+            should_sync_from_storage: false,
+            force_load_wals: false,
+            sync_conccurency: 8,
         }
     }
 }
@@ -958,19 +964,28 @@ where
             Ok(())
         });
 
-        // If we have performed the migration, load all shared wals to force flush to storage with
-        // the new registry
-        if did_migrate {
+        // If we performed a migration from bottomless to libsql-wal earlier, then we need to
+        // forecefully load all the wals, to trigger segment storage with the actual storage. This
+        // is because migration didn't actually send anything to storage, but just created the
+        // segments.
+        if did_migrate || self.should_sync_from_storage || self.force_load_wals {
+            // eagerly load all namespaces, then call sync_all on the registry
+            // TODO: do conccurently
             let dbs_path = base_config.base_path.join("dbs");
             let stream = meta_store.namespaces();
             tokio::pin!(stream);
             while let Some(conf) = stream.next().await {
                 let registry = registry.clone();
                 let namespace = conf.namespace().clone();
-                let path = dbs_path.join(namespace.as_str()).join("data");
-                tokio::task::spawn_blocking(move || registry.open(&path, &namespace.into()))
+                let path = dbs_path.join(namespace.as_str());
+                tokio::fs::create_dir_all(&path).await?;
+                tokio::task::spawn_blocking(move || registry.open(&path.join("data"), &namespace.into()))
                     .await
                     .unwrap()?;
+                }
+
+            if self.should_sync_from_storage {
+                registry.sync_all(self.sync_conccurency).await?;
             }
         }
 
