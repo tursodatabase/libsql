@@ -1,4 +1,5 @@
 use hyper::Uri;
+use tonic::metadata::AsciiMetadataValue;
 use tonic::{transport::Channel, Status};
 
 use super::replication_log::rpc::replication_log_client::ReplicationLogClient;
@@ -19,6 +20,11 @@ impl ReplicationLogProxyService {
     }
 }
 
+fn mark_proxied<T>(mut req: tonic::Request<T>) -> tonic::Request<T> {
+    req.metadata_mut().insert("libsql-proxied", AsciiMetadataValue::from_static("true"));
+    req
+}
+
 #[tonic::async_trait]
 impl ReplicationLog for ReplicationLogProxyService {
     type LogEntriesStream = tonic::codec::Streaming<Frame>;
@@ -29,7 +35,7 @@ impl ReplicationLog for ReplicationLogProxyService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
         let mut client = self.client.clone();
-        client.log_entries(req).await
+        client.log_entries(mark_proxied(req)).await
     }
 
     async fn batch_log_entries(
@@ -37,7 +43,7 @@ impl ReplicationLog for ReplicationLogProxyService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Frames>, Status> {
         let mut client = self.client.clone();
-        client.batch_log_entries(req).await
+        client.batch_log_entries(mark_proxied(req)).await
     }
 
     async fn hello(
@@ -45,7 +51,7 @@ impl ReplicationLog for ReplicationLogProxyService {
         req: tonic::Request<HelloRequest>,
     ) -> Result<tonic::Response<HelloResponse>, Status> {
         let mut client = self.client.clone();
-        client.hello(req).await
+        client.hello(mark_proxied(req)).await
     }
 
     async fn snapshot(
@@ -53,6 +59,6 @@ impl ReplicationLog for ReplicationLogProxyService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
         let mut client = self.client.clone();
-        client.snapshot(req).await
+        client.snapshot(mark_proxied(req)).await
     }
 }
