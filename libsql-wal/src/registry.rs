@@ -3,13 +3,16 @@ use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Instant;
 
 use dashmap::DashMap;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::{Condvar, Mutex};
 use rand::Rng;
+use roaring::RoaringBitmap;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
+use tokio_stream::StreamExt;
 use uuid::Uuid;
 use zerocopy::{AsBytes, FromZeroes};
 
@@ -17,13 +20,14 @@ use crate::checkpointer::CheckpointMessage;
 use crate::error::Result;
 use crate::io::file::FileExt;
 use crate::io::{Io, StdIO};
-use crate::replication::storage::StorageReplicator;
+use crate::replication::injector::Injector;
+use crate::replication::storage::{ReplicateFromStorage as _, StorageReplicator};
 use crate::segment::list::SegmentList;
 use crate::segment::Segment;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::{SharedWal, SwapLog};
 use crate::storage::{OnStoreCallback, Storage};
-use crate::transaction::TxGuard;
+use crate::transaction::{Transaction, TxGuard};
 use crate::{LibsqlFooter, LIBSQL_PAGE_SIZE};
 use libsql_sys::name::NamespaceName;
 
@@ -124,23 +128,45 @@ where
         // sealing must the last fallible operation, because we don't want to end up in a situation
         // where the current log is sealed and it wasn't swapped.
         if let Some(sealed) = current.seal()? {
-            // todo: pass config override here
-            let notifier = self.checkpoint_notifier.clone();
-            let namespace = shared.namespace().clone();
-            let durable_frame_no = shared.durable_frame_no.clone();
-            let cb: OnStoreCallback = Box::new(move |fno| {
-                Box::pin(async move {
-                    update_durable(fno, notifier, durable_frame_no, namespace).await;
-                })
-            });
             new.tail().push(sealed.clone());
-            self.storage.store(&shared.namespace, sealed, None, cb);
+            maybe_store_segment(
+                self.storage.as_ref(),
+                &self.checkpoint_notifier,
+                &shared.namespace,
+                &shared.durable_frame_no,
+                sealed,
+            );
         }
 
         shared.current.swap(Arc::new(new));
         tracing::debug!("current segment swapped");
 
         Ok(())
+    }
+}
+
+#[tracing::instrument(skip_all, fields(namespace = namespace.as_str(), start_frame_no = seg.start_frame_no()))]
+fn maybe_store_segment<S: Storage>(
+    storage: &S,
+    notifier: &tokio::sync::mpsc::Sender<CheckpointMessage>,
+    namespace: &NamespaceName,
+    durable_frame_no: &Arc<Mutex<u64>>,
+    seg: S::Segment
+) {
+    if seg.is_storable() {
+        let cb: OnStoreCallback = Box::new({
+            let notifier = notifier.clone();
+            let durable_frame_no = durable_frame_no.clone();
+            let namespace = namespace.clone();
+            move |fno| {
+                Box::pin(async move {
+                    update_durable(fno, notifier, durable_frame_no, namespace).await;
+                })
+            }
+        });
+        storage.store(namespace, seg, None, cb);
+    } else {
+        tracing::debug!("segment marked as not storable; skipping");
     }
 }
 
@@ -271,17 +297,14 @@ where
             if let Some(sealed) =
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
-                let notifier = self.checkpoint_notifier.clone();
-                let ns = namespace.clone();
-                let durable_frame_no = durable_frame_no.clone();
-                let cb: OnStoreCallback = Box::new(move |fno| {
-                    Box::pin(async move {
-                        update_durable(fno, notifier, durable_frame_no, ns).await;
-                    })
-                });
-                // TODO: pass config override here
-                self.storage.store(&namespace, sealed.clone(), None, cb);
-                list.push(sealed);
+                list.push(sealed.clone());
+                maybe_store_segment(
+                    self.storage.as_ref(),
+                    &self.checkpoint_notifier,
+                    &namespace,
+                    &durable_frame_no,
+                    sealed,
+                );
             }
         }
 
@@ -313,7 +336,7 @@ where
 
         let (db_size, next_frame_no) = list
             .with_head(|segment| {
-                let header = dbg!(segment.header());
+                let header = segment.header();
                 (header.size_after(), header.next_frame_no())
             })
         .unwrap_or_else(|| match header {
