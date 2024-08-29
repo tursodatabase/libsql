@@ -381,14 +381,36 @@ where
     }
 
     /// Attempts to sync all loaded dbs with durable storage
-    pub async fn sync_all(&self) -> Result<()>
+    pub async fn sync_all(&self, conccurency: usize) -> Result<()>
         where S: Storage,
     {
+        let mut join_set = JoinSet::new();
         tracing::info!("syncing {} namespaces", self.opened.len());
+        // FIXME: arbitrary value, maybe use something like numcpu * 2?
+        let before_sync = Instant::now();
+        let sem = Arc::new(Semaphore::new(conccurency));
         for entry in self.opened.iter() {
             let Slot::Wal(shared) = entry.value() else { panic!("all wals should already be opened") };
-            sync_one(shared, self.storage.as_ref()).await?;
+            let storage = self.storage.clone();
+            let shared = shared.clone();
+            let sem = sem.clone();
+            let permit = sem.acquire_owned().await.unwrap();
+
+            join_set.spawn(async move {
+                let _permit = permit;
+                sync_one(shared, storage).await
+            });
+
+            if let Some(ret) = join_set.try_join_next() {
+                ret.unwrap()?;
+            }
         }
+
+        while let Some(ret) = join_set.join_next().await {
+            ret.unwrap()?;
+        }
+
+        tracing::info!("synced in {:?}", before_sync.elapsed());
 
         Ok(())
     }
