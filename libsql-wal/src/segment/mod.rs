@@ -99,7 +99,7 @@ impl SegmentHeader {
         }
     }
 
-    fn flags(&self) -> SegmentFlags {
+    pub fn flags(&self) -> SegmentFlags {
         SegmentFlags::from_bits(self.flags.get()).unwrap()
     }
 
