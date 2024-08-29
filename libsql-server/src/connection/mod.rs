@@ -314,6 +314,13 @@ impl<F> MakeThrottledConnection<F> {
             1
         }
     }
+
+    pub async fn untracked(&self) -> Result<F::Connection, Error>
+    where
+        F: MakeConnection,
+    {
+        self.connection_maker.create().await
+    }
 }
 
 struct WaitersGuard<'a> {

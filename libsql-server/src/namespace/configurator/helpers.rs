@@ -17,7 +17,7 @@ use tokio_util::io::StreamReader;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::connection_manager::InnerWalManager;
 use crate::connection::legacy::MakeLegacyConnection;
-use crate::connection::{Connection as _, MakeConnection};
+use crate::connection::{Connection as _, MakeConnection, MakeThrottledConnection};
 use crate::database::{PrimaryConnection, PrimaryConnectionMaker};
 use crate::error::LoadDumpError;
 use crate::namespace::broadcasters::BroadcasterHandle;
@@ -380,7 +380,7 @@ pub(super) async fn make_stats(
 // right after checkpointing is exactly where it should be done.
 pub(crate) async fn run_storage_monitor<M: MakeConnection>(
     stats: Weak<Stats>,
-    connection_maker: Arc<M>,
+    connection_maker: Arc<MakeThrottledConnection<M>>,
 ) -> anyhow::Result<()> {
     // on initialization, the database file doesn't exist yet, so we wait a bit for it to be
     // created
@@ -392,7 +392,7 @@ pub(crate) async fn run_storage_monitor<M: MakeConnection>(
             return Ok(());
         };
 
-        match connection_maker.create().await {
+        match connection_maker.untracked().await {
             Ok(conn) => {
                 let _ = BLOCKING_RT
                     .spawn_blocking(move || {
