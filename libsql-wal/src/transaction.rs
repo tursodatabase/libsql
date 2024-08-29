@@ -155,14 +155,23 @@ pub struct WriteTransaction<F> {
 }
 
 pub struct TxGuardOwned<F> {
-    _lock: Option<async_lock::MutexGuardArc<Option<u64>>>,
+    lock: Option<async_lock::MutexGuardArc<Option<u64>>>,
     inner: Option<WriteTransaction<F>>,
+}
+
+impl<F> TxGuardOwned<F> {
+    pub(crate) fn into_inner(mut self) -> WriteTransaction<F> {
+        self.lock.take();
+        self.inner.take().unwrap()
+    }
 }
 
 impl<F> Drop for TxGuardOwned<F> {
     fn drop(&mut self) {
-        let _ = self._lock.take();
-        self.inner.take().expect("already dropped").downgrade();
+        let _ = self.lock.take();
+        if let Some(inner) = self.inner.take() {
+            inner.downgrade();
+        }
     }
 }
 
@@ -217,11 +226,6 @@ impl<F> WriteTransaction<F> {
     }
 
     pub fn lock(&mut self) -> TxGuard<F> {
-        if self.is_commited {
-            tracing::error!("transaction already commited");
-            todo!("txn has already been commited");
-        }
-
         let g = self.wal_lock.tx_id.lock_arc_blocking();
         match *g {
             // we still hold the lock, we can proceed
@@ -236,16 +240,11 @@ impl<F> WriteTransaction<F> {
     }
 
     pub fn into_lock_owned(self) -> TxGuardOwned<F> {
-        if self.is_commited {
-            tracing::error!("transaction already commited");
-            todo!("txn has already been commited");
-        }
-
         let g = self.wal_lock.tx_id.lock_arc_blocking();
         match *g {
             // we still hold the lock, we can proceed
             Some(id) if self.id == id => TxGuardOwned {
-                _lock: Some(g),
+                lock: Some(g),
                 inner: Some(self),
             },
             // Somebody took the lock from us
