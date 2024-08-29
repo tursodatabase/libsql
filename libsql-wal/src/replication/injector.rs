@@ -2,8 +2,6 @@
 
 use std::sync::Arc;
 
-use tokio_stream::{Stream, StreamExt};
-
 use crate::error::Result;
 use crate::io::Io;
 use crate::segment::Frame;
@@ -36,19 +34,6 @@ impl<IO: Io> Injector<IO> {
             tx,
             max_tx_frame_no: 0,
         })
-    }
-
-    pub async fn inject_stream(&mut self, stream: impl Stream<Item = Result<Box<Frame>>>) -> Result<()> {
-        tokio::pin!(stream);
-        loop {
-            match stream.next().await {
-                Some(Ok(frame)) => {
-                    self.insert_frame(frame).await?;
-                },
-                Some(Err(e)) => return Err(e),
-                None => return Ok(()),
-            }
-        }
     }
 
     pub async fn insert_frame(&mut self, frame: Box<Frame>) -> Result<Option<u64>> {
