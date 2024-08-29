@@ -37,6 +37,9 @@ pub struct ReplicationLogService {
     disable_namespaces: bool,
     session_token: Bytes,
     collect_stats: bool,
+    // whether this is an internal service. If it is an internal service, auth is checked for
+    // proxied requests
+    service_internal: bool,
 
     //deprecated:
     generation_id: Uuid,
@@ -52,6 +55,7 @@ impl ReplicationLogService {
         user_auth_strategy: Option<Auth>,
         disable_namespaces: bool,
         collect_stats: bool,
+        service_internal: bool,
     ) -> Self {
         let session_token = Uuid::new_v4().to_string().into();
         Self {
@@ -63,6 +67,7 @@ impl ReplicationLogService {
             collect_stats,
             generation_id: Uuid::new_v4(),
             replicas_with_hello: Default::default(),
+            service_internal,
         }
     }
 
@@ -71,14 +76,20 @@ impl ReplicationLogService {
         req: &tonic::Request<T>,
         namespace: NamespaceName,
     ) -> Result<(), Status> {
-        super::auth::authenticate(
-            &self.namespaces,
-            req,
-            namespace,
-            &self.user_auth_strategy,
-            true,
-        )
-        .await
+        if self.service_internal && req.metadata().get("libsql-proxied").is_some()
+            || !self.service_internal
+        {
+            super::auth::authenticate(
+                &self.namespaces,
+                req,
+                namespace,
+                &self.user_auth_strategy,
+                true,
+            )
+            .await
+        } else {
+            Ok(())
+        }
     }
 
     fn verify_session_token<R>(

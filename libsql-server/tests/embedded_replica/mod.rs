@@ -6,11 +6,15 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use crate::common::auth::encode;
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
-use crate::common::snapshot_metrics;
+use crate::common::{self, snapshot_metrics};
 use libsql::Database;
-use libsql_server::config::{AdminApiConfig, DbConfig, RpcServerConfig, UserApiConfig};
+use libsql_server::auth::{user_auth_strategies, Auth};
+use libsql_server::config::{
+    AdminApiConfig, DbConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
+};
 use serde_json::json;
 use tempfile::tempdir;
 use tokio::sync::Notify;
@@ -1357,6 +1361,152 @@ fn replicated_return() {
         let count = row.next().await.unwrap().unwrap().get::<u64>(0).unwrap();
         assert_eq!(count, 3);
 
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn replicate_auth() {
+    init_tracing();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    let (encoding, decoding) = common::auth::key_pair();
+    sim.host("primary", {
+        let decoding = decoding.clone();
+        move || {
+            let decoding = decoding.clone();
+            async move {
+                let tmp = tempdir()?;
+                let jwt_keys =
+                    vec![jsonwebtoken::DecodingKey::from_ed_components(&decoding).unwrap()];
+                let auth = Auth::new(user_auth_strategies::Jwt::new(jwt_keys));
+                let server = TestServer {
+                    path: tmp.path().to_owned().into(),
+                    user_api_config: UserApiConfig {
+                        hrana_ws_acceptor: None,
+                        auth_strategy: auth,
+                        ..Default::default()
+                    },
+                    admin_api_config: Some(AdminApiConfig {
+                        acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
+                        connector: TurmoilConnector,
+                        disable_metrics: true,
+                    }),
+                    rpc_server_config: Some(RpcServerConfig {
+                        acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await?,
+                        tls_config: None,
+                    }),
+                    ..Default::default()
+                };
+
+                server.start_sim(8080).await?;
+
+                Ok(())
+            }
+        }
+    });
+
+    sim.host("replica", {
+        let decoding = decoding.clone();
+        move || {
+            let decoding = decoding.clone();
+            async move {
+                let tmp = tempdir()?;
+                let jwt_keys =
+                    vec![jsonwebtoken::DecodingKey::from_ed_components(&decoding).unwrap()];
+                let auth = Auth::new(user_auth_strategies::Jwt::new(jwt_keys));
+                let server = TestServer {
+                    path: tmp.path().to_owned().into(),
+                    user_api_config: UserApiConfig {
+                        hrana_ws_acceptor: None,
+                        auth_strategy: auth,
+                        ..Default::default()
+                    },
+                    admin_api_config: Some(AdminApiConfig {
+                        acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
+                        connector: TurmoilConnector,
+                        disable_metrics: true,
+                    }),
+                    rpc_client_config: Some(RpcClientConfig {
+                        remote_url: "http://primary:4567".into(),
+                        connector: TurmoilConnector,
+                        tls_config: None,
+                    }),
+                    ..Default::default()
+                };
+
+                server.start_sim(8080).await?;
+
+                Ok(())
+            }
+        }
+    });
+
+    sim.client("client", async move {
+        let token = encode(
+            &serde_json::json!({
+                "id": "default",
+            }),
+            &encoding,
+        );
+
+        // no auth
+        let tmp = tempdir().unwrap();
+        let db = Database::open_with_remote_sync_connector(
+            tmp.path().join("embedded").to_str().unwrap(),
+            "http://primary:8080",
+            "",
+            TurmoilConnector,
+            false,
+            None,
+        )
+        .await?;
+
+        assert!(db.sync().await.is_err());
+
+        let tmp = tempdir().unwrap();
+        let db = Database::open_with_remote_sync_connector(
+            tmp.path().join("embedded").to_str().unwrap(),
+            "http://replica:8080",
+            "",
+            TurmoilConnector,
+            false,
+            None,
+        )
+        .await?;
+
+        assert!(db.sync().await.is_err());
+
+        // auth
+        let tmp = tempdir().unwrap();
+        let db = Database::open_with_remote_sync_connector(
+            tmp.path().join("embedded").to_str().unwrap(),
+            "http://primary:8080",
+            token.clone(),
+            TurmoilConnector,
+            false,
+            None,
+        )
+        .await?;
+
+        assert!(db.sync().await.is_ok());
+
+        let tmp = tempdir().unwrap();
+        let db = Database::open_with_remote_sync_connector(
+            tmp.path().join("embedded").to_str().unwrap(),
+            "http://replica:8080",
+            token.clone(),
+            TurmoilConnector,
+            false,
+            None,
+        )
+        .await?;
+
+        assert!(db.sync().await.is_ok());
         Ok(())
     });
 

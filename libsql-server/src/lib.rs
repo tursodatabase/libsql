@@ -129,10 +129,11 @@ pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
 type Result<T, E = Error> = std::result::Result<T, E>;
 type StatsSender = mpsc::Sender<(NamespaceName, MetaStoreHandle, Weak<Stats>)>;
 type MakeReplicationSvc = Box<
-    dyn FnOnce(
+    dyn Fn(
             NamespaceStore,
             Option<Auth>,
             Option<IdleShutdownKicker>,
+            bool,
             bool,
         ) -> BoxReplicationService
         + Send
@@ -620,9 +621,10 @@ where
 
             let replication_service = make_replication_svc(
                 namespace_store.clone(),
-                None,
+                Some(user_auth_strategy.clone()),
                 idle_shutdown_kicker.clone(),
                 false,
+                true,
             );
 
             task_manager.spawn_until_shutdown(run_rpc_server(
@@ -630,7 +632,7 @@ where
                 config.acceptor,
                 config.tls_config,
                 idle_shutdown_kicker.clone(),
-                replication_service,
+                replication_service, // internal replicaton service
             ));
         }
 
@@ -658,12 +660,12 @@ where
                         .await?;
                 }
 
-                let replication_svc = ReplicationLogService::new(
+                let replication_svc = make_replication_svc(
                     namespace_store.clone(),
-                    idle_shutdown_kicker.clone(),
                     Some(user_auth_strategy.clone()),
-                    self.disable_namespaces,
+                    idle_shutdown_kicker.clone(),
                     true,
+                    false, // external replication service
                 );
 
                 let proxy_svc = ProxyService::new(
@@ -936,9 +938,9 @@ where
         let make_replication_svc = Box::new({
             let registry = registry.clone();
             let disable_namespaces = self.disable_namespaces;
-            move |store, user_auth, _, _| -> BoxReplicationService {
+            move |store, user_auth, _, _, _| -> BoxReplicationService {
                 Box::new(LibsqlReplicationService::new(
-                    registry,
+                    registry.clone(),
                     store,
                     user_auth,
                     disable_namespaces,
@@ -1023,13 +1025,19 @@ where
 
         let make_replication_svc = Box::new({
             let disable_namespaces = self.disable_namespaces;
-            move |store, client_auth, idle_shutdown, collect_stats| -> BoxReplicationService {
+            move |store,
+                  client_auth,
+                  idle_shutdown,
+                  collect_stats,
+                  is_internal|
+                  -> BoxReplicationService {
                 Box::new(ReplicationLogService::new(
                     store,
                     idle_shutdown,
                     client_auth,
                     disable_namespaces,
                     collect_stats,
+                    is_internal,
                 ))
             }
         });
@@ -1055,13 +1063,19 @@ where
 
         let make_replication_svc = Box::new({
             let disable_namespaces = self.disable_namespaces;
-            move |store, client_auth, idle_shutdown, collect_stats| -> BoxReplicationService {
+            move |store,
+                  client_auth,
+                  idle_shutdown,
+                  collect_stats,
+                  is_internal|
+                  -> BoxReplicationService {
                 Box::new(ReplicationLogService::new(
                     store,
                     idle_shutdown,
                     client_auth,
                     disable_namespaces,
                     collect_stats,
+                    is_internal,
                 ))
             }
         });

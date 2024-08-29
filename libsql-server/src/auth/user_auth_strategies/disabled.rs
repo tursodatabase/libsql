@@ -1,6 +1,7 @@
 use super::{UserAuthContext, UserAuthStrategy};
 use crate::auth::{AuthError, Authenticated};
 
+#[derive(Debug)]
 pub struct Disabled {}
 
 impl UserAuthStrategy for Disabled {

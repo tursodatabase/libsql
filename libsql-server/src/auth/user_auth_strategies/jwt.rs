@@ -1,3 +1,5 @@
+use std::fmt::{self, Debug, Formatter};
+
 use chrono::{DateTime, Utc};
 
 use crate::{
@@ -13,6 +15,12 @@ use super::{UserAuthContext, UserAuthStrategy};
 
 pub struct Jwt {
     keys: Vec<jsonwebtoken::DecodingKey>,
+}
+
+impl Debug for Jwt {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Jwt").finish()
+    }
 }
 
 impl UserAuthStrategy for Jwt {

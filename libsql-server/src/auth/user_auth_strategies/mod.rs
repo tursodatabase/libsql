@@ -55,7 +55,7 @@ impl UserAuthContext {
     }
 }
 
-pub trait UserAuthStrategy: Sync + Send {
+pub trait UserAuthStrategy: Sync + Send + std::fmt::Debug {
     /// Returns a list of fields required by the stragegy.
     /// Every strategy implementation should override this function if it requires input to work.
     /// Strategy implementations should validate the content of provided fields.
