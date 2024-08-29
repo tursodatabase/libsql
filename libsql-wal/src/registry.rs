@@ -474,19 +474,56 @@ where
     }
 }
 
-#[tracing::instrument(skip_all, fields(namespace = shared.namespace.as_str()))]
-async fn sync_one<IO, S>(shared: &SharedWal<IO>, storage: &S) -> Result<()>
+#[tracing::instrument(skip_all, fields(namespace = shared.namespace().as_str()))]
+async fn sync_one<IO, S>(shared: Arc<SharedWal<IO>>, storage: Arc<S>) -> Result<()>
 where IO: Io,
       S: Storage
 {
-    let remote_durable_frame_no = storage.durable_frame_no(&shared.namespace, None).await.map_err(Box::new)?;
+    let remote_durable_frame_no = storage.durable_frame_no(shared.namespace(), None).await.map_err(Box::new)?;
     let local_current_frame_no = shared.current.load().next_frame_no().get() - 1;
 
-    if remote_durable_frame_no >= local_current_frame_no {
+    if remote_durable_frame_no > local_current_frame_no {
         tracing::info!(remote_durable_frame_no, local_current_frame_no, "remote storage has newer segments");
-    } else {
-        tracing::info!("local database is up to date");
+        let mut seen = RoaringBitmap::new();
+        let replicator = StorageReplicator::new(storage, shared.namespace().clone());
+        let stream = replicator
+            .stream(&mut seen, local_current_frame_no, 1)
+            .peekable();
+        let mut injector = Injector::new(shared.clone(), 10)?;
+        // use pin to the heap so that we can drop the stream in the loop, and count `seen`.
+        let mut stream = Box::pin(stream);
+        loop {
+            match stream.next().await {
+                Some(Ok(mut frame)) => {
+                    if stream.peek().await.is_none() {
+                        drop(stream);
+                        frame.header_mut().frame_no();
+                        frame.header_mut().set_size_after(seen.len() as _);
+                        injector.insert_frame(frame).await?;
+                        break
+                    } else {
+                        injector.insert_frame(frame).await?;
+                    }
+                }
+                Some(Err(e)) => todo!("handle error: {e}, {}", shared.namespace()),
+                None => break,
+            }
+        }
+
+        let mut tx = Transaction::Write(injector.into_guard().into_inner());
+        let ret = {
+            let mut guard = tx.as_write_mut().unwrap().lock();
+            guard.commit();
+            // the current segment it unordered, no new frames should be appended to it, seal it and
+            // open a new segment
+            shared.swap_current(&guard)
+        };
+        // make sure the tx is always ended before it's dropped!
+        tx.end();
+        ret?;
     }
+
+    tracing::info!("local database is up to date");
 
     Ok(())
 }
