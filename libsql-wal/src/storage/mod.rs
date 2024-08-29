@@ -52,12 +52,12 @@ pub enum RestoreOptions {
 /// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 1000 };
 /// map.insert(SegmentKey(&meta).to_string(), meta);
 ///
-/// map.range(format!("{:019}", u64::MAX - 50)..).next();
-/// map.range(format!("{:019}", u64::MAX - 0)..).next();
-/// map.range(format!("{:019}", u64::MAX - 1)..).next();
-/// map.range(format!("{:019}", u64::MAX - 100)..).next();
-/// map.range(format!("{:019}", u64::MAX - 101)..).next();
-/// map.range(format!("{:019}", u64::MAX - 5000)..).next();
+/// map.range(format!("{:020}", u64::MAX - 50)..).next();
+/// map.range(format!("{:020}", u64::MAX - 0)..).next();
+/// map.range(format!("{:020}", u64::MAX - 1)..).next();
+/// map.range(format!("{:020}", u64::MAX - 100)..).next();
+/// map.range(format!("{:020}", u64::MAX - 101)..).next();
+/// map.range(format!("{:020}", u64::MAX - 5000)..).next();
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SegmentKey {
@@ -137,7 +137,7 @@ impl fmt::Display for SegmentKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{:019}-{:019}",
+            "{:020}-{:020}",
             u64::MAX - self.start_frame_no,
             u64::MAX - self.end_frame_no,
         )
