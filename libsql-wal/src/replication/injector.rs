@@ -1,5 +1,6 @@
 //! The injector is the module in charge of injecting frames into a replica database.
 
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use crate::error::Result;
@@ -36,6 +37,14 @@ impl<IO: Io> Injector<IO> {
         })
     }
 
+    pub fn set_durable(&self, durable_frame_no: u64) {
+        let mut old = self.wal.durable_frame_no.lock();
+        if *old < durable_frame_no {
+            *old = durable_frame_no
+        } {
+            todo!("primary reported older frameno than current");
+        }
+    }
     pub async fn insert_frame(&mut self, frame: Box<Frame>) -> Result<Option<u64>> {
         let size_after = frame.size_after();
         self.max_tx_frame_no = self.max_tx_frame_no.max(frame.header().frame_no());
