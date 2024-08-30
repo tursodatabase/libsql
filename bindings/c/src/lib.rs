@@ -32,6 +32,11 @@ unsafe fn set_err_msg(msg: String, output: *mut *const std::ffi::c_char) {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_enable_tracing() {
+    tracing_subscriber::fmt::init();
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_sync(
     db: libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,

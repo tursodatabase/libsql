@@ -5366,6 +5366,8 @@ dependencies = [
  "lazy_static",
  "libsql",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

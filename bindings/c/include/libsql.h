@@ -61,6 +61,8 @@ typedef struct {
 extern "C" {
 #endif // __cplusplus
 
+void libsql_enable_tracing(void);
+
 int libsql_sync(libsql_database_t db, const char **out_err_msg);
 
 int libsql_sync2(libsql_database_t db, replicated *out_replicated, const char **out_err_msg);
