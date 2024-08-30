@@ -772,6 +772,7 @@ mod test {
                         .map(|f| RpcFrame {
                             data: f.bytes(),
                             timestamp: None,
+                            durable_frame_no: None,
                         })
                         .take(2)
                         .map(Ok)
@@ -785,6 +786,7 @@ mod test {
                         .map(|f| RpcFrame {
                             data: f.bytes(),
                             timestamp: None,
+                            durable_frame_no: None,
                         })
                         .map(Ok)
                         .collect::<Vec<_>>();

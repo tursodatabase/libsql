@@ -102,6 +102,7 @@ where
                         Poll::Ready(Some(Ok(RpcFrame {
                             data,
                             timestamp: None,
+                            durable_frame_no: None,
                         })))
                     }
                     WalFlavor::Sqlite => {
@@ -116,6 +117,7 @@ where
                         Poll::Ready(Some(Ok(RpcFrame {
                             data: frame.bytes(),
                             timestamp: None,
+                            durable_frame_no: None,
                         })))
                     }
                 }

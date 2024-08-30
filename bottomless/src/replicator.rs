@@ -1652,6 +1652,7 @@ impl Replicator {
                     let frame = RpcFrame {
                         data: frame_to_inject.bytes(),
                         timestamp: None,
+                        durable_frame_no: None,
                     };
                     injector.inject_frame(frame).await?;
                     applied_wal_frame = true;

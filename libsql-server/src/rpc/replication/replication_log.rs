@@ -187,6 +187,7 @@ fn map_frame_stream_output(
         Ok((frame, ts)) => Ok(Frame {
             data: frame.bytes(),
             timestamp: ts.map(|ts| ts.timestamp_millis()),
+            durable_frame_no: None,
         }),
         Err(LogReadError::SnapshotRequired) => Err(Status::new(
             tonic::Code::FailedPrecondition,
@@ -431,6 +432,7 @@ mod snapshot_stream {
                         yield Ok(Frame {
                             data: libsql_replication::frame::Frame::from(frame).bytes(),
                             timestamp: None,
+                            durable_frame_no: None,
                         });
                     }
                     Err(e) => {

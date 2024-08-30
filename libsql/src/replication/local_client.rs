@@ -47,7 +47,7 @@ impl ReplicatorClient for LocalClient {
     async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
         match self.frames.take() {
             Some(Frames::Vec(f)) => {
-                let iter = f.into_iter().map(|f| RpcFrame { data: f.bytes(), timestamp: None }).map(Ok);
+                let iter = f.into_iter().map(|f| RpcFrame { data: f.bytes(), timestamp: None, durable_frame_no: None }).map(Ok);
                 Ok(Box::pin(tokio_stream::iter(iter)))
             }
             Some(f @ Frames::Snapshot(_)) => {
@@ -72,7 +72,7 @@ impl ReplicatorClient for LocalClient {
                             next.header_mut().size_after = size_after.into();
                         }
                         let frame = Frame::from(next);
-                        yield RpcFrame { data: frame.bytes(), timestamp: None };
+                        yield RpcFrame { data: frame.bytes(), timestamp: None, durable_frame_no: None };
                     }
                 };
 
