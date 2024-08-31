@@ -23,7 +23,7 @@ use crate::io::file::FileExt;
 use crate::io::Inspect;
 use crate::segment::{checked_frame_offset, SegmentFlags};
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
-use crate::transaction::{Transaction, TxGuard, TxGuardOwned};
+use crate::transaction::{Transaction, TxGuardShared, TxGuardOwned};
 use crate::{LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::list::SegmentList;
@@ -231,7 +231,7 @@ impl<F> CurrentSegment<F> {
         &self,
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
-        tx: &mut TxGuard<F>,
+        tx: &mut TxGuardShared<F>,
     ) -> Result<Option<u64>>
     where
         F: FileExt,
