@@ -96,6 +96,10 @@ impl<IO: Io> SharedWal<IO> {
         self.current.load().log_id()
     }
 
+    pub fn durable_frame_no(&self) -> u64 {
+        *self.durable_frame_no.lock()
+    }
+    
     #[tracing::instrument(skip_all)]
     pub fn begin_read(&self, conn_id: u64) -> ReadTransaction<IO::File> {
         // FIXME: this is not enough to just increment the counter, we must make sure that the segment
