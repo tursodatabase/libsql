@@ -18,6 +18,7 @@ pub struct Injector<IO: Io> {
     capacity: usize,
     tx: TxGuardOwned<IO::File>,
     max_tx_frame_no: u64,
+    previous_durable_frame_no: u64,
 }
 
 impl<IO: Io> Injector<IO> {
@@ -37,13 +38,18 @@ impl<IO: Io> Injector<IO> {
         })
     }
 
-    pub fn set_durable(&self, durable_frame_no: u64) {
+    pub fn set_durable(&mut self, durable_frame_no: u64) {
         let mut old = self.wal.durable_frame_no.lock();
-        if *old < durable_frame_no {
-            *old = durable_frame_no
-        } {
-            todo!("primary reported older frameno than current");
+        if *old <= durable_frame_no {
+            self.previous_durable_frame_no = *old;
+            *old = durable_frame_no;
+        } else {
+            todo!("primary reported older frame_no than current");
         }
+    }
+
+    pub fn current_durable(&self) -> u64 {
+        *self.wal.durable_frame_no.lock()
     }
     pub async fn insert_frame(&mut self, frame: Box<Frame>) -> Result<Option<u64>> {
         let size_after = frame.size_after();
