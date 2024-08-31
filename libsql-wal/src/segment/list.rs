@@ -136,7 +136,7 @@ where
         let mut last_replication_index = 0;
         while let Some((k, v)) = union.next() {
             let page_no = u32::from_be_bytes(k.try_into().unwrap());
-            tracing::debug!(page_no);
+            tracing::trace!(page_no);
             let v = v.iter().min_by_key(|i| i.index).unwrap();
             let offset = v.value as u32;
 
@@ -197,6 +197,8 @@ where
         }
 
         self.len.fetch_sub(segs.len(), Ordering::Relaxed);
+
+        tracing::debug!(until = last_replication_index, "checkpointed");
 
         Ok(Some(last_replication_index))
     }
