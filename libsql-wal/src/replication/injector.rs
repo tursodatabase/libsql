@@ -16,25 +16,20 @@ pub struct Injector<IO: Io> {
     buffer: Vec<Box<Frame>>,
     /// capacity of the frame buffer
     capacity: usize,
-    tx: TxGuardOwned<IO::File>,
+    tx: Option<TxGuardOwned<IO::File>>,
     max_tx_frame_no: u64,
     previous_durable_frame_no: u64,
 }
 
 impl<IO: Io> Injector<IO> {
     pub fn new(wal: Arc<SharedWal<IO>>, buffer_capacity: usize) -> Result<Self> {
-        let mut tx = Transaction::Read(wal.begin_read(u64::MAX));
-        wal.upgrade(&mut tx)?;
-        let tx = tx
-            .into_write()
-            .unwrap_or_else(|_| unreachable!())
-            .into_lock_owned();
         Ok(Self {
             wal,
             buffer: Vec::with_capacity(buffer_capacity),
             capacity: buffer_capacity,
-            tx,
+            tx: None,
             max_tx_frame_no: 0,
+            previous_durable_frame_no: 0, 
         })
     }
 
@@ -51,7 +46,22 @@ impl<IO: Io> Injector<IO> {
     pub fn current_durable(&self) -> u64 {
         *self.wal.durable_frame_no.lock()
     }
+    pub fn maybe_begin_txn(&mut self) -> Result<()> {
+        if self.tx.is_none() {
+            let mut tx = Transaction::Read(self.wal.begin_read(u64::MAX));
+            self.wal.upgrade(&mut tx)?;
+            let tx = tx
+                .into_write()
+                .unwrap_or_else(|_| unreachable!())
+                .into_lock_owned();
+            assert!(self.tx.replace(tx).is_none());
+        }
+
+        Ok(())
+    }
+
     pub async fn insert_frame(&mut self, frame: Box<Frame>) -> Result<Option<u64>> {
+        self.maybe_begin_txn()?;
         let size_after = frame.size_after();
         self.max_tx_frame_no = self.max_tx_frame_no.max(frame.header().frame_no());
         self.buffer.push(frame);
@@ -64,28 +74,38 @@ impl<IO: Io> Injector<IO> {
     }
 
     pub async fn flush(&mut self, size_after: Option<u32>) -> Result<()> {
-        let buffer = std::mem::take(&mut self.buffer);
-        let current = self.wal.current.load();
-        let commit_data = size_after.map(|size| (size, self.max_tx_frame_no));
-        if commit_data.is_some() {
-            self.max_tx_frame_no = 0;
+        if !self.buffer.is_empty() && self.tx.is_some() {
+            let last_committed_frame_no = self.max_tx_frame_no;
+            {
+                let tx = self.tx.as_mut().expect("we just checked that tx was there");
+                let buffer = std::mem::take(&mut self.buffer);
+                let current = self.wal.current.load();
+                let commit_data = size_after.map(|size| (size, self.max_tx_frame_no));
+                if commit_data.is_some() {
+                    self.max_tx_frame_no = 0;
+                }
+                let buffer = current
+                    .inject_frames(buffer, commit_data, tx)
+                .await?;
+                self.buffer = buffer;
+                self.buffer.clear();
+            }
+
+            if size_after.is_some() {
+                let mut tx = self.tx.take().unwrap();
+                self.wal.new_frame_notifier.send_replace(last_committed_frame_no);
+                }
+            }
         }
-        let buffer = current
-            .inject_frames(buffer, commit_data, &mut self.tx)
-            .await?;
-        self.buffer = buffer;
-        self.buffer.clear();
 
         Ok(())
     }
 
     pub fn rollback(&mut self) {
         self.buffer.clear();
-        self.tx.reset(0);
-    }
-
-    pub(crate) fn into_guard(self) -> TxGuardOwned<IO::File> {
-        self.tx
+        if let Some(tx) = self.tx.as_mut() {
+            tx.reset(0);
+        }
     }
 }
 
