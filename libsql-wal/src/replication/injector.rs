@@ -28,7 +28,7 @@ impl<IO: Io> Injector<IO> {
             capacity: buffer_capacity,
             tx: None,
             max_tx_frame_no: 0,
-            previous_durable_frame_no: 0, 
+            previous_durable_frame_no: 0,
         })
     }
 
@@ -84,25 +84,29 @@ impl<IO: Io> Injector<IO> {
                 if commit_data.is_some() {
                     self.max_tx_frame_no = 0;
                 }
-                let buffer = current
-                    .inject_frames(buffer, commit_data, tx)
-                .await?;
+                let buffer = current.inject_frames(buffer, commit_data, tx).await?;
                 self.buffer = buffer;
                 self.buffer.clear();
             }
 
             if size_after.is_some() {
                 let mut tx = self.tx.take().unwrap();
-                self.wal.new_frame_notifier.send_replace(last_committed_frame_no);
+                self.wal
+                    .new_frame_notifier
+                    .send_replace(last_committed_frame_no);
                 // the strategy to swap the current log is to do it on change of durable boundary,
                 // when we have caught up with the current durable frame_no
-                if self.current_durable() != self.previous_durable_frame_no && self.current_durable() >= self.max_tx_frame_no {
+                if self.current_durable() != self.previous_durable_frame_no
+                    && self.current_durable() >= self.max_tx_frame_no
+                {
                     let wal = self.wal.clone();
                     // FIXME: tokio dependency here is annoying, we need an async version of swap_current.
                     tokio::task::spawn_blocking(move || {
                         tx.commit();
                         wal.swap_current(&tx)
-                    }).await.unwrap()?
+                    })
+                    .await
+                    .unwrap()?
                 }
             }
         }

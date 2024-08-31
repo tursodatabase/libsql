@@ -48,7 +48,7 @@ impl Injector for SqliteInjector {
     }
 
     #[inline]
-    fn durable_frame_no(&mut self, _frame_no: u64) { }
+    fn durable_frame_no(&mut self, _frame_no: u64) {}
 }
 
 impl SqliteInjector {

@@ -189,10 +189,10 @@ impl<F> DerefMut for TxGuardOwned<F> {
     }
 }
 
-pub trait TxGuard<F>: Deref<Target = WriteTransaction<F>> + DerefMut + Send + Sync { }
+pub trait TxGuard<F>: Deref<Target = WriteTransaction<F>> + DerefMut + Send + Sync {}
 
-impl<'a, F: Send + Sync> TxGuard<F> for TxGuardShared<'a, F> { }
-impl<F: Send + Sync> TxGuard<F> for TxGuardOwned<F> { }
+impl<'a, F: Send + Sync> TxGuard<F> for TxGuardShared<'a, F> {}
+impl<F: Send + Sync> TxGuard<F> for TxGuardOwned<F> {}
 
 pub struct TxGuardShared<'a, F> {
     _lock: async_lock::MutexGuardArc<Option<u64>>,

@@ -109,7 +109,10 @@ where
         // readers pointing to them
         while let Some(segment) = &*current {
             // skip any segment more recent than until_frame_no
-            tracing::debug!(last_committed = segment.last_committed(), until = until_frame_no);
+            tracing::debug!(
+                last_committed = segment.last_committed(),
+                until = until_frame_no
+            );
             if segment.last_committed() <= until_frame_no {
                 if !segment.is_checkpointable() {
                     segs.clear();

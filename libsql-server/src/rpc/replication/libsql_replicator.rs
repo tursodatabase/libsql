@@ -79,7 +79,11 @@ pin_project_lite::pin_project! {
 
 impl<S> FrameStreamAdapter<S> {
     fn new(inner: S, flavor: WalFlavor, shared: Arc<SharedWal<StdIO>>) -> Self {
-        Self { inner, flavor, shared }
+        Self {
+            inner,
+            flavor,
+            shared,
+        }
     }
 }
 
@@ -150,8 +154,10 @@ impl ReplicationLog for LibsqlReplicationService {
         let shared = self.registry.get_async(&namespace.into()).await.unwrap();
         let req = req.into_inner();
         // TODO: replicator should only accecpt NonZero
-        let replicator =
-            libsql_wal::replication::replicator::Replicator::new(shared.clone(), req.next_offset.max(1));
+        let replicator = libsql_wal::replication::replicator::Replicator::new(
+            shared.clone(),
+            req.next_offset.max(1),
+        );
 
         let flavor = req.wal_flavor();
         let stream = FrameStreamAdapter::new(replicator.into_frame_stream(), flavor, shared);
