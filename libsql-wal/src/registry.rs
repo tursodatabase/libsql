@@ -131,6 +131,8 @@ fn maybe_store_segment<S: Storage>(
         });
         storage.store(namespace, seg, None, cb);
     } else {
+        // segment can be checkpointed right away.
+        let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
         tracing::debug!("segment marked as not storable; skipping");
     }
 }
