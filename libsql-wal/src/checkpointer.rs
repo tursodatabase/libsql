@@ -52,6 +52,7 @@ where
     IO: Io,
     S: Sync + Send + 'static,
 {
+    #[tracing::instrument(skip(self))]
     fn checkpoint(
         &self,
         namespace: &NamespaceName,
