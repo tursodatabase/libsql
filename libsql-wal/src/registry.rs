@@ -533,6 +533,9 @@ where
             .stream(&mut seen, remote_durable_frame_no, 1)
             .peekable();
         let mut injector = Injector::new(shared.clone(), 10)?;
+        // we set the durable frame_no before we start injecting, because the wal may want to
+        // checkpoint on commit.
+        injector.set_durable(remote_durable_frame_no);
         // use pin to the heap so that we can drop the stream in the loop, and count `seen`.
         let mut stream = Box::pin(stream);
         loop {
