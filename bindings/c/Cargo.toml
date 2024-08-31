@@ -15,6 +15,8 @@ bytes = "1.5.0"
 lazy_static = "1.4.0"
 tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
 hyper-rustls = { version = "0.25", features = ["webpki-roots"]}
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
 
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 libsql = { path = "../../libsql", features = ["encryption"] }
