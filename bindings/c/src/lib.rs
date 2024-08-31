@@ -627,6 +627,7 @@ pub unsafe extern "C" fn libsql_reset_stmt(
     }
     let stmt = stmt.get_ref_mut();
     stmt.params.clear();
+    stmt.stmt.reset();
     0
 }
 
