@@ -78,6 +78,7 @@ where
 
     /// Checkpoints as many segments as possible to the main db file, and return the checkpointed
     /// frame_no, if anything was checkpointed
+    #[tracing::instrument(skip_all)]
     pub async fn checkpoint<IO: Io>(
         &self,
         db_file: &IO::File,
@@ -108,6 +109,7 @@ where
         // readers pointing to them
         while let Some(segment) = &*current {
             // skip any segment more recent than until_frame_no
+            tracing::debug!(last_committed = segment.last_committed(), until = until_frame_no);
             if segment.last_committed() <= until_frame_no {
                 if !segment.is_checkpointable() {
                     segs.clear();
@@ -120,6 +122,7 @@ where
 
         // nothing to checkpoint rn
         if segs.is_empty() {
+            tracing::debug!("nothing to checkpoint");
             return Ok(None);
         }
 
@@ -133,6 +136,7 @@ where
         let mut last_replication_index = 0;
         while let Some((k, v)) = union.next() {
             let page_no = u32::from_be_bytes(k.try_into().unwrap());
+            tracing::debug!(page_no);
             let v = v.iter().min_by_key(|i| i.index).unwrap();
             let offset = v.value as u32;
 

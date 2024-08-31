@@ -318,7 +318,7 @@ impl<F> WriteTransaction<F> {
             }
         }
 
-        tracing::debug!(id = read_tx.id, "lock released");
+        tracing::trace!(id = read_tx.id, "lock released");
 
         read_tx
     }

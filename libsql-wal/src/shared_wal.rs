@@ -305,6 +305,7 @@ impl<IO: Io> SharedWal<IO> {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn checkpoint(&self) -> Result<Option<u64>> {
         let durable_frame_no = *self.durable_frame_no.lock();
         let checkpointed_frame_no = self

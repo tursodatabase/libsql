@@ -40,16 +40,20 @@ impl<IO: Io> Replicator<IO> {
     ///
     /// In a single replication step, the replicator guarantees that a minimal set of frames is
     /// sent to the replica.
+    #[tracing::instrument(skip(self))]
     pub fn into_frame_stream(mut self) -> impl Stream<Item = Result<Box<Frame>>> + Send {
         async_stream::try_stream! {
             loop {
                 // First we decide up to what frame_no we want to replicate in this step. If we are
                 // already up to date, wait for something to happen
+                tracing::debug!(next_frame_no = self.next_frame_no);
                 let most_recent_frame_no = *self
                     .new_frame_notifier
                     .wait_for(|fno| *fno >= self.next_frame_no)
                     .await
                     .expect("channel cannot be closed because we hold a ref to the sending end");
+
+                tracing::debug!(most_recent_frame_no, "new frame_no available");
 
                 let mut commit_frame_no = 0;
                 // we have stuff to replicate
@@ -66,6 +70,7 @@ impl<IO: Io> Replicator<IO> {
 
                         let mut stream = stream.peekable();
 
+                        tracing::debug!(replicated_until, "replicating from current log");
                         loop {
                             let Some(frame) = stream.next().await else { break };
                             let mut frame = frame.map_err(|e| Error::CurrentSegment(e.into()))?;
@@ -88,6 +93,7 @@ impl<IO: Io> Replicator<IO> {
                                 .stream_pages_from(replicated_until, self.next_frame_no, &mut seen).await;
                             tokio::pin!(stream);
 
+                        tracing::debug!(replicated_until, "replicating from tail");
                             let mut stream = stream.peekable();
 
                             let should_replicate_from_storage = replicated_until != self.next_frame_no;
@@ -110,6 +116,7 @@ impl<IO: Io> Replicator<IO> {
                         // Replicating from sealed segments was not enough, so we replicate from
                         // durable storage
                         if let Some(replicated_until) = replicated_until {
+                            tracing::debug!("replicating from durable storage");
                             let stream = self
                                 .shared
                                 .stored_segments

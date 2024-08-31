@@ -181,7 +181,9 @@ where
     }
 
     fn is_checkpointable(&self) -> bool {
-        self.read_locks.load(Ordering::Relaxed) == 0
+        let read_locks = self.read_locks.load(Ordering::Relaxed);
+        tracing::debug!(read_locks);
+        read_locks == 0
     }
 
     fn size_after(&self) -> u32 {

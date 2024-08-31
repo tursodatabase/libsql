@@ -131,7 +131,7 @@ impl<FS: Io> Wal for LibsqlWal<FS> {
         self.last_read_frame_no = Some(tx.max_frame_no);
         self.tx = Some(Transaction::Read(tx));
 
-        tracing::debug!(invalidate_cache, "read started");
+        tracing::trace!(invalidate_cache, "read started");
         Ok(invalidate_cache)
     }
 
@@ -182,9 +182,9 @@ impl<FS: Io> Wal for LibsqlWal<FS> {
         match self.tx.as_mut() {
             Some(tx) => {
                 self.shared.upgrade(tx).map_err(Into::into)?;
-                tracing::debug!("write lock acquired");
+                tracing::trace!("write lock acquired");
             }
-            None => todo!("should acquire read txn first"),
+            None => panic!("should acquire read txn first"),
         }
 
         Ok(())
