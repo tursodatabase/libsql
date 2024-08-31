@@ -274,7 +274,6 @@ impl<IO: Io> SharedWal<IO> {
             self.new_frame_notifier.send_replace(last_committed);
         }
 
-        // TODO: use config for max log size
         if tx.is_commited()
             && current.count_committed() > self.max_segment_size.load(Ordering::Relaxed)
         {
