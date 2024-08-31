@@ -189,12 +189,17 @@ impl<F> DerefMut for TxGuardOwned<F> {
     }
 }
 
-pub struct TxGuard<'a, F> {
+pub trait TxGuard<F>: Deref<Target = WriteTransaction<F>> + DerefMut + Send + Sync { }
+
+impl<'a, F: Send + Sync> TxGuard<F> for TxGuardShared<'a, F> { }
+impl<F: Send + Sync> TxGuard<F> for TxGuardOwned<F> { }
+
+pub struct TxGuardShared<'a, F> {
     _lock: async_lock::MutexGuardArc<Option<u64>>,
     inner: &'a mut WriteTransaction<F>,
 }
 
-impl<'a, F> Deref for TxGuard<'a, F> {
+impl<'a, F> Deref for TxGuardShared<'a, F> {
     type Target = WriteTransaction<F>;
 
     fn deref(&self) -> &Self::Target {
@@ -202,7 +207,7 @@ impl<'a, F> Deref for TxGuard<'a, F> {
     }
 }
 
-impl<'a, F> DerefMut for TxGuard<'a, F> {
+impl<'a, F> DerefMut for TxGuardShared<'a, F> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner
     }
@@ -225,11 +230,11 @@ impl<F> WriteTransaction<F> {
         savepoint_id
     }
 
-    pub fn lock(&mut self) -> TxGuard<F> {
+    pub fn lock(&mut self) -> TxGuardShared<F> {
         let g = self.wal_lock.tx_id.lock_arc_blocking();
         match *g {
             // we still hold the lock, we can proceed
-            Some(id) if self.id == id => TxGuard {
+            Some(id) if self.id == id => TxGuardShared {
                 _lock: g,
                 inner: self,
             },

@@ -27,7 +27,7 @@ use crate::segment::Segment;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::{SharedWal, SwapLog};
 use crate::storage::{OnStoreCallback, Storage};
-use crate::transaction::{Transaction, TxGuard};
+use crate::transaction::TxGuard;
 use crate::{LibsqlFooter, LIBSQL_PAGE_SIZE};
 use libsql_sys::name::NamespaceName;
 
@@ -100,48 +100,13 @@ where
     S: Storage<Segment = SealedSegment<IO::File>>,
 {
     #[tracing::instrument(skip_all)]
-    fn swap_current(&self, shared: &SharedWal<IO>, tx: &TxGuard<<IO as Io>::File>) -> Result<()> {
+    fn swap_current(
+        &self,
+        shared: &SharedWal<IO>,
+        tx: &dyn TxGuard<<IO as Io>::File>,
+    ) -> Result<()> {
         assert!(tx.is_commited());
-        // at this point we must hold a lock to a commited transaction.
-
-        let current = shared.current.load();
-        if current.is_empty() {
-            return Ok(());
-        }
-        let start_frame_no = current.next_frame_no();
-        let path = self
-            .path
-            .join(shared.namespace().as_str())
-            .join(format!("{}:{start_frame_no:020}.seg", shared.namespace()));
-
-        let segment_file = self.io.open(true, true, true, &path)?;
-        let salt = self.io.with_rng(|rng| rng.gen());
-        let new = CurrentSegment::create(
-            segment_file,
-            path,
-            start_frame_no,
-            current.db_size(),
-            current.tail().clone(),
-            salt,
-            current.log_id(),
-        )?;
-        // sealing must the last fallible operation, because we don't want to end up in a situation
-        // where the current log is sealed and it wasn't swapped.
-        if let Some(sealed) = current.seal()? {
-            new.tail().push(sealed.clone());
-            maybe_store_segment(
-                self.storage.as_ref(),
-                &self.checkpoint_notifier,
-                &shared.namespace,
-                &shared.durable_frame_no,
-                sealed,
-            );
-        }
-
-        shared.current.swap(Arc::new(new));
-        tracing::debug!("current segment swapped");
-
-        Ok(())
+        self.swap_current_inner(shared)
     }
 }
 
@@ -495,6 +460,48 @@ where
         self.checkpoint_notifier.closed().await;
 
         tracing::info!("registry shutdown gracefully");
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip_all)]
+    fn swap_current_inner(&self, shared: &SharedWal<IO>) -> Result<()> {
+        let current = shared.current.load();
+        if current.is_empty() {
+            return Ok(());
+        }
+        let start_frame_no = current.next_frame_no();
+        let path = self
+            .path
+            .join(shared.namespace().as_str())
+            .join(format!("{}:{start_frame_no:020}.seg", shared.namespace()));
+
+        let segment_file = self.io.open(true, true, true, &path)?;
+        let salt = self.io.with_rng(|rng| rng.gen());
+        let new = CurrentSegment::create(
+            segment_file,
+            path,
+            start_frame_no,
+            current.db_size(),
+            current.tail().clone(),
+            salt,
+            current.log_id(),
+        )?;
+        // sealing must the last fallible operation, because we don't want to end up in a situation
+        // where the current log is sealed and it wasn't swapped.
+        if let Some(sealed) = current.seal()? {
+            new.tail().push(sealed.clone());
+            maybe_store_segment(
+                self.storage.as_ref(),
+                &self.checkpoint_notifier,
+                &shared.namespace,
+                &shared.durable_frame_no,
+                sealed,
+            );
+        }
+
+        shared.current.swap(Arc::new(new));
+        tracing::debug!("current segment swapped");
 
         Ok(())
     }

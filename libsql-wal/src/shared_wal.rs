@@ -35,7 +35,7 @@ pub struct WalLock {
 }
 
 pub(crate) trait SwapLog<IO: Io>: Sync + Send + 'static {
-    fn swap_current(&self, shared: &SharedWal<IO>, tx: &TxGuard<IO::File>) -> Result<()>;
+    fn swap_current(&self, shared: &SharedWal<IO>, tx: &dyn TxGuard<IO::File>) -> Result<()>;
 }
 
 pub struct SharedWal<IO: Io> {
@@ -300,7 +300,7 @@ impl<IO: Io> SharedWal<IO> {
     }
 
     /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
-    pub(crate) fn swap_current(&self, tx: &TxGuard<IO::File>) -> Result<()> {
+    pub(crate) fn swap_current(&self, tx: &impl TxGuard<IO::File>) -> Result<()> {
         self.registry.swap_current(self, tx)?;
         Ok(())
     }
