@@ -552,18 +552,6 @@ where
                 None => break,
             }
         }
-
-        let mut tx = Transaction::Write(injector.into_guard().into_inner());
-        let ret = {
-            let mut guard = tx.as_write_mut().unwrap().lock();
-            guard.commit();
-            // the current segment it unordered, no new frames should be appended to it, seal it and
-            // open a new segment
-            shared.swap_current(&guard)
-        };
-        // make sure the tx is always ended before it's dropped!
-        tx.end();
-        ret?;
     }
 
     tracing::info!("local database is up to date");
