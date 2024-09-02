@@ -49,6 +49,7 @@ impl ReplicaConfigurator {
 }
 
 impl ConfigureNamespace for ReplicaConfigurator {
+    #[tracing::instrument(skip_all, fields(name))]
     fn setup<'a>(
         &'a self,
         meta_store_handle: MetaStoreHandle,

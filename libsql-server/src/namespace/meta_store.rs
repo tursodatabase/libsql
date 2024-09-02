@@ -23,6 +23,7 @@ use tokio::sync::{
 
 use crate::config::BottomlessConfig;
 use crate::connection::config::DatabaseConfig;
+use crate::database::DatabaseKind;
 use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::{
     config::MetaStoreConfig, connection::legacy::open_conn_active_checkpoint, error::Error, Result,
@@ -74,6 +75,7 @@ struct MetaStoreInner {
     configs: tokio::sync::Mutex<HashMap<NamespaceName, Sender<InnerConfig>>>,
     conn: tokio::sync::Mutex<MetaStoreConnection>,
     wal_manager: MetaStoreWalManager,
+    db_kind: DatabaseKind,
 }
 
 fn setup_connection(conn: &rusqlite::Connection) -> Result<()> {
@@ -182,6 +184,7 @@ impl MetaStoreInner {
         conn: MetaStoreConnection,
         wal_manager: MetaStoreWalManager,
         config: MetaStoreConfig,
+        db_kind: DatabaseKind,
     ) -> Result<Self> {
         setup_connection(&conn)?;
 
@@ -189,6 +192,7 @@ impl MetaStoreInner {
             configs: Default::default(),
             conn: conn.into(),
             wal_manager,
+            db_kind,
         };
 
         if config.allow_recover_from_fs {
@@ -350,9 +354,11 @@ fn try_process(
     let mut conn = inner.conn.blocking_lock();
     if let Some(schema) = config.shared_schema_name.as_ref() {
         let tx = conn.transaction()?;
-        if let Some(ref schema) = config.shared_schema_name {
-            if crate::schema::db::has_pending_migration_jobs(&tx, schema)? {
-                return Err(crate::Error::PendingMigrationOnSchema(schema.clone()));
+        if inner.db_kind.is_primary() {
+            if let Some(ref schema) = config.shared_schema_name {
+                if crate::schema::db::has_pending_migration_jobs(&tx, schema)? {
+                    return Err(crate::Error::PendingMigrationOnSchema(schema.clone()));
+                }
             }
         }
         tx.execute(
@@ -394,6 +400,7 @@ impl MetaStore {
         base_path: &Path,
         conn: MetaStoreConnection,
         wal_manager: MetaStoreWalManager,
+        db_kind: DatabaseKind,
     ) -> Result<Self> {
         let (changes_tx, mut changes_rx) = mpsc::channel(256);
 
@@ -402,7 +409,7 @@ impl MetaStore {
         let maybe_inner = tokio::task::spawn_blocking({
             let base_path = base_path.to_owned();
             let config = config.clone();
-            move || MetaStoreInner::new(&base_path, conn, wal_manager, config.clone())
+            move || MetaStoreInner::new(&base_path, conn, wal_manager, config.clone(), db_kind)
         })
         .await
         .unwrap();
@@ -446,7 +453,7 @@ impl MetaStore {
 
                     let inner = tokio::task::spawn_blocking({
                         let base_path = base_path.to_owned();
-                        move || MetaStoreInner::new(&base_path, conn, wal, config)
+                        move || MetaStoreInner::new(&base_path, conn, wal, config, db_kind)
                     })
                     .await
                     .unwrap()?;

@@ -659,9 +659,15 @@ mod test {
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
-                .await
-                .unwrap(),
+            MetaStore::new(
+                Default::default(),
+                tmp.path(),
+                maker().unwrap(),
+                manager,
+                crate::database::DatabaseKind::Primary,
+            )
+            .await
+            .unwrap(),
         );
         conn.execute_program(
             Program::seq(&["CREATE TABLE test (x)"]),

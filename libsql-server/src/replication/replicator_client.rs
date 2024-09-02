@@ -121,6 +121,7 @@ impl ReplicatorClient for Client {
                     .await
                     .map_err(|e| Status::new(Code::Internal, e.to_string()))?;
             }
+
             self.meta_store_handle
                 .store(DatabaseConfig::from(config))
                 .await

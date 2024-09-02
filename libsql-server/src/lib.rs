@@ -570,6 +570,7 @@ where
             &self.path,
             meta_conn,
             meta_store_wal_manager,
+            db_kind,
         )
         .await?;
 
