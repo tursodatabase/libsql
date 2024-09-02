@@ -31,6 +31,7 @@ use crate::net::Connector;
 use crate::LIBSQL_PAGE_SIZE;
 
 pub mod stats;
+mod admin_shell;
 
 #[derive(Clone)]
 struct Metrics {

@@ -112,6 +112,8 @@ metrics-util = "0.15"
 s3s = "0.8.1"
 s3s-fs = "0.8.1"
 ring = { version = "0.17.8", features = ["std"] }
+tonic-build = "0.11"
+prost-build = "0.12"
 
 [build-dependencies]
 vergen = { version = "8", features = ["build", "git", "gitcl"] }
