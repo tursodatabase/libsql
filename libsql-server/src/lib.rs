@@ -84,6 +84,7 @@ use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
 use self::schema::SchedulerHandle;
 
+pub mod admin_shell;
 pub mod auth;
 mod broadcaster;
 pub mod config;

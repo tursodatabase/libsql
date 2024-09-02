@@ -31,7 +31,6 @@ use crate::net::Connector;
 use crate::LIBSQL_PAGE_SIZE;
 
 pub mod stats;
-mod admin_shell;
 
 #[derive(Clone)]
 struct Metrics {
@@ -169,7 +168,7 @@ where
         .route("/profile/heap/disable/:id", post(disable_profile_heap))
         .route("/profile/heap/:id", delete(delete_profile_heap))
         .with_state(Arc::new(AppState {
-            namespaces,
+            namespaces: namespaces.clone(),
             connector,
             user_http_server,
             metrics,
@@ -184,6 +183,14 @@ where
                 ),
         )
         .layer(axum::middleware::from_fn_with_state(auth, auth_middleware));
+
+    let admin_shell = crate::admin_shell::make_svc(namespaces.clone());
+    let grpc_router = tonic::transport::Server::builder()
+        .accept_http1(true)
+        .add_service(tonic_web::enable(admin_shell))
+        .into_router();
+
+    let router = router.merge(grpc_router);
 
     hyper::server::Server::builder(acceptor)
         .serve(router.into_make_service())
