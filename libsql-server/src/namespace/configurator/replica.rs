@@ -49,6 +49,7 @@ impl ReplicaConfigurator {
 }
 
 impl ConfigureNamespace for ReplicaConfigurator {
+    #[tracing::instrument(skip_all, fields(name))]
     fn setup<'a>(
         &'a self,
         meta_store_handle: MetaStoreHandle,
@@ -65,6 +66,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
             let channel = self.channel.clone();
             let uri = self.uri.clone();
 
+            dbg!(&name);
             let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
             let client = crate::replication::replicator_client::Client::new(
                 name.clone(),
@@ -86,7 +88,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
 
             tracing::debug!("try perform handshake");
             // force a handshake now, to retrieve the primary's current replication index
-            match replicator.try_perform_handshake().await {
+            match replicator.try_perform_handshake().await.map_err(|e| dbg!(e)) {
                 Err(libsql_replication::replicator::Error::Meta(
                     libsql_replication::meta::Error::LogIncompatible,
                 )) => {
@@ -110,6 +112,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 Ok(_) => (),
             }
 
+            dbg!(&name);
             tracing::debug!("done performing handshake");
 
             let primary_current_replicatio_index =
@@ -167,6 +170,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 }
             });
 
+            dbg!(&name);
             let stats = make_stats(
                 &db_path,
                 &mut join_set,
@@ -177,6 +181,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
             )
             .await?;
 
+            dbg!(&name);
             let connection_maker = MakeLegacyConnection::new(
                 db_path.clone(),
                 PassthroughWalWrapper,
@@ -195,6 +200,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
             )
             .await?;
 
+            dbg!(&name);
             let connection_maker = Arc::new(
                 MakeWriteProxyConn::new(
                     channel.clone(),
@@ -215,11 +221,13 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 ),
             );
 
+            dbg!(&name);
             join_set.spawn(run_storage_monitor(
                 Arc::downgrade(&stats),
                 connection_maker.clone(),
             ));
 
+            dbg!(&name);
             Ok(Namespace {
                 tasks: join_set,
                 db: Database::Replica(ReplicaDatabase { connection_maker }),

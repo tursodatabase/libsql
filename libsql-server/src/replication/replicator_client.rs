@@ -108,6 +108,7 @@ impl ReplicatorClient for Client {
         self.primary_replication_index = hello.current_replication_index;
         self.session_token.replace(hello.session_token.clone());
 
+        dbg!();
         if let Some(config) = &hello.config {
             // HACK: if we load a shared schema db before the main schema is replicated,
             // inserting the new database in the meta store will cause a foreign constraint Error
@@ -116,15 +117,17 @@ impl ReplicatorClient for Client {
             if let Some(ref name) = config.shared_schema_name {
                 let name = NamespaceName::from_string(name.clone())
                     .map_err(|_| Status::new(Code::InvalidArgument, "invalid namespace name"))?;
+                dbg!(&name);
                 self.store
                     .with(name, |_| ())
                     .await
                     .map_err(|e| Status::new(Code::Internal, e.to_string()))?;
             }
+
             self.meta_store_handle
                 .store(DatabaseConfig::from(config))
                 .await
-                .map_err(|e| Error::Internal(e.into()))?;
+                .map_err(|e| dbg!(Error::Internal(e.into())))?;
 
             tracing::debug!("replica config has been updated");
         } else {

@@ -511,7 +511,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, crate::database::DatabaseKind::Primary)
             .await
             .unwrap();
         let mut conn = maker().unwrap();
@@ -555,7 +555,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, crate::database::DatabaseKind::Primary)
             .await
             .unwrap();
 
@@ -577,7 +577,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, crate::database::DatabaseKind::Primary)
             .await
             .unwrap();
         let mut conn = maker().unwrap();
@@ -624,7 +624,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, crate::database::DatabaseKind::Primary)
             .await
             .unwrap();
         let mut conn = maker().unwrap();
@@ -674,7 +674,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, crate::database::DatabaseKind::Primary)
             .await
             .unwrap();
         let mut conn = maker().unwrap();
@@ -725,7 +725,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, crate::database::DatabaseKind::Primary)
             .await
             .unwrap();
         let mut conn = maker().unwrap();
@@ -751,7 +751,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, crate::database::DatabaseKind::Primary)
             .await
             .unwrap();
         let mut conn = maker().unwrap();

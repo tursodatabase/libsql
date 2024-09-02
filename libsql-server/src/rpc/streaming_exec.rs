@@ -396,7 +396,7 @@ pub mod test {
         let ctx = RequestContext::new(
             Authenticated::Anonymous,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager, crate::database::DatabaseKind::Primary)
                 .await
                 .unwrap(),
         );
@@ -422,7 +422,7 @@ pub mod test {
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager, crate::database::DatabaseKind::Primary)
                 .await
                 .unwrap(),
         );
@@ -444,7 +444,7 @@ pub mod test {
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager, crate::database::DatabaseKind::Primary)
                 .await
                 .unwrap(),
         );
@@ -468,7 +468,7 @@ pub mod test {
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager, crate::database::DatabaseKind::Primary)
                 .await
                 .unwrap(),
         );
@@ -525,7 +525,7 @@ pub mod test {
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager, crate::database::DatabaseKind::Primary)
                 .await
                 .unwrap(),
         );
@@ -552,7 +552,7 @@ pub mod test {
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager, crate::database::DatabaseKind::Primary)
                 .await
                 .unwrap(),
         );
@@ -579,7 +579,7 @@ pub mod test {
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager, crate::database::DatabaseKind::Primary)
                 .await
                 .unwrap(),
         );
@@ -608,7 +608,7 @@ pub mod test {
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager, crate::database::DatabaseKind::Primary)
                 .await
                 .unwrap(),
         );

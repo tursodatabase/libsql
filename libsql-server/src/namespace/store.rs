@@ -398,7 +398,7 @@ impl NamespaceStore {
         let init = async {
             let ns = self
                 .make_namespace(namespace, db_config, restore_option)
-                .await?;
+                .await.map_err(|e| dbg!(e))?;
             Ok(Some(ns))
         };
 
@@ -516,6 +516,7 @@ impl NamespaceStore {
     }
 
     fn get_configurator(&self, db_config: &DatabaseConfig) -> &DynConfigurator {
+        dbg!(self.inner.db_kind);
         match self.inner.db_kind {
             DatabaseKind::Primary if db_config.is_shared_schema => {
                 self.inner.configurators.configure_schema().unwrap()

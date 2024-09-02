@@ -826,7 +826,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, DatabaseKind::Primary)
             .await
             .unwrap();
         let (sender, mut receiver) = mpsc::channel(100);
@@ -950,7 +950,7 @@ mod test {
         {
             let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
             let conn = maker().unwrap();
-            let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+            let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, DatabaseKind::Primary)
                 .await
                 .unwrap();
             let (sender, mut receiver) = mpsc::channel(100);
@@ -1025,7 +1025,7 @@ mod test {
 
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, DatabaseKind::Primary)
             .await
             .unwrap();
         let (sender, _receiver) = mpsc::channel(100);
@@ -1053,7 +1053,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, DatabaseKind::Primary)
             .await
             .unwrap();
         let (sender, mut receiver) = mpsc::channel(100);
@@ -1127,7 +1127,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager, DatabaseKind::Primary)
             .await
             .unwrap();
         let (sender, _receiver) = mpsc::channel(100);
