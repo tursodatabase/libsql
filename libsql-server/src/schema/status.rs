@@ -45,6 +45,7 @@ pub struct MigrationJob {
     pub(super) progress: MigrationProgress,
     /// error info for the task that failed the job
     pub(super) task_error: Option<(i64, String, NamespaceName)>,
+    pub(super) disable_foreign_key: bool,
 }
 
 impl MigrationJob {

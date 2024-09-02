@@ -272,6 +272,7 @@ impl Scheduler {
                         job.job_id(),
                         self.namespace_store.clone(),
                         self.migration_db.clone(),
+                        job.disable_foreign_key,
                     ));
                     // do not enqueue anything until the schema migration is complete
                     self.has_work = false;
@@ -374,6 +375,7 @@ impl Scheduler {
                 job.migration.clone(),
                 task,
                 block_writes,
+                job.disable_foreign_key,
             ));
         } else {
             // there is still a job, but the queue is empty, it means that we are waiting for the
@@ -434,6 +436,7 @@ async fn try_step_task(
     migration: Arc<Program>,
     mut task: MigrationTask,
     block_writes: Arc<AtomicBool>,
+    disable_foreign_key: bool,
 ) -> WorkResult {
     let old_status = *task.status();
     let error = match try_step_task_inner(
@@ -443,6 +446,7 @@ async fn try_step_task(
         migration,
         &task,
         block_writes,
+        disable_foreign_key,
     )
     .await
     {
@@ -485,6 +489,7 @@ async fn try_step_task_inner(
     migration: Arc<Program>,
     task: &MigrationTask,
     block_writes: Arc<AtomicBool>,
+    disable_foreign_key: bool,
 ) -> Result<(MigrationTaskStatus, Option<String>), Error> {
     let status = *task.status();
     let mut db_connection = connection_maker
@@ -508,6 +513,9 @@ async fn try_step_task_inner(
     let job_id = task.job_id();
     let (status, error) = tokio::task::spawn_blocking(move || -> Result<_, Error> {
         db_connection.with_raw(move |conn| {
+            if disable_foreign_key {
+                conn.execute("PRAGMA foreign_keys=off", ())?;
+            }
             let mut txn = conn.transaction()?;
 
             match status {
@@ -525,6 +533,10 @@ async fn try_step_task_inner(
 
             let (new_status, error) = step_task(&mut txn, job_id)?;
             txn.commit()?;
+
+            if disable_foreign_key {
+                conn.execute("PRAGMA foreign_keys=off", ())?;
+            }
 
             if new_status.is_finished() {
                 block_writes.store(false, std::sync::atomic::Ordering::SeqCst);
@@ -737,6 +749,7 @@ async fn step_job_run_success(
     job_id: i64,
     namespace_store: NamespaceStore,
     migration_db: Arc<Mutex<MetaStoreConnection>>,
+    disable_foreign_key: bool,
 ) -> WorkResult {
     try_step_job(MigrationJobStatus::WaitingRun, async move {
         // TODO: check that all tasks actually reported success before migration
@@ -757,6 +770,9 @@ async fn step_job_run_success(
             .map_err(|e| Error::FailedToConnect(schema.clone(), e.into()))?;
         tokio::task::spawn_blocking(move || -> Result<(), Error> {
             connection.with_raw(|conn| -> Result<(), Error> {
+                if disable_foreign_key {
+                    conn.execute("PRAGMA foreign_keys=off", ())?;
+                }
                 let mut txn = conn.transaction()?;
                 let schema_version =
                     txn.query_row("PRAGMA schema_version", (), |row| row.get::<_, i64>(0))?;
@@ -774,6 +790,9 @@ async fn step_job_run_success(
                     txn.pragma_update(None, "schema_version", job_id)?;
                     // update schema version to job_id?
                     txn.commit()?;
+                    if disable_foreign_key {
+                        conn.execute("PRAGMA foreign_keys=on", ())?;
+                    }
                 }
 
                 Ok(())
