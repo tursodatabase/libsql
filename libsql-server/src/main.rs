@@ -272,6 +272,10 @@ struct Cli {
         requires = "enable_bottomless_replication"
     )]
     migrate_bottomless: bool,
+
+    /// Enables the main runtime deadlock monitor: if the main runtime deadlocks, logs an error
+    #[clap(long)]
+    enable_deadlock_monitor: bool,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -671,6 +675,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         storage_server_address: config.storage_server_address.clone(),
         connector: Some(https),
         migrate_bottomless: config.migrate_bottomless,
+        enable_deadlock_monitor: config.enable_deadlock_monitor,
     })
 }
 

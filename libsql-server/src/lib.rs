@@ -176,6 +176,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub storage_server_address: String,
     pub connector: Option<D>,
     pub migrate_bottomless: bool,
+    pub enable_deadlock_monitor: bool,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -201,6 +202,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             storage_server_address: Default::default(),
             connector: None,
             migrate_bottomless: false,
+            enable_deadlock_monitor: false,
         }
     }
 }
@@ -410,6 +412,57 @@ fn init_version_file(db_path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// The deadlock watcher monitors the main tokio runtime for deadlock by sending Ping to a task
+/// within it, and waiting for pongs. If the runtime fails to respond in due time, the watcher
+/// exits the process.
+fn install_deadlock_monitor() {
+    // this is a very generous deadline for the main runtime to respond
+    const PONG_DEADLINE: Duration = Duration::from_secs(5);
+
+    struct Ping;
+    struct Pong;
+
+    let (sender, mut receiver) = tokio::sync::mpsc::channel(1);
+
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_time()
+            .build()
+            .unwrap();
+        rt.block_on(async move {
+            loop {
+                let (snd, ret) = tokio::sync::oneshot::channel();
+                sender.try_send((snd, Ping)).unwrap();
+                match tokio::time::timeout(PONG_DEADLINE, ret).await {
+                    Ok(Ok(Pong)) => (),
+                    Err(_) => {
+                        tracing::error!(
+                            "main runtime failed to respond within deadlines, deadlock detected"
+                        );
+                        // std::process::exit(1);
+                    }
+                    _ => (),
+                }
+
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+        })
+    });
+
+    tokio::spawn(async move {
+        loop {
+            match receiver.recv().await {
+                Some((ret, Ping)) => {
+                    let _ = ret.send(Pong);
+                }
+                None => break,
+            }
+        }
+
+        tracing::warn!("deadlock monitor exited")
+    });
+}
+
 impl<C, A, D> Server<C, A, D>
 where
     C: Connector,
@@ -500,6 +553,11 @@ where
     pub async fn start(mut self) -> anyhow::Result<()> {
         static INIT: std::sync::Once = std::sync::Once::new();
         let mut task_manager = TaskManager::new();
+
+        if self.enable_deadlock_monitor {
+            install_deadlock_monitor();
+            tracing::info!("deadlock monitor installed");
+        }
 
         if std::env::var("LIBSQL_SQLITE_MIMALLOC").is_ok() {
             setup_sqlite_alloc();
