@@ -1,11 +1,9 @@
-use std::process::Command;
 use std::path::PathBuf;
+use std::process::Command;
 
 #[test]
 fn bootstrap() {
-    let iface_files = &[
-        "proto/admin_shell.proto",
-    ];
+    let iface_files = &["proto/admin_shell.proto"];
     let dirs = &["proto"];
 
     let out_dir = PathBuf::from(std::env!("CARGO_MANIFEST_DIR"))
