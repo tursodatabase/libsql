@@ -83,6 +83,7 @@ pub struct AdminApiConfig<A = AddrIncoming, C = HttpsConnector<HttpConnector>> {
     pub acceptor: A,
     pub connector: C,
     pub disable_metrics: bool,
+    pub auth_key: Option<String>,
 }
 
 #[derive(Clone)]

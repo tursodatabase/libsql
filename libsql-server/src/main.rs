@@ -276,6 +276,10 @@ struct Cli {
     /// Enables the main runtime deadlock monitor: if the main runtime deadlocks, logs an error
     #[clap(long)]
     enable_deadlock_monitor: bool,
+
+    /// Auth key for the admin API
+    #[clap(long, env = "LIBSQL_ADMIN_AUTH_KEY", requires = "admin_listen_addr")]
+    admin_auth_key: Option<String>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -468,6 +472,7 @@ async fn make_admin_api_config(config: &Cli) -> anyhow::Result<Option<AdminApiCo
                 acceptor,
                 connector,
                 disable_metrics: false,
+                auth_key: config.admin_auth_key.clone(),
             }))
         }
         None => Ok(None),

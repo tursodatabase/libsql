@@ -1,11 +1,12 @@
 use anyhow::Context as _;
 use axum::body::StreamBody;
 use axum::extract::{FromRef, Path, State};
+use axum::middleware::Next;
 use axum::routing::delete;
 use axum::Json;
 use chrono::NaiveDateTime;
 use futures::{SinkExt, StreamExt, TryStreamExt};
-use hyper::{Body, Request};
+use hyper::{Body, Request, StatusCode};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
@@ -64,6 +65,7 @@ pub async fn run<A, C>(
     connector: C,
     disable_metrics: bool,
     shutdown: Arc<Notify>,
+    auth: Option<Arc<str>>,
 ) -> anyhow::Result<()>
 where
     A: crate::net::Accept,
@@ -162,15 +164,15 @@ where
         )
         .route("/v1/diagnostics", get(handle_diagnostics))
         .route("/metrics", get(handle_metrics))
+        .route("/profile/heap/enable", post(enable_profile_heap))
+        .route("/profile/heap/disable/:id", post(disable_profile_heap))
+        .route("/profile/heap/:id", delete(delete_profile_heap))
         .with_state(Arc::new(AppState {
             namespaces,
             connector,
             user_http_server,
             metrics,
         }))
-        .route("/profile/heap/enable", post(enable_profile_heap))
-        .route("/profile/heap/disable/:id", post(disable_profile_heap))
-        .route("/profile/heap/:id", delete(delete_profile_heap))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .on_request(trace_request)
@@ -179,7 +181,8 @@ where
                         .level(tracing::Level::DEBUG)
                         .latency_unit(tower_http::LatencyUnit::Micros),
                 ),
-        );
+        )
+        .layer(axum::middleware::from_fn_with_state(auth, auth_middleware));
 
     hyper::server::Server::builder(acceptor)
         .serve(router.into_make_service())
@@ -188,6 +191,34 @@ where
         .context("Could not bind admin HTTP API server")?;
 
     Ok(())
+}
+
+async fn auth_middleware<B>(
+    State(auth): State<Option<Arc<str>>>,
+    request: Request<B>,
+    next: Next<B>,
+) -> Result<axum::response::Response, StatusCode> {
+    if let Some(ref auth) = auth {
+        let Some(auth_header) = request.headers().get("authorization") else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+        let Ok(auth_str) = std::str::from_utf8(auth_header.as_bytes()) else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        let mut split = auth_str.split_whitespace();
+        match split.next() {
+            Some(s) if s.trim().eq_ignore_ascii_case("basic") => (),
+            _ => return Err(StatusCode::UNAUTHORIZED),
+        }
+
+        match split.next() {
+            Some(s) if s.trim() == auth.as_ref() => (),
+            _ => return Err(StatusCode::UNAUTHORIZED),
+        }
+    }
+
+    Ok(next.run(request).await)
 }
 
 async fn handle_get_index() -> &'static str {
