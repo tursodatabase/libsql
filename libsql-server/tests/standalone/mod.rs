@@ -17,6 +17,7 @@ use libsql_server::config::{AdminApiConfig, UserApiConfig};
 
 use common::net::{init_tracing, TestServer, TurmoilConnector};
 
+mod admin;
 mod attach;
 mod auth;
 
@@ -33,6 +34,7 @@ async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
             acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
             connector: TurmoilConnector,
             disable_metrics: true,
+            auth_key: None,
         }),
         disable_namespaces: false,
         ..Default::default()
@@ -355,6 +357,7 @@ fn dirty_startup_dont_prevent_namespace_creation() {
                 acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                 connector: TurmoilConnector,
                 disable_metrics: true,
+                auth_key: None,
             }),
             disable_default_namespace: true,
             disable_namespaces: false,

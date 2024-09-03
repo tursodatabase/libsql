@@ -320,6 +320,7 @@ where
             acceptor,
             connector,
             disable_metrics,
+            auth_key,
         }) = self.admin_api_config
         {
             task_manager.spawn_with_shutdown_notify(|shutdown| {
@@ -330,6 +331,7 @@ where
                     connector,
                     disable_metrics,
                     shutdown,
+                    auth_key.map(Into::into),
                 )
             });
         }

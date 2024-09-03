@@ -1,3 +1,4 @@
+use axum::http::HeaderName;
 use bytes::Bytes;
 use hyper::Body;
 use serde::{de::DeserializeOwned, Serialize};
@@ -41,11 +42,27 @@ impl Client {
     }
 
     pub(crate) async fn post<T: Serialize>(&self, url: &str, body: T) -> anyhow::Result<Response> {
+        self.post_with_headers(url, &[], body).await
+    }
+
+    pub(crate) async fn post_with_headers<T: Serialize>(
+        &self,
+        url: &str,
+        headers: &[(HeaderName, &str)],
+        body: T,
+    ) -> anyhow::Result<Response> {
         let bytes: Bytes = serde_json::to_vec(&body)?.into();
         let body = Body::from(bytes);
-        let request = hyper::Request::post(url)
+        let mut request = hyper::Request::post(url)
             .header("Content-Type", "application/json")
             .body(body)?;
+
+        for (key, val) in headers {
+            request
+                .headers_mut()
+                .insert(key.clone(), val.parse().unwrap());
+        }
+
         let resp = self.0.request(request).await?;
 
         if resp.status().is_server_error() {

@@ -55,6 +55,7 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
                     connector: TurmoilConnector,
                     disable_metrics: false,
+                    auth_key: None,
                 }),
                 rpc_server_config: Some(RpcServerConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await?,
@@ -408,6 +409,7 @@ fn replica_primary_reset() {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                         connector: TurmoilConnector,
                         disable_metrics: true,
+                        auth_key: None,
                     }),
                     rpc_server_config: Some(RpcServerConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await.unwrap(),
@@ -692,6 +694,7 @@ fn replicate_with_snapshots() {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                     connector: TurmoilConnector,
                     disable_metrics: true,
+                    auth_key: None,
                 }),
                 rpc_server_config: Some(RpcServerConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await.unwrap(),
@@ -1266,6 +1269,7 @@ fn replicated_return() {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                         connector: TurmoilConnector,
                         disable_metrics: true,
+                        auth_key: None,
                     }),
                     rpc_server_config: Some(RpcServerConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await.unwrap(),
@@ -1395,6 +1399,7 @@ fn replicate_auth() {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
                         connector: TurmoilConnector,
                         disable_metrics: true,
+                        auth_key: None,
                     }),
                     rpc_server_config: Some(RpcServerConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await?,
@@ -1430,6 +1435,7 @@ fn replicate_auth() {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
                         connector: TurmoilConnector,
                         disable_metrics: true,
+                        auth_key: None,
                     }),
                     rpc_client_config: Some(RpcClientConfig {
                         remote_url: "http://primary:4567".into(),

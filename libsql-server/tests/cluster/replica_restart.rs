@@ -34,6 +34,7 @@ fn replica_restart() {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
                     connector: TurmoilConnector,
                     disable_metrics: true,
+                    auth_key: None,
                 }),
                 rpc_server_config: Some(RpcServerConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await?,
@@ -67,6 +68,7 @@ fn replica_restart() {
                             acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                             connector: TurmoilConnector,
                             disable_metrics: true,
+                            auth_key: None,
                         }),
                         rpc_client_config: Some(RpcClientConfig {
                             remote_url: "http://primary:4567".into(),
@@ -187,6 +189,7 @@ fn primary_regenerate_log_no_replica_restart() {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                         connector: TurmoilConnector,
                         disable_metrics: true,
+                        auth_key: None,
                     }),
                     rpc_server_config: Some(RpcServerConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await.unwrap(),
@@ -241,6 +244,7 @@ fn primary_regenerate_log_no_replica_restart() {
                             acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                             connector: TurmoilConnector,
                             disable_metrics: true,
+                            auth_key: None,
                         }),
                         rpc_client_config: Some(RpcClientConfig {
                             remote_url: "http://primary:4567".into(),
@@ -365,6 +369,7 @@ fn primary_regenerate_log_with_replica_restart() {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                         connector: TurmoilConnector,
                         disable_metrics: true,
+                        auth_key: None,
                     }),
                     rpc_server_config: Some(RpcServerConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await.unwrap(),
@@ -421,6 +426,7 @@ fn primary_regenerate_log_with_replica_restart() {
                             acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                             connector: TurmoilConnector,
                             disable_metrics: true,
+                            auth_key: None,
                         }),
                         rpc_client_config: Some(RpcClientConfig {
                             remote_url: "http://primary:4567".into(),
