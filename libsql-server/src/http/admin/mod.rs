@@ -181,8 +181,7 @@ where
                         .level(tracing::Level::DEBUG)
                         .latency_unit(tower_http::LatencyUnit::Micros),
                 ),
-        )
-        .layer(axum::middleware::from_fn_with_state(auth, auth_middleware));
+        );
 
     let admin_shell = crate::admin_shell::make_svc(namespaces.clone());
     let grpc_router = tonic::transport::Server::builder()
@@ -190,7 +189,9 @@ where
         .add_service(tonic_web::enable(admin_shell))
         .into_router();
 
-    let router = router.merge(grpc_router);
+    let router = router
+        .merge(grpc_router)
+        .layer(axum::middleware::from_fn_with_state(auth, auth_middleware));
 
     hyper::server::Server::builder(acceptor)
         .serve(router.into_make_service())

@@ -313,6 +313,8 @@ enum UtilsSubcommands {
         admin_api_url: String,
         #[clap(long)]
         namespace: Option<String>,
+        #[clap(long)]
+        auth: Option<String>,
     },
 }
 
@@ -719,9 +721,12 @@ async fn main() -> Result<()> {
             UtilsSubcommands::AdminShell {
                 admin_api_url,
                 namespace,
+                auth,
             } => {
-                let client =
-                    libsql_server::admin_shell::AdminShellClient::new(admin_api_url.clone());
+                let client = libsql_server::admin_shell::AdminShellClient::new(
+                    admin_api_url.clone(),
+                    auth.clone(),
+                );
                 if let Some(ns) = namespace {
                     client.run_namespace(ns).await?;
                 }

@@ -1,11 +1,12 @@
 use std::fmt::Display;
 use std::pin::Pin;
+use std::str::FromStr;
 
 use bytes::Bytes;
 use dialoguer::BasicHistory;
 use rusqlite::types::ValueRef;
 use tokio_stream::{Stream, StreamExt as _};
-use tonic::metadata::BinaryMetadataValue;
+use tonic::metadata::{AsciiMetadataValue, BinaryMetadataValue};
 
 use crate::connection::Connection as _;
 use crate::database::Connection;
@@ -139,11 +140,12 @@ impl AdminShellService for AdminShell {
 
 pub struct AdminShellClient {
     remote_url: String,
+    auth: Option<String>,
 }
 
 impl AdminShellClient {
-    pub fn new(remote_url: String) -> Self {
-        Self { remote_url }
+    pub fn new(remote_url: String, auth: Option<String>) -> Self {
+        Self { remote_url, auth }
     }
 
     pub async fn run_namespace(&self, namespace: &str) -> anyhow::Result<()> {
@@ -160,6 +162,14 @@ impl AdminShellClient {
             "x-namespace-bin",
             BinaryMetadataValue::from_bytes(namespace.as_slice()),
         );
+
+        if let Some(ref auth) = self.auth {
+            req.metadata_mut().insert(
+                "authorization",
+                AsciiMetadataValue::from_str(&format!("basic {auth}")).unwrap(),
+            );
+        }
+
         let mut resp_stream = client.shell(req).await?.into_inner();
 
         let mut history = BasicHistory::new();
