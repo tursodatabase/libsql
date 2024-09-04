@@ -158,7 +158,7 @@ where
                             self.errors = 0;
                         }
                     }
-                    Some(Err(e)) => panic!("checkoint task panicked: {e}"),
+                    Some(Err(e)) => panic!("checkpoint task panicked: {e}"),
                     None => unreachable!("got None, but join set is not empty")
                 }
             }

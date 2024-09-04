@@ -543,7 +543,6 @@ where
                 Some(Ok(mut frame)) => {
                     if stream.peek().await.is_none() {
                         drop(stream);
-                        frame.header_mut().frame_no();
                         frame.header_mut().set_size_after(seen.len() as _);
                         injector.insert_frame(frame).await?;
                         break;

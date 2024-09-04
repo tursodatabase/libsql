@@ -110,8 +110,8 @@ where
         while let Some((page_no_bytes, offset)) = pages.next() {
             let (mut b, ret) = self.read_frame_offset_async(offset as _, buffer).await;
             ret?;
-            // transaction boundaries in a segment are completely erased. The responsibility in on
-            // the user of the segment to place the transaction boundary such that all frames from
+            // transaction boundaries in a segment are completely erased. The responsibility is on
+            // the consumer of the segment to place the transaction boundary such that all frames from
             // the segment are applied within the same transaction.
             b.get_mut().header_mut().set_size_after(0);
             hasher.update(&b.get_ref().as_bytes());

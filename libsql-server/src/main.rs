@@ -298,7 +298,7 @@ struct Cli {
         long,
         env = "LIBSQL_SYNC_CONCCURENCY",
         requires = "sync_from_storage",
-        default_value = "8",
+        default_value = "8"
     )]
     sync_conccurency: usize,
 }
