@@ -29,4 +29,6 @@ pub trait Injector {
     /// Trigger a dummy write, and flush the cache to trigger a call to xFrame. The buffer's frame
     /// are then injected into the wal.
     fn flush(&mut self) -> impl Future<Output = Result<Option<FrameNo>>> + Send;
+
+    fn durable_frame_no(&mut self, frame_no: u64);
 }

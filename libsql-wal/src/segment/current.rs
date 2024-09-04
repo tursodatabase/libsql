@@ -23,7 +23,7 @@ use crate::io::file::FileExt;
 use crate::io::Inspect;
 use crate::segment::{checked_frame_offset, SegmentFlags};
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
-use crate::transaction::{Transaction, TxGuard, TxGuardOwned};
+use crate::transaction::{Transaction, TxGuardOwned, TxGuardShared};
 use crate::{LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::list::SegmentList;
@@ -73,6 +73,7 @@ impl<F> CurrentSegment<F> {
             salt: salt.into(),
             page_size: LIBSQL_PAGE_SIZE.into(),
             log_id: log_id.as_u128().into(),
+            frame_count: 0.into(),
         };
 
         header.recompute_checksum();
@@ -96,7 +97,7 @@ impl<F> CurrentSegment<F> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.count_committed() == 0
+        self.header.lock().is_empty()
     }
 
     pub fn with_header<R>(&self, f: impl FnOnce(&SegmentHeader) -> R) -> R {
@@ -113,7 +114,7 @@ impl<F> CurrentSegment<F> {
     }
 
     pub fn count_committed(&self) -> usize {
-        self.header.lock().count_committed()
+        self.header.lock().frame_count()
     }
 
     pub fn db_size(&self) -> u32 {
@@ -192,6 +193,12 @@ impl<F> CurrentSegment<F> {
                     // set frames unordered because there are no guarantees that we received frames
                     // in order.
                     header.set_flags(header.flags().union(SegmentFlags::FRAME_UNORDERED));
+                    {
+                        let savepoint = tx.savepoints.first().unwrap();
+                        header.frame_count = (header.frame_count.get()
+                            + (tx.next_offset - savepoint.next_offset) as u64)
+                            .into();
+                    }
                     header.recompute_checksum();
 
                     let (header, ret) = self
@@ -224,7 +231,7 @@ impl<F> CurrentSegment<F> {
         &self,
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
-        tx: &mut TxGuard<F>,
+        tx: &mut TxGuardShared<F>,
     ) -> Result<Option<u64>>
     where
         F: FileExt,
@@ -298,6 +305,7 @@ impl<F> CurrentSegment<F> {
             }
         }
 
+        // commit
         if let Some(size_after) = size_after {
             if tx.not_empty() {
                 let new_checksum = if let Some(offset) = tx.recompute_checksum {
@@ -325,6 +333,13 @@ impl<F> CurrentSegment<F> {
                 let mut header = { *self.header.lock() };
                 header.last_commited_frame_no = last_frame_no.into();
                 header.size_after = size_after.into();
+                // count how many frames were appeneded: basically last appeneded offset - initial
+                // offset
+                let tx = tx.deref_mut();
+                let savepoint = tx.savepoints.first().unwrap();
+                header.frame_count = (header.frame_count.get()
+                    + (tx.next_offset - savepoint.next_offset) as u64)
+                    .into();
                 header.recompute_checksum();
 
                 self.file.write_all_at(header.as_bytes(), 0)?;
@@ -398,7 +413,7 @@ impl<F> CurrentSegment<F> {
         F: FileExt,
     {
         let mut header = self.header.lock();
-        let index_offset = header.count_committed() as u32;
+        let index_offset = header.frame_count() as u32;
         let index_byte_offset = checked_frame_offset(index_offset);
         let mut cursor = self.file.cursor(index_byte_offset);
         let writer = BufWriter::new(&mut cursor);

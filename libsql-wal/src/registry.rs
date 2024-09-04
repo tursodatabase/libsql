@@ -3,13 +3,16 @@ use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Instant;
 
 use dashmap::DashMap;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::{Condvar, Mutex};
 use rand::Rng;
+use roaring::RoaringBitmap;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
+use tokio_stream::StreamExt;
 use uuid::Uuid;
 use zerocopy::{AsBytes, FromZeroes};
 
@@ -17,7 +20,8 @@ use crate::checkpointer::CheckpointMessage;
 use crate::error::Result;
 use crate::io::file::FileExt;
 use crate::io::{Io, StdIO};
-use crate::replication::storage::StorageReplicator;
+use crate::replication::injector::Injector;
+use crate::replication::storage::{ReplicateFromStorage as _, StorageReplicator};
 use crate::segment::list::SegmentList;
 use crate::segment::Segment;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
@@ -96,51 +100,40 @@ where
     S: Storage<Segment = SealedSegment<IO::File>>,
 {
     #[tracing::instrument(skip_all)]
-    fn swap_current(&self, shared: &SharedWal<IO>, tx: &TxGuard<<IO as Io>::File>) -> Result<()> {
+    fn swap_current(
+        &self,
+        shared: &SharedWal<IO>,
+        tx: &dyn TxGuard<<IO as Io>::File>,
+    ) -> Result<()> {
         assert!(tx.is_commited());
-        // at this point we must hold a lock to a commited transaction.
+        self.swap_current_inner(shared)
+    }
+}
 
-        let current = shared.current.load();
-        if current.is_empty() {
-            return Ok(());
-        }
-        let start_frame_no = current.next_frame_no();
-        let path = self
-            .path
-            .join(shared.namespace().as_str())
-            .join(format!("{}:{start_frame_no:020}.seg", shared.namespace()));
-
-        let segment_file = self.io.open(true, true, true, &path)?;
-        let salt = self.io.with_rng(|rng| rng.gen());
-        let new = CurrentSegment::create(
-            segment_file,
-            path,
-            start_frame_no,
-            current.db_size(),
-            current.tail().clone(),
-            salt,
-            current.log_id(),
-        )?;
-        // sealing must the last fallible operation, because we don't want to end up in a situation
-        // where the current log is sealed and it wasn't swapped.
-        if let Some(sealed) = current.seal()? {
-            // todo: pass config override here
-            let notifier = self.checkpoint_notifier.clone();
-            let namespace = shared.namespace().clone();
-            let durable_frame_no = shared.durable_frame_no.clone();
-            let cb: OnStoreCallback = Box::new(move |fno| {
+#[tracing::instrument(skip_all, fields(namespace = namespace.as_str(), start_frame_no = seg.start_frame_no()))]
+fn maybe_store_segment<S: Storage>(
+    storage: &S,
+    notifier: &tokio::sync::mpsc::Sender<CheckpointMessage>,
+    namespace: &NamespaceName,
+    durable_frame_no: &Arc<Mutex<u64>>,
+    seg: S::Segment,
+) {
+    if seg.is_storable() {
+        let cb: OnStoreCallback = Box::new({
+            let notifier = notifier.clone();
+            let durable_frame_no = durable_frame_no.clone();
+            let namespace = namespace.clone();
+            move |fno| {
                 Box::pin(async move {
                     update_durable(fno, notifier, durable_frame_no, namespace).await;
                 })
-            });
-            new.tail().push(sealed.clone());
-            self.storage.store(&shared.namespace, sealed, None, cb);
-        }
-
-        shared.current.swap(Arc::new(new));
-        tracing::debug!("current segment swapped");
-
-        Ok(())
+            }
+        });
+        storage.store(namespace, seg, None, cb);
+    } else {
+        // segment can be checkpointed right away.
+        let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
+        tracing::debug!("segment marked as not storable; skipping");
     }
 }
 
@@ -231,16 +224,30 @@ where
         namespace: &NamespaceName,
         db_path: &Path,
     ) -> Result<Arc<SharedWal<IO>>> {
+        let db_file = self.io.open(false, true, true, db_path)?;
+        let db_file_len = db_file.len()?;
+        let header = if db_file_len > 0 {
+            let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
+            db_file.read_exact_at(header.as_bytes_mut(), 0)?;
+            Some(header)
+        } else {
+            None
+        };
+
+        let footer = self.try_read_footer(&db_file)?;
+
+        let mut checkpointed_frame_no = footer.map(|f| f.replication_index.get()).unwrap_or(0);
+
         let path = self.path.join(namespace.as_str());
         self.io.create_dir_all(&path)?;
         // TODO: handle that with abstract io
         let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
 
-        // TODO: pass config override here
-        let max_frame_no = self.storage.durable_frame_no_sync(&namespace, None);
-        let durable_frame_no = Arc::new(Mutex::new(max_frame_no));
+        // we only checkpoint durable frame_no so this is a good first estimate without an actual
+        // network call.
+        let durable_frame_no = Arc::new(Mutex::new(checkpointed_frame_no));
 
-        let tail = SegmentList::default();
+        let list = SegmentList::default();
         for entry in dir {
             let entry = entry.map_err(|e| e.into_io_error().unwrap())?;
             if entry
@@ -257,37 +264,22 @@ where
             if let Some(sealed) =
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
-                let notifier = self.checkpoint_notifier.clone();
-                let ns = namespace.clone();
-                let durable_frame_no = durable_frame_no.clone();
-                let cb: OnStoreCallback = Box::new(move |fno| {
-                    Box::pin(async move {
-                        update_durable(fno, notifier, durable_frame_no, ns).await;
-                    })
-                });
-                // TODO: pass config override here
-                self.storage.store(&namespace, sealed.clone(), None, cb);
-                tail.push(sealed);
+                list.push(sealed.clone());
+                maybe_store_segment(
+                    self.storage.as_ref(),
+                    &self.checkpoint_notifier,
+                    &namespace,
+                    &durable_frame_no,
+                    sealed,
+                );
             }
         }
 
-        let db_file = self.io.open(false, true, true, db_path)?;
-        let db_file_len = db_file.len()?;
-        let header = if db_file_len > 0 {
-            let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
-            db_file.read_exact_at(header.as_bytes_mut(), 0)?;
-            Some(header)
-        } else {
-            None
-        };
-
-        let footer = self.try_read_footer(&db_file)?;
-
         let log_id = match footer {
-            Some(footer) if tail.is_empty() => footer.log_id(),
-            None if tail.is_empty() => self.io.uuid(),
+            Some(footer) if list.is_empty() => footer.log_id(),
+            None if list.is_empty() => self.io.uuid(),
             Some(footer) => {
-                let log_id = tail
+                let log_id = list
                     .with_head(|h| h.header().log_id.get())
                     .expect("non-empty list should have a head");
                 let log_id = Uuid::from_u128(log_id);
@@ -295,14 +287,21 @@ where
                 log_id
             }
             None => {
-                let log_id = tail
+                let log_id = list
                     .with_head(|h| h.header().log_id.get())
                     .expect("non-empty list should have a head");
                 Uuid::from_u128(log_id)
             }
         };
 
-        let (db_size, next_frame_no) = tail
+        // if there is a tail, then the latest checkpointed frame_no is one before the the
+        // start frame_no of the tail. We must read it from the tail, because a partial
+        // checkpoint may have occured before a crash.
+        if let Some(last) = list.last() {
+            checkpointed_frame_no = (last.start_frame_no() - 1).max(1)
+        }
+
+        let (db_size, next_frame_no) = list
             .with_head(|segment| {
                 let header = segment.header();
                 (header.size_after(), header.next_frame_no())
@@ -310,32 +309,23 @@ where
             .unwrap_or_else(|| match header {
                 Some(header) => (
                     header.db_size.get(),
-                    NonZeroU64::new(header.replication_index.get() + 1)
+                    NonZeroU64::new(checkpointed_frame_no + 1)
                         .unwrap_or(NonZeroU64::new(1).unwrap()),
                 ),
                 None => (0, NonZeroU64::new(1).unwrap()),
             });
 
-        let current_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
+        let current_segment_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
 
-        let segment_file = self.io.open(true, true, true, &current_path)?;
+        let segment_file = self.io.open(true, true, true, &current_segment_path)?;
         let salt = self.io.with_rng(|rng| rng.gen());
-
-        let checkpointed_frame_no = match tail.last() {
-            // if there is a tail, then the latest checkpointed frame_no is one before the the
-            // start frame_no of the tail. We must read it from the tail, because a partial
-            // checkpoint may have occured before a crash.
-            Some(last) => (last.start_frame_no() - 1).max(1),
-            // otherwise, we read the it from the footer.
-            None => footer.map(|f| f.replication_index.get()).unwrap_or(0),
-        };
 
         let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
             segment_file,
-            current_path,
+            current_segment_path,
             next_frame_no,
             db_size,
-            tail.into(),
+            list.into(),
             salt,
             log_id,
         )?));
@@ -378,6 +368,44 @@ where
         } else {
             Ok(None)
         }
+    }
+
+    /// Attempts to sync all loaded dbs with durable storage
+    pub async fn sync_all(&self, conccurency: usize) -> Result<()>
+    where
+        S: Storage,
+    {
+        let mut join_set = JoinSet::new();
+        tracing::info!("syncing {} namespaces", self.opened.len());
+        // FIXME: arbitrary value, maybe use something like numcpu * 2?
+        let before_sync = Instant::now();
+        let sem = Arc::new(Semaphore::new(conccurency));
+        for entry in self.opened.iter() {
+            let Slot::Wal(shared) = entry.value() else {
+                panic!("all wals should already be opened")
+            };
+            let storage = self.storage.clone();
+            let shared = shared.clone();
+            let sem = sem.clone();
+            let permit = sem.acquire_owned().await.unwrap();
+
+            join_set.spawn(async move {
+                let _permit = permit;
+                sync_one(shared, storage).await
+            });
+
+            if let Some(ret) = join_set.try_join_next() {
+                ret.unwrap()?;
+            }
+        }
+
+        while let Some(ret) = join_set.join_next().await {
+            ret.unwrap()?;
+        }
+
+        tracing::info!("synced in {:?}", before_sync.elapsed());
+
+        Ok(())
     }
 
     // On shutdown, we checkpoint all the WALs. This require sealing the current segment, and when
@@ -437,6 +465,100 @@ where
 
         Ok(())
     }
+
+    #[tracing::instrument(skip_all)]
+    fn swap_current_inner(&self, shared: &SharedWal<IO>) -> Result<()> {
+        let current = shared.current.load();
+        if current.is_empty() {
+            return Ok(());
+        }
+        let start_frame_no = current.next_frame_no();
+        let path = self
+            .path
+            .join(shared.namespace().as_str())
+            .join(format!("{}:{start_frame_no:020}.seg", shared.namespace()));
+
+        let segment_file = self.io.open(true, true, true, &path)?;
+        let salt = self.io.with_rng(|rng| rng.gen());
+        let new = CurrentSegment::create(
+            segment_file,
+            path,
+            start_frame_no,
+            current.db_size(),
+            current.tail().clone(),
+            salt,
+            current.log_id(),
+        )?;
+        // sealing must the last fallible operation, because we don't want to end up in a situation
+        // where the current log is sealed and it wasn't swapped.
+        if let Some(sealed) = current.seal()? {
+            new.tail().push(sealed.clone());
+            maybe_store_segment(
+                self.storage.as_ref(),
+                &self.checkpoint_notifier,
+                &shared.namespace,
+                &shared.durable_frame_no,
+                sealed,
+            );
+        }
+
+        shared.current.swap(Arc::new(new));
+        tracing::debug!("current segment swapped");
+
+        Ok(())
+    }
+}
+
+#[tracing::instrument(skip_all, fields(namespace = shared.namespace().as_str()))]
+async fn sync_one<IO, S>(shared: Arc<SharedWal<IO>>, storage: Arc<S>) -> Result<()>
+where
+    IO: Io,
+    S: Storage,
+{
+    let remote_durable_frame_no = storage
+        .durable_frame_no(shared.namespace(), None)
+        .await
+        .map_err(Box::new)?;
+    let local_current_frame_no = shared.current.load().next_frame_no().get() - 1;
+
+    if remote_durable_frame_no > local_current_frame_no {
+        tracing::info!(
+            remote_durable_frame_no,
+            local_current_frame_no,
+            "remote storage has newer segments"
+        );
+        let mut seen = RoaringBitmap::new();
+        let replicator = StorageReplicator::new(storage, shared.namespace().clone());
+        let stream = replicator
+            .stream(&mut seen, remote_durable_frame_no, 1)
+            .peekable();
+        let mut injector = Injector::new(shared.clone(), 10)?;
+        // we set the durable frame_no before we start injecting, because the wal may want to
+        // checkpoint on commit.
+        injector.set_durable(remote_durable_frame_no);
+        // use pin to the heap so that we can drop the stream in the loop, and count `seen`.
+        let mut stream = Box::pin(stream);
+        loop {
+            match stream.next().await {
+                Some(Ok(mut frame)) => {
+                    if stream.peek().await.is_none() {
+                        drop(stream);
+                        frame.header_mut().set_size_after(seen.len() as _);
+                        injector.insert_frame(frame).await?;
+                        break;
+                    } else {
+                        injector.insert_frame(frame).await?;
+                    }
+                }
+                Some(Err(e)) => todo!("handle error: {e}, {}", shared.namespace()),
+                None => break,
+            }
+        }
+    }
+
+    tracing::info!("local database is up to date");
+
+    Ok(())
 }
 
 fn read_log_id_from_footer<F: FileExt>(db_file: &F, db_size: u64) -> io::Result<Uuid> {

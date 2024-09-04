@@ -6,7 +6,7 @@ use crate::error::Result;
 use crate::io::Io;
 use crate::segment::Frame;
 use crate::shared_wal::SharedWal;
-use crate::transaction::TxGuardOwned;
+use crate::transaction::{Transaction, TxGuardOwned};
 
 /// The injector takes frames and injects them in the wal.
 pub struct Injector<IO: Io> {
@@ -15,26 +15,53 @@ pub struct Injector<IO: Io> {
     buffer: Vec<Box<Frame>>,
     /// capacity of the frame buffer
     capacity: usize,
-    tx: TxGuardOwned<IO::File>,
+    tx: Option<TxGuardOwned<IO::File>>,
     max_tx_frame_no: u64,
+    previous_durable_frame_no: u64,
 }
 
 impl<IO: Io> Injector<IO> {
-    pub fn new(
-        wal: Arc<SharedWal<IO>>,
-        tx: TxGuardOwned<IO::File>,
-        buffer_capacity: usize,
-    ) -> Result<Self> {
+    pub fn new(wal: Arc<SharedWal<IO>>, buffer_capacity: usize) -> Result<Self> {
         Ok(Self {
             wal,
             buffer: Vec::with_capacity(buffer_capacity),
             capacity: buffer_capacity,
-            tx,
+            tx: None,
             max_tx_frame_no: 0,
+            previous_durable_frame_no: 0,
         })
     }
 
+    pub fn set_durable(&mut self, durable_frame_no: u64) {
+        let mut old = self.wal.durable_frame_no.lock();
+        if *old <= durable_frame_no {
+            self.previous_durable_frame_no = *old;
+            *old = durable_frame_no;
+        } else {
+            todo!("primary reported older frame_no than current");
+        }
+    }
+
+    pub fn current_durable(&self) -> u64 {
+        *self.wal.durable_frame_no.lock()
+    }
+
+    pub fn maybe_begin_txn(&mut self) -> Result<()> {
+        if self.tx.is_none() {
+            let mut tx = Transaction::Read(self.wal.begin_read(u64::MAX));
+            self.wal.upgrade(&mut tx)?;
+            let tx = tx
+                .into_write()
+                .unwrap_or_else(|_| unreachable!())
+                .into_lock_owned();
+            assert!(self.tx.replace(tx).is_none());
+        }
+
+        Ok(())
+    }
+
     pub async fn insert_frame(&mut self, frame: Box<Frame>) -> Result<Option<u64>> {
+        self.maybe_begin_txn()?;
         let size_after = frame.size_after();
         self.max_tx_frame_no = self.max_tx_frame_no.max(frame.header().frame_no());
         self.buffer.push(frame);
@@ -47,24 +74,51 @@ impl<IO: Io> Injector<IO> {
     }
 
     pub async fn flush(&mut self, size_after: Option<u32>) -> Result<()> {
-        let buffer = std::mem::take(&mut self.buffer);
-        let current = self.wal.current.load();
-        let commit_data = size_after.map(|size| (size, self.max_tx_frame_no));
-        if commit_data.is_some() {
-            self.max_tx_frame_no = 0;
+        if !self.buffer.is_empty() && self.tx.is_some() {
+            let last_committed_frame_no = self.max_tx_frame_no;
+            {
+                let tx = self.tx.as_mut().expect("we just checked that tx was there");
+                let buffer = std::mem::take(&mut self.buffer);
+                let current = self.wal.current.load();
+                let commit_data = size_after.map(|size| (size, self.max_tx_frame_no));
+                if commit_data.is_some() {
+                    self.max_tx_frame_no = 0;
+                }
+                let buffer = current.inject_frames(buffer, commit_data, tx).await?;
+                self.buffer = buffer;
+                self.buffer.clear();
+            }
+
+            if size_after.is_some() {
+                let mut tx = self.tx.take().unwrap();
+                self.wal
+                    .new_frame_notifier
+                    .send_replace(last_committed_frame_no);
+                // the strategy to swap the current log is to do it on change of durable boundary,
+                // when we have caught up with the current durable frame_no
+                if self.current_durable() != self.previous_durable_frame_no
+                    && self.current_durable() >= self.max_tx_frame_no
+                {
+                    let wal = self.wal.clone();
+                    // FIXME: tokio dependency here is annoying, we need an async version of swap_current.
+                    tokio::task::spawn_blocking(move || {
+                        tx.commit();
+                        wal.swap_current(&tx)
+                    })
+                    .await
+                    .unwrap()?
+                }
+            }
         }
-        let buffer = current
-            .inject_frames(buffer, commit_data, &mut self.tx)
-            .await?;
-        self.buffer = buffer;
-        self.buffer.clear();
 
         Ok(())
     }
 
     pub fn rollback(&mut self) {
         self.buffer.clear();
-        self.tx.reset(0);
+        if let Some(tx) = self.tx.as_mut() {
+            tx.reset(0);
+        }
     }
 }
 
@@ -93,13 +147,7 @@ mod test {
         let replica_conn = replica_env.open_conn("test");
         let replica_shared = replica_env.shared("test");
 
-        let mut tx = crate::transaction::Transaction::Read(replica_shared.begin_read(42));
-        replica_shared.upgrade(&mut tx).unwrap();
-        let guard = tx
-            .into_write()
-            .unwrap_or_else(|_| panic!())
-            .into_lock_owned();
-        let mut injector = Injector::new(replica_shared.clone(), guard, 10).unwrap();
+        let mut injector = Injector::new(replica_shared.clone(), 10).unwrap();
 
         primary_conn.execute("create table test (x)", ()).unwrap();
 

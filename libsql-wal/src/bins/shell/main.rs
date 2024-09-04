@@ -143,7 +143,7 @@ where
     S: Storage,
 {
     let namespace = NamespaceName::from_string(namespace.to_owned());
-    let durable = storage.durable_frame_no(&namespace, None).await;
+    let durable = storage.durable_frame_no(&namespace, None).await.unwrap();
     println!("namespace: {namespace}");
     println!("max durable frame: {durable}");
 }

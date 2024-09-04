@@ -50,6 +50,8 @@ pub struct SegmentHeader {
     pub version: U16,
     pub start_frame_no: U64,
     pub last_commited_frame_no: U64,
+    /// number of frames in the segment
+    pub frame_count: U64,
     /// size of the database in pages, after applying the segment.
     pub size_after: U32,
     /// byte offset of the index. If 0, then the index wasn't written, and must be recovered.
@@ -97,7 +99,7 @@ impl SegmentHeader {
         }
     }
 
-    fn flags(&self) -> SegmentFlags {
+    pub fn flags(&self) -> SegmentFlags {
         SegmentFlags::from_bits(self.flags.get()).unwrap()
     }
 
@@ -120,14 +122,11 @@ impl SegmentHeader {
     }
 
     fn is_empty(&self) -> bool {
-        self.last_commited_frame_no.get() == 0
+        self.frame_count() == 0
     }
 
-    fn count_committed(&self) -> usize {
-        self.last_commited_frame_no
-            .get()
-            .checked_sub(self.start_frame_no.get() - 1)
-            .unwrap_or(0) as usize
+    pub fn frame_count(&self) -> usize {
+        self.frame_count.get() as usize
     }
 
     pub fn last_committed(&self) -> u64 {
@@ -160,6 +159,7 @@ pub trait Segment: Send + Sync + 'static {
     fn start_frame_no(&self) -> u64;
     fn last_committed(&self) -> u64;
     fn index(&self) -> &fst::Map<Arc<[u8]>>;
+    fn is_storable(&self) -> bool;
     fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> io::Result<bool>;
     /// returns the number of readers currently holding a reference to this log.
     /// The read count must monotonically decrease.
@@ -215,6 +215,10 @@ impl<T: Segment> Segment for Arc<T> {
 
     fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()> {
         self.as_ref().destroy(io)
+    }
+
+    fn is_storable(&self) -> bool {
+        self.as_ref().is_storable()
     }
 }
 

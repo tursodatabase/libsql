@@ -328,6 +328,10 @@ where
     async fn inject_frame(&mut self, frame: RpcFrame) -> Result<(), Error> {
         self.frames_synced += 1;
 
+        if let Some(frame_no) = frame.durable_frame_no {
+            self.injector.durable_frame_no(frame_no);
+        }
+
         match self.injector.inject_frame(frame).await? {
             Some(commit_fno) => {
                 self.client.commit_frame_no(commit_fno).await?;
@@ -772,6 +776,7 @@ mod test {
                         .map(|f| RpcFrame {
                             data: f.bytes(),
                             timestamp: None,
+                            durable_frame_no: None,
                         })
                         .take(2)
                         .map(Ok)
@@ -785,6 +790,7 @@ mod test {
                         .map(|f| RpcFrame {
                             data: f.bytes(),
                             timestamp: None,
+                            durable_frame_no: None,
                         })
                         .map(Ok)
                         .collect::<Vec<_>>();

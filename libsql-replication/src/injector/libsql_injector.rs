@@ -49,4 +49,8 @@ impl super::Injector for LibsqlInjector {
             .map_err(|e| Error::FatalInjectError(e.into()))?;
         Ok(None)
     }
+
+    fn durable_frame_no(&mut self, frame_no: u64) {
+        self.injector.set_durable(frame_no);
+    }
 }

@@ -63,6 +63,7 @@ where
 
                         let (frame, ret) = segment.read_frame(Frame::new_box_zeroed(), offset as u32).await;
                         ret?;
+                        debug_assert_eq!(frame.header().size_after(), 0, "all frames in a compacted segment should have size_after set to 0");
                         if frame.header().frame_no() >= until {
                             yield frame;
                         }

@@ -35,7 +35,7 @@ pub struct WalLock {
 }
 
 pub(crate) trait SwapLog<IO: Io>: Sync + Send + 'static {
-    fn swap_current(&self, shared: &SharedWal<IO>, tx: &TxGuard<IO::File>) -> Result<()>;
+    fn swap_current(&self, shared: &SharedWal<IO>, tx: &dyn TxGuard<IO::File>) -> Result<()>;
 }
 
 pub struct SharedWal<IO: Io> {
@@ -94,6 +94,10 @@ impl<IO: Io> SharedWal<IO> {
 
     pub fn log_id(&self) -> Uuid {
         self.current.load().log_id()
+    }
+
+    pub fn durable_frame_no(&self) -> u64 {
+        *self.durable_frame_no.lock()
     }
 
     #[tracing::instrument(skip_all)]
@@ -270,7 +274,6 @@ impl<IO: Io> SharedWal<IO> {
             self.new_frame_notifier.send_replace(last_committed);
         }
 
-        // TODO: use config for max log size
         if tx.is_commited()
             && current.count_committed() > self.max_segment_size.load(Ordering::Relaxed)
         {
@@ -284,22 +287,28 @@ impl<IO: Io> SharedWal<IO> {
     pub fn seal_current(&self) -> Result<()> {
         let mut tx = self.begin_read(u64::MAX).into();
         self.upgrade(&mut tx)?;
-        {
+
+        let ret = {
             let mut guard = tx.as_write_mut().unwrap().lock();
             guard.commit();
-            self.swap_current(&mut guard)?;
-        }
+            self.swap_current(&mut guard)
+        };
+        // make sure the tx is always ended before it's dropped!
+        // FIXME: this is an issue with this design, since downgrade consume self, we can't have a
+        // drop implementation. The should probably have a Option<WriteTxnInner>, to that we can
+        // take &mut Self instead.
         tx.end();
 
-        Ok(())
+        ret
     }
 
     /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
-    pub(crate) fn swap_current(&self, tx: &TxGuard<IO::File>) -> Result<()> {
+    pub(crate) fn swap_current(&self, tx: &impl TxGuard<IO::File>) -> Result<()> {
         self.registry.swap_current(self, tx)?;
         Ok(())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn checkpoint(&self) -> Result<Option<u64>> {
         let durable_frame_no = *self.durable_frame_no.lock();
         let checkpointed_frame_no = self

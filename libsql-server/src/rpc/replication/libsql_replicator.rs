@@ -13,6 +13,7 @@ use libsql_replication::rpc::replication::{
 use libsql_wal::io::StdIO;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::segment::Frame;
+use libsql_wal::shared_wal::SharedWal;
 use md5::{Digest as _, Md5};
 use tokio_stream::Stream;
 use tonic::Status;
@@ -72,12 +73,17 @@ pin_project_lite::pin_project! {
         #[pin]
         inner: S,
         flavor: WalFlavor,
+        shared: Arc<SharedWal<StdIO>>,
     }
 }
 
 impl<S> FrameStreamAdapter<S> {
-    fn new(inner: S, flavor: WalFlavor) -> Self {
-        Self { inner, flavor }
+    fn new(inner: S, flavor: WalFlavor, shared: Arc<SharedWal<StdIO>>) -> Self {
+        Self {
+            inner,
+            flavor,
+            shared,
+        }
     }
 }
 
@@ -93,6 +99,11 @@ where
             Some(Ok(f)) => {
                 match this.flavor {
                     WalFlavor::Libsql => {
+                        let durable_frame_no = if f.header().is_commit() {
+                            Some(this.shared.durable_frame_no())
+                        } else {
+                            None
+                        };
                         // safety: frame implemements zerocopy traits, so it can safely be interpreted as a
                         // byte slize of the same size
                         let bytes: Box<[u8; size_of::<Frame>()]> =
@@ -102,6 +113,7 @@ where
                         Poll::Ready(Some(Ok(RpcFrame {
                             data,
                             timestamp: None,
+                            durable_frame_no,
                         })))
                     }
                     WalFlavor::Sqlite => {
@@ -116,6 +128,7 @@ where
                         Poll::Ready(Some(Ok(RpcFrame {
                             data: frame.bytes(),
                             timestamp: None,
+                            durable_frame_no: None,
                         })))
                     }
                 }
@@ -131,6 +144,7 @@ impl ReplicationLog for LibsqlReplicationService {
     type LogEntriesStream = BoxStream<'static, Result<RpcFrame, Status>>;
     type SnapshotStream = BoxStream<'static, Result<RpcFrame, Status>>;
 
+    #[tracing::instrument(skip_all, fields(namespace))]
     async fn log_entries(
         &self,
         req: tonic::Request<LogOffset>,
@@ -140,11 +154,13 @@ impl ReplicationLog for LibsqlReplicationService {
         let shared = self.registry.get_async(&namespace.into()).await.unwrap();
         let req = req.into_inner();
         // TODO: replicator should only accecpt NonZero
-        let replicator =
-            libsql_wal::replication::replicator::Replicator::new(shared, req.next_offset.max(1));
+        let replicator = libsql_wal::replication::replicator::Replicator::new(
+            shared.clone(),
+            req.next_offset.max(1),
+        );
 
         let flavor = req.wal_flavor();
-        let stream = FrameStreamAdapter::new(replicator.into_frame_stream(), flavor);
+        let stream = FrameStreamAdapter::new(replicator.into_frame_stream(), flavor, shared);
         Ok(tonic::Response::new(Box::pin(stream)))
     }
 

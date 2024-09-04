@@ -280,6 +280,27 @@ struct Cli {
     /// Auth key for the admin API
     #[clap(long, env = "LIBSQL_ADMIN_AUTH_KEY", requires = "admin_listen_addr")]
     admin_auth_key: Option<String>,
+
+    /// Whether to perform a sync of all namespaces with remote on startup
+    #[clap(
+        long,
+        env = "LIBSQL_SYNC_FROM_STORAGE",
+        requires = "enable_bottomless_replication"
+    )]
+    sync_from_storage: bool,
+    /// Whether to force loading all WAL at startup, with libsql-wal
+    /// By default, WALs are loaded lazily, as the databases are openned.
+    /// Whether to force loading all wal at startup
+    #[clap(long)]
+    force_load_wals: bool,
+    /// Sync conccurency
+    #[clap(
+        long,
+        env = "LIBSQL_SYNC_CONCCURENCY",
+        requires = "sync_from_storage",
+        default_value = "8"
+    )]
+    sync_conccurency: usize,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -681,6 +702,9 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         connector: Some(https),
         migrate_bottomless: config.migrate_bottomless,
         enable_deadlock_monitor: config.enable_deadlock_monitor,
+        should_sync_from_storage: config.sync_from_storage,
+        force_load_wals: config.force_load_wals,
+        sync_conccurency: config.sync_conccurency,
     })
 }
 

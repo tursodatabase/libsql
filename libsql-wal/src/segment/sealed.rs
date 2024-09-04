@@ -108,8 +108,12 @@ where
         let mut current_offset = 0;
 
         while let Some((page_no_bytes, offset)) = pages.next() {
-            let (b, ret) = self.read_frame_offset_async(offset as _, buffer).await;
-            ret.unwrap();
+            let (mut b, ret) = self.read_frame_offset_async(offset as _, buffer).await;
+            ret?;
+            // transaction boundaries in a segment are completely erased. The responsibility is on
+            // the consumer of the segment to place the transaction boundary such that all frames from
+            // the segment are applied within the same transaction.
+            b.get_mut().header_mut().set_size_after(0);
             hasher.update(&b.get_ref().as_bytes());
             let dest_offset =
                 size_of::<CompactedSegmentDataHeader>() + current_offset * size_of::<Frame>();
@@ -177,7 +181,9 @@ where
     }
 
     fn is_checkpointable(&self) -> bool {
-        self.read_locks.load(Ordering::Relaxed) == 0
+        let read_locks = self.read_locks.load(Ordering::Relaxed);
+        tracing::debug!(read_locks);
+        read_locks == 0
     }
 
     fn size_after(&self) -> u32 {
@@ -190,6 +196,17 @@ where
                 tracing::error!("failed to remove segment file {:?}: {e}", self.path);
             }
         }
+    }
+
+    fn is_storable(&self) -> bool {
+        // we don't store unordered segments, since they only happen in two cases:
+        // - in a replica: no need for storage
+        // - in a primary, on recovery from storage: we don't want to override remote
+        // segment.
+        !self
+            .header()
+            .flags()
+            .contains(SegmentFlags::FRAME_UNORDERED)
     }
 }
 
@@ -211,7 +228,7 @@ impl<F: FileExt> SealedSegment<F> {
         // This happens in case of crash: the segment is not empty, but it wasn't sealed. We need to
         // recover the index, and seal the segment.
         if !header.flags().contains(SegmentFlags::SEALED) {
-            assert_eq!(header.index_offset.get(), 0);
+            assert_eq!(header.index_offset.get(), 0, "{header:?}");
             return Self::recover(file, path, header).map(Some);
         }
 
@@ -235,8 +252,6 @@ impl<F: FileExt> SealedSegment<F> {
         assert_eq!(header.index_size.get(), 0);
         assert_eq!(header.index_offset.get(), 0);
         assert!(!header.flags().contains(SegmentFlags::SEALED));
-        // recovery for replica log should take a different path (i.e: resync with primary)
-        assert!(!header.flags().contains(SegmentFlags::FRAME_UNORDERED));
 
         let mut current_checksum = header.salt.get();
         tracing::trace!("recovering unsealed segment at {path:?}");
@@ -246,6 +261,11 @@ impl<F: FileExt> SealedSegment<F> {
         let mut last_committed = 0;
         let mut size_after = 0;
         let mut frame_count = 0;
+        // When the segment is ordered, then the biggest frame_no is the last commited
+        // frame. This is not the case for an unordered segment (in case of recovery or
+        // a replica), so we track the biggest frame_no and set last_commited to that
+        // value on a commit frame
+        let mut max_seen_frame_no = 0;
         for i in 0.. {
             let offset = checked_frame_offset(i as u32);
             match file.read_exact_at(frame.as_bytes_mut(), offset) {
@@ -263,9 +283,19 @@ impl<F: FileExt> SealedSegment<F> {
                     current_checksum = new_checksum;
                     frame_count += 1;
 
+                    // this must always hold for a ordered segment.
+                    #[cfg(debug_assertions)]
+                    {
+                        if !header.flags().contains(SegmentFlags::FRAME_UNORDERED) {
+                            assert!(frame.frame.header().frame_no() > max_seen_frame_no);
+                        }
+                    }
+
+                    max_seen_frame_no = max_seen_frame_no.max(frame.frame.header.frame_no());
+
                     current_tx.push(frame.frame.header().page_no());
                     if frame.frame.header.is_commit() {
-                        last_committed = frame.frame.header().frame_no();
+                        last_committed = max_seen_frame_no;
                         size_after = frame.frame.header().size_after();
                         let base_offset = (i + 1) - current_tx.len();
                         for (frame_offset, page_no) in current_tx.drain(..).enumerate() {
@@ -304,6 +334,8 @@ impl<F: FileExt> SealedSegment<F> {
         header.index_size = index_size.into();
         header.last_commited_frame_no = last_committed.into();
         header.size_after = size_after.into();
+        let flags = header.flags();
+        header.set_flags(flags | SegmentFlags::SEALED);
         header.recompute_checksum();
         file.write_all_at(header.as_bytes(), 0)?;
         let index = Map::new(index_bytes.into()).unwrap();

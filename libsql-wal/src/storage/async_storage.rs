@@ -205,10 +205,10 @@ where
         &self,
         namespace: &NamespaceName,
         config_override: Option<Self::Config>,
-    ) -> u64 {
+    ) -> super::Result<u64> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
-        let meta = self.backend.meta(&config, namespace).await.unwrap();
-        meta.max_frame_no
+        let meta = self.backend.meta(&config, namespace).await?;
+        Ok(meta.max_frame_no)
     }
 
     async fn restore(
@@ -222,15 +222,6 @@ where
         self.backend
             .restore(&config, &namespace, restore_options, file)
             .await
-    }
-
-    fn durable_frame_no_sync(
-        &self,
-        namespace: &NamespaceName,
-        config_override: Option<Self::Config>,
-    ) -> u64 {
-        tokio::runtime::Handle::current()
-            .block_on(self.durable_frame_no(namespace, config_override))
     }
 
     async fn find_segment(

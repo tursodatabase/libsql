@@ -417,7 +417,7 @@ pub(crate) async fn run_storage_monitor<M: MakeConnection>(
                     .await;
             }
             Err(e) => {
-                tracing::warn!("failed to open connection for storager monitor: {e}, trying again in {duration:?}");
+                tracing::warn!("failed to open connection for storage monitor: {e}, trying again in {duration:?}");
             }
         }
 

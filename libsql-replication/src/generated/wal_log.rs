@@ -83,6 +83,8 @@ pub struct Frame {
     /// to the time when the transaction was commited
     #[prost(int64, optional, tag = "2")]
     pub timestamp: ::core::option::Option<i64>,
+    #[prost(uint64, optional, tag = "3")]
+    pub durable_frame_no: ::core::option::Option<u64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

@@ -58,6 +58,7 @@ pub mod test {
     use std::path::Path;
     use std::path::PathBuf;
     use std::sync::Arc;
+    use std::time::Duration;
 
     use libsql_sys::name::NamespaceName;
     use libsql_sys::rusqlite::OpenFlags;
@@ -171,5 +172,18 @@ pub mod test {
             shared.swap_current(&mut guard).unwrap();
         }
         tx.end();
+    }
+
+    pub async fn wait_current_durable<IO: Io>(shared: &SharedWal<IO>) {
+        let current = shared.current.load().next_frame_no().get() - 1;
+        loop {
+            {
+                if *shared.durable_frame_no.lock() >= current {
+                    break;
+                }
+            }
+
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
     }
 }

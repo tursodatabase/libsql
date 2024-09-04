@@ -423,6 +423,10 @@ mod test {
             fn destroy<IO: Io>(&self, _io: &IO) -> impl std::future::Future<Output = ()> {
                 async move { todo!() }
             }
+
+            fn is_storable(&self) -> bool {
+                true
+            }
         }
 
         struct TestBackend;

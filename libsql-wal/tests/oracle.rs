@@ -15,7 +15,7 @@ use libsql_sys::wal::{Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::storage::TestStorage;
-use libsql_wal::test::seal_current_segment;
+use libsql_wal::test::{seal_current_segment, wait_current_durable};
 use libsql_wal::wal::LibsqlWalManager;
 use once_cell::sync::Lazy;
 use rand::Rng;
@@ -130,6 +130,7 @@ async fn run_test_sample(path: &Path) -> Result {
 
     let shared = registry.clone().open(&db_path, &"test".into()).unwrap();
     seal_current_segment(&shared);
+    wait_current_durable(&shared).await;
     shared.checkpoint().await.unwrap();
 
     std::env::set_current_dir(curdir).unwrap();

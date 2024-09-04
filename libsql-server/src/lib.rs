@@ -177,6 +177,9 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub connector: Option<D>,
     pub migrate_bottomless: bool,
     pub enable_deadlock_monitor: bool,
+    pub should_sync_from_storage: bool,
+    pub force_load_wals: bool,
+    pub sync_conccurency: usize,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -203,6 +206,9 @@ impl<C, A, D> Default for Server<C, A, D> {
             connector: None,
             migrate_bottomless: false,
             enable_deadlock_monitor: false,
+            should_sync_from_storage: false,
+            force_load_wals: false,
+            sync_conccurency: 8,
         }
     }
 }
@@ -781,10 +787,10 @@ where
         tokio::select! {
             _ = shutdown.notified() => {
                 let shutdown = async {
+                    namespace_store.shutdown().await?;
                     task_manager.shutdown().await?;
                     // join_set.shutdown().await;
                     service_shutdown.notify_waiters();
-                    namespace_store.shutdown().await?;
 
                     Ok::<_, crate::Error>(())
                 };
@@ -958,19 +964,30 @@ where
             Ok(())
         });
 
-        // If we have performed the migration, load all shared wals to force flush to storage with
-        // the new registry
-        if did_migrate {
+        // If we performed a migration from bottomless to libsql-wal earlier, then we need to
+        // forecefully load all the wals, to trigger segment storage with the actual storage. This
+        // is because migration didn't actually send anything to storage, but just created the
+        // segments.
+        if did_migrate || self.should_sync_from_storage || self.force_load_wals {
+            // eagerly load all namespaces, then call sync_all on the registry
+            // TODO: do conccurently
             let dbs_path = base_config.base_path.join("dbs");
             let stream = meta_store.namespaces();
             tokio::pin!(stream);
             while let Some(conf) = stream.next().await {
                 let registry = registry.clone();
                 let namespace = conf.namespace().clone();
-                let path = dbs_path.join(namespace.as_str()).join("data");
-                tokio::task::spawn_blocking(move || registry.open(&path, &namespace.into()))
-                    .await
-                    .unwrap()?;
+                let path = dbs_path.join(namespace.as_str());
+                tokio::fs::create_dir_all(&path).await?;
+                tokio::task::spawn_blocking(move || {
+                    registry.open(&path.join("data"), &namespace.into())
+                })
+                .await
+                .unwrap()?;
+            }
+
+            if self.should_sync_from_storage {
+                registry.sync_all(self.sync_conccurency).await?;
             }
         }
 
@@ -1236,31 +1253,31 @@ where
         base_config: &BaseNamespaceConfig,
         primary_config: &PrimaryConfig,
     ) -> anyhow::Result<bool> {
-        let is_previous_migration_successful = self.check_previous_migration_success()?;
-        let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
-        let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
         let is_primary = self.rpc_client_config.is_none();
-        let should_attempt_migration = self.migrate_bottomless
-            && is_primary
-            && is_bottomless_enabled
-            && !is_previous_migration_successful
-            && is_libsql_wal;
+        if self.migrate_bottomless && is_primary {
+            let is_previous_migration_successful = self.check_previous_migration_success()?;
+            let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
+            let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
+            let should_attempt_migration =
+                is_bottomless_enabled && !is_previous_migration_successful && is_libsql_wal;
 
-        if should_attempt_migration {
-            bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
-            Ok(true)
-        } else {
-            // the wals directory is present and so is the _dbs. This means that a crash occured
-            // before we could remove it. clean it up now. see code in `bottomless_migrate.rs`
-            let tmp_dbs_path = base_config.base_path.join("_dbs");
-            if tmp_dbs_path.try_exists()? {
-                tracing::info!("removed dangling `_dbs` folder");
-                tokio::fs::remove_dir_all(&tmp_dbs_path).await?;
+            if should_attempt_migration {
+                bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
+                return Ok(true);
+            } else {
+                // the wals directory is present and so is the _dbs. This means that a crash occured
+                // before we could remove it. clean it up now. see code in `bottomless_migrate.rs`
+                let tmp_dbs_path = base_config.base_path.join("_dbs");
+                if tmp_dbs_path.try_exists()? {
+                    tracing::info!("removed dangling `_dbs` folder");
+                    tokio::fs::remove_dir_all(&tmp_dbs_path).await?;
+                }
+
+                tracing::info!("bottomless already migrated, skipping...");
             }
-
-            tracing::info!("bottomless already migrated, skipping...");
-            Ok(false)
         }
+
+        Ok(false)
     }
 
     fn check_previous_migration_success(&self) -> anyhow::Result<bool> {

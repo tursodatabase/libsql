@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 use std::future::Future;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -52,12 +52,12 @@ pub enum RestoreOptions {
 /// let meta = SegmentMeta { start_frame_no: 101, end_frame_no: 1000 };
 /// map.insert(SegmentKey(&meta).to_string(), meta);
 ///
-/// map.range(format!("{:019}", u64::MAX - 50)..).next();
-/// map.range(format!("{:019}", u64::MAX - 0)..).next();
-/// map.range(format!("{:019}", u64::MAX - 1)..).next();
-/// map.range(format!("{:019}", u64::MAX - 100)..).next();
-/// map.range(format!("{:019}", u64::MAX - 101)..).next();
-/// map.range(format!("{:019}", u64::MAX - 5000)..).next();
+/// map.range(format!("{:020}", u64::MAX - 50)..).next();
+/// map.range(format!("{:020}", u64::MAX - 0)..).next();
+/// map.range(format!("{:020}", u64::MAX - 1)..).next();
+/// map.range(format!("{:020}", u64::MAX - 100)..).next();
+/// map.range(format!("{:020}", u64::MAX - 101)..).next();
+/// map.range(format!("{:020}", u64::MAX - 5000)..).next();
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SegmentKey {
@@ -84,6 +84,28 @@ impl Ord for SegmentKey {
 impl SegmentKey {
     pub(crate) fn includes(&self, frame_no: u64) -> bool {
         (self.start_frame_no..=self.end_frame_no).contains(&frame_no)
+    }
+
+    #[tracing::instrument]
+    fn validate_from_path(mut path: &Path, ns: &NamespaceName) -> Option<Self> {
+        // path in the form "v2/clusters/{cluster-id}/namespaces/{namespace}/indexes/{index-key}"
+        let key: Self = path.file_name()?.to_str()?.parse().ok()?;
+
+        path = path.parent()?;
+
+        if path.file_name()? != "indexes" {
+            tracing::debug!("invalid key, ignoring");
+            return None;
+        }
+
+        path = path.parent()?;
+
+        if path.file_name()? != ns.as_str() {
+            tracing::debug!("invalid namespace for key");
+            return None;
+        }
+
+        Some(key)
     }
 }
 
@@ -115,7 +137,7 @@ impl fmt::Display for SegmentKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{:019}-{:019}",
+            "{:020}-{:020}",
             u64::MAX - self.start_frame_no,
             u64::MAX - self.end_frame_no,
         )
@@ -145,17 +167,11 @@ pub trait Storage: Send + Sync + 'static {
         on_store: OnStoreCallback,
     );
 
-    fn durable_frame_no_sync(
+    fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
         config_override: Option<Self::Config>,
-    ) -> u64;
-
-    async fn durable_frame_no(
-        &self,
-        namespace: &NamespaceName,
-        config_override: Option<Self::Config>,
-    ) -> u64;
+    ) -> impl Future<Output = Result<u64>> + Send;
 
     async fn restore(
         &self,
@@ -227,22 +243,11 @@ where
         }
     }
 
-    fn durable_frame_no_sync(
-        &self,
-        namespace: &NamespaceName,
-        config_override: Option<Self::Config>,
-    ) -> u64 {
-        match zip(self, config_override) {
-            Either::A((s, c)) => s.durable_frame_no_sync(namespace, c),
-            Either::B((s, c)) => s.durable_frame_no_sync(namespace, c),
-        }
-    }
-
     async fn durable_frame_no(
         &self,
         namespace: &NamespaceName,
         config_override: Option<Self::Config>,
-    ) -> u64 {
+    ) -> Result<u64> {
         match zip(self, config_override) {
             Either::A((s, c)) => s.durable_frame_no(namespace, c).await,
             Either::B((s, c)) => s.durable_frame_no(namespace, c).await,
@@ -339,10 +344,10 @@ impl Storage for NoStorage {
 
     async fn durable_frame_no(
         &self,
-        namespace: &NamespaceName,
-        config: Option<Self::Config>,
-    ) -> u64 {
-        self.durable_frame_no_sync(namespace, config)
+        _namespace: &NamespaceName,
+        _config: Option<Self::Config>,
+    ) -> Result<u64> {
+        Ok(u64::MAX)
     }
 
     async fn restore(
@@ -353,14 +358,6 @@ impl Storage for NoStorage {
         _config_override: Option<Self::Config>,
     ) -> Result<()> {
         panic!("can restore from no storage")
-    }
-
-    fn durable_frame_no_sync(
-        &self,
-        _namespace: &NamespaceName,
-        _config_override: Option<Self::Config>,
-    ) -> u64 {
-        u64::MAX
     }
 
     async fn find_segment(
@@ -473,15 +470,21 @@ impl<IO: Io> Storage for TestStorage<IO> {
                 .or_default()
                 .insert(key, (out_path, index));
             tokio::runtime::Handle::current().block_on(on_store(end_frame_no));
+        } else {
+            // HACK: we need to spawn because many tests just call this method indirectly in
+            // async context. That makes tests easier to write.
+            tokio::task::spawn_blocking(move || {
+                tokio::runtime::Handle::current().block_on(on_store(u64::MAX));
+            });
         }
     }
 
     async fn durable_frame_no(
         &self,
-        namespace: &NamespaceName,
-        config: Option<Self::Config>,
-    ) -> u64 {
-        self.durable_frame_no_sync(namespace, config)
+        _namespace: &NamespaceName,
+        _config: Option<Self::Config>,
+    ) -> Result<u64> {
+        Ok(u64::MAX)
     }
 
     async fn restore(
@@ -492,22 +495,6 @@ impl<IO: Io> Storage for TestStorage<IO> {
         _config_override: Option<Self::Config>,
     ) -> Result<()> {
         todo!();
-    }
-
-    fn durable_frame_no_sync(
-        &self,
-        namespace: &NamespaceName,
-        _config_override: Option<Self::Config>,
-    ) -> u64 {
-        let inner = self.inner.lock_blocking();
-        if inner.store {
-            let Some(segs) = inner.stored.get(namespace) else {
-                return 0;
-            };
-            segs.keys().map(|k| k.end_frame_no).max().unwrap_or(0)
-        } else {
-            u64::MAX
-        }
     }
 
     async fn find_segment(

@@ -198,12 +198,14 @@ impl<IO: Io> S3Backend<IO> {
         folder_key: &FolderKey<'_>,
         frame_no: u64,
     ) -> Result<Option<SegmentKey>> {
+        let lookup_key_prefix = s3_segment_index_lookup_key_prefix(&folder_key);
         let lookup_key = s3_segment_index_lookup_key(&folder_key, frame_no);
 
         let objects = self
             .client
             .list_objects_v2()
             .bucket(&config.bucket)
+            .prefix(lookup_key_prefix)
             .start_after(lookup_key)
             .send()
             .await
@@ -214,15 +216,10 @@ impl<IO: Io> S3Backend<IO> {
         };
         let key = contents.key().expect("misssing key?");
         let key_path: &Path = key.as_ref();
-        let segment_key: SegmentKey = key_path
-            .file_stem()
-            .expect("invalid key")
-            .to_str()
-            .expect("invalid key")
-            .parse()
-            .expect("invalid key");
 
-        Ok(Some(segment_key))
+        let key = SegmentKey::validate_from_path(key_path, &folder_key.namespace);
+
+        Ok(key)
     }
 
     // This method could probably be optimized a lot by using indexes and only downloading useful
@@ -335,8 +332,12 @@ fn s3_segment_index_key(folder_key: &FolderKey, segment_key: &SegmentKey) -> Str
     format!("{folder_key}/indexes/{segment_key}")
 }
 
+fn s3_segment_index_lookup_key_prefix(folder_key: &FolderKey) -> String {
+    format!("{folder_key}/indexes/")
+}
+
 fn s3_segment_index_lookup_key(folder_key: &FolderKey, frame_no: u64) -> String {
-    format!("{folder_key}/indexes/{:019}", u64::MAX - frame_no)
+    format!("{folder_key}/indexes/{:020}", u64::MAX - frame_no)
 }
 
 impl<IO> Backend for S3Backend<IO>

@@ -46,6 +46,9 @@ impl Injector for SqliteInjector {
         let inner = self.inner.clone();
         spawn_blocking(move || inner.lock().flush()).await.unwrap()
     }
+
+    #[inline]
+    fn durable_frame_no(&mut self, _frame_no: u64) {}
 }
 
 impl SqliteInjector {
