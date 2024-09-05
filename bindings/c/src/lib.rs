@@ -943,6 +943,35 @@ pub unsafe extern "C" fn libsql_column_name(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_stmt_parameter_name(
+    stmt: libsql_stmt_t,
+    index: std::ffi::c_int,
+    out_name: *mut *const std::ffi::c_char,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    if let Some(name) = stmt.stmt.parameter_name(index) {
+        match std::ffi::CString::new(name) {
+            Ok(name) => {
+                *out_name = name.into_raw();
+                return 0;
+            }
+            Err(e) => {
+                set_err_msg(format!("Error getting parameter name: {}", e), out_err_msg);
+                return 1;
+            }
+        }
+    } else {
+        set_err_msg(format!("There is no named parameter at index {}", index), out_err_msg);
+        return 1;
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_column_type(
     res: libsql_rows_t,
     row: libsql_row_t,
