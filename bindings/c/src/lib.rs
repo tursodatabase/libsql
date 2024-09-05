@@ -738,6 +738,29 @@ pub unsafe extern "C" fn libsql_bind_blob(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_stmt_parameter_count(
+    stmt: libsql_stmt_t,
+    out_count: *mut std::ffi::c_int,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    match stmt.stmt.parameter_count().try_into() as Result<i32, _> {
+        Ok(i) => {
+            *out_count = i;
+            return 0;
+        }
+        Err(e) => {
+            set_err_msg(format!("Error getting parameter count: {}", e), out_err_msg);
+            return 1;
+        }
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_query_stmt(
     stmt: libsql_stmt_t,
     out_rows: *mut libsql_rows_t,
