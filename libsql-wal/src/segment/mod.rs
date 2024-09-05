@@ -25,7 +25,7 @@ use crate::io::Io;
 use crate::LIBSQL_MAGIC;
 use crate::LIBSQL_PAGE_SIZE;
 
-pub(crate) mod compacted;
+pub mod compacted;
 pub mod current;
 pub mod list;
 pub mod sealed;
