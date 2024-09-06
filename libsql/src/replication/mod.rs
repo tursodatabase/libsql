@@ -256,13 +256,26 @@ impl EmbeddedReplicator {
             }
         }
 
-        let last_frames_synced = self.last_frames_synced.fetch_add(
-            replicator.frames_synced(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
+        let current_frames_synced = replicator.frames_synced();
+
+        let mut last_frames_synced = self
+            .last_frames_synced
+            .load(std::sync::atomic::Ordering::Relaxed);
+
+        while current_frames_synced > last_frames_synced {
+            match self.last_frames_synced.compare_exchange(
+                last_frames_synced,
+                current_frames_synced,
+                std::sync::atomic::Ordering::Relaxed,
+                std::sync::atomic::Ordering::Relaxed,
+            ) {
+                Ok(_) => break,
+                Err(current_value) => last_frames_synced = current_value,
+            }
+        }
 
         let frames_synced =
-            ((replicator.frames_synced() as i64 - last_frames_synced as i64).abs()) as usize;
+            ((current_frames_synced as i64 - last_frames_synced as i64).abs()) as usize;
 
         let replicated = Replicated {
             frame_no: replicator.client_mut().committed_frame_no(),
