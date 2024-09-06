@@ -819,6 +819,20 @@ pub unsafe extern "C" fn libsql_reset_stmt(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_stmt_finalize(
+    stmt: libsql_stmt_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    stmt.stmt.finalize();
+    0
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_free_stmt(stmt: libsql_stmt_t) {
     if stmt.is_null() {
         return;
