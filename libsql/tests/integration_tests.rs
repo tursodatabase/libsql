@@ -526,6 +526,17 @@ async fn blob() {
 
     let out = row.get::<Vec<u8>>(1).unwrap();
     assert_eq!(&out, &bytes);
+
+    let empty: Vec<u8> = vec![];
+    let mut rows = conn
+        .query(
+            "INSERT INTO bbb (data) VALUES (?1) RETURNING *",
+            [Value::Blob(empty.clone())],
+        )
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<Vec<u8>>(1).unwrap(), empty);
 }
 
 #[tokio::test]
