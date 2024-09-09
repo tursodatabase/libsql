@@ -22,6 +22,7 @@ pub use self::error::Error;
 
 pub mod async_storage;
 pub mod backend;
+pub mod compaction;
 pub(crate) mod error;
 mod job;
 mod scheduler;
