@@ -4,7 +4,7 @@ use std::mem::size_of;
 use zerocopy::little_endian::{U128 as lu128, U16 as lu16, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
-use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
+use crate::io::buf::{IoBufMut, ZeroCopyBuf};
 use crate::io::FileExt;
 use crate::{LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
@@ -82,14 +82,16 @@ impl<F: FileExt> CompactedSegment<F> {
         Ok(Self { file, header })
     }
 
-    pub(crate) async fn read_frame(
+    pub(crate) async fn read_frame<B: IoBufMut + Send + 'static>(
         &self,
-        frame: Box<Frame>,
+        buf: B,
         offset: u32,
-    ) -> (Box<Frame>, io::Result<()>) {
+    ) -> (B, io::Result<()>) {
+        assert_eq!(buf.bytes_init(), 0);
+        assert_eq!(buf.bytes_total(), size_of::<Frame>());
         let offset = size_of::<CompactedSegmentDataHeader>() + size_of::<Frame>() * offset as usize;
-        let buf = ZeroCopyBoxIoBuf::new(frame);
         let (buf, ret) = self.file.read_exact_at_async(buf, offset as u64).await;
-        (buf.into_inner(), ret)
+        (buf, ret)
+    }
     }
 }
