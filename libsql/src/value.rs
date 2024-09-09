@@ -244,10 +244,11 @@ impl From<libsql_sys::Value> for Value {
                 assert!(len >= 0, "unexpected negative bytes value from sqlite3");
 
                 let mut v = Vec::with_capacity(len as usize);
-
-                let slice: &[u8] =
-                    unsafe { std::slice::from_raw_parts(blob as *const u8, len as usize) };
-                v.extend_from_slice(slice);
+                if !blob.is_null() {
+                    let slice: &[u8] =
+                        unsafe { std::slice::from_raw_parts(blob as *const u8, len as usize) };
+                    v.extend_from_slice(slice);
+                }
                 Value::Blob(v)
             }
         }
