@@ -132,6 +132,10 @@ impl<T> ZeroCopyBoxIoBuf<T> {
         }
     }
 
+    pub fn new_uninit(inner: Box<T>) -> Self {
+        Self { init: 0, inner }
+    }
+
     fn is_init(&self) -> bool {
         self.init == size_of::<T>()
     }
