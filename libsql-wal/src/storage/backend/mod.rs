@@ -4,9 +4,10 @@ use std::{future::Future, path::Path};
 
 use chrono::{DateTime, Utc};
 use fst::Map;
+use tokio_stream::Stream;
 use uuid::Uuid;
 
-use super::{RestoreOptions, Result, SegmentKey};
+use super::{RestoreOptions, Result, SegmentInfo, SegmentKey};
 use crate::io::file::FileExt;
 use crate::segment::compacted::CompactedSegmentDataHeader;
 use libsql_sys::name::NamespaceName;
@@ -98,6 +99,13 @@ pub trait Backend: Send + Sync + 'static {
         restore_options: RestoreOptions,
         dest: impl FileExt,
     ) -> Result<()>;
+
+    fn list_segments<'a>(
+        &'a self,
+        config: Self::Config,
+        namespace: &'a NamespaceName,
+        until: u64,
+    ) -> impl Stream<Item = Result<SegmentInfo>> + 'a;
 
     /// Returns the default configuration for this storage
     fn default_config(&self) -> Self::Config;
@@ -194,5 +202,14 @@ impl<T: Backend> Backend for Arc<T> {
             .clone()
             .fetch_segment_data(config, namespace, key)
             .await
+    }
+
+    fn list_segments<'a>(
+        &'a self,
+        config: Self::Config,
+        namespace: &'a NamespaceName,
+        until: u64,
+    ) -> impl Stream<Item = Result<SegmentInfo>> + 'a {
+        self.as_ref().list_segments(config, namespace, until)
     }
 }

@@ -13,11 +13,13 @@ use aws_sdk_s3::operation::create_bucket::CreateBucketError;
 use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::Client;
+use aws_smithy_types_convert::date_time::DateTimeExt;
 use bytes::{Bytes, BytesMut};
 use http_body::{Frame as HttpFrame, SizeHint};
 use libsql_sys::name::NamespaceName;
 use roaring::RoaringBitmap;
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader};
+use tokio_stream::Stream;
 use tokio_util::sync::ReusableBoxFuture;
 use zerocopy::byteorder::little_endian::{U16 as lu16, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
@@ -28,7 +30,7 @@ use crate::io::compat::copy_to_file;
 use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegmentDataHeader;
 use crate::segment::Frame;
-use crate::storage::{Error, RestoreOptions, Result, SegmentKey};
+use crate::storage::{Error, RestoreOptions, Result, SegmentInfo, SegmentKey};
 use crate::LIBSQL_MAGIC;
 
 pub struct S3Backend<IO> {
@@ -306,6 +308,52 @@ impl<IO: Io> S3Backend<IO> {
 
         Ok(index)
     }
+
+    fn list_segments_inner<'a>(
+        &'a self,
+        config: Arc<S3Config>,
+        namespace: &'a NamespaceName,
+        _until: u64,
+    ) -> impl Stream<Item = Result<SegmentInfo>> + 'a {
+        async_stream::try_stream! {
+            let folder_key = FolderKey { cluster_id: &config.cluster_id, namespace };
+            let lookup_key_prefix = s3_segment_index_lookup_key_prefix(&folder_key);
+
+            let mut continuation_token = None;
+            loop {
+                let objects = self
+                    .client
+                    .list_objects_v2()
+                    .bucket(&config.bucket)
+                    .prefix(lookup_key_prefix.clone())
+                    .set_continuation_token(continuation_token.take())
+                    .send()
+                    .await
+                    .map_err(|e| Error::unhandled(e, "failed to list bucket"))?;
+
+                for entry in objects.contents() {
+                    let key = entry.key().expect("misssing key?");
+                    let key_path: &Path = key.as_ref();
+                    let Some(key) = SegmentKey::validate_from_path(key_path, &folder_key.namespace) else { continue };
+
+                    let infos = SegmentInfo {
+                        key,
+                        size: entry.size().unwrap_or(0) as usize,
+                        created_at: entry.last_modified().unwrap().to_chrono_utc().unwrap(),
+                    };
+
+                    yield infos;
+                }
+
+                if objects.is_truncated().unwrap_or(false) {
+                    assert!(objects.next_continuation_token.is_some());
+                    continuation_token = objects.next_continuation_token;
+                } else {
+                    break
+                }
+            }
+        }
+    }
 }
 
 pub struct S3Config {
@@ -513,6 +561,15 @@ where
         self.fetch_segment_data_to_file(&config, &namespace, &key, &file)
             .await?;
         Ok(file)
+    }
+
+    fn list_segments<'a>(
+        &'a self,
+        config: Self::Config,
+        namespace: &'a NamespaceName,
+        until: u64,
+    ) -> impl Stream<Item = Result<SegmentInfo>> + 'a {
+        self.list_segments_inner(config, namespace, until)
     }
 }
 

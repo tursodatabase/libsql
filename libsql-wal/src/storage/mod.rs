@@ -1,10 +1,9 @@
 use std::collections::BTreeMap;
-use std::fmt;
-use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::{fmt, future::Future};
 
 use chrono::{DateTime, Utc};
 use fst::Map;
@@ -12,6 +11,7 @@ use hashbrown::HashMap;
 use libsql_sys::name::NamespaceName;
 use libsql_sys::wal::either::Either;
 use tempfile::{tempdir, TempDir};
+use tokio_stream::Stream;
 
 use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegment;
@@ -205,6 +205,20 @@ pub trait Storage: Send + Sync + 'static {
     fn shutdown(&self) -> impl Future<Output = ()> + Send {
         async { () }
     }
+
+    fn list_segments<'a>(
+        &'a self,
+        namespace: &'a NamespaceName,
+        until: u64,
+        config_override: Option<Self::Config>,
+    ) -> impl Stream<Item = Result<SegmentInfo>> + 'a;
+}
+
+#[derive(Debug)]
+pub struct SegmentInfo {
+    pub key: SegmentKey,
+    pub size: usize,
+    pub created_at: DateTime<Utc>,
 }
 
 /// special zip function for Either storage implementation
@@ -323,6 +337,22 @@ where
             Either::B(b) => b.shutdown().await,
         }
     }
+
+    fn list_segments<'a>(
+        &'a self,
+        namespace: &'a NamespaceName,
+        until: u64,
+        config_override: Option<Self::Config>,
+    ) -> impl Stream<Item = Result<SegmentInfo>> + 'a {
+        match zip(self, config_override) {
+            Either::A((s, c)) => {
+                tokio_util::either::Either::Left(s.list_segments(namespace, until, c))
+            }
+            Either::B((s, c)) => {
+                tokio_util::either::Either::Right(s.list_segments(namespace, until, c))
+            }
+        }
+    }
 }
 
 /// a placeholder storage that doesn't store segment
@@ -387,6 +417,17 @@ impl Storage for NoStorage {
         unimplemented!();
         #[allow(unreachable_code)]
         Result::<CompactedSegment<std::fs::File>>::Err(Error::InvalidIndex(""))
+    }
+
+    fn list_segments<'a>(
+        &'a self,
+        _namespace: &'a NamespaceName,
+        _until: u64,
+        _config_override: Option<Self::Config>,
+    ) -> impl Stream<Item = Result<SegmentInfo>> + 'a {
+        unimplemented!("no storage!");
+        #[allow(unreachable_code)]
+        tokio_stream::empty()
     }
 }
 
@@ -554,6 +595,17 @@ impl<IO: Io> Storage for TestStorage<IO> {
         } else {
             panic!("not storing")
         }
+    }
+
+    fn list_segments<'a>(
+        &'a self,
+        _namespace: &'a NamespaceName,
+        _until: u64,
+        _config_override: Option<Self::Config>,
+    ) -> impl Stream<Item = Result<SegmentInfo>> + 'a {
+        todo!();
+        #[allow(unreachable_code)]
+        tokio_stream::empty()
     }
 }
 

@@ -520,6 +520,16 @@ mod test {
             ) -> Result<fst::Map<Arc<[u8]>>> {
                 todo!()
             }
+
+            fn list_segments<'a>(
+                &'a self,
+                _config: Self::Config,
+                _namespace: &'a NamespaceName,
+                _until: u64,
+            ) -> impl tokio_stream::Stream<Item = Result<crate::storage::SegmentInfo>> + 'a
+            {
+                tokio_stream::iter(std::iter::from_fn(|| todo!()))
+            }
         }
 
         let job = Job {
