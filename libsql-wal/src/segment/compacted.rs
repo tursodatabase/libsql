@@ -82,6 +82,10 @@ impl<F: FileExt> CompactedSegment<F> {
         Ok(Self { file, header })
     }
 
+    pub(crate) fn from_parts(file: F, header: CompactedSegmentDataHeader) -> Self {
+        Self { header, file }
+    }
+
     pub(crate) async fn read_frame<B: IoBufMut + Send + 'static>(
         &self,
         buf: B,
