@@ -40,20 +40,21 @@ struct Cli {
     "s3_bucket",
     "cluster_id",
     ])]
+
 struct S3Args {
     #[arg(long, requires = "S3Args")]
     enable_s3: bool,
-    #[arg(long)]
+    #[arg(long, env = "LIBSQL_BOTTOMLESS_DATABASE_ID")]
     cluster_id: Option<String>,
-    #[arg(long)]
+    #[arg(long, env = "LIBSQL_BOTTOMLESS_ENDPOINT")]
     s3_url: Option<String>,
-    #[arg(long)]
+    #[arg(long, env = "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY")]
     s3_access_key: Option<String>,
-    #[arg(long)]
+    #[arg(long, env = "LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID")]
     s3_access_key_id: Option<String>,
-    #[arg(long)]
+    #[arg(long, env = "LIBSQL_BOTTOMLESS_BUCKET")]
     s3_bucket: Option<String>,
-    #[arg(long)]
+    #[arg(long, env = "LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION")]
     s3_region_id: Option<String>,
 }
 
