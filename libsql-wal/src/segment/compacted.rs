@@ -6,6 +6,7 @@ use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
 use crate::io::buf::{IoBufMut, ZeroCopyBuf};
 use crate::io::FileExt;
+use crate::segment::FrameHeader;
 use crate::{LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::{Frame, Result};
@@ -97,5 +98,18 @@ impl<F: FileExt> CompactedSegment<F> {
         let (buf, ret) = self.file.read_exact_at_async(buf, offset as u64).await;
         (buf, ret)
     }
+
+    pub(crate) async fn read_page<B: IoBufMut + Send + 'static>(
+        &self,
+        buf: B,
+        offset: u32,
+    ) -> (B, io::Result<()>) {
+        assert_eq!(buf.bytes_init(), 0);
+        assert_eq!(buf.bytes_total(), LIBSQL_PAGE_SIZE as usize);
+        let offset = size_of::<CompactedSegmentDataHeader>()
+            + size_of::<Frame>() * offset as usize
+            + size_of::<FrameHeader>();
+        let (buf, ret) = self.file.read_exact_at_async(buf, offset as u64).await;
+        (buf, ret)
     }
 }
