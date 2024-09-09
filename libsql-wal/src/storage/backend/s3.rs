@@ -17,7 +17,7 @@ use bytes::{Bytes, BytesMut};
 use http_body::{Frame as HttpFrame, SizeHint};
 use libsql_sys::name::NamespaceName;
 use roaring::RoaringBitmap;
-use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader};
 use tokio_util::sync::ReusableBoxFuture;
 use zerocopy::byteorder::little_endian::{U16 as lu16, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
@@ -135,12 +135,17 @@ impl<IO: Io> S3Backend<IO> {
         folder_key: &FolderKey<'_>,
         segment_key: &SegmentKey,
         file: &impl FileExt,
-    ) -> Result<()> {
+    ) -> Result<CompactedSegmentDataHeader> {
         let reader = self
             .fetch_segment_data_reader(config, folder_key, segment_key)
             .await?;
+        let mut reader = tokio::io::BufReader::with_capacity(8196, reader);
+        while reader.fill_buf().await?.len() < size_of::<CompactedSegmentDataHeader>() {}
+        let header = CompactedSegmentDataHeader::read_from_prefix(reader.buffer()).unwrap();
+
         copy_to_file(reader, file).await?;
-        Ok(())
+
+        Ok(header)
     }
 
     async fn s3_get(&self, config: &S3Config, key: String) -> Result<ByteStream> {
@@ -487,14 +492,15 @@ where
         namespace: &NamespaceName,
         key: &SegmentKey,
         file: &impl FileExt,
-    ) -> Result<()> {
+    ) -> Result<CompactedSegmentDataHeader> {
         let folder_key = FolderKey {
             cluster_id: &config.cluster_id,
             namespace: &namespace,
         };
-        self.fetch_segment_data_inner(config, &folder_key, key, file)
+        let header = self
+            .fetch_segment_data_inner(config, &folder_key, key, file)
             .await?;
-        Ok(())
+        Ok(header)
     }
 
     async fn fetch_segment_data(

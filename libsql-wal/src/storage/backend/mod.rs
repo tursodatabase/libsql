@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use super::{RestoreOptions, Result, SegmentKey};
 use crate::io::file::FileExt;
+use crate::segment::compacted::CompactedSegmentDataHeader;
 use libsql_sys::name::NamespaceName;
 
 // pub mod fs;
@@ -63,7 +64,7 @@ pub trait Backend: Send + Sync + 'static {
         namespace: &NamespaceName,
         key: &SegmentKey,
         file: &impl FileExt,
-    ) -> Result<()>;
+    ) -> Result<CompactedSegmentDataHeader>;
 
     // this method taking self: Arc<Self> is an infortunate consequence of rust type system making
     // impl FileExt variant with all the arguments, with no escape hatch...
@@ -176,7 +177,7 @@ impl<T: Backend> Backend for Arc<T> {
         namespace: &NamespaceName,
         key: &SegmentKey,
         file: &impl FileExt,
-    ) -> Result<()> {
+    ) -> Result<CompactedSegmentDataHeader> {
         self.as_ref()
             .fetch_segment_data_to_file(config, namespace, key, file)
             .await

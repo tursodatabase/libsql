@@ -116,6 +116,7 @@ mod test {
 
     use crate::io::file::FileExt;
     use crate::io::StdIO;
+    use crate::segment::compacted::CompactedSegmentDataHeader;
     use crate::storage::{RestoreOptions, SegmentKey};
     // use crate::registry::WalRegistry;
     // use crate::segment::compacted::CompactedSegmentDataHeader;
@@ -497,7 +498,7 @@ mod test {
                 _namespace: &NamespaceName,
                 _key: &SegmentKey,
                 _file: &impl FileExt,
-            ) -> Result<()> {
+            ) -> Result<CompactedSegmentDataHeader> {
                 todo!()
             }
 
