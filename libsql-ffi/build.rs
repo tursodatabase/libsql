@@ -349,8 +349,8 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
     cmake_opts.push("-DCMAKE_POSITION_INDEPENDENT_CODE=ON");
 
     if target.contains("musl") {
-        cmake_opts.push("-DCMAKE_C_FLAGS=\"-U_FORTIFY_SOURCE\"");
-        cmake_opts.push("-DCMAKE_CXX_FLAGS=\"-U_FORTIFY_SOURCE\"");
+        cmake_opts.push("-DCMAKE_C_FLAGS=\"-U_FORTIFY_SOURCE\" -D_FILE_OFFSET_BITS=32");
+        cmake_opts.push("-DCMAKE_CXX_FLAGS=\"-U_FORTIFY_SOURCE\" -D_FILE_OFFSET_BITS=32");
     }
 
     let mut cmake = Command::new("cmake");
