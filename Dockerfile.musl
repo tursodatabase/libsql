@@ -1,0 +1,17 @@
+# A dockerfile that can be used to build musl targets
+# currently this is setup to run the most basic libsql example
+# to force the linker to resolve. This was able to reproduce the
+# fcntl64 issues + other issues that require custom flags for musl.
+
+FROM messense/rust-musl-cross:x86_64-musl
+RUN rustup target add x86_64-unknown-linux-musl
+
+COPY . .
+
+RUN rm rust-toolchain.toml
+
+ENV LIBSQL_DEV=1
+
+RUN apt-get install -y cmake
+
+RUN cargo run -p libsql --example example --features encryption
