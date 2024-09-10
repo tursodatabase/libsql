@@ -3096,7 +3096,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-ffi"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bindgen 0.66.1",
  "cc",
