@@ -137,7 +137,7 @@ jobs:
     - name: clean build dir
       run: rm -rf libsql-ffi/bundled/SQLite3MultipleCiphers/build
     - name: embedded replica encryption tests
-      run: cargo test -F test-encryption --package libsql-server --test tests embedded_replica
+      run: cargo xtask test-encryption
   windows:
     runs-on: windows-latest
     name: Windows checks
