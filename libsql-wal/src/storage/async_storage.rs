@@ -7,6 +7,7 @@ use chrono::Utc;
 use libsql_sys::name::NamespaceName;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinSet;
+use tokio_stream::Stream;
 
 use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegment;
@@ -266,6 +267,16 @@ where
             .await?;
         let segment = CompactedSegment::open(file).await?;
         Ok(segment)
+    }
+
+    fn list_segments<'a>(
+        &'a self,
+        namespace: &'a NamespaceName,
+        until: u64,
+        config_override: Option<Self::Config>,
+    ) -> impl Stream<Item = super::Result<super::SegmentInfo>> + 'a {
+        let config = config_override.unwrap_or_else(|| self.backend.default_config());
+        self.backend.list_segments(config, namespace, until)
     }
 }
 

@@ -116,6 +116,7 @@ mod test {
 
     use crate::io::file::FileExt;
     use crate::io::StdIO;
+    use crate::segment::compacted::CompactedSegmentDataHeader;
     use crate::storage::{RestoreOptions, SegmentKey};
     // use crate::registry::WalRegistry;
     // use crate::segment::compacted::CompactedSegmentDataHeader;
@@ -497,7 +498,7 @@ mod test {
                 _namespace: &NamespaceName,
                 _key: &SegmentKey,
                 _file: &impl FileExt,
-            ) -> Result<()> {
+            ) -> Result<CompactedSegmentDataHeader> {
                 todo!()
             }
 
@@ -518,6 +519,16 @@ mod test {
                 _dest_path: &std::path::Path,
             ) -> Result<fst::Map<Arc<[u8]>>> {
                 todo!()
+            }
+
+            fn list_segments<'a>(
+                &'a self,
+                _config: Self::Config,
+                _namespace: &'a NamespaceName,
+                _until: u64,
+            ) -> impl tokio_stream::Stream<Item = Result<crate::storage::SegmentInfo>> + 'a
+            {
+                tokio_stream::iter(std::iter::from_fn(|| todo!()))
             }
         }
 

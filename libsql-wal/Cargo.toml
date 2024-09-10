@@ -44,6 +44,9 @@ tracing-subscriber = { version = "0.3.18", optional = true }
 aws-credential-types = { version = "1.2.0", optional = true }
 dashmap = "6.0.1"
 rand = "0.8.5"
+aws-smithy-types-convert = { version = "0.60.8", features = ["convert-chrono"] }
+petgraph = "0.6.5"
+anyhow = { version = "1.0.86", optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -78,9 +81,15 @@ shell-bin = [
     "dep:inquire",
     "s3",
     "dep:tracing-subscriber",
+    "dep:anyhow",
 ]
 
 [[bin]]
 name = "shell"
 path = "src/bins/shell/main.rs"
+required-features = ["shell-bin"]  
+
+[[bin]]
+name = "compactor"
+path = "src/bins/compactor/main.rs"
 required-features = ["shell-bin"]  

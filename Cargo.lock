@@ -679,6 +679,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f280f434214856abace637b1f944d50ccca216814813acd195cdd7f206ce17f"
 dependencies = [
  "aws-smithy-types",
+ "chrono",
  "time",
 ]
 
@@ -3310,6 +3311,7 @@ dependencies = [
 name = "libsql-wal"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "arc-swap",
  "async-lock 3.4.0",
  "async-stream",
@@ -3317,6 +3319,7 @@ dependencies = [
  "aws-credential-types",
  "aws-sdk-s3",
  "aws-smithy-runtime",
+ "aws-smithy-types-convert",
  "bitflags 2.6.0",
  "bytes",
  "chrono",
@@ -3337,6 +3340,7 @@ dependencies = [
  "nix 0.28.0",
  "once_cell",
  "parking_lot",
+ "petgraph",
  "priority-queue 2.0.3",
  "rand",
  "rand_chacha",

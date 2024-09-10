@@ -7,6 +7,7 @@ use roaring::RoaringBitmap;
 use tokio_stream::Stream;
 use zerocopy::FromZeroes;
 
+use crate::io::buf::ZeroCopyBoxIoBuf;
 use crate::segment::Frame;
 use crate::storage::Storage;
 
@@ -61,8 +62,9 @@ where
                             },
                         };
 
-                        let (frame, ret) = segment.read_frame(Frame::new_box_zeroed(), offset as u32).await;
+                        let (frame, ret) = segment.read_frame(ZeroCopyBoxIoBuf::new_uninit(Frame::new_box_zeroed()), offset as u32).await;
                         ret?;
+                        let frame = frame.into_inner();
                         debug_assert_eq!(frame.header().size_after(), 0, "all frames in a compacted segment should have size_after set to 0");
                         if frame.header().frame_no() >= until {
                             yield frame;
