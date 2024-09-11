@@ -11,9 +11,9 @@ use hyper::client::HttpConnector;
 use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_keys, user_auth_strategies, Auth};
 use tokio::sync::Notify;
 use tokio::time::Duration;
-use tracing_subscriber::{prelude::*, EnvFilter};
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
+use tracing_subscriber::{prelude::*, EnvFilter};
 
 use libsql_server::config::{
     AdminApiConfig, BottomlessConfig, DbConfig, HeartbeatConfig, MetaStoreConfig, RpcClientConfig,
@@ -642,7 +642,10 @@ fn make_meta_store_config(config: &Cli) -> anyhow::Result<MetaStoreConfig> {
     })
 }
 
-async fn build_server(config: &Cli, set_log_level: impl Fn(&str) -> anyhow::Result<()> + Send + 'static) -> anyhow::Result<Server> {
+async fn build_server(
+    config: &Cli,
+    set_log_level: impl Fn(&str) -> anyhow::Result<()> + Send + Sync + 'static,
+) -> anyhow::Result<Server> {
     let db_config = make_db_config(config)?;
     let user_api_config = make_user_api_config(config).await?;
     let admin_api_config = make_admin_api_config(config).await?;
@@ -750,9 +753,10 @@ async fn main() -> Result<()> {
     #[cfg(feature = "debug-tools")]
     enable_libsql_logging();
 
-    let (filter, reload_handle) = tracing_subscriber::reload::Layer::new(tracing_subscriber::EnvFilter::from_default_env());
+    let (filter, reload_handle) =
+        tracing_subscriber::reload::Layer::new(tracing_subscriber::EnvFilter::from_default_env());
     let set_log_level = move |s: &str| -> anyhow::Result<()> {
-        let filter = EnvFilter::from_str(s)?;
+        let filter = EnvFilter::from_str(s.trim())?;
         reload_handle.reload(filter)?;
         Ok(())
     };

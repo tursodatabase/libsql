@@ -7,7 +7,6 @@ use axum::middleware::Next;
 use axum::response::Response;
 use hashbrown::HashMap;
 use parking_lot::Mutex;
-use tracing::{Instrument, Span};
 
 #[derive(Default, Clone, Debug)]
 pub struct Timings {
