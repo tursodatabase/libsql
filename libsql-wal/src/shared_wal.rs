@@ -16,8 +16,8 @@ use crate::io::file::FileExt;
 use crate::io::Io;
 use crate::replication::storage::ReplicateFromStorage;
 use crate::segment::current::CurrentSegment;
-use crate::swap_strategy::SwapStrategy;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
+use crate::segment_swap_strategy::SegmentSwapStrategy;
 use libsql_sys::name::NamespaceName;
 
 #[derive(Default)]
@@ -54,7 +54,7 @@ pub struct SharedWal<IO: Io> {
     pub(crate) shutdown: AtomicBool,
     pub(crate) checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     pub(crate) io: Arc<IO>,
-    pub(crate) swap_strategy: Box<dyn SwapStrategy>,
+    pub(crate) swap_strategy: Box<dyn SegmentSwapStrategy>,
 }
 
 impl<IO: Io> SharedWal<IO> {

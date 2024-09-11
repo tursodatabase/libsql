@@ -1,4 +1,4 @@
-use super::SwapStrategy;
+use super::SegmentSwapStrategy;
 
 /// A swap strategy that swaps if the count of frames in the wal exceed some threshold
 pub struct FrameCountSwapStrategy {
@@ -11,7 +11,7 @@ impl FrameCountSwapStrategy {
     }
 }
 
-impl SwapStrategy for FrameCountSwapStrategy {
+impl SegmentSwapStrategy for FrameCountSwapStrategy {
     #[inline(always)]
     fn should_swap(&self, frames_in_wal: usize) -> bool {
         frames_in_wal >= self.max_frames_in_wal

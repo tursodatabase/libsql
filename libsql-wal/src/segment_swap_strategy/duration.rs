@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use parking_lot::Mutex;
 
-use super::SwapStrategy;
+use super::SegmentSwapStrategy;
 
 /// A wal swap strategy that swaps the current wal if it's older that some duration
 pub struct DurationSwapStrategy {
@@ -16,7 +16,7 @@ impl DurationSwapStrategy {
     }
 }
 
-impl SwapStrategy for DurationSwapStrategy {
+impl SegmentSwapStrategy for DurationSwapStrategy {
     #[inline(always)]
     fn should_swap(&self, _frames_in_wal: usize) -> bool {
         let last_swapped_at = self.last_swapped_at.lock();
