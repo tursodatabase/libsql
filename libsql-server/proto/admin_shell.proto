@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package admin_shell;
+
+message Query {
+    string query = 1;
+}
+
+message Value {
+    oneof value {
+        Null null = 1;
+        double real = 2;
+        int64 integer = 3;
+        string text = 4;
+        bytes blob = 5;
+    }
+}
+
+message Null {}
+
+message Row {
+    repeated Value values = 1;
+}
+
+message Rows {
+    repeated Row rows = 1;
+}
+
+message Error {
+    string Error = 1;
+}
+
+message Response {
+    oneof resp {
+        Rows rows = 1;
+        Error error = 2;
+    }
+}
+
+service AdminShellService {
+  rpc Shell(stream Query) returns (stream Response) {}
+}

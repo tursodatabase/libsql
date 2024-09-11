@@ -168,7 +168,7 @@ where
         .route("/profile/heap/disable/:id", post(disable_profile_heap))
         .route("/profile/heap/:id", delete(delete_profile_heap))
         .with_state(Arc::new(AppState {
-            namespaces,
+            namespaces: namespaces.clone(),
             connector,
             user_http_server,
             metrics,
@@ -181,7 +181,16 @@ where
                         .level(tracing::Level::DEBUG)
                         .latency_unit(tower_http::LatencyUnit::Micros),
                 ),
-        )
+        );
+
+    let admin_shell = crate::admin_shell::make_svc(namespaces.clone());
+    let grpc_router = tonic::transport::Server::builder()
+        .accept_http1(true)
+        .add_service(tonic_web::enable(admin_shell))
+        .into_router();
+
+    let router = router
+        .merge(grpc_router)
         .layer(axum::middleware::from_fn_with_state(auth, auth_middleware));
 
     hyper::server::Server::builder(acceptor)

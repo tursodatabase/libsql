@@ -301,16 +301,20 @@ struct Cli {
         default_value = "8"
     )]
     sync_conccurency: usize,
+
+    #[clap(subcommand)]
+    subcommand: Option<UtilsSubcommands>,
 }
 
 #[derive(clap::Subcommand, Debug)]
 enum UtilsSubcommands {
-    Dump {
+    AdminShell {
+        #[clap(long, default_value = "http://127.0.0.1:9090")]
+        admin_api_url: String,
         #[clap(long)]
-        /// Path at which to write the dump
-        path: Option<PathBuf>,
+        namespace: Option<String>,
         #[clap(long)]
-        namespace: String,
+        auth: Option<String>,
     },
 }
 
@@ -710,6 +714,28 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = Cli::parse();
+
+    if let Some(ref subcommand) = args.subcommand {
+        match subcommand {
+            UtilsSubcommands::AdminShell {
+                admin_api_url,
+                namespace,
+                auth,
+            } => {
+                let client = libsql_server::admin_shell::AdminShellClient::new(
+                    admin_api_url.clone(),
+                    auth.clone(),
+                );
+                if let Some(ns) = namespace {
+                    client.run_namespace(ns).await?;
+                }
+            }
+        }
+
+        return Ok(());
+    }
+
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
@@ -729,8 +755,6 @@ async fn main() -> Result<()> {
                 .with_filter(tracing_subscriber::EnvFilter::from_default_env()),
         )
         .init();
-
-    let args = Cli::parse();
 
     args.print_welcome_message();
     let server = build_server(&args).await?;
