@@ -10,6 +10,7 @@ pub mod shared_wal;
 pub mod storage;
 pub mod transaction;
 pub mod wal;
+mod swap_strategy;
 
 const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
 const LIBSQL_PAGE_SIZE: u16 = 4096;
