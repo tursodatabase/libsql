@@ -6,11 +6,11 @@ pub mod io;
 pub mod registry;
 pub mod replication;
 pub mod segment;
+mod segment_swap_strategy;
 pub mod shared_wal;
 pub mod storage;
 pub mod transaction;
 pub mod wal;
-mod segment_swap_strategy;
 
 const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
 const LIBSQL_PAGE_SIZE: u16 = 4096;

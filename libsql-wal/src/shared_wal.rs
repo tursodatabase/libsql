@@ -16,8 +16,8 @@ use crate::io::file::FileExt;
 use crate::io::Io;
 use crate::replication::storage::ReplicateFromStorage;
 use crate::segment::current::CurrentSegment;
-use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 use crate::segment_swap_strategy::SegmentSwapStrategy;
+use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 use libsql_sys::name::NamespaceName;
 
 #[derive(Default)]
@@ -274,9 +274,7 @@ impl<IO: Io> SharedWal<IO> {
             self.new_frame_notifier.send_replace(last_committed);
         }
 
-        if tx.is_commited()
-            && self.swap_strategy.should_swap(current.count_committed())
-        {
+        if tx.is_commited() && self.swap_strategy.should_swap(current.count_committed()) {
             self.swap_current(&tx)?;
             self.swap_strategy.swapped();
         }

@@ -18,5 +18,5 @@ impl SegmentSwapStrategy for FrameCountSwapStrategy {
     }
 
     #[inline(always)]
-    fn swapped(&self) { }
+    fn swapped(&self) {}
 }

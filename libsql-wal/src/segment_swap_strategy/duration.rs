@@ -12,7 +12,10 @@ pub struct DurationSwapStrategy {
 
 impl DurationSwapStrategy {
     pub fn new(swap_after: Duration) -> Self {
-        Self { swap_after, last_swapped_at: Mutex::new(Instant::now()) }
+        Self {
+            swap_after,
+            last_swapped_at: Mutex::new(Instant::now()),
+        }
     }
 }
 
