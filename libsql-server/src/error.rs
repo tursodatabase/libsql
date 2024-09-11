@@ -124,6 +124,8 @@ pub enum Error {
     AttachInMigration,
     #[error("join failure: {0}")]
     RuntimeTaskJoinError(#[from] tokio::task::JoinError),
+    #[error("wal error: {0}")]
+    LibsqlWal(#[from] libsql_wal::error::Error),
 }
 
 impl AsRef<Self> for Error {
@@ -218,6 +220,7 @@ impl IntoResponse for &Error {
             HasLinkedDbs(_) => self.format_err(StatusCode::BAD_REQUEST),
             AttachInMigration => self.format_err(StatusCode::BAD_REQUEST),
             RuntimeTaskJoinError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            LibsqlWal(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }
