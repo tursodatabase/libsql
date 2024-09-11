@@ -37,6 +37,8 @@ enum Slot<IO: Io> {
     /// entry in the registry map puts a building slot. Other connections will wait for the mutex
     /// to turn to true, after the slot has been updated to contain the wal
     Building(Arc<(Condvar, Mutex<bool>)>, Arc<Notify>),
+    /// The namespace was removed
+    Tombstone,
 }
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
@@ -85,6 +87,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
                 match self.opened.get(namespace).as_deref() {
                     Some(Slot::Wal(wal)) => return Some(wal.clone()),
                     Some(Slot::Building(_, notify)) => notify.clone(),
+                    Some(Slot::Tombstone) => return None,
                     None => return None,
                 }
             };
@@ -178,6 +181,7 @@ where
                         // the slot was updated: try again
                         continue;
                     }
+                    Slot::Tombstone => return Err(crate::error::Error::DeletingWal),
                 }
             }
 
@@ -185,6 +189,7 @@ where
                 dashmap::Entry::Occupied(e) => match e.get() {
                     Slot::Wal(shared) => return Ok(shared.clone()),
                     Slot::Building(wait, _) => Err(wait.clone()),
+                    Slot::Tombstone => return Err(crate::error::Error::DeletingWal),
                 },
                 dashmap::Entry::Vacant(e) => {
                     let notifier = Arc::new((Condvar::new(), Mutex::new(false)));
@@ -370,6 +375,37 @@ where
         }
     }
 
+    pub async fn tombstone(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO>>> {
+        // if a wal is currently being openned, let it
+        {
+            let v = self.opened.get(namespace)?;
+            if let Slot::Building(_, ref notify) = *v {
+                notify.clone().notified().await;
+            }
+        }
+
+        match self.opened.insert(namespace.clone(), Slot::Tombstone) {
+            Some(Slot::Tombstone) => None,
+            Some(Slot::Building(_, _)) => {
+                unreachable!("already waited for ns to open")
+            }
+            Some(Slot::Wal(wal)) => Some(wal),
+            None => None,
+        }
+    }
+
+    pub async fn remove(&self, namespace: &NamespaceName) {
+        // if a wal is currently being openned, let it
+        {
+            let v = self.opened.get(namespace);
+            if let Some(Slot::Building(_, ref notify)) = v.as_deref() {
+                notify.clone().notified().await;
+            }
+        }
+
+        self.opened.remove(namespace);
+    }
+
     /// Attempts to sync all loaded dbs with durable storage
     pub async fn sync_all(&self, conccurency: usize) -> Result<()>
     where
@@ -445,6 +481,7 @@ where
                         // wait for shared to finish building
                         notify.notified().await;
                     }
+                    Slot::Tombstone => continue,
                 }
             }
         }
@@ -506,6 +543,10 @@ where
         tracing::debug!("current segment swapped");
 
         Ok(())
+    }
+
+    pub fn storage(&self) -> &S {
+        &self.storage
     }
 }
 
