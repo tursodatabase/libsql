@@ -181,6 +181,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub should_sync_from_storage: bool,
     pub force_load_wals: bool,
     pub sync_conccurency: usize,
+    pub set_log_level: Option<Box<dyn Fn(&str) -> anyhow::Result<()> + Send +'static>>
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -210,6 +211,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             should_sync_from_storage: false,
             force_load_wals: false,
             sync_conccurency: 8,
+            set_log_level: None,
         }
     }
 }
