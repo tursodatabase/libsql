@@ -7,6 +7,7 @@ use axum::middleware::Next;
 use axum::response::Response;
 use hashbrown::HashMap;
 use parking_lot::Mutex;
+use tracing::{Instrument, Span};
 
 #[derive(Default, Clone, Debug)]
 pub struct Timings {
@@ -40,13 +41,22 @@ macro_rules! record_time {
             let __ret__ = {
                 $($rest)*
             };
-            let _ = $crate::http::user::timing::TIMINGS.try_with(|t| t.record($k, __before__.elapsed()));
+            let __elapsed__ = __before__.elapsed();
+            tracing::debug!(target: "timings", name = $k, elapsed = tracing::field::debug(__elapsed__));
+            let _ = $crate::http::user::timing::TIMINGS.try_with(|t| t.record($k, __elapsed__));
             __ret__
         }
     };
 }
 
+pub fn sample_time(name: &'static str, duration: Duration) {
+    tracing::debug!(target: "timings", name = name, elapsed = tracing::field::debug(duration));
+    let _ = TIMINGS.try_with(|t| t.record(name, duration));
+}
+
+#[tracing::instrument(skip_all, fields(req_id = tracing::field::debug(uuid::Uuid::new_v4())))]
 pub(crate) async fn timings_middleware<B>(request: Request<B>, next: Next<B>) -> Response {
+    // tracing::error!("hello");
     TIMINGS
         .scope(Default::default(), async move {
             let mut response = record_time! {
