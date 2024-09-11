@@ -29,6 +29,7 @@ use crate::namespace::{
 };
 use crate::{SqldStorage, DB_CREATE_TIMEOUT};
 
+use super::helpers::cleanup_libsql;
 use super::{BaseNamespaceConfig, ConfigureNamespace};
 
 pub struct LibsqlReplicaConfigurator {
@@ -251,14 +252,11 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
         _prune_all: bool,
         _bottomless_db_id_init: NamespaceBottomlessDbIdInit,
     ) -> Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>> {
-        Box::pin(async move {
-            let ns_path = self.base.base_path.join("dbs").join(namespace.as_str());
-            if ns_path.try_exists()? {
-                tracing::debug!("removing database directory: {}", ns_path.display());
-                tokio::fs::remove_dir_all(ns_path).await?;
-            }
-            Ok(())
-        })
+        Box::pin(cleanup_libsql(
+            namespace,
+            &self.registry,
+            &self.base.base_path,
+        ))
     }
 
     fn fork<'a>(

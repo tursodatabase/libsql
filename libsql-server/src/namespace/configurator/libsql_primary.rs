@@ -25,6 +25,7 @@ use crate::schema::{has_pending_migration_task, setup_migration_table};
 use crate::stats::Stats;
 use crate::{SqldStorage, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
 
+use super::helpers::cleanup_libsql;
 use super::{BaseNamespaceConfig, ConfigureNamespace, PrimaryConfig};
 
 pub struct LibsqlPrimaryConfigurator {
@@ -248,12 +249,16 @@ impl ConfigureNamespace for LibsqlPrimaryConfigurator {
 
     fn cleanup<'a>(
         &'a self,
-        _namespace: &'a NamespaceName,
+        namespace: &'a NamespaceName,
         _db_config: &'a DatabaseConfig,
         _prune_all: bool,
         _bottomless_db_id_init: NamespaceBottomlessDbIdInit,
     ) -> Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>> {
-        unimplemented!()
+        Box::pin(cleanup_libsql(
+            namespace,
+            &self.registry,
+            &self.base.base_path,
+        ))
     }
 
     fn fork<'a>(

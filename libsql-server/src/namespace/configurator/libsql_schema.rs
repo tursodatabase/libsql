@@ -16,7 +16,7 @@ use crate::namespace::{
 use crate::schema::SchedulerHandle;
 use crate::SqldStorage;
 
-use super::helpers::cleanup_primary;
+use super::helpers::cleanup_libsql;
 use super::libsql_primary::{libsql_primary_common, LibsqlPrimaryCommon};
 use super::{BaseNamespaceConfig, ConfigureNamespace, PrimaryConfig};
 
@@ -146,21 +146,15 @@ impl ConfigureNamespace for LibsqlSchemaConfigurator {
     fn cleanup<'a>(
         &'a self,
         namespace: &'a NamespaceName,
-        db_config: &'a DatabaseConfig,
-        prune_all: bool,
-        bottomless_db_id_init: crate::namespace::NamespaceBottomlessDbIdInit,
+        _db_config: &'a DatabaseConfig,
+        _prune_all: bool,
+        _bottomless_db_id_init: crate::namespace::NamespaceBottomlessDbIdInit,
     ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>> {
-        Box::pin(async move {
-            cleanup_primary(
-                &self.base,
-                &self.primary_config,
-                namespace,
-                db_config,
-                prune_all,
-                bottomless_db_id_init,
-            )
-            .await
-        })
+        Box::pin(cleanup_libsql(
+            namespace,
+            &self.registry,
+            &self.base.base_path,
+        ))
     }
 
     fn fork<'a>(
