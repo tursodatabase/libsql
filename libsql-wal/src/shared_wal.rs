@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -16,6 +16,7 @@ use crate::io::file::FileExt;
 use crate::io::Io;
 use crate::replication::storage::ReplicateFromStorage;
 use crate::segment::current::CurrentSegment;
+use crate::swap_strategy::SwapStrategy;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 use libsql_sys::name::NamespaceName;
 
@@ -46,15 +47,14 @@ pub struct SharedWal<IO: Io> {
     pub(crate) registry: Arc<dyn SwapLog<IO>>,
     #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
-    /// max frame_no acknoledged by the durable storage
+    /// max frame_no acknowledged by the durable storage
     pub(crate) durable_frame_no: Arc<Mutex<u64>>,
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
     pub(crate) stored_segments: Box<dyn ReplicateFromStorage>,
     pub(crate) shutdown: AtomicBool,
     pub(crate) checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
-    /// maximum size the segment is allowed to grow
-    pub(crate) max_segment_size: AtomicUsize,
     pub(crate) io: Arc<IO>,
+    pub(crate) swap_strategy: Box<dyn SwapStrategy>,
 }
 
 impl<IO: Io> SharedWal<IO> {
@@ -275,9 +275,10 @@ impl<IO: Io> SharedWal<IO> {
         }
 
         if tx.is_commited()
-            && current.count_committed() > self.max_segment_size.load(Ordering::Relaxed)
+            && self.swap_strategy.should_swap(current.count_committed())
         {
             self.swap_current(&tx)?;
+            self.swap_strategy.swapped();
         }
 
         Ok(())

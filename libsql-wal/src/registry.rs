@@ -3,7 +3,7 @@ use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use dashmap::DashMap;
 use libsql_sys::ffi::Sqlite3DbHeader;
@@ -27,6 +27,9 @@ use crate::segment::Segment;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::{SharedWal, SwapLog};
 use crate::storage::{OnStoreCallback, Storage};
+use crate::swap_strategy::duration::DurationSwapStrategy;
+use crate::swap_strategy::frame_count::FrameCountSwapStrategy;
+use crate::swap_strategy::SwapStrategy;
 use crate::transaction::TxGuard;
 use crate::{LibsqlFooter, LIBSQL_PAGE_SIZE};
 use libsql_sys::name::NamespaceName;
@@ -332,6 +335,17 @@ where
 
         let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
 
+        // FIXME: make swap strategy configurable
+        // This strategy will perform a swap if either the wal is bigger than 20k frames, or older
+        // than 10 minutes, or if the frame count is greater than a 1000 and the wal was last
+        // swapped more than 30 secs ago
+        let swap_strategy = Box::new(
+            DurationSwapStrategy::new(Duration::from_secs(5 * 60))
+                .or(FrameCountSwapStrategy::new(20_000))
+                .or(FrameCountSwapStrategy::new(1000)
+                    .and(DurationSwapStrategy::new(Duration::from_secs(30)))),
+        );
+
         let shared = Arc::new(SharedWal {
             current,
             wal_lock: Default::default(),
@@ -347,8 +361,8 @@ where
             )),
             shutdown: false.into(),
             checkpoint_notifier: self.checkpoint_notifier.clone(),
-            max_segment_size: 1000.into(),
             io: self.io.clone(),
+            swap_strategy,
         });
 
         self.opened
