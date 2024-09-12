@@ -10,6 +10,7 @@ use std::task::Poll;
 
 use aws_config::SdkConfig;
 use aws_sdk_s3::operation::create_bucket::CreateBucketError;
+use aws_sdk_s3::operation::get_object::GetObjectOutput;
 use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::Client;
@@ -128,7 +129,7 @@ impl<IO: Io> S3Backend<IO> {
     ) -> Result<impl AsyncRead> {
         let key = s3_segment_data_key(folder_key, segment_key);
         let stream = self.s3_get(config, key).await?;
-        Ok(stream.into_async_read())
+        Ok(stream.body.into_async_read())
     }
 
     async fn fetch_segment_data_inner(
@@ -158,8 +159,7 @@ impl<IO: Io> S3Backend<IO> {
             .key(key.to_string())
             .send()
             .await
-            .map_err(|e| Error::unhandled(e, "error sending s3 GET request"))?
-            .body)
+            .map_err(|e| Error::unhandled(e, "error sending s3 GET request"))?)
     }
 
     async fn s3_put(&self, config: &S3Config, key: impl ToString, body: ByteStream) -> Result<()> {
@@ -181,7 +181,7 @@ impl<IO: Io> S3Backend<IO> {
         segment_key: &SegmentKey,
     ) -> Result<fst::Map<Arc<[u8]>>> {
         let s3_index_key = s3_segment_index_key(folder_key, segment_key);
-        let mut stream = self.s3_get(config, s3_index_key).await?.into_async_read();
+        let mut stream = self.s3_get(config, s3_index_key).await?.body.into_async_read();
         let mut header: SegmentIndexHeader = SegmentIndexHeader::new_zeroed();
         stream.read_exact(header.as_bytes_mut()).await?;
         if header.magic.get() != LIBSQL_MAGIC && header.version.get() != 1 {
