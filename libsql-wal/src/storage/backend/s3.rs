@@ -24,7 +24,7 @@ use tokio_util::sync::ReusableBoxFuture;
 use zerocopy::byteorder::little_endian::{U16 as lu16, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
-use super::{Backend, SegmentMeta};
+use super::{Backend, FindSegmentReq, SegmentMeta};
 use crate::io::buf::ZeroCopyBuf;
 use crate::io::compat::copy_to_file;
 use crate::io::{FileExt, Io, StdIO};
@@ -199,7 +199,7 @@ impl<IO: Io> S3Backend<IO> {
     }
 
     /// Find the most recent, and biggest segment that may contain `frame_no`
-    async fn find_segment_inner(
+    async fn find_segment_by_frame_no(
         &self,
         config: &S3Config,
         folder_key: &FolderKey<'_>,
@@ -242,7 +242,7 @@ impl<IO: Io> S3Backend<IO> {
             namespace,
         };
         let Some(latest_key) = self
-            .find_segment_inner(config, &folder_key, u64::MAX)
+            .find_segment_by_frame_no(config, &folder_key, u64::MAX)
             .await?
         else {
             tracing::info!("nothing to restore for {namespace}");
@@ -279,7 +279,7 @@ impl<IO: Io> S3Backend<IO> {
 
             let next_frame_no = header.start_frame_no.get() - 1;
             let Some(key) = self
-                .find_segment_inner(config, &folder_key, next_frame_no)
+                .find_segment_by_frame_no(config, &folder_key, next_frame_no)
                 .await?
             else {
                 todo!("there should be a segment!");
@@ -452,7 +452,7 @@ where
         };
 
         let Some(segment_key) = self
-            .find_segment_inner(config, &folder_key, frame_no)
+            .find_segment_by_frame_no(config, &folder_key, frame_no)
             .await?
         else {
             return Err(Error::FrameNotFound(frame_no));
@@ -480,7 +480,7 @@ where
 
         // request a key bigger than any other to get the last segment
         let max_segment_key = self
-            .find_segment_inner(config, &folder_key, u64::MAX)
+            .find_segment_by_frame_no(config, &folder_key, u64::MAX)
             .await?;
 
         Ok(super::DbMeta {
@@ -509,15 +509,21 @@ where
         &self,
         config: &Self::Config,
         namespace: &NamespaceName,
-        frame_no: u64,
+        req: FindSegmentReq,
     ) -> Result<SegmentKey> {
         let folder_key = FolderKey {
             cluster_id: &config.cluster_id,
             namespace: &namespace,
         };
-        self.find_segment_inner(config, &folder_key, frame_no)
-            .await?
-            .ok_or_else(|| Error::FrameNotFound(frame_no))
+
+        match req {
+            FindSegmentReq::Frame(frame_no) => {
+                self.find_segment_by_frame_no(config, &folder_key, frame_no)
+                    .await?
+                    .ok_or_else(|| Error::FrameNotFound(frame_no))
+            },
+            FindSegmentReq::Timestamp(_) => todo!(),
+        }
     }
 
     async fn fetch_segment_index(

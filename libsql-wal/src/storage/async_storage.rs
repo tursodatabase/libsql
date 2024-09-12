@@ -234,7 +234,7 @@ where
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
         let key = self
             .backend
-            .find_segment(&config, namespace, frame_no)
+            .find_segment(&config, namespace, super::backend::FindSegmentReq::Frame(frame_no))
             .await?;
         Ok(key)
     }
