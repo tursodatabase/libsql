@@ -22,7 +22,7 @@ pub struct SegmentMeta {
     pub segment_id: Uuid,
     pub start_frame_no: u64,
     pub end_frame_no: u64,
-    pub created_at: DateTime<Utc>,
+    pub segment_timestamp: DateTime<Utc>,
 }
 
 pub struct RestoreRequest {}

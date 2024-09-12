@@ -69,7 +69,7 @@ where
             namespace: self.request.namespace.clone(),
             start_frame_no: segment.start_frame_no(),
             end_frame_no: segment.last_committed(),
-            created_at: io.now(),
+            segment_timestamp: segment.timestamp(),
         };
         let config = self
             .request
@@ -108,6 +108,7 @@ mod test {
     // use std::sync::atomic::AtomicBool;
     use std::sync::Arc;
 
+    use chrono::prelude::DateTime;
     use chrono::Utc;
     // use fst::{Map, Streamer};
     // use libsql_sys::rusqlite::OpenFlags;
@@ -427,6 +428,10 @@ mod test {
 
             fn is_storable(&self) -> bool {
                 true
+            }
+
+            fn timestamp(&self) -> DateTime<Utc> {
+                Utc::now()
             }
         }
 

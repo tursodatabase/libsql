@@ -15,6 +15,8 @@ use std::mem::size_of;
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
+use chrono::DateTime;
+use chrono::Utc;
 use zerocopy::byteorder::little_endian::{U128, U16, U32, U64};
 use zerocopy::AsBytes;
 
@@ -171,6 +173,7 @@ pub trait Segment: Send + Sync + 'static {
     async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
     where
         B: IoBufMut + Send + 'static;
+    fn timestamp(&self) -> DateTime<Utc>;
 
     fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()>;
 }
@@ -196,15 +199,12 @@ impl<T: Segment> Segment for Arc<T> {
         self.as_ref().index()
     }
 
-    fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> io::Result<bool> {
-        self.as_ref().read_page(page_no, max_frame_no, buf)
+    fn is_storable(&self) -> bool {
+        self.as_ref().is_storable()
     }
 
-    async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
-    where
-        B: IoBufMut + Send + 'static,
-    {
-        self.as_ref().read_frame_offset_async(offset, buf).await
+    fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> io::Result<bool> {
+        self.as_ref().read_page(page_no, max_frame_no, buf)
     }
 
     fn is_checkpointable(&self) -> bool {
@@ -215,12 +215,19 @@ impl<T: Segment> Segment for Arc<T> {
         self.as_ref().size_after()
     }
 
+    async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
+    where
+        B: IoBufMut + Send + 'static,
+    {
+        self.as_ref().read_frame_offset_async(offset, buf).await
+    }
+
     fn destroy<IO: Io>(&self, io: &IO) -> impl Future<Output = ()> {
         self.as_ref().destroy(io)
     }
 
-    fn is_storable(&self) -> bool {
-        self.as_ref().is_storable()
+    fn timestamp(&self) -> DateTime<Utc> {
+        self.as_ref().timestamp()
     }
 }
 

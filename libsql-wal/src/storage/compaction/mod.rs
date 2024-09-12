@@ -304,7 +304,7 @@ impl<B> Compactor<B> {
                     segment_id: Uuid::new_v4(),
                     start_frame_no: start,
                     end_frame_no: end,
-                    created_at: Utc::now(),
+                    segment_timestamp: Utc::now(),
                 },
                 out_file,
                 out_index.into_inner().unwrap(),
