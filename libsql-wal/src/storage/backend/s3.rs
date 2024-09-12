@@ -1,6 +1,6 @@
 //! S3 implementation of storage backend
 
-use std::fmt;
+use std::fmt::{self, Formatter};
 use std::mem::size_of;
 use std::path::Path;
 use std::pin::Pin;
@@ -150,24 +150,24 @@ impl<IO: Io> S3Backend<IO> {
         Ok(header)
     }
 
-    async fn s3_get(&self, config: &S3Config, key: String) -> Result<ByteStream> {
+    async fn s3_get(&self, config: &S3Config, key: impl ToString) -> Result<GetObjectOutput> {
         Ok(self
             .client
             .get_object()
             .bucket(&config.bucket)
-            .key(key)
+            .key(key.to_string())
             .send()
             .await
             .map_err(|e| Error::unhandled(e, "error sending s3 GET request"))?
             .body)
     }
 
-    async fn s3_put(&self, config: &S3Config, key: String, body: ByteStream) -> Result<()> {
+    async fn s3_put(&self, config: &S3Config, key: impl ToString, body: ByteStream) -> Result<()> {
         self.client
             .put_object()
             .bucket(&config.bucket)
             .body(body)
-            .key(key)
+            .key(key.to_string())
             .send()
             .await
             .map_err(|e| Error::unhandled(e, "error sending s3 PUT request"))?;
@@ -212,8 +212,8 @@ impl<IO: Io> S3Backend<IO> {
             .client
             .list_objects_v2()
             .bucket(&config.bucket)
-            .prefix(lookup_key_prefix)
-            .start_after(lookup_key)
+            .prefix(lookup_key_prefix.to_string())
+            .start_after(lookup_key.to_string())
             .send()
             .await
             .map_err(|e| Error::unhandled(e, "failed to list bucket"))?;
@@ -325,7 +325,7 @@ impl<IO: Io> S3Backend<IO> {
                     .client
                     .list_objects_v2()
                     .bucket(&config.bucket)
-                    .prefix(lookup_key_prefix.clone())
+                    .prefix(lookup_key_prefix.to_string())
                     .set_continuation_token(continuation_token.take())
                     .send()
                     .await
@@ -377,20 +377,52 @@ impl fmt::Display for FolderKey<'_> {
     }
 }
 
-fn s3_segment_data_key(folder_key: &FolderKey, segment_key: &SegmentKey) -> String {
-    format!("{folder_key}/segments/{segment_key}")
+pub struct SegmentDataKey<'a>(&'a FolderKey<'a>, &'a SegmentKey);
+
+impl fmt::Display for SegmentDataKey<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/segments/{}", self.0, self.1)
+    }
 }
 
-fn s3_segment_index_key(folder_key: &FolderKey, segment_key: &SegmentKey) -> String {
-    format!("{folder_key}/indexes/{segment_key}")
+fn s3_segment_data_key<'a>(folder_key: &'a FolderKey, segment_key: &'a SegmentKey) -> SegmentDataKey<'a> {
+    SegmentDataKey(folder_key, segment_key)
 }
 
-fn s3_segment_index_lookup_key_prefix(folder_key: &FolderKey) -> String {
-    format!("{folder_key}/indexes/")
+pub struct SegmentIndexKey<'a>(&'a FolderKey<'a>, &'a SegmentKey);
+
+impl fmt::Display for SegmentIndexKey<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/indexes/{}", self.0, self.1)
+    }
 }
 
-fn s3_segment_index_lookup_key(folder_key: &FolderKey, frame_no: u64) -> String {
-    format!("{folder_key}/indexes/{:020}", u64::MAX - frame_no)
+fn s3_segment_index_key<'a>(folder_key: &'a FolderKey, segment_key: &'a SegmentKey) -> SegmentIndexKey<'a> {
+    SegmentIndexKey(folder_key, segment_key)
+}
+
+pub struct SegmentIndexLookupKeyPrefix<'a>(&'a FolderKey<'a>);
+
+impl fmt::Display for SegmentIndexLookupKeyPrefix<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/indexes/", self.0)
+    }
+}
+
+fn s3_segment_index_lookup_key_prefix<'a>(folder_key: &'a FolderKey) ->  SegmentIndexLookupKeyPrefix<'a> {
+    SegmentIndexLookupKeyPrefix(folder_key)
+}
+
+pub struct SegmentIndexLookupKey<'a>(&'a FolderKey<'a>, u64);
+
+impl fmt::Display for SegmentIndexLookupKey<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/indexes/{:020}", self.0, u64::MAX - self.1)
+    }
+}
+
+fn s3_segment_index_lookup_key<'a>(folder_key: &'a FolderKey, frame_no: u64) -> SegmentIndexLookupKey<'a> {
+    SegmentIndexLookupKey(folder_key, frame_no)
 }
 
 impl<IO> Backend for S3Backend<IO>
