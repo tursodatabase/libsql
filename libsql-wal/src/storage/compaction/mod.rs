@@ -246,6 +246,9 @@ impl<B> Compactor<B> {
             version: LIBSQL_WAL_VERSION.into(),
             magic: LIBSQL_MAGIC.into(),
             page_size: last_header.page_size,
+            // the new compacted segment inherit the last segment timestamp: it contains the same
+            // logical data.
+            timestamp: last_header.timestamp,
         };
 
         hasher.update(header.as_bytes());

@@ -94,6 +94,7 @@ where
             version: LIBSQL_WAL_VERSION.into(),
             magic: LIBSQL_MAGIC.into(),
             page_size: self.header().page_size,
+            timestamp: self.header.sealed_at_timestamp,
         };
 
         hasher.update(header.as_bytes());
