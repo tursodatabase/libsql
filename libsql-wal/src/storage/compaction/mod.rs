@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use chrono::DateTime;
-use chrono::Utc;
 use fst::map::OpBuilder;
 use fst::Streamer;
 use libsql_sys::name::NamespaceName;
@@ -58,7 +57,7 @@ impl<B> Compactor<B> {
             "CREATE TABLE IF NOT EXISTS segments (
                         start_frame_no INTEGER,
                         end_frame_no INTEGER,
-                        created_at DATE,
+                        timestamp DATE,
                         size INTEGER,
                         namespace_id INTEGER,
                         PRIMARY KEY (start_frame_no, end_frame_no),
@@ -93,7 +92,7 @@ impl<B> Compactor<B> {
     pub fn analyze(&self, namespace: &NamespaceName) -> Result<AnalyzedSegments> {
         let mut stmt = self.meta.prepare_cached(
             r#"
-        SELECT start_frame_no, end_frame_no
+        SELECT start_frame_no, end_frame_no, timestamp
         FROM segments as s
         JOIN monitored_namespaces as m
         ON m.id = s.namespace_id
@@ -105,11 +104,12 @@ impl<B> Compactor<B> {
         while let Some(row) = rows.next()? {
             let start_frame_no: u64 = row.get(0)?;
             let end_frame_no: u64 = row.get(1)?;
+            let timestamp: u64 = row.get(2)?;
             // it's free to go from one end of a segment to the next
             graph.add_edge(start_frame_no, end_frame_no, 0);
             if start_frame_no != 1 {
                 // going from a segment to the next costs us
-                graph.add_edge(start_frame_no - 1, start_frame_no, 1);
+                graph.add_edge(start_frame_no - 1, start_frame_no, timestamp);
             }
             last_frame_no = last_frame_no.max(end_frame_no);
         }
@@ -304,7 +304,7 @@ impl<B> Compactor<B> {
                     segment_id: Uuid::new_v4(),
                     start_frame_no: start,
                     end_frame_no: end,
-                    segment_timestamp: Utc::now(),
+                    segment_timestamp: DateTime::from_timestamp_millis(set.last().unwrap().timestamp as _).unwrap().to_utc(),
                 },
                 out_file,
                 out_index.into_inner().unwrap(),
@@ -375,9 +375,13 @@ impl AnalyzedSegments {
         match path {
             Some((_len, nodes)) => {
                 for chunk in nodes.chunks(2) {
+                    let start_frame_no = chunk[0];
+                    let end_frame_no = chunk[1];
+                    let timestamp = *self.graph.edges(start_frame_no).find_map(|(_, to, ts)| (to == end_frame_no).then_some(ts)).unwrap();
                     let key = SegmentKey {
-                        start_frame_no: chunk[0],
-                        end_frame_no: chunk[1],
+                        start_frame_no,
+                        end_frame_no,
+                        timestamp,
                     };
                     segments.push(key);
                 }
@@ -448,7 +452,7 @@ fn list_segments<'a>(
 ) -> Result<()> {
     let mut stmt = conn.prepare_cached(
         r#"
-    SELECT created_at, size, start_frame_no, end_frame_no
+    SELECT timestamp, size, start_frame_no, end_frame_no
     FROM segments as s
     JOIN monitored_namespaces as m
     ON m.id == s.namespace_id
@@ -462,9 +466,9 @@ fn list_segments<'a>(
             key: SegmentKey {
                 start_frame_no: r.get(2)?,
                 end_frame_no: r.get(3)?,
+                timestamp: r.get(0)?,
             },
             size: r.get(1)?,
-            created_at: DateTime::from_timestamp(r.get(0)?, 0).unwrap(),
         })
     })?;
 
@@ -486,7 +490,7 @@ fn register_segment_info(
     INSERT OR IGNORE INTO segments (
         start_frame_no,
         end_frame_no,
-        created_at,
+        timestamp,
         size,
         namespace_id
     ) 
@@ -495,7 +499,7 @@ fn register_segment_info(
     stmt.execute((
         info.key.start_frame_no,
         info.key.end_frame_no,
-        info.created_at.timestamp(),
+        info.key.timestamp,
         info.size,
         namespace_id,
     ))?;
@@ -508,7 +512,7 @@ fn segments_range(
 ) -> Result<Option<(SegmentInfo, SegmentInfo)>> {
     let mut stmt = conn.prepare_cached(
         r#"
-    SELECT min(created_at), size, start_frame_no, end_frame_no
+    SELECT min(timestamp), size, start_frame_no, end_frame_no
     FROM segments as s
     JOIN monitored_namespaces as m
     ON m.id == s.namespace_id
@@ -522,16 +526,16 @@ fn segments_range(
                 key: SegmentKey {
                     start_frame_no: r.get(2)?,
                     end_frame_no: r.get(3)?,
+                    timestamp: r.get(0)?,
                 },
                 size: r.get(1)?,
-                created_at: DateTime::from_timestamp(r.get(0)?, 0).unwrap(),
             })
         })
         .optional()?;
 
     let mut stmt = conn.prepare_cached(
         r#"
-    SELECT max(created_at), size, start_frame_no, end_frame_no
+    SELECT max(timestamp), size, start_frame_no, end_frame_no
     FROM segments as s
     JOIN monitored_namespaces as m
     ON m.id == s.namespace_id
@@ -545,9 +549,9 @@ fn segments_range(
                 key: SegmentKey {
                     start_frame_no: r.get(2)?,
                     end_frame_no: r.get(3)?,
+                    timestamp: r.get(0)?,
                 },
                 size: r.get(1)?,
-                created_at: DateTime::from_timestamp(r.get(0)?, 0).unwrap(),
             })
         })
         .optional()?;

@@ -64,6 +64,7 @@ pub enum RestoreOptions {
 pub struct SegmentKey {
     pub start_frame_no: u64,
     pub end_frame_no: u64,
+    pub timestamp: u64,
 }
 
 impl PartialOrd for SegmentKey {
@@ -115,6 +116,7 @@ impl From<&SegmentMeta> for SegmentKey {
         Self {
             start_frame_no: value.start_frame_no,
             end_frame_no: value.end_frame_no,
+            timestamp: value.segment_timestamp.timestamp_millis() as _,
         }
     }
 }
@@ -125,11 +127,13 @@ impl FromStr for SegmentKey {
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let (rev_start_fno, s) = s.split_at(20);
         let start_frame_no = u64::MAX - rev_start_fno.parse::<u64>().map_err(|_| ())?;
-        let (_, rev_end_fno) = s.split_at(1);
+        let (rev_end_fno, timestamp) = s[1..].split_at(20);
         let end_frame_no = u64::MAX - rev_end_fno.parse::<u64>().map_err(|_| ())?;
+        let timestamp = timestamp[1..].parse().map_err(|_| ())?;
         Ok(Self {
             start_frame_no,
             end_frame_no,
+            timestamp,
         })
     }
 }
@@ -138,9 +142,10 @@ impl fmt::Display for SegmentKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{:020}-{:020}",
+            "{:020}-{:020}-{:020}",
             u64::MAX - self.start_frame_no,
             u64::MAX - self.end_frame_no,
+            self.timestamp,
         )
     }
 }
@@ -219,9 +224,6 @@ pub trait Storage: Send + Sync + 'static {
 pub struct SegmentInfo {
     pub key: SegmentKey,
     pub size: usize,
-    /// when that segment was created. This is different from the segment timestamp, corresponding
-    /// to the last commit date in this segment
-    pub created_at: DateTime<Utc>,
 }
 
 /// special zip function for Either storage implementation
@@ -506,6 +508,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
             let key = SegmentKey {
                 start_frame_no: seg.header().start_frame_no.get(),
                 end_frame_no,
+                timestamp: seg.header().sealed_at_timestamp.get(),
             };
             let index = Map::new(index.into()).unwrap();
             inner
