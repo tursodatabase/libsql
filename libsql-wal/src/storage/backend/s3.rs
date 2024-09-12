@@ -229,6 +229,74 @@ impl<IO: Io> S3Backend<IO> {
         Ok(key)
     }
 
+    /// finding a segment by timestamp should not be a common operation, and it's costly. We will
+    /// perform a binary search until we find a satisfying segment. This forces us to iteratively:
+    /// - find a segment for some frame_no
+    /// - fetch that segment index to retrieve the metata (we don't need to download the data, just
+    /// the metata is of use to us)
+    /// - check the timestamp, rince and repeat
+    ///
+    /// unfortunately, s3 doesn't have a way to list object with their metadata...
+    #[tracing::instrument(skip(self, config, folder_key))]
+    async fn find_segment_by_timestamp(&self, config: &S3Config, folder_key: &FolderKey<'_>, timestamp: DateTime<Utc>) -> Result<Option<SegmentKey>> {
+        let mut attempted_frame_no = u64::MAX;
+        let mut max_seen = 0;
+        let mut best_so_far = None;
+        loop {
+            let Some(seg_key) = self.find_segment_by_frame_no(config, folder_key, attempted_frame_no).await? else { return Ok(None) };
+            max_seen = max_seen.max(seg_key.end_frame_no);
+            let key = s3_segment_index_key(folder_key, &seg_key);
+            let object = self.s3_get(config, &key).await?;
+            let Some(segment_timestamp_rfc3339) = object.metadata().and_then(|m| m.get(SEGMENT_TIMESTAMP_META_KEY)) else { 
+                tracing::warn!("{key} is missing metadata. Cannot be used as a restore point!");
+                todo!("update next attempt frame_no");
+                // continue
+            };
+
+            let segment_timestamp = match DateTime::parse_from_rfc3339(segment_timestamp_rfc3339) {
+                Ok(s) => s.to_utc(),
+                Err(e) => {
+                    tracing::warn!("timestamp for `{key}` is invalid, skipping restore point: {e}");
+                    todo!("update next attempt frame_no");
+                    // continue
+                }
+            };
+
+            if segment_timestamp >= timestamp {
+                if segment_timestamp == timestamp {
+                    // look no further!
+                    tracing::debug!("found exact match for timestamp: {seg_key}");
+                    return Ok(Some(seg_key))
+                }
+                best_so_far = match best_so_far {
+                    Some((best, key)) => {
+                        assert!(best >= timestamp);
+                        if best - timestamp <= segment_timestamp - timestamp {
+                            Some((best, key))
+                        } else {
+                            Some((segment_timestamp, seg_key))
+                        }
+                    }
+                    None => Some((segment_timestamp, seg_key)),
+                };
+
+                let next_attempt = attempted_frame_no + ((max_seen - attempted_frame_no) / 2);
+                if next_attempt == attempted_frame_no {
+                    let (ts, key) = best_so_far.unwrap();
+                    tracing::debug!("found best match for {timestamp}: {key}@{ts}");
+                    return Ok(Some(key))
+                }
+
+                attempted_frame_no = next_attempt;
+            } else {
+                let next_attempt = attempted_frame_no - (attempted_frame_no / 2);
+                if next_attempt <= 1 {
+                    return Ok(best_so_far.map(|x| x.1))
+                }
+            }
+        }
+    }
+
     // This method could probably be optimized a lot by using indexes and only downloading useful
     // segments
     async fn restore_latest(
