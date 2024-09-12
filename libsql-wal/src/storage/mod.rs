@@ -219,6 +219,8 @@ pub trait Storage: Send + Sync + 'static {
 pub struct SegmentInfo {
     pub key: SegmentKey,
     pub size: usize,
+    /// when that segment was created. This is different from the segment timestamp, corresponding
+    /// to the last commit date in this segment
     pub created_at: DateTime<Utc>,
 }
 
