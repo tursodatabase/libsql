@@ -542,7 +542,7 @@ where
         )?;
         // sealing must the last fallible operation, because we don't want to end up in a situation
         // where the current log is sealed and it wasn't swapped.
-        if let Some(sealed) = current.seal()? {
+        if let Some(sealed) = current.seal(self.io.now())? {
             new.tail().push(sealed.clone());
             maybe_store_segment(
                 self.storage.as_ref(),

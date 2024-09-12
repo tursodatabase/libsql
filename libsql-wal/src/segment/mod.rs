@@ -66,6 +66,8 @@ pub struct SegmentHeader {
     /// we could do it without changing the header
     pub page_size: U16,
     pub log_id: U128,
+    /// ms, from unix epoch
+    pub sealed_at_timestamp: U64,
 
     /// checksum of the header fields, excluding the checksum itself. This field must be the last
     pub header_cheksum: U32,
