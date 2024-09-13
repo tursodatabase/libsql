@@ -115,6 +115,7 @@ mod stats;
 #[cfg(test)]
 mod test;
 mod utils;
+pub mod wal_toolkit;
 
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
