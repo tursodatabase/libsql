@@ -6,8 +6,10 @@ use std::sync::Arc;
 use chrono::{DateTime, Utc};
 use futures::prelude::Future;
 use libsql_sys::name::NamespaceResolver;
+use libsql_sys::wal::either::Either;
 use libsql_wal::io::StdIO;
 use libsql_wal::registry::WalRegistry;
+use libsql_wal::storage::backend::Backend;
 use libsql_wal::wal::LibsqlWalManager;
 use tokio::task::JoinSet;
 
@@ -264,13 +266,30 @@ impl ConfigureNamespace for LibsqlPrimaryConfigurator {
 
     fn fork<'a>(
         &'a self,
-        _from_ns: &'a Namespace,
+        from_ns: &'a Namespace,
         _from_config: MetaStoreHandle,
         _to_ns: NamespaceName,
         _to_config: MetaStoreHandle,
         timestamp: Option<DateTime<Utc>>,
         _store: NamespaceStore,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
-        unimplemented!()
+        Box::pin(async move {
+            match self.registry.storage() {
+                Either::A(s) => {
+                    match timestamp {
+                        Some(ts) => {
+                            let ns: libsql_sys::name::NamespaceName = from_ns.name().clone().into();
+                            let _key = s.backend().find_segment(&s.backend().default_config(), &ns, libsql_wal::storage::backend::FindSegmentReq::Timestamp(ts)).await.unwrap();
+                            todo!()
+                        },
+                        // find the most recent frame_no
+                        None => todo!("fork from most recent"),
+                    };
+                },
+                Either::B(_) => {
+                    todo!("cannot fork without storage");
+                },
+            }
+        })
     }
 }
