@@ -59,11 +59,9 @@ where
     ) -> impl Future<Output = crate::error::Result<()>> + Send {
         let namespace = namespace.clone();
         async move {
-            let registry = self
-                .get_async(&namespace)
-                .await
-                .expect("namespace not openned");
-            registry.checkpoint().await?;
+            if let Some(registry) = self.get_async(&namespace).await {
+                registry.checkpoint().await?;
+            }
             Ok(())
         }
     }

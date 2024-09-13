@@ -27,6 +27,8 @@ pub enum Error {
 
     #[error("storage error: {0}")]
     Storage(#[from] Box<crate::storage::Error>),
+    #[error("wal is being deleted")]
+    DeletingWal,
 }
 
 impl Into<libsql_sys::ffi::Error> for Error {

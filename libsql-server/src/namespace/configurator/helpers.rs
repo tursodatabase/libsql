@@ -9,6 +9,8 @@ use bytes::Bytes;
 use enclose::enclose;
 use futures::Stream;
 use libsql_sys::EncryptionConfig;
+use libsql_wal::io::StdIO;
+use libsql_wal::registry::WalRegistry;
 use tokio::io::AsyncBufReadExt as _;
 use tokio::sync::watch;
 use tokio::task::JoinSet;
@@ -29,7 +31,7 @@ use crate::namespace::{
 };
 use crate::replication::{FrameNo, ReplicationLogger};
 use crate::stats::Stats;
-use crate::{StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
+use crate::{SqldStorage, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
 
 use super::{BaseNamespaceConfig, PrimaryConfig};
 
@@ -461,6 +463,56 @@ pub(super) async fn cleanup_primary(
         tracing::debug!("removing database directory: {}", ns_path.display());
         tokio::fs::remove_dir_all(ns_path).await?;
     }
+
+    Ok(())
+}
+
+pub async fn cleanup_libsql(
+    namespace: &NamespaceName,
+    registry: &WalRegistry<StdIO, SqldStorage>,
+    base_path: &Path,
+) -> crate::Result<()> {
+    let namespace = namespace.clone().into();
+    if let Some(shared) = registry.tombstone(&namespace).await {
+        // shutdown the registry, don't seal the current segment so that it's not
+        tokio::task::spawn_blocking({
+            let shared = shared.clone();
+            move || shared.shutdown()
+        })
+        .await
+        .unwrap()?;
+    }
+
+    let ns_db_path = base_path.join("dbs").join(namespace.as_str());
+    if ns_db_path.try_exists()? {
+        tracing::debug!("removing database directory: {}", ns_db_path.display());
+        let _ = tokio::fs::remove_dir_all(ns_db_path).await;
+    }
+
+    let ns_wals_path = base_path.join("wals").join(namespace.as_str());
+    if ns_wals_path.try_exists()? {
+        tracing::debug!("removing database directory: {}", ns_wals_path.display());
+        if let Err(e) = tokio::fs::remove_dir_all(ns_wals_path).await {
+            // what can go wrong?:
+            match e.kind() {
+                // alright, there's nothing to delete anyway
+                std::io::ErrorKind::NotFound => (),
+                _ => {
+                    // something unexpected happened, this namespaces is in a bad state.
+                    // The entry will not be removed from the registry to prevent another
+                    // namespace with the same name to be reuse the same wal files. a
+                    // manual intervention is necessary
+                    // FIXME: on namespace creation, we could ensure that this directory is
+                    // clean.
+                    tracing::error!("error deleting `{namespace}` wal directory, manual intervention may be necessary: {e}");
+                    return Err(e.into());
+                }
+            }
+        }
+    }
+
+    // when all is cleaned, leave place for next one
+    registry.remove(&namespace).await;
 
     Ok(())
 }
