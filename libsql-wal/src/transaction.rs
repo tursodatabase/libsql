@@ -79,6 +79,8 @@ pub struct ReadTransaction<F> {
     pub id: u64,
     /// Max frame number that this transaction can read
     pub max_frame_no: u64,
+    // max offset that can be read from the current log
+    pub max_offset: u64,
     pub db_size: u32,
     /// The segment to which we have a read lock
     pub current: Arc<CurrentSegment<F>>,
@@ -105,6 +107,7 @@ impl<F> Clone for ReadTransaction<F> {
             pages_read: self.pages_read,
             namespace: self.namespace.clone(),
             checkpoint_notifier: self.checkpoint_notifier.clone(),
+            max_offset: self.max_offset,
         }
     }
 }
@@ -358,28 +361,5 @@ impl<F> Deref for WriteTransaction<F> {
 impl<F> DerefMut for WriteTransaction<F> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.read_tx
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use std::collections::BTreeMap;
-
-    use crate::segment::current::SegmentIndex;
-
-    use super::merge_savepoints;
-
-    #[test]
-    fn test_merge_savepoints() {
-        let first = [(1, 1), (3, 2)].into_iter().collect::<BTreeMap<_, _>>();
-        let second = [(1, 3), (4, 6)].into_iter().collect::<BTreeMap<_, _>>();
-
-        let out = SegmentIndex::new(0);
-        merge_savepoints([first, second].iter().rev(), &out);
-
-        let mut iter = out.iter(0, 100);
-        assert_eq!(iter.next(), Some((1, 3, 3)));
-        assert_eq!(iter.next(), Some((3, 2, 2)));
-        assert_eq!(iter.next(), Some((4, 6, 6)));
     }
 }

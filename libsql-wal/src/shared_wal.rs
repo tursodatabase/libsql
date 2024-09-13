@@ -106,8 +106,13 @@ impl<IO: Io> SharedWal<IO> {
         // is not sealed. If the segment is sealed, retry with the current segment
         let current = self.current.load();
         current.inc_reader_count();
-        let (max_frame_no, db_size) =
-            current.with_header(|header| (header.last_committed(), header.size_after()));
+        let (max_frame_no, db_size, max_offset) = current.with_header(|header| {
+            (
+                header.last_committed(),
+                header.size_after(),
+                header.frame_count() as u64,
+            )
+        });
         let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
         ReadTransaction {
             id,
@@ -119,6 +124,7 @@ impl<IO: Io> SharedWal<IO> {
             pages_read: 0,
             namespace: self.namespace.clone(),
             checkpoint_notifier: self.checkpoint_notifier.clone(),
+            max_offset,
         }
     }
 
