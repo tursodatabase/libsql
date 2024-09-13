@@ -1,5 +1,7 @@
 use std::panic::Location;
 
+use chrono::{DateTime, Utc};
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("io error: {0}")]
@@ -10,6 +12,8 @@ pub enum Error {
     Compact(#[from] crate::error::Error),
     #[error("frame not {0} found")]
     FrameNotFound(u64),
+    #[error("No satisfying segment found for timestamp {0}")]
+    SegmentNotFoundTimestamp(DateTime<Utc>),
     #[error("unhandled storage error: {error}, in {context}")]
     UnhandledStorageError {
         error: Box<dyn std::error::Error + Send + Sync + 'static>,
