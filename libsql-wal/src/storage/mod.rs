@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::str::FromStr;
@@ -60,10 +61,21 @@ pub enum RestoreOptions {
 /// map.range(format!("{:020}", u64::MAX - 101)..).next();
 /// map.range(format!("{:020}", u64::MAX - 5000)..).next();
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct SegmentKey {
     pub start_frame_no: u64,
     pub end_frame_no: u64,
+    pub timestamp: u64,
+}
+
+impl Debug for SegmentKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SegmentKey")
+            .field("start_frame_no", &self.start_frame_no)
+            .field("end_frame_no", &self.end_frame_no)
+            .field("timestamp", &self.timestamp())
+            .finish()
+    }
 }
 
 impl PartialOrd for SegmentKey {
@@ -108,6 +120,12 @@ impl SegmentKey {
 
         Some(key)
     }
+
+    fn timestamp(&self) -> DateTime<Utc> {
+        DateTime::from_timestamp_millis(self.timestamp as _)
+            .unwrap()
+            .to_utc()
+    }
 }
 
 impl From<&SegmentMeta> for SegmentKey {
@@ -115,6 +133,7 @@ impl From<&SegmentMeta> for SegmentKey {
         Self {
             start_frame_no: value.start_frame_no,
             end_frame_no: value.end_frame_no,
+            timestamp: value.segment_timestamp.timestamp_millis() as _,
         }
     }
 }
@@ -125,11 +144,13 @@ impl FromStr for SegmentKey {
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let (rev_start_fno, s) = s.split_at(20);
         let start_frame_no = u64::MAX - rev_start_fno.parse::<u64>().map_err(|_| ())?;
-        let (_, rev_end_fno) = s.split_at(1);
+        let (rev_end_fno, timestamp) = s[1..].split_at(20);
         let end_frame_no = u64::MAX - rev_end_fno.parse::<u64>().map_err(|_| ())?;
+        let timestamp = timestamp[1..].parse().map_err(|_| ())?;
         Ok(Self {
             start_frame_no,
             end_frame_no,
+            timestamp,
         })
     }
 }
@@ -138,9 +159,10 @@ impl fmt::Display for SegmentKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{:020}-{:020}",
+            "{:020}-{:020}-{:020}",
             u64::MAX - self.start_frame_no,
             u64::MAX - self.end_frame_no,
+            self.timestamp,
         )
     }
 }
@@ -219,7 +241,6 @@ pub trait Storage: Send + Sync + 'static {
 pub struct SegmentInfo {
     pub key: SegmentKey,
     pub size: usize,
-    pub created_at: DateTime<Utc>,
 }
 
 /// special zip function for Either storage implementation
@@ -504,6 +525,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
             let key = SegmentKey {
                 start_frame_no: seg.header().start_frame_no.get(),
                 end_frame_no,
+                timestamp: seg.header().sealed_at_timestamp.get(),
             };
             let index = Map::new(index.into()).unwrap();
             inner
@@ -624,9 +646,9 @@ pub struct StoreSegmentRequest<S, C> {
     on_store_callback: OnStoreCallback,
 }
 
-impl<S, C> fmt::Debug for StoreSegmentRequest<S, C>
+impl<S, C> Debug for StoreSegmentRequest<S, C>
 where
-    S: fmt::Debug,
+    S: Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("StoreSegmentRequest")

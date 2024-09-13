@@ -2,6 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
+use chrono::{DateTime, Utc};
 use hyper::Uri;
 use libsql_replication::injector::LibsqlInjector;
 use libsql_replication::replicator::Replicator;
@@ -265,7 +266,7 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
         _from_config: MetaStoreHandle,
         _to_ns: NamespaceName,
         _to_config: MetaStoreHandle,
-        _timestamp: Option<chrono::prelude::NaiveDateTime>,
+        _timestamp: Option<DateTime<Utc>>,
         _store: NamespaceStore,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(std::future::ready(Err(crate::Error::Fork(

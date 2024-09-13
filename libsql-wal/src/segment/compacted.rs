@@ -23,6 +23,7 @@ pub struct CompactedSegmentDataHeader {
     pub(crate) size_after: lu32,
     /// for now, always 4096
     pub(crate) page_size: lu16,
+    pub(crate) timestamp: lu64,
 }
 impl CompactedSegmentDataHeader {
     fn check(&self) -> Result<()> {

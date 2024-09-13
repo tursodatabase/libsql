@@ -9,6 +9,7 @@ use std::sync::{
     Arc,
 };
 
+use chrono::{DateTime, Utc};
 use crossbeam_skiplist::SkipMap;
 use fst::MapBuilder;
 use parking_lot::{Mutex, RwLock};
@@ -74,6 +75,7 @@ impl<F> CurrentSegment<F> {
             page_size: LIBSQL_PAGE_SIZE.into(),
             log_id: log_id.as_u128().into(),
             frame_count: 0.into(),
+            sealed_at_timestamp: 0.into(),
         };
 
         header.recompute_checksum();
@@ -408,7 +410,7 @@ impl<F> CurrentSegment<F> {
 
     /// It is expected that sealing is performed under a write lock
     #[tracing::instrument(skip_all)]
-    pub fn seal(&self) -> Result<Option<SealedSegment<F>>>
+    pub fn seal(&self, now: DateTime<Utc>) -> Result<Option<SealedSegment<F>>>
     where
         F: FileExt,
     {
@@ -442,6 +444,7 @@ impl<F> CurrentSegment<F> {
         header.index_size = index_size.into();
         let flags = header.flags();
         header.set_flags(flags | SegmentFlags::SEALED);
+        header.sealed_at_timestamp = (now.timestamp_millis() as u64).into();
         header.recompute_checksum();
         self.file.write_all_at(header.as_bytes(), 0)?;
 

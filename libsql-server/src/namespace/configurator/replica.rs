@@ -2,6 +2,7 @@ use std::pin::Pin;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
+use chrono::{DateTime, Utc};
 use futures::Future;
 use hyper::Uri;
 use libsql_replication::rpc::replication::log_offset::WalFlavor;
@@ -255,7 +256,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
         _from_config: MetaStoreHandle,
         _to_ns: NamespaceName,
         _to_config: MetaStoreHandle,
-        _timestamp: Option<chrono::prelude::NaiveDateTime>,
+        _timestamp: Option<DateTime<Utc>>,
         _store: NamespaceStore,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(std::future::ready(Err(crate::Error::Fork(

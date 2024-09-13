@@ -234,7 +234,11 @@ where
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
         let key = self
             .backend
-            .find_segment(&config, namespace, frame_no)
+            .find_segment(
+                &config,
+                namespace,
+                super::backend::FindSegmentReq::Frame(frame_no),
+            )
             .await?;
         Ok(key)
     }
@@ -324,6 +328,10 @@ impl<B: Backend, S> AsyncStorage<B, S> {
         };
 
         (this, storage_loop)
+    }
+
+    pub fn backend(&self) -> &B {
+        &self.backend
     }
 
     /// send shutdown signal to bottomless.

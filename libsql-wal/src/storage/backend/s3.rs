@@ -1,6 +1,6 @@
 //! S3 implementation of storage backend
 
-use std::fmt;
+use std::fmt::{self, Formatter};
 use std::mem::size_of;
 use std::path::Path;
 use std::pin::Pin;
@@ -10,11 +10,12 @@ use std::task::Poll;
 
 use aws_config::SdkConfig;
 use aws_sdk_s3::operation::create_bucket::CreateBucketError;
+use aws_sdk_s3::operation::get_object::GetObjectOutput;
 use aws_sdk_s3::primitives::{ByteStream, SdkBody};
-use aws_sdk_s3::types::CreateBucketConfiguration;
+use aws_sdk_s3::types::{CreateBucketConfiguration, Object};
 use aws_sdk_s3::Client;
-use aws_smithy_types_convert::date_time::DateTimeExt;
 use bytes::{Bytes, BytesMut};
+use chrono::{DateTime, Utc};
 use http_body::{Frame as HttpFrame, SizeHint};
 use libsql_sys::name::NamespaceName;
 use roaring::RoaringBitmap;
@@ -24,7 +25,7 @@ use tokio_util::sync::ReusableBoxFuture;
 use zerocopy::byteorder::little_endian::{U16 as lu16, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
-use super::{Backend, SegmentMeta};
+use super::{Backend, FindSegmentReq, SegmentMeta};
 use crate::io::buf::ZeroCopyBuf;
 use crate::io::compat::copy_to_file;
 use crate::io::{FileExt, Io, StdIO};
@@ -128,7 +129,7 @@ impl<IO: Io> S3Backend<IO> {
     ) -> Result<impl AsyncRead> {
         let key = s3_segment_data_key(folder_key, segment_key);
         let stream = self.s3_get(config, key).await?;
-        Ok(stream.into_async_read())
+        Ok(stream.body.into_async_read())
     }
 
     async fn fetch_segment_data_inner(
@@ -150,24 +151,23 @@ impl<IO: Io> S3Backend<IO> {
         Ok(header)
     }
 
-    async fn s3_get(&self, config: &S3Config, key: String) -> Result<ByteStream> {
+    async fn s3_get(&self, config: &S3Config, key: impl ToString) -> Result<GetObjectOutput> {
         Ok(self
             .client
             .get_object()
             .bucket(&config.bucket)
-            .key(key)
+            .key(key.to_string())
             .send()
             .await
-            .map_err(|e| Error::unhandled(e, "error sending s3 GET request"))?
-            .body)
+            .map_err(|e| Error::unhandled(e, "error sending s3 GET request"))?)
     }
 
-    async fn s3_put(&self, config: &S3Config, key: String, body: ByteStream) -> Result<()> {
+    async fn s3_put(&self, config: &S3Config, key: impl ToString, body: ByteStream) -> Result<()> {
         self.client
             .put_object()
             .bucket(&config.bucket)
             .body(body)
-            .key(key)
+            .key(key.to_string())
             .send()
             .await
             .map_err(|e| Error::unhandled(e, "error sending s3 PUT request"))?;
@@ -181,7 +181,11 @@ impl<IO: Io> S3Backend<IO> {
         segment_key: &SegmentKey,
     ) -> Result<fst::Map<Arc<[u8]>>> {
         let s3_index_key = s3_segment_index_key(folder_key, segment_key);
-        let mut stream = self.s3_get(config, s3_index_key).await?.into_async_read();
+        let mut stream = self
+            .s3_get(config, s3_index_key)
+            .await?
+            .body
+            .into_async_read();
         let mut header: SegmentIndexHeader = SegmentIndexHeader::new_zeroed();
         stream.read_exact(header.as_bytes_mut()).await?;
         if header.magic.get() != LIBSQL_MAGIC && header.version.get() != 1 {
@@ -199,7 +203,7 @@ impl<IO: Io> S3Backend<IO> {
     }
 
     /// Find the most recent, and biggest segment that may contain `frame_no`
-    async fn find_segment_inner(
+    async fn find_segment_by_frame_no(
         &self,
         config: &S3Config,
         folder_key: &FolderKey<'_>,
@@ -212,8 +216,8 @@ impl<IO: Io> S3Backend<IO> {
             .client
             .list_objects_v2()
             .bucket(&config.bucket)
-            .prefix(lookup_key_prefix)
-            .start_after(lookup_key)
+            .prefix(lookup_key_prefix.to_string())
+            .start_after(lookup_key.to_string())
             .send()
             .await
             .map_err(|e| Error::unhandled(e, "failed to list bucket"))?;
@@ -229,6 +233,101 @@ impl<IO: Io> S3Backend<IO> {
         Ok(key)
     }
 
+    /// We are kinda bruteforcing out way into finding a segment that fits the bill, this can very
+    /// probably be optimized
+    #[tracing::instrument(skip(self, config, folder_key))]
+    async fn find_segment_by_timestamp(
+        &self,
+        config: &S3Config,
+        folder_key: &FolderKey<'_>,
+        timestamp: DateTime<Utc>,
+    ) -> Result<Option<SegmentKey>> {
+        let object_to_key = |o: &Object| {
+            let key_path = o.key().unwrap();
+            SegmentKey::validate_from_path(key_path.as_ref(), &folder_key.namespace)
+        };
+
+        let lookup_key_prefix = s3_segment_index_lookup_key_prefix(&folder_key);
+
+        let mut continuation_token = None;
+        loop {
+            let objects = self
+                .client
+                .list_objects_v2()
+                .set_continuation_token(continuation_token.take())
+                .bucket(&config.bucket)
+                .prefix(lookup_key_prefix.to_string())
+                .send()
+                .await
+                .map_err(|e| Error::unhandled(e, "failed to list bucket"))?;
+
+            // there is noting to restore
+            if objects.contents().is_empty() {
+                return Ok(None);
+            }
+
+            let ts = timestamp.timestamp_millis() as u64;
+            let search_result =
+                objects
+                    .contents()
+                    .binary_search_by_key(&std::cmp::Reverse(ts), |o| {
+                        let key = object_to_key(o).unwrap();
+                        std::cmp::Reverse(key.timestamp)
+                    });
+
+            match search_result {
+                Ok(i) => {
+                    let key = object_to_key(&objects.contents()[i]).unwrap();
+                    tracing::trace!("found perfect match for `{timestamp}`: {key}");
+                    return Ok(Some(key));
+                }
+                Err(i) if i == 0 => {
+                    // this is caught by the first iteration of the loop, anything that's more
+                    // recent than the most recent should be interpret as most recent
+                    let key = object_to_key(&objects.contents()[i]).unwrap();
+                    tracing::trace!("best match for `{timestamp}` is most recent segment: {key}");
+                    return Ok(Some(key));
+                }
+                Err(i) if i == objects.contents().len() => {
+                    // there are two scenarios. Either there are more pages with the request, and
+                    // we fetch older entries, or there aren't. If there are older segment, search
+                    // in those, otherwise, just take the oldest segment and return that
+                    if objects.continuation_token().is_some() {
+                        // nothing to do; fetch next page
+                    } else {
+                        let key = object_to_key(&objects.contents().last().unwrap()).unwrap();
+                        return Ok(Some(key));
+                    }
+                }
+                // This is the index where timestamp would be inserted, we look left and right of that
+                // key and pick the closest one.
+                Err(i) => {
+                    // i - 1 is well defined since we already catch the case where i == 0 above
+                    let left_key = object_to_key(&objects.contents()[i - 1]).unwrap();
+                    let right_key = object_to_key(&objects.contents()[i]).unwrap();
+                    let time_to_left = left_key.timestamp().signed_duration_since(timestamp).abs();
+                    let time_to_right =
+                        right_key.timestamp().signed_duration_since(timestamp).abs();
+
+                    if time_to_left < time_to_right {
+                        return Ok(Some(left_key));
+                    } else {
+                        return Ok(Some(right_key));
+                    }
+                }
+            }
+
+            match objects.continuation_token {
+                Some(token) => {
+                    continuation_token = Some(token);
+                }
+                None => {
+                    unreachable!("the absence of continuation token should be dealt with earlier");
+                }
+            }
+        }
+    }
+
     // This method could probably be optimized a lot by using indexes and only downloading useful
     // segments
     async fn restore_latest(
@@ -242,7 +341,7 @@ impl<IO: Io> S3Backend<IO> {
             namespace,
         };
         let Some(latest_key) = self
-            .find_segment_inner(config, &folder_key, u64::MAX)
+            .find_segment_by_frame_no(config, &folder_key, u64::MAX)
             .await?
         else {
             tracing::info!("nothing to restore for {namespace}");
@@ -279,7 +378,7 @@ impl<IO: Io> S3Backend<IO> {
 
             let next_frame_no = header.start_frame_no.get() - 1;
             let Some(key) = self
-                .find_segment_inner(config, &folder_key, next_frame_no)
+                .find_segment_by_frame_no(config, &folder_key, next_frame_no)
                 .await?
             else {
                 todo!("there should be a segment!");
@@ -325,7 +424,7 @@ impl<IO: Io> S3Backend<IO> {
                     .client
                     .list_objects_v2()
                     .bucket(&config.bucket)
-                    .prefix(lookup_key_prefix.clone())
+                    .prefix(lookup_key_prefix.to_string())
                     .set_continuation_token(continuation_token.take())
                     .send()
                     .await
@@ -339,7 +438,6 @@ impl<IO: Io> S3Backend<IO> {
                     let infos = SegmentInfo {
                         key,
                         size: entry.size().unwrap_or(0) as usize,
-                        created_at: entry.last_modified().unwrap().to_chrono_utc().unwrap(),
                     };
 
                     yield infos;
@@ -377,20 +475,63 @@ impl fmt::Display for FolderKey<'_> {
     }
 }
 
-fn s3_segment_data_key(folder_key: &FolderKey, segment_key: &SegmentKey) -> String {
-    format!("{folder_key}/segments/{segment_key}")
+pub struct SegmentDataKey<'a>(&'a FolderKey<'a>, &'a SegmentKey);
+
+impl fmt::Display for SegmentDataKey<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/segments/{}", self.0, self.1)
+    }
 }
 
-fn s3_segment_index_key(folder_key: &FolderKey, segment_key: &SegmentKey) -> String {
-    format!("{folder_key}/indexes/{segment_key}")
+fn s3_segment_data_key<'a>(
+    folder_key: &'a FolderKey,
+    segment_key: &'a SegmentKey,
+) -> SegmentDataKey<'a> {
+    SegmentDataKey(folder_key, segment_key)
 }
 
-fn s3_segment_index_lookup_key_prefix(folder_key: &FolderKey) -> String {
-    format!("{folder_key}/indexes/")
+pub struct SegmentIndexKey<'a>(&'a FolderKey<'a>, &'a SegmentKey);
+
+impl fmt::Display for SegmentIndexKey<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/indexes/{}", self.0, self.1)
+    }
 }
 
-fn s3_segment_index_lookup_key(folder_key: &FolderKey, frame_no: u64) -> String {
-    format!("{folder_key}/indexes/{:020}", u64::MAX - frame_no)
+fn s3_segment_index_key<'a>(
+    folder_key: &'a FolderKey,
+    segment_key: &'a SegmentKey,
+) -> SegmentIndexKey<'a> {
+    SegmentIndexKey(folder_key, segment_key)
+}
+
+pub struct SegmentIndexLookupKeyPrefix<'a>(&'a FolderKey<'a>);
+
+impl fmt::Display for SegmentIndexLookupKeyPrefix<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/indexes/", self.0)
+    }
+}
+
+fn s3_segment_index_lookup_key_prefix<'a>(
+    folder_key: &'a FolderKey,
+) -> SegmentIndexLookupKeyPrefix<'a> {
+    SegmentIndexLookupKeyPrefix(folder_key)
+}
+
+pub struct SegmentIndexLookupKey<'a>(&'a FolderKey<'a>, u64);
+
+impl fmt::Display for SegmentIndexLookupKey<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/indexes/{:020}", self.0, u64::MAX - self.1)
+    }
+}
+
+fn s3_segment_index_lookup_key<'a>(
+    folder_key: &'a FolderKey,
+    frame_no: u64,
+) -> SegmentIndexLookupKey<'a> {
+    SegmentIndexLookupKey(folder_key, frame_no)
 }
 
 impl<IO> Backend for S3Backend<IO>
@@ -452,7 +593,7 @@ where
         };
 
         let Some(segment_key) = self
-            .find_segment_inner(config, &folder_key, frame_no)
+            .find_segment_by_frame_no(config, &folder_key, frame_no)
             .await?
         else {
             return Err(Error::FrameNotFound(frame_no));
@@ -480,7 +621,7 @@ where
 
         // request a key bigger than any other to get the last segment
         let max_segment_key = self
-            .find_segment_inner(config, &folder_key, u64::MAX)
+            .find_segment_by_frame_no(config, &folder_key, u64::MAX)
             .await?;
 
         Ok(super::DbMeta {
@@ -509,15 +650,23 @@ where
         &self,
         config: &Self::Config,
         namespace: &NamespaceName,
-        frame_no: u64,
+        req: FindSegmentReq,
     ) -> Result<SegmentKey> {
         let folder_key = FolderKey {
             cluster_id: &config.cluster_id,
             namespace: &namespace,
         };
-        self.find_segment_inner(config, &folder_key, frame_no)
-            .await?
-            .ok_or_else(|| Error::FrameNotFound(frame_no))
+
+        match req {
+            FindSegmentReq::Frame(frame_no) => self
+                .find_segment_by_frame_no(config, &folder_key, frame_no)
+                .await?
+                .ok_or_else(|| Error::FrameNotFound(frame_no)),
+            FindSegmentReq::Timestamp(ts) => self
+                .find_segment_by_timestamp(config, &folder_key, ts)
+                .await?
+                .ok_or_else(|| Error::SegmentNotFoundTimestamp(ts)),
+        }
     }
 
     async fn fetch_segment_index(
@@ -754,7 +903,7 @@ mod tests {
                     segment_id: Uuid::new_v4(),
                     start_frame_no: 0u64.into(),
                     end_frame_no: 64u64.into(),
-                    created_at: Utc::now(),
+                    segment_timestamp: Utc::now(),
                 },
                 std::fs::File::open(&f_path).unwrap(),
                 index,
@@ -776,7 +925,7 @@ mod tests {
                     segment_id: Uuid::new_v4(),
                     start_frame_no: 64u64.into(),
                     end_frame_no: 128u64.into(),
-                    created_at: Utc::now(),
+                    segment_timestamp: Utc::now(),
                 },
                 std::fs::File::open(&f_path).unwrap(),
                 index,

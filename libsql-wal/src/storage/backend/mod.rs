@@ -22,13 +22,20 @@ pub struct SegmentMeta {
     pub segment_id: Uuid,
     pub start_frame_no: u64,
     pub end_frame_no: u64,
-    pub created_at: DateTime<Utc>,
+    pub segment_timestamp: DateTime<Utc>,
 }
 
 pub struct RestoreRequest {}
 
 pub struct DbMeta {
     pub max_frame_no: u64,
+}
+
+pub enum FindSegmentReq {
+    /// returns a segment containing this frame
+    Frame(u64),
+    /// Returns the segment with closest timestamp less than or equal to the requested timestamp
+    Timestamp(DateTime<Utc>),
 }
 
 pub trait Backend: Send + Sync + 'static {
@@ -48,7 +55,7 @@ pub trait Backend: Send + Sync + 'static {
         &self,
         config: &Self::Config,
         namespace: &NamespaceName,
-        frame_no: u64,
+        req: FindSegmentReq,
     ) -> impl Future<Output = Result<SegmentKey>> + Send;
 
     fn fetch_segment_index(
@@ -161,11 +168,9 @@ impl<T: Backend> Backend for Arc<T> {
         &self,
         config: &Self::Config,
         namespace: &NamespaceName,
-        frame_no: u64,
+        req: FindSegmentReq,
     ) -> Result<SegmentKey> {
-        self.as_ref()
-            .find_segment(config, namespace, frame_no)
-            .await
+        self.as_ref().find_segment(config, namespace, req).await
     }
 
     async fn fetch_segment_index(

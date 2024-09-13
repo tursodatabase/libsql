@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Context as _;
 use aws_config::{retry::RetryConfig, BehaviorVersion, Region};
 use aws_sdk_s3::config::{Credentials, SharedCredentialsProvider};
+use chrono::DateTime;
 use libsql_wal::io::StdIO;
 use libsql_wal::storage::backend::s3::S3Backend;
 use libsql_wal::storage::compaction::strategy::identity::IdentityStrategy;
@@ -80,11 +81,15 @@ impl WalToolkit {
                 if let Some((first, last)) = compactor.get_segment_range(&namespace)? {
                     println!(
                         "- oldest segment: {}-{} ({})",
-                        first.key.start_frame_no, first.key.end_frame_no, first.created_at
+                        first.key.start_frame_no,
+                        first.key.end_frame_no,
+                        DateTime::from_timestamp_millis(first.key.timestamp as _).unwrap()
                     );
                     println!(
                         "- most recent segment: {}-{} ({})",
-                        last.key.start_frame_no, last.key.end_frame_no, last.created_at
+                        last.key.start_frame_no,
+                        last.key.end_frame_no,
+                        DateTime::from_timestamp_millis(last.key.timestamp as _).unwrap()
                     );
                 }
 
@@ -93,7 +98,9 @@ impl WalToolkit {
                     compactor.list_all(&namespace, |info| {
                         println!(
                             "- {}-{} ({})",
-                            info.key.start_frame_no, info.key.end_frame_no, info.created_at
+                            info.key.start_frame_no,
+                            info.key.end_frame_no,
+                            DateTime::from_timestamp_millis(info.key.timestamp as _).unwrap()
                         );
                     })?;
                 }

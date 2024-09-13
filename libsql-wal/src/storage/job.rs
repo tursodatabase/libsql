@@ -69,7 +69,7 @@ where
             namespace: self.request.namespace.clone(),
             start_frame_no: segment.start_frame_no(),
             end_frame_no: segment.last_committed(),
-            created_at: io.now(),
+            segment_timestamp: segment.timestamp(),
         };
         let config = self
             .request
@@ -101,270 +101,21 @@ pub(crate) struct JobResult<S, C> {
 #[cfg(test)]
 mod test {
     use std::future::ready;
-    // use std::fs::File;
-    // use std::io::Write;
-    // use std::mem::size_of;
     use std::str::FromStr;
-    // use std::sync::atomic::AtomicBool;
     use std::sync::Arc;
 
+    use chrono::prelude::DateTime;
     use chrono::Utc;
-    // use fst::{Map, Streamer};
-    // use libsql_sys::rusqlite::OpenFlags;
-    // use tempfile::{tempdir, tempfile, NamedTempFile};
     use uuid::Uuid;
 
     use crate::io::file::FileExt;
     use crate::io::StdIO;
     use crate::segment::compacted::CompactedSegmentDataHeader;
+    use crate::storage::backend::FindSegmentReq;
     use crate::storage::{RestoreOptions, SegmentKey};
-    // use crate::registry::WalRegistry;
-    // use crate::segment::compacted::CompactedSegmentDataHeader;
-    // use crate::segment::sealed::SealedSegment;
-    // use crate::segment::{Frame, FrameHeader};
-    // use crate::storage::Storage;
-    // use crate::wal::{LibsqlWal, LibsqlWalManager};
     use libsql_sys::name::NamespaceName;
 
     use super::*;
-
-    // fn setup_wal<S: Storage>(
-    //     path: &Path,
-    //     storage: S,
-    // ) -> (LibsqlWalManager<StdIO, S>, Arc<WalRegistry<StdIO, S>>) {
-    //     let resolver = |path: &Path| {
-    //         NamespaceName::from_string(path.file_name().unwrap().to_str().unwrap().to_string())
-    //     };
-    //     let registry =
-    //         Arc::new(WalRegistry::new(path.join("wals"), storage).unwrap());
-    //     (LibsqlWalManager::new(registry.clone()), registry)
-    // }
-    //
-    // fn make_connection(
-    //     path: &Path,
-    //     wal: LibsqlWalManager<StdIO>,
-    // ) -> libsql_sys::Connection<LibsqlWal<StdIO>> {
-    //     libsql_sys::Connection::open(
-    //         path.join("db"),
-    //         OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-    //         wal,
-    //         10000,
-    //         None,
-    //     )
-    //     .unwrap()
-    // }
-    //
-    // #[tokio::test]
-    // async fn compact_segment() {
-    //     struct SwapHandler;
-    //
-    //     impl SegmentSwapHandler<Arc<SealedSegment<File>>> for SwapHandler {
-    //         fn handle_segment_swap(
-    //             &self,
-    //             namespace: NamespaceName,
-    //             segment: Arc<SealedSegment<File>>,
-    //         ) {
-    //             tokio::runtime::Handle::current().block_on(async move {
-    //                 let out_file = tempfile().unwrap();
-    //                 let id = Uuid::new_v4();
-    //                 let index_bytes = segment.compact(&out_file, id).await.unwrap();
-    //                 let index = Map::new(index_bytes).unwrap();
-    //
-    //                 // indexes contain the same pages
-    //                 let mut new_stream = index.stream();
-    //                 let mut orig_stream = segment.index().stream();
-    //                 assert_eq!(new_stream.next().unwrap().0, orig_stream.next().unwrap().0);
-    //                 assert_eq!(new_stream.next().unwrap().0, orig_stream.next().unwrap().0);
-    //                 assert!(new_stream.next().is_none());
-    //                 assert!(orig_stream.next().is_none());
-    //
-    //                 let mut db_file = NamedTempFile::new().unwrap();
-    //                 let mut stream = index.stream();
-    //                 while let Some((page_bytes, offset)) = stream.next() {
-    //                     let page_no = u32::from_be_bytes(page_bytes.try_into().unwrap());
-    //                     let mut buf = [0u8; 4096];
-    //                     let offset = size_of::<CompactedSegmentDataHeader>()
-    //                         + offset as usize * size_of::<Frame>()
-    //                         + size_of::<FrameHeader>();
-    //                     out_file.read_exact_at(&mut buf, offset as u64).unwrap();
-    //                     db_file
-    //                         .as_file()
-    //                         .write_all_at(&buf, (page_no as u64 - 1) * 4096)
-    //                         .unwrap();
-    //                 }
-    //
-    //                 db_file.flush().unwrap();
-    //                 let conn = libsql_sys::rusqlite::Connection::open(db_file.path()).unwrap();
-    //                 conn.query_row("select count(*) from test", (), |r| Ok(()))
-    //                     .unwrap();
-    //             });
-    //         }
-    //     }
-    //
-    //     let tmp = tempdir().unwrap();
-    //     let (wal, registry) = setup_wal(tmp.path(), SwapHandler);
-    //     let conn = make_connection(tmp.path(), wal.clone());
-    //
-    //     tokio::task::spawn_blocking(move || {
-    //         conn.execute("create table test (x)", ()).unwrap();
-    //         for i in 0..100usize {
-    //             conn.execute("insert into test values (?)", [i]).unwrap();
-    //         }
-    //
-    //         registry.shutdown().unwrap();
-    //     })
-    //     .await
-    //     .unwrap();
-    // }
-    //
-    // #[tokio::test]
-    // async fn simple_perform_job() {
-    //     struct TestIO;
-    //
-    //     impl Io for TestIO {
-    //         type File = <StdIO as Io>::File;
-    //         type TempFile = <StdIO as Io>::TempFile;
-    //
-    //         fn create_dir_all(&self, path: &Path) -> std::io::Result<()> {
-    //             StdIO(()).create_dir_all(path)
-    //         }
-    //
-    //         fn open(
-    //             &self,
-    //             create_new: bool,
-    //             read: bool,
-    //             write: bool,
-    //             path: &Path,
-    //         ) -> std::io::Result<Self::File> {
-    //             StdIO(()).open(create_new, read, write, path)
-    //         }
-    //
-    //         fn tempfile(&self) -> std::io::Result<Self::TempFile> {
-    //             StdIO(()).tempfile()
-    //         }
-    //
-    //         fn now(&self) -> DateTime<Utc> {
-    //             DateTime::UNIX_EPOCH
-    //         }
-    //
-    //         fn uuid(&self) -> Uuid {
-    //             Uuid::from_u128(0)
-    //         }
-    //
-    //         fn hard_link(&self, _src: &Path, _dst: &Path) -> std::io::Result<()> {
-    //             unimplemented!()
-    //         }
-    //     }
-    //
-    //     struct TestStorage {
-    //         called: AtomicBool,
-    //     }
-    //
-    //     impl Drop for TestStorage {
-    //         fn drop(&mut self) {
-    //             assert!(self.called.load(std::sync::atomic::Ordering::Relaxed));
-    //         }
-    //     }
-    //
-    //     impl Backend for TestStorage {
-    //         type Config = ();
-    //
-    //         fn store(
-    //             &self,
-    //             _config: &Self::Config,
-    //             meta: SegmentMeta,
-    //             segment_data: impl FileExt,
-    //             segment_index: Vec<u8>,
-    //         ) -> impl std::future::Future<Output = Result<()>> + Send {
-    //             async move {
-    //                 self.called
-    //                     .store(true, std::sync::atomic::Ordering::Relaxed);
-    //
-    //                 insta::assert_debug_snapshot!(meta);
-    //                 insta::assert_debug_snapshot!(crc32fast::hash(&segment_index));
-    //                 insta::assert_debug_snapshot!(segment_index.len());
-    //                 let data = async_read_all_to_vec(segment_data).await.unwrap();
-    //                 insta::assert_debug_snapshot!(data.len());
-    //                 insta::assert_debug_snapshot!(crc32fast::hash(&data));
-    //
-    //                 Ok(())
-    //             }
-    //         }
-    //
-    //         async fn fetch_segment(
-    //             &self,
-    //             _config: &Self::Config,
-    //             _namespace: NamespaceName,
-    //             _frame_no: u64,
-    //             _dest_path: &Path,
-    //         ) -> Result<()> {
-    //             todo!()
-    //         }
-    //
-    //         async fn meta(
-    //             &self,
-    //             _config: &Self::Config,
-    //             _namespace: NamespaceName,
-    //         ) -> Result<crate::storage::backend::DbMeta> {
-    //             todo!();
-    //         }
-    //
-    //         fn default_config(&self) -> Arc<Self::Config> {
-    //             Arc::new(())
-    //         }
-    //     }
-    //
-    //     struct SwapHandler;
-    //
-    //     impl SegmentSwapHandler<File> for SwapHandler {
-    //         fn handle_segment_swap(
-    //             &self,
-    //             namespace: NamespaceName,
-    //             segment: Arc<SealedSegment<File>>,
-    //         ) {
-    //             tokio::runtime::Handle::current().block_on(async move {
-    //                 let job = Job {
-    //                     request: IndexedRequest {
-    //                         request: StoreSegmentRequest {
-    //                             namespace,
-    //                             segment,
-    //                             created_at: TestIO.now(),
-    //                             storage_config_override: None,
-    //                         },
-    //                         id: 0,
-    //                     },
-    //                 };
-    //
-    //                 let result = job
-    //                     .perform(
-    //                         TestStorage {
-    //                             called: false.into(),
-    //                         },
-    //                         TestIO,
-    //                     )
-    //                     .await;
-    //
-    //                 assert_eq!(result.job.request.id, 0);
-    //                 assert!(result.result.is_ok());
-    //             });
-    //         }
-    //     }
-    //
-    //     let tmp = tempdir().unwrap();
-    //     let (wal, registry) = setup_wal(tmp.path(), SwapHandler);
-    //     let conn = make_connection(tmp.path(), wal.clone());
-    //
-    //     tokio::task::spawn_blocking(move || {
-    //         conn.execute("create table test (x)", ()).unwrap();
-    //         for i in 0..100usize {
-    //             conn.execute("insert into test values (?)", [i]).unwrap();
-    //         }
-    //
-    //         registry.shutdown().unwrap();
-    //     })
-    //     .await
-    //     .unwrap();
-    // }
 
     #[tokio::test]
     async fn perform_job() {
@@ -428,6 +179,10 @@ mod test {
             fn is_storable(&self) -> bool {
                 true
             }
+
+            fn timestamp(&self) -> DateTime<Utc> {
+                Utc::now()
+            }
         }
 
         struct TestBackend;
@@ -478,7 +233,7 @@ mod test {
                 &self,
                 _config: &Self::Config,
                 _namespace: &NamespaceName,
-                _frame_no: u64,
+                _frame_no: FindSegmentReq,
             ) -> Result<SegmentKey> {
                 todo!()
             }

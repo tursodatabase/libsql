@@ -9,6 +9,7 @@ use std::sync::{
     Arc,
 };
 
+use chrono::prelude::{DateTime, Utc};
 use fst::{Map, MapBuilder, Streamer};
 use zerocopy::{AsBytes, FromZeroes};
 
@@ -94,6 +95,7 @@ where
             version: LIBSQL_WAL_VERSION.into(),
             magic: LIBSQL_MAGIC.into(),
             page_size: self.header().page_size,
+            timestamp: self.header.sealed_at_timestamp,
         };
 
         hasher.update(header.as_bytes());
@@ -155,6 +157,17 @@ where
         &self.index
     }
 
+    fn is_storable(&self) -> bool {
+        // we don't store unordered segments, since they only happen in two cases:
+        // - in a replica: no need for storage
+        // - in a primary, on recovery from storage: we don't want to override remote
+        // segment.
+        !self
+            .header()
+            .flags()
+            .contains(SegmentFlags::FRAME_UNORDERED)
+    }
+
     fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> std::io::Result<bool> {
         if self.header().start_frame_no.get() > max_frame_no {
             return Ok(false);
@@ -170,16 +183,6 @@ where
         Ok(false)
     }
 
-    async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
-    where
-        B: IoBufMut + Send + 'static,
-    {
-        assert_eq!(buf.bytes_total(), size_of::<Frame>());
-        let frame_offset = frame_offset(offset);
-        let (buf, ret) = self.file.read_exact_at_async(buf, frame_offset as _).await;
-        (buf, ret.map_err(Into::into))
-    }
-
     fn is_checkpointable(&self) -> bool {
         let read_locks = self.read_locks.load(Ordering::Relaxed);
         tracing::debug!(read_locks);
@@ -190,6 +193,16 @@ where
         self.header().size_after()
     }
 
+    async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
+    where
+        B: IoBufMut + Send + 'static,
+    {
+        assert_eq!(buf.bytes_total(), size_of::<Frame>());
+        let frame_offset = frame_offset(offset);
+        let (buf, ret) = self.file.read_exact_at_async(buf, frame_offset as _).await;
+        (buf, ret.map_err(Into::into))
+    }
+
     fn destroy<IO: crate::io::Io>(&self, io: &IO) -> impl std::future::Future<Output = ()> {
         async move {
             if let Err(e) = io.remove_file_async(&self.path).await {
@@ -198,15 +211,14 @@ where
         }
     }
 
-    fn is_storable(&self) -> bool {
-        // we don't store unordered segments, since they only happen in two cases:
-        // - in a replica: no need for storage
-        // - in a primary, on recovery from storage: we don't want to override remote
-        // segment.
-        !self
-            .header()
-            .flags()
-            .contains(SegmentFlags::FRAME_UNORDERED)
+    fn timestamp(&self) -> DateTime<Utc> {
+        assert_ne!(
+            self.header().sealed_at_timestamp.get(),
+            0,
+            "segment was not sealed properly"
+        );
+        DateTime::from_timestamp_millis(self.header().sealed_at_timestamp.get() as _)
+            .expect("this should be a guaranteed roundtrip with DateTime::timestamp_millis")
     }
 }
 

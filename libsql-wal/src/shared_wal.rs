@@ -79,7 +79,7 @@ impl<IO: Io> SharedWal<IO> {
         }
         // The current segment will not be used anymore. It's empty, but we still seal it so that
         // the next startup doesn't find an unsealed segment.
-        self.current.load().seal()?;
+        self.current.load().seal(self.io.now())?;
         tracing::info!("namespace shutdown");
         Ok(())
     }
