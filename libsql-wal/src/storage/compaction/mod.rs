@@ -105,11 +105,9 @@ impl<B> Compactor<B> {
             let start_frame_no: u64 = row.get(0)?;
             let end_frame_no: u64 = row.get(1)?;
             let timestamp: u64 = row.get(2)?;
-            // it's free to go from one end of a segment to the next
-            graph.add_edge(start_frame_no, end_frame_no, 0);
+            graph.add_edge(start_frame_no, end_frame_no, timestamp);
             if start_frame_no != 1 {
-                // going from a segment to the next costs us
-                graph.add_edge(start_frame_no - 1, start_frame_no, timestamp);
+                graph.add_edge(start_frame_no - 1, start_frame_no, 0);
             }
             last_frame_no = last_frame_no.max(end_frame_no);
         }
@@ -368,7 +366,10 @@ impl AnalyzedSegments {
             &self.graph,
             1,
             |n| n == self.last_frame_no,
-            |(_, _, &x)| x,
+            // it's always free to go from one end of the segment to the other, and it costs us to
+            // fetch a new segment. edges between segments are always 0, and edges within segments
+            // are the segment timestamp
+            |(_, _, &x)| if x == 0 { 1 } else { 0 },
             |n| self.last_frame_no - n,
         );
         let mut segments = Vec::new();
@@ -383,6 +384,7 @@ impl AnalyzedSegments {
                         end_frame_no,
                         timestamp,
                     };
+                    dbg!(&key);
                     segments.push(key);
                 }
             }
