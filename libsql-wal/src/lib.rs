@@ -6,6 +6,7 @@ pub mod io;
 pub mod registry;
 pub mod replication;
 pub mod segment;
+mod segment_swap_strategy;
 pub mod shared_wal;
 pub mod storage;
 pub mod transaction;
