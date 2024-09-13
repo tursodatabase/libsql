@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use async_lock::RwLock;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use futures::TryFutureExt;
 use moka::future::Cache;
 use once_cell::sync::OnceCell;
@@ -219,7 +219,7 @@ impl NamespaceStore {
         from: NamespaceName,
         to: NamespaceName,
         to_config: DatabaseConfig,
-        timestamp: Option<NaiveDateTime>,
+        timestamp: Option<DateTime<Utc>>,
     ) -> crate::Result<()> {
         if self.inner.has_shutdown.load(Ordering::Relaxed) {
             return Err(Error::NamespaceStoreShutdown);

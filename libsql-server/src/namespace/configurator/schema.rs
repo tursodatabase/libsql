@@ -1,5 +1,6 @@
 use std::sync::{atomic::AtomicBool, Arc};
 
+use chrono::{DateTime, Utc};
 use futures::prelude::Future;
 use tokio::task::JoinSet;
 
@@ -120,7 +121,7 @@ impl ConfigureNamespace for SchemaConfigurator {
         from_config: MetaStoreHandle,
         to_ns: NamespaceName,
         to_config: MetaStoreHandle,
-        timestamp: Option<chrono::prelude::NaiveDateTime>,
+        timestamp: Option<DateTime<Utc>>,
         store: NamespaceStore,
     ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(super::fork::fork(
@@ -128,7 +129,7 @@ impl ConfigureNamespace for SchemaConfigurator {
             from_config,
             to_ns,
             to_config,
-            timestamp,
+            timestamp.map(|ts| ts.naive_utc()),
             store,
             &self.primary_config,
             self.base.base_path.clone(),
