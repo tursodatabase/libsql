@@ -212,8 +212,13 @@ where
     }
 
     fn timestamp(&self) -> DateTime<Utc> {
-        assert_ne!(self.header().sealed_at_timestamp.get(), 0, "segment was not sealed properly");
-        DateTime::from_timestamp_millis(self.header().sealed_at_timestamp.get() as _).expect("this should be a guaranteed roundtrip with DateTime::timestamp_millis")
+        assert_ne!(
+            self.header().sealed_at_timestamp.get(),
+            0,
+            "segment was not sealed properly"
+        );
+        DateTime::from_timestamp_millis(self.header().sealed_at_timestamp.get() as _)
+            .expect("this should be a guaranteed roundtrip with DateTime::timestamp_millis")
     }
 }
 

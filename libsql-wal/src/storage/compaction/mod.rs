@@ -302,7 +302,11 @@ impl<B> Compactor<B> {
                     segment_id: Uuid::new_v4(),
                     start_frame_no: start,
                     end_frame_no: end,
-                    segment_timestamp: DateTime::from_timestamp_millis(set.last().unwrap().timestamp as _).unwrap().to_utc(),
+                    segment_timestamp: DateTime::from_timestamp_millis(
+                        set.last().unwrap().timestamp as _,
+                    )
+                    .unwrap()
+                    .to_utc(),
                 },
                 out_file,
                 out_index.into_inner().unwrap(),
@@ -378,7 +382,11 @@ impl AnalyzedSegments {
                 for chunk in nodes.chunks(2) {
                     let start_frame_no = chunk[0];
                     let end_frame_no = chunk[1];
-                    let timestamp = *self.graph.edges(start_frame_no).find_map(|(_, to, ts)| (to == end_frame_no).then_some(ts)).unwrap();
+                    let timestamp = *self
+                        .graph
+                        .edges(start_frame_no)
+                        .find_map(|(_, to, ts)| (to == end_frame_no).then_some(ts))
+                        .unwrap();
                     let key = SegmentKey {
                         start_frame_no,
                         end_frame_no,

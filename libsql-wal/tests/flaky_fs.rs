@@ -5,6 +5,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 use std::sync::Arc;
 
+use chrono::prelude::{DateTime, Utc};
 use libsql_wal::io::{file::FileExt, Io};
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::storage::TestStorage;
@@ -140,8 +141,8 @@ impl Io for FlakyIo {
         todo!()
     }
 
-    fn now(&self) -> chrono::prelude::DateTime<chrono::prelude::Utc> {
-        todo!()
+    fn now(&self) -> DateTime<Utc> {
+        Utc::now()
     }
 
     fn hard_link(&self, _src: &Path, _dst: &Path) -> std::io::Result<()> {

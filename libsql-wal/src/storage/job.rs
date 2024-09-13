@@ -111,6 +111,7 @@ mod test {
     use crate::io::file::FileExt;
     use crate::io::StdIO;
     use crate::segment::compacted::CompactedSegmentDataHeader;
+    use crate::storage::backend::FindSegmentReq;
     use crate::storage::{RestoreOptions, SegmentKey};
     use libsql_sys::name::NamespaceName;
 
@@ -232,7 +233,7 @@ mod test {
                 &self,
                 _config: &Self::Config,
                 _namespace: &NamespaceName,
-                _frame_no: u64,
+                _frame_no: FindSegmentReq,
             ) -> Result<SegmentKey> {
                 todo!()
             }

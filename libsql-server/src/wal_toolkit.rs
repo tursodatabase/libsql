@@ -81,11 +81,15 @@ impl WalToolkit {
                 if let Some((first, last)) = compactor.get_segment_range(&namespace)? {
                     println!(
                         "- oldest segment: {}-{} ({})",
-                        first.key.start_frame_no, first.key.end_frame_no, DateTime::from_timestamp_millis(first.key.timestamp as _).unwrap()
+                        first.key.start_frame_no,
+                        first.key.end_frame_no,
+                        DateTime::from_timestamp_millis(first.key.timestamp as _).unwrap()
                     );
                     println!(
                         "- most recent segment: {}-{} ({})",
-                        last.key.start_frame_no, last.key.end_frame_no, DateTime::from_timestamp_millis(last.key.timestamp as _).unwrap()
+                        last.key.start_frame_no,
+                        last.key.end_frame_no,
+                        DateTime::from_timestamp_millis(last.key.timestamp as _).unwrap()
                     );
                 }
 
@@ -94,7 +98,9 @@ impl WalToolkit {
                     compactor.list_all(&namespace, |info| {
                         println!(
                             "- {}-{} ({})",
-                            info.key.start_frame_no, info.key.end_frame_no, DateTime::from_timestamp_millis(info.key.timestamp as _).unwrap()
+                            info.key.start_frame_no,
+                            info.key.end_frame_no,
+                            DateTime::from_timestamp_millis(info.key.timestamp as _).unwrap()
                         );
                     })?;
                 }

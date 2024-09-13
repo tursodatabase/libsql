@@ -170,9 +170,7 @@ impl<T: Backend> Backend for Arc<T> {
         namespace: &NamespaceName,
         req: FindSegmentReq,
     ) -> Result<SegmentKey> {
-        self.as_ref()
-            .find_segment(config, namespace, req)
-            .await
+        self.as_ref().find_segment(config, namespace, req).await
     }
 
     async fn fetch_segment_index(

@@ -279,16 +279,24 @@ impl ConfigureNamespace for LibsqlPrimaryConfigurator {
                     match timestamp {
                         Some(ts) => {
                             let ns: libsql_sys::name::NamespaceName = from_ns.name().clone().into();
-                            let _key = s.backend().find_segment(&s.backend().default_config(), &ns, libsql_wal::storage::backend::FindSegmentReq::Timestamp(ts)).await.unwrap();
+                            let _key = s
+                                .backend()
+                                .find_segment(
+                                    &s.backend().default_config(),
+                                    &ns,
+                                    libsql_wal::storage::backend::FindSegmentReq::Timestamp(ts),
+                                )
+                                .await
+                                .unwrap();
                             todo!()
-                        },
+                        }
                         // find the most recent frame_no
                         None => todo!("fork from most recent"),
                     };
-                },
+                }
                 Either::B(_) => {
                     todo!("cannot fork without storage");
-                },
+                }
             }
         })
     }
