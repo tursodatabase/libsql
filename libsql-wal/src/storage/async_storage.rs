@@ -326,6 +326,10 @@ impl<B: Backend, S> AsyncStorage<B, S> {
         (this, storage_loop)
     }
 
+    pub fn backend(&self) -> &B {
+        &self.backend
+    }
+
     /// send shutdown signal to bottomless.
     /// return a function that can be called to force shutdown, if necessary
     pub fn send_shutdown(self) -> impl FnOnce() {
