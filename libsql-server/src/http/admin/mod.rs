@@ -48,6 +48,7 @@ struct AppState<C> {
     user_http_server: Arc<hrana::http::Server>,
     connector: C,
     metrics: Metrics,
+    set_env_filter: Option<Box<dyn Fn(&str) -> anyhow::Result<()> + Sync + Send + 'static>>,
 }
 
 impl<C> FromRef<Arc<AppState<C>>> for Metrics {
@@ -66,6 +67,7 @@ pub async fn run<A, C>(
     disable_metrics: bool,
     shutdown: Arc<Notify>,
     auth: Option<Arc<str>>,
+    set_env_filter: Option<Box<dyn Fn(&str) -> anyhow::Result<()> + Sync + Send + 'static>>,
 ) -> anyhow::Result<()>
 where
     A: crate::net::Accept,
@@ -167,11 +169,13 @@ where
         .route("/profile/heap/enable", post(enable_profile_heap))
         .route("/profile/heap/disable/:id", post(disable_profile_heap))
         .route("/profile/heap/:id", delete(delete_profile_heap))
+        .route("/log-filter", post(handle_set_log_filter))
         .with_state(Arc::new(AppState {
             namespaces: namespaces.clone(),
             connector,
             user_http_server,
             metrics,
+            set_env_filter,
         }))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
@@ -509,6 +513,16 @@ async fn handle_delete_namespace<C>(
         .namespaces
         .destroy(NamespaceName::from_string(namespace)?, prune_all)
         .await?;
+    Ok(())
+}
+
+async fn handle_set_log_filter<C>(
+    State(app_state): State<Arc<AppState<C>>>,
+    body: String,
+) -> crate::Result<()> {
+    if let Some(ref cb) = app_state.set_env_filter {
+        cb(&body)?;
+    }
     Ok(())
 }
 

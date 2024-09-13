@@ -10,6 +10,7 @@ use tonic::metadata::BinaryMetadataValue;
 
 use crate::auth::Authenticated;
 use crate::error::Error;
+use crate::http::user::timing::sample_time;
 use crate::metrics::{
     CONCURRENT_CONNECTIONS_COUNT, CONNECTION_ALIVE_DURATION, CONNECTION_CREATE_TIME,
 };
@@ -398,6 +399,7 @@ pub struct TrackedConnection<DB> {
 
 impl<T> Drop for TrackedConnection<T> {
     fn drop(&mut self) {
+        sample_time("connection-duration", self.created_at.elapsed());
         CONCURRENT_CONNECTIONS_COUNT.decrement(1.0);
         CONNECTION_ALIVE_DURATION.record(self.created_at.elapsed());
     }
