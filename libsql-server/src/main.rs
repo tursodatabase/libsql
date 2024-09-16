@@ -185,7 +185,7 @@ struct Cli {
     #[clap(long, env = "SQLD_CHECKPOINT_INTERVAL_S")]
     checkpoint_interval_s: Option<u64>,
 
-    /// By default, all request for which a namespace can't be determined fallaback to the default
+    /// By default, all request for which a namespace can't be determined fallback to the default
     /// namespace `default`. This flag disables that.
     #[clap(long)]
     disable_default_namespace: bool,
