@@ -207,7 +207,7 @@ pub trait Storage: Send + Sync + 'static {
     fn find_segment(
         &self,
         namespace: &NamespaceName,
-        frame_no: u64,
+        frame_no: FindSegmentReq,
         config_override: Option<Self::Config>,
     ) -> impl Future<Output = Result<SegmentKey>> + Send;
 
@@ -306,7 +306,7 @@ where
     fn find_segment(
         &self,
         namespace: &NamespaceName,
-        frame_no: u64,
+        frame_no: FindSegmentReq,
         config_override: Option<Self::Config>,
     ) -> impl Future<Output = Result<SegmentKey>> + Send {
         async move {
@@ -415,7 +415,7 @@ impl Storage for NoStorage {
     async fn find_segment(
         &self,
         _namespace: &NamespaceName,
-        _frame_no: u64,
+        _frame_no: FindSegmentReq,
         _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
         unimplemented!()
@@ -564,7 +564,7 @@ impl<IO: Io> Storage for TestStorage<IO> {
     async fn find_segment(
         &self,
         namespace: &NamespaceName,
-        frame_no: u64,
+        req: FindSegmentReq,
         _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
         let inner = self.inner.lock().await;
