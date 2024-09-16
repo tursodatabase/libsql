@@ -569,9 +569,10 @@ impl<IO: Io> Storage for TestStorage<IO> {
     ) -> Result<SegmentKey> {
         let inner = self.inner.lock().await;
         if inner.store {
+            let FindSegmentReq::EndFrameNoLessThan(fno) = req else { panic!("unsupported lookup by ts") };
             if let Some(segs) = inner.stored.get(namespace) {
-                let Some((key, _path)) = segs.iter().find(|(k, _)| k.includes(frame_no)) else {
-                    return Err(Error::FrameNotFound(frame_no));
+                let Some((key, _path)) = segs.iter().find(|(k, _)| k.includes(fno)) else {
+                    return Err(Error::SegmentNotFound(req));
                 };
                 return Ok(*key);
             } else {

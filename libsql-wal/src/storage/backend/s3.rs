@@ -210,7 +210,7 @@ impl<IO: Io> S3Backend<IO> {
         frame_no: u64,
     ) -> Result<Option<SegmentKey>> {
         let lookup_key_prefix = s3_segment_index_lookup_key_prefix(&folder_key);
-        let lookup_key = s3_segment_index_lookup_key(&folder_key, frame_no);
+        let lookup_key = s3_segment_index_ends_before_lookup_key(&folder_key, frame_no);
 
         let objects = self
             .client
@@ -527,7 +527,8 @@ impl fmt::Display for SegmentIndexLookupKey<'_> {
     }
 }
 
-fn s3_segment_index_lookup_key<'a>(
+/// return the biggest segment whose end frame number is less than frame_no
+fn s3_segment_index_ends_before_lookup_key<'a>(
     folder_key: &'a FolderKey,
     frame_no: u64,
 ) -> SegmentIndexLookupKey<'a> {
@@ -658,14 +659,14 @@ where
         };
 
         match req {
-            FindSegmentReq::Frame(frame_no) => self
+            FindSegmentReq::EndFrameNoLessThan(frame_no) => self
                 .find_segment_by_frame_no(config, &folder_key, frame_no)
                 .await?
-                .ok_or_else(|| Error::FrameNotFound(frame_no)),
+                .ok_or_else(|| Error::SegmentNotFound(req)),
             FindSegmentReq::Timestamp(ts) => self
                 .find_segment_by_timestamp(config, &folder_key, ts)
                 .await?
-                .ok_or_else(|| Error::SegmentNotFoundTimestamp(ts)),
+                .ok_or_else(|| Error::SegmentNotFound(req)),
         }
     }
 

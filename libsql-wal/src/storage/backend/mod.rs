@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use std::sync::Arc;
-use std::{future::Future, path::Path};
+use std::future::Future;
 
 use chrono::{DateTime, Utc};
 use fst::Map;
@@ -31,9 +31,10 @@ pub struct DbMeta {
     pub max_frame_no: u64,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum FindSegmentReq {
     /// returns a segment containing this frame
-    Frame(u64),
+    EndFrameNoLessThan(u64),
     /// Returns the segment with closest timestamp less than or equal to the requested timestamp
     Timestamp(DateTime<Utc>),
 }
