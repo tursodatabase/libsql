@@ -44,7 +44,6 @@ where
         mut current: u64,
         until: u64,
     ) -> Pin<Box<dyn Stream<Item = Result<Box<Frame>>> + Send + 'a>> {
-        
         Box::pin(async_stream::try_stream! {
             loop {
                 let key = self.storage.find_segment(&self.namespace, FindSegmentReq::EndFrameNoLessThan(current), None).await?;

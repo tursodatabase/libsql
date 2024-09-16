@@ -38,7 +38,8 @@ pub struct S3Backend<IO> {
     client: Client,
     default_config: Arc<S3Config>,
     io: IO,
-} impl S3Backend<StdIO> {
+}
+impl S3Backend<StdIO> {
     pub async fn from_sdk_config(
         aws_config: SdkConfig,
         bucket: String,
@@ -911,8 +912,11 @@ mod tests {
             .unwrap();
         assert_eq!(key.start_frame_no, 1);
         assert_eq!(key.end_frame_no, 64);
-        
-        let index = storage.fetch_segment_index(&s3_config, &ns, &key).await.unwrap();
+
+        let index = storage
+            .fetch_segment_index(&s3_config, &ns, &key)
+            .await
+            .unwrap();
         assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
     }
 }

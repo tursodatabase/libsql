@@ -1,6 +1,6 @@
 #![allow(dead_code)]
-use std::sync::Arc;
 use std::future::Future;
+use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use fst::Map;

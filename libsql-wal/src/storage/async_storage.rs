@@ -232,14 +232,7 @@ where
         config_override: Option<Self::Config>,
     ) -> super::Result<super::SegmentKey> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
-        let key = self
-            .backend
-            .find_segment(
-                &config,
-                namespace,
-                req,
-            )
-            .await?;
+        let key = self.backend.find_segment(&config, namespace, req).await?;
         Ok(key)
     }
 
