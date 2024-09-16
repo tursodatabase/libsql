@@ -39,7 +39,6 @@ pub struct S3Backend<IO> {
     default_config: Arc<S3Config>,
     io: IO,
 }
-
 impl S3Backend<StdIO> {
     pub async fn from_sdk_config(
         aws_config: SdkConfig,
@@ -210,7 +209,7 @@ impl<IO: Io> S3Backend<IO> {
         frame_no: u64,
     ) -> Result<Option<SegmentKey>> {
         let lookup_key_prefix = s3_segment_index_lookup_key_prefix(&folder_key);
-        let lookup_key = s3_segment_index_lookup_key(&folder_key, frame_no);
+        let lookup_key = s3_segment_index_ends_before_lookup_key(&folder_key, frame_no);
 
         let objects = self
             .client
@@ -527,7 +526,8 @@ impl fmt::Display for SegmentIndexLookupKey<'_> {
     }
 }
 
-fn s3_segment_index_lookup_key<'a>(
+/// return the biggest segment whose end frame number is less than frame_no
+fn s3_segment_index_ends_before_lookup_key<'a>(
     folder_key: &'a FolderKey,
     frame_no: u64,
 ) -> SegmentIndexLookupKey<'a> {
@@ -580,35 +580,6 @@ where
         Ok(())
     }
 
-    async fn fetch_segment(
-        &self,
-        config: &Self::Config,
-        namespace: &NamespaceName,
-        frame_no: u64,
-        dest_path: &Path,
-    ) -> Result<fst::Map<Arc<[u8]>>> {
-        let folder_key = FolderKey {
-            cluster_id: &config.cluster_id,
-            namespace: &namespace,
-        };
-
-        let Some(segment_key) = self
-            .find_segment_by_frame_no(config, &folder_key, frame_no)
-            .await?
-        else {
-            return Err(Error::FrameNotFound(frame_no));
-        };
-
-        if segment_key.includes(frame_no) {
-            // TODO: make open async
-            let file = self.io.open(false, false, true, dest_path)?;
-            self.fetch_segment_from_key(config, &folder_key, &segment_key, &file)
-                .await
-        } else {
-            return Err(Error::FrameNotFound(frame_no));
-        }
-    }
-
     async fn meta(
         &self,
         config: &Self::Config,
@@ -658,14 +629,14 @@ where
         };
 
         match req {
-            FindSegmentReq::Frame(frame_no) => self
+            FindSegmentReq::EndFrameNoLessThan(frame_no) => self
                 .find_segment_by_frame_no(config, &folder_key, frame_no)
                 .await?
-                .ok_or_else(|| Error::FrameNotFound(frame_no)),
+                .ok_or_else(|| Error::SegmentNotFound(req)),
             FindSegmentReq::Timestamp(ts) => self
                 .find_segment_by_timestamp(config, &folder_key, ts)
                 .await?
-                .ok_or_else(|| Error::SegmentNotFoundTimestamp(ts)),
+                .ok_or_else(|| Error::SegmentNotFound(req)),
         }
     }
 
@@ -831,7 +802,6 @@ mod tests {
     use fst::MapBuilder;
     use s3s::auth::SimpleAuth;
     use s3s::service::{S3ServiceBuilder, SharedS3Service};
-    use tempfile::NamedTempFile;
     use uuid::Uuid;
 
     use crate::io::StdIO;
@@ -901,7 +871,7 @@ mod tests {
                 SegmentMeta {
                     namespace: ns.clone(),
                     segment_id: Uuid::new_v4(),
-                    start_frame_no: 0u64.into(),
+                    start_frame_no: 1u64.into(),
                     end_frame_no: 64u64.into(),
                     segment_timestamp: Utc::now(),
                 },
@@ -936,30 +906,17 @@ mod tests {
         let db_meta = storage.meta(&s3_config, &ns).await.unwrap();
         assert_eq!(db_meta.max_frame_no, 128);
 
-        let tmp = NamedTempFile::new().unwrap();
+        let key = storage
+            .find_segment(&s3_config, &ns, FindSegmentReq::EndFrameNoLessThan(65))
+            .await
+            .unwrap();
+        assert_eq!(key.start_frame_no, 1);
+        assert_eq!(key.end_frame_no, 64);
 
         let index = storage
-            .fetch_segment(&s3_config, &ns, 1, tmp.path())
+            .fetch_segment_index(&s3_config, &ns, &key)
             .await
             .unwrap();
         assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
-
-        let index = storage
-            .fetch_segment(&s3_config, &ns, 63, tmp.path())
-            .await
-            .unwrap();
-        assert_eq!(index.get(42u32.to_be_bytes()).unwrap(), 42);
-
-        let index = storage
-            .fetch_segment(&s3_config, &ns, 64, tmp.path())
-            .await
-            .unwrap();
-        assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
-
-        let index = storage
-            .fetch_segment(&s3_config, &ns, 65, tmp.path())
-            .await
-            .unwrap();
-        assert_eq!(index.get(44u32.to_be_bytes()).unwrap(), 44);
     }
 }

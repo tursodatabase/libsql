@@ -13,7 +13,7 @@ use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegment;
 use crate::segment::Segment;
 
-use super::backend::Backend;
+use super::backend::{Backend, FindSegmentReq};
 use super::scheduler::Scheduler;
 use super::{OnStoreCallback, RestoreOptions, Storage, StoreSegmentRequest};
 
@@ -228,18 +228,11 @@ where
     async fn find_segment(
         &self,
         namespace: &NamespaceName,
-        frame_no: u64,
+        req: FindSegmentReq,
         config_override: Option<Self::Config>,
     ) -> super::Result<super::SegmentKey> {
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
-        let key = self
-            .backend
-            .find_segment(
-                &config,
-                namespace,
-                super::backend::FindSegmentReq::Frame(frame_no),
-            )
-            .await?;
+        let key = self.backend.find_segment(&config, namespace, req).await?;
         Ok(key)
     }
 

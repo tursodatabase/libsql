@@ -9,6 +9,7 @@ use zerocopy::FromZeroes;
 
 use crate::io::buf::ZeroCopyBoxIoBuf;
 use crate::segment::Frame;
+use crate::storage::backend::FindSegmentReq;
 use crate::storage::Storage;
 
 use super::Result;
@@ -45,7 +46,7 @@ where
     ) -> Pin<Box<dyn Stream<Item = Result<Box<Frame>>> + Send + 'a>> {
         Box::pin(async_stream::try_stream! {
             loop {
-                let key = self.storage.find_segment(&self.namespace, current, None).await?;
+                let key = self.storage.find_segment(&self.namespace, FindSegmentReq::EndFrameNoLessThan(current), None).await?;
                 let index = self.storage.fetch_segment_index(&self.namespace, &key, None).await?;
                 let mut pages = index.into_stream();
                 let mut maybe_seg = None;

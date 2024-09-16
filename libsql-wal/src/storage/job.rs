@@ -266,16 +266,6 @@ mod test {
                 Ok(std::fs::File::open("").unwrap())
             }
 
-            async fn fetch_segment(
-                &self,
-                _config: &Self::Config,
-                _namespace: &NamespaceName,
-                _frame_no: u64,
-                _dest_path: &std::path::Path,
-            ) -> Result<fst::Map<Arc<[u8]>>> {
-                todo!()
-            }
-
             fn list_segments<'a>(
                 &'a self,
                 _config: Self::Config,

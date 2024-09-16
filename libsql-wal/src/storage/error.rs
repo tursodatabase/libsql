@@ -1,6 +1,6 @@
 use std::panic::Location;
 
-use chrono::{DateTime, Utc};
+use super::backend::FindSegmentReq;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -10,10 +10,8 @@ pub enum Error {
     Store(String),
     #[error("error compacting segment: {0}")]
     Compact(#[from] crate::error::Error),
-    #[error("frame not {0} found")]
-    FrameNotFound(u64),
-    #[error("No satisfying segment found for timestamp {0}")]
-    SegmentNotFoundTimestamp(DateTime<Utc>),
+    #[error("segment not found for request {0:?}")]
+    SegmentNotFound(FindSegmentReq),
     #[error("unhandled storage error: {error}, in {context}")]
     UnhandledStorageError {
         error: Box<dyn std::error::Error + Send + Sync + 'static>,

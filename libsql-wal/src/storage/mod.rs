@@ -18,7 +18,7 @@ use crate::io::{FileExt, Io, StdIO};
 use crate::segment::compacted::CompactedSegment;
 use crate::segment::{sealed::SealedSegment, Segment};
 
-use self::backend::SegmentMeta;
+use self::backend::{FindSegmentReq, SegmentMeta};
 pub use self::error::Error;
 
 pub mod async_storage;
@@ -142,10 +142,10 @@ impl FromStr for SegmentKey {
     type Err = ();
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        let (rev_start_fno, s) = s.split_at(20);
-        let start_frame_no = u64::MAX - rev_start_fno.parse::<u64>().map_err(|_| ())?;
-        let (rev_end_fno, timestamp) = s[1..].split_at(20);
+        let (rev_end_fno, s) = s.split_at(20);
         let end_frame_no = u64::MAX - rev_end_fno.parse::<u64>().map_err(|_| ())?;
+        let (start_fno, timestamp) = s[1..].split_at(20);
+        let start_frame_no = start_fno.parse::<u64>().map_err(|_| ())?;
         let timestamp = timestamp[1..].parse().map_err(|_| ())?;
         Ok(Self {
             start_frame_no,
@@ -160,8 +160,8 @@ impl fmt::Display for SegmentKey {
         write!(
             f,
             "{:020}-{:020}-{:020}",
-            u64::MAX - self.start_frame_no,
             u64::MAX - self.end_frame_no,
+            self.start_frame_no,
             self.timestamp,
         )
     }
@@ -207,7 +207,7 @@ pub trait Storage: Send + Sync + 'static {
     fn find_segment(
         &self,
         namespace: &NamespaceName,
-        frame_no: u64,
+        frame_no: FindSegmentReq,
         config_override: Option<Self::Config>,
     ) -> impl Future<Output = Result<SegmentKey>> + Send;
 
@@ -306,7 +306,7 @@ where
     fn find_segment(
         &self,
         namespace: &NamespaceName,
-        frame_no: u64,
+        frame_no: FindSegmentReq,
         config_override: Option<Self::Config>,
     ) -> impl Future<Output = Result<SegmentKey>> + Send {
         async move {
@@ -415,7 +415,7 @@ impl Storage for NoStorage {
     async fn find_segment(
         &self,
         _namespace: &NamespaceName,
-        _frame_no: u64,
+        _frame_no: FindSegmentReq,
         _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
         unimplemented!()
@@ -564,14 +564,17 @@ impl<IO: Io> Storage for TestStorage<IO> {
     async fn find_segment(
         &self,
         namespace: &NamespaceName,
-        frame_no: u64,
+        req: FindSegmentReq,
         _config_override: Option<Self::Config>,
     ) -> Result<SegmentKey> {
         let inner = self.inner.lock().await;
         if inner.store {
+            let FindSegmentReq::EndFrameNoLessThan(fno) = req else {
+                panic!("unsupported lookup by ts")
+            };
             if let Some(segs) = inner.stored.get(namespace) {
-                let Some((key, _path)) = segs.iter().find(|(k, _)| k.includes(frame_no)) else {
-                    return Err(Error::FrameNotFound(frame_no));
+                let Some((key, _path)) = segs.iter().find(|(k, _)| k.includes(fno)) else {
+                    return Err(Error::SegmentNotFound(req));
                 };
                 return Ok(*key);
             } else {
