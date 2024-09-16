@@ -84,15 +84,6 @@ pub trait Backend: Send + Sync + 'static {
         key: SegmentKey,
     ) -> impl Future<Output = Result<impl FileExt>> + Send;
 
-    // /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
-    async fn fetch_segment(
-        &self,
-        config: &Self::Config,
-        namespace: &NamespaceName,
-        frame_no: u64,
-        dest_path: &Path,
-    ) -> Result<Map<Arc<[u8]>>>;
-
     /// Fetch meta for `namespace`
     fn meta(
         &self,
@@ -131,18 +122,6 @@ impl<T: Backend> Backend for Arc<T> {
     ) -> impl Future<Output = Result<()>> + Send {
         self.as_ref()
             .store(config, meta, segment_data, segment_index)
-    }
-
-    async fn fetch_segment(
-        &self,
-        config: &Self::Config,
-        namespace: &NamespaceName,
-        frame_no: u64,
-        dest_path: &Path,
-    ) -> Result<fst::Map<Arc<[u8]>>> {
-        self.as_ref()
-            .fetch_segment(config, namespace, frame_no, dest_path)
-            .await
     }
 
     async fn meta(&self, config: &Self::Config, namespace: &NamespaceName) -> Result<DbMeta> {
