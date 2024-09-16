@@ -392,7 +392,6 @@ impl AnalyzedSegments {
                         end_frame_no,
                         timestamp,
                     };
-                    dbg!(&key);
                     segments.push(key);
                 }
             }
