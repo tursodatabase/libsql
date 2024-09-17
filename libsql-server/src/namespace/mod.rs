@@ -92,7 +92,9 @@ impl Namespace {
             self.checkpoint().await?;
         }
         self.db.shutdown().await?;
-        let _ = tokio::fs::remove_file(self.path.join(".sentinel")).await;
+        if let Err(e) = tokio::fs::remove_file(self.path.join(".sentinel")).await {
+            tracing::error!("unable to remove .sentinel file: {}", e);
+        }
         Ok(())
     }
 
