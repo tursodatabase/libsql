@@ -15,7 +15,7 @@ use uuid::Uuid;
 use zerocopy::AsBytes;
 
 use crate::io::buf::ZeroCopyBuf;
-use crate::io::FileExt as _;
+use crate::io::FileExt;
 use crate::segment::compacted::CompactedSegment;
 use crate::segment::compacted::CompactedSegmentDataFooter;
 use crate::segment::compacted::CompactedSegmentDataHeader;
@@ -52,16 +52,17 @@ impl<B> Compactor<B> {
     pub fn new(backend: Arc<B>, compactor_path: &Path) -> Result<Self> {
         let meta = rusqlite::Connection::open(compactor_path.join("meta.db"))?;
         // todo! set pragmas: wal + foreign key check
-        meta.execute("CREATE TABLE IF NOT EXISTS monitored_namespaces (id INTEGER PRIMARY KEY AUTOINCREMENT, namespace_name BLOB NOT NULL)", ()).unwrap();
+        meta.pragma_update(None, "journal_mode", "wal")?;
+        meta.execute(r#"CREATE TABLE IF NOT EXISTS monitored_namespaces (id INTEGER PRIMARY KEY AUTOINCREMENT, namespace_name BLOB NOT NULL, UNIQUE(namespace_name))"#, ()).unwrap();
         meta.execute(
-            "CREATE TABLE IF NOT EXISTS segments (
+            r#"CREATE TABLE IF NOT EXISTS segments (
                         start_frame_no INTEGER,
                         end_frame_no INTEGER,
                         timestamp DATE,
                         size INTEGER,
-                        namespace_id INTEGER,
-                        PRIMARY KEY (start_frame_no, end_frame_no),
-                        FOREIGN KEY(namespace_id) REFERENCES monitored_namespaces(id))",
+                        namespace_id INTEGER REFERENCES monitored_namespaces(id) ON DELETE CASCADE,
+                        PRIMARY KEY (start_frame_no, end_frame_no))
+                        "#,
             (),
         )?;
 
@@ -79,10 +80,13 @@ impl<B> Compactor<B> {
         let tx = self.meta.transaction()?;
         let id = {
             let mut stmt  = tx.prepare_cached("INSERT OR IGNORE INTO monitored_namespaces(namespace_name) VALUES (?) RETURNING id")?;
-            stmt.query_row([namespace.as_str()], |r| r.get(0))?
+            stmt.query_row([namespace.as_str()], |r| r.get(0))
+                .optional()?
         };
 
-        sync_one(self.backend.as_ref(), namespace, id, &tx).await?;
+        if let Some(id) = id {
+            sync_one(self.backend.as_ref(), namespace, id, &tx, true).await?;
+        }
 
         tx.commit()?;
 
@@ -139,7 +143,7 @@ impl<B> Compactor<B> {
     }
 
     /// sync all segments from storage with local cache
-    pub async fn sync_full(&mut self) -> Result<()>
+    pub async fn sync_all(&mut self, full: bool) -> Result<()>
     where
         B: Backend,
     {
@@ -147,13 +151,35 @@ impl<B> Compactor<B> {
             .meta
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         {
-            tx.execute("DELETE FROM segments", ())?;
             let mut stmt = tx.prepare("SELECT namespace_name, id FROM monitored_namespaces")?;
             let mut namespace_rows = stmt.query(())?;
             while let Some(row) = namespace_rows.next()? {
                 let namespace = NamespaceName::from_string(row.get::<_, String>(0)?);
                 let id = row.get::<_, u64>(1)?;
-                sync_one(self.backend.as_ref(), &namespace, id, &tx).await?;
+                sync_one(self.backend.as_ref(), &namespace, id, &tx, full).await?;
+            }
+        }
+
+        tx.commit()?;
+
+        Ok(())
+    }
+
+    pub async fn sync_one(&mut self, namespace: &NamespaceName, full: bool) -> Result<()>
+    where
+        B: Backend,
+    {
+        let tx = self
+            .meta
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        {
+            let mut stmt =
+                tx.prepare_cached("SELECT id FROM monitored_namespaces WHERE namespace_name = ?")?;
+            let id = stmt
+                .query_row([namespace.as_str()], |row| row.get(0))
+                .optional()?;
+            if let Some(id) = id {
+                sync_one(self.backend.as_ref(), &namespace, id, &tx, full).await?;
             }
         }
 
@@ -294,6 +320,9 @@ impl<B> Compactor<B> {
         ret?;
 
         let (start, end) = set.range().expect("non-empty set");
+        let timestamp = DateTime::from_timestamp_millis(set.last().unwrap().timestamp as _)
+            .unwrap()
+            .to_utc();
         self.backend
             .store(
                 &self.backend.default_config(),
@@ -302,11 +331,7 @@ impl<B> Compactor<B> {
                     segment_id: Uuid::new_v4(),
                     start_frame_no: start,
                     end_frame_no: end,
-                    segment_timestamp: DateTime::from_timestamp_millis(
-                        set.last().unwrap().timestamp as _,
-                    )
-                    .unwrap()
-                    .to_utc(),
+                    segment_timestamp: timestamp,
                 },
                 out_file,
                 out_index.into_inner().unwrap(),
@@ -352,8 +377,20 @@ impl<B> Compactor<B> {
         Ok(())
     }
 
-    pub fn list_all(&self, namespace: &NamespaceName, f: impl FnMut(SegmentInfo)) -> Result<()> {
+    pub fn list_all_segments(
+        &self,
+        namespace: &NamespaceName,
+        f: impl FnMut(SegmentInfo),
+    ) -> Result<()> {
         list_segments(&self.meta, namespace, f)
+    }
+
+    pub fn list_monitored_namespaces(&self, f: impl FnMut(NamespaceName)) -> Result<()> {
+        list_namespace(&self.meta, f)
+    }
+
+    pub fn unmonitor(&self, ns: &NamespaceName) -> Result<()> {
+        unmonitor(&self.meta, ns)
     }
 }
 
@@ -442,13 +479,25 @@ async fn sync_one<B: Backend>(
     namespace: &NamespaceName,
     id: u64,
     conn: &rusqlite::Connection,
+    full: bool,
 ) -> Result<()> {
+    let until = if full {
+        get_last_frame_no(conn, id)?
+    } else {
+        None
+    };
+
     let segs = backend.list_segments(backend.default_config(), &namespace, 0);
     tokio::pin!(segs);
 
     while let Some(info) = segs.next().await {
         let info = info.unwrap();
-        register_segment_info(&conn, info, id)?;
+        register_segment_info(&conn, &info, id)?;
+        if let Some(until) = until {
+            if info.key.start_frame_no <= until {
+                break;
+            }
+        }
     }
 
     Ok(())
@@ -489,9 +538,25 @@ fn list_segments<'a>(
     Ok(())
 }
 
+fn list_namespace<'a>(
+    conn: &'a rusqlite::Connection,
+    mut f: impl FnMut(NamespaceName),
+) -> Result<()> {
+    let mut stmt = conn.prepare_cached(r#"SELECT namespace_name FROM monitored_namespaces"#)?;
+
+    stmt.query_map((), |r| {
+        let n = NamespaceName::from_string(r.get(0)?);
+        f(n);
+        Ok(())
+    })?
+    .try_for_each(|c| c)?;
+
+    Ok(())
+}
+
 fn register_segment_info(
     conn: &rusqlite::Connection,
-    info: SegmentInfo,
+    info: &SegmentInfo,
     namespace_id: u64,
 ) -> Result<()> {
     let mut stmt = conn.prepare_cached(
@@ -566,4 +631,18 @@ fn segments_range(
         .optional()?;
 
     Ok(first.zip(last))
+}
+
+fn get_last_frame_no(conn: &rusqlite::Connection, namespace_id: u64) -> Result<Option<u64>> {
+    let mut stmt =
+        conn.prepare_cached("SELECT MAX(end_frame_no) FROM segments WHERE namespace_id = ?")?;
+    Ok(stmt.query_row([namespace_id], |row| row.get(0))?)
+}
+
+fn unmonitor(conn: &rusqlite::Connection, namespace: &NamespaceName) -> Result<()> {
+    conn.execute(
+        "DELETE FROM monitored_namespaces WHERE namespace_name = ?",
+        [namespace.as_str()],
+    )?;
+    Ok(())
 }
