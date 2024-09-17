@@ -63,7 +63,12 @@ pub(super) async fn make_primary_connection_maker(
     let mut is_dirty = {
         let sentinel_path = db_path.join(".sentinel");
         if sentinel_path.try_exists()? {
-            true
+            if std::env::var("LIBSQL_IGNORE_DIRTY_LOG").is_ok() {
+                tracing::warn!("ignoring dirty log");
+                false
+            } else {
+                true
+            }
         } else {
             tokio::fs::File::create(&sentinel_path).await?;
             false
