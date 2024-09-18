@@ -3,7 +3,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use chrono::{DateTime, Utc};
 use futures::prelude::Future;
 use libsql_sys::name::NamespaceResolver;
 use libsql_sys::wal::either::Either;
@@ -270,7 +269,7 @@ impl ConfigureNamespace for LibsqlPrimaryConfigurator {
         _from_config: MetaStoreHandle,
         _to_ns: NamespaceName,
         _to_config: MetaStoreHandle,
-        timestamp: Option<DateTime<Utc>>,
+        timestamp: Option<chrono::prelude::NaiveDateTime>,
         _store: NamespaceStore,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(async move {
@@ -284,7 +283,9 @@ impl ConfigureNamespace for LibsqlPrimaryConfigurator {
                                 .find_segment(
                                     &s.backend().default_config(),
                                     &ns,
-                                    libsql_wal::storage::backend::FindSegmentReq::Timestamp(ts),
+                                    libsql_wal::storage::backend::FindSegmentReq::Timestamp(
+                                        ts.and_utc(),
+                                    ),
                                 )
                                 .await
                                 .unwrap();
