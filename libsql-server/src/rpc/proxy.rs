@@ -633,7 +633,12 @@ impl Proxy for ProxyService {
                     tracing::debug!("connected: {client_id}");
                     match connection_maker.create().await {
                         Ok(conn) => {
-                            assert!(conn.is_primary());
+                            if !conn.is_primary() {
+                                return Err(tonic::Status::failed_precondition(
+                                    "cannot run schema migration against a replica",
+                                ));
+                            }
+
                             let conn = Arc::new(TimeoutConnection::new(conn));
                             let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
                             lock.insert(client_id, conn.clone());
@@ -703,7 +708,12 @@ impl Proxy for ProxyService {
                 tracing::debug!("connected: {client_id}");
                 match connection_maker.create().await {
                     Ok(conn) => {
-                        assert!(conn.is_primary());
+                        if !conn.is_primary() {
+                            return Err(tonic::Status::failed_precondition(
+                                "cannot run schema migration against a replica",
+                            ));
+                        }
+
                         let conn = Arc::new(TimeoutConnection::new(conn));
                         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
                         lock.insert(client_id, conn.clone());
