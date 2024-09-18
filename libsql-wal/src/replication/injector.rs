@@ -137,7 +137,7 @@ mod test {
         let primary_conn = primary_env.open_conn("test");
         let primary_shared = primary_env.shared("test");
 
-        let replicator = Replicator::new(primary_shared.clone(), 1);
+        let replicator = Replicator::new(primary_shared.clone(), 1, true);
         let stream = replicator.into_frame_stream();
 
         tokio::pin!(stream);

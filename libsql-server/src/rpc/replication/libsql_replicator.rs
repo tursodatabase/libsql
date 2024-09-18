@@ -157,6 +157,7 @@ impl ReplicationLog for LibsqlReplicationService {
         let replicator = libsql_wal::replication::replicator::Replicator::new(
             shared.clone(),
             req.next_offset.max(1),
+            true,
         );
 
         let flavor = req.wal_flavor();

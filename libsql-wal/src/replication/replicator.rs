@@ -15,15 +15,17 @@ pub struct Replicator<IO: Io> {
     shared: Arc<SharedWal<IO>>,
     new_frame_notifier: watch::Receiver<u64>,
     next_frame_no: u64,
+    wait_for_more: bool,
 }
 
 impl<IO: Io> Replicator<IO> {
-    pub fn new(shared: Arc<SharedWal<IO>>, next_frame_no: u64) -> Self {
+    pub fn new(shared: Arc<SharedWal<IO>>, next_frame_no: u64, wait_for_more: bool) -> Self {
         let new_frame_notifier = shared.new_frame_notifier.subscribe();
         Self {
             shared,
             new_frame_notifier,
             next_frame_no,
+            wait_for_more,
         }
     }
 
@@ -59,7 +61,7 @@ impl<IO: Io> Replicator<IO> {
                 // we have stuff to replicate
                 if most_recent_frame_no >= self.next_frame_no {
                     // first replicate the most recent version of each page from the current
-                    // segment. We also return how far we have replicated from the current log
+                    // segment. We also return how far back we have replicated from the current log
                     let current = self.shared.current.load();
                     let mut seen = RoaringBitmap::new();
                     let (stream, replicated_until, size_after) = current.frame_stream_from(self.next_frame_no, &mut seen);
@@ -139,6 +141,10 @@ impl<IO: Io> Replicator<IO> {
                         }
                     }
                 }
+
+                if !self.wait_for_more {
+                    break
+                }
             }
         }
     }
@@ -169,7 +175,7 @@ mod test {
                 .unwrap();
         }
 
-        let replicator = Replicator::new(shared.clone(), 1);
+        let replicator = Replicator::new(shared.clone(), 1, true);
 
         let tmp = NamedTempFile::new().unwrap();
         let stream = replicator.into_frame_stream();
@@ -240,7 +246,7 @@ mod test {
         // replicate everything from scratch again
         {
             let tmp = NamedTempFile::new().unwrap();
-            let replicator = Replicator::new(shared.clone(), 1);
+            let replicator = Replicator::new(shared.clone(), 1, true);
             let stream = replicator.into_frame_stream();
 
             tokio::pin!(stream);
@@ -302,7 +308,7 @@ mod test {
 
         let db_content = std::fs::read(&env.db_path("test").join("data")).unwrap();
 
-        let replicator = Replicator::new(shared, 1);
+        let replicator = Replicator::new(shared, 1, true);
         let stream = replicator.into_frame_stream().take(3);
 
         tokio::pin!(stream);
