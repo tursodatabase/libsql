@@ -133,8 +133,26 @@ fn maybe_store_segment<S: Storage>(
         storage.store(namespace, seg, None, cb);
     } else {
         // segment can be checkpointed right away.
-        let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
-        tracing::debug!(segment_end = seg.last_committed(), durable_frame_no = *durable_frame_no.lock(), "segment doesn't contain any new data");
+        // FIXME: this is only necessary because some tests call this method in an async context.
+        #[cfg(debug_assertions)]
+        {
+            let namespace = namespace.clone();
+            let notifier = notifier.clone();
+            tokio::spawn(async move {
+                let _ = notifier.send(CheckpointMessage::Namespace(namespace)).await;
+            });
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
+        }
+
+        tracing::debug!(
+            segment_end = seg.last_committed(),
+            durable_frame_no = *durable_frame_no.lock(),
+            "segment doesn't contain any new data"
+        );
     }
 }
 
@@ -245,10 +263,15 @@ where
         // will think that this is a wal file, but it's in fact a directory and it will not like
         // it.
         let mut wals_path = db_path.to_owned();
-        wals_path.set_file_name(format!("{}-wal", db_path.file_name().unwrap().to_str().unwrap()));
+        wals_path.set_file_name(format!(
+            "{}-wal",
+            db_path.file_name().unwrap().to_str().unwrap()
+        ));
         self.io.create_dir_all(&wals_path)?;
         // TODO: handle that with abstract io
-        let dir = walkdir::WalkDir::new(&wals_path).sort_by_file_name().into_iter();
+        let dir = walkdir::WalkDir::new(&wals_path)
+            .sort_by_file_name()
+            .into_iter();
 
         // we only checkpoint durable frame_no so this is a good first estimate without an actual
         // network call.
@@ -268,9 +291,12 @@ where
 
             let file = self.io.open(false, true, true, entry.path())?;
 
-            if let Some(sealed) =
-                SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default(), self.io.now())?
-            {
+            if let Some(sealed) = SealedSegment::open(
+                file.into(),
+                entry.path().to_path_buf(),
+                Default::default(),
+                self.io.now(),
+            )? {
                 list.push(sealed.clone());
                 maybe_store_segment(
                     self.storage.as_ref(),
@@ -526,9 +552,7 @@ where
             return Ok(());
         }
         let start_frame_no = current.next_frame_no();
-        let path = shared
-            .wals_path
-            .join(format!("{start_frame_no:020}.seg"));
+        let path = shared.wals_path.join(format!("{start_frame_no:020}.seg"));
 
         let segment_file = self.io.open(true, true, true, &path)?;
         let salt = self.io.with_rng(|rng| rng.gen());

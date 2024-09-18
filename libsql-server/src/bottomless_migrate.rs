@@ -66,10 +66,7 @@ pub async fn bottomless_migrate(
         }
     });
 
-    let tmp_registry = Arc::new(WalRegistry::new(
-        NoStorage.into(),
-        sender,
-    )?);
+    let tmp_registry = Arc::new(WalRegistry::new(NoStorage.into(), sender)?);
 
     let mut configurators = NamespaceConfigurators::default();
 

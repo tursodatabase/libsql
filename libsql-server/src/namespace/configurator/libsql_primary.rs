@@ -3,6 +3,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+use chrono::NaiveDateTime;
 use futures::prelude::Future;
 use libsql_sys::name::NamespaceResolver;
 use libsql_wal::io::StdIO;
@@ -267,13 +268,19 @@ impl ConfigureNamespace for LibsqlPrimaryConfigurator {
         _from_config: MetaStoreHandle,
         to_ns: NamespaceName,
         to_config: MetaStoreHandle,
-        timestamp: Option<DateTime<Utc>>,
+        timestamp: Option<NaiveDateTime>,
         store: NamespaceStore,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         let registry = self.registry.clone();
         let base_path = &self.base.base_path;
         Box::pin(super::libsql_fork::libsql_wal_fork(
-            registry, base_path, from_ns, to_ns, to_config, timestamp, store,
+            registry,
+            base_path,
+            from_ns,
+            to_ns,
+            to_config,
+            timestamp.map(|ts| ts.and_utc()),
+            store,
         ))
     }
 }

@@ -67,7 +67,13 @@ async fn run_test_sample(path: &Path) -> Result {
 
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
     let before = std::time::Instant::now();
-    let sqlite_results = run_script(&sqlite_conn, &script, &mut rng, Sqlite3WalManager::default()).collect::<Vec<_>>();
+    let sqlite_results = run_script(
+        &sqlite_conn,
+        &script,
+        &mut rng,
+        Sqlite3WalManager::default(),
+    )
+    .collect::<Vec<_>>();
     println!("ran sqlite in {:?}", before.elapsed());
     drop(sqlite_conn);
 
@@ -93,15 +99,11 @@ async fn run_test_sample(path: &Path) -> Result {
     };
 
     let (sender, _receiver) = tokio::sync::mpsc::channel(64);
-    let registry = Arc::new(
-        WalRegistry::new(
-            TestStorage::new().into(),
-            sender,
-        )
-        .unwrap(),
-    );
+    let registry = Arc::new(WalRegistry::new(TestStorage::new().into(), sender).unwrap());
     let wal_manager = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
-    tokio::fs::create_dir_all(tmp.path().join("test")).await.unwrap();
+    tokio::fs::create_dir_all(tmp.path().join("test"))
+        .await
+        .unwrap();
     let db_path = tmp.path().join("test/data").clone();
     let libsql_conn = libsql_sys::Connection::open(
         &db_path,
@@ -114,7 +116,8 @@ async fn run_test_sample(path: &Path) -> Result {
 
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
     let before = std::time::Instant::now();
-    let libsql_results = run_script(&libsql_conn, &script, &mut rng, wal_manager.clone()).collect::<Vec<_>>();
+    let libsql_results =
+        run_script(&libsql_conn, &script, &mut rng, wal_manager.clone()).collect::<Vec<_>>();
     println!("ran libsql in {:?}", before.elapsed());
 
     for ((a, _), (b, _)) in sqlite_results.iter().zip(libsql_results.iter()) {

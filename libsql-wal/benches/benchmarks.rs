@@ -60,8 +60,7 @@ fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal<StdIO>>)) {
     let resolver = |_: &Path| NamespaceName::from_string("test".into());
 
     let (sender, _) = tokio::sync::mpsc::channel(12);
-    let registry =
-        Arc::new(WalRegistry::new(NoStorage.into(), sender).unwrap());
+    let registry = Arc::new(WalRegistry::new(NoStorage.into(), sender).unwrap());
     let wal_manager = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
 
     let mut conn = libsql_sys::Connection::open(

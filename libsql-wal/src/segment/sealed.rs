@@ -4,8 +4,8 @@ use std::io::{BufWriter, ErrorKind, Write};
 use std::mem::size_of;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 use chrono::prelude::{DateTime, Utc};
 use fst::{Map, MapBuilder, Streamer};
@@ -210,7 +210,12 @@ where
 }
 
 impl<F: FileExt> SealedSegment<F> {
-    pub fn open(file: Arc<F>, path: PathBuf, read_locks: Arc<AtomicU64>, now: DateTime<Utc>) -> Result<Option<Self>> {
+    pub fn open(
+        file: Arc<F>,
+        path: PathBuf,
+        read_locks: Arc<AtomicU64>,
+        now: DateTime<Utc>,
+    ) -> Result<Option<Self>> {
         let mut header: SegmentHeader = SegmentHeader::new_zeroed();
         file.read_exact_at(header.as_bytes_mut(), 0)?;
 
@@ -246,7 +251,12 @@ impl<F: FileExt> SealedSegment<F> {
         }))
     }
 
-    fn recover(file: Arc<F>, path: PathBuf, mut header: SegmentHeader, now: DateTime<Utc>) -> Result<Self> {
+    fn recover(
+        file: Arc<F>,
+        path: PathBuf,
+        mut header: SegmentHeader,
+        now: DateTime<Utc>,
+    ) -> Result<Self> {
         assert!(!header.is_empty());
         assert_eq!(header.index_size.get(), 0);
         assert_eq!(header.index_offset.get(), 0);

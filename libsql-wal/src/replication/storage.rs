@@ -10,7 +10,7 @@ use zerocopy::FromZeroes;
 use crate::io::buf::ZeroCopyBoxIoBuf;
 use crate::segment::Frame;
 use crate::storage::backend::FindSegmentReq;
-use crate::storage::{Storage};
+use crate::storage::Storage;
 
 use super::Result;
 
