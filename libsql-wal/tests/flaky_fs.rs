@@ -213,14 +213,13 @@ async fn flaky_fs() {
     let registry = Arc::new(
         WalRegistry::new_with_io(
             io.clone(),
-            tmp.path().join("test/wals"),
             TestStorage::new_io(false, io).into(),
             sender,
         )
         .unwrap(),
     );
     let wal_manager = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
-
+    tokio::fs::create_dir_all(tmp.path().join("test")).await.unwrap();
     let conn = libsql_sys::Connection::open(
         tmp.path().join("test/data").clone(),
         OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,

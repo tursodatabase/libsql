@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
@@ -55,6 +56,7 @@ pub struct SharedWal<IO: Io> {
     pub(crate) checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     pub(crate) io: Arc<IO>,
     pub(crate) swap_strategy: Box<dyn SegmentSwapStrategy>,
+    pub(crate) wals_path: PathBuf,
 }
 
 impl<IO: Io> SharedWal<IO> {

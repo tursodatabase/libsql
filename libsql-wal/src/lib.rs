@@ -112,7 +112,6 @@ pub mod test {
             let registry = Arc::new(
                 WalRegistry::new_with_io(
                     io.clone(),
-                    tmp.path().join("test/wals"),
                     TestStorage::new_io(store, io).into(),
                     sender,
                 )

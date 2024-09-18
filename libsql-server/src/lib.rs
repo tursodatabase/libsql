@@ -835,20 +835,6 @@ where
         scripted_backup: Option<ScriptBackupManager>,
         meta_store: MetaStore,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
-        let wal_path = base_config.base_path.join("wals");
-        let enable_libsql_wal_test = {
-            let is_primary = self.rpc_server_config.is_some();
-            let is_libsql_wal_test = std::env::var("LIBSQL_WAL_TEST").is_ok();
-            is_primary && is_libsql_wal_test
-        };
-        let use_libsql_wal =
-            self.use_custom_wal == Some(CustomWAL::LibsqlWal) || enable_libsql_wal_test;
-        if !use_libsql_wal {
-            if wal_path.try_exists()? {
-                anyhow::bail!("database was previously setup to use libsql-wal");
-            }
-        }
-
         #[cfg(feature = "durable-wal")]
         if let Some(CustomWAL::DurableWal) = self.use_custom_wal {
             if self.db_config.bottomless_replication.is_some() {
@@ -864,7 +850,6 @@ where
                     task_manager,
                     migration_scheduler_handle,
                     scripted_backup,
-                    wal_path,
                     meta_store,
                 )
                 .await
@@ -895,7 +880,6 @@ where
         task_manager: &mut TaskManager,
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
-        wal_path: PathBuf,
         meta_store: MetaStore,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
         tracing::info!("using libsql wal");
@@ -964,7 +948,7 @@ where
             anyhow::bail!("replication without bottomless not supported yet");
         }
 
-        let registry = Arc::new(WalRegistry::new(wal_path, storage, sender)?);
+        let registry = Arc::new(WalRegistry::new(storage, sender)?);
         let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
         task_manager.spawn_with_shutdown_notify(|_| async move {
             checkpointer.run().await;
@@ -1288,15 +1272,16 @@ where
     }
 
     fn check_previous_migration_success(&self) -> anyhow::Result<bool> {
-        let wals_path = self.path.join("wals");
-        if !wals_path.try_exists()? {
-            return Ok(false);
-        }
-
-        let dir = std::fs::read_dir(&wals_path)?;
-
-        // wals dir exist and is not empty
-        Ok(dir.count() != 0)
+        todo!("not usings wal directory anymore");
+        // let wals_path = self.path.join("wals");
+        // if !wals_path.try_exists()? {
+        //     return Ok(false);
+        // }
+        //
+        // let dir = std::fs::read_dir(&wals_path)?;
+        //
+        // // wals dir exist and is not empty
+        // Ok(dir.count() != 0)
     }
 }
 

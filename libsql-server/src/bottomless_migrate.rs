@@ -50,7 +50,6 @@ pub async fn bottomless_migrate(
     let tmp = TempDir::new()?;
 
     tokio::fs::create_dir_all(tmp.path().join("dbs")).await?;
-    tokio::fs::create_dir_all(tmp.path().join("wals")).await?;
 
     let configs_stream = meta_store.namespaces();
     tokio::pin!(configs_stream);
@@ -68,7 +67,6 @@ pub async fn bottomless_migrate(
     });
 
     let tmp_registry = Arc::new(WalRegistry::new(
-        tmp.path().join("wals"),
         NoStorage.into(),
         sender,
     )?);
@@ -110,7 +108,6 @@ pub async fn bottomless_migrate(
     // doesn't exist, then we restore it, otherwise, we delete it.
     tokio::fs::rename(&base_dbs_dir, &base_dbs_dir_tmp).await?;
     tokio::fs::rename(tmp.path().join("dbs"), base_dbs_dir).await?;
-    tokio::fs::rename(tmp.path().join("wals"), base_config.base_path.join("wals")).await?;
     tokio::fs::remove_dir_all(base_config.base_path.join("_dbs")).await?;
 
     Ok(())

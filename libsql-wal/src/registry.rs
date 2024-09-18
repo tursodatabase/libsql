@@ -1,6 +1,6 @@
 use std::io;
 use std::num::NonZeroU64;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -47,7 +47,6 @@ enum Slot<IO: Io> {
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
 pub struct WalRegistry<IO: Io, S> {
     io: Arc<IO>,
-    path: PathBuf,
     shutdown: AtomicBool,
     opened: DashMap<NamespaceName, Slot<IO>>,
     storage: Arc<S>,
@@ -56,25 +55,21 @@ pub struct WalRegistry<IO: Io, S> {
 
 impl<S> WalRegistry<StdIO, S> {
     pub fn new(
-        path: PathBuf,
         storage: Arc<S>,
         checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     ) -> Result<Self> {
-        Self::new_with_io(StdIO(()), path, storage, checkpoint_notifier)
+        Self::new_with_io(StdIO(()), storage, checkpoint_notifier)
     }
 }
 
 impl<IO: Io, S> WalRegistry<IO, S> {
     pub fn new_with_io(
         io: IO,
-        path: PathBuf,
         storage: Arc<S>,
         checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     ) -> Result<Self> {
-        io.create_dir_all(&path)?;
         let registry = Self {
             io: io.into(),
-            path,
             opened: Default::default(),
             shutdown: Default::default(),
             storage,
@@ -246,10 +241,14 @@ where
 
         let mut checkpointed_frame_no = footer.map(|f| f.replication_index.get()).unwrap_or(0);
 
-        let path = self.path.join(namespace.as_str());
-        self.io.create_dir_all(&path)?;
+        // the trick here to prevent sqlite to open our db is to create a dir <db-name>-wal. Sqlite
+        // will think that this is a wal file, but it's in fact a directory and it will not like
+        // it.
+        let mut wals_path = db_path.to_owned();
+        wals_path.set_file_name(format!("{}-wal", db_path.file_name().unwrap().to_str().unwrap()));
+        self.io.create_dir_all(&wals_path)?;
         // TODO: handle that with abstract io
-        let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
+        let dir = walkdir::WalkDir::new(&wals_path).sort_by_file_name().into_iter();
 
         // we only checkpoint durable frame_no so this is a good first estimate without an actual
         // network call.
@@ -323,7 +322,7 @@ where
                 None => (0, NonZeroU64::new(1).unwrap()),
             });
 
-        let current_segment_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
+        let current_segment_path = wals_path.join(format!("{next_frame_no:020}.seg"));
 
         let segment_file = self.io.open(true, true, true, &current_segment_path)?;
         let salt = self.io.with_rng(|rng| rng.gen());
@@ -368,6 +367,7 @@ where
             checkpoint_notifier: self.checkpoint_notifier.clone(),
             io: self.io.clone(),
             swap_strategy,
+            wals_path: wals_path.to_owned(),
         });
 
         self.opened
@@ -524,10 +524,9 @@ where
             return Ok(());
         }
         let start_frame_no = current.next_frame_no();
-        let path = self
-            .path
-            .join(shared.namespace().as_str())
-            .join(format!("{}:{start_frame_no:020}.seg", shared.namespace()));
+        let path = shared
+            .wals_path
+            .join(format!("{start_frame_no:020}.seg"));
 
         let segment_file = self.io.open(true, true, true, &path)?;
         let salt = self.io.with_rng(|rng| rng.gen());
