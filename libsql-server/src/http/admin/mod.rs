@@ -4,7 +4,7 @@ use axum::extract::{FromRef, Path, State};
 use axum::middleware::Next;
 use axum::routing::delete;
 use axum::Json;
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 use futures::{SinkExt, StreamExt, TryStreamExt};
 use hyper::{Body, Request, StatusCode};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
@@ -427,7 +427,7 @@ async fn handle_create_namespace<C: Connector>(
 
 #[derive(Debug, Deserialize)]
 struct ForkNamespaceReq {
-    timestamp: DateTime<Utc>,
+    timestamp: NaiveDateTime,
 }
 
 async fn handle_fork_namespace<C>(

@@ -3,7 +3,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use chrono::{DateTime, Utc};
 use futures::prelude::Future;
 use libsql_sys::EncryptionConfig;
 use tokio::task::JoinSet;
@@ -185,7 +184,7 @@ impl ConfigureNamespace for PrimaryConfigurator {
         from_config: MetaStoreHandle,
         to_ns: NamespaceName,
         to_config: MetaStoreHandle,
-        timestamp: Option<DateTime<Utc>>,
+        timestamp: Option<chrono::prelude::NaiveDateTime>,
         store: NamespaceStore,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(super::fork::fork(
@@ -193,7 +192,7 @@ impl ConfigureNamespace for PrimaryConfigurator {
             from_config,
             to_ns,
             to_config,
-            timestamp.map(|d| d.naive_utc()),
+            timestamp,
             store,
             &self.primary_config,
             self.base.base_path.clone(),

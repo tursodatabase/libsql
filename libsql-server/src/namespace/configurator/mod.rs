@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 use futures::Future;
 use libsql_sys::EncryptionConfig;
 use tokio::sync::Semaphore;
@@ -139,7 +139,7 @@ pub trait ConfigureNamespace {
         from_config: MetaStoreHandle,
         to_ns: NamespaceName,
         to_config: MetaStoreHandle,
-        timestamp: Option<DateTime<Utc>>,
+        timestamp: Option<NaiveDateTime>,
         store: NamespaceStore,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>>;
 }
