@@ -455,6 +455,7 @@ impl<F> CurrentSegment<F> {
             self.file.clone(),
             self.path.clone(),
             self.read_locks.clone(),
+            now,
         )?;
 
         // we only flip the sealed mark when no more error can occur, or we risk to deadlock a read
