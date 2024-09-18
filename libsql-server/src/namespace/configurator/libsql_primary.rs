@@ -269,7 +269,7 @@ impl ConfigureNamespace for LibsqlPrimaryConfigurator {
         _from_config: MetaStoreHandle,
         _to_ns: NamespaceName,
         _to_config: MetaStoreHandle,
-        _timestamp: Option<chrono::prelude::NaiveDateTime>,
+        timestamp: Option<chrono::prelude::NaiveDateTime>,
         _store: NamespaceStore,
     ) -> Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
         Box::pin(async move {
@@ -283,7 +283,9 @@ impl ConfigureNamespace for LibsqlPrimaryConfigurator {
                                 .find_segment(
                                     &s.backend().default_config(),
                                     &ns,
-                                    libsql_wal::storage::backend::FindSegmentReq::Timestamp(ts),
+                                    libsql_wal::storage::backend::FindSegmentReq::Timestamp(
+                                        ts.and_utc(),
+                                    ),
                                 )
                                 .await
                                 .unwrap();
