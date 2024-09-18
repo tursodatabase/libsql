@@ -403,6 +403,13 @@ pub struct AnalyzedSegments {
 impl AnalyzedSegments {
     /// returns a list of keys that covers frame_no 1 to last in the shortest amount of segments
     pub fn shortest_restore_path(&self) -> SegmentSet {
+        if self.graph.node_count() == 0 {
+            return SegmentSet {
+                namespace: self.namespace.clone(),
+                segments: Vec::new(),
+            };
+        }
+
         let path = petgraph::algo::astar(
             &self.graph,
             1,
