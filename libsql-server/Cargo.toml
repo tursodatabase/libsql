@@ -1,6 +1,6 @@
 [package]
 name = "libsql-server"
-version = "0.24.23"
+version = "0.24.24"
 edition = "2021"
 default-run = "sqld"
 repository = "https://github.com/tursodatabase/libsql"
