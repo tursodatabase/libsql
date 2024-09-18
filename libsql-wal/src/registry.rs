@@ -119,7 +119,7 @@ fn maybe_store_segment<S: Storage>(
     durable_frame_no: &Arc<Mutex<u64>>,
     seg: S::Segment,
 ) {
-    if seg.is_storable() {
+    if seg.last_committed() > *durable_frame_no.lock() {
         let cb: OnStoreCallback = Box::new({
             let notifier = notifier.clone();
             let durable_frame_no = durable_frame_no.clone();
@@ -134,7 +134,7 @@ fn maybe_store_segment<S: Storage>(
     } else {
         // segment can be checkpointed right away.
         let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
-        tracing::debug!("segment marked as not storable; skipping");
+        tracing::debug!(segment_end = seg.last_committed(), durable_frame_no = *durable_frame_no.lock(), "segment doesn't contain any new data");
     }
 }
 
@@ -269,7 +269,7 @@ where
             let file = self.io.open(false, true, true, entry.path())?;
 
             if let Some(sealed) =
-                SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
+                SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default(), self.io.now())?
             {
                 list.push(sealed.clone());
                 maybe_store_segment(
@@ -401,6 +401,8 @@ where
         match self.opened.insert(namespace.clone(), Slot::Tombstone) {
             Some(Slot::Tombstone) => None,
             Some(Slot::Building(_, _)) => {
+                // FIXME: that could happen is someone removed it and immediately reopenned the
+                // wal. fix by retrying in a loop
                 unreachable!("already waited for ns to open")
             }
             Some(Slot::Wal(wal)) => Some(wal),
@@ -558,8 +560,8 @@ where
         Ok(())
     }
 
-    pub fn storage(&self) -> &S {
-        &self.storage
+    pub fn storage(&self) -> Arc<S> {
+        self.storage.clone()
     }
 }
 

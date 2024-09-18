@@ -157,17 +157,6 @@ where
         &self.index
     }
 
-    fn is_storable(&self) -> bool {
-        // we don't store unordered segments, since they only happen in two cases:
-        // - in a replica: no need for storage
-        // - in a primary, on recovery from storage: we don't want to override remote
-        // segment.
-        !self
-            .header()
-            .flags()
-            .contains(SegmentFlags::FRAME_UNORDERED)
-    }
-
     fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> std::io::Result<bool> {
         if self.header().start_frame_no.get() > max_frame_no {
             return Ok(false);
