@@ -20,6 +20,7 @@ use super::{
 };
 
 pub mod fork;
+mod libsql_fork;
 mod helpers;
 mod libsql_primary;
 mod libsql_replica;
