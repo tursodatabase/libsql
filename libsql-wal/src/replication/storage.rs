@@ -15,8 +15,8 @@ use crate::storage::Storage;
 use super::Result;
 
 pub trait ReplicateFromStorage: Sync + Send + 'static {
-    fn stream<'a>(
-        &'a self,
+    fn stream<'a, 'b>(
+        &'b self,
         seen: &'a mut RoaringBitmap,
         current: u64,
         until: u64,
@@ -38,16 +38,18 @@ impl<S> ReplicateFromStorage for StorageReplicator<S>
 where
     S: Storage,
 {
-    fn stream<'a>(
-        &'a self,
+    fn stream<'a, 'b>(
+        &'b self,
         seen: &'a mut roaring::RoaringBitmap,
         mut current: u64,
         until: u64,
     ) -> Pin<Box<dyn Stream<Item = Result<Box<Frame>>> + Send + 'a>> {
+        let storage = self.storage.clone();
+        let namespace = self.namespace.clone();
         Box::pin(async_stream::try_stream! {
             loop {
-                let key = self.storage.find_segment(&self.namespace, FindSegmentReq::EndFrameNoLessThan(current), None).await?;
-                let index = self.storage.fetch_segment_index(&self.namespace, &key, None).await?;
+                let key = storage.find_segment(&namespace, FindSegmentReq::EndFrameNoLessThan(current), None).await?;
+                let index = storage.fetch_segment_index(&namespace, &key, None).await?;
                 let mut pages = index.into_stream();
                 let mut maybe_seg = None;
                 while let Some((page, offset)) = pages.next() {
@@ -58,7 +60,7 @@ where
                         let segment = match maybe_seg {
                             Some(ref seg) => seg,
                             None => {
-                                maybe_seg = Some(self.storage.fetch_segment_data(&self.namespace, &key, None).await?);
+                                maybe_seg = Some(storage.fetch_segment_data(&namespace, &key, None).await?);
                                 maybe_seg.as_ref().unwrap()
                             },
                         };

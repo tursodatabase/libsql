@@ -11,7 +11,7 @@ use std::sync::Arc;
 use libsql_sys::ffi::{sqlite3_finalize, sqlite3_prepare, Sqlite3DbHeader};
 use libsql_sys::name::NamespaceName;
 use libsql_sys::rusqlite::OpenFlags;
-use libsql_sys::wal::{Sqlite3WalManager, Wal};
+use libsql_sys::wal::{Sqlite3WalManager, Wal, WalManager};
 use libsql_sys::Connection;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::storage::TestStorage;
@@ -67,7 +67,13 @@ async fn run_test_sample(path: &Path) -> Result {
 
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
     let before = std::time::Instant::now();
-    let sqlite_results = run_script(&sqlite_conn, &script, &mut rng).collect::<Vec<_>>();
+    let sqlite_results = run_script(
+        &sqlite_conn,
+        &script,
+        &mut rng,
+        Sqlite3WalManager::default(),
+    )
+    .collect::<Vec<_>>();
     println!("ran sqlite in {:?}", before.elapsed());
     drop(sqlite_conn);
 
@@ -93,15 +99,11 @@ async fn run_test_sample(path: &Path) -> Result {
     };
 
     let (sender, _receiver) = tokio::sync::mpsc::channel(64);
-    let registry = Arc::new(
-        WalRegistry::new(
-            tmp.path().join("test/wals"),
-            TestStorage::new().into(),
-            sender,
-        )
-        .unwrap(),
-    );
+    let registry = Arc::new(WalRegistry::new(TestStorage::new().into(), sender).unwrap());
     let wal_manager = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
+    tokio::fs::create_dir_all(tmp.path().join("test"))
+        .await
+        .unwrap();
     let db_path = tmp.path().join("test/data").clone();
     let libsql_conn = libsql_sys::Connection::open(
         &db_path,
@@ -114,7 +116,8 @@ async fn run_test_sample(path: &Path) -> Result {
 
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
     let before = std::time::Instant::now();
-    let libsql_results = run_script(&libsql_conn, &script, &mut rng).collect::<Vec<_>>();
+    let libsql_results =
+        run_script(&libsql_conn, &script, &mut rng, wal_manager.clone()).collect::<Vec<_>>();
     println!("ran libsql in {:?}", before.elapsed());
 
     for ((a, _), (b, _)) in sqlite_results.iter().zip(libsql_results.iter()) {
@@ -204,12 +207,13 @@ fn run_script<'a, T: Wal>(
     conn: &'a Connection<T>,
     script: &'a str,
     rng: &'a mut ChaCha8Rng,
+    wal_manager: impl WalManager + Clone + 'static,
 ) -> impl Iterator<Item = (String, String)> + 'a {
     let mut stmts = split_statements(conn, script);
     std::iter::from_fn(move || {
         let stmt_str = patch_randomness(stmts.next()?, rng);
         if stmt_str.trim_start().starts_with("ATTACH") {
-            patch_attach(&stmt_str);
+            patch_attach(&stmt_str, wal_manager.clone());
         }
         let mut stmt = conn.prepare(&stmt_str).unwrap();
 
@@ -227,14 +231,14 @@ fn run_script<'a, T: Wal>(
     })
 }
 
-fn patch_attach(s: &str) {
+fn patch_attach(s: &str, wal: impl WalManager) {
     let mut split = s.split_whitespace();
     let name = split.nth(1).unwrap();
     let name = name.trim_matches('\'');
     let _ = libsql_sys::Connection::open(
         name,
         OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-        Sqlite3WalManager::default(),
+        wal,
         100000,
         None,
     )

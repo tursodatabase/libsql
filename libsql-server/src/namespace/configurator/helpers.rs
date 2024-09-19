@@ -494,28 +494,6 @@ pub async fn cleanup_libsql(
         let _ = tokio::fs::remove_dir_all(ns_db_path).await;
     }
 
-    let ns_wals_path = base_path.join("wals").join(namespace.as_str());
-    if ns_wals_path.try_exists()? {
-        tracing::debug!("removing database directory: {}", ns_wals_path.display());
-        if let Err(e) = tokio::fs::remove_dir_all(ns_wals_path).await {
-            // what can go wrong?:
-            match e.kind() {
-                // alright, there's nothing to delete anyway
-                std::io::ErrorKind::NotFound => (),
-                _ => {
-                    // something unexpected happened, this namespaces is in a bad state.
-                    // The entry will not be removed from the registry to prevent another
-                    // namespace with the same name to be reuse the same wal files. a
-                    // manual intervention is necessary
-                    // FIXME: on namespace creation, we could ensure that this directory is
-                    // clean.
-                    tracing::error!("error deleting `{namespace}` wal directory, manual intervention may be necessary: {e}");
-                    return Err(e.into());
-                }
-            }
-        }
-    }
-
     // when all is cleaned, leave place for next one
     registry.remove(&namespace).await;
 

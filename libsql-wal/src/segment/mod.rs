@@ -163,7 +163,6 @@ pub trait Segment: Send + Sync + 'static {
     fn start_frame_no(&self) -> u64;
     fn last_committed(&self) -> u64;
     fn index(&self) -> &fst::Map<Arc<[u8]>>;
-    fn is_storable(&self) -> bool;
     fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> io::Result<bool>;
     /// returns the number of readers currently holding a reference to this log.
     /// The read count must monotonically decrease.
@@ -197,10 +196,6 @@ impl<T: Segment> Segment for Arc<T> {
 
     fn index(&self) -> &fst::Map<Arc<[u8]>> {
         self.as_ref().index()
-    }
-
-    fn is_storable(&self) -> bool {
-        self.as_ref().is_storable()
     }
 
     fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> io::Result<bool> {

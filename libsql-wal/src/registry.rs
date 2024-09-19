@@ -1,6 +1,6 @@
 use std::io;
 use std::num::NonZeroU64;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -47,7 +47,6 @@ enum Slot<IO: Io> {
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
 pub struct WalRegistry<IO: Io, S> {
     io: Arc<IO>,
-    path: PathBuf,
     shutdown: AtomicBool,
     opened: DashMap<NamespaceName, Slot<IO>>,
     storage: Arc<S>,
@@ -56,25 +55,21 @@ pub struct WalRegistry<IO: Io, S> {
 
 impl<S> WalRegistry<StdIO, S> {
     pub fn new(
-        path: PathBuf,
         storage: Arc<S>,
         checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     ) -> Result<Self> {
-        Self::new_with_io(StdIO(()), path, storage, checkpoint_notifier)
+        Self::new_with_io(StdIO(()), storage, checkpoint_notifier)
     }
 }
 
 impl<IO: Io, S> WalRegistry<IO, S> {
     pub fn new_with_io(
         io: IO,
-        path: PathBuf,
         storage: Arc<S>,
         checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
     ) -> Result<Self> {
-        io.create_dir_all(&path)?;
         let registry = Self {
             io: io.into(),
-            path,
             opened: Default::default(),
             shutdown: Default::default(),
             storage,
@@ -124,7 +119,7 @@ fn maybe_store_segment<S: Storage>(
     durable_frame_no: &Arc<Mutex<u64>>,
     seg: S::Segment,
 ) {
-    if seg.is_storable() {
+    if seg.last_committed() > *durable_frame_no.lock() {
         let cb: OnStoreCallback = Box::new({
             let notifier = notifier.clone();
             let durable_frame_no = durable_frame_no.clone();
@@ -138,8 +133,26 @@ fn maybe_store_segment<S: Storage>(
         storage.store(namespace, seg, None, cb);
     } else {
         // segment can be checkpointed right away.
-        let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
-        tracing::debug!("segment marked as not storable; skipping");
+        // FIXME: this is only necessary because some tests call this method in an async context.
+        #[cfg(debug_assertions)]
+        {
+            let namespace = namespace.clone();
+            let notifier = notifier.clone();
+            tokio::spawn(async move {
+                let _ = notifier.send(CheckpointMessage::Namespace(namespace)).await;
+            });
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
+        }
+
+        tracing::debug!(
+            segment_end = seg.last_committed(),
+            durable_frame_no = *durable_frame_no.lock(),
+            "segment doesn't contain any new data"
+        );
     }
 }
 
@@ -246,10 +259,19 @@ where
 
         let mut checkpointed_frame_no = footer.map(|f| f.replication_index.get()).unwrap_or(0);
 
-        let path = self.path.join(namespace.as_str());
-        self.io.create_dir_all(&path)?;
+        // the trick here to prevent sqlite to open our db is to create a dir <db-name>-wal. Sqlite
+        // will think that this is a wal file, but it's in fact a directory and it will not like
+        // it.
+        let mut wals_path = db_path.to_owned();
+        wals_path.set_file_name(format!(
+            "{}-wal",
+            db_path.file_name().unwrap().to_str().unwrap()
+        ));
+        self.io.create_dir_all(&wals_path)?;
         // TODO: handle that with abstract io
-        let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
+        let dir = walkdir::WalkDir::new(&wals_path)
+            .sort_by_file_name()
+            .into_iter();
 
         // we only checkpoint durable frame_no so this is a good first estimate without an actual
         // network call.
@@ -269,9 +291,12 @@ where
 
             let file = self.io.open(false, true, true, entry.path())?;
 
-            if let Some(sealed) =
-                SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
-            {
+            if let Some(sealed) = SealedSegment::open(
+                file.into(),
+                entry.path().to_path_buf(),
+                Default::default(),
+                self.io.now(),
+            )? {
                 list.push(sealed.clone());
                 maybe_store_segment(
                     self.storage.as_ref(),
@@ -323,7 +348,7 @@ where
                 None => (0, NonZeroU64::new(1).unwrap()),
             });
 
-        let current_segment_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
+        let current_segment_path = wals_path.join(format!("{next_frame_no:020}.seg"));
 
         let segment_file = self.io.open(true, true, true, &current_segment_path)?;
         let salt = self.io.with_rng(|rng| rng.gen());
@@ -368,6 +393,7 @@ where
             checkpoint_notifier: self.checkpoint_notifier.clone(),
             io: self.io.clone(),
             swap_strategy,
+            wals_path: wals_path.to_owned(),
         });
 
         self.opened
@@ -401,6 +427,8 @@ where
         match self.opened.insert(namespace.clone(), Slot::Tombstone) {
             Some(Slot::Tombstone) => None,
             Some(Slot::Building(_, _)) => {
+                // FIXME: that could happen is someone removed it and immediately reopenned the
+                // wal. fix by retrying in a loop
                 unreachable!("already waited for ns to open")
             }
             Some(Slot::Wal(wal)) => Some(wal),
@@ -524,10 +552,7 @@ where
             return Ok(());
         }
         let start_frame_no = current.next_frame_no();
-        let path = self
-            .path
-            .join(shared.namespace().as_str())
-            .join(format!("{}:{start_frame_no:020}.seg", shared.namespace()));
+        let path = shared.wals_path.join(format!("{start_frame_no:020}.seg"));
 
         let segment_file = self.io.open(true, true, true, &path)?;
         let salt = self.io.with_rng(|rng| rng.gen());
@@ -559,8 +584,8 @@ where
         Ok(())
     }
 
-    pub fn storage(&self) -> &S {
-        &self.storage
+    pub fn storage(&self) -> Arc<S> {
+        self.storage.clone()
     }
 }
 

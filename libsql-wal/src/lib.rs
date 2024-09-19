@@ -110,13 +110,8 @@ pub mod test {
 
             let (sender, receiver) = mpsc::channel(128);
             let registry = Arc::new(
-                WalRegistry::new_with_io(
-                    io.clone(),
-                    tmp.path().join("test/wals"),
-                    TestStorage::new_io(store, io).into(),
-                    sender,
-                )
-                .unwrap(),
+                WalRegistry::new_with_io(io.clone(), TestStorage::new_io(store, io).into(), sender)
+                    .unwrap(),
             );
 
             if store {

@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use chrono::NaiveDateTime;
 use futures::prelude::Future;
 use libsql_sys::name::NamespaceResolver;
 use libsql_wal::io::StdIO;
@@ -160,21 +161,22 @@ impl ConfigureNamespace for LibsqlSchemaConfigurator {
     fn fork<'a>(
         &'a self,
         from_ns: &'a Namespace,
-        from_config: MetaStoreHandle,
+        _from_config: MetaStoreHandle,
         to_ns: NamespaceName,
         to_config: MetaStoreHandle,
-        timestamp: Option<chrono::prelude::NaiveDateTime>,
+        timestamp: Option<NaiveDateTime>,
         store: NamespaceStore,
     ) -> std::pin::Pin<Box<dyn Future<Output = crate::Result<Namespace>> + Send + 'a>> {
-        Box::pin(super::fork::fork(
+        let registry = self.registry.clone();
+        let base_path = &self.base.base_path;
+        Box::pin(super::libsql_fork::libsql_wal_fork(
+            registry,
+            base_path,
             from_ns,
-            from_config,
             to_ns,
             to_config,
-            timestamp,
+            timestamp.map(|ts| ts.and_utc()),
             store,
-            &self.primary_config,
-            self.base.base_path.clone(),
         ))
     }
 }

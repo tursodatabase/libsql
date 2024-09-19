@@ -176,10 +176,6 @@ mod test {
                 async move { todo!() }
             }
 
-            fn is_storable(&self) -> bool {
-                true
-            }
-
             fn timestamp(&self) -> DateTime<Utc> {
                 Utc::now()
             }

@@ -4,10 +4,8 @@ use std::io::{BufWriter, ErrorKind, Write};
 use std::mem::size_of;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::{
-    atomic::{AtomicU64, Ordering},
-    Arc,
-};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 use chrono::prelude::{DateTime, Utc};
 use fst::{Map, MapBuilder, Streamer};
@@ -157,17 +155,6 @@ where
         &self.index
     }
 
-    fn is_storable(&self) -> bool {
-        // we don't store unordered segments, since they only happen in two cases:
-        // - in a replica: no need for storage
-        // - in a primary, on recovery from storage: we don't want to override remote
-        // segment.
-        !self
-            .header()
-            .flags()
-            .contains(SegmentFlags::FRAME_UNORDERED)
-    }
-
     fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> std::io::Result<bool> {
         if self.header().start_frame_no.get() > max_frame_no {
             return Ok(false);
@@ -223,7 +210,12 @@ where
 }
 
 impl<F: FileExt> SealedSegment<F> {
-    pub fn open(file: Arc<F>, path: PathBuf, read_locks: Arc<AtomicU64>) -> Result<Option<Self>> {
+    pub fn open(
+        file: Arc<F>,
+        path: PathBuf,
+        read_locks: Arc<AtomicU64>,
+        now: DateTime<Utc>,
+    ) -> Result<Option<Self>> {
         let mut header: SegmentHeader = SegmentHeader::new_zeroed();
         file.read_exact_at(header.as_bytes_mut(), 0)?;
 
@@ -241,7 +233,7 @@ impl<F: FileExt> SealedSegment<F> {
         // recover the index, and seal the segment.
         if !header.flags().contains(SegmentFlags::SEALED) {
             assert_eq!(header.index_offset.get(), 0, "{header:?}");
-            return Self::recover(file, path, header).map(Some);
+            return Self::recover(file, path, header, now).map(Some);
         }
 
         let mut slice = vec![0; index_len as usize];
@@ -259,7 +251,12 @@ impl<F: FileExt> SealedSegment<F> {
         }))
     }
 
-    fn recover(file: Arc<F>, path: PathBuf, mut header: SegmentHeader) -> Result<Self> {
+    fn recover(
+        file: Arc<F>,
+        path: PathBuf,
+        mut header: SegmentHeader,
+        now: DateTime<Utc>,
+    ) -> Result<Self> {
         assert!(!header.is_empty());
         assert_eq!(header.index_size.get(), 0);
         assert_eq!(header.index_offset.get(), 0);
@@ -346,6 +343,7 @@ impl<F: FileExt> SealedSegment<F> {
         header.index_size = index_size.into();
         header.last_commited_frame_no = last_committed.into();
         header.size_after = size_after.into();
+        header.sealed_at_timestamp = (now.timestamp_millis() as u64).into();
         let flags = header.flags();
         header.set_flags(flags | SegmentFlags::SEALED);
         header.recompute_checksum();

@@ -91,6 +91,8 @@ pub enum ForkError {
     ForkReplica,
     #[error("backup service not configured")]
     BackupServiceNotConfigured,
+    #[error("cannot fork a namespace without storage")]
+    ForkNoStorage,
 }
 
 impl From<tokio::task::JoinError> for ForkError {
