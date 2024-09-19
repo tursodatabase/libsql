@@ -129,3 +129,64 @@ fn schema_migration_basics() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn schema_migration_via_replica() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    make_cluster(&mut sim, 1, true);
+
+    sim.client("client", async {
+        let http = Client::new();
+
+        assert!(http
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({ "shared_schema": true })
+            )
+            .await
+            .unwrap()
+            .status()
+            .is_success());
+        assert!(http
+            .post(
+                "http://primary:9090/v1/namespaces/foo/create",
+                json!({ "shared_schema_name": "schema" })
+            )
+            .await
+            .unwrap()
+            .status()
+            .is_success());
+
+        {
+            let db = Database::open_remote_with_connector(
+                "http://schema.primary:8080",
+                "",
+                TurmoilConnector,
+            )
+            .unwrap();
+            let conn = db.connect().unwrap();
+            conn.execute("create table test (x)", ()).await.unwrap();
+        }
+
+        {
+            let db = Database::open_remote_with_connector(
+                "http://schema.replica0:8080",
+                "",
+                TurmoilConnector,
+            )
+            .unwrap();
+            let conn = db.connect().unwrap();
+            conn.execute("select * from sqlite_master;", ())
+                .await
+                .unwrap();
+
+            conn.execute("create table foo (x)", ()).await.unwrap();
+        }
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
