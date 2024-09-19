@@ -311,3 +311,32 @@ fn large_proxy_query() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn replicate_from_shared_schema() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(10000))
+        .tcp_capacity(100000)
+        .build();
+    make_cluster(&mut sim, 1, true);
+
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
+            .unwrap();
+        let conn = db.connect().unwrap();
+
+        conn.execute("create table test (x)", ()).await.unwrap();
+
+        let db = Database::open_remote_with_connector("http://replica0:8080", "", TurmoilConnector)
+            .unwrap();
+        let conn = db.connect().unwrap();
+
+        conn.execute_batch("select * from sqlite_master;")
+            .await
+            .unwrap();
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
