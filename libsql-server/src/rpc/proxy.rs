@@ -635,7 +635,7 @@ impl Proxy for ProxyService {
                         Ok(conn) => {
                             if !conn.is_primary() {
                                 return Err(tonic::Status::failed_precondition(
-                                    "cannot run schema migration against a replica",
+                                    "cannot run schema migration against a replica from a replica",
                                 ));
                             }
 
@@ -710,7 +710,7 @@ impl Proxy for ProxyService {
                     Ok(conn) => {
                         if !conn.is_primary() {
                             return Err(tonic::Status::failed_precondition(
-                                "cannot run schema migration against a replica",
+                                "cannot run schema migration against a replica from a replica",
                             ));
                         }
 

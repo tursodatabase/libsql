@@ -131,7 +131,7 @@ fn schema_migration_basics() {
 }
 
 #[test]
-fn error_on_replicate() {
+fn schema_migration_via_replica() {
     let mut sim = Builder::new()
         .simulation_duration(Duration::from_secs(1000))
         .build();
