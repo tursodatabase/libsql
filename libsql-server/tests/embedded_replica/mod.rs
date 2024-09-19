@@ -1637,3 +1637,62 @@ fn replicated_synced_frames_zero_when_no_data_synced() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn schema_db() {
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let http = Client::new();
+
+        assert!(http
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({ "shared_schema": true })
+            )
+            .await
+            .unwrap()
+            .status()
+            .is_success());
+        assert!(http
+            .post(
+                "http://primary:9090/v1/namespaces/foo/create",
+                json!({ "shared_schema_name": "schema" })
+            )
+            .await
+            .unwrap()
+            .status()
+            .is_success());
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://schema.primary:8080",
+            "",
+            TurmoilConnector,
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+
+        db.sync().await.unwrap_err();
+
+        let conn = db.connect().unwrap();
+
+        conn.execute("create table test (x)", ()).await.unwrap_err();
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

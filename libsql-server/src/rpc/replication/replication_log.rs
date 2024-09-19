@@ -351,6 +351,12 @@ impl ReplicationLog for ReplicationLogService {
         let (logger, config, version, _, _) =
             self.logger_from_namespace(namespace, &req, false).await?;
 
+        if config.is_shared_schema {
+            return Err(tonic::Status::failed_precondition(
+                "cannot replicate a shared schema db",
+            ));
+        }
+
         let session_hash = self.encode_session_token(version);
 
         let response = HelloResponse {
