@@ -3328,6 +3328,7 @@ dependencies = [
 name = "libsql-wal"
 version = "0.1.0"
 dependencies = [
+ "aes",
  "anyhow",
  "arc-swap",
  "async-lock 3.4.0",
@@ -3339,6 +3340,7 @@ dependencies = [
  "aws-smithy-types-convert",
  "bitflags 2.6.0",
  "bytes",
+ "cbc",
  "chrono",
  "clap 4.5.9",
  "crc32fast",
@@ -3349,6 +3351,7 @@ dependencies = [
  "fst",
  "hashbrown 0.14.5",
  "hex",
+ "hmac",
  "http-body 1.0.0",
  "hyper 0.14.30",
  "inquire",
@@ -3366,6 +3369,7 @@ dependencies = [
  "s3s 0.10.1-dev",
  "s3s-aws",
  "s3s-fs 0.10.1-dev",
+ "sha2",
  "tempfile",
  "thiserror",
  "tokio",

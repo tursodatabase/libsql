@@ -94,7 +94,7 @@ pub(super) async fn libsql_primary_common(
             encryption_config: base_config.encryption_config.clone(),
             block_writes: block_writes.clone(),
             resolve_attach_path,
-            wal_manager: LibsqlWalManager::new(registry.clone(), namespace_resolver.clone()),
+            wal_manager: LibsqlWalManager::new(registry.clone(), namespace_resolver.clone(), Some("megasecret".to_string().into())),
         }),
     }
     .throttled(

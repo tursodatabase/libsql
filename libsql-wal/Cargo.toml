@@ -48,6 +48,12 @@ aws-smithy-types-convert = { version = "0.60.8", features = ["convert-chrono"] }
 petgraph = "0.6.5"
 anyhow = { version = "1.0.86", optional = true }
 
+# feat: encryption
+aes = { version = "0.8.4" }
+cbc = { version = "0.1.2" }
+hmac = { version = "0.12.1"  }
+sha2 = { version = "0.10.8"  }
+
 [dev-dependencies]
 criterion = "0.5.1"
 hex = "0.4.3"

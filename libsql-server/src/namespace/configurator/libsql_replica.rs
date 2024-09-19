@@ -114,6 +114,7 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
                     wal_manager: LibsqlWalManager::new(
                         self.registry.clone(),
                         self.namespace_resolver.clone(),
+                        Some("megasecret".to_string().into())
                     ),
                 }),
             };
