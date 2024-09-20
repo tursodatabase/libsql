@@ -1,6 +1,6 @@
 [package]
 name = "libsql_replication"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 description = "libSQL replication protocol"
 repository = "https://github.com/tursodatabase/libsql"
@@ -11,8 +11,8 @@ license = "MIT"
 [dependencies]
 tonic = { version = "0.11", default-features = false, features = ["codegen", "prost"] }
 prost = "0.12"
-libsql-sys = { version = "0.7", path = "../libsql-sys", default-features = false, features = ["wal", "rusqlite", "api"] }
-libsql-wal = { path = "../libsql-wal/", optional = true }
+libsql-sys = { version = "0.8", path = "../libsql-sys", default-features = false, features = ["wal", "rusqlite", "api"] }
+libsql-wal = { version = "0.1.0-alpha.1", path = "../libsql-wal/", optional = true }
 rusqlite = { workspace = true }
 parking_lot = "0.12.1"
 bytes = { version = "1.5.0", features = ["serde"] } 
