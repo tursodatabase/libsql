@@ -16,7 +16,7 @@ libsql-hrana = { version = "0.2", path = "../libsql-hrana", optional = true }
 tokio = { version = "1.29.1", features = ["sync"], optional = true }
 tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
-hyper = { workspace = true, features = ["client", "stream"], optional = true }
+hyper = { version = "0.14", features = ["client", "http1", "http2", "stream", "runtime"], optional = true }
 hyper-rustls = { version = "0.25", features = ["webpki-roots"], optional = true }
 base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
@@ -31,7 +31,7 @@ anyhow = { version = "1.0.71", optional = true }
 bytes = { version = "1.4.0", features = ["serde"], optional = true }
 uuid = { version = "1.4.0", features = ["v4", "serde"], optional = true }
 tokio-stream = { version = "0.1.14", optional = true }
-tonic = { version = "0.11", features = ["tls", "tls-roots", "tls-webpki-roots"], optional = true}
+tonic = { version = "0.11", optional = true}
 tonic-web = { version = "0.11", optional = true }
 tower-http = { version = "0.4.4", features = ["trace", "set-header", "util"], optional = true }
 http = { version = "0.2", optional = true }
@@ -53,7 +53,7 @@ tempfile = { version = "3.7.0" }
 rand = "0.8.5"
 
 [features]
-default = ["core", "replication", "remote"]
+default = ["core", "replication", "remote", "tls"]
 core = [
   "libsql-sys",
   "dep:bitflags",
@@ -88,7 +88,6 @@ replication = [
   "dep:tonic",
   "dep:tonic-web",
   "dep:tower-http",
-  "dep:hyper-rustls",
   "dep:futures",
   "dep:libsql_replication",
 ]
@@ -109,11 +108,11 @@ remote = [
   "hrana",
   "dep:tower",
   "dep:hyper",
+  "dep:hyper",
   "dep:http",
   "dep:tokio",
   "dep:futures",
   "dep:bitflags",
-  "dep:hyper-rustls",
 ]
 wasm = ["hrana"]
 cloudflare = [
@@ -121,6 +120,7 @@ cloudflare = [
   "dep:worker"
 ]
 encryption = ["core", "libsql-sys/encryption", "dep:bytes"]
+tls = ["dep:hyper-rustls"]
 
 [[bench]]
 name = "benchmark"
@@ -128,3 +128,6 @@ harness = false
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["hyper-rustls"]
