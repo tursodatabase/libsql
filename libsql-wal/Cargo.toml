@@ -2,6 +2,8 @@
 name = "libsql-wal"
 version = "0.1.0-alpha.1"
 edition = "2021"
+description = "wal implementation for libsql"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -60,7 +62,7 @@ s3s-fs = { git = "https://github.com/Nugine/s3s" }
 s3s-aws = { git = "https://github.com/Nugine/s3s" }
 tracing-subscriber = "0.3"
 aws-credential-types = { version = "1", features = ["test-util"] }
-tokio = { version = "*", features = ["test-util"] }
+tokio = { version = "1", features = ["test-util"] }
 
 [[bench]]
 name = "benchmarks"
