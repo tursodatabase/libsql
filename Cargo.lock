@@ -3053,7 +3053,7 @@ dependencies = [
 
 [[package]]
 name = "libsql"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3111,7 +3111,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-ffi"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "bindgen 0.66.1",
  "cc",
@@ -3131,7 +3131,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-rusqlite"
-version = "0.32.0"
+version = "0.33.0"
 dependencies = [
  "bencher",
  "bitflags 2.6.0",
@@ -3314,7 +3314,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-sys"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "bytes",
  "libsql-ffi",
@@ -3326,7 +3326,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-wal"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -3399,7 +3399,7 @@ dependencies = [
 
 [[package]]
 name = "libsql_replication"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aes",
  "arbitrary",
