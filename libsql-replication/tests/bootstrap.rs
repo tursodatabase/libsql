@@ -19,7 +19,7 @@ fn bootstrap() {
     tonic_build::configure()
         .build_client(true)
         .build_server(true)
-        .build_transport(true)
+        .build_transport(false)
         .out_dir(&out_dir)
         .type_attribute(".proxy", "#[derive(serde::Serialize, serde::Deserialize)]")
         .compile_with_config(config, iface_files, dirs)
