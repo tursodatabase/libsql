@@ -380,7 +380,10 @@ where
         ctx: RequestContext,
         builder: B,
     ) -> Result<B> {
-        let config = self.inner.lock().config();
+        let inner = self.inner.clone();
+        let config = tokio::task::spawn_blocking(move || inner.lock().config())
+            .await
+            .unwrap();
         check_program_auth(&ctx, &pgm, &config).await?;
         let conn = self.inner.clone();
         CoreConnection::run_async(conn, pgm, builder).await
