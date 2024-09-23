@@ -147,8 +147,8 @@ type MakeReplicationSvc = Box<
 // static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[global_allocator]
-static GLOBAL: rheaper::Allocator<mimalloc::MiMalloc> =
-    rheaper::Allocator::from_allocator(mimalloc::MiMalloc);
+static GLOBAL: rheaper::Allocator<std::alloc::System> =
+    rheaper::Allocator::from_allocator(std::alloc::System);
 
 #[derive(clap::ValueEnum, PartialEq, Clone, Copy, Debug)]
 pub enum CustomWAL {
