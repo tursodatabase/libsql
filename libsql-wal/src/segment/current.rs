@@ -654,7 +654,7 @@ impl SegmentIndex {
         offsets
             .iter()
             .rev()
-            .find(|fno| **fno as u64 <= max_offset)
+            .find(|fno| (**fno as u64) < max_offset)
             .copied()
     }
 
