@@ -304,6 +304,10 @@ struct Cli {
     )]
     sync_conccurency: usize,
 
+    /// Disable prometheus metrics collection
+    #[clap(long, env = "LIBSQL_DISABLE_METRICS")]
+    disable_metrics: bool,
+
     #[clap(subcommand)]
     subcommand: Option<UtilsSubcommands>,
 }
@@ -506,7 +510,7 @@ async fn make_admin_api_config(config: &Cli) -> anyhow::Result<Option<AdminApiCo
             Ok(Some(AdminApiConfig {
                 acceptor,
                 connector,
-                disable_metrics: false,
+                disable_metrics: config.disable_metrics,
                 auth_key: config.admin_auth_key.clone(),
             }))
         }
