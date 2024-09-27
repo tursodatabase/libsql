@@ -4,6 +4,6 @@ expression: "conn.execute(\"create table test (x)\", ()).await.unwrap_err()"
 ---
 Hrana(
     Api(
-        "{\"error\":\"Not authorized to execute query: Current session doesn't not have Write permission to namespace schema\"}",
+        "{\"error\":\"Authorization forbidden: Current session doesn't not have Write permission to namespace schema\"}",
     ),
 )

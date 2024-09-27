@@ -4,6 +4,6 @@ expression: "bar_conn.execute(\"ATTACH foo as foo\", ()).await.unwrap_err()"
 ---
 Hrana(
     Api(
-        "{\"error\":\"Not authorized to execute query: Namespace `foo` doesn't allow attach\"}",
+        "{\"error\":\"Authorization forbidden: Namespace `foo` doesn't allow attach\"}",
     ),
 )
