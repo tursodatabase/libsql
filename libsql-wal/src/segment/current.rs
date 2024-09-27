@@ -9,6 +9,8 @@ use std::sync::{
     Arc,
 };
 
+use aes::cipher::block_padding::NoPadding;
+use aes::cipher::BlockEncryptMut;
 use chrono::{DateTime, Utc};
 use crossbeam_skiplist::SkipMap;
 use fst::MapBuilder;
@@ -24,6 +26,7 @@ use crate::io::file::FileExt;
 use crate::io::Inspect;
 use crate::segment::{checked_frame_offset, SegmentFlags};
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
+use crate::shared_wal::Context;
 use crate::transaction::{Transaction, TxGuardOwned, TxGuardShared};
 use crate::{LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
@@ -228,12 +231,13 @@ impl<F> CurrentSegment<F> {
         }
     }
 
-    #[tracing::instrument(skip(self, pages, tx))]
+    #[tracing::instrument(skip_all)]
     pub fn insert_pages<'a>(
         &self,
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
         tx: &mut TxGuardShared<F>,
+        ctx: &mut Context,
     ) -> Result<Option<u64>>
     where
         F: FileExt,
@@ -245,6 +249,14 @@ impl<F> CurrentSegment<F> {
             // let mut commit_frame_written = false;
             let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
             while let Some((page_no, page)) = pages.next() {
+                let page = match ctx.encryption {
+                    Some(ref mut crypto) if page_no != 1 => {
+                        crypto.encryptor.clone().encrypt_padded_b2b_mut::<NoPadding>(page, crypto.scratch.as_mut_slice()).unwrap();
+                        crypto.scratch.as_slice()
+                    },
+                    _ => page,
+                };
+
                 // optim: if the page is already present, overwrite its content
                 if let Some(offset) = current_savepoint.index.get(&page_no) {
                     tracing::trace!(page_no, "recycling frame");

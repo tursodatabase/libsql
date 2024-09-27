@@ -11,6 +11,7 @@ pub mod shared_wal;
 pub mod storage;
 pub mod transaction;
 pub mod wal;
+mod encryption;
 
 const LIBSQL_MAGIC: u64 = u64::from_be_bytes(*b"LIBSQL\0\0");
 const LIBSQL_PAGE_SIZE: u16 = 4096;
@@ -119,7 +120,7 @@ pub mod test {
                 tokio::spawn(checkpointer.run());
             }
 
-            let wal = LibsqlWalManager::new(registry.clone(), Arc::new(resolver));
+            let wal = LibsqlWalManager::new(registry.clone(), Arc::new(resolver), None);
 
             Self { tmp, registry, wal }
         }

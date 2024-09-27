@@ -3,20 +3,27 @@ use std::os::unix::prelude::OsStrExt;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
+use aes::cipher::KeyIvInit as _;
+use aes::Aes256;
+use hmac::{Hmac, Mac as _};
 use libsql_sys::name::NamespaceResolver;
 use libsql_sys::wal::{Wal, WalManager};
+use sha2::Sha256;
 
+use crate::encryption::EncryptionConfig;
 use crate::io::Io;
 use crate::registry::WalRegistry;
 use crate::segment::sealed::SealedSegment;
-use crate::shared_wal::SharedWal;
+use crate::shared_wal::{Context, SharedWal};
 use crate::storage::Storage;
 use crate::transaction::Transaction;
+use crate::LIBSQL_PAGE_SIZE;
 
 pub struct LibsqlWalManager<IO: Io, S> {
     registry: Arc<WalRegistry<IO, S>>,
     next_conn_id: Arc<AtomicU64>,
     namespace_resolver: Arc<dyn NamespaceResolver>,
+    secret: Option<Arc<str>>,
 }
 
 impl<IO: Io, S> Clone for LibsqlWalManager<IO, S> {
@@ -25,6 +32,7 @@ impl<IO: Io, S> Clone for LibsqlWalManager<IO, S> {
             registry: self.registry.clone(),
             next_conn_id: self.next_conn_id.clone(),
             namespace_resolver: self.namespace_resolver.clone(),
+            secret: self.secret.clone(),
         }
     }
 }
@@ -33,11 +41,13 @@ impl<FS: Io, S> LibsqlWalManager<FS, S> {
     pub fn new(
         registry: Arc<WalRegistry<FS, S>>,
         namespace_resolver: Arc<dyn NamespaceResolver>,
+        secret: Option<Arc<str>>,
     ) -> Self {
         Self {
             registry,
             next_conn_id: Default::default(),
             namespace_resolver,
+            secret,
         }
     }
 }
@@ -47,6 +57,7 @@ pub struct LibsqlWal<FS: Io> {
     tx: Option<Transaction<FS::File>>,
     shared: Arc<SharedWal<FS>>,
     conn_id: u64,
+    context: Context,
 }
 
 impl<IO: Io, S: Storage<Segment = SealedSegment<IO::File>>> WalManager for LibsqlWalManager<IO, S> {
@@ -74,11 +85,32 @@ impl<IO: Io, S: Storage<Segment = SealedSegment<IO::File>>> WalManager for Libsq
         let conn_id = self
             .next_conn_id
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+        let context = match self.secret {
+            Some(ref secret) => {
+                let mut mac = Hmac::<Sha256>::new_from_slice(b"secret").unwrap();
+                mac.update(secret.as_bytes());
+                let key_h = mac.finalize().into_bytes();
+                let iv = [42u8; 16];
+                let encryptor = cbc::Encryptor::<Aes256>::new(&key_h.into(), &iv.into());
+                let decryptor = cbc::Decryptor::<Aes256>::new(&key_h.into(), &iv.into());
+                Context {
+                    encryption: Some(EncryptionConfig {
+                        decryptor,
+                        encryptor,
+                        scratch: Box::new([0; LIBSQL_PAGE_SIZE as usize]),
+                    })
+                }
+            }
+            _ => Default::default(),
+        };
+
         Ok(LibsqlWal {
             last_read_frame_no: None,
             tx: None,
             shared,
             conn_id,
+            context,
         })
     }
 
@@ -161,7 +193,7 @@ impl<FS: Io> Wal for LibsqlWal<FS> {
         tracing::trace!(page_no, "reading frame");
         let tx = self.tx.as_mut().unwrap();
         self.shared
-            .read_page(tx, page_no.get(), buffer)
+            .read_page(tx, page_no.get(), buffer, &mut self.context)
             .map_err(Into::into)?;
         Ok(())
     }
@@ -279,6 +311,7 @@ impl<FS: Io> Wal for LibsqlWal<FS> {
                         tx,
                         page_headers.iter(),
                         (size_after != 0).then_some(size_after),
+                        &mut self.context,
                     )
                     .map_err(Into::into)?;
             }

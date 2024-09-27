@@ -407,7 +407,7 @@ mod test {
     use tempfile::{tempfile, NamedTempFile};
     use tokio_stream::StreamExt as _;
 
-    use crate::test::{seal_current_segment, TestEnv};
+    use crate::{shared_wal::Context, test::{seal_current_segment, TestEnv}};
 
     use super::*;
 
@@ -442,11 +442,12 @@ mod test {
 
         let mut file = NamedTempFile::new().unwrap();
         let mut tx = shared.begin_read(999999).into();
+        let ctx = Context::default();
         while let Some(frame) = stream.next().await {
             let frame = frame.unwrap();
             let mut buffer = [0; 4096];
             shared
-                .read_page(&mut tx, frame.header.page_no(), &mut buffer)
+                .read_page(&mut tx, frame.header.page_no(), &mut buffer, &ctx)
                 .unwrap();
             assert_eq!(buffer, frame.data());
             file.write_all(frame.data()).unwrap();

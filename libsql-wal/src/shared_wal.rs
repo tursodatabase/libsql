@@ -4,6 +4,8 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
+use aes::cipher::block_padding::NoPadding;
+use aes::cipher::BlockDecryptMut;
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
@@ -12,6 +14,7 @@ use tokio::sync::{mpsc, watch};
 use uuid::Uuid;
 
 use crate::checkpointer::CheckpointMessage;
+use crate::encryption::EncryptionConfig;
 use crate::error::{Error, Result};
 use crate::io::file::FileExt;
 use crate::io::Io;
@@ -20,6 +23,12 @@ use crate::segment::current::CurrentSegment;
 use crate::segment_swap_strategy::SegmentSwapStrategy;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 use libsql_sys::name::NamespaceName;
+
+/// addtional context passed during wal operation
+#[derive(Debug, Default)]
+pub struct Context {
+    pub encryption: Option<EncryptionConfig>,
+}
 
 #[derive(Default)]
 pub struct WalLock {
@@ -222,12 +231,13 @@ impl<IO: Io> SharedWal<IO> {
         })
     }
 
-    #[tracing::instrument(skip(self, tx, buffer))]
+    #[tracing::instrument(skip_all)]
     pub fn read_page(
         &self,
         tx: &mut Transaction<IO::File>,
         page_no: u32,
         buffer: &mut [u8],
+        ctx: &Context,
     ) -> Result<()> {
         match tx.current.find_frame(page_no, tx) {
             Some(offset) => {
@@ -264,6 +274,12 @@ impl<IO: Io> SharedWal<IO> {
             }
         }
 
+        if let Some(ref enc) = ctx.encryption {
+            if page_no != 1 {
+                enc.decryptor.clone().decrypt_padded_mut::<NoPadding>(buffer).unwrap();
+            }
+        }
+
         tx.pages_read += 1;
 
         Ok(())
@@ -275,10 +291,11 @@ impl<IO: Io> SharedWal<IO> {
         tx: &mut WriteTransaction<IO::File>,
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
+        ctx: &mut Context,
     ) -> Result<()> {
         let current = self.current.load();
         let mut tx = tx.lock();
-        if let Some(last_committed) = current.insert_pages(pages, size_after, &mut tx)? {
+        if let Some(last_committed) = current.insert_pages(pages, size_after, &mut tx, ctx)? {
             self.new_frame_notifier.send_replace(last_committed);
         }
 
