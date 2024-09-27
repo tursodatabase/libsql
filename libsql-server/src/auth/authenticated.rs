@@ -67,12 +67,12 @@ impl Authenticated {
         perm: Permission,
     ) -> crate::Result<()> {
         match self {
-            Authenticated::Anonymous => Err(crate::Error::NotAuthorized(
+            Authenticated::Anonymous => Err(crate::Error::Forbidden(
                 "anonymous access not allowed".to_string(),
             )),
             Authenticated::Authorized(a) => {
                 if !a.has_right(Scope::Namespace(namespace.clone()), perm) {
-                    Err(crate::Error::NotAuthorized(format!(
+                    Err(crate::Error::Forbidden(format!(
                                 "Current session doesn't not have {perm:?} permission to namespace {namespace}")))
                 } else {
                     Ok(())
@@ -84,7 +84,7 @@ impl Authenticated {
                 {
                     Ok(())
                 } else {
-                    Err(crate::Error::NotAuthorized(format!(
+                    Err(crate::Error::Forbidden(format!(
                                 "Current session doesn't not have {perm:?} permission to namespace {namespace}")))
                 }
             }
@@ -95,7 +95,7 @@ impl Authenticated {
         match self {
             Authenticated::Authorized(a) if a.ddl_permitted(namespace) => Ok(()),
             Authenticated::FullAccess => Ok(()),
-            _ => Err(crate::Error::NotAuthorized(format!(
+            _ => Err(crate::Error::Forbidden(format!(
                 "DDL statements not permitted on namespace {namespace}"
             ))),
         }

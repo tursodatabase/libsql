@@ -371,7 +371,7 @@ pub async fn check_program_auth(
             StmtKind::Attach(ref ns) => {
                 ctx.auth.has_right(ns, Permission::AttachRead)?;
                 if !ctx.meta_store.handle(ns.clone()).await.get().allow_attach {
-                    return Err(Error::NotAuthorized(format!(
+                    return Err(Error::Forbidden(format!(
                         "Namespace `{ns}` doesn't allow attach"
                     )));
                 }

@@ -37,6 +37,8 @@ pub enum Error {
     InvalidBatchStep(usize),
     #[error("Not authorized to execute query: {0}")]
     NotAuthorized(String),
+    #[error("Authorization forbidden: {0}")]
+    Forbidden(String),
     #[error("The replicator exited, instance cannot make any progress.")]
     ReplicatorExited,
     #[error("Timed out while opening database connection")]
@@ -176,6 +178,7 @@ impl IntoResponse for &Error {
             Internal(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             InvalidBatchStep(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NotAuthorized(_) => self.format_err(StatusCode::UNAUTHORIZED),
+            Forbidden(_) => self.format_err(StatusCode::FORBIDDEN),
             ReplicatorExited => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
             DbCreateTimeout => self.format_err(StatusCode::TOO_MANY_REQUESTS),
             BuilderError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -185,7 +188,7 @@ impl IntoResponse for &Error {
             QueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidHost(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidPath(_) => self.format_err(StatusCode::BAD_REQUEST),
-            NamespaceDoesntExist(_) => self.format_err(StatusCode::BAD_REQUEST),
+            NamespaceDoesntExist(_) => self.format_err(StatusCode::NOT_FOUND),
             PrimaryConnectionTimeout => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidNamespace => self.format_err(StatusCode::BAD_REQUEST),
