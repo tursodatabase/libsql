@@ -1,0 +1,11 @@
+[package]
+name = "sqlx-libsql"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libsql = { version = "0.6", path = "../libsql" }
+sqlx-core = "=0.8.2"
+futures-core = "0.3"
+futures-util = "0.3"
+log = "0.4"
