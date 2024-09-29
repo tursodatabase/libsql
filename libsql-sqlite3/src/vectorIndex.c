@@ -951,6 +951,7 @@ int vectorIndexSearch(
   char **pzErrMsg
 ) {
   int type, dims, k, rc;
+  double kDouble;
   const char *zIdxName;
   const char *zErrMsg;
   Vector *pVector = NULL;
@@ -981,17 +982,32 @@ int vectorIndexSearch(
     rc = SQLITE_ERROR;
     goto out;
   }
-  if( sqlite3_value_type(argv[2]) != SQLITE_INTEGER ){
-    *pzErrMsg = sqlite3_mprintf("vector index(search): third parameter (k) must be a non-negative integer");
+  if( sqlite3_value_type(argv[2]) == SQLITE_INTEGER ){
+    k = sqlite3_value_int(argv[2]);
+    if( k < 0 ){
+      *pzErrMsg = sqlite3_mprintf("vector index(search): third parameter (k) must be a non-negative integer, but negative value were provided");
+      rc = SQLITE_ERROR;
+      goto out;
+    }
+  }else if( sqlite3_value_type(argv[2]) == SQLITE_FLOAT ) {
+    kDouble = sqlite3_value_double(argv[2]);
+    k = (int)kDouble;
+    if( (double)k != kDouble ){
+      *pzErrMsg = sqlite3_mprintf("vector index(search): third parameter (k) must be an integer, but float value were provided");
+      rc = SQLITE_ERROR;
+      goto out;
+    }
+    if( k < 0 ){
+      *pzErrMsg = sqlite3_mprintf("vector index(search): third parameter (k) must be a non-negative integer, but negative value were provided");
+      rc = SQLITE_ERROR;
+      goto out;
+    }
+  }else{
+    *pzErrMsg = sqlite3_mprintf("vector index(search): third parameter (k) must be an integer, but unexpected type of value were provided");
     rc = SQLITE_ERROR;
     goto out;
   }
-  k = sqlite3_value_int(argv[2]);
-  if( k < 0 ){
-    *pzErrMsg = sqlite3_mprintf("vector index(search): third parameter (k) must be a non-negative integer");
-    rc = SQLITE_ERROR;
-    goto out;
-  }
+
   if( sqlite3_value_type(argv[0]) != SQLITE_TEXT ){
     *pzErrMsg = sqlite3_mprintf("vector index(search): first parameter (index) must be a string");
     rc = SQLITE_ERROR;
