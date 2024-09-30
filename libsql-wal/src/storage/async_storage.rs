@@ -15,7 +15,7 @@ use crate::segment::Segment;
 
 use super::backend::{Backend, FindSegmentReq};
 use super::scheduler::Scheduler;
-use super::{OnStoreCallback, RestoreOptions, Storage, StoreSegmentRequest};
+use super::{OnStoreCallback, Storage, StoreSegmentRequest};
 
 /// Background loop task state.
 ///
@@ -210,19 +210,6 @@ where
         let config = config_override.unwrap_or_else(|| self.backend.default_config());
         let meta = self.backend.meta(&config, namespace).await?;
         Ok(meta.max_frame_no)
-    }
-
-    async fn restore(
-        &self,
-        file: impl crate::io::FileExt,
-        namespace: &NamespaceName,
-        restore_options: RestoreOptions,
-        config_override: Option<Self::Config>,
-    ) -> super::Result<()> {
-        let config = config_override.unwrap_or_else(|| self.backend.default_config());
-        self.backend
-            .restore(&config, &namespace, restore_options, file)
-            .await
     }
 
     async fn find_segment(

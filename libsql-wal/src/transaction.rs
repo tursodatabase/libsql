@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::ops::{Deref, DerefMut};
+use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -131,6 +132,26 @@ pub struct Savepoint {
     pub index: BTreeMap<u32, u32>,
 }
 
+pub static SAVEPOINT_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+impl Savepoint {
+    pub fn new(next_offset: u32, next_frame_no: u64, current_checksum: u32) -> Self {
+        SAVEPOINT_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Self {
+            next_offset,
+            next_frame_no,
+            current_checksum,
+            index: Default::default(),
+        }
+    }
+}
+
+impl Drop for Savepoint {
+    fn drop(&mut self) {
+        SAVEPOINT_COUNTER.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
 /// The savepoints must be passed from most recent to oldest
 pub(crate) fn merge_savepoints<'a>(
     savepoints: impl Iterator<Item = &'a BTreeMap<u32, u32>>,
@@ -224,12 +245,11 @@ impl<F> WriteTransaction<F> {
 
     pub fn savepoint(&mut self) -> usize {
         let savepoint_id = self.savepoints.len();
-        self.savepoints.push(Savepoint {
-            next_offset: self.next_offset,
-            next_frame_no: self.next_frame_no,
-            index: BTreeMap::new(),
-            current_checksum: self.current_checksum,
-        });
+        self.savepoints.push(Savepoint::new(
+            self.next_offset,
+            self.next_frame_no,
+            self.current_checksum,
+        ));
         savepoint_id
     }
 

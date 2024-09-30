@@ -2,14 +2,14 @@
 use std::future::Future;
 use std::sync::Arc;
 
+use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use fst::Map;
 use tokio_stream::Stream;
-use uuid::Uuid;
 
-use super::{RestoreOptions, Result, SegmentInfo, SegmentKey};
+use super::{Result, SegmentInfo, SegmentKey};
 use crate::io::file::FileExt;
-use crate::segment::compacted::CompactedSegmentDataHeader;
+use crate::segment::compacted::{CompactedFrameHeader, CompactedSegmentHeader};
 use libsql_sys::name::NamespaceName;
 
 // pub mod fs;
@@ -19,7 +19,6 @@ pub mod s3;
 #[derive(Debug)]
 pub struct SegmentMeta {
     pub namespace: NamespaceName,
-    pub segment_id: Uuid,
     pub start_frame_no: u64,
     pub end_frame_no: u64,
     pub segment_timestamp: DateTime<Utc>,
@@ -52,6 +51,24 @@ pub trait Backend: Send + Sync + 'static {
         segment_index: Vec<u8>,
     ) -> impl Future<Output = Result<()>> + Send;
 
+    /// Store `segment_data` with its associated `meta`
+    fn store_segment_data(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        segment_data: impl Stream<Item = Result<Bytes>> + Send + Sync + 'static,
+    ) -> impl Future<Output = Result<()>> + Send;
+
+    /// Store `segment_data` with its associated `meta`
+    fn store_segment_index(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        index: Vec<u8>,
+    ) -> impl Future<Output = Result<()>> + Send;
+
     fn find_segment(
         &self,
         config: &Self::Config,
@@ -73,7 +90,7 @@ pub trait Backend: Send + Sync + 'static {
         namespace: &NamespaceName,
         key: &SegmentKey,
         file: &impl FileExt,
-    ) -> Result<CompactedSegmentDataHeader>;
+    ) -> Result<CompactedSegmentHeader>;
 
     // this method taking self: Arc<Self> is an infortunate consequence of rust type system making
     // impl FileExt variant with all the arguments, with no escape hatch...
@@ -84,20 +101,22 @@ pub trait Backend: Send + Sync + 'static {
         key: SegmentKey,
     ) -> impl Future<Output = Result<impl FileExt>> + Send;
 
+    async fn fetch_segment_data_stream(
+        &self,
+        config: Self::Config,
+        namespace: &NamespaceName,
+        key: SegmentKey,
+    ) -> Result<(
+        CompactedSegmentHeader,
+        impl Stream<Item = Result<(CompactedFrameHeader, Bytes)>>,
+    )>;
+
     /// Fetch meta for `namespace`
     fn meta(
         &self,
         config: &Self::Config,
         namespace: &NamespaceName,
     ) -> impl Future<Output = Result<DbMeta>> + Send;
-
-    async fn restore(
-        &self,
-        config: &Self::Config,
-        namespace: &NamespaceName,
-        restore_options: RestoreOptions,
-        dest: impl FileExt,
-    ) -> Result<()>;
 
     fn list_segments<'a>(
         &'a self,
@@ -132,18 +151,6 @@ impl<T: Backend> Backend for Arc<T> {
         self.as_ref().default_config()
     }
 
-    async fn restore(
-        &self,
-        config: &Self::Config,
-        namespace: &NamespaceName,
-        restore_options: RestoreOptions,
-        dest: impl FileExt,
-    ) -> Result<()> {
-        self.as_ref()
-            .restore(config, namespace, restore_options, dest)
-            .await
-    }
-
     async fn find_segment(
         &self,
         config: &Self::Config,
@@ -170,7 +177,7 @@ impl<T: Backend> Backend for Arc<T> {
         namespace: &NamespaceName,
         key: &SegmentKey,
         file: &impl FileExt,
-    ) -> Result<CompactedSegmentDataHeader> {
+    ) -> Result<CompactedSegmentHeader> {
         self.as_ref()
             .fetch_segment_data_to_file(config, namespace, key, file)
             .await
@@ -196,5 +203,43 @@ impl<T: Backend> Backend for Arc<T> {
         until: u64,
     ) -> impl Stream<Item = Result<SegmentInfo>> + 'a {
         self.as_ref().list_segments(config, namespace, until)
+    }
+
+    async fn fetch_segment_data_stream(
+        &self,
+        config: Self::Config,
+        namespace: &NamespaceName,
+        key: SegmentKey,
+    ) -> Result<(
+        CompactedSegmentHeader,
+        impl Stream<Item = Result<(CompactedFrameHeader, Bytes)>>,
+    )> {
+        self.as_ref()
+            .fetch_segment_data_stream(config, namespace, key)
+            .await
+    }
+
+    async fn store_segment_data(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        segment_data: impl Stream<Item = Result<Bytes>> + Send + Sync + 'static,
+    ) -> Result<()> {
+        self.as_ref()
+            .store_segment_data(config, namespace, key, segment_data)
+            .await
+    }
+
+    async fn store_segment_index(
+        &self,
+        config: &Self::Config,
+        namespace: &NamespaceName,
+        key: &SegmentKey,
+        index: Vec<u8>,
+    ) -> Result<()> {
+        self.as_ref()
+            .store_segment_index(config, namespace, key, index)
+            .await
     }
 }

@@ -8,6 +8,7 @@ use tokio_stream::Stream;
 use zerocopy::FromZeroes;
 
 use crate::io::buf::ZeroCopyBoxIoBuf;
+use crate::segment::compacted::CompactedFrame;
 use crate::segment::Frame;
 use crate::storage::backend::FindSegmentReq;
 use crate::storage::Storage;
@@ -65,10 +66,19 @@ where
                             },
                         };
 
-                        let (frame, ret) = segment.read_frame(ZeroCopyBoxIoBuf::new_uninit(Frame::new_box_zeroed()), offset as u32).await;
+                        // TODO: The copy here is inneficient. This is OK for now, until we rewrite
+                        // this code to read from the main db file instead of storage.
+                        let (compacted_frame, ret) = segment.read_frame(ZeroCopyBoxIoBuf::new_uninit(CompactedFrame::new_box_zeroed()), offset as u32).await;
                         ret?;
-                        let frame = frame.into_inner();
-                        debug_assert_eq!(frame.header().size_after(), 0, "all frames in a compacted segment should have size_after set to 0");
+                        let compacted_frame = compacted_frame.into_inner();
+                        let mut frame = Frame::new_box_zeroed();
+                        frame.data_mut().copy_from_slice(&compacted_frame.data);
+
+                        let header = frame.header_mut();
+                        header.frame_no = compacted_frame.header().frame_no;
+                        header.size_after = 0.into();
+                        header.page_no = compacted_frame.header().page_no;
+
                         if frame.header().frame_no() >= until {
                             yield frame;
                         }

@@ -48,6 +48,9 @@ rand = "0.8.5"
 aws-smithy-types-convert = { version = "0.60.8", features = ["convert-chrono"] }
 petgraph = "0.6.5"
 anyhow = { version = "1.0.86", optional = true }
+futures = "0.3.30"
+memmap = "0.7.0"
+pin-project-lite = "0.2.14"
 
 [dev-dependencies]
 criterion = "0.5.1"

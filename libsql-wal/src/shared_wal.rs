@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -207,12 +206,7 @@ impl<IO: Io> SharedWal<IO> {
 
         Ok(WriteTransaction {
             wal_lock: self.wal_lock.clone(),
-            savepoints: vec![Savepoint {
-                current_checksum,
-                next_offset,
-                next_frame_no,
-                index: BTreeMap::new(),
-            }],
+            savepoints: vec![Savepoint::new(next_offset, next_frame_no, current_checksum)],
             next_frame_no,
             next_offset,
             current_checksum,
