@@ -96,6 +96,7 @@ aws-config = "1"
 aws-sdk-s3 = "1"
 aws-smithy-runtime = "1.6.2"
 dialoguer = { version = "0.11.0", features = ["history"] }
+indicatif = "0.17.8"
 
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }

@@ -9,7 +9,7 @@ use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
 use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_keys, user_auth_strategies, Auth};
-use libsql_server::wal_toolkit::{S3Args, WalToolkit};
+use libsql_server::wal_toolkit::{S3Args, WalToolkitCommand};
 use tokio::sync::Notify;
 use tokio::time::Duration;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -328,7 +328,7 @@ enum UtilsSubcommands {
         #[clap(flatten)]
         s3_args: S3Args,
         #[clap(subcommand)]
-        command: WalToolkit,
+        command: WalToolkitCommand,
     },
 }
 
@@ -754,7 +754,7 @@ async fn main() -> Result<()> {
                 path,
                 s3_args,
             } => {
-                command.run(path, s3_args).await?;
+                command.exec(path, s3_args).await?;
             }
         }
 
