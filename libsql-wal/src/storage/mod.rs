@@ -196,14 +196,6 @@ pub trait Storage: Send + Sync + 'static {
         config_override: Option<Self::Config>,
     ) -> impl Future<Output = Result<u64>> + Send;
 
-    async fn restore(
-        &self,
-        file: impl FileExt,
-        namespace: &NamespaceName,
-        restore_options: RestoreOptions,
-        config_override: Option<Self::Config>,
-    ) -> Result<()>;
-
     fn find_segment(
         &self,
         namespace: &NamespaceName,
@@ -287,19 +279,6 @@ where
         match zip(self, config_override) {
             Either::A((s, c)) => s.durable_frame_no(namespace, c).await,
             Either::B((s, c)) => s.durable_frame_no(namespace, c).await,
-        }
-    }
-
-    async fn restore(
-        &self,
-        file: impl FileExt,
-        namespace: &NamespaceName,
-        restore_options: RestoreOptions,
-        config_override: Option<Self::Config>,
-    ) -> Result<()> {
-        match zip(self, config_override) {
-            Either::A((s, c)) => s.restore(file, namespace, restore_options, c).await,
-            Either::B((s, c)) => s.restore(file, namespace, restore_options, c).await,
         }
     }
 
@@ -400,16 +379,6 @@ impl Storage for NoStorage {
         _config: Option<Self::Config>,
     ) -> Result<u64> {
         Ok(u64::MAX)
-    }
-
-    async fn restore(
-        &self,
-        _file: impl FileExt,
-        _namespace: &NamespaceName,
-        _restore_options: RestoreOptions,
-        _config_override: Option<Self::Config>,
-    ) -> Result<()> {
-        panic!("can restore from no storage")
     }
 
     async fn find_segment(
@@ -515,11 +484,10 @@ impl<IO: Io> Storage for TestStorage<IO> {
     ) {
         let mut inner = self.inner.lock_blocking();
         if inner.store {
-            let id = uuid::Uuid::new_v4();
-            let out_path = inner.dir.path().join(id.to_string());
+            let out_path = inner.dir.path().join(uuid::Uuid::new_v4().to_string());
             let out_file = inner.io.open(true, true, true, &out_path).unwrap();
             let index = tokio::runtime::Handle::current()
-                .block_on(seg.compact(&out_file, id))
+                .block_on(seg.compact(&out_file))
                 .unwrap();
             let end_frame_no = seg.header().last_committed();
             let key = SegmentKey {
@@ -549,16 +517,6 @@ impl<IO: Io> Storage for TestStorage<IO> {
         _config: Option<Self::Config>,
     ) -> Result<u64> {
         Ok(u64::MAX)
-    }
-
-    async fn restore(
-        &self,
-        _file: impl FileExt,
-        _namespace: &NamespaceName,
-        _restore_options: RestoreOptions,
-        _config_override: Option<Self::Config>,
-    ) -> Result<()> {
-        todo!();
     }
 
     async fn find_segment(

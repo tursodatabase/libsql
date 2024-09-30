@@ -2798,6 +2798,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "indicatif"
+version = "0.17.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "763a5a8f45087d6bcea4222e7b72c291a054edf80e4ef6efd2a4979878c7bea3"
+dependencies = [
+ "console",
+ "instant",
+ "number_prefix",
+ "portable-atomic",
+ "unicode-width",
+]
+
+[[package]]
 name = "inferno"
 version = "0.11.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2853,6 +2866,15 @@ dependencies = [
  "linked-hash-map",
  "serde",
  "similar",
+]
+
+[[package]]
+name = "instant"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
+dependencies = [
+ "cfg-if",
 ]
 
 [[package]]
@@ -3194,6 +3216,7 @@ dependencies = [
  "hyper 0.14.30",
  "hyper-rustls 0.24.1",
  "hyper-tungstenite",
+ "indicatif",
  "insta",
  "itertools 0.10.5",
  "jsonwebtoken",
@@ -3347,6 +3370,7 @@ dependencies = [
  "crossbeam-skiplist",
  "dashmap",
  "fst",
+ "futures",
  "hashbrown 0.14.5",
  "hex",
  "http-body 1.0.0",
@@ -3354,10 +3378,12 @@ dependencies = [
  "inquire",
  "insta",
  "libsql-sys",
+ "memmap",
  "nix 0.28.0",
  "once_cell",
  "parking_lot",
  "petgraph",
+ "pin-project-lite",
  "priority-queue 2.0.3",
  "rand",
  "rand_chacha",
@@ -3532,6 +3558,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2cffa4ad52c6f791f4f8b15f0c05f9824b2ced1160e88cc393d64fff9a8ac64"
 dependencies = [
  "rustix 0.38.34",
+]
+
+[[package]]
+name = "memmap"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6585fd95e7bb50d6cc31e20d4cf9afb4e2ba16c5846fc76793f11218da9c475b"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]
@@ -3827,6 +3863,12 @@ checksum = "5c7398b9c8b70908f6371f47ed36737907c87c52af34c268fed0bf0ceb92ead9"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "number_prefix"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "numeric_cast"

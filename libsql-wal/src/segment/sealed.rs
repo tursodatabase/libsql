@@ -12,13 +12,15 @@ use fst::{Map, MapBuilder, Streamer};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::io::buf::{IoBufMut, ZeroCopyBuf};
+use crate::io::buf::{IoBuf, IoBufMut, MapSlice, ZeroCopyBuf};
 use crate::io::file::{BufCopy, FileExt};
 use crate::io::Inspect;
 use crate::segment::{checked_frame_offset, CheckedFrame};
 use crate::{LIBSQL_MAGIC, LIBSQL_WAL_VERSION};
 
-use super::compacted::{CompactedSegmentDataFooter, CompactedSegmentDataHeader};
+use super::compacted::{
+    CompactedFrame, CompactedFrameFlags, CompactedFrameHeader, CompactedSegmentHeader,
+};
 use super::{frame_offset, page_offset, Frame, Segment, SegmentFlags, SegmentHeader};
 
 /// an immutable, wal segment
@@ -81,12 +83,8 @@ impl<F> Segment for SealedSegment<F>
 where
     F: FileExt,
 {
-    async fn compact(&self, out_file: &impl FileExt, id: uuid::Uuid) -> Result<Vec<u8>> {
-        let mut hasher = crc32fast::Hasher::new();
-
-        let header = CompactedSegmentDataHeader {
-            frame_count: (self.index().len() as u32).into(),
-            segment_id: id.as_u128().into(),
+    async fn compact(&self, out_file: &impl FileExt) -> Result<Vec<u8>> {
+        let header = CompactedSegmentHeader {
             start_frame_no: self.header().start_frame_no,
             end_frame_no: self.header().last_commited_frame_no,
             size_after: self.header.size_after,
@@ -94,49 +92,63 @@ where
             magic: LIBSQL_MAGIC.into(),
             page_size: self.header().page_size,
             timestamp: self.header.sealed_at_timestamp,
+            log_id: self.header().log_id.into(),
         };
 
-        hasher.update(header.as_bytes());
+        let mut crc_init = crc32fast::hash(header.as_bytes());
+
         let (_, ret) = out_file
             .write_all_at_async(ZeroCopyBuf::new_init(header), 0)
             .await;
         ret?;
 
+        let mut count_pages = self.index().len();
         let mut pages = self.index().stream();
         let mut buffer = Box::new(ZeroCopyBuf::<Frame>::new_uninit());
         let mut out_index = fst::MapBuilder::memory();
         let mut current_offset = 0;
 
         while let Some((page_no_bytes, offset)) = pages.next() {
+            count_pages -= 1;
             let (mut b, ret) = self.read_frame_offset_async(offset as _, buffer).await;
             ret?;
             // transaction boundaries in a segment are completely erased. The responsibility is on
             // the consumer of the segment to place the transaction boundary such that all frames from
             // the segment are applied within the same transaction.
-            b.get_mut().header_mut().set_size_after(0);
-            hasher.update(&b.get_ref().as_bytes());
-            let dest_offset =
-                size_of::<CompactedSegmentDataHeader>() + current_offset * size_of::<Frame>();
-            let (mut b, ret) = out_file.write_all_at_async(b, dest_offset as u64).await;
-            ret?;
+            let frame = b.get_mut();
+
+            let flags = if count_pages == 0 {
+                CompactedFrameFlags::LAST.bits()
+            } else {
+                CompactedFrameFlags::empty().bits()
+            };
+
+            let mut compacted_header = CompactedFrameHeader {
+                checksum: 0.into(),
+                flags: flags.into(),
+                page_no: frame.header().page_no,
+                frame_no: frame.header().frame_no,
+            };
+
+            crc_init = compacted_header.update_checksum(crc_init, b.get_ref().data());
+
+            fn map_data(b: &ZeroCopyBuf<Frame>) -> &[u8] {
+                b.get_ref().data()
+            }
+
+            let data = MapSlice::new(b, map_data);
+            let mut b = write_compact_frame(out_file, current_offset, compacted_header, data)
+                .await?
+                .into_inner();
+
             out_index
                 .insert(page_no_bytes, current_offset as _)
                 .unwrap();
             current_offset += 1;
+
             b.deinit();
             buffer = b;
         }
-
-        let footer = CompactedSegmentDataFooter {
-            checksum: hasher.finalize().into(),
-        };
-
-        let footer_offset =
-            size_of::<CompactedSegmentDataHeader>() + current_offset * size_of::<Frame>();
-        let (_, ret) = out_file
-            .write_all_at_async(ZeroCopyBuf::new_init(footer), footer_offset as _)
-            .await;
-        ret?;
 
         Ok(out_index.into_inner().unwrap())
     }
@@ -207,6 +219,26 @@ where
         DateTime::from_timestamp_millis(self.header().sealed_at_timestamp.get() as _)
             .expect("this should be a guaranteed roundtrip with DateTime::timestamp_millis")
     }
+}
+
+async fn write_compact_frame<B: IoBuf + Send>(
+    file: &impl FileExt,
+    offset: usize,
+    header: CompactedFrameHeader,
+    data: B,
+) -> Result<B> {
+    let header_offset = size_of::<CompactedSegmentHeader>() + offset * size_of::<CompactedFrame>();
+
+    let fut1 = file.write_all_at_async(ZeroCopyBuf::new_init(header), header_offset as u64);
+
+    let data_offset = header_offset + size_of::<CompactedFrameHeader>();
+    let fut2 = file.write_all_at_async(data, data_offset as u64);
+    let ((_, ret1), (b, ret2)) = futures::join!(fut1, fut2);
+
+    ret1?;
+    ret2?;
+
+    Ok(b)
 }
 
 impl<F: FileExt> SealedSegment<F> {
