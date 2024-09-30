@@ -5733,12 +5733,14 @@ dependencies = [
  "sqlx",
  "sqlx-libsql",
  "tokio",
+ "tokio-stream",
 ]
 
 [[package]]
 name = "sqlx-libsql"
 version = "0.1.0"
 dependencies = [
+ "async-stream",
  "futures-core",
  "futures-util",
  "libsql",

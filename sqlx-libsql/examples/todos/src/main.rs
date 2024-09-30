@@ -19,6 +19,20 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let pool = LibsqlPool::connect(&env::var("DATABASE_URL")?).await?;
 
+    // Migrations currently do not work, so we must do them manually
+    sqlx::query(
+        r#"
+CREATE TABLE IF NOT EXISTS todos
+(
+    id          INTEGER PRIMARY KEY NOT NULL,
+    description TEXT                NOT NULL,
+    done        BOOLEAN             NOT NULL DEFAULT 0
+);
+        "#,
+    )
+    .execute(&pool)
+    .await?;
+
     match args.cmd {
         Some(Command::Add { description }) => {
             println!("Adding new todo with description '{description}'");
@@ -87,14 +101,12 @@ ORDER BY id
     .fetch_all(pool)
     .await?;
 
-    for _rec in recs {
-        // TODO(lucio): impl this
-        // println!(
-        //     "- [{}] {}: {}",
-        //     if rec.done { "x" } else { " " },
-        //     rec.id,
-        //     &rec.description,
-        // );
+    for rec in recs {
+        let done = rec.get::<bool>(2).unwrap();
+        let id = rec.get::<u64>(0).unwrap();
+        let desc = rec.get::<String>(1).unwrap();
+
+        println!("- [{}] {}: {}", if done { "x" } else { " " }, id, &desc,);
     }
 
     Ok(())

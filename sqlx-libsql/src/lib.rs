@@ -3,6 +3,7 @@
 use std::{
     iter::{Extend, IntoIterator},
     marker::PhantomData,
+    ops::Deref,
     str::FromStr,
 };
 
@@ -20,6 +21,7 @@ use sqlx_core::{
     type_info::TypeInfo,
     types::Type,
     value::{Value, ValueRef},
+    Either,
 };
 
 #[derive(Debug)]
@@ -42,67 +44,6 @@ impl Database for Libsql {
     const URL_SCHEMES: &'static [&'static str] = &["libsql"];
 }
 
-// #[derive(Debug)]
-// pub struct LibsqlExecutor<'a> {
-//     _a: PhantomData<&'a ()>,
-// }
-
-// impl<'a> Executor<'a> for LibsqlExecutor<'a> {
-//     type Database = Libsql;
-
-//     fn fetch_many<'e, 'q: 'e, E>(
-//         self,
-//         query: E,
-//     ) -> futures_core::stream::BoxStream<
-//         'e,
-//         Result<
-//             sqlx_core::Either<
-//                 <Self::Database as Database>::QueryResult,
-//                 <Self::Database as Database>::Row,
-//             >,
-//             sqlx_core::Error,
-//         >,
-//     >
-//     where
-//         'a: 'e,
-//         E: 'q + sqlx_core::executor::Execute<'q, Self::Database>,
-//     {
-//         todo!()
-//     }
-
-//     fn fetch_optional<'e, 'q: 'e, E>(
-//         self,
-//         query: E,
-//     ) -> BoxFuture<'e, Result<Option<<Self::Database as Database>::Row>, sqlx_core::Error>>
-//     where
-//         'a: 'e,
-//         E: 'q + sqlx_core::executor::Execute<'q, Self::Database>,
-//     {
-//         todo!()
-//     }
-
-//     fn prepare_with<'e, 'q: 'e>(
-//         self,
-//         sql: &'q str,
-//         parameters: &'e [<Self::Database as Database>::TypeInfo],
-//     ) -> BoxFuture<'e, Result<<Self::Database as Database>::Statement<'q>, sqlx_core::Error>>
-//     where
-//         'a: 'e,
-//     {
-//         todo!()
-//     }
-
-//     fn describe<'e, 'q: 'e>(
-//         self,
-//         sql: &'q str,
-//     ) -> BoxFuture<'e, Result<sqlx_core::describe::Describe<Self::Database>, sqlx_core::Error>>
-//     where
-//         'a: 'e,
-//     {
-//         todo!()
-//     }
-// }
-
 impl<'a> Executor<'a> for &'a mut LibsqlConnection {
     type Database = Libsql;
 
@@ -123,7 +64,15 @@ impl<'a> Executor<'a> for &'a mut LibsqlConnection {
         'a: 'e,
         E: 'q + sqlx_core::executor::Execute<'q, Self::Database>,
     {
-        todo!()
+        let sql = query.sql();
+
+        Box::pin(async_stream::stream! {
+            let mut rows = self.conn.query(sql, ()).await.unwrap();
+
+            while let Some(row) = rows.next().await.unwrap() {
+                yield Ok(Either::Right(LibsqlRow { row }));
+            }
+        })
     }
 
     fn fetch_optional<'e, 'q: 'e, E>(
@@ -171,7 +120,9 @@ sqlx_core::impl_acquire!(Libsql, LibsqlConnection);
 sqlx_core::impl_encode_for_option!(Libsql);
 
 #[derive(Debug)]
-pub struct LibsqlConnection {}
+pub struct LibsqlConnection {
+    conn: libsql::Connection,
+}
 
 impl Connection for LibsqlConnection {
     type Database = Libsql;
@@ -187,7 +138,7 @@ impl Connection for LibsqlConnection {
     }
 
     fn ping(&mut self) -> BoxFuture<'_, Result<(), sqlx_core::Error>> {
-        todo!()
+        Box::pin(async { Ok(()) })
     }
 
     fn begin(
@@ -216,7 +167,9 @@ impl Connection for LibsqlConnection {
 }
 
 #[derive(Debug, Clone)]
-pub struct LibsqlConnectionOptions {}
+pub struct LibsqlConnectionOptions {
+    url: String,
+}
 
 impl ConnectOptions for LibsqlConnectionOptions {
     type Connection = LibsqlConnection;
@@ -229,7 +182,16 @@ impl ConnectOptions for LibsqlConnectionOptions {
     where
         Self::Connection: Sized,
     {
-        todo!()
+        let url = self.url.clone();
+
+        Box::pin(async {
+            let db = libsql::Builder::new_remote(url, "".to_string())
+                .build()
+                .await
+                .unwrap();
+            let conn = db.connect().unwrap();
+            Ok(LibsqlConnection { conn })
+        })
     }
 
     fn log_statements(self, level: log::LevelFilter) -> Self {
@@ -245,7 +207,7 @@ impl FromStr for LibsqlConnectionOptions {
     type Err = sqlx_core::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        todo!()
+        Ok(LibsqlConnectionOptions { url: s.to_string() })
     }
 }
 
@@ -277,7 +239,17 @@ impl TransactionManager for LibsqlTransactionManager {
     }
 }
 
-pub struct LibsqlRow {}
+pub struct LibsqlRow {
+    row: libsql::Row,
+}
+
+impl Deref for LibsqlRow {
+    type Target = libsql::Row;
+
+    fn deref(&self) -> &Self::Target {
+        &self.row
+    }
+}
 
 impl Row for LibsqlRow {
     type Database = Libsql;

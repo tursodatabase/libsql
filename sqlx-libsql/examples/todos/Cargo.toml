@@ -12,3 +12,4 @@ sqlx = { version = "0.8", features = [ "runtime-tokio", "tls-native-tls" ] }
 sqlx-libsql = { path = "../.." }
 clap = { version = "4", features = ["derive"] }
 tokio = { version = "1.20.0", features = ["rt", "macros"]}
+tokio-stream = "0.1"
