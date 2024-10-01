@@ -69,7 +69,7 @@ pub struct TurmoilConnector;
 pin_project_lite::pin_project! {
     pub struct TurmoilStream {
         #[pin]
-        inner: turmoil::net::TcpStream,
+        pub(crate) inner: turmoil::net::TcpStream,
     }
 }
 

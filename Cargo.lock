@@ -3245,6 +3245,7 @@ dependencies = [
  "prost",
  "prost-build",
  "rand",
+ "rand_chacha",
  "regex",
  "reqwest",
  "rheaper",
@@ -6138,9 +6139,9 @@ dependencies = [
 
 [[package]]
 name = "turmoil"
-version = "0.6.2"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1a6d72d6f78941e759159d1080436847926852d5250455fecbbfab203832eac"
+checksum = "e4d81bafd9a29aea436db2b3d5bec441ed3b777ac627059dd3ea65bea638126a"
 dependencies = [
  "bytes",
  "futures",
