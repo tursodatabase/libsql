@@ -57,7 +57,7 @@ pub trait Backend: Send + Sync + 'static {
         config: &Self::Config,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        segment_data: impl Stream<Item = Result<Bytes>> + Send + Sync + 'static,
+        segment_data: impl Stream<Item = Result<Bytes>> + Send + 'static,
     ) -> impl Future<Output = Result<()>> + Send;
 
     /// Store `segment_data` with its associated `meta`
@@ -224,7 +224,7 @@ impl<T: Backend> Backend for Arc<T> {
         config: &Self::Config,
         namespace: &NamespaceName,
         key: &SegmentKey,
-        segment_data: impl Stream<Item = Result<Bytes>> + Send + Sync + 'static,
+        segment_data: impl Stream<Item = Result<Bytes>> + Send + 'static,
     ) -> Result<()> {
         self.as_ref()
             .store_segment_data(config, namespace, key, segment_data)
