@@ -310,7 +310,9 @@ impl<IO: Io> S3Backend<IO> {
             let mut current_chunk_len = 0;
             tokio::pin!(data);
             loop {
-                let Some(frame) = poll_fn(|cx| data.as_mut().poll_frame(cx)).await else {
+                let next_frame_fut = poll_fn(|cx| data.as_mut().poll_frame(cx));
+                let Some(frame) = next_frame_fut.await else {
+                    let _ = s_chunks.send(current_chunk_file).await;
                     break;
                 };
                 let frame = frame?;
