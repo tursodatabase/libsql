@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use futures_core::future::BoxFuture;
 use futures_core::Stream;
@@ -11,7 +12,7 @@ use parking_lot::Mutex as PMutex;
 use tokio::sync::{mpsc, watch, Mutex};
 use tokio_stream::StreamExt;
 use tonic::transport::Channel;
-use tonic::{Request, Streaming};
+use tonic::{Code, Request, Streaming};
 
 use crate::connection::program::{DescribeCol, DescribeParam};
 use crate::error::Error;
@@ -249,19 +250,35 @@ impl RemoteConnection {
         ctx: RequestContext,
         builder_config: QueryBuilderConfig,
     ) -> crate::Result<Self> {
-        let (request_sender, receiver) = mpsc::channel(1);
+        let mut retries = 0;
 
-        let stream = tokio_stream::wrappers::ReceiverStream::new(receiver);
-        let mut req = Request::new(stream);
-        ctx.upgrade_grpc_request(&mut req);
-        let response_stream = client.stream_exec(req).await?.into_inner();
+        loop {
+            let (request_sender, receiver) = mpsc::channel(1);
 
-        Ok(Self {
-            response_stream,
-            request_sender,
-            current_request_id: 0,
-            builder_config,
-        })
+            let stream = tokio_stream::wrappers::ReceiverStream::new(receiver);
+            let mut req = Request::new(stream);
+            ctx.upgrade_grpc_request(&mut req);
+            let response_stream = match client.stream_exec(req).await {
+                Ok(i) => i.into_inner(),
+                Err(e) => {
+                    if e.code() == Code::Unavailable {
+                        tracing::error!("retrying proxy connection: {}", e);
+                        tokio::time::sleep(Duration::from_millis(500) * 2u32.pow(retries)).await;
+                        retries += 1;
+                        continue;
+                    } else {
+                        return Err(e.into());
+                    }
+                }
+            };
+
+            return Ok(Self {
+                response_stream,
+                request_sender,
+                current_request_id: 0,
+                builder_config,
+            });
+        }
     }
 }
 
