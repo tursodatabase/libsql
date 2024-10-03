@@ -7,7 +7,6 @@ pub struct SimConfig {
 
     /// how many replica to start the sim with
     pub n_replicas: usize,
-    pub n_clients: usize,
 
     /// p that a service soft-crashes
     pub p_soft_crash: f64,
@@ -21,4 +20,19 @@ pub struct SimConfig {
     pub p_net_repair: f64,
     pub latency_curve: f64,
     pub sim_duration: Duration,
+
+    pub n_clients: usize,
+    pub n_namespaces: usize,
+
+    /* workload config */
+    /// probability to perform a batch query
+    pub p_batch: f64,
+    /// probability to perform an interactive
+    pub p_interactive_txn: f64,
+    /// probability to perform a write query
+    pub p_write: f64,
+    /// probability to perform a read query
+    pub p_read: f64,
+    /// maximum number of steps in a client workload
+    pub max_steps: usize,
 }

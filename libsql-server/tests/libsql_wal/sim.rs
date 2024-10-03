@@ -1,6 +1,6 @@
-use jsonwebtoken::EncodingKey;
 use rand::{RngCore, SeedableRng as _};
 
+use super::services::clients::ClientsService;
 use super::services::sqld::SqldService;
 use super::services::s3::S3Service;
 use super::services::SimService;
@@ -12,7 +12,6 @@ type Services = Vec<Box<dyn SimService>>;
 
 pub struct Sim {
     simulator: turmoil::Sim<'static>,
-    jwt_encoding: EncodingKey,
     services: Services,
     config: SimConfig,
     rng: Box<dyn RngCore>,
@@ -43,6 +42,9 @@ impl Sim {
         dns.register("primary".to_string(), primary.hostname());
         services.push(Box::new(primary));
 
+        let clients = ClientsService::configure(dns.clone(), encoding);
+        services.push(Box::new(clients));
+
         for _ in 0..config.n_replicas {
             let replica = SqldService::configure_replica(&mut sim, decoding.clone(), dns.clone(), &mut rng);
             dns.register("replica".to_string(), replica.hostname());
@@ -51,7 +53,6 @@ impl Sim {
 
         Self {
             simulator: sim,
-            jwt_encoding: encoding,
             services,
             config,
             rng: Box::new(rng),
@@ -61,7 +62,8 @@ impl Sim {
     pub fn run(&mut self) {
         tracing_subscriber::fmt::try_init();
 
-        while self.simulator.step().unwrap() {
+        loop {
+            self.simulator.step().unwrap();
             self.services.retain_mut(|s| s.tick(&mut self.simulator, &self.config, &mut self.rng));
         }
     }

@@ -175,7 +175,7 @@ impl SqldService {
                     ..Default::default()
                 };
 
-                server.start().await;
+                server.start().await.unwrap();
 
                 Ok(())
             }.instrument(span)
