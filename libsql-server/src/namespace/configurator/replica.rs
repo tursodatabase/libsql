@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use futures::Future;
 use hyper::Uri;
-use libsql_replication::rpc::replication::log_offset::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_sys::wal::wrapper::PassthroughWalWrapper;
+use tokio::sync::watch;
 use tokio::task::JoinSet;
 use tonic::transport::Channel;
 
@@ -21,6 +21,7 @@ use crate::namespace::configurator::helpers::{make_stats, run_storage_monitor};
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{Namespace, NamespaceBottomlessDbIdInit, RestoreOption};
 use crate::namespace::{NamespaceName, NamespaceStore, ResetCb, ResetOp, ResolveNamespacePathFn};
+use crate::replication::replicator_client::WalImpl;
 use crate::{DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
 
 use super::{BaseNamespaceConfig, ConfigureNamespace};
@@ -66,17 +67,16 @@ impl ConfigureNamespace for ReplicaConfigurator {
             let channel = self.channel.clone();
             let uri = self.uri.clone();
 
+            let (new_frame_sender, new_frame_receiver) = watch::channel(None);
             let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
             let client = crate::replication::replicator_client::Client::new(
                 name.clone(),
                 rpc_client,
-                &db_path,
                 meta_store_handle.clone(),
                 store.clone(),
-                WalFlavor::Sqlite,
+                WalImpl::new_sqlite(&db_path, new_frame_sender).await?,
             )
             .await?;
-            let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
             let mut replicator = libsql_replication::replicator::Replicator::new_sqlite(
                 client,
                 db_path.join("data"),
@@ -174,9 +174,29 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 meta_store_handle.clone(),
                 self.base.stats_sender.clone(),
                 name.clone(),
-                applied_frame_no_receiver.clone(),
             )
             .await?;
+
+            join_set.spawn({
+                let stats = stats.clone();
+                let mut rcv = new_frame_receiver.clone();
+                async move {
+                    let _ = rcv
+                        .wait_for(move |fno| {
+                            if let Some(fno) = *fno {
+                                stats.set_current_frame_no(fno);
+                            }
+                            false
+                        })
+                        .await;
+                    Ok(())
+                }
+            });
+
+            let get_current_frame_no = Arc::new({
+                let rcv = new_frame_receiver.clone();
+                move || *rcv.borrow()
+            });
 
             let connection_maker = MakeLegacyConnection::new(
                 db_path.clone(),
@@ -188,7 +208,7 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 self.base.max_response_size,
                 self.base.max_total_response_size,
                 DEFAULT_AUTO_CHECKPOINT,
-                applied_frame_no_receiver.clone(),
+                get_current_frame_no.clone(),
                 self.base.encryption_config.clone(),
                 Arc::new(AtomicBool::new(false)), // this is always false for write proxy
                 resolve_attach_path,
@@ -196,17 +216,33 @@ impl ConfigureNamespace for ReplicaConfigurator {
             )
             .await?;
 
+            let wait_for_frame_no = Arc::new({
+                let rcv = new_frame_receiver.clone();
+                move |frame_no| -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+                    let mut rcv = rcv.clone();
+                    Box::pin(async move {
+                        let _ = rcv
+                            .wait_for(|x| match *x {
+                                Some(x) if x >= frame_no => true,
+                                _ => false,
+                            })
+                            .await;
+                    })
+                }
+            });
+
             let connection_maker = Arc::new(
                 MakeWriteProxyConn::new(
                     channel.clone(),
                     uri.clone(),
                     stats.clone(),
-                    applied_frame_no_receiver,
+                    wait_for_frame_no,
                     self.base.max_response_size,
                     self.base.max_total_response_size,
                     primary_current_replicatio_index,
                     self.base.encryption_config.clone(),
                     connection_maker,
+                    get_current_frame_no,
                 )
                 .throttled(
                     self.base.max_concurrent_connections.clone(),

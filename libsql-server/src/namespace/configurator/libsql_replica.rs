@@ -1,11 +1,11 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::Duration;
 
 use hyper::Uri;
 use libsql_replication::injector::LibsqlInjector;
 use libsql_replication::replicator::Replicator;
-use libsql_replication::rpc::replication::log_offset::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_sys::name::NamespaceResolver;
 use libsql_wal::io::StdIO;
@@ -27,6 +27,7 @@ use crate::namespace::{
     Namespace, NamespaceBottomlessDbIdInit, NamespaceName, NamespaceStore, ResetCb, ResetOp,
     ResolveNamespacePathFn, RestoreOption,
 };
+use crate::replication::replicator_client::WalImpl;
 use crate::{SqldStorage, DB_CREATE_TIMEOUT};
 
 use super::helpers::cleanup_libsql;
@@ -76,25 +77,50 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
             let channel = self.channel.clone();
             let uri = self.uri.clone();
             let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
+            let shared = {
+                let registry = self.registry.clone();
+                let ns = name.clone().into();
+                let db_path = db_path.join("data");
+                tokio::task::spawn_blocking(move || registry.open(&db_path, &ns))
+                    .await
+                    .unwrap()?
+            };
+
             let client = crate::replication::replicator_client::Client::new(
                 name.clone(),
                 rpc_client,
-                &db_path,
                 db_config.clone(),
                 store.clone(),
-                WalFlavor::Libsql,
+                WalImpl::new_libsql(shared.clone()),
             )
             .await?;
-            let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
             let stats = make_stats(
                 &db_path,
                 &mut join_set,
                 db_config.clone(),
                 self.base.stats_sender.clone(),
                 name.clone(),
-                applied_frame_no_receiver.clone(),
             )
             .await?;
+
+            join_set.spawn({
+                let stats = stats.clone();
+                let mut rcv = shared.new_frame_notifier();
+                async move {
+                    let _ = rcv
+                        .wait_for(move |fno| {
+                            stats.set_current_frame_no(*fno);
+                            false
+                        })
+                        .await;
+                    Ok(())
+                }
+            });
+
+            let get_current_frame_no = Arc::new({
+                let rcv = shared.new_frame_notifier();
+                move || Some(*rcv.borrow())
+            });
 
             let read_connection_maker = MakeLibsqlConnection {
                 inner: Arc::new(MakeLibsqlConnectionInner {
@@ -106,7 +132,7 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
                     max_response_size: self.base.max_response_size,
                     max_total_response_size: self.base.max_total_response_size,
                     auto_checkpoint: 0,
-                    current_frame_no_receiver: applied_frame_no_receiver.clone(),
+                    get_current_frame_no: get_current_frame_no.clone(),
                     encryption_config: self.base.encryption_config.clone(),
                     block_writes: Arc::new(true.into()),
                     resolve_attach_path: resolve_attach_path.clone(),
@@ -117,18 +143,29 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
                 }),
             };
 
+            let rcv = shared.new_frame_notifier();
+            let wait_for_frame_no = Arc::new(
+                move |frame_no| -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+                    let mut rcv = rcv.clone();
+                    Box::pin(async move {
+                        let _ = rcv.wait_for(|x| *x == frame_no).await;
+                    })
+                },
+            );
+
             let connection_maker = Arc::new(
                 MakeWriteProxyConn::new(
                     channel.clone(),
                     uri.clone(),
                     stats.clone(),
-                    applied_frame_no_receiver.clone(),
+                    wait_for_frame_no,
                     self.base.max_response_size,
                     self.base.max_total_response_size,
                     // FIXME: we need to fetch the primary index before
                     None,
                     self.base.encryption_config.clone(),
                     read_connection_maker,
+                    get_current_frame_no,
                 )
                 .throttled(
                     self.base.max_concurrent_connections.clone(),
@@ -145,12 +182,6 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
 
             // FIXME: hack, this is necessary for the registry to open the SharedWal
             let _ = connection_maker.create().await?;
-            let shared = self
-                .registry
-                .get_async(&(name.clone().into()))
-                .await
-                .unwrap();
-
             let injector = Injector::new(shared, 10).unwrap();
             let injector = LibsqlInjector::new(injector);
             let mut replicator = Replicator::new(client, injector);
@@ -184,10 +215,12 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
             tracing::debug!("done performing handshake");
 
             let namespace = name.clone();
+            let mut retries = 0;
             join_set.spawn(async move {
                 use libsql_replication::replicator::Error;
                 loop {
                     match replicator.run().await {
+                        err if retries > 10 => Err(err)?,
                         err @ Error::Fatal(_) => Err(err)?,
                         err @ Error::NamespaceDoesntExist => {
                             tracing::error!("namespace {namespace} doesn't exist, destroying...");
@@ -231,6 +264,9 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
                         }
                         Error::SnapshotPending => unreachable!(),
                     }
+
+                    tokio::time::sleep(Duration::from_millis(500) * 2u32.pow(retries)).await;
+                    retries += 1;
                 }
             });
 
