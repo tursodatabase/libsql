@@ -7,7 +7,6 @@ use std::time::{Duration, Instant};
 use libsql_sys::wal::{Wal, WalManager};
 use metrics::histogram;
 use parking_lot::Mutex;
-use tokio::sync::watch;
 
 use crate::connection::legacy::open_conn_active_checkpoint;
 use crate::error::Error;
@@ -24,13 +23,15 @@ use crate::{Result, BLOCKING_RT};
 use super::config::DatabaseConfig;
 use super::program::{DescribeCol, DescribeParam, DescribeResponse, Program, Vm};
 
+pub type GetCurrentFrameNo = Arc<dyn Fn() -> Option<FrameNo> + Send + Sync + 'static>;
+
 /// The base connection type, shared between legacy and libsql-wal implementations
 pub(super) struct CoreConnection<W> {
     conn: libsql_sys::Connection<W>,
     stats: Arc<Stats>,
     config_store: MetaStoreHandle,
     builder_config: QueryBuilderConfig,
-    current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    get_current_frame_no: GetCurrentFrameNo,
     block_writes: Arc<AtomicBool>,
     resolve_attach_path: ResolveNamespacePathFn,
     forced_rollback: bool,
@@ -65,7 +66,7 @@ impl<W: Wal + Send + 'static> CoreConnection<W> {
         broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
-        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        get_current_frame_no: GetCurrentFrameNo,
         block_writes: Arc<AtomicBool>,
         resolve_attach_path: ResolveNamespacePathFn,
     ) -> Result<Self> {
@@ -118,13 +119,13 @@ impl<W: Wal + Send + 'static> CoreConnection<W> {
             stats,
             config_store,
             builder_config,
-            current_frame_no_receiver,
             block_writes,
             resolve_attach_path,
             forced_rollback: false,
             broadcaster,
             hooked: false,
             canceled,
+            get_current_frame_no,
         };
 
         for ext in extensions.iter() {
@@ -265,9 +266,9 @@ impl<W: Wal + Send + 'static> CoreConnection<W> {
         }
 
         {
-            let mut lock = this.lock();
+            let lock = this.lock();
             let is_autocommit = lock.conn.is_autocommit();
-            let current_fno = *lock.current_frame_no_receiver.borrow_and_update();
+            let current_fno = (lock.get_current_frame_no)();
             vm.builder().finish(current_fno, is_autocommit)?;
         }
 
@@ -424,13 +425,13 @@ mod test {
             stats: Arc::new(Stats::default()),
             config_store: MetaStoreHandle::new_test(),
             builder_config: QueryBuilderConfig::default(),
-            current_frame_no_receiver: watch::channel(None).1,
             block_writes: Default::default(),
             resolve_attach_path: Arc::new(|_| unreachable!()),
             forced_rollback: false,
             broadcaster: Default::default(),
             hooked: false,
             canceled: Arc::new(false.into()),
+            get_current_frame_no: Arc::new(|| None),
         };
 
         let conn = Arc::new(Mutex::new(conn));
@@ -465,7 +466,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            Arc::new(|| None),
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
@@ -511,7 +512,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            Arc::new(|| None),
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
@@ -562,7 +563,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            Arc::new(|| None),
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
@@ -645,7 +646,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            Arc::new(|| None),
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
@@ -738,7 +739,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            Arc::new(|| None),
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),

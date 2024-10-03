@@ -12,7 +12,6 @@ use libsql_sys::EncryptionConfig;
 use libsql_wal::io::StdIO;
 use libsql_wal::registry::WalRegistry;
 use tokio::io::AsyncBufReadExt as _;
-use tokio::sync::watch;
 use tokio::task::JoinSet;
 use tokio_util::io::StreamReader;
 
@@ -29,7 +28,7 @@ use crate::namespace::{
     NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName, ResolveNamespacePathFn,
     RestoreOption,
 };
-use crate::replication::{FrameNo, ReplicationLogger};
+use crate::replication::ReplicationLogger;
 use crate::stats::Stats;
 use crate::{SqldStorage, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
 
@@ -125,15 +124,34 @@ pub(super) async fn make_primary_connection_maker(
         meta_store_handle.clone(),
         base_config.stats_sender.clone(),
         name.clone(),
-        logger.new_frame_notifier.subscribe(),
     )
     .await?;
+
+    join_set.spawn({
+        let stats = stats.clone();
+        let mut rcv = logger.new_frame_notifier.subscribe();
+        async move {
+            let _ = rcv
+                .wait_for(move |fno| {
+                    if let Some(fno) = *fno {
+                        stats.set_current_frame_no(fno);
+                    }
+                    false
+                })
+                .await;
+            Ok(())
+        }
+    });
 
     tracing::debug!("Making replication wal wrapper");
     let wal_wrapper = make_replication_wal_wrapper(bottomless_replicator, logger.clone());
 
     tracing::debug!("Opening libsql connection");
 
+    let get_current_frame_no = Arc::new({
+        let rcv = logger.new_frame_notifier.subscribe();
+        move || *rcv.borrow()
+    });
     let connection_maker = Arc::new(
         MakeLegacyConnection::new(
             db_path.to_path_buf(),
@@ -145,7 +163,7 @@ pub(super) async fn make_primary_connection_maker(
             base_config.max_response_size,
             base_config.max_total_response_size,
             auto_checkpoint,
-            logger.new_frame_notifier.subscribe(),
+            get_current_frame_no,
             encryption_config,
             block_writes,
             resolve_attach_path,
@@ -350,7 +368,6 @@ pub(super) async fn make_stats(
     meta_store_handle: MetaStoreHandle,
     stats_sender: StatsSender,
     name: NamespaceName,
-    mut current_frame_no: watch::Receiver<Option<FrameNo>>,
 ) -> anyhow::Result<Arc<Stats>> {
     tracing::debug!("creating stats type");
     let stats = Stats::new(name.clone(), db_path, join_set).await?;
@@ -360,22 +377,6 @@ pub(super) async fn make_stats(
     let _ = stats_sender
         .send((name.clone(), meta_store_handle, Arc::downgrade(&stats)))
         .await;
-
-    join_set.spawn({
-        let stats = stats.clone();
-        // initialize the current_frame_no value
-        current_frame_no
-            .borrow_and_update()
-            .map(|fno| stats.set_current_frame_no(fno));
-        async move {
-            while current_frame_no.changed().await.is_ok() {
-                current_frame_no
-                    .borrow_and_update()
-                    .map(|fno| stats.set_current_frame_no(fno));
-            }
-            Ok(())
-        }
-    });
 
     tracing::debug!("done sending stats, and creating bg tasks");
 

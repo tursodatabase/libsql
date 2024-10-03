@@ -9,7 +9,6 @@ use libsql_sys::EncryptionConfig;
 use parking_lot::Mutex;
 use rusqlite::ffi::SQLITE_BUSY;
 use rusqlite::{ErrorCode, OpenFlags};
-use tokio::sync::watch;
 use tokio::time::Duration;
 
 use crate::error::Error;
@@ -22,7 +21,7 @@ use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::{record_time, Result};
 
-use super::connection_core::CoreConnection;
+use super::connection_core::{CoreConnection, GetCurrentFrameNo};
 
 use super::connection_manager::{
     ConnectionManager, InnerWalManager, ManagedConnectionWal, ManagedConnectionWalWrapper,
@@ -40,7 +39,7 @@ pub struct MakeLegacyConnection<W> {
     max_response_size: u64,
     max_total_response_size: u64,
     auto_checkpoint: u32,
-    current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    get_current_frame_no: GetCurrentFrameNo,
     connection_manager: ConnectionManager,
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LegacyConnection<W>>,
@@ -65,7 +64,7 @@ where
         max_response_size: u64,
         max_total_response_size: u64,
         auto_checkpoint: u32,
-        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        current_frame_no: GetCurrentFrameNo,
         encryption_config: Option<EncryptionConfig>,
         block_writes: Arc<AtomicBool>,
         resolve_attach_path: ResolveNamespacePathFn,
@@ -82,7 +81,7 @@ where
             max_response_size,
             max_total_response_size,
             auto_checkpoint,
-            current_frame_no_receiver,
+            get_current_frame_no: current_frame_no,
             _db: None,
             wal_wrapper,
             encryption_config,
@@ -142,7 +141,7 @@ where
                 auto_checkpoint: self.auto_checkpoint,
                 encryption_config: self.encryption_config.clone(),
             },
-            self.current_frame_no_receiver.clone(),
+            self.get_current_frame_no.clone(),
             self.block_writes.clone(),
             self.resolve_attach_path.clone(),
             self.connection_manager.clone(),
@@ -185,7 +184,7 @@ impl LegacyConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
             Default::default(),
             MetaStoreHandle::new_test(),
             QueryBuilderConfig::default(),
-            tokio::sync::watch::channel(None).1,
+            Arc::new(|| None),
             Default::default(),
             Arc::new(|_| unreachable!()),
             ConnectionManager::new(TXN_TIMEOUT),
@@ -321,7 +320,7 @@ where
         broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
-        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        current_frame_no_receiver: GetCurrentFrameNo,
         block_writes: Arc<AtomicBool>,
         resolve_attach_path: ResolveNamespacePathFn,
         connection_manager: ConnectionManager,

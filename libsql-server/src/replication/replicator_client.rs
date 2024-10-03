@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::pin::Pin;
+use std::sync::Arc;
 
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -9,9 +10,11 @@ use libsql_replication::replicator::{Error, ReplicatorClient};
 use libsql_replication::rpc::replication::log_offset::WalFlavor;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{
-    verify_session_token, Frame as RpcFrame, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY,
-    SESSION_TOKEN_KEY,
+    verify_session_token, Frame as RpcFrame, HelloRequest, HelloResponse, LogOffset,
+    NAMESPACE_METADATA_KEY, SESSION_TOKEN_KEY,
 };
+use libsql_wal::io::StdIO;
+use libsql_wal::shared_wal::SharedWal;
 use tokio::sync::watch;
 use tokio_stream::Stream;
 
@@ -27,41 +30,128 @@ use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::replication::FrameNo;
 
+pub enum WalImpl {
+    LibsqlWal {
+        shared: Arc<SharedWal<StdIO>>,
+    },
+    SqliteWal {
+        meta: WalIndexMeta,
+        current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
+    },
+}
+
+impl WalImpl {
+    pub async fn new_sqlite(
+        path: &Path,
+        sender: watch::Sender<Option<FrameNo>>,
+    ) -> Result<Self, Error> {
+        let meta = WalIndexMeta::open(path).await?;
+        Ok(Self::SqliteWal {
+            meta,
+            current_frame_no_notifier: sender,
+        })
+    }
+
+    pub fn new_libsql(shared: Arc<SharedWal<StdIO>>) -> Self {
+        Self::LibsqlWal { shared }
+    }
+
+    fn next_frame_no(&self, first_since_handshake: bool) -> FrameNo {
+        match self {
+            WalImpl::LibsqlWal { shared } => {
+                if first_since_handshake {
+                    // with libsql-wal we only checkpoint frames that are durable. We will only
+                    // perform a handshake if we just started, or if the primary forced us to do it
+                    // again. In either cases, we want to start replicating again from the last
+                    // known durable replication index
+                    shared.durable_frame_no() + 1
+                } else {
+                    // otherwise we just query the next frame
+                    *shared.new_frame_notifier().borrow() + 1
+                }
+            }
+            WalImpl::SqliteWal {
+                current_frame_no_notifier,
+                ..
+            } => match *current_frame_no_notifier.borrow() {
+                Some(fno) => fno + 1,
+                None => 0,
+            },
+        }
+    }
+
+    fn handle_hello(&mut self, hello: HelloResponse) -> Result<(), Error> {
+        match self {
+            WalImpl::LibsqlWal { .. } => Ok(()),
+            WalImpl::SqliteWal {
+                meta,
+                current_frame_no_notifier,
+            } => {
+                meta.init_from_hello(hello)?;
+                current_frame_no_notifier.send_replace(meta.current_frame_no());
+                Ok(())
+            }
+        }
+    }
+
+    async fn set_commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error> {
+        match self {
+            WalImpl::LibsqlWal { .. } => Ok(()),
+            WalImpl::SqliteWal {
+                meta,
+                current_frame_no_notifier,
+            } => {
+                current_frame_no_notifier.send_replace(Some(frame_no));
+                meta.set_commit_frame_no(frame_no).await?;
+                Ok(())
+            }
+        }
+    }
+
+    fn commit_frame_no(&self) -> Option<FrameNo> {
+        match self {
+            WalImpl::LibsqlWal { shared, .. } => Some(*shared.new_frame_notifier().borrow()),
+            WalImpl::SqliteWal { meta, .. } => meta.current_frame_no(),
+        }
+    }
+
+    fn flavor(&self) -> WalFlavor {
+        match self {
+            WalImpl::LibsqlWal { .. } => WalFlavor::Libsql,
+            WalImpl::SqliteWal { .. } => WalFlavor::Sqlite,
+        }
+    }
+}
+
 pub struct Client {
     client: ReplicationLogClient<Channel>,
-    meta: WalIndexMeta,
-    pub current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
     namespace: NamespaceName,
     session_token: Option<Bytes>,
     meta_store_handle: MetaStoreHandle,
     // the primary current replication index, as reported by the last handshake
     pub primary_replication_index: Option<FrameNo>,
     store: NamespaceStore,
-    wal_flavor: WalFlavor,
+    wal_impl: WalImpl,
+    first_sync_since_handshake: bool,
 }
 
 impl Client {
     pub async fn new(
         namespace: NamespaceName,
         client: ReplicationLogClient<Channel>,
-        path: &Path,
         meta_store_handle: MetaStoreHandle,
         store: NamespaceStore,
-        wal_flavor: WalFlavor,
+        wal_flavor: WalImpl,
     ) -> crate::Result<Self> {
-        let (current_frame_no_notifier, _) = watch::channel(None);
-        let meta = WalIndexMeta::open(path).await?;
-
         Ok(Self {
             namespace,
             client,
-            current_frame_no_notifier,
-            meta,
             session_token: None,
             meta_store_handle,
             primary_replication_index: None,
             store,
-            wal_flavor,
+            wal_impl: wal_flavor,
+            first_sync_since_handshake: true,
         })
     }
 
@@ -83,10 +173,7 @@ impl Client {
     }
 
     fn next_frame_no(&self) -> FrameNo {
-        match *self.current_frame_no_notifier.borrow() {
-            Some(fno) => fno + 1,
-            None => 0,
-        }
+        self.wal_impl.next_frame_no(self.first_sync_since_handshake)
     }
 
     pub(crate) fn reset_token(&mut self) {
@@ -100,6 +187,7 @@ impl ReplicatorClient for Client {
 
     #[tracing::instrument(skip(self))]
     async fn handshake(&mut self) -> Result<(), Error> {
+        self.first_sync_since_handshake = true;
         tracing::debug!("Attempting to perform handshake with primary.");
         let req = self.make_request(HelloRequest::new());
         let resp = self.client.hello(req).await?;
@@ -132,10 +220,7 @@ impl ReplicatorClient for Client {
             tracing::debug!("no config passed in handshake");
         }
 
-        self.meta.init_from_hello(hello)?;
-        self.current_frame_no_notifier
-            .send_replace(self.meta.current_frame_no());
-
+        self.wal_impl.handle_hello(hello)?;
         tracing::trace!("handshake completed");
 
         Ok(())
@@ -144,8 +229,9 @@ impl ReplicatorClient for Client {
     async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
         let offset = LogOffset {
             next_offset: self.next_frame_no(),
-            wal_flavor: Some(self.wal_flavor.into()),
+            wal_flavor: Some(self.wal_impl.flavor().into()),
         };
+
         let req = self.make_request(offset);
         let stream = self
             .client
@@ -180,7 +266,7 @@ impl ReplicatorClient for Client {
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
         let offset = LogOffset {
             next_offset: self.next_frame_no(),
-            wal_flavor: Some(self.wal_flavor.into()),
+            wal_flavor: Some(self.wal_impl.flavor().into()),
         };
         let req = self.make_request(offset);
         match self.client.snapshot(req).await {
@@ -197,14 +283,13 @@ impl ReplicatorClient for Client {
         &mut self,
         frame_no: libsql_replication::frame::FrameNo,
     ) -> Result<(), Error> {
-        self.current_frame_no_notifier.send_replace(Some(frame_no));
-        self.meta.set_commit_frame_no(frame_no).await?;
-
+        self.wal_impl.set_commit_frame_no(frame_no).await?;
+        self.first_sync_since_handshake = false;
         Ok(())
     }
 
     fn committed_frame_no(&self) -> Option<FrameNo> {
-        self.meta.current_frame_no()
+        self.wal_impl.commit_frame_no()
     }
 
     fn rollback(&mut self) {}

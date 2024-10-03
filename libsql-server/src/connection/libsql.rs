@@ -6,7 +6,6 @@ use libsql_sys::EncryptionConfig;
 use libsql_wal::io::StdIO;
 use libsql_wal::wal::{LibsqlWal, LibsqlWalManager};
 use parking_lot::Mutex;
-use tokio::sync::watch;
 
 use crate::connection::program::check_program_auth;
 use crate::metrics::DESCRIBE_COUNT;
@@ -19,7 +18,7 @@ use crate::stats::Stats;
 use crate::Result;
 use crate::{record_time, SqldStorage, BLOCKING_RT};
 
-use super::connection_core::CoreConnection;
+use super::connection_core::{CoreConnection, GetCurrentFrameNo};
 use super::program::{check_describe_auth, DescribeResponse, Program};
 use super::{MakeConnection, RequestContext};
 
@@ -36,7 +35,7 @@ pub struct MakeLibsqlConnectionInner {
     pub(crate) max_response_size: u64,
     pub(crate) max_total_response_size: u64,
     pub(crate) auto_checkpoint: u32,
-    pub(crate) current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    pub(crate) get_current_frame_no: GetCurrentFrameNo,
     pub(crate) encryption_config: Option<EncryptionConfig>,
     pub(crate) block_writes: Arc<AtomicBool>,
     pub(crate) resolve_attach_path: ResolveNamespacePathFn,
@@ -67,7 +66,7 @@ impl MakeConnection for MakeLibsqlConnection {
                     inner.broadcaster.clone(),
                     inner.config_store.clone(),
                     builder_config,
-                    inner.current_frame_no_receiver.clone(),
+                    inner.get_current_frame_no.clone(),
                     inner.block_writes.clone(),
                     inner.resolve_attach_path.clone(),
                 )

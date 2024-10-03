@@ -67,9 +67,25 @@ pub(super) async fn libsql_primary_common(
         db_config.clone(),
         base_config.stats_sender.clone(),
         namespace.clone(),
-        rcv.clone(),
     )
     .await?;
+
+    join_set.spawn({
+        let stats = stats.clone();
+        let rcv = rcv.clone();
+        async move {
+            let mut rcv = rcv.clone();
+            let _ = rcv
+                .wait_for(move |fno| {
+                    if let Some(fno) = *fno {
+                        stats.set_current_frame_no(fno);
+                    }
+                    false
+                })
+                .await;
+            Ok(())
+        }
+    });
 
     let auto_checkpoint = if primary_config.checkpoint_interval.is_some() {
         0
@@ -77,6 +93,11 @@ pub(super) async fn libsql_primary_common(
         DEFAULT_AUTO_CHECKPOINT
     };
     let block_writes = Arc::new(AtomicBool::new(false));
+
+    let get_current_frame_no = Arc::new({
+        let rcv = rcv.clone();
+        move || *rcv.borrow()
+    });
 
     let connection_maker = MakeLibsqlConnection {
         inner: Arc::new(MakeLibsqlConnectionInner {
@@ -88,11 +109,11 @@ pub(super) async fn libsql_primary_common(
             max_response_size: base_config.max_response_size,
             max_total_response_size: base_config.max_total_response_size,
             auto_checkpoint,
-            current_frame_no_receiver: rcv.clone(),
-            encryption_config: base_config.encryption_config.clone(),
+            get_current_frame_no,
             block_writes: block_writes.clone(),
             resolve_attach_path,
             wal_manager: LibsqlWalManager::new(registry.clone(), namespace_resolver.clone()),
+            encryption_config: None,
         }),
     }
     .throttled(
