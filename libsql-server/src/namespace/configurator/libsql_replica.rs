@@ -74,6 +74,7 @@ impl ConfigureNamespace for LibsqlReplicaConfigurator {
             tracing::debug!("creating replica namespace");
             let mut join_set = JoinSet::new();
             let db_path = self.base.base_path.join("dbs").join(name.as_str());
+            tokio::fs::create_dir_all(&db_path).await?;
             let channel = self.channel.clone();
             let uri = self.uri.clone();
             let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
