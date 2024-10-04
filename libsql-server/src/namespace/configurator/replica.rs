@@ -123,10 +123,17 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 loop {
                     match replicator.run().await {
                         err @ Error::Fatal(_) => Err(err)?,
-                        err @ Error::NamespaceDoesntExist => {
-                            tracing::error!("namespace {namespace} doesn't exist, destroying...");
-                            (reset)(ResetOp::Destroy(namespace.clone()));
-                            Err(err)?;
+                        _err @ Error::NamespaceDoesntExist => {
+                            // TODO(lucio): there is a bug where a primary will report that a valid
+                            // namespace doesn't exist when it does and causes the replicate to
+                            // destroy the namespace locally. For now the temp solution is to
+                            // ignore this error (still log it) and don't destroy the local
+                            // namespace data on the replica. This trades off storage space for
+                            // returing 500s.
+                            tracing::error!("namespace {namespace} doesn't exist, trying to replicate again...");
+                            // tracing::error!("namespace {namespace} doesn't exist, destroying...");
+                            // (reset)(ResetOp::Destroy(namespace.clone()));
+                            // Err(err)?;
                         }
                         e @ Error::Injector(_) => {
                             tracing::error!("potential corruption detected while replicating, reseting  replica: {e}");
