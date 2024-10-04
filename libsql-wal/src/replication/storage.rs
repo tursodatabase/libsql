@@ -61,6 +61,7 @@ where
                         let segment = match maybe_seg {
                             Some(ref seg) => seg,
                             None => {
+                                tracing::debug!(key = %key, "fetching segment");
                                 maybe_seg = Some(storage.fetch_segment_data(&namespace, &key, None).await?);
                                 maybe_seg.as_ref().unwrap()
                             },

@@ -15,6 +15,7 @@ use crate::error::Result;
 use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
 use crate::io::{FileExt, Io};
 use crate::segment::Frame;
+use crate::transaction::ReadTransaction;
 use crate::{LibsqlFooter, LIBSQL_MAGIC, LIBSQL_PAGE_SIZE, LIBSQL_WAL_VERSION};
 
 use super::Segment;
@@ -209,11 +210,13 @@ where
     /// returns a stream of pages from the sealed segment list, and what's the lowest replication index
     /// that was covered. If the returned index is less than start frame_no, the missing frames
     /// must be read somewhere else.
-    pub async fn stream_pages_from<'a>(
+    pub async fn stream_pages_from<'a, F>(
         &self,
         current_fno: u64,
         until_fno: u64,
         seen: &'a mut RoaringBitmap,
+        // not actually used, but ensures that a read lock is held while this method id called
+        _tx: &ReadTransaction<F>,
     ) -> (
         impl Stream<Item = crate::error::Result<Box<Frame>>> + 'a,
         u64,
@@ -434,10 +437,13 @@ mod test {
 
         seal_current_segment(&shared);
 
-        let current = shared.current.load();
-        let segment_list = current.tail();
+        let tx = shared.begin_read(u64::MAX);
         let mut seen = RoaringBitmap::new();
-        let (stream, _) = segment_list.stream_pages_from(0, 0, &mut seen).await;
+        let (stream, _) = tx
+            .current
+            .tail()
+            .stream_pages_from(0, 0, &mut seen, &tx)
+            .await;
         tokio::pin!(stream);
 
         let mut file = NamedTempFile::new().unwrap();
@@ -485,10 +491,13 @@ mod test {
 
         seal_current_segment(&shared);
 
-        let current = shared.current.load();
-        let segment_list = current.tail();
+        let tx = shared.begin_read(u64::MAX);
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list.stream_pages_from(0, 10, &mut seen).await;
+        let (stream, replicated_until) = tx
+            .current
+            .tail()
+            .stream_pages_from(0, 10, &mut seen, &tx)
+            .await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, 10);
@@ -513,10 +522,13 @@ mod test {
 
         seal_current_segment(&shared);
 
-        let current = shared.current.load();
-        let segment_list = current.tail();
+        let tx = shared.begin_read(u64::MAX);
         let mut seen = RoaringBitmap::from_sorted_iter([1]).unwrap();
-        let (stream, replicated_until) = segment_list.stream_pages_from(0, 1, &mut seen).await;
+        let (stream, replicated_until) = tx
+            .current
+            .tail()
+            .stream_pages_from(0, 1, &mut seen, &tx)
+            .await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, 1);
@@ -541,22 +553,27 @@ mod test {
 
         seal_current_segment(&shared);
 
-        let current = shared.current.load();
-        let segment_list = current.tail();
-        let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list.stream_pages_from(0, 1, &mut seen).await;
-        tokio::pin!(stream);
-
-        assert_eq!(replicated_until, 1);
-
         let mut tmp = tempfile().unwrap();
-
         let mut last_offset = 0;
-        while let Some(frame) = stream.next().await {
-            let frame = frame.unwrap();
-            let offset = (frame.header().page_no() - 1) * 4096;
-            tmp.write_all_at(frame.data(), offset as u64).unwrap();
-            last_offset = last_offset.max(frame.header().frame_no());
+
+        {
+            let tx = shared.begin_read(u64::MAX);
+            let mut seen = RoaringBitmap::new();
+            let (stream, replicated_until) = tx
+                .current
+                .tail()
+                .stream_pages_from(0, 1, &mut seen, &tx)
+                .await;
+            tokio::pin!(stream);
+
+            assert_eq!(replicated_until, 1);
+
+            while let Some(frame) = stream.next().await {
+                let frame = frame.unwrap();
+                let offset = (frame.header().page_no() - 1) * 4096;
+                tmp.write_all_at(frame.data(), offset as u64).unwrap();
+                last_offset = last_offset.max(frame.header().frame_no());
+            }
         }
 
         for _ in 0..10 {
@@ -565,21 +582,26 @@ mod test {
 
         seal_current_segment(&shared);
 
-        let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list
-            .stream_pages_from(0, last_offset, &mut seen)
-            .await;
-        tokio::pin!(stream);
+        {
+            let tx = shared.begin_read(u64::MAX);
+            let mut seen = RoaringBitmap::new();
+            let (stream, replicated_until) = tx
+                .current
+                .tail()
+                .stream_pages_from(0, last_offset, &mut seen, &tx)
+                .await;
+            tokio::pin!(stream);
 
-        assert_eq!(replicated_until, last_offset);
+            assert_eq!(replicated_until, last_offset);
 
-        while let Some(frame) = stream.next().await {
-            let frame = frame.unwrap();
-            let offset = (frame.header().page_no() - 1) * 4096;
-            tmp.write_all_at(frame.data(), offset as u64).unwrap();
+            while let Some(frame) = stream.next().await {
+                let frame = frame.unwrap();
+                let offset = (frame.header().page_no() - 1) * 4096;
+                tmp.write_all_at(frame.data(), offset as u64).unwrap();
+            }
+
+            *shared.durable_frame_no.lock() = 999999;
         }
-
-        *shared.durable_frame_no.lock() = 999999;
 
         shared.checkpoint().await.unwrap();
         tmp.seek(std::io::SeekFrom::Start(0)).unwrap();
@@ -618,10 +640,13 @@ mod test {
         }
         seal_current_segment(&shared);
 
-        let current = shared.current.load();
-        let segment_list = current.tail();
+        let tx = shared.begin_read(u64::MAX);
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_from) = segment_list.stream_pages_from(0, 0, &mut seen).await;
+        let (stream, replicated_from) = tx
+            .current
+            .tail()
+            .stream_pages_from(0, 0, &mut seen, &tx)
+            .await;
         tokio::pin!(stream);
 
         let mut count = 0;
@@ -633,8 +658,8 @@ mod test {
         assert_eq!(replicated_from, 13);
     }
 
-    fn db_payload(db: &[u8]) -> &[u8] {
+    fn db_payload(db: &[u8]) -> u32 {
         let size = (db.len() / 4096) * 4096;
-        &db[..size]
+        crc32fast::hash(&db[..size])
     }
 }
