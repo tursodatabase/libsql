@@ -148,7 +148,6 @@ where
                     }
                 },
                 Some(res) = recv.recv() => {
-                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                     yield Ok(res);
                 },
                 (ret, request_id) = &mut current_request_fut => {
