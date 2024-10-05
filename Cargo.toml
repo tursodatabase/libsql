@@ -19,6 +19,8 @@ members = [
   "libsql-wal",
   "libsql-storage",
   "libsql-storage-server",
+  "sqlx-libsql",
+  "sqlx-libsql/examples/todos"
 ]
 
 exclude = [
