@@ -631,7 +631,7 @@ mod serde_ {
 
         serde::forward_to_deserialize_any! {
             i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
-                bytes byte_buf unit_struct newtype_struct seq tuple tuple_struct
+                bytes byte_buf unit_struct seq tuple tuple_struct
                 map struct identifier ignored_any
         }
 
@@ -759,6 +759,17 @@ mod serde_ {
                     &"a valid sqlite enum representation",
                 )),
             }
+        }
+
+        fn deserialize_newtype_struct<V>(
+            self,
+            _name: &'static str,
+            visitor: V,
+        ) -> std::result::Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            visitor.visit_newtype_struct(self)
         }
     }
 
