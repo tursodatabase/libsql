@@ -51,7 +51,6 @@ pub struct SharedWal<IO: Io> {
     pub(crate) db_file: IO::File,
     pub(crate) namespace: NamespaceName,
     pub(crate) registry: Arc<dyn SwapLog<IO>>,
-    #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
     /// max frame_no acknowledged by the durable storage
     pub(crate) durable_frame_no: Arc<Mutex<u64>>,
