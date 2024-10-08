@@ -25,5 +25,6 @@ wal = []
 rusqlite = ["dep:rusqlite"]
 wasmtime-bindings = ["libsql-ffi/wasmtime-bindings"]
 unix-excl-vfs = []
+zig-build = ["libsql-ffi/zig-build"]
 encryption = ["libsql-ffi/multiple-ciphers"]
 
