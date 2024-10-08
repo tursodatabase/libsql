@@ -525,7 +525,7 @@ impl<F> CurrentSegment<F> {
             if !self.is_empty() {
                 let mut frame_offset = (tx.max_frame_no - seg_start_frame_no) as u32;
                 loop {
-                    let buf = ZeroCopyBoxIoBuf::new(Frame::new_box_zeroed());
+                    let buf = ZeroCopyBoxIoBuf::new_uninit(Frame::new_box_zeroed());
                     let (buf, res) = self.read_frame_offset_async(frame_offset, buf).await;
                     res?;
 
@@ -746,7 +746,6 @@ mod test {
         let mut copy = Vec::new();
         tmp.read_to_end(&mut copy).unwrap();
 
-        dbg!(copy.len(), orig.len());
         assert_eq!(db_payload(&copy), db_payload(&orig));
     }
 

@@ -138,8 +138,10 @@ where
 
         let mut buf = ZeroCopyBuf::<Frame>::new_uninit();
         let mut last_replication_index = 0;
+        let mut checkpointed = RoaringBitmap::new();
         while let Some((k, v)) = union.next() {
             let page_no = u32::from_be_bytes(k.try_into().unwrap());
+            checkpointed.insert(page_no);
             tracing::trace!(page_no);
             let v = v.iter().min_by_key(|i| i.index).unwrap();
             let offset = v.value as u32;
@@ -156,6 +158,7 @@ where
                 .await;
             ret?;
             buf = read_buf.into_inner();
+            buf.deinit();
         }
 
         // update the footer at the end of the db file.
@@ -174,7 +177,6 @@ where
             .await;
         ret?;
 
-        // todo: truncate if necessary
         //// TODO: make async
         db_file.sync_all()?;
 
@@ -265,7 +267,7 @@ where
                     continue
                 }
 
-                let buf = ZeroCopyBoxIoBuf::new(Frame::new_box_zeroed());
+                let buf = ZeroCopyBoxIoBuf::new_uninit(Frame::new_box_zeroed());
                 let (buf, ret) = segment.read_frame_offset_async(*frame_offset as u32, buf).await;
                 ret?;
                 let mut frame = buf.into_inner();

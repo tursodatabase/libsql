@@ -1,8 +1,9 @@
+use std::pin::Pin;
 use std::sync::Arc;
 
 use roaring::RoaringBitmap;
 use tokio::sync::watch;
-use tokio_stream::{Stream, StreamExt};
+use tokio_stream::{Stream, StreamExt as _};
 
 use crate::io::Io;
 use crate::replication::Error;
@@ -118,12 +119,21 @@ impl<IO: Io> Replicator<IO> {
                         // Replicating from sealed segments was not enough, so we replicate from
                         // durable storage
                         if let Some(replicated_until) = replicated_until {
-                            tracing::debug!("replicating from durable storage");
-                            let stream = self
-                                .shared
-                                .stored_segments
-                                .stream(&mut seen, replicated_until, self.next_frame_no)
-                                .peekable();
+                            let stream: Pin<Box<dyn Stream<Item = _> + Send>> = if self.next_frame_no == 1 {
+                                // we're replicating from scratch, read straight from the main db
+                                // file
+                                tracing::debug!("replicating main db file");
+                                Box::pin(self.shared.replicate_from_db_file(&mut seen, &tx, replicated_until))
+                            } else {
+                                tracing::debug!("replicating from durable storage");
+                                Box::pin(self
+                                    .shared
+                                    .stored_segments
+                                    .stream(&mut seen, replicated_until, self.next_frame_no)
+                                    .peekable())
+                            };
+
+                            let stream = stream.peekable();
 
                             tokio::pin!(stream);
 
