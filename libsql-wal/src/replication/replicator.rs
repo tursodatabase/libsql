@@ -1,8 +1,9 @@
+use std::pin::Pin;
 use std::sync::Arc;
 
 use roaring::RoaringBitmap;
 use tokio::sync::watch;
-use tokio_stream::{Stream, StreamExt};
+use tokio_stream::{Stream, StreamExt as _};
 
 use crate::io::Io;
 use crate::replication::Error;
@@ -58,13 +59,13 @@ impl<IO: Io> Replicator<IO> {
                 tracing::debug!(most_recent_frame_no, "new frame_no available");
 
                 let mut commit_frame_no = 0;
+                let tx = self.shared.begin_read(u64::MAX);
                 // we have stuff to replicate
                 if most_recent_frame_no >= self.next_frame_no {
                     // first replicate the most recent version of each page from the current
                     // segment. We also return how far back we have replicated from the current log
-                    let current = self.shared.current.load();
                     let mut seen = RoaringBitmap::new();
-                    let (stream, replicated_until, size_after) = current.frame_stream_from(self.next_frame_no, &mut seen);
+                    let (stream, replicated_until) = tx.current.frame_stream_from(self.next_frame_no, &mut seen, &tx);
                     let should_replicate_from_tail = replicated_until != self.next_frame_no;
 
                     {
@@ -78,7 +79,7 @@ impl<IO: Io> Replicator<IO> {
                             let mut frame = frame.map_err(|e| Error::CurrentSegment(e.into()))?;
                             commit_frame_no = frame.header().frame_no().max(commit_frame_no);
                             if stream.peek().await.is_none() && !should_replicate_from_tail {
-                                frame.header_mut().set_size_after(size_after);
+                                frame.header_mut().set_size_after(tx.db_size);
                                 self.next_frame_no = commit_frame_no + 1;
                             }
 
@@ -90,9 +91,9 @@ impl<IO: Io> Replicator<IO> {
                     // wee need to take frames from the sealed segments.
                     if should_replicate_from_tail {
                         let replicated_until = {
-                            let (stream, replicated_until) = current
+                            let (stream, replicated_until) = tx.current
                                 .tail()
-                                .stream_pages_from(replicated_until, self.next_frame_no, &mut seen).await;
+                                .stream_pages_from(replicated_until, self.next_frame_no, &mut seen, &tx).await;
                             tokio::pin!(stream);
 
                         tracing::debug!(replicated_until, "replicating from tail");
@@ -105,7 +106,7 @@ impl<IO: Io> Replicator<IO> {
                                 let mut frame = frame.map_err(|e| Error::SealedSegment(e.into()))?;
                                 commit_frame_no = frame.header().frame_no().max(commit_frame_no);
                                 if stream.peek().await.is_none() && !should_replicate_from_storage {
-                                    frame.header_mut().set_size_after(size_after);
+                                    frame.header_mut().set_size_after(tx.db_size);
                                     self.next_frame_no = commit_frame_no + 1;
                                 }
 
@@ -118,12 +119,21 @@ impl<IO: Io> Replicator<IO> {
                         // Replicating from sealed segments was not enough, so we replicate from
                         // durable storage
                         if let Some(replicated_until) = replicated_until {
-                            tracing::debug!("replicating from durable storage");
-                            let stream = self
-                                .shared
-                                .stored_segments
-                                .stream(&mut seen, replicated_until, self.next_frame_no)
-                                .peekable();
+                            let stream: Pin<Box<dyn Stream<Item = _> + Send>> = if self.next_frame_no == 1 {
+                                // we're replicating from scratch, read straight from the main db
+                                // file
+                                tracing::debug!("replicating main db file");
+                                Box::pin(self.shared.replicate_from_db_file(&mut seen, &tx, replicated_until))
+                            } else {
+                                tracing::debug!("replicating from durable storage");
+                                Box::pin(self
+                                    .shared
+                                    .stored_segments
+                                    .stream(&mut seen, replicated_until, self.next_frame_no)
+                                    .peekable())
+                            };
+
+                            let stream = stream.peekable();
 
                             tokio::pin!(stream);
 
@@ -132,7 +142,7 @@ impl<IO: Io> Replicator<IO> {
                                 let mut frame = frame?;
                                 commit_frame_no = frame.header().frame_no().max(commit_frame_no);
                                 if stream.peek().await.is_none() {
-                                    frame.header_mut().set_size_after(size_after);
+                                    frame.header_mut().set_size_after(tx.db_size);
                                     self.next_frame_no = commit_frame_no + 1;
                                 }
 

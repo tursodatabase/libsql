@@ -6,18 +6,24 @@ use std::time::Instant;
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
+use futures::Stream;
 use parking_lot::{Mutex, MutexGuard};
+use roaring::RoaringBitmap;
 use tokio::sync::{mpsc, watch};
 use uuid::Uuid;
+use zerocopy::FromZeroes;
 
 use crate::checkpointer::CheckpointMessage;
 use crate::error::{Error, Result};
+use crate::io::buf::ZeroCopyBoxIoBuf;
 use crate::io::file::FileExt;
 use crate::io::Io;
 use crate::replication::storage::ReplicateFromStorage;
 use crate::segment::current::CurrentSegment;
+use crate::segment::{Frame, FrameHeader};
 use crate::segment_swap_strategy::SegmentSwapStrategy;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
+use crate::LIBSQL_PAGE_SIZE;
 use libsql_sys::name::NamespaceName;
 
 #[derive(Default)]
@@ -333,6 +339,34 @@ impl<IO: Io> SharedWal<IO> {
 
     pub fn namespace(&self) -> &NamespaceName {
         &self.namespace
+    }
+
+    /// read frames from the main db file.
+    pub(crate) fn replicate_from_db_file<'a>(
+        &'a self,
+        seen: &'a RoaringBitmap,
+        tx: &'a ReadTransaction<IO::File>,
+        until: u64,
+    ) -> impl Stream<Item = crate::replication::Result<Box<Frame>>> + Send + 'a {
+        async_stream::try_stream! {
+            let mut all = RoaringBitmap::new();
+            all.insert_range(1..=tx.db_size);
+            let to_take = all - seen;
+            for page_no in to_take {
+                let mut frame = Frame::new_box_zeroed();
+                *frame.header_mut() = FrameHeader {
+                    page_no: page_no.into(),
+                    size_after: 0.into(),
+                    // we don't really know what the frame_no is, so we set it to a number less that any other frame_no
+                    frame_no: until.into(),
+                };
+                let buf = unsafe { ZeroCopyBoxIoBuf::new_uninit_partial(frame, size_of::<FrameHeader>()) };
+                let (buf, ret) = self.db_file.read_exact_at_async(buf, (page_no as u64 - 1) * LIBSQL_PAGE_SIZE as u64).await;
+                ret?;
+                let frame = buf.into_inner();
+                yield frame;
+            }
+        }
     }
 }
 
