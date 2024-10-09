@@ -9,3 +9,4 @@ mod embedded_replica;
 mod hrana;
 mod namespaces;
 mod standalone;
+mod libsql_wal;

@@ -2,6 +2,7 @@
 #![allow(deprecated)]
 
 use futures::SinkExt as _;
+use jsonwebtoken::EncodingKey;
 use libsql::Database;
 use libsql_server::{
     auth::{
@@ -41,15 +42,21 @@ async fn make_standalone_server(auth_strategy: Auth) -> Result<(), Box<dyn std::
     Ok(())
 }
 
+pub fn make_auth(decoding: &str) -> Auth {
+    let jwt_keys = vec![jsonwebtoken::DecodingKey::from_ed_components(decoding).unwrap()];
+    Auth::new(user_auth_strategies::Jwt::new(jwt_keys))
+}
+
+pub fn make_default_token(encoding: &EncodingKey) -> String {
+    let claims = Token::default();
+    let token = encode(&claims, &encoding);
+    token
+}
+
 fn gen_test_jwt_auth() -> (Auth, String) {
     let (encoding_key, decoding_key) = key_pair();
-    let jwt_keys = vec![jsonwebtoken::DecodingKey::from_ed_components(&decoding_key).unwrap()];
-
-    let auth = Auth::new(user_auth_strategies::Jwt::new(jwt_keys));
-
-    let claims = Token::default();
-
-    let token = encode(&claims, &encoding_key);
+    let auth = make_auth(&decoding_key);
+    let token =make_default_token(&encoding_key);
 
     (auth, token)
 }
