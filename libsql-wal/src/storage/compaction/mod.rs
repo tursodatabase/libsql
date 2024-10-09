@@ -591,13 +591,23 @@ impl AnalyzedSegments {
 
 /// A set of segments, with the guarantee that segments are non-overlapping and increasing in
 /// frameno
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SegmentSet {
     namespace: NamespaceName,
     segments: Vec<SegmentKey>,
 }
 
 impl SegmentSet {
+    /// return segments end - start
+    pub fn span(&self) -> u64 {
+        if self.is_empty() {
+            0
+        } else {
+            self.segments.last().unwrap().end_frame_no
+                - self.segments.first().unwrap().start_frame_no
+        }
+    }
+
     pub fn range(&self) -> Option<(u64, u64)> {
         self.segments
             .first()
