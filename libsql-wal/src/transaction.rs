@@ -132,23 +132,14 @@ pub struct Savepoint {
     pub index: BTreeMap<u32, u32>,
 }
 
-pub static SAVEPOINT_COUNTER: AtomicU64 = AtomicU64::new(0);
-
 impl Savepoint {
     pub fn new(next_offset: u32, next_frame_no: u64, current_checksum: u32) -> Self {
-        SAVEPOINT_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         Self {
             next_offset,
             next_frame_no,
             current_checksum,
             index: Default::default(),
         }
-    }
-}
-
-impl Drop for Savepoint {
-    fn drop(&mut self) {
-        SAVEPOINT_COUNTER.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
     }
 }
 
