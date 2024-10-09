@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::ops::{Deref, DerefMut};
-use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use std::time::Instant;
 

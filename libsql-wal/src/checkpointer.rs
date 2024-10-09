@@ -8,6 +8,8 @@ use tokio::task::JoinSet;
 
 use crate::io::Io;
 use crate::registry::WalRegistry;
+use crate::segment::sealed::SealedSegment;
+use crate::storage::Storage;
 
 pub(crate) type NotifyCheckpointer = mpsc::Sender<NamespaceName>;
 
@@ -29,7 +31,7 @@ pub type LibsqlCheckpointer<IO, S> = Checkpointer<WalRegistry<IO, S>>;
 impl<IO, S> LibsqlCheckpointer<IO, S>
 where
     IO: Io,
-    S: Sync + Send + 'static,
+    S: Storage<Segment = SealedSegment<IO::File>>,
 {
     pub fn new(
         registry: Arc<WalRegistry<IO, S>>,
@@ -51,6 +53,7 @@ impl<IO, S> PerformCheckpoint for WalRegistry<IO, S>
 where
     IO: Io,
     S: Sync + Send + 'static,
+    S: Storage<Segment = SealedSegment<IO::File>>,
 {
     #[tracing::instrument(skip(self))]
     fn checkpoint(

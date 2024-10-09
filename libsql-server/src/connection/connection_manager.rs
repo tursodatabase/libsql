@@ -31,13 +31,13 @@ pub type ConnId = u64;
 pub type InnerWalManager =
     Either3<Sqlite3WalManager, LibsqlWalManager<StdIO, SqldStorage>, DurableWalManager>;
 #[cfg(feature = "durable-wal")]
-pub type InnerWal = Either3<Sqlite3Wal, LibsqlWal<StdIO>, DurableWal>;
+pub type InnerWal = Either3<Sqlite3Wal, LibsqlWal<StdIO, SqldStorage>, DurableWal>;
 
 #[cfg(not(feature = "durable-wal"))]
 pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO, SqldStorage>>;
 
 #[cfg(not(feature = "durable-wal"))]
-pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO>>;
+pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO, SqldStorage>>;
 pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, InnerWal>;
 
 #[derive(Copy, Clone, Debug)]

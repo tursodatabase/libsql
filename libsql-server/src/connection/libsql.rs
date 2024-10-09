@@ -82,7 +82,7 @@ impl MakeConnection for MakeLibsqlConnection {
 
 #[derive(Clone)]
 pub struct LibsqlConnection {
-    inner: Arc<Mutex<CoreConnection<LibsqlWal<StdIO>>>>,
+    inner: Arc<Mutex<CoreConnection<LibsqlWal<StdIO, SqldStorage>>>>,
 }
 
 impl LibsqlConnection {
