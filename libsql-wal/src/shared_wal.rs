@@ -1,29 +1,38 @@
-use std::path::PathBuf;
+use std::num::NonZeroU64;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
 use futures::Stream;
+use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::{Mutex, MutexGuard};
+use rand::Rng as _;
 use roaring::RoaringBitmap;
 use tokio::sync::{mpsc, watch};
 use uuid::Uuid;
-use zerocopy::FromZeroes;
+use zerocopy::{AsBytes as _, FromZeroes as _};
 
 use crate::checkpointer::CheckpointMessage;
 use crate::error::{Error, Result};
 use crate::io::buf::ZeroCopyBoxIoBuf;
 use crate::io::file::FileExt;
 use crate::io::Io;
-use crate::replication::storage::ReplicateFromStorage;
+use crate::replication::storage::{ReplicateFromStorage, StorageReplicator};
 use crate::segment::current::CurrentSegment;
+use crate::segment::list::SegmentList;
+use crate::segment::sealed::SealedSegment;
+use crate::segment::Segment as _;
 use crate::segment::{Frame, FrameHeader};
+use crate::segment_swap_strategy::duration::DurationSwapStrategy;
+use crate::segment_swap_strategy::frame_count::FrameCountSwapStrategy;
 use crate::segment_swap_strategy::SegmentSwapStrategy;
+use crate::storage::{OnStoreCallback, Storage};
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
-use crate::LIBSQL_PAGE_SIZE;
+use crate::{LibsqlFooter, LIBSQL_PAGE_SIZE};
 use libsql_sys::name::NamespaceName;
 
 #[derive(Default)]
@@ -41,16 +50,11 @@ pub struct WalLock {
     pub(crate) waiters: Injector<(Unparker, u64)>,
 }
 
-pub(crate) trait SwapLog<IO: Io>: Sync + Send + 'static {
-    fn swap_current(&self, shared: &SharedWal<IO>, tx: &dyn TxGuard<IO::File>) -> Result<()>;
-}
-
-pub struct SharedWal<IO: Io> {
+pub struct SharedWal<IO: Io, S> {
     pub(crate) current: ArcSwap<CurrentSegment<IO::File>>,
     pub(crate) wal_lock: Arc<WalLock>,
     pub(crate) db_file: IO::File,
     pub(crate) namespace: NamespaceName,
-    pub(crate) registry: Arc<dyn SwapLog<IO>>,
     pub(crate) checkpointed_frame_no: AtomicU64,
     /// max frame_no acknowledged by the durable storage
     pub(crate) durable_frame_no: Arc<Mutex<u64>>,
@@ -61,11 +65,18 @@ pub struct SharedWal<IO: Io> {
     pub(crate) io: Arc<IO>,
     pub(crate) swap_strategy: Box<dyn SegmentSwapStrategy>,
     pub(crate) wals_path: PathBuf,
+    pub(crate) storage: Arc<S>,
 }
 
-impl<IO: Io> SharedWal<IO> {
+impl<IO, S> SharedWal<IO, S>
+where
+    IO: Io,
+{
     #[tracing::instrument(skip(self), fields(namespace = self.namespace.as_str()))]
-    pub fn shutdown(&self) -> Result<()> {
+    pub fn shutdown(&self) -> Result<()>
+    where
+        S: Storage<Segment = SealedSegment<IO::File>>,
+    {
         tracing::info!("started namespace shutdown");
         self.shutdown.store(true, Ordering::SeqCst);
         // fixme: for infinite loop
@@ -81,7 +92,7 @@ impl<IO: Io> SharedWal<IO> {
         {
             let mut tx = tx.as_write_mut().unwrap().lock();
             tx.commit();
-            self.registry.swap_current(self, &tx)?;
+            self.swap_current(&tx)?;
         }
         // The current segment will not be used anymore. It's empty, but we still seal it so that
         // the next startup doesn't find an unsealed segment.
@@ -274,7 +285,10 @@ impl<IO: Io> SharedWal<IO> {
         tx: &mut WriteTransaction<IO::File>,
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
-    ) -> Result<()> {
+    ) -> Result<()>
+    where
+        S: Storage<Segment = SealedSegment<IO::File>>,
+    {
         let current = self.current.load();
         let mut tx = tx.lock();
         if let Some(last_committed) = current.insert_pages(pages, size_after, &mut tx)? {
@@ -290,7 +304,10 @@ impl<IO: Io> SharedWal<IO> {
     }
 
     /// Cut the current log, and register it for storage
-    pub fn seal_current(&self) -> Result<()> {
+    pub fn seal_current(&self) -> Result<()>
+    where
+        S: Storage<Segment = SealedSegment<IO::File>>,
+    {
         let mut tx = self.begin_read(u64::MAX).into();
         self.upgrade(&mut tx)?;
 
@@ -309,8 +326,45 @@ impl<IO: Io> SharedWal<IO> {
     }
 
     /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
-    pub(crate) fn swap_current(&self, tx: &impl TxGuard<IO::File>) -> Result<()> {
-        self.registry.swap_current(self, tx)?;
+    pub(crate) fn swap_current(&self, tx: &impl TxGuard<IO::File>) -> Result<()>
+    where
+        S: Storage<Segment = SealedSegment<IO::File>>,
+    {
+        assert!(tx.is_commited());
+        let current = self.current.load();
+        if current.is_empty() {
+            return Ok(());
+        }
+        let start_frame_no = current.next_frame_no();
+        let path = self.wals_path.join(format!("{start_frame_no:020}.seg"));
+
+        let segment_file = self.io.open(true, true, true, &path)?;
+        let salt = self.io.with_rng(|rng| rng.gen());
+        let new = CurrentSegment::create(
+            segment_file,
+            path,
+            start_frame_no,
+            current.db_size(),
+            current.tail().clone(),
+            salt,
+            current.log_id(),
+        )?;
+        // sealing must the last fallible operation, because we don't want to end up in a situation
+        // where the current log is sealed and it wasn't swapped.
+        if let Some(sealed) = current.seal(self.io.now())? {
+            new.tail().push(sealed.clone());
+            maybe_store_segment(
+                self.storage.as_ref(),
+                &self.checkpoint_notifier,
+                &self.namespace,
+                &self.durable_frame_no,
+                sealed,
+            );
+        }
+
+        self.current.swap(Arc::new(new));
+        tracing::debug!("current segment swapped");
+
         Ok(())
     }
 
@@ -346,7 +400,10 @@ impl<IO: Io> SharedWal<IO> {
         seen: &'a RoaringBitmap,
         tx: &'a ReadTransaction<IO::File>,
         until: u64,
-    ) -> impl Stream<Item = crate::replication::Result<Box<Frame>>> + Send + 'a {
+    ) -> impl Stream<Item = crate::replication::Result<Box<Frame>>> + Send + 'a
+    where
+        S: Send + Sync,
+    {
         async_stream::try_stream! {
             let mut all = RoaringBitmap::new();
             all.insert_range(1..=tx.db_size);
@@ -367,6 +424,240 @@ impl<IO: Io> SharedWal<IO> {
             }
         }
     }
+
+    /// Open the shared wal at path. The caller must ensure that no other process is calling this
+    /// conccurently.
+    pub(crate) fn try_open(
+        io: Arc<IO>,
+        storage: Arc<S>,
+        checkpoint_notifier: &tokio::sync::mpsc::Sender<CheckpointMessage>,
+        namespace: &NamespaceName,
+        db_path: &Path,
+    ) -> Result<Self>
+    where
+        S: Storage<Segment = SealedSegment<IO::File>>,
+    {
+        let db_file = io.open(false, true, true, db_path)?;
+        let db_file_len = db_file.len()?;
+        let header = if db_file_len > 0 {
+            let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
+            db_file.read_exact_at(header.as_bytes_mut(), 0)?;
+            Some(header)
+        } else {
+            None
+        };
+
+        let footer = try_read_footer(&db_file)?;
+
+        let mut checkpointed_frame_no = footer.map(|f| f.replication_index.get()).unwrap_or(0);
+
+        // the trick here to prevent sqlite to open our db is to create a dir <db-name>-wal. Sqlite
+        // will think that this is a wal file, but it's in fact a directory and it will not like
+        // it.
+        let mut wals_path = db_path.to_owned();
+        wals_path.set_file_name(format!(
+            "{}-wal",
+            db_path.file_name().unwrap().to_str().unwrap()
+        ));
+        io.create_dir_all(&wals_path)?;
+        // TODO: handle that with abstract io
+        let dir = walkdir::WalkDir::new(&wals_path)
+            .sort_by_file_name()
+            .into_iter();
+
+        // we only checkpoint durable frame_no so this is a good first estimate without an actual
+        // network call.
+        let durable_frame_no = Arc::new(Mutex::new(checkpointed_frame_no));
+
+        let list = SegmentList::default();
+        for entry in dir {
+            let entry = entry.map_err(|e| e.into_io_error().unwrap())?;
+            if entry
+                .path()
+                .extension()
+                .map(|e| e.to_str().unwrap() != "seg")
+                .unwrap_or(true)
+            {
+                continue;
+            }
+
+            let file = io.open(false, true, true, entry.path())?;
+
+            if let Some(sealed) = SealedSegment::open(
+                file.into(),
+                entry.path().to_path_buf(),
+                Default::default(),
+                io.now(),
+            )? {
+                list.push(sealed.clone());
+                maybe_store_segment(
+                    storage.as_ref(),
+                    &checkpoint_notifier,
+                    &namespace,
+                    &durable_frame_no,
+                    sealed,
+                );
+            }
+        }
+
+        let log_id = match footer {
+            Some(footer) if list.is_empty() => footer.log_id(),
+            None if list.is_empty() => io.uuid(),
+            Some(footer) => {
+                let log_id = list
+                    .with_head(|h| h.header().log_id.get())
+                    .expect("non-empty list should have a head");
+                let log_id = Uuid::from_u128(log_id);
+                assert_eq!(log_id, footer.log_id());
+                log_id
+            }
+            None => {
+                let log_id = list
+                    .with_head(|h| h.header().log_id.get())
+                    .expect("non-empty list should have a head");
+                Uuid::from_u128(log_id)
+            }
+        };
+
+        // if there is a tail, then the latest checkpointed frame_no is one before the the
+        // start frame_no of the tail. We must read it from the tail, because a partial
+        // checkpoint may have occured before a crash.
+        if let Some(last) = list.last() {
+            checkpointed_frame_no = (last.start_frame_no() - 1).max(1)
+        }
+
+        let (db_size, next_frame_no) = list
+            .with_head(|segment| {
+                let header = segment.header();
+                (header.size_after(), header.next_frame_no())
+            })
+            .unwrap_or_else(|| match header {
+                Some(header) => (
+                    header.db_size.get(),
+                    NonZeroU64::new(checkpointed_frame_no + 1)
+                        .unwrap_or(NonZeroU64::new(1).unwrap()),
+                ),
+                None => (0, NonZeroU64::new(1).unwrap()),
+            });
+
+        let current_segment_path = wals_path.join(format!("{next_frame_no:020}.seg"));
+
+        let segment_file = io.open(true, true, true, &current_segment_path)?;
+        let salt = io.with_rng(|rng| rng.gen());
+
+        let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
+            segment_file,
+            current_segment_path,
+            next_frame_no,
+            db_size,
+            list.into(),
+            salt,
+            log_id,
+        )?));
+
+        let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
+
+        // FIXME: make swap strategy configurable
+        // This strategy will perform a swap if either the wal is bigger than 20k frames, or older
+        // than 10 minutes, or if the frame count is greater than a 1000 and the wal was last
+        // swapped more than 30 secs ago
+        let swap_strategy = Box::new(
+            DurationSwapStrategy::new(Duration::from_secs(5 * 60))
+                .or(FrameCountSwapStrategy::new(20_000))
+                .or(FrameCountSwapStrategy::new(1000)
+                    .and(DurationSwapStrategy::new(Duration::from_secs(30)))),
+        );
+
+        Ok(Self {
+            current,
+            wal_lock: Default::default(),
+            db_file,
+            namespace: namespace.clone(),
+            checkpointed_frame_no: checkpointed_frame_no.into(),
+            new_frame_notifier,
+            durable_frame_no,
+            stored_segments: Box::new(StorageReplicator::new(storage.clone(), namespace.clone())),
+            shutdown: false.into(),
+            checkpoint_notifier: checkpoint_notifier.clone(),
+            io,
+            storage,
+            swap_strategy,
+            wals_path: wals_path.to_owned(),
+        })
+    }
+}
+
+fn try_read_footer(db_file: &impl FileExt) -> Result<Option<LibsqlFooter>> {
+    let len = db_file.len()?;
+    if len as usize % LIBSQL_PAGE_SIZE as usize == size_of::<LibsqlFooter>() {
+        let mut footer: LibsqlFooter = LibsqlFooter::new_zeroed();
+        let footer_offset = (len / LIBSQL_PAGE_SIZE as u64) * LIBSQL_PAGE_SIZE as u64;
+        db_file.read_exact_at(footer.as_bytes_mut(), footer_offset)?;
+        footer.validate()?;
+        Ok(Some(footer))
+    } else {
+        Ok(None)
+    }
+}
+
+#[tracing::instrument(skip_all, fields(namespace = namespace.as_str(), start_frame_no = seg.start_frame_no()))]
+fn maybe_store_segment<S: Storage>(
+    storage: &S,
+    notifier: &tokio::sync::mpsc::Sender<CheckpointMessage>,
+    namespace: &NamespaceName,
+    durable_frame_no: &Arc<Mutex<u64>>,
+    seg: S::Segment,
+) {
+    if seg.last_committed() > *durable_frame_no.lock() {
+        let cb: OnStoreCallback = Box::new({
+            let notifier = notifier.clone();
+            let durable_frame_no = durable_frame_no.clone();
+            let namespace = namespace.clone();
+            move |fno| {
+                Box::pin(async move {
+                    update_durable(fno, notifier, durable_frame_no, namespace).await;
+                })
+            }
+        });
+        storage.store(namespace, seg, None, cb);
+    } else {
+        // segment can be checkpointed right away.
+        // FIXME: this is only necessary because some tests call this method in an async context.
+        #[cfg(debug_assertions)]
+        {
+            let namespace = namespace.clone();
+            let notifier = notifier.clone();
+            tokio::spawn(async move {
+                let _ = notifier.send(CheckpointMessage::Namespace(namespace)).await;
+            });
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
+        }
+
+        tracing::debug!(
+            segment_end = seg.last_committed(),
+            durable_frame_no = *durable_frame_no.lock(),
+            "segment doesn't contain any new data"
+        );
+    }
+}
+
+async fn update_durable(
+    new_durable: u64,
+    notifier: mpsc::Sender<CheckpointMessage>,
+    durable_frame_no_slot: Arc<Mutex<u64>>,
+    namespace: NamespaceName,
+) {
+    {
+        let mut g = durable_frame_no_slot.lock();
+        if *g < new_durable {
+            *g = new_durable;
+        }
+    }
+    let _ = notifier.send(CheckpointMessage::Namespace(namespace)).await;
 }
 
 #[cfg(test)]

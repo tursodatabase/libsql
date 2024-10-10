@@ -9,18 +9,19 @@ use crate::io::Io;
 use crate::replication::Error;
 use crate::segment::Frame;
 use crate::shared_wal::SharedWal;
+use crate::storage::Storage;
 
 use super::Result;
 
-pub struct Replicator<IO: Io> {
-    shared: Arc<SharedWal<IO>>,
+pub struct Replicator<IO: Io, S> {
+    shared: Arc<SharedWal<IO, S>>,
     new_frame_notifier: watch::Receiver<u64>,
     next_frame_no: u64,
     wait_for_more: bool,
 }
 
-impl<IO: Io> Replicator<IO> {
-    pub fn new(shared: Arc<SharedWal<IO>>, next_frame_no: u64, wait_for_more: bool) -> Self {
+impl<IO: Io, S: Storage> Replicator<IO, S> {
+    pub fn new(shared: Arc<SharedWal<IO, S>>, next_frame_no: u64, wait_for_more: bool) -> Self {
         let new_frame_notifier = shared.new_frame_notifier.subscribe();
         Self {
             shared,

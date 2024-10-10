@@ -29,10 +29,11 @@ use crate::metrics::{
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::replication::FrameNo;
+use crate::SqldStorage;
 
 pub enum WalImpl {
     LibsqlWal {
-        shared: Arc<SharedWal<StdIO>>,
+        shared: Arc<SharedWal<StdIO, SqldStorage>>,
     },
     SqliteWal {
         meta: WalIndexMeta,
@@ -52,7 +53,7 @@ impl WalImpl {
         })
     }
 
-    pub fn new_libsql(shared: Arc<SharedWal<StdIO>>) -> Self {
+    pub fn new_libsql(shared: Arc<SharedWal<StdIO, SqldStorage>>) -> Self {
         Self::LibsqlWal { shared }
     }
 

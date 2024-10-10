@@ -1,8 +1,9 @@
 use std::mem::size_of;
 
-use libsql_wal::io::StdIO;
 use libsql_wal::replication::injector::Injector;
+use libsql_wal::segment::sealed::SealedSegment;
 use libsql_wal::segment::Frame as WalFrame;
+use libsql_wal::{io::StdIO, storage::Storage};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::frame::FrameNo;
@@ -10,17 +11,17 @@ use crate::rpc::replication::Frame as RpcFrame;
 
 use super::error::{Error, Result};
 
-pub struct LibsqlInjector {
-    injector: Injector<StdIO>,
+pub struct LibsqlInjector<S> {
+    injector: Injector<StdIO, S>,
 }
 
-impl LibsqlInjector {
-    pub fn new(injector: Injector<StdIO>) -> Self {
+impl<S> LibsqlInjector<S> {
+    pub fn new(injector: Injector<StdIO, S>) -> Self {
         Self { injector }
     }
 }
 
-impl super::Injector for LibsqlInjector {
+impl<S: Storage<Segment = SealedSegment<std::fs::File>>> super::Injector for LibsqlInjector<S> {
     async fn inject_frame(&mut self, frame: RpcFrame) -> Result<Option<FrameNo>> {
         // this is a bit annoying be we want to read the frame, and it has to be aligned, so we
         // must copy it...

@@ -97,7 +97,7 @@ pub(crate) async fn libsql_wal_fork(
 }
 
 async fn try_inject(
-    to_shared: Arc<SharedWal<StdIO>>,
+    to_shared: Arc<SharedWal<StdIO, SqldStorage>>,
     stream: &mut Pin<
         Box<dyn Stream<Item = Result<Box<Frame>, libsql_wal::replication::Error>> + Send + '_>,
     >,
