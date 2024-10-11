@@ -7771,13 +7771,16 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   return rc;
 }
 
-unsigned int sqlite3PagerWalFrameCount(Pager *pPager){
+/**
+** Return the number of frames in the WAL file.
+**
+** If the pager is not in WAL mode or we failed to obtain an exclusive write lock, returns -1.
+**/
+int sqlite3PagerWalFrameCount(Pager *pPager, unsigned int *pnFrames){
   if( pagerUseWal(pPager) ){
-    // TODO: We are under sqlite3 mutex, but do we need something else?
-    struct sqlite3_wal* pWal = (void*) pPager->wal->pData;
-    return pWal->hdr.mxFrame;
+    return pPager->wal->methods.xFrameCount(pPager->wal->pData, pnFrames);
   }else{
-    return 0;
+    return SQLITE_ERROR;
   }
 }
 

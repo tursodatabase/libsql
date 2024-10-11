@@ -2445,9 +2445,8 @@ int libsql_wal_frame_count(
 
   sqlite3_mutex_enter(db->mutex);
   pPager = sqlite3BtreePager(db->aDb[0].pBt);
-  *pnFrame = sqlite3PagerWalFrameCount(pPager);
+  rc = sqlite3PagerWalFrameCount(pPager, pnFrame);
   sqlite3_mutex_leave(db->mutex);
-
   return rc;
 #endif
 }
