@@ -82,12 +82,12 @@ pin_project_lite::pin_project! {
         #[pin]
         inner: S,
         flavor: WalFlavor,
-        shared: Arc<SharedWal<StdIO>>,
+        shared: Arc<SharedWal<StdIO, SqldStorage>>,
     }
 }
 
 impl<S> FrameStreamAdapter<S> {
-    fn new(inner: S, flavor: WalFlavor, shared: Arc<SharedWal<StdIO>>) -> Self {
+    fn new(inner: S, flavor: WalFlavor, shared: Arc<SharedWal<StdIO, SqldStorage>>) -> Self {
         Self {
             inner,
             flavor,

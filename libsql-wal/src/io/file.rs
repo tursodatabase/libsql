@@ -193,16 +193,17 @@ impl FileExt for File {
         let (buffer, ret) = tokio::task::spawn_blocking(move || {
             // let mut read = 0;
 
+            let len = buf.bytes_total();
+            let init = buf.bytes_init();
             let chunk = unsafe {
-                let len = buf.bytes_total();
-                let ptr = buf.stable_mut_ptr();
-                std::slice::from_raw_parts_mut(ptr, len)
+                let ptr = buf.stable_mut_ptr().offset(init as _);
+                std::slice::from_raw_parts_mut(ptr, len - init)
             };
 
             let ret = file.read_exact_at(chunk, offset);
             if ret.is_ok() {
                 unsafe {
-                    buf.set_init(buf.bytes_total());
+                    buf.set_init(init + chunk.len());
                 }
             }
             (buf, ret)
@@ -222,16 +223,17 @@ impl FileExt for File {
         let (buffer, ret) = tokio::task::spawn_blocking(move || {
             // let mut read = 0;
 
+            let len = buf.bytes_total();
+            let init = buf.bytes_init();
             let chunk = unsafe {
-                let len = buf.bytes_total();
-                let ptr = buf.stable_mut_ptr();
-                std::slice::from_raw_parts_mut(ptr, len)
+                let ptr = buf.stable_mut_ptr().offset(init as _);
+                std::slice::from_raw_parts_mut(ptr, len - init)
             };
 
             let ret = file.read_at(chunk, offset);
             if let Ok(n) = ret {
                 unsafe {
-                    buf.set_init(n);
+                    buf.set_init(init + n);
                 }
             }
             (buf, ret)
@@ -358,13 +360,13 @@ mod test {
         file.write_all(&[1; 12345]).unwrap();
         file.write_all(&[2; 50]).unwrap();
 
-        let buf = vec![0u8; 12345];
+        let buf = Vec::with_capacity(12345);
         let (buf, ret) = file.read_exact_at_async(buf, 0).await;
         ret.unwrap();
         assert_eq!(buf.len(), 12345);
         assert!(buf.iter().all(|x| *x == 1));
 
-        let buf = vec![2u8; 50];
+        let buf = Vec::with_capacity(50);
         let (buf, ret) = file.read_exact_at_async(buf, 12345).await;
         ret.unwrap();
         assert_eq!(buf.len(), 50);

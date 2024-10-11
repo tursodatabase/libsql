@@ -12,15 +12,10 @@ use libsql_wal::storage::backend::s3::S3Backend;
 use libsql_wal::storage::backend::Backend;
 use libsql_wal::storage::compaction::strategy::identity::IdentityStrategy;
 use libsql_wal::storage::compaction::strategy::log_strategy::LogReductionStrategy;
-use libsql_wal::storage::compaction::strategy::PartitionStrategy;
+use libsql_wal::storage::compaction::strategy::tiered::LevelsStrategy;
+use libsql_wal::storage::compaction::strategy::CompactionStrategy;
 use libsql_wal::storage::compaction::Compactor;
 use rusqlite::OpenFlags;
-
-#[derive(Clone, Debug, clap::ValueEnum, Copy)]
-pub enum CompactStrategy {
-    Logarithmic,
-    CompactAll,
-}
 
 #[derive(Debug, clap::Subcommand)]
 pub enum WalToolkitCommand {
@@ -119,6 +114,13 @@ impl SyncCommand {
     }
 }
 
+#[derive(Clone, Debug, clap::ValueEnum, Copy)]
+pub enum CompactStrategy {
+    Logarithmic,
+    CompactAll,
+    Tiered,
+}
+
 #[derive(Debug, clap::Args)]
 /// Compact segments into bigger segments
 pub struct CompactCommand {
@@ -168,10 +170,12 @@ impl CompactCommand {
         namespace: &NamespaceName,
     ) -> anyhow::Result<()> {
         let analysis = compactor.analyze(&namespace)?;
-        let strat: Box<dyn PartitionStrategy> = match self.strategy {
+        let strat: Box<dyn CompactionStrategy> = match self.strategy {
             CompactStrategy::Logarithmic => Box::new(LogReductionStrategy),
             CompactStrategy::CompactAll => Box::new(IdentityStrategy),
+            CompactStrategy::Tiered => Box::new(LevelsStrategy::new(self.threshold)),
         };
+
         let set = analysis.shortest_restore_path();
         if set.len() <= self.threshold {
             println!(

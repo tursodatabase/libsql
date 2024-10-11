@@ -2,12 +2,12 @@ use std::ops::Deref as _;
 
 use crate::storage::compaction::SegmentSet;
 
-use super::PartitionStrategy;
+use super::CompactionStrategy;
 
 /// partition the SegmentSet in logarithmically reducing sets
 pub struct LogReductionStrategy;
 
-impl PartitionStrategy for LogReductionStrategy {
+impl CompactionStrategy for LogReductionStrategy {
     fn partition(&self, segments: &SegmentSet) -> Vec<SegmentSet> {
         let mut segs = segments.deref();
         let mut out = Vec::new();

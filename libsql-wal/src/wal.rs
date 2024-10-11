@@ -29,9 +29,9 @@ impl<IO: Io, S> Clone for LibsqlWalManager<IO, S> {
     }
 }
 
-impl<FS: Io, S> LibsqlWalManager<FS, S> {
+impl<IO: Io, S> LibsqlWalManager<IO, S> {
     pub fn new(
-        registry: Arc<WalRegistry<FS, S>>,
+        registry: Arc<WalRegistry<IO, S>>,
         namespace_resolver: Arc<dyn NamespaceResolver>,
     ) -> Self {
         Self {
@@ -42,15 +42,15 @@ impl<FS: Io, S> LibsqlWalManager<FS, S> {
     }
 }
 
-pub struct LibsqlWal<FS: Io> {
+pub struct LibsqlWal<IO: Io, S> {
     last_read_frame_no: Option<u64>,
-    tx: Option<Transaction<FS::File>>,
-    shared: Arc<SharedWal<FS>>,
+    tx: Option<Transaction<IO::File>>,
+    shared: Arc<SharedWal<IO, S>>,
     conn_id: u64,
 }
 
 impl<IO: Io, S: Storage<Segment = SealedSegment<IO::File>>> WalManager for LibsqlWalManager<IO, S> {
-    type Wal = LibsqlWal<IO>;
+    type Wal = LibsqlWal<IO, S>;
 
     fn use_shared_memory(&self) -> bool {
         false
@@ -116,7 +116,11 @@ impl<IO: Io, S: Storage<Segment = SealedSegment<IO::File>>> WalManager for Libsq
     }
 }
 
-impl<FS: Io> Wal for LibsqlWal<FS> {
+impl<IO, S> Wal for LibsqlWal<IO, S>
+where
+    IO: Io,
+    S: Storage<Segment = SealedSegment<IO::File>>,
+{
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn limit(&mut self, _size: i64) {}
 
