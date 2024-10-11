@@ -23,10 +23,11 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 
-pub const SQLITE_VERSION: &[u8; 7] = b"3.44.0\0";
-pub const SQLITE_VERSION_NUMBER: i32 = 3044000;
+pub const __GNUC_VA_LIST: i32 = 1;
+pub const SQLITE_VERSION: &[u8; 7] = b"3.45.1\0";
+pub const SQLITE_VERSION_NUMBER: i32 = 3045001;
 pub const SQLITE_SOURCE_ID: &[u8; 85] =
-    b"2023-11-01 11:23:50 17129ba1ff7f0daf37100ee82d507aef7827cf38de1866e2633096ae6ad8alt1\0";
+    b"2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1\0";
 pub const LIBSQL_VERSION: &[u8; 6] = b"0.2.3\0";
 pub const SQLITE_OK: i32 = 0;
 pub const SQLITE_ERROR: i32 = 1;
@@ -355,6 +356,7 @@ pub const SQLITE_DETERMINISTIC: i32 = 2048;
 pub const SQLITE_DIRECTONLY: i32 = 524288;
 pub const SQLITE_SUBTYPE: i32 = 1048576;
 pub const SQLITE_INNOCUOUS: i32 = 2097152;
+pub const SQLITE_RESULT_SUBTYPE: i32 = 16777216;
 pub const SQLITE_WIN32_DATA_DIRECTORY_TYPE: i32 = 1;
 pub const SQLITE_WIN32_TEMP_DIRECTORY_TYPE: i32 = 2;
 pub const SQLITE_TXN_NONE: i32 = 0;
@@ -407,6 +409,7 @@ pub const SQLITE_TESTCTRL_PENDING_BYTE: i32 = 11;
 pub const SQLITE_TESTCTRL_ASSERT: i32 = 12;
 pub const SQLITE_TESTCTRL_ALWAYS: i32 = 13;
 pub const SQLITE_TESTCTRL_RESERVE: i32 = 14;
+pub const SQLITE_TESTCTRL_JSON_SELFCHECK: i32 = 14;
 pub const SQLITE_TESTCTRL_OPTIMIZATIONS: i32 = 15;
 pub const SQLITE_TESTCTRL_ISKEYWORD: i32 = 16;
 pub const SQLITE_TESTCTRL_SCRATCHMALLOC: i32 = 17;
@@ -516,8 +519,8 @@ pub const FTS5_TOKENIZE_DOCUMENT: i32 = 4;
 pub const FTS5_TOKENIZE_AUX: i32 = 8;
 pub const FTS5_TOKEN_COLOCATED: i32 = 1;
 pub const WAL_SAVEPOINT_NDATA: i32 = 4;
-pub type __gnuc_va_list = __builtin_va_list;
 pub type va_list = __builtin_va_list;
+pub type __gnuc_va_list = __builtin_va_list;
 extern "C" {
     pub static sqlite3_version: [::std::os::raw::c_char; 0usize];
 }
@@ -2278,11 +2281,7 @@ pub struct sqlite3_module {
             pzErr: *mut *mut ::std::os::raw::c_char,
         ) -> ::std::os::raw::c_int,
     >,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct libsql_module {
-    pub iVersion: ::std::os::raw::c_int,
+    pub reserved: [::std::option::Option<unsafe extern "C" fn()>; 5usize],
     pub xPreparedSql: ::std::option::Option<
         unsafe extern "C" fn(
             arg1: *mut sqlite3_vtab_cursor,
@@ -2345,16 +2344,6 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn libsql_create_module(
-        db: *mut sqlite3,
-        zName: *const ::std::os::raw::c_char,
-        p: *const sqlite3_module,
-        pLibsql: *const libsql_module,
-        pClientData: *mut ::std::os::raw::c_void,
-        xDestroy: ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
     pub fn sqlite3_drop_modules(
         db: *mut sqlite3,
         azKeep: *mut *const ::std::os::raw::c_char,
@@ -2364,7 +2353,6 @@ extern "C" {
 #[derive(Debug, Copy, Clone)]
 pub struct sqlite3_vtab {
     pub pModule: *const sqlite3_module,
-    pub pLibsqlModule: *const libsql_module,
     pub nRef: ::std::os::raw::c_int,
     pub zErrMsg: *mut ::std::os::raw::c_char,
 }
@@ -2891,6 +2879,37 @@ extern "C" {
         >,
         arg: *mut ::std::os::raw::c_void,
     ) -> *mut ::std::os::raw::c_void;
+}
+extern "C" {
+    pub fn libsql_wal_disable_checkpoint(db: *mut sqlite3) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn libsql_wal_frame_count(
+        arg1: *mut sqlite3,
+        arg2: *mut ::std::os::raw::c_uint,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn libsql_wal_get_frame(
+        arg1: *mut sqlite3,
+        arg2: ::std::os::raw::c_uint,
+        arg3: *mut ::std::os::raw::c_void,
+        arg4: ::std::os::raw::c_uint,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn libsql_wal_insert_begin(arg1: *mut sqlite3) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn libsql_wal_insert_end(arg1: *mut sqlite3) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn libsql_wal_insert_frame(
+        arg1: *mut sqlite3,
+        arg2: ::std::os::raw::c_uint,
+        arg3: *mut ::std::os::raw::c_void,
+        arg4: ::std::os::raw::c_uint,
+    ) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn sqlite3_system_errno(arg1: *mut sqlite3) -> ::std::os::raw::c_int;
@@ -3658,6 +3677,24 @@ pub struct Fts5ExtensionApi {
             arg2: *mut Fts5PhraseIter,
             piCol: *mut ::std::os::raw::c_int,
         ),
+    >,
+    pub xQueryToken: ::std::option::Option<
+        unsafe extern "C" fn(
+            arg1: *mut Fts5Context,
+            iPhrase: ::std::os::raw::c_int,
+            iToken: ::std::os::raw::c_int,
+            ppToken: *mut *const ::std::os::raw::c_char,
+            pnToken: *mut ::std::os::raw::c_int,
+        ) -> ::std::os::raw::c_int,
+    >,
+    pub xInstToken: ::std::option::Option<
+        unsafe extern "C" fn(
+            arg1: *mut Fts5Context,
+            iIdx: ::std::os::raw::c_int,
+            iToken: ::std::os::raw::c_int,
+            arg2: *mut *const ::std::os::raw::c_char,
+            arg3: *mut ::std::os::raw::c_int,
+        ) -> ::std::os::raw::c_int,
     >,
 }
 #[repr(C)]
