@@ -10550,6 +10550,44 @@ SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
 SQLITE_API void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), void *arg);
 
 /*
+** CAPI3REF: Get the number of frames in the WAL file
+** METHOD: sqlite3
+**
+** ^The [libsql_wal_frame_count(D,P)] interface returns the number of frames
+** in the WAL file for [database connection] D into *P.
+*/
+SQLITE_API int libsql_wal_frame_count(sqlite3*, unsigned int*);
+
+/*
+** CAPI3REF: Get a frame from the WAL file
+** METHOD: sqlite3
+**
+** ^The [libsql_wal_get_frame(D,I,P,S)] interface extracts frame I from
+** the WAL file for [database connection] D into memory obtained from
+** [sqlite3_malloc64()] and returns a pointer to that memory. The size of
+** the memory allocated is given by S.
+*/
+SQLITE_API int libsql_wal_get_frame(sqlite3*, unsigned int, void*, unsigned int);
+
+/*
+** CAPI3REF: Begin a WAL commit
+** METHOD: sqlite3
+*/
+SQLITE_API int libsql_wal_insert_begin(sqlite3*);
+
+/*
+** CAPI3REF: End a WAL commit
+** METHOD: sqlite3
+*/
+SQLITE_API int libsql_wal_insert_end(sqlite3*);
+
+/*
+** CAPI3REF: Insert a frame into the WAL file
+** METHOD: sqlite3
+*/
+SQLITE_API int libsql_wal_insert_frame(sqlite3*, unsigned int, void *, unsigned int);
+
+/*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
 **
@@ -13574,6 +13612,7 @@ typedef struct libsql_wal_methods {
   /* Read a page from the write-ahead log, if it is present. */
   int (*xFindFrame)(wal_impl* pWal, unsigned int, unsigned int *);
   int (*xReadFrame)(wal_impl* pWal, unsigned int, int, unsigned char *);
+  int (*xReadFrameRaw)(wal_impl* pWal, unsigned int, int, unsigned char *);
 
   /* If the WAL is not empty, return the size of the database. */
   unsigned int (*xDbsize)(wal_impl* pWal);
