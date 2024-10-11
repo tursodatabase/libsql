@@ -2505,6 +2505,81 @@ int libsql_wal_get_frame(
 }
 
 /*
+** Begin a WAL commit.
+*/
+int libsql_wal_insert_begin(sqlite3 *db) {
+  Pager *pPager;
+  int rc;
+
+  sqlite3_mutex_enter(db->mutex);
+  pPager = sqlite3BtreePager(db->aDb[0].pBt);
+  rc = sqlite3PagerSharedLock(pPager);
+  if (rc != SQLITE_OK) {
+    goto out_unlock;
+  }
+  int isOpen = 0;
+  rc = sqlite3PagerOpenWal(pPager, &isOpen);
+  if (rc != SQLITE_OK) {
+    goto out_unlock;
+  }
+  rc = sqlite3PagerWalBeginCommit(pPager);
+  if (rc != SQLITE_OK) {
+    goto out_unlock;
+  }
+out_unlock:
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
+int libsql_wal_insert_end(sqlite3 *db) {
+  Pager *pPager;
+  int rc;
+
+  sqlite3_mutex_enter(db->mutex);
+  pPager = sqlite3BtreePager(db->aDb[0].pBt);
+  rc = sqlite3PagerWalEndCommit(pPager);
+  if (rc != SQLITE_OK) {
+    goto out_unlock;
+  }
+out_unlock:
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
+/*
+** Insert a frame into the WAL.
+*/
+int libsql_wal_insert_frame(
+  sqlite3* db,
+  unsigned int iFrame,
+  void *pBuf,
+  unsigned int nBuf
+){
+  int rc = SQLITE_OK;
+  Pager *pPager;
+
+#ifdef SQLITE_OMIT_WAL
+  *pnFrame = 0;
+  return SQLITE_OK;
+#else
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+
+  sqlite3_mutex_enter(db->mutex);
+  pPager = sqlite3BtreePager(db->aDb[0].pBt);
+  rc = sqlite3PagerWalInsert(pPager, iFrame, pBuf, nBuf);
+  if (rc != SQLITE_OK) {
+    goto out_unlock;
+  }
+out_unlock:
+  sqlite3_mutex_leave(db->mutex);
+
+  return rc;
+#endif
+}
+
+/*
 ** Register a function to be invoked prior to each autovacuum that
 ** determines the number of pages to vacuum.
 */

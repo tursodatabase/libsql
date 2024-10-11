@@ -10585,6 +10585,24 @@ int libsql_wal_frame_count(sqlite3*, unsigned int*);
 int libsql_wal_get_frame(sqlite3*, unsigned int, void*, unsigned int);
 
 /*
+** CAPI3REF: Begin frame insertion into the WAL
+** METHOD: sqlite3
+*/
+int libsql_wal_insert_begin(sqlite3*);
+
+/*
+** CAPI3REF: End frame insertion into the WAL
+** METHOD: sqlite3
+*/
+int libsql_wal_insert_end(sqlite3*);
+
+/*
+** CAPI3REF: Insert a frame into the WAL
+** METHOD: sqlite3
+*/
+int libsql_wal_insert_frame(sqlite3*, unsigned int, void *, unsigned int);
+
+/*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
 **
