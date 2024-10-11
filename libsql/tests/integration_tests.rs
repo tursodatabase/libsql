@@ -634,11 +634,11 @@ async fn deserialize_row() {
     let conn = db.connect().unwrap();
     let _ = conn
         .execute(
-            "CREATE TABLE users (id INTEGER, name TEXT, score REAL, data BLOB, age INTEGER, status TEXT, wrapper TEXT)",
+            "CREATE TABLE users (id INTEGER, name TEXT, score REAL, data BLOB, age INTEGER, status TEXT, wrapper TEXT, newtype TEXT)",
             (),
         )
         .await;
-    conn.execute("INSERT INTO users (id, name, score, data, age, status, wrapper) VALUES (123, 'potato', 42.0, X'deadbeef', NULL, 'Draft', 'Published')", ())
+    conn.execute("INSERT INTO users (id, name, score, data, age, status, wrapper, newtype) VALUES (123, 'potato', 42.0, X'deadbeef', NULL, 'Draft', 'Published', 'Newtype')", ())
     .await
     .unwrap();
 
@@ -654,7 +654,11 @@ async fn deserialize_row() {
         none: Option<()>,
         status: Status,
         wrapper: Wrapper,
+        newtype: NewType,
     }
+
+    #[derive(Deserialize, Debug, PartialEq)]
+    struct NewType(String);
 
     #[derive(Deserialize, Debug, PartialEq)]
     enum Status {
@@ -683,6 +687,7 @@ async fn deserialize_row() {
     assert_eq!(data.none, None);
     assert_eq!(data.status, Status::Draft);
     assert_eq!(data.wrapper, Wrapper(Status::Published));
+    assert_eq!(data.newtype, NewType("Newtype".to_string()));
 }
 
 #[tokio::test]
