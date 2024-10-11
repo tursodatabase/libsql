@@ -2475,6 +2475,35 @@ int libsql_wal_frame_count(
 #endif
 }
 
+int libsql_wal_get_frame(
+  sqlite3* db,
+  unsigned int iFrame,
+  void *pBuf,
+  unsigned int nBuf
+){
+  int rc = SQLITE_OK;
+  Pager *pPager;
+
+#ifdef SQLITE_OMIT_WAL
+  UNUSED_PARAMETER(iFrame);
+  UNUSED_PARAMETER(nBuf);
+  UNUSED_PARAMETER(pBuf);
+  return SQLITE_OK;
+#else
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  
+    sqlite3_mutex_enter(db->mutex);
+    pPager = sqlite3BtreePager(db->aDb[0].pBt);
+    rc = sqlite3PagerWalReadFrameRaw(pPager, iFrame, pBuf, nBuf);
+    sqlite3_mutex_leave(db->mutex);
+  
+    return rc;
+#endif
+}
+
 /*
 ** Register a function to be invoked prior to each autovacuum that
 ** determines the number of pages to vacuum.

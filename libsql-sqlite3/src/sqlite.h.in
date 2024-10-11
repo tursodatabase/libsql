@@ -10574,6 +10574,17 @@ int libsql_wal_disable_checkpoint(sqlite3 *db);
 int libsql_wal_frame_count(sqlite3*, unsigned int*);
 
 /*
+** CAPI3REF: Get a frame from the WAL file
+** METHOD: sqlite3
+**
+** ^The [libsql_wal_get_frame(D,I,P,S)] interface extracts frame I from
+** the WAL file for [database connection] D into memory obtained from
+** [sqlite3_malloc64()] and returns a pointer to that memory. The size of
+** the memory allocated is given by S.
+*/
+int libsql_wal_get_frame(sqlite3*, unsigned int, void*, unsigned int);
+
+/*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
 **

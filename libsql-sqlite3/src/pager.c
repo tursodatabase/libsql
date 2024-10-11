@@ -7784,6 +7784,21 @@ int sqlite3PagerWalFrameCount(Pager *pPager, unsigned int *pnFrames){
   }
 }
 
+int sqlite3PagerWalReadFrameRaw(
+  Pager *pPager,
+  unsigned int iFrame,
+  void *pFrameOut,
+  unsigned int nFrameOutLen
+){
+  if( pagerUseWal(pPager) ){
+    unsigned int nFrameLen = 24+pPager->pageSize;
+    if( nFrameOutLen!=nFrameLen ) return SQLITE_MISUSE;
+    return pPager->wal->methods.xReadFrameRaw(pPager->wal->pData, iFrame, nFrameOutLen, pFrameOut);
+  }else{
+    return SQLITE_ERROR;
+  }
+}
+
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
 /*
 ** If pager pPager is a wal-mode database not in exclusive locking mode,
