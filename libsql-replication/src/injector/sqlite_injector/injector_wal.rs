@@ -110,6 +110,10 @@ impl Wal for InjectorWal {
         self.inner.read_frame(frame_no, buffer)
     }
 
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()> {
+        self.inner.read_frame_raw(frame_no, buffer)
+    }
+
     fn db_size(&self) -> u32 {
         self.inner.db_size()
     }

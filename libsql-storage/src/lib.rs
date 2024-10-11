@@ -266,6 +266,10 @@ impl Wal for DurableWal {
         Ok(())
     }
 
+    fn read_frame_raw(&mut self, _page_no: std::num::NonZeroU32, _buffer: &mut [u8]) -> Result<()> {
+        todo!()
+    }
+
     fn frame_count(&self, _locked: i32) -> Result<u32> {
         todo!()
     }

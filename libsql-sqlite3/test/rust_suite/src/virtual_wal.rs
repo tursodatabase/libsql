@@ -98,6 +98,14 @@ mod tests {
             self.0.read_frame(frame_no, buffer)
         }
 
+        fn read_frame_raw(
+            &mut self,
+            page_no: NonZeroU32,
+            buffer: &mut [u8],
+        ) -> libsql_sys::wal::Result<()> {
+            self.0.read_frame_raw(page_no, buffer)
+        }
+
         fn frame_count(&self, locked: i32) -> libsql_sys::wal::Result<u32> {
             self.0.frame_count(locked)
         }

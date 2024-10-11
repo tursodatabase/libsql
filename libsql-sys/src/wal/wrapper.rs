@@ -61,6 +61,10 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
         unsafe { (*self.wrapper).read_frame(&mut *self.wrapped, frame_no, buffer) }
     }
 
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+        unsafe { (*self.wrapper).read_frame_raw(&mut *self.wrapped, frame_no, buffer) }
+    }
+
     fn db_size(&self) -> u32 {
         unsafe { (*self.wrapper).db_size(&*self.wrapped) }
     }
@@ -238,6 +242,11 @@ where
         self.wrapper.read_frame(&mut self.wrapped, frame_no, buffer)
     }
 
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+        self.wrapper
+            .read_frame_raw(&mut self.wrapped, frame_no, buffer)
+    }
+
     fn db_size(&self) -> u32 {
         self.wrapper.db_size(&self.wrapped)
     }
@@ -361,6 +370,15 @@ pub trait WrapWal<W: Wal> {
         buffer: &mut [u8],
     ) -> super::Result<()> {
         wrapped.read_frame(frame_no, buffer)
+    }
+
+    fn read_frame_raw(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        wrapped.read_frame_raw(frame_no, buffer)
     }
 
     fn db_size(&self, wrapped: &W) -> u32 {
@@ -572,6 +590,19 @@ where
             wrapped,
         };
         self.0.read_frame(&mut r, frame_no, buffer)
+    }
+
+    fn read_frame_raw(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.read_frame_raw(&mut r, frame_no, buffer)
     }
 
     fn db_size(&self, wrapped: &W) -> u32 {
@@ -787,6 +818,18 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
         match self {
             Some(t) => t.read_frame(wrapped, frame_no, buffer),
             None => wrapped.read_frame(frame_no, buffer),
+        }
+    }
+
+    fn read_frame_raw(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        match self {
+            Some(t) => t.read_frame_raw(wrapped, frame_no, buffer),
+            None => wrapped.read_frame_raw(frame_no, buffer),
         }
     }
 

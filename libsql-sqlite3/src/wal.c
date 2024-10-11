@@ -3392,6 +3392,29 @@ static int sqlite3WalReadFrame(
 }
 
 /*
+** Read the contents of frame iRead from the wal file into buffer pOut
+** (which is nOut bytes in size). Return SQLITE_OK if successful, or an
+** error code otherwise.
+*/
+static int sqlite3WalReadFrameRaw(
+  Wal *pWal,                      /* WAL handle */
+  u32 iRead,                      /* Frame to read */
+  int nOut,                       /* Size of buffer pOut in bytes */
+  u8 *pOut                        /* Buffer to write page data to */
+){
+  int sz;
+  i64 iOffset;
+  sz = pWal->hdr.szPage;
+  sz = (sz&0xfe00) + ((sz&0x0001)<<16);
+  testcase( sz<=32768 );
+  testcase( sz>=65536 );
+  iOffset = walFrameOffset(iRead, sz);
+  /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
+  sz += WAL_FRAME_HDRSIZE;
+  return sqlite3OsRead(pWal->pWalFd, pOut, (nOut>sz ? sz : nOut), iOffset);
+}
+
+/*
 ** Return the size of the database in pages (or zero, if unknown).
 */
 static Pgno sqlite3WalDbsize(Wal *pWal){
@@ -4513,6 +4536,7 @@ static int sqlite3WalOpen(
     out->methods.xEndReadTransaction = (void (*)(wal_impl *))sqlite3WalEndReadTransaction;
     out->methods.xFindFrame = (int (*)(wal_impl *, unsigned int, unsigned int *))sqlite3WalFindFrame;
     out->methods.xReadFrame = (int (*)(wal_impl *, unsigned int, int, unsigned char *))sqlite3WalReadFrame;
+    out->methods.xReadFrameRaw = (int (*)(wal_impl *, unsigned int, int, unsigned char *))sqlite3WalReadFrameRaw;
     out->methods.xDbsize = (unsigned int (*)(wal_impl *))sqlite3WalDbsize;
     out->methods.xBeginWriteTransaction = (int (*)(wal_impl *))sqlite3WalBeginWriteTransaction;
     out->methods.xEndWriteTransaction = (int (*)(wal_impl *))sqlite3WalEndWriteTransaction;
