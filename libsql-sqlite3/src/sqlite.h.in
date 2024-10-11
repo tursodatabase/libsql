@@ -10550,6 +10550,15 @@ int sqlite3_preupdate_blobwrite(sqlite3 *);
 void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), void *arg);
 
 /*
+** CAPI3REF: Get the number of frames in the WAL file
+** METHOD: sqlite3
+**
+** ^The [libsql_wal_frame_count(D,P)] interface returns the number of frames
+** in the WAL file for [database connection] D into *P.
+*/
+int libsql_wal_frame_count(sqlite3*, unsigned int*);
+
+/*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
 **
