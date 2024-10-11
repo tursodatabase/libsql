@@ -2426,6 +2426,33 @@ void *libsql_close_hook(
 }
 
 /*
+** Return the number of frames in the WAL of the given database.
+*/
+int libsql_wal_frame_count(
+  sqlite3* db,
+  unsigned int *pnFrame
+){
+  int rc = SQLITE_OK;
+  Pager *pPager;
+
+#ifdef SQLITE_OMIT_WAL
+  *pnFrame = 0;
+  return SQLITE_OK;
+#else
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+
+  sqlite3_mutex_enter(db->mutex);
+  pPager = sqlite3BtreePager(db->aDb[0].pBt);
+  *pnFrame = sqlite3PagerWalFrameCount(pPager);
+  sqlite3_mutex_leave(db->mutex);
+
+  return rc;
+#endif
+}
+
+/*
 ** Register a function to be invoked prior to each autovacuum that
 ** determines the number of pages to vacuum.
 */
