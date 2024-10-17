@@ -1,12 +1,14 @@
 use axum::http::HeaderName;
 use bytes::Bytes;
 use hyper::Body;
+use libsql_server::net::Connector;
 use serde::{de::DeserializeOwned, Serialize};
 
 use super::net::TurmoilConnector;
 
 /// An hyper client that resolves URI within a turmoil simulation.
-pub struct Client(hyper::Client<TurmoilConnector>);
+#[derive(Clone)]
+pub struct Client<C = TurmoilConnector>(hyper::Client<C>);
 
 pub struct Response(hyper::Response<Body>);
 
@@ -36,7 +38,15 @@ impl Client {
         let connector = TurmoilConnector;
         Self(hyper::client::Client::builder().build(connector))
     }
+}
 
+impl<C> From<hyper::Client<C>> for Client<C> {
+    fn from(value: hyper::Client<C>) -> Self {
+        Self(value)
+    }
+}
+
+impl<C: Connector> Client<C> {
     pub async fn get(&self, s: &str) -> anyhow::Result<Response> {
         Ok(Response(self.0.get(s.parse()?).await?))
     }
