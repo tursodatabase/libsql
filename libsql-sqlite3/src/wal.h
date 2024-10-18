@@ -75,6 +75,9 @@ typedef struct libsql_wal_methods {
   ** response to a ROLLBACK TO command. */
   int (*xSavepointUndo)(wal_impl* pWal, unsigned int *aWalData);
 
+  /* Return the number of frames in the WAL */
+  int (*xFrameCount)(wal_impl* pWal, int, unsigned int *);
+
   /* Write a frame or frames to the log. */
   int (*xFrames)(wal_impl* pWal, int, libsql_pghdr *, unsigned int, int, int, int*);
 

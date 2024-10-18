@@ -7771,6 +7771,19 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   return rc;
 }
 
+/**
+** Return the number of frames in the WAL file.
+**
+** If the pager is not in WAL mode or we failed to obtain an exclusive write lock, returns -1.
+**/
+int sqlite3PagerWalFrameCount(Pager *pPager, unsigned int *pnFrames){
+  if( pagerUseWal(pPager) ){
+    return pPager->wal->methods.xFrameCount(pPager->wal->pData, 0, pnFrames);
+  }else{
+    return SQLITE_ERROR;
+  }
+}
+
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
 /*
 ** If pager pPager is a wal-mode database not in exclusive locking mode,

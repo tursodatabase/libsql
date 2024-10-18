@@ -75,6 +75,12 @@ macro_rules! create_either {
                 }
             }
 
+            fn frame_count(&self, locked: i32) -> super::Result<u32> {
+                match self {
+                    $( $name::$t(inner) => inner.frame_count(locked) ),*
+                }
+            }
+
             fn insert_frames(
                 &mut self,
                 page_size: std::ffi::c_int,

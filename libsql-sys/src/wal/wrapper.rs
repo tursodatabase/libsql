@@ -85,6 +85,10 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
         unsafe { (*self.wrapper).savepoint_undo(&mut *self.wrapped, rollback_data) }
     }
 
+    fn frame_count(&self, locked: i32) -> super::Result<u32> {
+        unsafe { (*self.wrapper).frame_count(&*self.wrapped, locked) }
+    }
+
     fn insert_frames(
         &mut self,
         page_size: c_int,
@@ -259,6 +263,10 @@ where
             .savepoint_undo(&mut self.wrapped, rollback_data)
     }
 
+    fn frame_count(&self, locked: i32) -> super::Result<u32> {
+        self.wrapper.frame_count(&self.wrapped, locked)
+    }
+
     fn insert_frames(
         &mut self,
         page_size: std::ffi::c_int,
@@ -381,6 +389,10 @@ pub trait WrapWal<W: Wal> {
 
     fn savepoint_undo(&mut self, wrapped: &mut W, rollback_data: &mut [u32]) -> super::Result<()> {
         wrapped.savepoint_undo(rollback_data)
+    }
+
+    fn frame_count(&self, wrapped: &W, locked: i32) -> super::Result<u32> {
+        wrapped.frame_count(locked)
     }
 
     fn insert_frames(

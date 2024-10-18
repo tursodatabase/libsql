@@ -134,6 +134,10 @@ impl Wal for InjectorWal {
         self.inner.savepoint_undo(rollback_data)
     }
 
+    fn frame_count(&self, locked: i32) -> Result<u32> {
+        self.inner.frame_count(locked)
+    }
+
     fn insert_frames(
         &mut self,
         page_size: c_int,

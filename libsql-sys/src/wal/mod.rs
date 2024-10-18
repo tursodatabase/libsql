@@ -197,6 +197,8 @@ pub trait Wal {
     fn savepoint(&mut self, rollback_data: &mut [u32]);
     fn savepoint_undo(&mut self, rollback_data: &mut [u32]) -> Result<()>;
 
+    fn frame_count(&self, locked: i32) -> Result<u32>;
+
     /// Insert frames in the wal. On commit, returns the number of inserted frames for that
     /// transaction, or 0 for non-commit calls.
     fn insert_frames(

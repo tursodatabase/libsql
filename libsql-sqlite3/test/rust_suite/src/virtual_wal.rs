@@ -98,6 +98,10 @@ mod tests {
             self.0.read_frame(frame_no, buffer)
         }
 
+        fn frame_count(&self, locked: i32) -> libsql_sys::wal::Result<u32> {
+            self.0.frame_count(locked)
+        }
+
         fn db_size(&self) -> u32 {
             self.0.db_size()
         }
