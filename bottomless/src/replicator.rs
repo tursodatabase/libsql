@@ -1332,7 +1332,7 @@ impl Replicator {
         {
             Ok(result) => {
                 tokio::fs::rename(&restore_path, &self.db_path).await?;
-                let _ = self.remove_wal_files().await; // best effort, WAL files may not exists
+                let _ = self.remove_wal_files(&self.db_path).await; // best effort, WAL files may not exists
 
                 let elapsed = Instant::now() - start_ts;
                 tracing::info!("Finished database restoration in {:?}", elapsed);
@@ -1692,13 +1692,19 @@ impl Replicator {
                 break;
             }
         }
+        // drop of injector will cause drop&close of last DB connection which will perform final
+        // WAL checkpoint of the DB
+        injector
+            .checkpoint()
+            .map_err(|e| anyhow!("unable to apply WAL after restore procedure: {e}"))?;
+        drop(injector);
         Ok(applied_wal_frame)
     }
 
-    async fn remove_wal_files(&self) -> Result<()> {
-        tracing::debug!("Overwriting any existing WAL file: {}-wal", &self.db_path);
-        tokio::fs::remove_file(&format!("{}-wal", &self.db_path)).await?;
-        tokio::fs::remove_file(&format!("{}-shm", &self.db_path)).await?;
+    async fn remove_wal_files(&self, db_path: &str) -> Result<()> {
+        tracing::debug!("Remove any existing WAL file: {}-wal", &db_path);
+        tokio::fs::remove_file(&format!("{}-wal", &db_path)).await?;
+        tokio::fs::remove_file(&format!("{}-shm", &db_path)).await?;
         Ok(())
     }
 

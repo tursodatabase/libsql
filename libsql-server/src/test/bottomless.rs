@@ -9,7 +9,7 @@ use s3s::auth::SimpleAuth;
 use s3s::service::S3ServiceBuilder;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::PathBuf;
-use std::sync::Once;
+use tokio::task::JoinError;
 use tokio::time::sleep;
 use tokio::time::Duration;
 use url::Url;
@@ -23,45 +23,49 @@ use crate::Server;
 
 const S3_URL: &str = "http://localhost:9000/";
 
-static S3_SERVER: Once = Once::new();
-
-async fn start_s3_server() {
+fn start_s3_server() -> impl Future<Output = ()> {
     std::env::set_var("LIBSQL_BOTTOMLESS_ENDPOINT", "http://localhost:9000");
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY", "foo");
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID", "bar");
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION", "us-east-1");
     std::env::set_var("LIBSQL_BOTTOMLESS_BUCKET", "my-bucket");
 
-    S3_SERVER.call_once(|| {
-        let tmp = std::env::temp_dir().join(format!("s3s-{}", Uuid::new_v4().as_simple()));
+    let tmp = std::env::temp_dir().join(format!("s3s-{}", Uuid::new_v4().as_simple()));
 
-        std::fs::create_dir_all(&tmp).unwrap();
+    std::fs::create_dir_all(&tmp).unwrap();
 
-        tracing::info!("starting mock s3 server with path: {}", tmp.display());
+    tracing::info!("starting mock s3 server with path: {}", tmp.display());
 
-        let s3_impl = s3s_fs::FileSystem::new(tmp).unwrap();
+    let s3_impl = s3s_fs::FileSystem::new(tmp).unwrap();
 
-        let key = std::env::var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").unwrap();
-        let secret = std::env::var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").unwrap();
+    let key = std::env::var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").unwrap();
+    let secret = std::env::var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").unwrap();
 
-        let auth = SimpleAuth::from_single(key, secret);
+    let auth = SimpleAuth::from_single(key, secret);
 
-        let mut s3 = S3ServiceBuilder::new(s3_impl);
-        s3.set_auth(auth);
-        let s3 = s3.build().into_shared().into_make_service();
+    let mut s3 = S3ServiceBuilder::new(s3_impl);
+    s3.set_auth(auth);
+    let s3 = s3.build().into_shared().into_make_service();
 
-        tokio::spawn(async move {
-            let addr = ([127, 0, 0, 1], 9000).into();
+    let addr = ([127, 0, 0, 1], 9000).into();
 
-            hyper::Server::bind(&addr).serve(s3).await.unwrap();
+    let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+    let server = hyper::Server::bind(&addr)
+        .serve(s3)
+        .with_graceful_shutdown(async {
+            rx.await.ok();
         });
+    tokio::spawn(async move {
+        server.await.unwrap();
     });
-
-    tokio::time::sleep(Duration::from_millis(500)).await;
+    async move {
+        let _ = tx.send(());
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
 }
 
 /// returns a future that once polled will shutdown the server and wait for cleanup
-fn start_db(step: u32, server: Server) -> impl Future<Output = ()> {
+fn start_db(step: u32, server: Server) -> impl Future<Output = Result<(), JoinError>> {
     let notify = server.shutdown.clone();
     let handle = tokio::spawn(async move {
         if let Err(e) = server.start().await {
@@ -71,7 +75,7 @@ fn start_db(step: u32, server: Server) -> impl Future<Output = ()> {
 
     async move {
         notify.notify_waiters();
-        handle.await.unwrap();
+        handle.await
     }
 }
 
@@ -124,7 +128,7 @@ async fn configure_server(
 async fn backup_restore() {
     let _ = tracing_subscriber::fmt::try_init();
 
-    start_s3_server().await;
+    let s3 = start_s3_server();
 
     const DB_ID: &str = "testbackuprestore";
     const BUCKET: &str = "testbackuprestore";
@@ -176,7 +180,7 @@ async fn backup_restore() {
 
         sleep(Duration::from_secs(2)).await;
 
-        db_job.await;
+        db_job.await.unwrap();
         drop(cleaner);
     }
 
@@ -195,7 +199,7 @@ async fn backup_restore() {
 
         assert_updates(&connection_addr, ROWS, OPS, "A").await;
 
-        db_job.await;
+        db_job.await.unwrap();
         drop(cleaner);
     }
 
@@ -213,7 +217,7 @@ async fn backup_restore() {
 
         // wait for WAL to backup
         sleep(Duration::from_secs(2)).await;
-        db_job.await;
+        db_job.await.unwrap();
         drop(cleaner);
     }
 
@@ -228,7 +232,7 @@ async fn backup_restore() {
 
         assert_updates(&connection_addr, ROWS, OPS, "B").await;
 
-        db_job.await;
+        db_job.await.unwrap();
         drop(cleaner);
     }
 
@@ -247,16 +251,272 @@ async fn backup_restore() {
 
         assert_updates(&connection_addr, ROWS, OPS, "B").await;
 
-        db_job.await;
+        db_job.await.unwrap();
         drop(cleaner);
     }
+
+    s3.await;
+}
+
+async fn list_bucket(bucket: &str) -> Vec<String> {
+    let client = s3_client().await.expect("failed to create s3 client");
+    let objects = client
+        .list_objects()
+        .bucket(bucket)
+        .prefix("")
+        .send()
+        .await
+        .expect("failed to list objects");
+    objects
+        .contents()
+        .iter()
+        .map(|x| String::from(x.key().unwrap()))
+        .collect()
+}
+
+#[tokio::test]
+async fn restore_from_partial_db() {
+    let _ = tracing_subscriber::fmt::try_init();
+
+    let s3 = start_s3_server();
+
+    const DB_ID: &str = "partialbackup";
+    const BUCKET: &str = "partialbackup";
+    const PATH: &str = "partialbackup.sqld";
+    const PORT: u16 = 15003;
+
+    let _ = S3BucketCleaner::new(BUCKET).await;
+    assert_bucket_occupancy(BUCKET, true).await;
+
+    let listener_addr = format!("0.0.0.0:{}", PORT)
+        .to_socket_addrs()
+        .unwrap()
+        .next()
+        .unwrap();
+    let conn = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
+    let options = bottomless::replicator::Options {
+        db_id: Some(DB_ID.to_string()),
+        create_bucket_if_not_exists: true,
+        verify_crc: true,
+        use_compression: bottomless::replicator::CompressionKind::None,
+        bucket_name: BUCKET.to_string(),
+        max_batch_interval: Duration::from_millis(10),
+        ..bottomless::replicator::Options::from_env().unwrap()
+    };
+    let make_server = || async { configure_server(&options, listener_addr, PATH).await };
+    {
+        tracing::info!(
+            "---STEP 1: create db, write rows, remove random S3 files to create effect of partial backup---"
+        );
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(1, make_server().await);
+
+        sleep(Duration::from_secs(2)).await;
+
+        let _ = sql(
+            &conn,
+            ["CREATE TABLE IF NOT EXISTS t(id INT PRIMARY KEY, name TEXT, payload BLOB);"],
+        )
+        .await
+        .unwrap();
+        for i in 0..128 {
+            sql(
+                &conn,
+                [format!("INSERT INTO t VALUES({i}, '{i}', zeroblob(4096))")],
+            )
+            .await
+            .expect("SQL query failed");
+        }
+
+        tracing::info!("Ready to remove files from S3");
+        let client = s3_client().await.expect("failed to create s3 client");
+        let mut i = 0;
+        for key in list_bucket(BUCKET).await {
+            // delete full snapshot and random wal frame ranges
+            let should_delete = key.ends_with(".changecounter")
+                || key.ends_with(".dep")
+                || key.ends_with("db.raw")
+                || i % 10 == 0;
+
+            if should_delete {
+                client
+                    .delete_object()
+                    .bucket(BUCKET)
+                    .key(key)
+                    .send()
+                    .await
+                    .expect("failed to delete object");
+            }
+            i += 1;
+        }
+
+        db_job.await.unwrap();
+        drop(cleaner);
+    }
+
+    {
+        sleep(Duration::from_secs(2)).await;
+
+        tracing::info!("---STEP 2: recreate database, check that it is unable to start ---");
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(2, make_server().await);
+        sleep(Duration::from_secs(2)).await;
+
+        let result = sql(&conn, ["SELECT COUNT(*) as cnt FROM t"]).await.unwrap();
+        let count = result
+            .first()
+            .unwrap()
+            .clone()
+            .into_result_set()
+            .unwrap()
+            .rows[0]
+            .cells["cnt"]
+            .clone();
+        if let Value::Integer(x) = count {
+            assert!(0 < x && x < 128);
+        } else {
+            assert!(false);
+        }
+        db_job.await.unwrap();
+        drop(cleaner);
+    }
+    s3.await;
+}
+
+#[tokio::test]
+async fn do_not_restore_from_corrupted_db() {
+    let _ = tracing_subscriber::fmt::try_init();
+
+    let s3 = start_s3_server();
+
+    const DB_ID: &str = "corruptedbackup";
+    const BUCKET: &str = "corruptedbackup";
+    const PATH: &str = "corruptedbackup.sqld";
+    const PORT: u16 = 15004;
+
+    let _ = S3BucketCleaner::new(BUCKET).await;
+    assert_bucket_occupancy(BUCKET, true).await;
+
+    let listener_addr = format!("0.0.0.0:{}", PORT)
+        .to_socket_addrs()
+        .unwrap()
+        .next()
+        .unwrap();
+    let conn = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
+    let options = bottomless::replicator::Options {
+        db_id: Some(DB_ID.to_string()),
+        create_bucket_if_not_exists: true,
+        verify_crc: false,
+        use_compression: bottomless::replicator::CompressionKind::None,
+        bucket_name: BUCKET.to_string(),
+        max_batch_interval: Duration::from_millis(10),
+        ..bottomless::replicator::Options::from_env().unwrap()
+    };
+    let make_server = || async { configure_server(&options, listener_addr, PATH).await };
+    {
+        tracing::info!("---STEP 1: create db, write rows, corrupt random S3 files ---");
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(1, make_server().await);
+
+        sleep(Duration::from_secs(2)).await;
+
+        let _ = sql(
+            &conn,
+            ["CREATE TABLE IF NOT EXISTS t(id INT PRIMARY KEY, name TEXT, payload BLOB);"],
+        )
+        .await
+        .unwrap();
+        for i in 0..128 {
+            sql(
+                &conn,
+                [format!("INSERT INTO t VALUES({i}, '{i}', zeroblob(128))")],
+            )
+            .await
+            .expect("SQL query failed");
+        }
+
+        tracing::info!("Ready to remove files from S3");
+        let client = s3_client().await.expect("failed to create s3 client");
+        for key in list_bucket(BUCKET).await {
+            // delete full snapshot files
+            let should_delete =
+                key.ends_with(".changecounter") || key.ends_with(".dep") || key.ends_with("db.raw");
+            if should_delete {
+                client
+                    .delete_object()
+                    .bucket(BUCKET)
+                    .key(&key)
+                    .send()
+                    .await
+                    .expect("failed to delete object");
+            } else if key.ends_with(".raw") {
+                tracing::info!("corrupt frame range: {key}");
+                // corrupt random wal frame range
+                let response = client
+                    .get_object()
+                    .bucket(BUCKET)
+                    .key(&key)
+                    .send()
+                    .await
+                    .expect("failed to read object");
+                let mut bytes: Vec<u8> = response
+                    .body
+                    .collect()
+                    .await
+                    .expect("failed to read body")
+                    .into_bytes()
+                    .into();
+                let single_frame_size = 24 + 4096;
+                assert!(bytes.len() % single_frame_size == 0);
+                for frame in 0..bytes.len() / single_frame_size {
+                    let page_number = u32::from_be_bytes(
+                        bytes[frame * single_frame_size..frame * single_frame_size + 4]
+                            .try_into()
+                            .unwrap(),
+                    );
+                    if page_number <= 1 {
+                        continue;
+                    }
+                    tracing::info!("corrupting page {page_number}");
+                    for b in frame * single_frame_size..(frame + 1) * single_frame_size {
+                        bytes[b] = bytes[b].wrapping_add(1);
+                    }
+                }
+                client
+                    .put_object()
+                    .bucket(BUCKET)
+                    .key(&key)
+                    .body(bytes.into())
+                    .send()
+                    .await
+                    .expect("failed to put body");
+            }
+        }
+
+        db_job.await.unwrap();
+        drop(cleaner);
+    }
+
+    {
+        sleep(Duration::from_secs(2)).await;
+
+        tracing::info!("---STEP 2: recreate database, check that it is unable to start ---");
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(2, make_server().await);
+        sleep(Duration::from_secs(2)).await;
+
+        assert!(sql(&conn, ["SELECT COUNT(*) as cnt FROM t"]).await.is_err());
+        assert!(db_job.await.is_err());
+        drop(cleaner);
+    }
+    s3.await;
 }
 
 #[tokio::test]
 async fn rollback_restore() {
     let _ = tracing_subscriber::fmt::try_init();
 
-    start_s3_server().await;
+    let s3 = start_s3_server();
 
     const DB_ID: &str = "testrollbackrestore";
     const BUCKET: &str = "testrollbackrestore";
@@ -340,7 +600,7 @@ async fn rollback_restore() {
             "rollback value should not be updated"
         );
 
-        db_job.await;
+        db_job.await.unwrap();
         drop(cleaner);
     }
 
@@ -369,9 +629,10 @@ async fn rollback_restore() {
             ]
         );
 
-        db_job.await;
+        db_job.await.unwrap();
         drop(cleaner);
     }
+    s3.await;
 }
 
 async fn perform_updates(connection_addr: &Url, row_count: usize, ops_count: usize, update: &str) {
