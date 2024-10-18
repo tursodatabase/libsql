@@ -133,6 +133,12 @@ int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
 void sqlite3PagerSetBusyHandler(Pager*, int(*)(void *), void *);
 int sqlite3PagerSetPagesize(Pager*, u32*, int);
 Pgno sqlite3PagerMaxPageCount(Pager*, Pgno);
+int sqlite3PagerWalFrameCount(Pager *, unsigned int *);
+int sqlite3PagerWalReadFrame(Pager *, unsigned int, void *, unsigned int);
+int sqlite3PagerWalBeginCommit(Pager*);
+int sqlite3PagerWalEndCommit(Pager*);
+int sqlite3PagerWalInsert(Pager*, unsigned int, void *, unsigned int);
+
 void sqlite3PagerSetCachesize(Pager*, int);
 int sqlite3PagerSetSpillsize(Pager*, int);
 void sqlite3PagerSetMmapLimit(Pager *, sqlite3_int64);

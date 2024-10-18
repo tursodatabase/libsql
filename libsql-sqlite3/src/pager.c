@@ -7771,6 +7771,106 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   return rc;
 }
 
+/**
+** Return the number of frames in the WAL file.
+**
+** If the pager is not in WAL mode or we failed to obtain an exclusive write lock, returns -1.
+**/
+int sqlite3PagerWalFrameCount(Pager *pPager, unsigned int *pnFrames){
+  if( pagerUseWal(pPager) ){
+    return pPager->wal->methods.xFrameCount(pPager->wal->pData, pnFrames);
+  }else{
+    return SQLITE_ERROR;
+  }
+}
+
+int sqlite3PagerWalReadFrameRaw(
+  Pager *pPager,
+  unsigned int iFrame,
+  void *pFrameOut,
+  unsigned int nFrameOutLen
+){
+  if( pagerUseWal(pPager) ){
+    unsigned int nFrameLen = 24+pPager->pageSize;
+    if( nFrameOutLen!=nFrameLen ) return SQLITE_MISUSE;
+    return pPager->wal->methods.xReadFrameRaw(pPager->wal->pData, iFrame, nFrameOutLen, pFrameOut);
+  }else{
+    return SQLITE_ERROR;
+  }
+}
+
+static void frame_to_pghdr(PgHdr *pPghdr, unsigned int pgno, void *pData) {
+  pPghdr->pPage      = NULL;   /* Pcache object page handle */
+  pPghdr->pData      = pData;  /* Page data */
+  pPghdr->pExtra     = NULL;   /* Extra content */
+  pPghdr->pCache     = NULL;   /* PRIVATE: Cache that owns this page */
+  pPghdr->pDirty     = NULL;   /* Transient list of dirty sorted by pgno */
+  pPghdr->pPager     = NULL;   /* The pager this page is part of */
+  pPghdr->pgno       = pgno;   /* Page number for this page */
+  pPghdr->pageHash   = 0;      /* Hash of page content */
+  pPghdr->flags      = 0;      /* PGHDR flags defined below */
+  pPghdr->nRef       = 1;      /* Number of users of this page */
+  pPghdr->pDirtyNext = NULL;   /* Next element in list of dirty pages */
+  pPghdr->pDirtyPrev = NULL;   /* Previous element in list of dirty pages */
+}
+
+int sqlite3PagerWalBeginCommit(Pager *pPager) {
+  int rc;
+  if (!pagerUseWal(pPager)) {
+    return SQLITE_ERROR;
+  }
+  rc = pagerBeginReadTransaction(pPager);
+  if (rc != SQLITE_OK) {
+    return rc;
+  }
+  return pPager->wal->methods.xBeginWriteTransaction(pPager->wal->pData);
+}
+
+int sqlite3PagerWalEndCommit(Pager *pPager) {
+  if (!pagerUseWal(pPager)) {
+    return SQLITE_ERROR;
+  }
+  return pPager->wal->methods.xEndWriteTransaction(pPager->wal->pData);
+}
+
+int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsigned int nBuf) {
+  int rc = SQLITE_OK;
+
+  // Check if WAL mode is enabled
+  if (!pagerUseWal(pPager)) {
+    return SQLITE_ERROR;
+  }
+
+  // Extract information from the WAL frame
+  u8 *aFrame = (u8*)pBuf;
+  u32 pgno = sqlite3Get4byte(&aFrame[0]);
+  u32 nTruncate = sqlite3Get4byte(&aFrame[4]);
+  u8 *pData = aFrame + 24;
+
+  // Prepare the PgHdr structure
+  PgHdr pghdr;
+  memset(&pghdr, 0, sizeof(PgHdr));
+  pghdr.pPage = NULL;
+  pghdr.pData = pData;
+  pghdr.pExtra = NULL;
+  pghdr.pgno = pgno;
+  pghdr.flags = 0;
+
+  // Determine if this is a commit frame
+  int isCommit = (nTruncate != 0);
+
+  // Call xFrames
+  int nFrames = 0;
+  rc = pPager->wal->methods.xFrames(pPager->wal->pData, 
+                                    pPager->pageSize, 
+                                    &pghdr, 
+                                    nTruncate, 
+                                    isCommit, 
+                                    pPager->walSyncFlags, 
+                                    &nFrames);
+  return rc;
+}
+
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
 /*
 ** If pager pPager is a wal-mode database not in exclusive locking mode,
