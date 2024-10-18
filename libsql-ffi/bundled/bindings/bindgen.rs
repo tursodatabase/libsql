@@ -3316,6 +3316,12 @@ pub struct libsql_wal_methods {
             aWalData: *mut ::std::os::raw::c_uint,
         ) -> ::std::os::raw::c_int,
     >,
+    pub xFrameCount: ::std::option::Option<
+        unsafe extern "C" fn(
+            pWal: *mut wal_impl,
+            arg1: *mut ::std::os::raw::c_uint,
+        ) -> ::std::os::raw::c_int,
+    >,
     pub xFrames: ::std::option::Option<
         unsafe extern "C" fn(
             pWal: *mut wal_impl,

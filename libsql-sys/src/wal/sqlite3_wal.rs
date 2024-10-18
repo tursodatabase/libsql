@@ -272,6 +272,16 @@ impl Wal for Sqlite3Wal {
         }
     }
 
+    fn frame_count(&self) -> Result<u32> {
+        let mut out: u32 = 0;
+        let rc = unsafe { (self.inner.methods.xFrameCount.unwrap())(self.inner.pData, &mut out) };
+        if rc != 0 {
+            Err(Error::new(rc))
+        } else {
+            Ok(out)
+        }
+    }
+
     fn insert_frames(
         &mut self,
         page_size: c_int,

@@ -4001,6 +4001,15 @@ static int walFrames(
   return rc;
 }
 
+int sqlite3WalFrameCount(Wal *pWal, unsigned int *pnFrames){
+  int rc;
+  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+  if (rc != SQLITE_OK) return rc;
+  *pnFrames = pWal->hdr.mxFrame;
+  walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+  return SQLITE_OK;
+}
+
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
@@ -4506,6 +4515,7 @@ static int sqlite3WalOpen(
     out->methods.xUndo = (int (*)(wal_impl *, int (*)(void *, unsigned int), void *))sqlite3WalUndo;
     out->methods.xSavepoint = (void (*)(wal_impl *, unsigned int *))sqlite3WalSavepoint;
     out->methods.xSavepointUndo = (int (*)(wal_impl *, unsigned int *))sqlite3WalSavepointUndo;
+    out->methods.xFrameCount = (int (*)(wal_impl *, unsigned int *))sqlite3WalFrameCount;
     out->methods.xFrames = (int (*)(wal_impl *, int, libsql_pghdr *, unsigned int, int, int, int *))sqlite3WalFrames;
     out->methods.xCheckpoint = (int (*)(wal_impl *, sqlite3 *, int, int (*)(void *), void *, int, int, unsigned char *, int *, int *, int (*)(void*, int, const unsigned char*, int, int, int), void*))sqlite3WalCheckpoint;
     out->methods.xCallback = (int (*)(wal_impl *))sqlite3WalCallback;
