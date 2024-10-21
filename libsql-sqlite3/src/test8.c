@@ -1361,8 +1361,13 @@ static sqlite3_module echoModuleV2 = {
   echoRelease,
   echoRollbackTo,
   0,                         /* xShadowName */
+  0,                         /* xIntegrity  */
+  0,
+  0,
+  0,
+  0,
+  0,
   echoPreparedSql,
-  0                          /* xIntegrity  */
 };
 
 /*
