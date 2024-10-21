@@ -107,7 +107,7 @@ impl RemoteClient {
         Ok(new_session)
     }
 
-    async fn do_handshake_with_prefetch(&mut self) -> (Result<bool, Error>, Duration) {
+    async fn do_handshake_with_prefetch(&mut self) -> (Result<(), Error>, Duration) {
         tracing::info!("Attempting to perform handshake with primary.");
         if self.dirty {
             self.prefetched_batch_log_entries = None;
@@ -144,7 +144,7 @@ impl RemoteClient {
             frames
         };
 
-        hello
+        (hello.0.map(|_| ()), hello.1)
     }
 
     async fn handle_next_frames_response(
@@ -255,7 +255,7 @@ impl ReplicatorClient for RemoteClient {
             &result,
             "handshake",
         );
-        result.map(|_| ())
+        result
     }
 
     /// Return a stream of frames to apply to the database
