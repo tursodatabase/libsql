@@ -89,7 +89,7 @@ impl RemoteClient {
     ) -> Result<bool, Error> {
         let hello = hello?.into_inner();
         verify_session_token(&hello.session_token).map_err(Error::Client)?;
-        let new_session = self.session_token != Some(hello.session_token.clone());
+        let new_session = self.session_token.as_ref() != Some(&hello.session_token);
         self.session_token = Some(hello.session_token.clone());
         let current_replication_index = hello.current_replication_index;
         if let Err(e) = self.meta.init_from_hello(hello) {
