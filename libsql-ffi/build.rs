@@ -1,7 +1,7 @@
 use std::env;
 use std::ffi::OsString;
 use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -39,13 +39,8 @@ fn main() {
 
     let dir = env!("CARGO_MANIFEST_DIR");
 
-    Command::new("cp")
-        .arg("--no-preserve=mode,ownership")
-        .arg("-R")
-        .arg(format!("{dir}/{bindgen_rs_path}"))
-        .arg(&out_path)
-        .output()
-        .unwrap();
+    let full_src_path = Path::new(dir).join(bindgen_rs_path);
+    copy_with_cp(full_src_path, &out_path).unwrap();
 
     println!("cargo:lib_dir={out_dir}");
 
@@ -59,6 +54,31 @@ fn main() {
     }
 
     build_bundled(&out_dir, &out_path);
+}
+
+#[cfg(target_os = "windows")]
+fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+    fs::copy(src, dst)?; // do a regular file copy on Windows
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+    let status = Command::new("cp")
+        .arg("--no-preserve=mode,ownership")
+        .arg("-R")
+        .arg(src.as_ref().to_str().unwrap())
+        .arg(dst.as_ref().to_str().unwrap())
+        .status()?;
+
+    if !status.success() {
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to copy using cp",
+        ))
+    } else {
+        Ok(())
+    }
 }
 
 fn make_amalgamation() {
