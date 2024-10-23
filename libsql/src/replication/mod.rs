@@ -65,6 +65,60 @@ pub enum Frames {
     Snapshot(SnapshotFile),
 }
 
+/// Detailed logs about bytes synced with primary
+pub struct SyncUsageStats {
+    prefetched_bytes: u64,
+    prefetched_bytes_discarded_due_to_new_session: u64,
+    prefetched_bytes_discarded_due_to_consecutive_handshake: u64,
+    prefetched_bytes_discarded_due_to_invalid_frame_header: u64,
+    synced_bytes_discarded_due_to_invalid_frame_header: u64,
+    prefetched_bytes_used: u64,
+    synced_bytes_used: u64,
+    snapshot_bytes: u64,
+}
+
+impl SyncUsageStats {
+    /// Number of bytes prefetched while doing handshake
+    pub fn prefetched_bytes(&self) -> u64 {
+        self.prefetched_bytes
+    }
+
+    /// Number of bytes prefetched and discarded due to the change of the client session
+    pub fn prefetched_bytes_discarded_due_to_new_session(&self) -> u64 {
+        self.prefetched_bytes_discarded_due_to_new_session
+    }
+
+    /// Number of bytes prefetched and discarded due to consecutive handshake with new prefetch
+    pub fn prefetched_bytes_discarded_due_to_consecutive_handshake(&self) -> u64 {
+        self.prefetched_bytes_discarded_due_to_consecutive_handshake
+    }
+
+    /// Number of bytes prefetched and discarded due to invalid frame header in received frames
+    pub fn prefetched_bytes_discarded_due_to_invalid_frame_header(&self) -> u64 {
+        self.prefetched_bytes_discarded_due_to_invalid_frame_header
+    }
+
+    /// Number of bytes synced and discarded due to invalid frame header in received frames
+    pub fn synced_bytes_discarded_due_to_invalid_frame_header(&self) -> u64 {
+        self.synced_bytes_discarded_due_to_invalid_frame_header
+    }
+
+    /// Number of bytes prefetched and used
+    pub fn prefetched_bytes_used(&self) -> u64 {
+        self.prefetched_bytes_used
+    }
+
+    /// Number of bytes synced and used
+    pub fn synced_bytes_used(&self) -> u64 {
+        self.synced_bytes_used
+    }
+
+    /// Number of bytes downloaded as snapshots
+    pub fn snapshot_bytes(&self) -> u64 {
+        self.snapshot_bytes
+    }
+}
+
 #[derive(Clone)]
 pub(crate) struct Writer {
     pub(crate) client: client::Client,
@@ -208,6 +262,35 @@ impl EmbeddedReplicator {
             bg_abort: None,
             last_frames_synced: Arc::new(AtomicUsize::new(0)),
         })
+    }
+
+    pub async fn get_sync_usage_stats(&self) -> Result<SyncUsageStats> {
+        let mut replicator = self.replicator.lock().await;
+        match replicator.client_mut() {
+            Either::Right(_) => {
+                Err(crate::errors::Error::Misuse(
+                    "Trying to get sync usage stats, but this is a local replicator".into(),
+                ))
+            }
+            Either::Left(c) => {
+                let stats = c.sync_stats();
+                Ok(SyncUsageStats {
+                    prefetched_bytes: stats.prefetched_bytes.load(std::sync::atomic::Ordering::SeqCst),
+                    prefetched_bytes_discarded_due_to_new_session: stats
+                        .prefetched_bytes_discarded_due_to_new_session.load(std::sync::atomic::Ordering::SeqCst),
+                    prefetched_bytes_discarded_due_to_consecutive_handshake: stats
+                        .prefetched_bytes_discarded_due_to_consecutive_handshake.load(std::sync::atomic::Ordering::SeqCst),
+                    prefetched_bytes_discarded_due_to_invalid_frame_header: stats
+                        .prefetched_bytes_discarded_due_to_invalid_frame_header.load(std::sync::atomic::Ordering::SeqCst),
+                    synced_bytes_discarded_due_to_invalid_frame_header: stats
+                        .synced_bytes_discarded_due_to_invalid_frame_header.load(std::sync::atomic::Ordering::SeqCst),
+                    prefetched_bytes_used: stats.prefetched_bytes_used.load(std::sync::atomic::Ordering::SeqCst),
+                    synced_bytes_used: stats.synced_bytes_used.load(std::sync::atomic::Ordering::SeqCst),
+                    snapshot_bytes: stats.snapshot_bytes.load(std::sync::atomic::Ordering::SeqCst),
+                })
+            }
+        }
+
     }
 
     pub async fn sync_oneshot(&self) -> Result<Replicated> {
