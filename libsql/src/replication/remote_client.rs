@@ -24,7 +24,7 @@ async fn time<O>(fut: impl Future<Output = O>) -> (O, Duration) {
     (out, before.elapsed())
 }
 
-struct SyncStats {
+pub(crate) struct SyncStats {
     pub prefetched_bytes: AtomicU64,
     pub prefetched_bytes_discarded_due_to_new_session: AtomicU64,
     pub prefetched_bytes_discarded_due_to_consecutive_handshake: AtomicU64,
@@ -119,6 +119,10 @@ impl RemoteClient {
             snapshot_latency_count: 0,
             sync_stats: Arc::new(SyncStats::new()),
         })
+    }
+
+    pub(crate) fn sync_stats(&self) -> Arc<SyncStats> {
+        self.sync_stats.clone()
     }
 
     fn next_offset(&self) -> FrameNo {

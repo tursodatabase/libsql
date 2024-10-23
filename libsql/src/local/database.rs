@@ -10,6 +10,7 @@ cfg_replication!(
     use crate::replication::remote_client::RemoteClient;
     use crate::replication::EmbeddedReplicator;
     pub use crate::replication::Frames;
+    pub use crate::replication::SyncUsageStats;
 
     pub struct ReplicationContext {
         pub(crate) replicator: EmbeddedReplicator,
@@ -275,6 +276,20 @@ impl Database {
     /// Sync with primary
     pub async fn sync(&self) -> Result<crate::replication::Replicated> {
         Ok(self.sync_oneshot().await?)
+    }
+
+    #[cfg(feature = "replication")]
+    /// Return detailed logs about bytes synced with primary
+    pub async fn get_sync_usage_stats(&self) -> Result<SyncUsageStats> {
+        if let Some(ctx) = &self.replication_ctx {
+            let sync_stats = ctx.replicator.get_sync_usage_stats().await?;
+            Ok(sync_stats)
+        } else {
+            Err(crate::errors::Error::Misuse(
+                "No replicator available. Use Database::with_replicator() to enable replication"
+                    .to_string(),
+            ))
+        }
     }
 
     #[cfg(feature = "replication")]
