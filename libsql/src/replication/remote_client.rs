@@ -1,6 +1,8 @@
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
+use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 use std::time::{Duration, Instant};
 
 use bytes::Bytes;
@@ -22,6 +24,63 @@ async fn time<O>(fut: impl Future<Output = O>) -> (O, Duration) {
     (out, before.elapsed())
 }
 
+struct SyncStats {
+    pub prefetched_bytes: AtomicU64,
+    pub prefetched_bytes_discarded_due_to_new_session: AtomicU64,
+    pub prefetched_bytes_discarded_due_to_consecutive_handshake: AtomicU64,
+    pub prefetched_bytes_discarded_due_to_invalid_frame_header: AtomicU64,
+    pub synced_bytes_discarded_due_to_invalid_frame_header: AtomicU64,
+    pub prefetched_bytes_used: AtomicU64,
+    pub synced_bytes_used: AtomicU64,
+    pub snapshot_bytes: AtomicU64,
+}
+
+impl SyncStats {
+    fn new() -> Self {
+        Self {
+            prefetched_bytes: AtomicU64::new(0),
+            prefetched_bytes_discarded_due_to_new_session: AtomicU64::new(0),
+            prefetched_bytes_discarded_due_to_consecutive_handshake: AtomicU64::new(0),
+            prefetched_bytes_discarded_due_to_invalid_frame_header: AtomicU64::new(0),
+            synced_bytes_discarded_due_to_invalid_frame_header: AtomicU64::new(0),
+            prefetched_bytes_used: AtomicU64::new(0),
+            synced_bytes_used: AtomicU64::new(0),
+            snapshot_bytes: AtomicU64::new(0),
+        }
+    }
+
+    fn add_prefetched_bytes(&self, bytes: u64) {
+        self.prefetched_bytes.fetch_add(bytes, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    fn add_prefetched_bytes_discarded_due_to_new_session(&self, bytes: u64) {
+        self.prefetched_bytes_discarded_due_to_new_session.fetch_add(bytes, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    fn add_prefetched_bytes_discarded_due_to_consecutive_handshake(&self, bytes: u64) {
+        self.prefetched_bytes_discarded_due_to_consecutive_handshake.fetch_add(bytes, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    fn add_prefetched_bytes_discarded_due_to_invalid_frame_header(&self, bytes: u64) {
+        self.prefetched_bytes_discarded_due_to_invalid_frame_header.fetch_add(bytes, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    fn add_synced_bytes_discarded_due_to_invalid_frame_headear(&self, bytes: u64) {
+        self.synced_bytes_discarded_due_to_invalid_frame_header.fetch_add(bytes, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    fn add_prefetched_bytes_used(&self, bytes: u64) {
+        self.prefetched_bytes_used.fetch_add(bytes, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    fn add_synced_bytes_used(&self, bytes: u64) {
+        self.synced_bytes_used.fetch_add(bytes, std::sync::atomic::Ordering::SeqCst);
+    }
+    fn add_snapshot_bytes(&self, bytes: u64) {
+        self.snapshot_bytes.fetch_add(bytes, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
 /// A remote replicator client, that pulls frames over RPC
 pub struct RemoteClient {
     remote: super::client::Client,
@@ -38,6 +97,7 @@ pub struct RemoteClient {
     frames_latency_count: u128,
     snapshot_latency_sum: Duration,
     snapshot_latency_count: u128,
+    sync_stats: Arc<SyncStats>,
 }
 
 impl RemoteClient {
@@ -57,6 +117,7 @@ impl RemoteClient {
             frames_latency_count: 0,
             snapshot_latency_sum: Duration::default(),
             snapshot_latency_count: 0,
+            sync_stats: Arc::new(SyncStats::new()),
         })
     }
 
@@ -109,6 +170,11 @@ impl RemoteClient {
 
     async fn do_handshake_with_prefetch(&mut self) -> (Result<(), Error>, Duration) {
         tracing::info!("Attempting to perform handshake with primary.");
+        if let Some((Ok(frames), _)) = &self.prefetched_batch_log_entries {
+            // TODO: check if it's ok to just do 4096 * frames.len()
+            let bytes = frames.get_ref().frames.iter().map(|f| f.data.len() as u64).sum();
+            self.sync_stats.add_prefetched_bytes_discarded_due_to_consecutive_handshake(bytes);
+        }
         if self.dirty {
             self.prefetched_batch_log_entries = None;
             self.meta.reset();
@@ -135,10 +201,19 @@ impl RemoteClient {
         } else {
             (hello_fut.await, None)
         };
+        let mut prefetched_bytes = None;
+        if let Some((Ok(frames), _)) = &frames {
+            let bytes = frames.get_ref().frames.iter().map(|f| f.data.len() as u64).sum();
+            self.sync_stats.add_prefetched_bytes(bytes);
+            prefetched_bytes = Some(bytes);
+        }
         self.prefetched_batch_log_entries = if let Ok(true) = hello.0 {
             tracing::debug!(
                 "Frames prefetching failed because of new session token returned by handshake"
             );
+            if let Some(bytes) = prefetched_bytes {
+                self.sync_stats.add_prefetched_bytes_discarded_due_to_new_session(bytes);
+            }
             None
         } else {
             frames
@@ -150,13 +225,29 @@ impl RemoteClient {
     async fn handle_next_frames_response(
         &mut self,
         frames: Result<Response<Frames>, Status>,
+        prefetched: bool,
     ) -> Result<<Self as ReplicatorClient>::FrameStream, Error> {
         let frames = frames?.into_inner().frames;
+        let bytes = frames.iter().map(|f| f.data.len() as u64).sum();
 
         if let Some(f) = frames.last() {
-            let header: FrameHeader = FrameHeader::read_from_prefix(&f.data)
+            let header_result = FrameHeader::read_from_prefix(&f.data);
+            if header_result.is_none() {
+                if prefetched {
+                    self.sync_stats.add_prefetched_bytes_discarded_due_to_invalid_frame_header(bytes);
+                } else {
+                    self.sync_stats.add_synced_bytes_discarded_due_to_invalid_frame_headear(bytes);
+                }
+            }
+            let header: FrameHeader = header_result
                 .ok_or_else(|| Error::Internal("invalid frame header".into()))?;
             self.last_received = Some(header.frame_no.get());
+        }
+
+        if prefetched {
+            self.sync_stats.add_prefetched_bytes_used(bytes);
+        } else {
+            self.sync_stats.add_synced_bytes_used(bytes);
         }
 
         let frames_iter = frames
@@ -174,17 +265,18 @@ impl RemoteClient {
         Result<<Self as ReplicatorClient>::FrameStream, Error>,
         Duration,
     ) {
-        let (frames, time) = match self.prefetched_batch_log_entries.take() {
-            Some((result, time)) => (result, time),
+        let ((frames, time), prefetched) = match self.prefetched_batch_log_entries.take() {
+            Some((result, time)) => ((result, time), true),
             None => {
                 let req = self.make_request(LogOffset {
                     next_offset: self.next_offset(),
                     wal_flavor: None,
                 });
-                time(self.remote.replication.batch_log_entries(req)).await
+                let result = time(self.remote.replication.batch_log_entries(req)).await;
+                (result, false)
             }
         };
-        let res = self.handle_next_frames_response(frames).await;
+        let res = self.handle_next_frames_response(frames, prefetched).await;
         (res, time)
     }
 
@@ -193,6 +285,7 @@ impl RemoteClient {
             next_offset: self.next_offset(),
             wal_flavor: None,
         });
+        let sync_stats = self.sync_stats.clone();
         let mut frames = self
             .remote
             .replication
@@ -200,6 +293,10 @@ impl RemoteClient {
             .await?
             .into_inner()
             .map_err(|e| e.into())
+            .map_ok(move |f| {
+                sync_stats.add_snapshot_bytes(f.data.len() as u64);
+                f
+            })
             .peekable();
 
         {
@@ -211,6 +308,7 @@ impl RemoteClient {
                 self.last_received = Some(header.frame_no.get());
             }
         }
+
 
         Ok(Box::pin(frames))
     }
