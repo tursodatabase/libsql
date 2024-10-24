@@ -11,10 +11,10 @@ docker run --name some-sqld -p 8080:8080 -ti \
 ## Launch a replica instance
 
 ```
-docker run --name some-sqld-replica -p 8081:8080 -ti
+docker run --name some-sqld-replica -p 8081:8080 -ti \
     -e SQLD_NODE=replica \
     -e SQLD_PRIMARY_URL=https://<host>:<port> \
-    ghcr.io/tursodatabase/libsql-server:lastest
+    ghcr.io/tursodatabase/libsql-server:latest
 ````
 
 ## Running on Apple Silicon
