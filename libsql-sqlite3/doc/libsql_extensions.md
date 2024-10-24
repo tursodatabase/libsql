@@ -355,3 +355,32 @@ static sqlite3_module helloModule = {
     .xPreparedSql = helloPreparedSql,
 };
 ```
+
+## WAL API
+
+The libSQL has the following WAL API functions, which are useful for
+syncing the WAL between databases:
+
+* `libsql_wal_disable_checkpoint` -- Disable checkpointing, including on database close.
+* `libsql_wal_frame_count` -- Get the number of frames in the WAL.
+* `libsql_wal_get_frame` -- Get a frame from the WAL.
+* `libsql_wal_insert_begin` -- Begin WAL insertion.
+* `libsql_wal_insert_frame` -- Insert a frame into the WAL.
+* `libsql_wal_insert_end` -- End WAL insertion.
+
+Example usage:
+
+```c
+static void sync_db(sqlite3 *db_primary, sqlite3 *db_backup){
+  unsigned int max_frame;
+
+  libsql_wal_frame_count(db_primary, &max_frame);
+  libsql_wal_begin_commit(db_backup);
+  for(int i=1; i<=max_frame; i++){
+    char frame[4096+24];
+    libsql_wal_get_frame(db_primary, i, frame, sizeof(frame));
+    libsql_wal_insert_frame(db_backup, i, frame, sizeof(frame));
+  }
+  libsql_wal_end_commit(db_backup);
+}
+```

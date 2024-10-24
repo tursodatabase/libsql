@@ -10550,6 +10550,59 @@ SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
 SQLITE_API void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), void *arg);
 
 /*
+** CAPI3REF: Disable WAL checkpointing
+** METHOD: sqlite3
+**
+** ^The [libsql_wal_disable_checkpoint(D)] interface disables automatic
+** checkpointing of the WAL file for [database connection] D.
+**
+** Note: This function disables WAL checkpointing entirely, including when
+** the last database connection is closed. This is different from
+** sqlite3_wal_autocheckpoint() which only disables automatic checkpoints
+** for the current connection, but still allows checkpointing when the
+** connection is closed.
+*/
+SQLITE_API int libsql_wal_disable_checkpoint(sqlite3 *db);
+
+/*
+** CAPI3REF: Get the number of frames in the WAL file
+** METHOD: sqlite3
+**
+** ^The [libsql_wal_frame_count(D,P)] interface returns the number of frames
+** in the WAL file for [database connection] D into *P.
+*/
+SQLITE_API int libsql_wal_frame_count(sqlite3*, unsigned int*);
+
+/*
+** CAPI3REF: Get a frame from the WAL file
+** METHOD: sqlite3
+**
+** ^The [libsql_wal_get_frame(D,I,P,S)] interface extracts frame I from
+** the WAL file for [database connection] D into memory obtained from
+** [sqlite3_malloc64()] and returns a pointer to that memory. The size of
+** the memory allocated is given by S.
+*/
+SQLITE_API int libsql_wal_get_frame(sqlite3*, unsigned int, void*, unsigned int);
+
+/*
+** CAPI3REF: Begin frame insertion into the WAL
+** METHOD: sqlite3
+*/
+SQLITE_API int libsql_wal_insert_begin(sqlite3*);
+
+/*
+** CAPI3REF: End frame insertion into the WAL
+** METHOD: sqlite3
+*/
+SQLITE_API int libsql_wal_insert_end(sqlite3*);
+
+/*
+** CAPI3REF: Insert a frame into the WAL
+** METHOD: sqlite3
+*/
+SQLITE_API int libsql_wal_insert_frame(sqlite3*, unsigned int, void *, unsigned int);
+
+/*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
 **
@@ -13574,6 +13627,7 @@ typedef struct libsql_wal_methods {
   /* Read a page from the write-ahead log, if it is present. */
   int (*xFindFrame)(wal_impl* pWal, unsigned int, unsigned int *);
   int (*xReadFrame)(wal_impl* pWal, unsigned int, int, unsigned char *);
+  int (*xReadFrameRaw)(wal_impl* pWal, unsigned int, int, unsigned char *);
 
   /* If the WAL is not empty, return the size of the database. */
   unsigned int (*xDbsize)(wal_impl* pWal);
@@ -13592,6 +13646,9 @@ typedef struct libsql_wal_methods {
   /* Move the write position of the WAL back to iFrame.  Called in
   ** response to a ROLLBACK TO command. */
   int (*xSavepointUndo)(wal_impl* pWal, unsigned int *aWalData);
+
+  /* Return the number of frames in the WAL */
+  int (*xFrameCount)(wal_impl* pWal, int, unsigned int *);
 
   /* Write a frame or frames to the log. */
   int (*xFrames)(wal_impl* pWal, int, libsql_pghdr *, unsigned int, int, int, int*);
