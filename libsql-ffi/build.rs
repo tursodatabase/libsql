@@ -478,6 +478,10 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
             cmake_opts.push(&cmake_toolchain_opt);
             writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"Linux\")").unwrap();
             writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"arm64\")").unwrap();
+        } else if cc.contains("x86_64") && cc.contains("darwin") {
+            cmake_opts.push(&cmake_toolchain_opt);
+            writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"Darwin\")").unwrap();
+            writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"x86_64\")").unwrap();
         }
     }
     if let Some(cc) = cross_cc {
