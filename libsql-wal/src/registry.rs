@@ -1,14 +1,11 @@
 use std::io;
-use std::num::NonZeroU64;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use dashmap::DashMap;
-use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::{Condvar, Mutex};
-use rand::Rng;
 use roaring::RoaringBitmap;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
@@ -22,20 +19,14 @@ use crate::io::file::FileExt;
 use crate::io::{Io, StdIO};
 use crate::replication::injector::Injector;
 use crate::replication::storage::{ReplicateFromStorage as _, StorageReplicator};
-use crate::segment::list::SegmentList;
-use crate::segment::Segment;
-use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
-use crate::segment_swap_strategy::duration::DurationSwapStrategy;
-use crate::segment_swap_strategy::frame_count::FrameCountSwapStrategy;
-use crate::segment_swap_strategy::SegmentSwapStrategy;
-use crate::shared_wal::{SharedWal, SwapLog};
-use crate::storage::{OnStoreCallback, Storage};
-use crate::transaction::TxGuard;
+use crate::segment::sealed::SealedSegment;
+use crate::shared_wal::SharedWal;
+use crate::storage::Storage;
 use crate::{LibsqlFooter, LIBSQL_PAGE_SIZE};
 use libsql_sys::name::NamespaceName;
 
-enum Slot<IO: Io> {
-    Wal(Arc<SharedWal<IO>>),
+enum Slot<IO: Io, S> {
+    Wal(Arc<SharedWal<IO, S>>),
     /// Only a single thread is allowed to instantiate the wal. The first thread to acquire an
     /// entry in the registry map puts a building slot. Other connections will wait for the mutex
     /// to turn to true, after the slot has been updated to contain the wal
@@ -48,7 +39,7 @@ enum Slot<IO: Io> {
 pub struct WalRegistry<IO: Io, S> {
     io: Arc<IO>,
     shutdown: AtomicBool,
-    opened: DashMap<NamespaceName, Slot<IO>>,
+    opened: DashMap<NamespaceName, Slot<IO, S>>,
     storage: Arc<S>,
     checkpoint_notifier: mpsc::Sender<CheckpointMessage>,
 }
@@ -79,7 +70,7 @@ impl<IO: Io, S> WalRegistry<IO, S> {
         Ok(registry)
     }
 
-    pub async fn get_async(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO>>> {
+    pub async fn get_async(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO, S>>> {
         loop {
             let notify = {
                 match self.opened.get(namespace).as_deref() {
@@ -95,82 +86,6 @@ impl<IO: Io, S> WalRegistry<IO, S> {
     }
 }
 
-impl<IO, S> SwapLog<IO> for WalRegistry<IO, S>
-where
-    IO: Io,
-    S: Storage<Segment = SealedSegment<IO::File>>,
-{
-    #[tracing::instrument(skip_all)]
-    fn swap_current(
-        &self,
-        shared: &SharedWal<IO>,
-        tx: &dyn TxGuard<<IO as Io>::File>,
-    ) -> Result<()> {
-        assert!(tx.is_commited());
-        self.swap_current_inner(shared)
-    }
-}
-
-#[tracing::instrument(skip_all, fields(namespace = namespace.as_str(), start_frame_no = seg.start_frame_no()))]
-fn maybe_store_segment<S: Storage>(
-    storage: &S,
-    notifier: &tokio::sync::mpsc::Sender<CheckpointMessage>,
-    namespace: &NamespaceName,
-    durable_frame_no: &Arc<Mutex<u64>>,
-    seg: S::Segment,
-) {
-    if seg.last_committed() > *durable_frame_no.lock() {
-        let cb: OnStoreCallback = Box::new({
-            let notifier = notifier.clone();
-            let durable_frame_no = durable_frame_no.clone();
-            let namespace = namespace.clone();
-            move |fno| {
-                Box::pin(async move {
-                    update_durable(fno, notifier, durable_frame_no, namespace).await;
-                })
-            }
-        });
-        storage.store(namespace, seg, None, cb);
-    } else {
-        // segment can be checkpointed right away.
-        // FIXME: this is only necessary because some tests call this method in an async context.
-        #[cfg(debug_assertions)]
-        {
-            let namespace = namespace.clone();
-            let notifier = notifier.clone();
-            tokio::spawn(async move {
-                let _ = notifier.send(CheckpointMessage::Namespace(namespace)).await;
-            });
-        }
-
-        #[cfg(not(debug_assertions))]
-        {
-            let _ = notifier.blocking_send(CheckpointMessage::Namespace(namespace.clone()));
-        }
-
-        tracing::debug!(
-            segment_end = seg.last_committed(),
-            durable_frame_no = *durable_frame_no.lock(),
-            "segment doesn't contain any new data"
-        );
-    }
-}
-
-async fn update_durable(
-    new_durable: u64,
-    notifier: mpsc::Sender<CheckpointMessage>,
-    durable_frame_no_slot: Arc<Mutex<u64>>,
-    namespace: NamespaceName,
-) {
-    {
-        let mut g = durable_frame_no_slot.lock();
-        if *g < new_durable {
-            *g = new_durable;
-        }
-    }
-    let _ = notifier.send(CheckpointMessage::Namespace(namespace)).await;
-}
-
 impl<IO, S> WalRegistry<IO, S>
 where
     IO: Io,
@@ -181,7 +96,7 @@ where
         self: Arc<Self>,
         db_path: &Path,
         namespace: &NamespaceName,
-    ) -> Result<Arc<SharedWal<IO>>> {
+    ) -> Result<Arc<SharedWal<IO, S>>> {
         if self.shutdown.load(Ordering::SeqCst) {
             return Err(crate::error::Error::ShuttingDown);
         }
@@ -219,10 +134,25 @@ where
                 Ok((notifier, async_notifier)) => {
                     // if try_open succedded, then the slot was updated and contains the shared wal, if it
                     // failed we need to remove the slot. Either way, notify all waiters
-                    let ret = self.clone().try_open(&namespace, db_path);
-                    if ret.is_err() {
-                        self.opened.remove(namespace);
-                    }
+                    let ret = match SharedWal::try_open(
+                        self.io.clone(),
+                        self.storage.clone(),
+                        &self.checkpoint_notifier,
+                        namespace,
+                        db_path,
+                    ) {
+                        Ok(shared) => {
+                            let shared = Arc::new(shared);
+                            self.opened
+                                .insert(namespace.clone(), Slot::Wal(shared.clone()));
+                            Ok(shared)
+                        }
+                        Err(e) => {
+                            tracing::error!("error opening wal: {e}");
+                            self.opened.remove(namespace);
+                            Err(e)
+                        }
+                    };
 
                     *notifier.1.lock() = true;
                     notifier.0.notify_all();
@@ -240,182 +170,7 @@ where
         }
     }
 
-    fn try_open(
-        self: Arc<Self>,
-        namespace: &NamespaceName,
-        db_path: &Path,
-    ) -> Result<Arc<SharedWal<IO>>> {
-        let db_file = self.io.open(false, true, true, db_path)?;
-        let db_file_len = db_file.len()?;
-        let header = if db_file_len > 0 {
-            let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
-            db_file.read_exact_at(header.as_bytes_mut(), 0)?;
-            Some(header)
-        } else {
-            None
-        };
-
-        let footer = self.try_read_footer(&db_file)?;
-
-        let mut checkpointed_frame_no = footer.map(|f| f.replication_index.get()).unwrap_or(0);
-
-        // the trick here to prevent sqlite to open our db is to create a dir <db-name>-wal. Sqlite
-        // will think that this is a wal file, but it's in fact a directory and it will not like
-        // it.
-        let mut wals_path = db_path.to_owned();
-        wals_path.set_file_name(format!(
-            "{}-wal",
-            db_path.file_name().unwrap().to_str().unwrap()
-        ));
-        self.io.create_dir_all(&wals_path)?;
-        // TODO: handle that with abstract io
-        let dir = walkdir::WalkDir::new(&wals_path)
-            .sort_by_file_name()
-            .into_iter();
-
-        // we only checkpoint durable frame_no so this is a good first estimate without an actual
-        // network call.
-        let durable_frame_no = Arc::new(Mutex::new(checkpointed_frame_no));
-
-        let list = SegmentList::default();
-        for entry in dir {
-            let entry = entry.map_err(|e| e.into_io_error().unwrap())?;
-            if entry
-                .path()
-                .extension()
-                .map(|e| e.to_str().unwrap() != "seg")
-                .unwrap_or(true)
-            {
-                continue;
-            }
-
-            let file = self.io.open(false, true, true, entry.path())?;
-
-            if let Some(sealed) = SealedSegment::open(
-                file.into(),
-                entry.path().to_path_buf(),
-                Default::default(),
-                self.io.now(),
-            )? {
-                list.push(sealed.clone());
-                maybe_store_segment(
-                    self.storage.as_ref(),
-                    &self.checkpoint_notifier,
-                    &namespace,
-                    &durable_frame_no,
-                    sealed,
-                );
-            }
-        }
-
-        let log_id = match footer {
-            Some(footer) if list.is_empty() => footer.log_id(),
-            None if list.is_empty() => self.io.uuid(),
-            Some(footer) => {
-                let log_id = list
-                    .with_head(|h| h.header().log_id.get())
-                    .expect("non-empty list should have a head");
-                let log_id = Uuid::from_u128(log_id);
-                assert_eq!(log_id, footer.log_id());
-                log_id
-            }
-            None => {
-                let log_id = list
-                    .with_head(|h| h.header().log_id.get())
-                    .expect("non-empty list should have a head");
-                Uuid::from_u128(log_id)
-            }
-        };
-
-        // if there is a tail, then the latest checkpointed frame_no is one before the the
-        // start frame_no of the tail. We must read it from the tail, because a partial
-        // checkpoint may have occured before a crash.
-        if let Some(last) = list.last() {
-            checkpointed_frame_no = (last.start_frame_no() - 1).max(1)
-        }
-
-        let (db_size, next_frame_no) = list
-            .with_head(|segment| {
-                let header = segment.header();
-                (header.size_after(), header.next_frame_no())
-            })
-            .unwrap_or_else(|| match header {
-                Some(header) => (
-                    header.db_size.get(),
-                    NonZeroU64::new(checkpointed_frame_no + 1)
-                        .unwrap_or(NonZeroU64::new(1).unwrap()),
-                ),
-                None => (0, NonZeroU64::new(1).unwrap()),
-            });
-
-        let current_segment_path = wals_path.join(format!("{next_frame_no:020}.seg"));
-
-        let segment_file = self.io.open(true, true, true, &current_segment_path)?;
-        let salt = self.io.with_rng(|rng| rng.gen());
-
-        let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
-            segment_file,
-            current_segment_path,
-            next_frame_no,
-            db_size,
-            list.into(),
-            salt,
-            log_id,
-        )?));
-
-        let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
-
-        // FIXME: make swap strategy configurable
-        // This strategy will perform a swap if either the wal is bigger than 20k frames, or older
-        // than 10 minutes, or if the frame count is greater than a 1000 and the wal was last
-        // swapped more than 30 secs ago
-        let swap_strategy = Box::new(
-            DurationSwapStrategy::new(Duration::from_secs(5 * 60))
-                .or(FrameCountSwapStrategy::new(20_000))
-                .or(FrameCountSwapStrategy::new(1000)
-                    .and(DurationSwapStrategy::new(Duration::from_secs(30)))),
-        );
-
-        let shared = Arc::new(SharedWal {
-            current,
-            wal_lock: Default::default(),
-            db_file,
-            registry: self.clone(),
-            namespace: namespace.clone(),
-            checkpointed_frame_no: checkpointed_frame_no.into(),
-            new_frame_notifier,
-            durable_frame_no,
-            stored_segments: Box::new(StorageReplicator::new(
-                self.storage.clone(),
-                namespace.clone(),
-            )),
-            shutdown: false.into(),
-            checkpoint_notifier: self.checkpoint_notifier.clone(),
-            io: self.io.clone(),
-            swap_strategy,
-            wals_path: wals_path.to_owned(),
-        });
-
-        self.opened
-            .insert(namespace.clone(), Slot::Wal(shared.clone()));
-
-        return Ok(shared);
-    }
-
-    fn try_read_footer(&self, db_file: &impl FileExt) -> Result<Option<LibsqlFooter>> {
-        let len = db_file.len()?;
-        if len as usize % LIBSQL_PAGE_SIZE as usize == size_of::<LibsqlFooter>() {
-            let mut footer: LibsqlFooter = LibsqlFooter::new_zeroed();
-            let footer_offset = (len / LIBSQL_PAGE_SIZE as u64) * LIBSQL_PAGE_SIZE as u64;
-            db_file.read_exact_at(footer.as_bytes_mut(), footer_offset)?;
-            footer.validate()?;
-            Ok(Some(footer))
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub async fn tombstone(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO>>> {
+    pub async fn tombstone(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO, S>>> {
         // if a wal is currently being openned, let it
         {
             let v = self.opened.get(namespace)?;
@@ -545,55 +300,16 @@ where
         Ok(())
     }
 
-    #[tracing::instrument(skip_all)]
-    fn swap_current_inner(&self, shared: &SharedWal<IO>) -> Result<()> {
-        let current = shared.current.load();
-        if current.is_empty() {
-            return Ok(());
-        }
-        let start_frame_no = current.next_frame_no();
-        let path = shared.wals_path.join(format!("{start_frame_no:020}.seg"));
-
-        let segment_file = self.io.open(true, true, true, &path)?;
-        let salt = self.io.with_rng(|rng| rng.gen());
-        let new = CurrentSegment::create(
-            segment_file,
-            path,
-            start_frame_no,
-            current.db_size(),
-            current.tail().clone(),
-            salt,
-            current.log_id(),
-        )?;
-        // sealing must the last fallible operation, because we don't want to end up in a situation
-        // where the current log is sealed and it wasn't swapped.
-        if let Some(sealed) = current.seal(self.io.now())? {
-            new.tail().push(sealed.clone());
-            maybe_store_segment(
-                self.storage.as_ref(),
-                &self.checkpoint_notifier,
-                &shared.namespace,
-                &shared.durable_frame_no,
-                sealed,
-            );
-        }
-
-        shared.current.swap(Arc::new(new));
-        tracing::debug!("current segment swapped");
-
-        Ok(())
-    }
-
     pub fn storage(&self) -> Arc<S> {
         self.storage.clone()
     }
 }
 
-#[tracing::instrument(skip_all, fields(namespace = shared.namespace().as_str()))]
-async fn sync_one<IO, S>(shared: Arc<SharedWal<IO>>, storage: Arc<S>) -> Result<()>
+#[tracing::instrument(skip_all, fields(namespace = shared.namespace.as_str()))]
+async fn sync_one<IO, S>(shared: Arc<SharedWal<IO, S>>, storage: Arc<S>) -> Result<()>
 where
     IO: Io,
-    S: Storage,
+    S: Storage<Segment = SealedSegment<IO::File>>,
 {
     let remote_durable_frame_no = storage
         .durable_frame_no(shared.namespace(), None)

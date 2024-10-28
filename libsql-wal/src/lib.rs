@@ -124,7 +124,7 @@ pub mod test {
             Self { tmp, registry, wal }
         }
 
-        pub fn shared(&self, namespace: &str) -> Arc<SharedWal<IO>> {
+        pub fn shared(&self, namespace: &str) -> Arc<SharedWal<IO, TestStorage<IO>>> {
             let path = self.tmp.path().join(namespace).join("data");
             let registry = self.registry.clone();
             let namespace = NamespaceName::from_string(namespace.into());
@@ -135,7 +135,10 @@ pub mod test {
             self.tmp.path().join(namespace)
         }
 
-        pub fn open_conn(&self, namespace: &'static str) -> libsql_sys::Connection<LibsqlWal<IO>> {
+        pub fn open_conn(
+            &self,
+            namespace: &'static str,
+        ) -> libsql_sys::Connection<LibsqlWal<IO, TestStorage<IO>>> {
             let path = self.db_path(namespace);
             let wal = self.wal.clone();
             std::fs::create_dir_all(&path).unwrap();
@@ -159,7 +162,7 @@ pub mod test {
         }
     }
 
-    pub fn seal_current_segment<IO: Io>(shared: &SharedWal<IO>) {
+    pub fn seal_current_segment<IO: Io>(shared: &SharedWal<IO, TestStorage<IO>>) {
         let mut tx = shared.begin_read(99999).into();
         shared.upgrade(&mut tx).unwrap();
         {
@@ -170,7 +173,7 @@ pub mod test {
         tx.end();
     }
 
-    pub async fn wait_current_durable<IO: Io>(shared: &SharedWal<IO>) {
+    pub async fn wait_current_durable<IO: Io>(shared: &SharedWal<IO, TestStorage>) {
         let current = shared.current.load().next_frame_no().get() - 1;
         loop {
             {

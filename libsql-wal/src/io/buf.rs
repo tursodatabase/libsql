@@ -154,6 +154,17 @@ impl<T> ZeroCopyBoxIoBuf<T> {
         Self { init: 0, inner }
     }
 
+    /// same as new_uninit, but partially fills the buffer starting at offset
+    ///
+    /// # Safety: The caller must ensure that the remaining bytes are initialized
+    pub unsafe fn new_uninit_partial(inner: Box<T>, offset: usize) -> Self {
+        assert!(offset < size_of::<T>());
+        Self {
+            inner,
+            init: offset,
+        }
+    }
+
     fn is_init(&self) -> bool {
         self.init == size_of::<T>()
     }

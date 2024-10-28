@@ -4,14 +4,16 @@ use std::sync::Arc;
 
 use crate::error::Result;
 use crate::io::Io;
+use crate::segment::sealed::SealedSegment;
 use crate::segment::Frame;
 use crate::shared_wal::SharedWal;
+use crate::storage::Storage;
 use crate::transaction::{Transaction, TxGuardOwned};
 
 /// The injector takes frames and injects them in the wal.
-pub struct Injector<IO: Io> {
+pub struct Injector<IO: Io, S> {
     // The wal to which we are injecting
-    wal: Arc<SharedWal<IO>>,
+    wal: Arc<SharedWal<IO, S>>,
     buffer: Vec<Box<Frame>>,
     /// capacity of the frame buffer
     capacity: usize,
@@ -20,8 +22,12 @@ pub struct Injector<IO: Io> {
     previous_durable_frame_no: u64,
 }
 
-impl<IO: Io> Injector<IO> {
-    pub fn new(wal: Arc<SharedWal<IO>>, buffer_capacity: usize) -> Result<Self> {
+impl<IO, S> Injector<IO, S>
+where
+    IO: Io,
+    S: Storage<Segment = SealedSegment<IO::File>>,
+{
+    pub fn new(wal: Arc<SharedWal<IO, S>>, buffer_capacity: usize) -> Result<Self> {
         Ok(Self {
             wal,
             buffer: Vec::with_capacity(buffer_capacity),

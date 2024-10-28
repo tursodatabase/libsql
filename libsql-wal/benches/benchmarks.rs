@@ -55,7 +55,7 @@ fn prepare_for_random_reads<W: Wal>(conn: &mut Connection<W>) {
     }
 }
 
-fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal<StdIO>>)) {
+fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal<StdIO, NoStorage>>)) {
     let tmp = tempdir().unwrap();
     let resolver = |_: &Path| NamespaceName::from_string("test".into());
 

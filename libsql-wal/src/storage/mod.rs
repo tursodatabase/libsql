@@ -126,6 +126,10 @@ impl SegmentKey {
             .unwrap()
             .to_utc()
     }
+
+    pub fn span(&self) -> u64 {
+        self.end_frame_no - self.start_frame_no
+    }
 }
 
 impl From<&SegmentMeta> for SegmentKey {

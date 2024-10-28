@@ -317,6 +317,9 @@ fn replica_interactive_transaction() {
             .unwrap();
         tx.commit().await.unwrap();
 
+        // libsql-client doesn't support read your writes yet
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
         let count = conn
             .query("select count(0) from test", ())
             .await

@@ -1,0 +1,39 @@
+---
+source: libsql-wal/src/storage/compaction/strategy/tiered.rs
+expression: partition.first().unwrap()
+---
+SegmentSet {
+    namespace: test,
+    segments: [
+        SegmentKey {
+            start_frame_no: 1,
+            end_frame_no: 20,
+            timestamp: 1970-01-01T00:00:00Z,
+        },
+        SegmentKey {
+            start_frame_no: 21,
+            end_frame_no: 27,
+            timestamp: 1970-01-01T00:00:00Z,
+        },
+        SegmentKey {
+            start_frame_no: 28,
+            end_frame_no: 41,
+            timestamp: 1970-01-01T00:00:00Z,
+        },
+        SegmentKey {
+            start_frame_no: 42,
+            end_frame_no: 70,
+            timestamp: 1970-01-01T00:00:00Z,
+        },
+        SegmentKey {
+            start_frame_no: 71,
+            end_frame_no: 81,
+            timestamp: 1970-01-01T00:00:00Z,
+        },
+        SegmentKey {
+            start_frame_no: 82,
+            end_frame_no: 100,
+            timestamp: 1970-01-01T00:00:00Z,
+        },
+    ],
+}
