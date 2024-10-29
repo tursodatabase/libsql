@@ -747,17 +747,25 @@ out:
 
 int vectorIndexGetParameters(
   sqlite3 *db,
+  const char *zDbSName,
   const char *zIdxName,
   VectorIdxParams *pParams
 ) {
   int rc = SQLITE_OK;
+  assert( zDbSName != NULL );
 
-  static const char* zSelectSql = "SELECT metadata FROM " VECTOR_INDEX_GLOBAL_META_TABLE " WHERE name = ?";
+  static const char *zSelectSqlTemplate = "SELECT metadata FROM \"%w\"." VECTOR_INDEX_GLOBAL_META_TABLE " WHERE name = ?";
+  char* zSelectSql;
+  zSelectSql = sqlite3_mprintf(zSelectSqlTemplate, zDbSName);
+  if( zSelectSql == NULL ){
+    return SQLITE_NOMEM_BKPT;
+  }
   // zSelectSqlPekkaLegacy handles the case when user created DB before 04 July 2024 (https://discord.com/channels/933071162680958986/1225560924526477322/1258367912402489397)
   // when instead of table with binary parameters rigid schema was used for index settings
   // we should drop this eventually - but for now we postponed this decision
   static const char* zSelectSqlPekkaLegacy = "SELECT vector_type, block_size, dims, distance_ops FROM libsql_vector_index WHERE name = ?";
   rc = vectorIndexTryGetParametersFromBinFormat(db, zSelectSql, zIdxName, pParams);
+  sqlite3_free(zSelectSql);
   if( rc == SQLITE_OK ){
     return SQLITE_OK;
   }
@@ -940,9 +948,32 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
   return CREATE_OK;
 }
 
+// extracts schema and index name part if full index name is composite (e.g. schema_name.index_name)
+// if full index name has no schema part - function returns SQLITE_OK but leaves pzIdxDbSName and pzIdxName untouched
+int getIndexNameParts(sqlite3 *db, const char *zIdxFullName, char **pzIdxDbSName, char **pzIdxName) {
+  int nFullName, nDbSName;
+  const char *pDot = zIdxFullName;
+  while( *pDot != '.' && *pDot != '\0' ){
+    pDot++;
+  }
+  if( *pDot == '\0' ){
+    return SQLITE_OK;
+  }
+  assert( *pDot == '.' );
+  nFullName = sqlite3Strlen30(zIdxFullName);
+  nDbSName = pDot - zIdxFullName;
+  *pzIdxDbSName = sqlite3DbStrNDup(db, zIdxFullName, nDbSName);
+  *pzIdxName = sqlite3DbStrNDup(db, pDot + 1, nFullName - nDbSName - 1);
+  if( pzIdxName == NULL || pzIdxDbSName == NULL ){
+    sqlite3DbFree(db, *pzIdxName);
+    sqlite3DbFree(db, *pzIdxDbSName);
+    return SQLITE_NOMEM_BKPT;
+  }
+  return SQLITE_OK;
+}
+
 int vectorIndexSearch(
   sqlite3 *db,
-  const char* zDbSName,
   int argc,
   sqlite3_value **argv,
   VectorOutRows *pRows,
@@ -952,7 +983,11 @@ int vectorIndexSearch(
 ) {
   int type, dims, k, rc;
   double kDouble;
-  const char *zIdxName;
+  const char *zIdxFullName;
+  char *zIdxDbSNameAlloc = NULL;  // allocated managed schema name string - must be freed if not null 
+  char *zIdxNameAlloc = NULL;     // allocated managed index name string - must be freed if not null
+  const char *zIdxDbSName = NULL; // schema name of the index (can be static in cases where explicit schema is omitted - so must not be freed)
+  const char *zIdxName = NULL;    // index name (can be extracted with sqlite3_value_text and managed by SQLite - so must not be freed)
   const char *zErrMsg;
   Vector *pVector = NULL;
   DiskAnnIndex *pDiskAnn = NULL;
@@ -960,8 +995,6 @@ int vectorIndexSearch(
   VectorIdxKey pKey;
   VectorIdxParams idxParams;
   vectorIdxParamsInit(&idxParams, NULL, 0);
-
-  assert( zDbSName != NULL );
 
   if( argc != 3 ){
     *pzErrMsg = sqlite3_mprintf("vector index(search): got %d parameters, expected 3", argc);
@@ -1013,19 +1046,33 @@ int vectorIndexSearch(
     rc = SQLITE_ERROR;
     goto out;
   }
-  zIdxName = (const char*)sqlite3_value_text(argv[0]);
-  if( vectorIndexGetParameters(db, zIdxName, &idxParams) != 0 ){
+  zIdxFullName = (const char*)sqlite3_value_text(argv[0]);
+  rc = getIndexNameParts(db, zIdxFullName, &zIdxDbSNameAlloc, &zIdxNameAlloc);
+  if( rc != SQLITE_OK ){
+    *pzErrMsg = sqlite3_mprintf("vector index(search): failed to parse index name");
+    goto out;
+  }
+  assert( (zIdxDbSNameAlloc == NULL && zIdxNameAlloc == NULL) || (zIdxDbSNameAlloc != NULL && zIdxNameAlloc != NULL) );
+  if( zIdxDbSNameAlloc == NULL && zIdxNameAlloc == NULL ){
+    zIdxDbSName = "main";
+    zIdxName = zIdxFullName;
+  } else{
+    zIdxDbSName = zIdxDbSNameAlloc;
+    zIdxName = zIdxNameAlloc;
+  }
+
+  if( vectorIndexGetParameters(db, zIdxDbSName, zIdxName, &idxParams) != 0 ){
     *pzErrMsg = sqlite3_mprintf("vector index(search): failed to parse vector index parameters");
     rc = SQLITE_ERROR;
     goto out;
   }
-  pIndex = sqlite3FindIndex(db, zIdxName, zDbSName);
+  pIndex = sqlite3FindIndex(db, zIdxName, zIdxDbSName);
   if( pIndex == NULL ){
     *pzErrMsg = sqlite3_mprintf("vector index(search): index not found");
     rc = SQLITE_ERROR;
     goto out;
   }
-  rc = diskAnnOpenIndex(db, zDbSName, zIdxName, &idxParams, &pDiskAnn);
+  rc = diskAnnOpenIndex(db, zIdxDbSName, zIdxName, &idxParams, &pDiskAnn);
   if( rc != SQLITE_OK ){
     *pzErrMsg = sqlite3_mprintf("vector index(search): failed to open diskann index");
     goto out;
@@ -1045,6 +1092,8 @@ out:
   if( pVector != NULL ){
     vectorFree(pVector);
   }
+  sqlite3DbFree(db, zIdxNameAlloc);
+  sqlite3DbFree(db, zIdxDbSNameAlloc);
   return rc;
 }
 
@@ -1094,7 +1143,7 @@ int vectorIndexCursorInit(
 
   assert( zDbSName != NULL );
 
-  if( vectorIndexGetParameters(db, zIndexName, &params) != 0 ){
+  if( vectorIndexGetParameters(db, zDbSName, zIndexName, &params) != 0 ){
     return SQLITE_ERROR;
   }
   pCursor = sqlite3DbMallocZero(db, sizeof(VectorIdxCursor));
