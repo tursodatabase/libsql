@@ -981,7 +981,7 @@ int vectorIndexSearch(
   int *nWrites,
   char **pzErrMsg
 ) {
-  int type, dims, k, rc;
+  int type, dims, k, rc, iDb = -1;
   double kDouble;
   const char *zIdxFullName;
   char *zIdxDbSNameAlloc = NULL;  // allocated managed schema name string - must be freed if not null 
@@ -1059,6 +1059,18 @@ int vectorIndexSearch(
   } else{
     zIdxDbSName = zIdxDbSNameAlloc;
     zIdxName = zIdxNameAlloc;
+    iDb = sqlite3FindDbName(db, zIdxDbSName);
+    if( iDb < 0 ){
+      *pzErrMsg = sqlite3_mprintf("vector index(search): unknown schema '%s'", zIdxDbSName);
+      rc = SQLITE_ERROR;
+      goto out;
+    }
+    // we need to hold mutex to protect schema against unwanted changes
+    // this code is necessary, otherwise sqlite3SchemaMutexHeld assert will fail
+    if( iDb !=1 ){
+      // not "main" DB which we already hold mutex for
+      sqlite3BtreeEnter(db->aDb[iDb].pBt);
+    }
   }
 
   if( vectorIndexGetParameters(db, zIdxDbSName, zIdxName, &idxParams) != 0 ){
@@ -1094,6 +1106,9 @@ out:
   }
   sqlite3DbFree(db, zIdxNameAlloc);
   sqlite3DbFree(db, zIdxDbSNameAlloc);
+  if( iDb >= 0 && iDb != 1 ){
+    sqlite3BtreeLeave(db->aDb[iDb].pBt);
+  }
   return rc;
 }
 
