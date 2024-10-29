@@ -489,6 +489,7 @@ do_test vector-errors {
   sqlite3_exec db { CREATE TABLE t_mixed_t( v FLOAT32(3)); }
   sqlite3_exec db { INSERT INTO t_mixed_t VALUES('[1]'); }
   lappend ret [error_messages {CREATE INDEX t_mixed_t_idx ON t_mixed_t( libsql_vector_idx(v) )}]
+  lappend ret [error_messages {SELECT * FROM vector_top_k('t.t_attach_idx', vector('[3,4,5]'), 4)}]
 } [list {*}{
   {no such table: main.t_no}
   {no such column: v}
@@ -507,6 +508,7 @@ do_test vector-errors {
   {vector index(search): dimensions are different: 2 != 4}
   {vector index(search): third parameter (k) must be an integer, but float value were provided}
   {vector index(insert): dimensions are different: 1 != 3}
+  {vector index(search): unknown schema name 't'}
 }]
 
 
