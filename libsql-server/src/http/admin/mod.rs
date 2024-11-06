@@ -326,39 +326,39 @@ async fn handle_post_config<C>(
         .namespaces
         .config_store(NamespaceName::from_string(namespace.clone())?)
         .await?;
-    let mut config_after = (*store.get()).clone();
-    let config_before = config_after.clone();
-    config_after.block_reads = req.block_reads;
-    config_after.block_writes = req.block_writes;
-    config_after.block_reason = req.block_reason;
-    config_after.allow_attach = req.allow_attach;
-    config_after.txn_timeout = req.txn_timeout_s.map(Duration::from_secs);
+    let original = (*store.get()).clone();
+    let mut updated = original.clone();
+    updated.block_reads = req.block_reads;
+    updated.block_writes = req.block_writes;
+    updated.block_reason = req.block_reason;
+    updated.allow_attach = req.allow_attach;
+    updated.txn_timeout = req.txn_timeout_s.map(Duration::from_secs);
     if let Some(size) = req.max_db_size {
-        config_after.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
+        updated.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
     }
     if let Some(url) = req.heartbeat_url {
-        config_after.heartbeat_url = Some(Url::parse(&url)?);
+        updated.heartbeat_url = Some(Url::parse(&url)?);
     }
-    config_after.jwt_key = req.jwt_key;
+    updated.jwt_key = req.jwt_key;
     if let Some(mode) = req.durability_mode {
-        config_after.durability_mode = mode;
+        updated.durability_mode = mode;
     }
 
-    store.store(config_after.clone()).await?;
+    store.store(updated.clone()).await?;
     // we better to not log jwt token - so let's explicitly log necessary fields
     tracing::info!(
         message = "updated db config",
         namespace = namespace,
-        block_writes_before = config_before.block_writes,
-        block_writes_after = config_after.block_writes,
-        block_reads_before = config_before.block_reads,
-        block_reads_after = config_after.block_reads,
-        allow_attach_before = config_before.allow_attach,
-        allow_attach_after = config_after.allow_attach,
-        max_db_pages_before = config_before.max_db_pages,
-        max_db_pages_after = config_after.max_db_pages,
-        durability_mode_before = config_before.durability_mode.to_string(),
-        durability_mode_after = config_after.durability_mode.to_string(),
+        block_writes_before = original.block_writes,
+        block_writes_after = updated.block_writes,
+        block_reads_before = original.block_reads,
+        block_reads_after = updated.block_reads,
+        allow_attach_before = original.allow_attach,
+        allow_attach_after = updated.allow_attach,
+        max_db_pages_before = original.max_db_pages,
+        max_db_pages_after = updated.max_db_pages,
+        durability_mode_before = original.durability_mode.to_string(),
+        durability_mode_after = updated.durability_mode.to_string(),
     );
 
     Ok(())
