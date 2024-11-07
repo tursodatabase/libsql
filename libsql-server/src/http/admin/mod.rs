@@ -324,26 +324,42 @@ async fn handle_post_config<C>(
     }
     let store = app_state
         .namespaces
-        .config_store(NamespaceName::from_string(namespace)?)
+        .config_store(NamespaceName::from_string(namespace.clone())?)
         .await?;
-    let mut config = (*store.get()).clone();
-    config.block_reads = req.block_reads;
-    config.block_writes = req.block_writes;
-    config.block_reason = req.block_reason;
-    config.allow_attach = req.allow_attach;
-    config.txn_timeout = req.txn_timeout_s.map(Duration::from_secs);
+    let original = (*store.get()).clone();
+    let mut updated = original.clone();
+    updated.block_reads = req.block_reads;
+    updated.block_writes = req.block_writes;
+    updated.block_reason = req.block_reason;
+    updated.allow_attach = req.allow_attach;
+    updated.txn_timeout = req.txn_timeout_s.map(Duration::from_secs);
     if let Some(size) = req.max_db_size {
-        config.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
+        updated.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
     }
     if let Some(url) = req.heartbeat_url {
-        config.heartbeat_url = Some(Url::parse(&url)?);
+        updated.heartbeat_url = Some(Url::parse(&url)?);
     }
-    config.jwt_key = req.jwt_key;
+    updated.jwt_key = req.jwt_key;
     if let Some(mode) = req.durability_mode {
-        config.durability_mode = mode;
+        updated.durability_mode = mode;
     }
 
-    store.store(config).await?;
+    store.store(updated.clone()).await?;
+    // we better to not log jwt token - so let's explicitly log necessary fields
+    tracing::info!(
+        message = "updated db config",
+        namespace = namespace,
+        block_writes_before = original.block_writes,
+        block_writes_after = updated.block_writes,
+        block_reads_before = original.block_reads,
+        block_reads_after = updated.block_reads,
+        allow_attach_before = original.allow_attach,
+        allow_attach_after = updated.allow_attach,
+        max_db_pages_before = original.max_db_pages,
+        max_db_pages_after = updated.max_db_pages,
+        durability_mode_before = original.durability_mode.to_string(),
+        durability_mode_after = updated.durability_mode.to_string(),
+    );
 
     Ok(())
 }
