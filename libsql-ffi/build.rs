@@ -474,19 +474,28 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
         .unwrap();
 
     if let Some(ref cc) = cross_cc {
-        if cc.contains("aarch64") && cc.contains("linux") {
-            cmake_opts.push(&cmake_toolchain_opt);
-            writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"Linux\")").unwrap();
-            writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"arm64\")").unwrap();
-        } else if cc.contains("x86_64") && cc.contains("darwin") {
-            cmake_opts.push(&cmake_toolchain_opt);
-            writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"Darwin\")").unwrap();
-            writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"x86_64\")").unwrap();
-        }
-    }
-    if let Some(cc) = cross_cc {
+        let system_name = if cc.contains("linux") {
+            "Linux"
+        } else if cc.contains("darwin") {
+            "Darwin"
+        } else {
+            panic!("Unsupported cross target {}", cc)
+        };
+
+        let system_processor = if cc.contains("x86_64") {
+            "x86_64"
+        } else if cc.contains("aarch64") {
+            "arm64"
+        } else {
+            panic!("Unsupported cross target {}", cc)
+        };
+
+        cmake_opts.push(&cmake_toolchain_opt);
+        writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"{}\")", system_name).unwrap();
+        writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"{}\")", system_processor).unwrap();
         writeln!(toolchain_file, "set(CMAKE_C_COMPILER {})", cc).unwrap();
     }
+
     if let Some(cxx) = cross_cxx {
         writeln!(toolchain_file, "set(CMAKE_CXX_COMPILER {})", cxx).unwrap();
     }
