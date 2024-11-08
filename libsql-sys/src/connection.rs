@@ -271,11 +271,23 @@ impl<W: Wal> Connection<W> {
             conn
         };
 
+        #[cfg(not(target_os = "windows"))]
+        use std::os::unix::ffi::OsStrExt;
+
+        #[cfg(target_os = "windows")]
+        use std::os::windows::ffi::OsStrExt;
+
         #[cfg(not(feature = "rusqlite"))]
         let conn = unsafe {
-            use std::os::unix::ffi::OsStrExt;
+
+            #[cfg(target_os = "windows")]
+            let path = std::ffi::CString::new(path.as_ref().as_os_str().as_encoded_bytes())
+                .map_err(|_| crate::error::Error::Bug("invalid database path"))?;
+
+            #[cfg(not(target_os = "windows"))]
             let path = std::ffi::CString::new(path.as_ref().as_os_str().as_bytes())
                 .map_err(|_| crate::error::Error::Bug("invalid database path"))?;
+
             let mut conn: *mut crate::ffi::sqlite3 = std::ptr::null_mut();
             // We pass a pointer to the WAL methods data to the database connection. This means
             // that the reference must outlive the connection. This is guaranteed by the marker in
