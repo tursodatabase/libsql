@@ -64,8 +64,8 @@ void blobSpotFree(BlobSpot *pBlobSpot);
 
 /*
  * Accessor for node binary format
- * - v1 format is the following:
- *   [u64 nRowid] [u16 nEdges] [node vector] [edge vector] * nEdges [trash vector] * (nMaxEdges - nEdges) ([u64 legacyField] [u64 edgeId]) * nEdges
+ * - default format is the following:
+ *   [u64 nRowid] [u16 nEdges] [2 byte padding] [node vector] [edge vector] * nEdges [trash vector] * (nMaxEdges - nEdges) ([u32 unused] [f32 distance] [u64 edgeId]) * nEdges
  *   Note, that node vector and edge vector can have different representations (and edge vector can be smaller in size than node vector)
 */
 int nodeEdgesMaxCount(const DiskAnnIndex *pIndex);
