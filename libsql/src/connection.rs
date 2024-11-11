@@ -245,3 +245,9 @@ impl Connection {
         self.conn.load_extension(dylib_path.as_ref(), entry_point)
     }
 }
+
+impl fmt::Debug for Connection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Connection").finish()
+    }
+}
