@@ -2256,9 +2256,14 @@ static int sqlite3WalClose(
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
-      rc = sqlite3WalCheckpoint(pWal, db,
-          SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0, NULL, NULL
-      );
+      /* Don't checkpoint on close if automatic WAL checkpointing is disabled. */
+      if( !db->walCheckPointDisabled ){
+        rc = sqlite3WalCheckpoint(pWal, db,
+            SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0, NULL, NULL
+        );
+      } else {
+        rc = SQLITE_ERROR;
+      }
       if( rc==SQLITE_OK ){
         int bPersist = -1;
         sqlite3OsFileControlHint(
@@ -3387,6 +3392,29 @@ static int sqlite3WalReadFrame(
 }
 
 /*
+** Read the contents of frame iRead from the wal file into buffer pOut
+** (which is nOut bytes in size). Return SQLITE_OK if successful, or an
+** error code otherwise.
+*/
+static int sqlite3WalReadFrameRaw(
+  Wal *pWal,                      /* WAL handle */
+  u32 iRead,                      /* Frame to read */
+  int nOut,                       /* Size of buffer pOut in bytes */
+  u8 *pOut                        /* Buffer to write page data to */
+){
+  int sz;
+  i64 iOffset;
+  sz = pWal->hdr.szPage;
+  sz = (sz&0xfe00) + ((sz&0x0001)<<16);
+  testcase( sz<=32768 );
+  testcase( sz>=65536 );
+  iOffset = walFrameOffset(iRead, sz);
+  /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
+  sz += WAL_FRAME_HDRSIZE;
+  return sqlite3OsRead(pWal->pWalFd, pOut, (nOut>sz ? sz : nOut), iOffset);
+}
+
+/*
 ** Return the size of the database in pages (or zero, if unknown).
 */
 static Pgno sqlite3WalDbsize(Wal *pWal){
@@ -3996,6 +4024,19 @@ static int walFrames(
   return rc;
 }
 
+int sqlite3WalFrameCount(Wal *pWal, int locked, unsigned int *pnFrames){
+  int rc = SQLITE_OK;
+  if( locked==0 ) {
+    rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+    if (rc != SQLITE_OK) return rc;
+  }
+  *pnFrames = pWal->hdr.mxFrame;
+  if( locked==0 ) {
+    walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+  }
+  return SQLITE_OK;
+}
+
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
@@ -4495,12 +4536,14 @@ static int sqlite3WalOpen(
     out->methods.xEndReadTransaction = (void (*)(wal_impl *))sqlite3WalEndReadTransaction;
     out->methods.xFindFrame = (int (*)(wal_impl *, unsigned int, unsigned int *))sqlite3WalFindFrame;
     out->methods.xReadFrame = (int (*)(wal_impl *, unsigned int, int, unsigned char *))sqlite3WalReadFrame;
+    out->methods.xReadFrameRaw = (int (*)(wal_impl *, unsigned int, int, unsigned char *))sqlite3WalReadFrameRaw;
     out->methods.xDbsize = (unsigned int (*)(wal_impl *))sqlite3WalDbsize;
     out->methods.xBeginWriteTransaction = (int (*)(wal_impl *))sqlite3WalBeginWriteTransaction;
     out->methods.xEndWriteTransaction = (int (*)(wal_impl *))sqlite3WalEndWriteTransaction;
     out->methods.xUndo = (int (*)(wal_impl *, int (*)(void *, unsigned int), void *))sqlite3WalUndo;
     out->methods.xSavepoint = (void (*)(wal_impl *, unsigned int *))sqlite3WalSavepoint;
     out->methods.xSavepointUndo = (int (*)(wal_impl *, unsigned int *))sqlite3WalSavepointUndo;
+    out->methods.xFrameCount = (int (*)(wal_impl *, int, unsigned int *))sqlite3WalFrameCount;
     out->methods.xFrames = (int (*)(wal_impl *, int, libsql_pghdr *, unsigned int, int, int, int *))sqlite3WalFrames;
     out->methods.xCheckpoint = (int (*)(wal_impl *, sqlite3 *, int, int (*)(void *), void *, int, int, unsigned char *, int *, int *, int (*)(void*, int, const unsigned char*, int, int, int), void*))sqlite3WalCheckpoint;
     out->methods.xCallback = (int (*)(wal_impl *))sqlite3WalCallback;

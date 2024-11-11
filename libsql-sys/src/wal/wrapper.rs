@@ -61,6 +61,10 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
         unsafe { (*self.wrapper).read_frame(&mut *self.wrapped, frame_no, buffer) }
     }
 
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+        unsafe { (*self.wrapper).read_frame_raw(&mut *self.wrapped, frame_no, buffer) }
+    }
+
     fn db_size(&self) -> u32 {
         unsafe { (*self.wrapper).db_size(&*self.wrapped) }
     }
@@ -83,6 +87,10 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
 
     fn savepoint_undo(&mut self, rollback_data: &mut [u32]) -> super::Result<()> {
         unsafe { (*self.wrapper).savepoint_undo(&mut *self.wrapped, rollback_data) }
+    }
+
+    fn frame_count(&self, locked: i32) -> super::Result<u32> {
+        unsafe { (*self.wrapper).frame_count(&*self.wrapped, locked) }
     }
 
     fn insert_frames(
@@ -234,6 +242,11 @@ where
         self.wrapper.read_frame(&mut self.wrapped, frame_no, buffer)
     }
 
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+        self.wrapper
+            .read_frame_raw(&mut self.wrapped, frame_no, buffer)
+    }
+
     fn db_size(&self) -> u32 {
         self.wrapper.db_size(&self.wrapped)
     }
@@ -257,6 +270,10 @@ where
     fn savepoint_undo(&mut self, rollback_data: &mut [u32]) -> super::Result<()> {
         self.wrapper
             .savepoint_undo(&mut self.wrapped, rollback_data)
+    }
+
+    fn frame_count(&self, locked: i32) -> super::Result<u32> {
+        self.wrapper.frame_count(&self.wrapped, locked)
     }
 
     fn insert_frames(
@@ -355,6 +372,15 @@ pub trait WrapWal<W: Wal> {
         wrapped.read_frame(frame_no, buffer)
     }
 
+    fn read_frame_raw(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        wrapped.read_frame_raw(frame_no, buffer)
+    }
+
     fn db_size(&self, wrapped: &W) -> u32 {
         wrapped.db_size()
     }
@@ -381,6 +407,10 @@ pub trait WrapWal<W: Wal> {
 
     fn savepoint_undo(&mut self, wrapped: &mut W, rollback_data: &mut [u32]) -> super::Result<()> {
         wrapped.savepoint_undo(rollback_data)
+    }
+
+    fn frame_count(&self, wrapped: &W, locked: i32) -> super::Result<u32> {
+        wrapped.frame_count(locked)
     }
 
     fn insert_frames(
@@ -560,6 +590,19 @@ where
             wrapped,
         };
         self.0.read_frame(&mut r, frame_no, buffer)
+    }
+
+    fn read_frame_raw(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.read_frame_raw(&mut r, frame_no, buffer)
     }
 
     fn db_size(&self, wrapped: &W) -> u32 {
@@ -775,6 +818,18 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
         match self {
             Some(t) => t.read_frame(wrapped, frame_no, buffer),
             None => wrapped.read_frame(frame_no, buffer),
+        }
+    }
+
+    fn read_frame_raw(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        match self {
+            Some(t) => t.read_frame_raw(wrapped, frame_no, buffer),
+            None => wrapped.read_frame_raw(frame_no, buffer),
         }
     }
 

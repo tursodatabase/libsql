@@ -56,6 +56,7 @@ typedef struct libsql_wal_methods {
   /* Read a page from the write-ahead log, if it is present. */
   int (*xFindFrame)(wal_impl* pWal, unsigned int, unsigned int *);
   int (*xReadFrame)(wal_impl* pWal, unsigned int, int, unsigned char *);
+  int (*xReadFrameRaw)(wal_impl* pWal, unsigned int, int, unsigned char *);
 
   /* If the WAL is not empty, return the size of the database. */
   unsigned int (*xDbsize)(wal_impl* pWal);
@@ -74,6 +75,9 @@ typedef struct libsql_wal_methods {
   /* Move the write position of the WAL back to iFrame.  Called in
   ** response to a ROLLBACK TO command. */
   int (*xSavepointUndo)(wal_impl* pWal, unsigned int *aWalData);
+
+  /* Return the number of frames in the WAL */
+  int (*xFrameCount)(wal_impl* pWal, int, unsigned int *);
 
   /* Write a frame or frames to the log. */
   int (*xFrames)(wal_impl* pWal, int, libsql_pghdr *, unsigned int, int, int, int*);

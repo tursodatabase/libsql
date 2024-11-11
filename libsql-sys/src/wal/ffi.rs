@@ -1,4 +1,4 @@
-use std::ffi::{c_char, c_int, c_longlong, c_void, CStr};
+use std::ffi::{c_char, c_int, c_longlong, c_uint, c_void, CStr};
 use std::num::NonZeroU32;
 use std::ptr::null;
 
@@ -23,12 +23,14 @@ pub(crate) fn construct_libsql_wal<W: Wal>(wal: *mut W) -> libsql_wal {
             xEndReadTransaction: Some(end_read_transaction::<W>),
             xFindFrame: Some(find_frame::<W>),
             xReadFrame: Some(read_frame::<W>),
+            xReadFrameRaw: Some(read_frame_raw::<W>),
             xDbsize: Some(db_size::<W>),
             xBeginWriteTransaction: Some(begin_write_transaction::<W>),
             xEndWriteTransaction: Some(end_write_transaction::<W>),
             xUndo: Some(undo::<W>),
             xSavepoint: Some(savepoint::<W>),
             xSavepointUndo: Some(savepoint_undo::<W>),
+            xFrameCount: Some(frame_count::<W>),
             xFrames: Some(frames::<W>),
             xCheckpoint: Some(checkpoint::<W>),
             xCallback: Some(callback::<W>),
@@ -210,6 +212,23 @@ pub unsafe extern "C" fn read_frame<T: Wal>(
     }
 }
 
+pub unsafe extern "C" fn read_frame_raw<T: Wal>(
+    wal: *mut wal_impl,
+    frame: u32,
+    n_out: c_int,
+    p_out: *mut u8,
+) -> i32 {
+    let this = &mut (*(wal as *mut T));
+    let buffer = std::slice::from_raw_parts_mut(p_out, n_out as usize);
+    match this.read_frame_raw(
+        NonZeroU32::new(frame).expect("invalid frame number"),
+        buffer,
+    ) {
+        Ok(_) => SQLITE_OK,
+        Err(code) => code.extended_code,
+    }
+}
+
 pub unsafe extern "C" fn db_size<T: Wal>(wal: *mut wal_impl) -> u32 {
     let this = &mut (*(wal as *mut T));
     this.db_size()
@@ -272,6 +291,25 @@ pub unsafe extern "C" fn savepoint_undo<T: Wal>(wal: *mut wal_impl, wal_data: *m
     let data = std::slice::from_raw_parts_mut(wal_data, WAL_SAVEPOINT_NDATA as usize);
     match this.savepoint_undo(data) {
         Ok(_) => SQLITE_OK,
+        Err(code) => code.extended_code,
+    }
+}
+
+pub unsafe extern "C" fn frame_count<T: Wal>(
+    wal: *mut wal_impl,
+    locked: i32,
+    out: *mut c_uint,
+) -> c_int {
+    let this = &mut (*(wal as *mut T));
+    match this.frame_count(locked) {
+        Ok(n) => {
+            if !out.is_null() {
+                unsafe {
+                    *out = n as _;
+                }
+            }
+            SQLITE_OK
+        }
         Err(code) => code.extended_code,
     }
 }

@@ -39,6 +39,12 @@ macro_rules! create_either {
                 }
             }
 
+            fn read_frame_raw(&mut self, frame_no: std::num::NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+                match self {
+                    $( $name::$t(inner) => inner.read_frame_raw(frame_no, buffer) ),*
+                }
+            }
+
             fn db_size(&self) -> u32 {
                 match self {
                     $( $name::$t(inner) => inner.db_size() ),*
@@ -72,6 +78,12 @@ macro_rules! create_either {
             fn savepoint_undo(&mut self, rollback_data: &mut [u32]) -> super::Result<()> {
                 match self {
                     $( $name::$t(inner) => inner.savepoint_undo(rollback_data) ),*
+                }
+            }
+
+            fn frame_count(&self, locked: i32) -> super::Result<u32> {
+                match self {
+                    $( $name::$t(inner) => inner.frame_count(locked) ),*
                 }
             }
 

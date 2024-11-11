@@ -203,6 +203,22 @@ impl Wal for Sqlite3Wal {
         }
     }
 
+    fn read_frame_raw(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()> {
+        let rc = unsafe {
+            (self.inner.methods.xReadFrameRaw.unwrap())(
+                self.inner.pData,
+                frame_no.into(),
+                buffer.len() as _,
+                buffer.as_mut_ptr(),
+            )
+        };
+        if rc != 0 {
+            Err(Error::new(rc))
+        } else {
+            Ok(())
+        }
+    }
+
     fn db_size(&self) -> u32 {
         unsafe { (self.inner.methods.xDbsize.unwrap())(self.inner.pData) }
     }
@@ -269,6 +285,18 @@ impl Wal for Sqlite3Wal {
             Err(Error::new(rc))
         } else {
             Ok(())
+        }
+    }
+
+    fn frame_count(&self, locked: i32) -> Result<u32> {
+        let mut out: u32 = 0;
+        let rc = unsafe {
+            (self.inner.methods.xFrameCount.unwrap())(self.inner.pData, locked, &mut out)
+        };
+        if rc != 0 {
+            Err(Error::new(rc))
+        } else {
+            Ok(out)
         }
     }
 
