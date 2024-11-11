@@ -299,7 +299,11 @@ void blobSpotFree(BlobSpot *pBlobSpot) {
 **************************************************************************/
 
 int nodeMetadataSize(int nFormatVersion){
-  return (sizeof(u64) + sizeof(u16));
+  if( nFormatVersion <= VECTOR_FORMAT_V2 ){
+    return (sizeof(u64) + sizeof(u16));
+  }else{
+    return (sizeof(u64) + sizeof(u64));
+  }
 }
 
 int edgeMetadataSize(int nFormatVersion){

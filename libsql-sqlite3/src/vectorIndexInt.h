@@ -104,9 +104,11 @@ typedef u8 MetricType;
 /*
  * 1 - v1 version; node block format: [node meta] [node vector] [edge vectors] ... [ [u64 unused               ] [u64 edge rowid] ] ...
  * 2 - v2 version; node block format: [node meta] [node vector] [edge vectors] ... [ [u32 unused] [f32 distance] [u64 edge rowid] ] ...
+ * 3 - v3 version; node meta aligned to 8-byte boundary (instead of having u64 + u16 size - we round it up to u64 + u64)
 */
 #define VECTOR_FORMAT_V1                    1
-#define VECTOR_FORMAT_DEFAULT               2
+#define VECTOR_FORMAT_V2                    2
+#define VECTOR_FORMAT_DEFAULT               3
 
 /* type of the vector index */
 #define VECTOR_INDEX_TYPE_PARAM_ID          2
