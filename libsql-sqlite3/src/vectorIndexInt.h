@@ -242,7 +242,7 @@ int vectorIdxParseColumnType(const char *, int *, int *, const char **);
 int vectorIndexCreate(Parse*, const Index*, const char *, const IdList*);
 int vectorIndexClear(sqlite3 *, const char *, const char *);
 int vectorIndexDrop(sqlite3 *, const char *, const char *);
-int vectorIndexSearch(sqlite3 *, const char *, int, sqlite3_value **, VectorOutRows *, int *, int *, char **);
+int vectorIndexSearch(sqlite3 *, int, sqlite3_value **, VectorOutRows *, int *, int *, char **);
 int vectorIndexCursorInit(sqlite3 *, const char *, const char *, VectorIdxCursor **);
 void vectorIndexCursorClose(sqlite3 *, VectorIdxCursor *, int *, int *);
 int vectorIndexInsert(VectorIdxCursor *, const UnpackedRecord *, char **);

@@ -7771,6 +7771,94 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   return rc;
 }
 
+/**
+** Return the number of frames in the WAL file.
+**
+** If the pager is not in WAL mode or we failed to obtain an exclusive write lock, returns -1.
+**/
+int sqlite3PagerWalFrameCount(Pager *pPager, unsigned int *pnFrames){
+  if( pagerUseWal(pPager) ){
+    return pPager->wal->methods.xFrameCount(pPager->wal->pData, 0, pnFrames);
+  }else{
+    return SQLITE_ERROR;
+  }
+}
+
+int sqlite3PagerWalReadFrameRaw(
+  Pager *pPager,
+  unsigned int iFrame,
+  void *pFrameOut,
+  unsigned int nFrameOutLen
+){
+  if( pagerUseWal(pPager) ){
+    unsigned int nFrameLen = 24+pPager->pageSize;
+    if( nFrameOutLen!=nFrameLen ) return SQLITE_MISUSE;
+    return pPager->wal->methods.xReadFrameRaw(pPager->wal->pData, iFrame, nFrameOutLen, pFrameOut);
+  }else{
+    return SQLITE_ERROR;
+  }
+}
+
+int sqlite3PagerWalBeginCommit(Pager *pPager) {
+  int rc;
+  if (!pagerUseWal(pPager)) {
+    return SQLITE_ERROR;
+  }
+  rc = pagerBeginReadTransaction(pPager);
+  if (rc != SQLITE_OK) {
+    return rc;
+  }
+  return pPager->wal->methods.xBeginWriteTransaction(pPager->wal->pData);
+}
+
+int sqlite3PagerWalEndCommit(Pager *pPager) {
+  if (!pagerUseWal(pPager)) {
+    return SQLITE_ERROR;
+  }
+  return pPager->wal->methods.xEndWriteTransaction(pPager->wal->pData);
+}
+
+int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsigned int nBuf) {
+  int rc = SQLITE_OK;
+
+  if (!pagerUseWal(pPager)) {
+    return SQLITE_ERROR;
+  }
+  unsigned int mxFrame;
+  rc = pPager->wal->methods.xFrameCount(pPager->wal->pData, 1, &mxFrame);
+  if (rc != SQLITE_OK) {
+    return rc;
+  }
+  if (iFrame <= mxFrame) {
+    return SQLITE_OK;
+  }
+  u8 *aFrame = (u8*)pBuf;
+  u32 pgno = sqlite3Get4byte(&aFrame[0]);
+  u32 nTruncate = sqlite3Get4byte(&aFrame[4]);
+  u8 *pData = aFrame + 24;
+
+  PgHdr pghdr;
+  memset(&pghdr, 0, sizeof(PgHdr));
+  pghdr.pPage = NULL;
+  pghdr.pData = pData;
+  pghdr.pExtra = NULL;
+  pghdr.pgno = pgno;
+  pghdr.flags = 0;
+
+  int isCommit = (nTruncate != 0);
+
+  int nFrames = 0;
+  rc = pPager->wal->methods.xFrames(pPager->wal->pData, 
+                                    pPager->pageSize, 
+                                    &pghdr, 
+                                    nTruncate, 
+                                    isCommit, 
+                                    pPager->walSyncFlags, 
+                                    &nFrames);
+  assert( nFrames == 1 );
+  return rc;
+}
+
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
 /*
 ** If pager pPager is a wal-mode database not in exclusive locking mode,

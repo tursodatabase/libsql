@@ -33,7 +33,6 @@ typedef struct vectorVtab vectorVtab;
 struct vectorVtab {
   sqlite3_vtab base;       /* Base class - must be first */
   sqlite3 *db;             /* Database connection */
-  char* zDbSName;          /* Database schema name */
 };
 
 typedef struct vectorVtab_cursor vectorVtab_cursor;
@@ -59,7 +58,6 @@ static int vectorVtabConnect(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  char *zDbSName = NULL;
   vectorVtab *pVtab = NULL;
   int rc;
   /*
@@ -74,21 +72,17 @@ static int vectorVtabConnect(
   if( pVtab == NULL ){
     return SQLITE_NOMEM_BKPT;
   }
-  zDbSName = sqlite3DbStrDup(db, argv[1]); // argv[1] is the database schema name by spec (see https://www.sqlite.org/vtab.html#the_xcreate_method)
-  if( zDbSName == NULL ){
-    sqlite3_free(pVtab);
-    return SQLITE_NOMEM_BKPT;
-  }
+  // > Eponymous virtual tables exist in the "main" schema only, so they will not work if prefixed with a different schema name. 
+  // so, argv[1] always equal to "main" and we can safely ignore it
+  // (see https://www.sqlite.org/vtab.html#epovtab)
   memset(pVtab, 0, sizeof(*pVtab));
   pVtab->db = db;
-  pVtab->zDbSName = zDbSName;
   *ppVtab = (sqlite3_vtab*)pVtab;
   return SQLITE_OK;
 }
 
 static int vectorVtabDisconnect(sqlite3_vtab *pVtab){
   vectorVtab *pVTab = (vectorVtab*)pVtab;
-  sqlite3DbFree(pVTab->db, pVTab->zDbSName);
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
@@ -155,7 +149,7 @@ static int vectorVtabFilter(
   pCur->rows.aIntValues = NULL;
   pCur->rows.ppValues = NULL;
 
-  if( vectorIndexSearch(pVTab->db, pVTab->zDbSName, argc, argv, &pCur->rows, &pCur->nReads, &pCur->nWrites, &pVTab->base.zErrMsg) != 0 ){
+  if( vectorIndexSearch(pVTab->db, argc, argv, &pCur->rows, &pCur->nReads, &pCur->nWrites, &pVTab->base.zErrMsg) != 0 ){
     return SQLITE_ERROR;
   }
 

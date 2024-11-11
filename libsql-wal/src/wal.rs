@@ -171,6 +171,15 @@ where
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
+    fn read_frame_raw(
+        &mut self,
+        _page_no: std::num::NonZeroU32,
+        _buffer: &mut [u8],
+    ) -> libsql_sys::wal::Result<()> {
+        Err(libsql_sys::wal::Error::new(10)) // SQLITE_IOERR
+    }
+
+    #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn db_size(&self) -> u32 {
         let db_size = match self.tx.as_ref() {
             Some(tx) => tx.db_size,
@@ -264,6 +273,11 @@ where
             }
             _ => Ok(()),
         }
+    }
+
+    #[tracing::instrument(skip_all, fields(id = self.conn_id))]
+    fn frame_count(&self, _locked: i32) -> libsql_sys::wal::Result<u32> {
+        Err(libsql_sys::wal::Error::new(10)) // SQLITE_IOERR
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
