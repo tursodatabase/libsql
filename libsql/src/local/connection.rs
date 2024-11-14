@@ -57,13 +57,23 @@ impl Connection {
                 )));
             }
         }
-
-        Ok(Connection {
+        let conn = Connection {
             raw,
             drop_ref: Arc::new(()),
             #[cfg(feature = "replication")]
             writer: db.writer()?,
-        })
+        };
+        #[cfg(feature = "sync")]
+        if let Some(_) = db.sync_ctx {
+            // We need to make sure database is in WAL mode with checkpointing
+            // disabled so that we can sync our changes back to a remote
+            // server.
+            conn.query("PRAGMA journal_mode = WAL", Params::None)?;
+            unsafe {
+                ffi::libsql_wal_disable_checkpoint(conn.raw);
+            }
+        }
+        Ok(conn)
     }
 
     /// Get a raw handle to the underlying libSQL connection
