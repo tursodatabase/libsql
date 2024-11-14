@@ -8,6 +8,7 @@ use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 
 use crate::TransactionBehavior;
 
+use bytes::{BufMut, BytesMut};
 use libsql_sys::ffi;
 use std::{ffi::c_int, fmt, path::Path, sync::Arc};
 
@@ -444,6 +445,39 @@ impl Connection {
                 Err(errors::Error::SqliteFailure(err, err_msg))
             }
         }
+    }
+
+    pub fn wal_frame_count(&self) -> u32 {
+        let mut max_frame_no: std::os::raw::c_uint = 0;
+        unsafe { libsql_sys::ffi::libsql_wal_frame_count(self.handle(), &mut max_frame_no) };
+
+        max_frame_no
+    }
+
+    pub fn wal_get_frame(&self, frame_no: u32, page_size: u32) -> Result<BytesMut> {
+        let frame_size: usize = 24 + page_size as usize;
+
+        let mut buf = BytesMut::with_capacity(frame_size);
+
+        let rc = unsafe {
+            libsql_sys::ffi::libsql_wal_get_frame(
+                self.handle(),
+                frame_no,
+                buf.chunk_mut().as_mut_ptr() as *mut _,
+                frame_size as u32,
+            )
+        };
+
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("Failed to get frame: {}", frame_no),
+            ));
+        }
+
+        unsafe { buf.advance_mut(frame_size) };
+
+        Ok(buf)
     }
 }
 
