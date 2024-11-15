@@ -175,7 +175,7 @@ cfg_hrana! {
 }
 
 pub use self::{
-    connection::Connection,
+    connection::{BatchRows, Connection},
     database::{Builder, Database},
     load_extension_guard::LoadExtensionGuard,
     rows::{Column, Row, Rows},
