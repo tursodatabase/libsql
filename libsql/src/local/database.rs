@@ -401,7 +401,7 @@ impl Database {
         let max_frame_no = conn.wal_frame_count();
 
         let generation = 1; // TODO: Probe from WAL.
-        let start_frame_no = sync_ctx.durable_frame_num + 1;
+        let start_frame_no = sync_ctx.durable_frame_num() + 1;
         let end_frame_no = max_frame_no;
 
         let mut frame_no = start_frame_no;

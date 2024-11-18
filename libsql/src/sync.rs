@@ -2,10 +2,10 @@ use crate::Result;
 
 const DEFAULT_MAX_RETRIES: usize = 5;
 pub struct SyncContext {
-    pub sync_url: String,
-    pub auth_token: Option<String>,
-    pub max_retries: usize,
-    pub durable_frame_num: u32,
+    sync_url: String,
+    auth_token: Option<String>,
+    max_retries: usize,
+    durable_frame_num: u32,
 }
 
 impl SyncContext {
@@ -91,5 +91,9 @@ impl SyncContext {
             tokio::time::sleep(delay).await;
             nr_retries += 1;
         }
+    }
+
+    pub(crate) fn durable_frame_num(&self) -> u32 {
+        self.durable_frame_num
     }
 }
