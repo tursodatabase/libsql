@@ -412,7 +412,7 @@ impl Database {
             // frames the server already knows about, we need to update the
             // frame number to the one returned by the server.
             let max_frame_no = sync_ctx
-                .push_one_frame(frame.to_vec(), generation, frame_no)
+                .push_one_frame(frame.freeze(), generation, frame_no)
                 .await?;
 
             if max_frame_no > frame_no {

@@ -1,4 +1,5 @@
 use crate::Result;
+use bytes::Bytes;
 
 const DEFAULT_MAX_RETRIES: usize = 5;
 pub struct SyncContext {
@@ -20,7 +21,7 @@ impl SyncContext {
 
     pub(crate) async fn push_one_frame(
         &self,
-        frame: Vec<u8>,
+        frame: Bytes,
         generation: u32,
         frame_no: u32,
     ) -> Result<u32> {
@@ -31,35 +32,48 @@ impl SyncContext {
             frame_no,
             frame_no + 1
         );
-        let max_frame_no = self
-            .push_with_retry(uri, frame.to_vec(), self.max_retries)
-            .await?;
+        let max_frame_no = self.push_with_retry(uri, frame, self.max_retries).await?;
 
         Ok(max_frame_no)
     }
 
-    async fn push_with_retry(
-        &self,
-        uri: String,
-        frame: Vec<u8>,
-        max_retries: usize,
-    ) -> Result<u32> {
+    async fn push_with_retry(&self, uri: String, frame: Bytes, max_retries: usize) -> Result<u32> {
         let mut nr_retries = 0;
         loop {
-            let client = reqwest::Client::new();
-            let mut builder = client.post(uri.to_owned());
+            // TODO(lucio): add custom connector + tls support here
+            let client = hyper::client::Client::builder().build_http::<hyper::Body>();
+
+            let mut req = http::Request::post(uri.clone());
+
             match &self.auth_token {
-                Some(ref auth_token) => {
-                    builder = builder.header("Authorization", format!("Bearer {}", auth_token));
+                Some(auth_token) => {
+                    let auth_header =
+                        http::HeaderValue::try_from(format!("Bearer {}", auth_token.to_owned()))
+                            .unwrap();
+
+                    req.headers_mut()
+                        .expect("valid http request")
+                        .insert("Authorization", auth_header);
                 }
                 None => {}
             }
-            let res = builder.body(frame.to_vec()).send().await.unwrap();
+
+            // TODO(lucio): convert this to use bytes to make this clone cheap, it should be
+            // to possible use BytesMut when reading frames from the WAL and efficiently use Bytes
+            // from that.
+            let req = req.body(frame.clone().into()).expect("valid body");
+
+            let res = client.request(req).await.unwrap();
+
+            // TODO(lucio): only retry on server side errors
             if res.status().is_success() {
-                let resp = res.json::<serde_json::Value>().await.unwrap();
+                let res_body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+                let resp = serde_json::from_slice::<serde_json::Value>(&res_body[..]).unwrap();
+
                 let max_frame_no = resp.get("max_frame_no").unwrap().as_u64().unwrap();
                 return Ok(max_frame_no as u32);
             }
+
             if nr_retries > max_retries {
                 return Err(crate::errors::Error::ConnectionFailed(format!(
                     "Failed to push frame: {}",
