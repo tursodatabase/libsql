@@ -443,7 +443,7 @@ impl Database {
             frame_no,
             frame_no + 1
         );
-        let max_frame_no = self
+        let max_frame_no = sync_ctx
             .push_with_retry(
                 uri,
                 &sync_ctx.auth_token,
@@ -452,43 +452,6 @@ impl Database {
             )
             .await?;
         Ok(max_frame_no)
-    }
-
-    #[cfg(feature = "sync")]
-    async fn push_with_retry(
-        &self,
-        uri: String,
-        auth_token: &Option<String>,
-        frame: Vec<u8>,
-        max_retries: usize,
-    ) -> Result<u32> {
-        let mut nr_retries = 0;
-        loop {
-            let client = reqwest::Client::new();
-            let mut builder = client.post(uri.to_owned());
-            match auth_token {
-                Some(ref auth_token) => {
-                    builder = builder
-                        .header("Authorization", format!("Bearer {}", auth_token.to_owned()));
-                }
-                None => {}
-            }
-            let res = builder.body(frame.to_vec()).send().await.unwrap();
-            if res.status().is_success() {
-                let resp = res.json::<serde_json::Value>().await.unwrap();
-                let max_frame_no = resp.get("max_frame_no").unwrap().as_u64().unwrap();
-                return Ok(max_frame_no as u32);
-            }
-            if nr_retries > max_retries {
-                return Err(crate::errors::Error::ConnectionFailed(format!(
-                    "Failed to push frame: {}",
-                    res.status()
-                )));
-            }
-            let delay = std::time::Duration::from_millis(100 * (1 << nr_retries));
-            tokio::time::sleep(delay).await;
-            nr_retries += 1;
-        }
     }
 
     pub(crate) fn path(&self) -> &str {
