@@ -18,7 +18,27 @@ impl SyncContext {
         }
     }
 
-    pub(crate) async fn push_with_retry(
+    pub(crate) async fn push_one_frame(
+        &self,
+        frame: Vec<u8>,
+        generation: u32,
+        frame_no: u32,
+    ) -> Result<u32> {
+        let uri = format!(
+            "{}/sync/{}/{}/{}",
+            self.sync_url,
+            generation,
+            frame_no,
+            frame_no + 1
+        );
+        let max_frame_no = self
+            .push_with_retry(uri, &self.auth_token, frame.to_vec(), self.max_retries)
+            .await?;
+
+        Ok(max_frame_no)
+    }
+
+    async fn push_with_retry(
         &self,
         uri: String,
         auth_token: &Option<String>,

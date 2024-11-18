@@ -406,12 +406,15 @@ impl Database {
 
         let mut frame_no = start_frame_no;
         while frame_no <= end_frame_no {
+            let frame = conn.wal_get_frame(frame_no, page_size)?;
+
             // The server returns its maximum frame number. To avoid resending
             // frames the server already knows about, we need to update the
             // frame number to the one returned by the server.
-            let max_frame_no = self
-                .push_one_frame(&conn, &sync_ctx, generation, frame_no, page_size)
+            let max_frame_no = sync_ctx
+                .push_one_frame(frame.to_vec(), generation, frame_no)
                 .await?;
+
             if max_frame_no > frame_no {
                 frame_no = max_frame_no;
             }
@@ -423,35 +426,6 @@ impl Database {
             frame_no: None,
             frames_synced: frame_count as usize,
         })
-    }
-
-    #[cfg(feature = "sync")]
-    async fn push_one_frame(
-        &self,
-        conn: &Connection,
-        sync_ctx: &SyncContext,
-        generation: u32,
-        frame_no: u32,
-        page_size: u32,
-    ) -> Result<u32> {
-        let frame = conn.wal_get_frame(frame_no, page_size)?;
-
-        let uri = format!(
-            "{}/sync/{}/{}/{}",
-            sync_ctx.sync_url,
-            generation,
-            frame_no,
-            frame_no + 1
-        );
-        let max_frame_no = sync_ctx
-            .push_with_retry(
-                uri,
-                &sync_ctx.auth_token,
-                frame.to_vec(),
-                sync_ctx.max_retries,
-            )
-            .await?;
-        Ok(max_frame_no)
     }
 
     pub(crate) fn path(&self) -> &str {
