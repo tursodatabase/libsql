@@ -32,7 +32,7 @@ impl SyncContext {
             frame_no + 1
         );
         let max_frame_no = self
-            .push_with_retry(uri, &self.auth_token, frame.to_vec(), self.max_retries)
+            .push_with_retry(uri, frame.to_vec(), self.max_retries)
             .await?;
 
         Ok(max_frame_no)
@@ -41,46 +41,25 @@ impl SyncContext {
     async fn push_with_retry(
         &self,
         uri: String,
-        auth_token: &Option<String>,
         frame: Vec<u8>,
         max_retries: usize,
     ) -> Result<u32> {
         let mut nr_retries = 0;
         loop {
-            // TODO(lucio): add custom connector + tls support here
-            let client = hyper::client::Client::builder().build_http::<hyper::Body>();
-
-            let mut req = http::Request::post(uri.clone());
-
-            match auth_token {
+            let client = reqwest::Client::new();
+            let mut builder = client.post(uri.to_owned());
+            match &self.auth_token {
                 Some(ref auth_token) => {
-                    let auth_header =
-                        http::HeaderValue::try_from(format!("Bearer {}", auth_token.to_owned()))
-                            .unwrap();
-
-                    req.headers_mut()
-                        .expect("valid http request")
-                        .insert("Authorization", auth_header);
+                    builder = builder.header("Authorization", format!("Bearer {}", auth_token));
                 }
                 None => {}
             }
-
-            // TODO(lucio): convert this to use bytes to make this clone cheap, it should be
-            // to possible use BytesMut when reading frames from the WAL and efficiently use Bytes
-            // from that.
-            let req = req.body(frame.clone().into()).expect("valid body");
-
-            let res = client.request(req).await.unwrap();
-
-            // TODO(lucio): only retry on server side errors
+            let res = builder.body(frame.to_vec()).send().await.unwrap();
             if res.status().is_success() {
-                let res_body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-                let resp = serde_json::from_slice::<serde_json::Value>(&res_body[..]).unwrap();
-
+                let resp = res.json::<serde_json::Value>().await.unwrap();
                 let max_frame_no = resp.get("max_frame_no").unwrap().as_u64().unwrap();
                 return Ok(max_frame_no as u32);
             }
-
             if nr_retries > max_retries {
                 return Err(crate::errors::Error::ConnectionFailed(format!(
                     "Failed to push frame: {}",
