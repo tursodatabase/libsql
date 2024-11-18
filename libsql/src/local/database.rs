@@ -33,7 +33,7 @@ pub struct Database {
     #[cfg(feature = "replication")]
     pub replication_ctx: Option<ReplicationContext>,
     #[cfg(feature = "sync")]
-    pub sync_ctx: Option<SyncContext>,
+    pub sync_ctx: Option<tokio::sync::Mutex<SyncContext>>,
 }
 
 impl Database {
@@ -143,7 +143,10 @@ impl Database {
             endpoint
         };
         let mut db = Database::open(&db_path, flags)?;
-        db.sync_ctx = Some(SyncContext::new(endpoint, Some(auth_token)));
+        db.sync_ctx = Some(tokio::sync::Mutex::new(SyncContext::new(
+            endpoint,
+            Some(auth_token),
+        )));
         Ok(db)
     }
 
@@ -383,7 +386,7 @@ impl Database {
     #[cfg(feature = "sync")]
     /// Push WAL frames to remote.
     pub async fn push(&self) -> Result<crate::database::Replicated> {
-        let sync_ctx = self.sync_ctx.as_ref().unwrap();
+        let sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
         let conn = self.connect()?;
 
         let page_size = {
