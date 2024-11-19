@@ -663,7 +663,8 @@ impl Database {
 
 #[cfg(any(
     all(feature = "tls", feature = "replication"),
-    all(feature = "tls", feature = "remote")
+    all(feature = "tls", feature = "remote"),
+    all(feature = "tls", feature = "sync")
 ))]
 fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     let mut http = hyper::client::HttpConnector::new();
@@ -680,7 +681,8 @@ fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnect
 
 #[cfg(any(
     all(not(feature = "tls"), feature = "replication"),
-    all(not(feature = "tls"), feature = "remote")
+    all(not(feature = "tls"), feature = "remote"),
+    all(not(feature = "tls"), feature = "sync")
 ))]
 fn connector() -> Result<hyper::client::HttpConnector> {
     panic!("The `tls` feature is disabled, you must provide your own http connector");
