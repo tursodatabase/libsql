@@ -1,21 +1,28 @@
 use crate::Result;
 use bytes::Bytes;
+use hyper::{client::HttpConnector, Body};
 
 const DEFAULT_MAX_RETRIES: usize = 5;
+
 pub struct SyncContext {
     sync_url: String,
     auth_token: Option<String>,
     max_retries: usize,
     durable_frame_num: u32,
+    client: hyper::Client<HttpConnector, Body>,
 }
 
 impl SyncContext {
     pub fn new(sync_url: String, auth_token: Option<String>) -> Self {
+        // TODO(lucio): add custom connector + tls support here
+        let client = hyper::client::Client::builder().build_http::<hyper::Body>();
+
         Self {
             sync_url,
             auth_token,
             durable_frame_num: 0,
             max_retries: DEFAULT_MAX_RETRIES,
+            client,
         }
     }
 
@@ -40,9 +47,6 @@ impl SyncContext {
     async fn push_with_retry(&self, uri: String, frame: Bytes, max_retries: usize) -> Result<u32> {
         let mut nr_retries = 0;
         loop {
-            // TODO(lucio): add custom connector + tls support here
-            let client = hyper::client::Client::builder().build_http::<hyper::Body>();
-
             let mut req = http::Request::post(uri.clone());
 
             match &self.auth_token {
@@ -63,7 +67,7 @@ impl SyncContext {
             // from that.
             let req = req.body(frame.clone().into()).expect("valid body");
 
-            let res = client.request(req).await.unwrap();
+            let res = self.client.request(req).await.unwrap();
 
             // TODO(lucio): only retry on server side errors
             if res.status().is_success() {
