@@ -144,11 +144,11 @@ impl Database {
             endpoint
         };
         let mut db = Database::open(&db_path, flags)?;
-        db.sync_ctx = Some(tokio::sync::Mutex::new(SyncContext::new(
-            connector,
-            endpoint,
-            Some(auth_token),
-        )));
+
+        let sync_ctx =
+            SyncContext::new(connector, db_path.into(), endpoint, Some(auth_token)).await?;
+        db.sync_ctx = Some(tokio::sync::Mutex::new(sync_ctx));
+
         Ok(db)
     }
 
@@ -388,7 +388,7 @@ impl Database {
     #[cfg(feature = "sync")]
     /// Push WAL frames to remote.
     pub async fn push(&self) -> Result<crate::database::Replicated> {
-        let sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
+        let mut sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
         let conn = self.connect()?;
 
         let page_size = {
