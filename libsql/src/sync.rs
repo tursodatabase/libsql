@@ -39,6 +39,7 @@ impl SyncContext {
         Ok(me)
     }
 
+    #[tracing::instrument(skip(self, frame))]
     pub(crate) async fn push_one_frame(
         &mut self,
         frame: Bytes,
@@ -52,14 +53,18 @@ impl SyncContext {
             frame_no,
             frame_no + 1
         );
-        let max_frame_no = self.push_with_retry(uri, frame, self.max_retries).await?;
+        tracing::debug!("pushing frame");
+
+        let durable_frame_num = self.push_with_retry(uri, frame, self.max_retries).await?;
+
+        tracing::debug!(?durable_frame_num, "frame successfully pushed");
 
         // Update our last known max_frame_no from the server.
-        self.durable_frame_num = max_frame_no;
+        self.durable_frame_num = durable_frame_num;
 
         self.write_metadata().await?;
 
-        Ok(max_frame_no)
+        Ok(durable_frame_num)
     }
 
     async fn push_with_retry(&self, uri: String, frame: Bytes, max_retries: usize) -> Result<u32> {
@@ -80,9 +85,6 @@ impl SyncContext {
                 None => {}
             }
 
-            // TODO(lucio): convert this to use bytes to make this clone cheap, it should be
-            // to possible use BytesMut when reading frames from the WAL and efficiently use Bytes
-            // from that.
             let req = req.body(frame.clone().into()).expect("valid body");
 
             let res = self.client.request(req).await.unwrap();
@@ -128,6 +130,11 @@ impl SyncContext {
 
     async fn read_metadata(&mut self) -> Result<()> {
         let path = format!("{}-info", self.db_path);
+
+        if !std::fs::exists(&path).unwrap() {
+            tracing::debug!("no metadata info file found");
+            return Ok(());
+        }
 
         let contents = tokio::fs::read(&path).await.unwrap();
 
