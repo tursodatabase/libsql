@@ -1,6 +1,6 @@
-use crate::Result;
+use crate::{util::ConnectorService, Result};
 use bytes::Bytes;
-use hyper::{client::HttpConnector, Body};
+use hyper::Body;
 
 const DEFAULT_MAX_RETRIES: usize = 5;
 
@@ -9,13 +9,13 @@ pub struct SyncContext {
     auth_token: Option<String>,
     max_retries: usize,
     durable_frame_num: u32,
-    client: hyper::Client<HttpConnector, Body>,
+    client: hyper::Client<ConnectorService, Body>,
 }
 
 impl SyncContext {
-    pub fn new(sync_url: String, auth_token: Option<String>) -> Self {
+    pub fn new(connector: ConnectorService, sync_url: String, auth_token: Option<String>) -> Self {
         // TODO(lucio): add custom connector + tls support here
-        let client = hyper::client::Client::builder().build_http::<hyper::Body>();
+        let client = hyper::client::Client::builder().build::<_, hyper::Body>(connector);
 
         Self {
             sync_url,

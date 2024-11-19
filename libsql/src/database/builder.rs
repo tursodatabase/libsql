@@ -424,7 +424,17 @@ cfg_sync! {
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
 
+            let https = super::connector()?;
+            use tower::ServiceExt;
+
+            let svc = https
+                .map_err(|e| e.into())
+                .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
+
+            let connector = crate::util::ConnectorService::new(svc);
+
             let db = crate::local::Database::open_local_with_offline_writes(
+                connector,
                 path,
                 flags,
                 url,

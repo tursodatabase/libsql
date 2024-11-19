@@ -131,6 +131,7 @@ impl Database {
     #[cfg(feature = "sync")]
     #[doc(hidden)]
     pub async fn open_local_with_offline_writes(
+        connector: crate::util::ConnectorService,
         db_path: impl Into<String>,
         flags: OpenFlags,
         endpoint: String,
@@ -144,6 +145,7 @@ impl Database {
         };
         let mut db = Database::open(&db_path, flags)?;
         db.sync_ctx = Some(tokio::sync::Mutex::new(SyncContext::new(
+            connector,
             endpoint,
             Some(auth_token),
         )));
