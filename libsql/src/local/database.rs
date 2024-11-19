@@ -395,8 +395,7 @@ impl Database {
             page_size
         };
 
-        let mut max_frame_no: std::os::raw::c_uint = 0;
-        unsafe { libsql_sys::ffi::libsql_wal_frame_count(conn.handle(), &mut max_frame_no) };
+        let max_frame_no = conn.wal_frame_count();
 
         let generation = 1; // TODO: Probe from WAL.
         let start_frame_no = sync_ctx.durable_frame_num + 1;
@@ -432,22 +431,8 @@ impl Database {
         frame_no: u32,
         page_size: u32,
     ) -> Result<u32> {
-        let frame_size: usize = 24 + page_size as usize;
-        let frame = vec![0; frame_size];
-        let rc = unsafe {
-            libsql_sys::ffi::libsql_wal_get_frame(
-                conn.handle(),
-                frame_no,
-                frame.as_ptr() as *mut _,
-                frame_size as u32,
-            )
-        };
-        if rc != 0 {
-            return Err(crate::errors::Error::SqliteFailure(
-                rc as std::ffi::c_int,
-                format!("Failed to get frame: {}", frame_no),
-            ));
-        }
+        let frame = conn.wal_get_frame(frame_no, page_size)?;
+
         let uri = format!(
             "{}/sync/{}/{}/{}",
             sync_ctx.sync_url,
