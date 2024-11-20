@@ -42,7 +42,9 @@ impl SyncContext {
             generation: 1,
         };
 
-        me.read_metadata().await?;
+        if let Err(e) = me.read_metadata().await {
+            tracing::error!("failed to read sync metadata file: {}", e);
+        }
 
         Ok(me)
     }
