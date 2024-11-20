@@ -131,6 +131,7 @@ impl Database {
     #[cfg(feature = "sync")]
     #[doc(hidden)]
     pub async fn open_local_with_offline_writes(
+        connector: crate::util::ConnectorService,
         db_path: impl Into<String>,
         flags: OpenFlags,
         endpoint: String,
@@ -144,6 +145,7 @@ impl Database {
         };
         let mut db = Database::open(&db_path, flags)?;
         db.sync_ctx = Some(tokio::sync::Mutex::new(SyncContext::new(
+            connector,
             endpoint,
             Some(auth_token),
         )));
@@ -412,7 +414,7 @@ impl Database {
             // frames the server already knows about, we need to update the
             // frame number to the one returned by the server.
             let max_frame_no = sync_ctx
-                .push_one_frame(frame.to_vec(), generation, frame_no)
+                .push_one_frame(frame.freeze(), generation, frame_no)
                 .await?;
 
             if max_frame_no > frame_no {
