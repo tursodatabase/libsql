@@ -109,7 +109,9 @@ sync = [
   "dep:futures",
   "dep:serde_json",
   "dep:crc32fast",
-  "dep:chrono"
+  "dep:chrono",
+  "dep:uuid",
+  "tokio/fs"
 ]
 hrana = [
   "parser",

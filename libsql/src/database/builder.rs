@@ -119,7 +119,7 @@ impl Builder<()> {
     }
 }
 
-cfg_replication_or_remote! {
+cfg_replication_or_remote_or_sync! {
     /// Remote configuration type used in [`Builder`].
     pub struct Remote {
         url: String,
@@ -505,7 +505,7 @@ cfg_remote! {
     }
 }
 
-cfg_replication_or_remote! {
+cfg_replication_or_remote_or_sync! {
     impl Remote {
         fn connector<C>(mut self, connector: C) -> Remote
         where

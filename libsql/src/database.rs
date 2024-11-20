@@ -34,9 +34,12 @@ cfg_core! {
 }
 
 cfg_replication_or_sync! {
+
     pub type FrameNo = u64;
 
     #[derive(Debug)]
+    // TODO(lucio): remove this once we use these fields in our sync code
+    #[allow(dead_code)]
     pub struct Replicated {
         pub(crate) frame_no: Option<FrameNo>,
         pub(crate) frames_synced: usize,
@@ -47,12 +50,16 @@ cfg_replication_or_sync! {
         /// where in the log you might be. Beware that this value can be reset to a lower value by the
         /// server in certain situations. Please use `frames_synced` if you want to track the amount of
         /// work a sync has done.
+        // TODO(lucio): remove this once we use these fields in our sync code
+        #[allow(dead_code)]
         pub fn frame_no(&self) -> Option<FrameNo> {
             self.frame_no
         }
 
         /// The count of frames synced during this call of `sync`. A frame is a 4kB frame from the
         /// libsql write ahead log.
+        // TODO(lucio): remove this once we use these fields in our sync code
+        #[allow(dead_code)]
         pub fn frames_synced(&self) -> usize {
             self.frames_synced
         }

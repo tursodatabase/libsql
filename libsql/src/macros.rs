@@ -10,7 +10,7 @@ macro_rules! cfg_core {
     }
 }
 
-macro_rules! cfg_replication_or_remote {
+macro_rules! cfg_replication_or_remote_or_sync {
     ($($item:item)*) => {
         $(
             #[cfg(any(feature = "replication", feature = "sync", feature = "remote"))]
