@@ -423,6 +423,8 @@ impl Database {
             frame_no += 1;
         }
 
+        // TODO(lucio): this can underflow if the server previously returned a higher max_frame_no
+        // than what we have stored here.
         let frame_count = end_frame_no - start_frame_no + 1;
         Ok(crate::database::Replicated {
             frame_no: None,

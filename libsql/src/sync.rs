@@ -129,12 +129,16 @@ impl SyncContext {
     async fn write_metadata(&mut self) -> Result<()> {
         let path = format!("{}-info", self.db_path);
 
-        let contents = serde_json::to_vec(&MetadataJson {
+        let mut metadata = MetadataJson {
+            hash: 0,
             version: METADATA_VERSION,
             durable_frame_num: self.durable_frame_num,
             generation: self.generation,
-        })
-        .unwrap();
+        };
+
+        metadata.set_hash();
+
+        let contents = serde_json::to_vec(&metadata).unwrap();
 
         atomic_write(path, &contents[..]).await.unwrap();
 
@@ -153,6 +157,9 @@ impl SyncContext {
 
         let metadata = serde_json::from_slice::<MetadataJson>(&contents[..]).unwrap();
 
+        metadata.verify_hash()?;
+
+        // TODO(lucio): convert this into a proper error
         assert_eq!(
             metadata.version, METADATA_VERSION,
             "Reading metadata from a different version than expected"
@@ -167,9 +174,42 @@ impl SyncContext {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct MetadataJson {
+    hash: u32,
     version: u32,
     durable_frame_num: u32,
     generation: u32,
+}
+
+impl MetadataJson {
+    fn calculate_hash(&self) -> u32 {
+        let mut hasher = crc32fast::Hasher::new();
+
+        // Hash each field in a consistent order
+        hasher.update(&self.version.to_le_bytes());
+        hasher.update(&self.durable_frame_num.to_le_bytes());
+        hasher.update(&self.generation.to_le_bytes());
+
+        hasher.finalize()
+    }
+
+    fn set_hash(&mut self) {
+        self.hash = self.calculate_hash();
+    }
+
+    fn verify_hash(&self) -> Result<()> {
+        let calculated_hash = self.calculate_hash();
+
+        if self.hash == calculated_hash {
+            Ok(())
+        } else {
+            // TODO(lucio): convert this into a proper error rather than
+            // an panic.
+            panic!(
+                "metadata hash mismatch, expected={}, got={}",
+                self.hash, calculated_hash
+            );
+        }
+    }
 }
 
 async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
@@ -194,4 +234,62 @@ async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
     tokio::fs::rename(&temp_path, &path).await.unwrap();
 
     Ok(())
+}
+
+// TODO(lucio): for the tests to work we need proper error handling which
+// will be done in follow up.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore]
+    fn test_hash_verification() {
+        let mut metadata = MetadataJson {
+            hash: 0,
+            version: 1,
+            durable_frame_num: 100,
+            generation: 5,
+        };
+
+        assert!(metadata.verify_hash().is_err());
+
+        metadata.set_hash();
+
+        assert!(metadata.verify_hash().is_ok());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_hash_tampering() {
+        let mut metadata = MetadataJson {
+            hash: 0,
+            version: 1,
+            durable_frame_num: 100,
+            generation: 5,
+        };
+
+        // Create metadata with hash
+        metadata.set_hash();
+
+        // Tamper with a field
+        metadata.version = 2;
+
+        // Verify should fail
+        assert!(metadata.verify_hash().is_err());
+
+        metadata.version = 1;
+        metadata.generation = 42;
+
+        assert!(metadata.verify_hash().is_err());
+
+        metadata.generation = 5;
+        metadata.durable_frame_num = 42;
+
+        assert!(metadata.verify_hash().is_err());
+
+        metadata.durable_frame_num = 100;
+
+        assert!(metadata.verify_hash().is_ok());
+    }
 }
