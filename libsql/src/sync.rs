@@ -3,6 +3,7 @@ use crate::{util::ConnectorService, Result};
 use std::path::Path;
 
 use bytes::Bytes;
+use chrono::Utc;
 use hyper::Body;
 use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
@@ -218,7 +219,8 @@ async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
     // Create a temporary file in the same directory as the target file
     let directory = path.as_ref().parent().unwrap();
 
-    let temp_name = format!(".tmp.{}", Uuid::new_v4());
+    let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
+    let temp_name = format!(".tmp.{}.{}", timestamp, Uuid::new_v4());
     let temp_path = directory.join(temp_name);
 
     // Write data to temporary file
