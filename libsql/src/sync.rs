@@ -13,12 +13,14 @@ const DEFAULT_MAX_RETRIES: usize = 5;
 
 pub struct SyncContext {
     db_path: String,
+    client: hyper::Client<ConnectorService, Body>,
     sync_url: String,
     auth_token: Option<String>,
     max_retries: usize,
     /// Represents the max_frame_no from the server.
     durable_frame_num: u32,
-    client: hyper::Client<ConnectorService, Body>,
+    /// Represents the current checkpoint generation.
+    generation: u32,
 }
 
 impl SyncContext {
@@ -34,9 +36,10 @@ impl SyncContext {
             db_path,
             sync_url,
             auth_token,
-            durable_frame_num: 0,
             max_retries: DEFAULT_MAX_RETRIES,
             client,
+            durable_frame_num: 0,
+            generation: 1,
         };
 
         me.read_metadata().await?;
@@ -119,12 +122,17 @@ impl SyncContext {
         self.durable_frame_num
     }
 
+    pub(crate) fn generation(&self) -> u32 {
+        self.generation
+    }
+
     async fn write_metadata(&mut self) -> Result<()> {
         let path = format!("{}-info", self.db_path);
 
         let contents = serde_json::to_vec(&MetadataJson {
             version: METADATA_VERSION,
             durable_frame_num: self.durable_frame_num,
+            generation: self.generation,
         })
         .unwrap();
 
@@ -151,6 +159,7 @@ impl SyncContext {
         );
 
         self.durable_frame_num = metadata.durable_frame_num;
+        self.generation = metadata.generation;
 
         Ok(())
     }
@@ -160,6 +169,7 @@ impl SyncContext {
 struct MetadataJson {
     version: u32,
     durable_frame_num: u32,
+    generation: u32,
 }
 
 async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
