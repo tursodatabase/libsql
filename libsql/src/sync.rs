@@ -1,6 +1,11 @@
 use crate::{util::ConnectorService, Result};
+
+use std::path::Path;
+
 use bytes::Bytes;
 use hyper::Body;
+use tokio::io::AsyncWriteExt as _;
+use uuid::Uuid;
 
 const METADATA_VERSION: u32 = 0;
 
@@ -123,7 +128,7 @@ impl SyncContext {
         })
         .unwrap();
 
-        tokio::fs::write(path, contents).await.unwrap();
+        atomic_write(path, &contents[..]).await.unwrap();
 
         Ok(())
     }
@@ -155,4 +160,28 @@ impl SyncContext {
 struct MetadataJson {
     version: u32,
     durable_frame_num: u32,
+}
+
+async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
+    // Create a temporary file in the same directory as the target file
+    let directory = path.as_ref().parent().unwrap();
+
+    let temp_name = format!(".tmp.{}", Uuid::new_v4());
+    let temp_path = directory.join(temp_name);
+
+    // Write data to temporary file
+    let mut temp_file = tokio::fs::File::create(&temp_path).await.unwrap();
+
+    temp_file.write_all(data).await.unwrap();
+
+    // Ensure all data is flushed to disk
+    temp_file.sync_all().await.unwrap();
+
+    // Close the file explicitly
+    drop(temp_file);
+
+    // Atomically rename temporary file to target file
+    tokio::fs::rename(&temp_path, &path).await.unwrap();
+
+    Ok(())
 }
