@@ -9,6 +9,9 @@ use hyper::Body;
 use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
 
+#[cfg(test)]
+mod test;
+
 const METADATA_VERSION: u32 = 0;
 
 const DEFAULT_MAX_RETRIES: usize = 5;
@@ -309,62 +312,4 @@ async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
         .map_err(SyncError::io("atomic rename"))?;
 
     Ok(())
-}
-
-// TODO(lucio): for the tests to work we need proper error handling which
-// will be done in follow up.
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[ignore]
-    fn test_hash_verification() {
-        let mut metadata = MetadataJson {
-            hash: 0,
-            version: 1,
-            durable_frame_num: 100,
-            generation: 5,
-        };
-
-        assert!(metadata.verify_hash().is_err());
-
-        metadata.set_hash();
-
-        assert!(metadata.verify_hash().is_ok());
-    }
-
-    #[test]
-    #[ignore]
-    fn test_hash_tampering() {
-        let mut metadata = MetadataJson {
-            hash: 0,
-            version: 1,
-            durable_frame_num: 100,
-            generation: 5,
-        };
-
-        // Create metadata with hash
-        metadata.set_hash();
-
-        // Tamper with a field
-        metadata.version = 2;
-
-        // Verify should fail
-        assert!(metadata.verify_hash().is_err());
-
-        metadata.version = 1;
-        metadata.generation = 42;
-
-        assert!(metadata.verify_hash().is_err());
-
-        metadata.generation = 5;
-        metadata.durable_frame_num = 42;
-
-        assert!(metadata.verify_hash().is_err());
-
-        metadata.durable_frame_num = 100;
-
-        assert!(metadata.verify_hash().is_ok());
-    }
 }
