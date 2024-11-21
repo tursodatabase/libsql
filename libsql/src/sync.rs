@@ -145,7 +145,6 @@ impl SyncContext {
                 .await
                 .map_err(SyncError::HttpDispatch)?;
 
-            // TODO(lucio): only retry on server side errors
             if res.status().is_success() {
                 let res_body = hyper::body::to_bytes(res.into_body())
                     .await
@@ -165,7 +164,9 @@ impl SyncContext {
                 return Ok(max_frame_no as u32);
             }
 
-            if nr_retries > max_retries {
+            // If we've retried too many times or the error is not a server error,
+            // return the error.
+            if nr_retries > max_retries || !res.status().is_server_error() {
                 let status = res.status();
 
                 let res_body = hyper::body::to_bytes(res.into_body())
