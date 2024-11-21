@@ -4,6 +4,7 @@ use std::path::Path;
 
 use bytes::Bytes;
 use chrono::Utc;
+use http::{HeaderValue, StatusCode};
 use hyper::Body;
 use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
@@ -12,11 +13,46 @@ const METADATA_VERSION: u32 = 0;
 
 const DEFAULT_MAX_RETRIES: usize = 5;
 
+#[derive(thiserror::Error, Debug)]
+#[non_exhaustive]
+pub enum SyncError {
+    #[error("io: msg={msg}, err={err}")]
+    Io {
+        msg: &'static str,
+        #[source]
+        err: std::io::Error,
+    },
+    #[error("invalid auth header: {0}")]
+    InvalidAuthHeader(http::header::InvalidHeaderValue),
+    #[error("http dispatch error: {0}")]
+    HttpDispatch(hyper::Error),
+    #[error("body error: {0}")]
+    HttpBody(hyper::Error),
+    #[error("json decode error: {0}")]
+    JsonDecode(serde_json::Error),
+    #[error("json value error, unexpected value: {0}")]
+    JsonValue(serde_json::Value),
+    #[error("json encode error: {0}")]
+    JsonEncode(serde_json::Error),
+    #[error("failed to push frame: status={0}, error={1}")]
+    PushFrame(StatusCode, String),
+    #[error("failed to verify metadata file version: expected={0}, got={1}")]
+    VerifyVersion(u32, u32),
+    #[error("failed to verify metadata file hash: expected={0}, got={1}")]
+    VerifyHash(u32, u32),
+}
+
+impl SyncError {
+    fn io(msg: &'static str) -> impl FnOnce(std::io::Error) -> SyncError {
+        move |err| SyncError::Io { msg, err }
+    }
+}
+
 pub struct SyncContext {
     db_path: String,
     client: hyper::Client<ConnectorService, Body>,
     sync_url: String,
-    auth_token: Option<String>,
+    auth_token: Option<HeaderValue>,
     max_retries: usize,
     /// Represents the max_frame_no from the server.
     durable_frame_num: u32,
@@ -32,6 +68,14 @@ impl SyncContext {
         auth_token: Option<String>,
     ) -> Result<Self> {
         let client = hyper::client::Client::builder().build::<_, hyper::Body>(connector);
+
+        let auth_token = match auth_token {
+            Some(t) => Some(
+                HeaderValue::try_from(format!("Bearer {}", t))
+                    .map_err(SyncError::InvalidAuthHeader)?,
+            ),
+            None => None,
+        };
 
         let mut me = Self {
             db_path,
@@ -85,36 +129,53 @@ impl SyncContext {
 
             match &self.auth_token {
                 Some(auth_token) => {
-                    let auth_header =
-                        http::HeaderValue::try_from(format!("Bearer {}", auth_token.to_owned()))
-                            .unwrap();
-
                     req.headers_mut()
                         .expect("valid http request")
-                        .insert("Authorization", auth_header);
+                        .insert("Authorization", auth_token.clone());
                 }
                 None => {}
             }
 
             let req = req.body(frame.clone().into()).expect("valid body");
 
-            let res = self.client.request(req).await.unwrap();
+            let res = self
+                .client
+                .request(req)
+                .await
+                .map_err(SyncError::HttpDispatch)?;
 
             // TODO(lucio): only retry on server side errors
             if res.status().is_success() {
-                let res_body = hyper::body::to_bytes(res.into_body()).await.unwrap();
-                let resp = serde_json::from_slice::<serde_json::Value>(&res_body[..]).unwrap();
+                let res_body = hyper::body::to_bytes(res.into_body())
+                    .await
+                    .map_err(SyncError::HttpBody)?;
 
-                let max_frame_no = resp.get("max_frame_no").unwrap().as_u64().unwrap();
+                let resp = serde_json::from_slice::<serde_json::Value>(&res_body[..])
+                    .map_err(SyncError::JsonDecode)?;
+
+                let max_frame_no = resp
+                    .get("max_frame_no")
+                    .ok_or_else(|| SyncError::JsonValue(resp.clone()))?;
+
+                let max_frame_no = max_frame_no
+                    .as_u64()
+                    .ok_or_else(|| SyncError::JsonValue(max_frame_no.clone()))?;
+
                 return Ok(max_frame_no as u32);
             }
 
             if nr_retries > max_retries {
-                return Err(crate::errors::Error::ConnectionFailed(format!(
-                    "Failed to push frame: {}",
-                    res.status()
-                )));
+                let status = res.status();
+
+                let res_body = hyper::body::to_bytes(res.into_body())
+                    .await
+                    .map_err(SyncError::HttpBody)?;
+
+                let msg = String::from_utf8_lossy(&res_body[..]);
+
+                return Err(SyncError::PushFrame(status, msg.to_string()).into());
             }
+
             let delay = std::time::Duration::from_millis(100 * (1 << nr_retries));
             tokio::time::sleep(delay).await;
             nr_retries += 1;
@@ -141,9 +202,9 @@ impl SyncContext {
 
         metadata.set_hash();
 
-        let contents = serde_json::to_vec(&metadata).unwrap();
+        let contents = serde_json::to_vec(&metadata).map_err(SyncError::JsonEncode)?;
 
-        atomic_write(path, &contents[..]).await.unwrap();
+        atomic_write(path, &contents[..]).await?;
 
         Ok(())
     }
@@ -151,22 +212,23 @@ impl SyncContext {
     async fn read_metadata(&mut self) -> Result<()> {
         let path = format!("{}-info", self.db_path);
 
-        if !std::fs::exists(&path).unwrap() {
+        if !std::fs::exists(&path).map_err(SyncError::io("metadata file exists"))? {
             tracing::debug!("no metadata info file found");
             return Ok(());
         }
 
-        let contents = tokio::fs::read(&path).await.unwrap();
+        let contents = tokio::fs::read(&path)
+            .await
+            .map_err(SyncError::io("metadata read"))?;
 
-        let metadata = serde_json::from_slice::<MetadataJson>(&contents[..]).unwrap();
+        let metadata =
+            serde_json::from_slice::<MetadataJson>(&contents[..]).map_err(SyncError::JsonDecode)?;
 
         metadata.verify_hash()?;
 
-        // TODO(lucio): convert this into a proper error
-        assert_eq!(
-            metadata.version, METADATA_VERSION,
-            "Reading metadata from a different version than expected"
-        );
+        if metadata.version != METADATA_VERSION {
+            return Err(SyncError::VerifyVersion(metadata.version, METADATA_VERSION).into());
+        }
 
         self.durable_frame_num = metadata.durable_frame_num;
         self.generation = metadata.generation;
@@ -205,37 +267,46 @@ impl MetadataJson {
         if self.hash == calculated_hash {
             Ok(())
         } else {
-            // TODO(lucio): convert this into a proper error rather than
-            // an panic.
-            panic!(
-                "metadata hash mismatch, expected={}, got={}",
-                self.hash, calculated_hash
-            );
+            Err(SyncError::VerifyHash(self.hash, calculated_hash).into())
         }
     }
 }
 
 async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
     // Create a temporary file in the same directory as the target file
-    let directory = path.as_ref().parent().unwrap();
+    let directory = path.as_ref().parent().ok_or_else(|| {
+        SyncError::io("parent path")(std::io::Error::other(
+            "unable to get parent of the provided path",
+        ))
+    })?;
 
     let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
     let temp_name = format!(".tmp.{}.{}", timestamp, Uuid::new_v4());
     let temp_path = directory.join(temp_name);
 
     // Write data to temporary file
-    let mut temp_file = tokio::fs::File::create(&temp_path).await.unwrap();
+    let mut temp_file = tokio::fs::File::create(&temp_path)
+        .await
+        .map_err(SyncError::io("temp file create"))?;
 
-    temp_file.write_all(data).await.unwrap();
+    temp_file
+        .write_all(data)
+        .await
+        .map_err(SyncError::io("temp file write_all"))?;
 
     // Ensure all data is flushed to disk
-    temp_file.sync_all().await.unwrap();
+    temp_file
+        .sync_all()
+        .await
+        .map_err(SyncError::io("temp file sync_all"))?;
 
     // Close the file explicitly
     drop(temp_file);
 
     // Atomically rename temporary file to target file
-    tokio::fs::rename(&temp_path, &path).await.unwrap();
+    tokio::fs::rename(&temp_path, &path)
+        .await
+        .map_err(SyncError::io("atomic rename"))?;
 
     Ok(())
 }
