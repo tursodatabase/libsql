@@ -120,8 +120,6 @@ impl SyncContext {
         // Update our last known max_frame_no from the server.
         self.durable_frame_num = durable_frame_num;
 
-        self.write_metadata().await?;
-
         Ok(durable_frame_num)
     }
 
@@ -193,7 +191,7 @@ impl SyncContext {
         self.generation
     }
 
-    async fn write_metadata(&mut self) -> Result<()> {
+    pub(crate) async fn write_metadata(&mut self) -> Result<()> {
         let path = format!("{}-info", self.db_path);
 
         let mut metadata = MetadataJson {

@@ -28,6 +28,7 @@ async fn test_sync_context_push_frame() {
 
     // Push a frame and verify the response
     let durable_frame = sync_ctx.push_one_frame(frame, 1, 0).await.unwrap();
+    sync_ctx.write_metadata().await.unwrap();
     assert_eq!(durable_frame, 1); // First frame should return max_frame_no = 1
 
     // Verify internal state was updated
@@ -55,6 +56,7 @@ async fn test_sync_context_with_auth() {
     let mut sync_ctx = sync_ctx;
 
     let durable_frame = sync_ctx.push_one_frame(frame, 1, 0).await.unwrap();
+    sync_ctx.write_metadata().await.unwrap();
     assert_eq!(durable_frame, 1);
     assert_eq!(server.frame_count(), 1);
 }
@@ -80,6 +82,7 @@ async fn test_sync_context_multiple_frames() {
     for i in 0..3 {
         let frame = Bytes::from(format!("frame data {}", i));
         let durable_frame = sync_ctx.push_one_frame(frame, 1, i).await.unwrap();
+        sync_ctx.write_metadata().await.unwrap();
         assert_eq!(durable_frame, i + 1);
         assert_eq!(sync_ctx.durable_frame_num(), i + 1);
         assert_eq!(server.frame_count(), i + 1);
@@ -105,6 +108,7 @@ async fn test_sync_context_corrupted_metadata() {
     let mut sync_ctx = sync_ctx;
     let frame = Bytes::from("test frame data");
     let durable_frame = sync_ctx.push_one_frame(frame, 1, 0).await.unwrap();
+    sync_ctx.write_metadata().await.unwrap();
     assert_eq!(durable_frame, 1);
     assert_eq!(server.frame_count(), 1);
 
