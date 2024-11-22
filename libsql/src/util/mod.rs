@@ -1,4 +1,4 @@
-cfg_replication_or_remote! {
+cfg_replication_or_remote_or_sync! {
     pub mod box_clone_service;
     mod http;
     pub(crate) use self::http::{ConnectorService, Socket};

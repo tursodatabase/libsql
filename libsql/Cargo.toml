@@ -43,6 +43,9 @@ fallible-iterator = { version = "0.3", optional = true }
 libsql_replication = { version = "0.6", path = "../libsql-replication", optional = true }
 async-stream = { version = "0.3.5", optional = true }
 
+crc32fast = { version = "1", optional = true }
+chrono = { version = "0.4", optional = true }
+
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports", "async", "async_futures", "async_tokio"] }
 pprof = { version = "0.12.1", features = ["criterion", "flamegraph"] }
@@ -105,6 +108,10 @@ sync = [
   "dep:tokio",
   "dep:futures",
   "dep:serde_json",
+  "dep:crc32fast",
+  "dep:chrono",
+  "dep:uuid",
+  "tokio/fs"
 ]
 hrana = [
   "parser",

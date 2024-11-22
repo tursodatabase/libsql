@@ -144,11 +144,11 @@ impl Database {
             endpoint
         };
         let mut db = Database::open(&db_path, flags)?;
-        db.sync_ctx = Some(tokio::sync::Mutex::new(SyncContext::new(
-            connector,
-            endpoint,
-            Some(auth_token),
-        )));
+
+        let sync_ctx =
+            SyncContext::new(connector, db_path.into(), endpoint, Some(auth_token)).await?;
+        db.sync_ctx = Some(tokio::sync::Mutex::new(sync_ctx));
+
         Ok(db)
     }
 
@@ -388,7 +388,7 @@ impl Database {
     #[cfg(feature = "sync")]
     /// Push WAL frames to remote.
     pub async fn push(&self) -> Result<crate::database::Replicated> {
-        let sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
+        let mut sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
         let conn = self.connect()?;
 
         let page_size = {
@@ -402,7 +402,7 @@ impl Database {
 
         let max_frame_no = conn.wal_frame_count();
 
-        let generation = 1; // TODO: Probe from WAL.
+        let generation = sync_ctx.generation(); // TODO: Probe from WAL.
         let start_frame_no = sync_ctx.durable_frame_num() + 1;
         let end_frame_no = max_frame_no;
 
@@ -423,6 +423,10 @@ impl Database {
             frame_no += 1;
         }
 
+        sync_ctx.write_metadata().await?;
+
+        // TODO(lucio): this can underflow if the server previously returned a higher max_frame_no
+        // than what we have stored here.
         let frame_count = end_frame_no - start_frame_no + 1;
         Ok(crate::database::Replicated {
             frame_no: None,
