@@ -4,7 +4,10 @@ use crate::auth::{AuthAction, AuthContext, Authorization};
 use crate::connection::AuthHook;
 use crate::local::rows::BatchedRows;
 use crate::params::Params;
-use crate::{connection::BatchRows, errors};
+use crate::{
+    connection::{BatchRows, Op, UpdateHook},
+    errors,
+};
 use std::time::Duration;
 
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
@@ -14,6 +17,10 @@ use crate::TransactionBehavior;
 use libsql_sys::ffi;
 use parking_lot::RwLock;
 use std::{ffi::c_int, fmt, path::Path, sync::Arc};
+
+struct Container {
+    cb: Box<UpdateHook>,
+}
 
 /// A connection to a libSQL database.
 #[derive(Clone)]
@@ -400,6 +407,24 @@ impl Connection {
         })
     }
 
+    /// Installs update hook
+    pub fn add_update_hook(&self, cb: Box<UpdateHook>) {
+        let c = Box::new(Container { cb });
+        let ptr: *mut Container = std::ptr::from_mut(Box::leak(c));
+
+        let old_data = unsafe {
+            ffi::sqlite3_update_hook(
+                self.raw,
+                Some(update_hook_cb),
+                ptr as *mut ::std::os::raw::c_void,
+            )
+        };
+
+        if !old_data.is_null() {
+            let _ = unsafe { Box::from_raw(old_data as *mut Container) };
+        }
+    }
+
     pub fn enable_load_extension(&self, onoff: bool) -> Result<()> {
         // SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION configration verb accepts 2 additional parameters: an on/off flag and a pointer to an c_int where new state of the parameter will be written (or NULL if reporting back the setting is not needed)
         // See: https://sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigenableloadextension
@@ -464,7 +489,8 @@ impl Connection {
 
     pub fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
         unsafe {
-            let rc = libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), None, std::ptr::null_mut());
+            let rc =
+                libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), None, std::ptr::null_mut());
             if rc != ffi::SQLITE_OK {
                 return Err(crate::errors::Error::SqliteFailure(
                     rc as std::ffi::c_int,
@@ -484,7 +510,8 @@ impl Connection {
             None => (None, std::ptr::null_mut()),
         };
 
-        let rc = unsafe { libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), callback, user_data) };
+        let rc =
+            unsafe { libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), callback, user_data) };
         if rc != ffi::SQLITE_OK {
             return Err(crate::errors::Error::SqliteFailure(
                 rc as std::ffi::c_int,
@@ -716,7 +743,7 @@ unsafe extern "C" fn authorizer_callback(
 
 pub(crate) struct WalInsertHandle<'a> {
     conn: &'a Connection,
-    in_session: RwLock<bool>
+    in_session: RwLock<bool>,
 }
 
 impl WalInsertHandle<'_> {
@@ -759,6 +786,28 @@ impl fmt::Debug for Connection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Connection").finish()
     }
+}
+
+#[no_mangle]
+extern "C" fn update_hook_cb(
+    data: *mut ::std::os::raw::c_void,
+    op: ::std::os::raw::c_int,
+    db_name: *const ::std::os::raw::c_char,
+    table_name: *const ::std::os::raw::c_char,
+    row_id: i64,
+) {
+    let db = unsafe { std::ffi::CStr::from_ptr(db_name).to_string_lossy() };
+    let table = unsafe { std::ffi::CStr::from_ptr(table_name).to_string_lossy() };
+
+    let c = unsafe { &mut *(data as *mut Container) };
+    let o = match op {
+        9 => Op::Delete,
+        18 => Op::Insert,
+        23 => Op::Update,
+        _ => unreachable!("Unknown operation {op}"),
+    };
+
+    (*c.cb)(o, &db, &table, row_id);
 }
 
 #[cfg(test)]
