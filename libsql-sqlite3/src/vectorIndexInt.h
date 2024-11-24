@@ -64,8 +64,9 @@ void blobSpotFree(BlobSpot *pBlobSpot);
 
 /*
  * Accessor for node binary format
- * - v1 format is the following:
- *   [u64 nRowid] [u16 nEdges] [node vector] [edge vector] * nEdges [trash vector] * (nMaxEdges - nEdges) ([u64 legacyField] [u64 edgeId]) * nEdges
+ * - default format is the following:
+ *   [u64 nRowid] [u16 nEdges] [6 byte padding] [node vector] [edge vector] * nEdges [trash vector] * (nMaxEdges - nEdges) ([u32 unused] [f32 distance] [u64 edgeId]) * nEdges
+ *   Note, that 6 byte padding after nEdges required to align [node vector] by word boundary and avoid unaligned reads
  *   Note, that node vector and edge vector can have different representations (and edge vector can be smaller in size than node vector)
 */
 int nodeEdgesMaxCount(const DiskAnnIndex *pIndex);
@@ -104,9 +105,11 @@ typedef u8 MetricType;
 /*
  * 1 - v1 version; node block format: [node meta] [node vector] [edge vectors] ... [ [u64 unused               ] [u64 edge rowid] ] ...
  * 2 - v2 version; node block format: [node meta] [node vector] [edge vectors] ... [ [u32 unused] [f32 distance] [u64 edge rowid] ] ...
+ * 3 - v3 version; node meta aligned to 8-byte boundary (instead of having u64 + u16 size - we round it up to u64 + u64)
 */
 #define VECTOR_FORMAT_V1                    1
-#define VECTOR_FORMAT_DEFAULT               2
+#define VECTOR_FORMAT_V2                    2
+#define VECTOR_FORMAT_DEFAULT               3
 
 /* type of the vector index */
 #define VECTOR_INDEX_TYPE_PARAM_ID          2
