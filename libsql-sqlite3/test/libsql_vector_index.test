@@ -532,6 +532,11 @@ do_execsql_test vector-index-attach-query {
   SELECT * FROM vector_top_k('t.t_attach_idx', vector('[3,4,5]'), 4);
 } {3 4 2 1}
 
+# protect binary file with test in order to make it more explicit when someone change it (expclitily or not; with malicious intent or not)
+do_test vector-index-v2-anti-hacker-check {
+  md5file libsql_vector_index_v2.db
+} {dcd33c78fc2bc53bb8e60236b418711a}
+
 # v2.db created with simple command (with LibSQL built from commit 4a5f373a298cc751d9ca56662eaaf879eefff279):
 #   ./sqlite3 v2.db --cmd "CREATE TABLE t (id TEXT, e FLOAT32(4)); CREATE INDEX t_idx ON t (libsql_vector_idx(e)); INSERT INTO t VALUES ('a', vector32('[1,2,3,4]')), ('b', vector32('[-100,-100,-100,-100]')), ('c', vector32('[10,10,-10,-10]')), ('d', vector32('[-1,2,3,4]'))"
 sqlite3 dbv2 libsql_vector_index_v2.db
