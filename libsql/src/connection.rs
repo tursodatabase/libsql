@@ -9,6 +9,13 @@ use crate::statement::Statement;
 use crate::transaction::Transaction;
 use crate::{Result, TransactionBehavior};
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Op {
+    Insert = 0,
+    Delete = 1,
+    Update = 2,
+}
+
 #[async_trait::async_trait]
 pub(crate) trait Conn {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64>;
@@ -37,6 +44,10 @@ pub(crate) trait Conn {
 
     fn load_extension(&self, _dylib_path: &Path, _entry_point: Option<&str>) -> Result<()> {
         Err(crate::Error::LoadExtensionNotSupported)
+    }
+
+    fn add_update_hook(&self, _cb: Box<dyn Fn(Op, &str, &str, i64) + Send + Sync>) -> Result<()> {
+        Err(crate::Error::UpdateHookNotSupported)
     }
 }
 
@@ -243,6 +254,13 @@ impl Connection {
         entry_point: Option<&str>,
     ) -> Result<()> {
         self.conn.load_extension(dylib_path.as_ref(), entry_point)
+    }
+
+    pub fn add_update_hook(
+        &self,
+        cb: Box<dyn Fn(Op, &str, &str, i64) + Send + Sync>,
+    ) -> Result<()> {
+        self.conn.add_update_hook(cb)
     }
 }
 
