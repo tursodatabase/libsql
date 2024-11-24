@@ -65,7 +65,8 @@ void blobSpotFree(BlobSpot *pBlobSpot);
 /*
  * Accessor for node binary format
  * - default format is the following:
- *   [u64 nRowid] [u16 nEdges] [2 byte padding] [node vector] [edge vector] * nEdges [trash vector] * (nMaxEdges - nEdges) ([u32 unused] [f32 distance] [u64 edgeId]) * nEdges
+ *   [u64 nRowid] [u16 nEdges] [6 byte padding] [node vector] [edge vector] * nEdges [trash vector] * (nMaxEdges - nEdges) ([u32 unused] [f32 distance] [u64 edgeId]) * nEdges
+ *   Note, that 6 byte padding after nEdges required to align [node vector] by word boundary and avoid unaligned reads
  *   Note, that node vector and edge vector can have different representations (and edge vector can be smaller in size than node vector)
 */
 int nodeEdgesMaxCount(const DiskAnnIndex *pIndex);
