@@ -5433,6 +5433,7 @@ version = "0.0.0"
 dependencies = [
  "bytes",
  "cbindgen",
+ "http 1.1.0",
  "hyper-rustls 0.25.0",
  "lazy_static",
  "libsql",
