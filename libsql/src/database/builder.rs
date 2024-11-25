@@ -506,6 +506,22 @@ cfg_remote! {
 }
 
 cfg_replication_or_remote_or_sync! {
+    fn wrap_connector<C>(connector: C) -> crate::util::ConnectorService
+    where
+        C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
+        C::Response: crate::util::Socket,
+        C::Future: Send + 'static,
+        C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+    {
+        use tower::ServiceExt;
+
+        let svc = connector
+            .map_err(|e| e.into())
+            .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
+
+        crate::util::ConnectorService::new(svc)
+    }
+
     impl Remote {
         fn connector<C>(mut self, connector: C) -> Remote
         where
@@ -514,15 +530,7 @@ cfg_replication_or_remote_or_sync! {
             C::Future: Send + 'static,
             C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
         {
-            use tower::ServiceExt;
-
-            let svc = connector
-                .map_err(|e| e.into())
-                .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
-
-            let svc = crate::util::ConnectorService::new(svc);
-
-            self.connector = Some(svc);
+            self.connector = Some(wrap_connector(connector));
             self
         }
 
