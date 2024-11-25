@@ -6,7 +6,7 @@ extern crate lazy_static;
 mod types;
 
 use crate::types::libsql_config;
-use libsql::{errors, LoadExtensionGuard};
+use libsql::{errors, Builder, LoadExtensionGuard};
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
@@ -152,6 +152,44 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
             return 3;
         }
     };
+    let uri: http::Uri = match primary_url.try_into() {
+        Ok(uri) => uri,
+        Err(e) => {
+            set_err_msg(format!("Wrong primary URL: {e}"), out_err_msg);
+            return 100;
+        }
+    };
+    if let Some(query) = uri.query() {
+        if query.contains("offline") {
+            let mut builder = Builder::new_synced_database(
+                db_path,
+                primary_url.to_owned(),
+                auth_token.to_owned(),
+            );
+            if config.with_webpki != 0 {
+                let https = hyper_rustls::HttpsConnectorBuilder::new()
+                    .with_webpki_roots()
+                    .https_or_http()
+                    .enable_http1()
+                    .build();
+                builder = builder.connector(https);
+            }
+            match RT.block_on(builder.build()) {
+                Ok(db) => {
+                    let db = Box::leak(Box::new(libsql_database { db }));
+                    *out_db = libsql_database_t::from(db);
+                    return 0;
+                }
+                Err(e) => {
+                    set_err_msg(
+                        format!("Error opening offline db path {db_path}, primary url {primary_url}: {e}"),
+                        out_err_msg,
+                    );
+                    return 101;
+                }
+            }
+        }
+    }
     let mut builder = libsql::Builder::new_remote_replica(
         db_path,
         primary_url.to_string(),
