@@ -119,7 +119,7 @@ impl Builder<()> {
     }
 }
 
-cfg_replication_or_remote! {
+cfg_replication_or_remote_or_sync! {
     /// Remote configuration type used in [`Builder`].
     pub struct Remote {
         url: String,
@@ -424,7 +424,17 @@ cfg_sync! {
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
 
+            let https = super::connector()?;
+            use tower::ServiceExt;
+
+            let svc = https
+                .map_err(|e| e.into())
+                .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
+
+            let connector = crate::util::ConnectorService::new(svc);
+
             let db = crate::local::Database::open_local_with_offline_writes(
+                connector,
                 path,
                 flags,
                 url,
@@ -495,7 +505,7 @@ cfg_remote! {
     }
 }
 
-cfg_replication_or_remote! {
+cfg_replication_or_remote_or_sync! {
     impl Remote {
         fn connector<C>(mut self, connector: C) -> Remote
         where

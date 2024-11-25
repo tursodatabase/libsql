@@ -76,8 +76,6 @@
 */
 #define DISKANN_BLOCK_SIZE_SHIFT 9
 
-#define VECTOR_NODE_METADATA_SIZE (sizeof(u64) + sizeof(u16))
-#define VECTOR_EDGE_METADATA_SIZE (sizeof(u64) + sizeof(u64))
 
 typedef struct VectorPair VectorPair;
 typedef struct DiskAnnSearchCtx DiskAnnSearchCtx;
@@ -300,16 +298,28 @@ void blobSpotFree(BlobSpot *pBlobSpot) {
 ** Layout specific utilities
 **************************************************************************/
 
-int nodeEdgeOverhead(int nEdgeVectorSize){
-  return nEdgeVectorSize + VECTOR_EDGE_METADATA_SIZE;
+int nodeMetadataSize(int nFormatVersion){
+  if( nFormatVersion <= VECTOR_FORMAT_V2 ){
+    return (sizeof(u64) + sizeof(u16));
+  }else{
+    return (sizeof(u64) + sizeof(u64));
+  }
 }
 
-int nodeOverhead(int nNodeVectorSize){
-  return nNodeVectorSize + VECTOR_NODE_METADATA_SIZE;
+int edgeMetadataSize(int nFormatVersion){
+  return (sizeof(u64) + sizeof(u64));
+}
+
+int nodeEdgeOverhead(int nFormatVersion, int nEdgeVectorSize){
+  return nEdgeVectorSize + edgeMetadataSize(nFormatVersion);
+}
+
+int nodeOverhead(int nFormatVersion, int nNodeVectorSize){
+  return nNodeVectorSize + nodeMetadataSize(nFormatVersion);
 }
 
 int nodeEdgesMaxCount(const DiskAnnIndex *pIndex){
-  unsigned int nMaxEdges = (pIndex->nBlockSize - nodeOverhead(pIndex->nNodeVectorSize)) / nodeEdgeOverhead(pIndex->nEdgeVectorSize);
+  unsigned int nMaxEdges = (pIndex->nBlockSize - nodeOverhead(pIndex->nFormatVersion, pIndex->nNodeVectorSize)) / nodeEdgeOverhead(pIndex->nFormatVersion, pIndex->nEdgeVectorSize);
   assert( nMaxEdges > 0);
   return nMaxEdges;
 }
@@ -317,29 +327,29 @@ int nodeEdgesMaxCount(const DiskAnnIndex *pIndex){
 int nodeEdgesMetadataOffset(const DiskAnnIndex *pIndex){
   unsigned int offset;
   unsigned int nMaxEdges = nodeEdgesMaxCount(pIndex);
-  offset = VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + nMaxEdges * pIndex->nEdgeVectorSize;
+  offset = nodeMetadataSize(pIndex->nFormatVersion) + pIndex->nNodeVectorSize + nMaxEdges * pIndex->nEdgeVectorSize;
   assert( offset <= pIndex->nBlockSize );
   return offset;
 }
 
 void nodeBinInit(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, u64 nRowid, Vector *pVector){
-  assert( VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize <= pBlobSpot->nBufferSize );
+  assert( nodeMetadataSize(pIndex->nFormatVersion) + pIndex->nNodeVectorSize <= pBlobSpot->nBufferSize );
 
   memset(pBlobSpot->pBuffer, 0, pBlobSpot->nBufferSize);
   writeLE64(pBlobSpot->pBuffer, nRowid);
   // neighbours count already zero after memset - no need to set it explicitly
 
-  vectorSerializeToBlob(pVector, pBlobSpot->pBuffer + VECTOR_NODE_METADATA_SIZE, pIndex->nNodeVectorSize);
+  vectorSerializeToBlob(pVector, pBlobSpot->pBuffer + nodeMetadataSize(pIndex->nFormatVersion), pIndex->nNodeVectorSize);
 }
 
 void nodeBinVector(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, Vector *pVector) {
-  assert( VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize <= pBlobSpot->nBufferSize );
+  assert( nodeMetadataSize(pIndex->nFormatVersion) + pIndex->nNodeVectorSize <= pBlobSpot->nBufferSize );
 
-  vectorInitStatic(pVector, pIndex->nNodeVectorType, pIndex->nVectorDims, pBlobSpot->pBuffer + VECTOR_NODE_METADATA_SIZE);
+  vectorInitStatic(pVector, pIndex->nNodeVectorType, pIndex->nVectorDims, pBlobSpot->pBuffer + nodeMetadataSize(pIndex->nFormatVersion));
 }
 
 u16 nodeBinEdges(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot) {
-  assert( VECTOR_NODE_METADATA_SIZE <= pBlobSpot->nBufferSize );
+  assert( nodeMetadataSize(pIndex->nFormatVersion) <= pBlobSpot->nBufferSize );
 
   return readLE16(pBlobSpot->pBuffer + sizeof(u64));
 }
@@ -349,20 +359,20 @@ void nodeBinEdge(const DiskAnnIndex *pIndex, const BlobSpot *pBlobSpot, int iEdg
   int offset = nodeEdgesMetadataOffset(pIndex);
 
   if( pRowid != NULL ){
-    assert( offset + (iEdge + 1) * VECTOR_EDGE_METADATA_SIZE <= pBlobSpot->nBufferSize );
-    *pRowid = readLE64(pBlobSpot->pBuffer + offset + iEdge * VECTOR_EDGE_METADATA_SIZE + sizeof(u64));
+    assert( offset + (iEdge + 1) * edgeMetadataSize(pIndex->nFormatVersion) <= pBlobSpot->nBufferSize );
+    *pRowid = readLE64(pBlobSpot->pBuffer + offset + iEdge * edgeMetadataSize(pIndex->nFormatVersion) + sizeof(u64));
   }
   if( pIndex->nFormatVersion != VECTOR_FORMAT_V1 && pDistance != NULL ){
-    distance = readLE32(pBlobSpot->pBuffer + offset + iEdge * VECTOR_EDGE_METADATA_SIZE + sizeof(u32));
+    distance = readLE32(pBlobSpot->pBuffer + offset + iEdge * edgeMetadataSize(pIndex->nFormatVersion) + sizeof(u32));
     *pDistance = *((float*)&distance);
   }
   if( pVector != NULL ){
-    assert( VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + iEdge * pIndex->nEdgeVectorSize < offset );
+    assert( nodeMetadataSize(pIndex->nFormatVersion) + pIndex->nNodeVectorSize + iEdge * pIndex->nEdgeVectorSize < offset );
     vectorInitStatic(
       pVector,
       pIndex->nEdgeVectorType,
       pIndex->nVectorDims,
-      pBlobSpot->pBuffer + VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + iEdge * pIndex->nEdgeVectorSize
+      pBlobSpot->pBuffer + nodeMetadataSize(pIndex->nFormatVersion) + pIndex->nNodeVectorSize + iEdge * pIndex->nEdgeVectorSize
     );
   }
 }
@@ -399,11 +409,11 @@ void nodeBinReplaceEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iRe
     nEdges++;
   }
 
-  edgeVectorOffset = VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + iReplace * pIndex->nEdgeVectorSize;
-  edgeMetaOffset = nodeEdgesMetadataOffset(pIndex) + iReplace * VECTOR_EDGE_METADATA_SIZE;
+  edgeVectorOffset = nodeMetadataSize(pIndex->nFormatVersion) + pIndex->nNodeVectorSize + iReplace * pIndex->nEdgeVectorSize;
+  edgeMetaOffset = nodeEdgesMetadataOffset(pIndex) + iReplace * edgeMetadataSize(pIndex->nFormatVersion);
 
   assert( edgeVectorOffset + pIndex->nEdgeVectorSize <= pBlobSpot->nBufferSize );
-  assert( edgeMetaOffset + VECTOR_EDGE_METADATA_SIZE <= pBlobSpot->nBufferSize );
+  assert( edgeMetaOffset + edgeMetadataSize(pIndex->nFormatVersion) <= pBlobSpot->nBufferSize );
 
   vectorSerializeToBlob(pVector, pBlobSpot->pBuffer + edgeVectorOffset, pIndex->nEdgeVectorSize);
   writeLE32(pBlobSpot->pBuffer + edgeMetaOffset + sizeof(u32), *((u32*)&distance));
@@ -419,19 +429,19 @@ void nodeBinDeleteEdge(const DiskAnnIndex *pIndex, BlobSpot *pBlobSpot, int iDel
 
   assert( 0 <= iDelete && iDelete < nEdges );
 
-  edgeVectorOffset = VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + iDelete * pIndex->nEdgeVectorSize;
-  lastVectorOffset = VECTOR_NODE_METADATA_SIZE + pIndex->nNodeVectorSize + (nEdges - 1) * pIndex->nEdgeVectorSize;
-  edgeMetaOffset = nodeEdgesMetadataOffset(pIndex) + iDelete * VECTOR_EDGE_METADATA_SIZE;
-  lastMetaOffset = nodeEdgesMetadataOffset(pIndex) + (nEdges - 1) * VECTOR_EDGE_METADATA_SIZE;
+  edgeVectorOffset = nodeMetadataSize(pIndex->nFormatVersion) + pIndex->nNodeVectorSize + iDelete * pIndex->nEdgeVectorSize;
+  lastVectorOffset = nodeMetadataSize(pIndex->nFormatVersion) + pIndex->nNodeVectorSize + (nEdges - 1) * pIndex->nEdgeVectorSize;
+  edgeMetaOffset = nodeEdgesMetadataOffset(pIndex) + iDelete * edgeMetadataSize(pIndex->nFormatVersion);
+  lastMetaOffset = nodeEdgesMetadataOffset(pIndex) + (nEdges - 1) * edgeMetadataSize(pIndex->nFormatVersion);
 
   assert( edgeVectorOffset + pIndex->nEdgeVectorSize <= pBlobSpot->nBufferSize );
   assert( lastVectorOffset + pIndex->nEdgeVectorSize <= pBlobSpot->nBufferSize );
-  assert( edgeMetaOffset + VECTOR_EDGE_METADATA_SIZE <= pBlobSpot->nBufferSize );
-  assert( lastMetaOffset + VECTOR_EDGE_METADATA_SIZE <= pBlobSpot->nBufferSize );
+  assert( edgeMetaOffset + edgeMetadataSize(pIndex->nFormatVersion) <= pBlobSpot->nBufferSize );
+  assert( lastMetaOffset + edgeMetadataSize(pIndex->nFormatVersion) <= pBlobSpot->nBufferSize );
 
   if( edgeVectorOffset < lastVectorOffset ){
     memmove(pBlobSpot->pBuffer + edgeVectorOffset, pBlobSpot->pBuffer + lastVectorOffset, pIndex->nEdgeVectorSize);
-    memmove(pBlobSpot->pBuffer + edgeMetaOffset, pBlobSpot->pBuffer + lastMetaOffset, VECTOR_EDGE_METADATA_SIZE);
+    memmove(pBlobSpot->pBuffer + edgeMetaOffset, pBlobSpot->pBuffer + lastMetaOffset, edgeMetadataSize(pIndex->nFormatVersion));
   }
 
   writeLE16(pBlobSpot->pBuffer + sizeof(u64), nEdges - 1);
@@ -517,9 +527,9 @@ int diskAnnCreateIndex(
   if( maxNeighborsParam == 0 ){
     // 3 D**(1/2) gives good recall values (90%+)
     // we also want to keep disk overhead at moderate level - 50x of the disk size increase is the current upper bound
-    maxNeighborsParam = MIN(3 * ((int)(sqrt(dims)) + 1), (50 * nodeOverhead(vectorDataSize(type, dims))) / nodeEdgeOverhead(vectorDataSize(neighbours, dims)) + 1);
+    maxNeighborsParam = MIN(3 * ((int)(sqrt(dims)) + 1), (50 * nodeOverhead(VECTOR_FORMAT_DEFAULT, vectorDataSize(type, dims))) / nodeEdgeOverhead(VECTOR_FORMAT_DEFAULT, vectorDataSize(neighbours, dims)) + 1);
   }
-  blockSizeBytes = nodeOverhead(vectorDataSize(type, dims)) + maxNeighborsParam * (u64)nodeEdgeOverhead(vectorDataSize(neighbours, dims));
+  blockSizeBytes = nodeOverhead(VECTOR_FORMAT_DEFAULT, vectorDataSize(type, dims)) + maxNeighborsParam * (u64)nodeEdgeOverhead(VECTOR_FORMAT_DEFAULT, vectorDataSize(neighbours, dims));
   if( blockSizeBytes > DISKANN_MAX_BLOCK_SZ ){
     return SQLITE_ERROR;
   }
