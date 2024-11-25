@@ -1,6 +1,7 @@
 cfg_core! {
     use crate::EncryptionConfig;
 }
+
 use crate::{Database, Result};
 
 use super::DbType;
@@ -99,6 +100,7 @@ impl Builder<()> {
                         connector: None,
                         version: None,
                     },
+                    connector:None,
                 },
             }
         }
@@ -399,12 +401,25 @@ cfg_sync! {
         path: std::path::PathBuf,
         flags: crate::OpenFlags,
         remote: Remote,
+        connector: Option<crate::util::ConnectorService>,
     }
 
     impl Builder<SyncedDatabase> {
         #[doc(hidden)]
         pub fn version(mut self, version: String) -> Builder<SyncedDatabase> {
             self.inner.remote = self.inner.remote.version(version);
+            self
+        }
+
+        /// Provide a custom http connector that will be used to create http connections.
+        pub fn connector<C>(mut self, connector: C) -> Builder<SyncedDatabase>
+        where
+            C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
+            C::Response: crate::util::Socket,
+            C::Future: Send + 'static,
+            C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+        {
+            self.inner.connector = Some(wrap_connector(connector));
             self
         }
 
@@ -420,11 +435,16 @@ cfg_sync! {
                         connector: _,
                         version: _,
                     },
+                connector,
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
 
-            let https = super::connector()?;
+            let https = if let Some(connector) = connector {
+                connector
+            } else {
+                wrap_connector(super::connector()?)
+            };
             use tower::ServiceExt;
 
             let svc = https
