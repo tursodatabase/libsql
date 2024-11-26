@@ -1,6 +1,7 @@
 #include <sqlite3.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #if 0
 static void dump_frame(unsigned char *frame, size_t size){
@@ -127,6 +128,7 @@ int open_db(const char *path, sqlite3 **db) {
 int main(int argc, char *argv[])
 {
     sqlite3 *db_primary, *db_backup;
+    unsigned int max_frame;
     int rc;
 
     rc = open_db("primary.db", &db_primary);
@@ -136,6 +138,16 @@ int main(int argc, char *argv[])
     gen_data(db_primary);
 
     rc = open_db("backup.db", &db_backup);
+    if (rc != SQLITE_OK) {
+        return 1;
+    }
+    rc = libsql_wal_frame_count(db_backup, &max_frame);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Can't get frame count for backup: %s\n", sqlite3_errmsg(db_backup));
+        return 1;
+    }
+    assert(max_frame == 0);
+    
     sync_db(db_primary, db_backup);
 
     if (cmp_data(db_primary, db_backup)) {
