@@ -2470,6 +2470,7 @@ int libsql_wal_frame_count(
   sqlite3_mutex_enter(db->mutex);
   pPager = sqlite3BtreePager(db->aDb[0].pBt);
   rc = sqlite3PagerWalFrameCount(pPager, pnFrame);
+  sqlite3Error(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 #endif
@@ -2495,12 +2496,13 @@ int libsql_wal_get_frame(
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
   
-    sqlite3_mutex_enter(db->mutex);
-    pPager = sqlite3BtreePager(db->aDb[0].pBt);
-    rc = sqlite3PagerWalReadFrameRaw(pPager, iFrame, pBuf, nBuf);
-    sqlite3_mutex_leave(db->mutex);
+  sqlite3_mutex_enter(db->mutex);
+  pPager = sqlite3BtreePager(db->aDb[0].pBt);
+  rc = sqlite3PagerWalReadFrameRaw(pPager, iFrame, pBuf, nBuf);
+  sqlite3Error(db, rc);
+  sqlite3_mutex_leave(db->mutex);
   
-    return rc;
+  return rc;
 #endif
 }
 
@@ -2527,6 +2529,7 @@ int libsql_wal_insert_begin(sqlite3 *db) {
     goto out_unlock;
   }
 out_unlock:
+  sqlite3Error(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
@@ -2542,6 +2545,7 @@ int libsql_wal_insert_end(sqlite3 *db) {
     goto out_unlock;
   }
 out_unlock:
+  sqlite3Error(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
@@ -2573,6 +2577,7 @@ int libsql_wal_insert_frame(
     goto out_unlock;
   }
 out_unlock:
+  sqlite3Error(db, rc);
   sqlite3_mutex_leave(db->mutex);
 
   return rc;
