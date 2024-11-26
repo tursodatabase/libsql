@@ -297,6 +297,8 @@ pub enum LoadDumpError {
     NoCommit,
     #[error("Path is not a file")]
     NotAFile,
+    #[error("The passed dump sql is invalid: {0}")]
+    InvalidSqlInput(String),
 }
 
 impl ResponseError for LoadDumpError {}
@@ -315,7 +317,8 @@ impl IntoResponse for &LoadDumpError {
             | NoTxn
             | NoCommit
             | NotAFile
-            | DumpFilePathNotAbsolute => self.format_err(StatusCode::BAD_REQUEST),
+            | DumpFilePathNotAbsolute
+            | InvalidSqlInput(_) => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
 }
