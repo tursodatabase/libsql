@@ -7780,7 +7780,8 @@ int sqlite3PagerWalFrameCount(Pager *pPager, unsigned int *pnFrames){
   if( pagerUseWal(pPager) ){
     return pPager->wal->methods.xFrameCount(pPager->wal->pData, 0, pnFrames);
   }else{
-    return SQLITE_ERROR;
+    *pnFrames = 0;
+    return SQLITE_OK;
   }
 }
 
