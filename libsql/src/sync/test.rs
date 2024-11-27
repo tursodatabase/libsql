@@ -4,10 +4,10 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use std::time::Duration;
 use tempfile::tempdir;
 use tokio::io::{duplex, AsyncRead, AsyncWrite, DuplexStream};
 use tower::Service;
-use std::time::Duration;
 
 #[tokio::test]
 async fn test_sync_context_push_frame() {
@@ -30,10 +30,10 @@ async fn test_sync_context_push_frame() {
     // Push a frame and verify the response
     let durable_frame = sync_ctx.push_one_frame(frame, 1, 0).await.unwrap();
     sync_ctx.write_metadata().await.unwrap();
-    assert_eq!(durable_frame, 1); // First frame should return max_frame_no = 1
+    assert_eq!(durable_frame, 0); // First frame should return max_frame_no = 0
 
     // Verify internal state was updated
-    assert_eq!(sync_ctx.durable_frame_num(), 1);
+    assert_eq!(sync_ctx.durable_frame_num(), 0);
     assert_eq!(sync_ctx.generation(), 1);
     assert_eq!(server.frame_count(), 1);
 }
@@ -58,7 +58,7 @@ async fn test_sync_context_with_auth() {
 
     let durable_frame = sync_ctx.push_one_frame(frame, 1, 0).await.unwrap();
     sync_ctx.write_metadata().await.unwrap();
-    assert_eq!(durable_frame, 1);
+    assert_eq!(durable_frame, 0);
     assert_eq!(server.frame_count(), 1);
 }
 
@@ -84,8 +84,8 @@ async fn test_sync_context_multiple_frames() {
         let frame = Bytes::from(format!("frame data {}", i));
         let durable_frame = sync_ctx.push_one_frame(frame, 1, i).await.unwrap();
         sync_ctx.write_metadata().await.unwrap();
-        assert_eq!(durable_frame, i + 1);
-        assert_eq!(sync_ctx.durable_frame_num(), i + 1);
+        assert_eq!(durable_frame, i);
+        assert_eq!(sync_ctx.durable_frame_num(), i);
         assert_eq!(server.frame_count(), i + 1);
     }
 }
@@ -110,7 +110,7 @@ async fn test_sync_context_corrupted_metadata() {
     let frame = Bytes::from("test frame data");
     let durable_frame = sync_ctx.push_one_frame(frame, 1, 0).await.unwrap();
     sync_ctx.write_metadata().await.unwrap();
-    assert_eq!(durable_frame, 1);
+    assert_eq!(durable_frame, 0);
     assert_eq!(server.frame_count(), 1);
 
     // Update metadata path to use -info instead of .meta
@@ -133,10 +133,68 @@ async fn test_sync_context_corrupted_metadata() {
 }
 
 #[tokio::test]
+async fn test_sync_restarts_with_lower_max_frame_no() {
+    let _ = tracing_subscriber::fmt::try_init();
+
+    let server = MockServer::start();
+    let temp_dir = tempdir().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+
+    // Create initial sync context and push a frame
+    let sync_ctx = SyncContext::new(
+        server.connector(),
+        db_path.to_str().unwrap().to_string(),
+        server.url(),
+        None,
+    )
+    .await
+    .unwrap();
+
+    let mut sync_ctx = sync_ctx;
+    let frame = Bytes::from("test frame data");
+    let durable_frame = sync_ctx.push_one_frame(frame.clone(), 1, 0).await.unwrap();
+    sync_ctx.write_metadata().await.unwrap();
+    assert_eq!(durable_frame, 0);
+    assert_eq!(server.frame_count(), 1);
+
+    // Bump the durable frame num so that the next time we call the
+    // server we think we are further ahead than the database we are talking to is.
+    sync_ctx.durable_frame_num += 3;
+    sync_ctx.write_metadata().await.unwrap();
+
+    // Create new sync context with corrupted metadata
+    let mut sync_ctx = SyncContext::new(
+        server.connector(),
+        db_path.to_str().unwrap().to_string(),
+        server.url(),
+        None,
+    )
+    .await
+    .unwrap();
+
+    // Verify that the context was set to new fake values.
+    assert_eq!(sync_ctx.durable_frame_num(), 3);
+    assert_eq!(sync_ctx.generation(), 1);
+
+    let frame_no = sync_ctx.durable_frame_num() + 1;
+    // This push should fail because we are ahead of the server and thus should get an invalid
+    // frame no error.
+    sync_ctx
+        .push_one_frame(frame.clone(), 1, frame_no)
+        .await
+        .unwrap_err();
+
+    let frame_no = sync_ctx.durable_frame_num() + 1;
+    // This then should work because when the last one failed it updated our state of the server
+    // durable_frame_num and we should then start writing from there.
+    sync_ctx.push_one_frame(frame, 1, frame_no).await.unwrap();
+}
+
+#[tokio::test]
 async fn test_sync_context_retry_on_error() {
     // Pause time to control it manually
     tokio::time::pause();
-    
+
     let server = MockServer::start();
     let temp_dir = tempdir().unwrap();
     let db_path = temp_dir.path().join("test.db");
@@ -172,7 +230,7 @@ async fn test_sync_context_retry_on_error() {
     // Next attempt should succeed
     let durable_frame = sync_ctx.push_one_frame(frame, 1, 0).await.unwrap();
     sync_ctx.write_metadata().await.unwrap();
-    assert_eq!(durable_frame, 1);
+    assert_eq!(durable_frame, 0);
     assert_eq!(server.frame_count(), 1);
 }
 
@@ -316,8 +374,9 @@ impl MockServer {
                             let current_count = frame_count.fetch_add(1, Ordering::SeqCst);
 
                             if req.uri().path().contains("/sync/") {
+                                // Return the max_frame_no that has been accepted
                                 let response = serde_json::json!({
-                                    "max_frame_no": current_count + 1
+                                    "max_frame_no": current_count
                                 });
 
                                 Ok::<_, hyper::Error>(

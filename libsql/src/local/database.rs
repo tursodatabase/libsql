@@ -388,6 +388,29 @@ impl Database {
     #[cfg(feature = "sync")]
     /// Push WAL frames to remote.
     pub async fn push(&self) -> Result<crate::database::Replicated> {
+        use crate::sync::SyncError;
+        use crate::Error;
+
+        match self.try_push().await {
+            Ok(rep) => Ok(rep),
+            Err(Error::Sync(err)) => {
+                // Retry the sync because we are ahead of the server and we need to push some older
+                // frames.
+                if let Some(SyncError::InvalidPushFrameNoLow(_, _)) =
+                    err.downcast_ref::<SyncError>()
+                {
+                    tracing::debug!("got InvalidPushFrameNo, retrying push");
+                    self.try_push().await
+                } else {
+                    Err(Error::Sync(err))
+                }
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    #[cfg(feature = "sync")]
+    async fn try_push(&self) -> Result<crate::database::Replicated> {
         let mut sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
         let conn = self.connect()?;
 
