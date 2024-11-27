@@ -30,13 +30,13 @@ static int cmp_data(sqlite3 *db1, sqlite3 *db2){
   sqlite3_stmt *stmt1, *stmt2;
   int rc;
 
-  rc = sqlite3_prepare_v2(db1, "SELECT * FROM users", -1, &stmt1, 0);
+  rc = sqlite3_prepare_v2(db1, "SELECT HEX(x) FROM t", -1, &stmt1, 0);
   if( rc!=SQLITE_OK ){
     fprintf(stderr, "Can't prepare statement: %s\n", sqlite3_errmsg(db1));
     return 1;
   }
 
-  rc = sqlite3_prepare_v2(db2, "SELECT * FROM users", -1, &stmt2, 0);
+  rc = sqlite3_prepare_v2(db2, "SELECT HEX(x) FROM t", -1, &stmt2, 0);
   if( rc!=SQLITE_OK ){
     fprintf(stderr, "Can't prepare statement: %s\n", sqlite3_errmsg(db2));
     return 1;
@@ -52,10 +52,10 @@ static int cmp_data(sqlite3 *db1, sqlite3 *db2){
     if( step1!=SQLITE_ROW ){
       break;
     }
-    const unsigned char *name1 = sqlite3_column_text(stmt1, 1);
-    const unsigned char *name2 = sqlite3_column_text(stmt2, 1);
-    if( strcmp((const char *)name1, (const char *)name2)!=0 ){
-      fprintf(stderr, "Data mismatch: %s != %s\n", name1, name2);
+    const unsigned char *text1 = sqlite3_column_text(stmt1, 0);
+    const unsigned char *text2 = sqlite3_column_text(stmt2, 0);
+    if( strncmp((const char *)text1, (const char *)text2, 4096)!=0 ){
+      fprintf(stderr, "Data mismatch\n");
       return 1;
     }
   }
@@ -98,10 +98,10 @@ static int sync_db(sqlite3 *db_primary, sqlite3 *db_backup){
 }
 
 static void gen_data(sqlite3 *db){
-  sqlite3_exec(db, "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)", 0, 0, 0);
-  sqlite3_exec(db, "INSERT INTO users (id, name) VALUES (1, 'John Doe')", 0, 0, 0);
-  sqlite3_exec(db, "INSERT INTO users (id, name) VALUES (2, 'Jane Doe')", 0, 0, 0);
-  sqlite3_exec(db, "INSERT INTO users (id, name) VALUES (3, 'Jim Beam')", 0, 0, 0);
+  sqlite3_exec(db, "CREATE TABLE t (x)", 0, 0, 0);
+  sqlite3_exec(db, "INSERT INTO t VALUES (randomblob(4 * 1024))", 0, 0, 0);
+  sqlite3_exec(db, "INSERT INTO t VALUES (randomblob(1 * 1024))", 0, 0, 0);
+  sqlite3_exec(db, "INSERT INTO t VALUES (randomblob(1 * 1024))", 0, 0, 0);
 }
 
 int open_db(const char *path, sqlite3 **db) {
