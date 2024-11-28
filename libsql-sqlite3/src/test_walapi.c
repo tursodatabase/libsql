@@ -119,6 +119,32 @@ void test_sync_by_parts() {
     cmp_data(db_primary, db_backup);
 }
 
+// This test case writes to a local database, syncs it to remote, and then verifies the remote.
+// The test then writes some more to local database, syncs it again, and verifies the remote again.
+void test_sync_while_reading() {
+     sqlite3 *db_primary, *db_backup;
+    unsigned int max_frame;
+    open_db("primary_test_sync_while_reading.db", &db_primary);
+    ensure(sqlite3_exec(db_primary, "CREATE TABLE t (x)", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(4 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(1 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(1 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+
+    open_db("backup_test_sync_while_reading.db", &db_backup);
+    ensure(libsql_wal_frame_count(db_backup, &max_frame) == SQLITE_OK, "failed to get frames count: %s\n", sqlite3_errmsg(db_backup));
+    assert(max_frame == 0);
+    
+    eprintf("start full sync\n");
+    sync_db(db_primary, db_backup);
+    cmp_data(db_primary, db_backup);
+
+    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(4 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(1 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(1 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+    sync_db(db_primary, db_backup);
+    cmp_data(db_primary, db_backup); 
+}
+
 int main(int argc, char *argv[])
 {
     test_huge_payload();
@@ -126,5 +152,9 @@ int main(int argc, char *argv[])
 
     test_sync_by_parts();
     printf("============= OK test_sync_by_parts\n");
+
+    test_sync_while_reading();
+    printf("============= OK test_sync_while_reading\n");
+
     return 0;
 }
