@@ -7856,6 +7856,9 @@ int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsign
                                     isCommit, 
                                     pPager->walSyncFlags, 
                                     &nFrames);
+  if( nFrames == 0 ){
+    return SQLITE_ERROR;
+  }
   assert( nFrames == 1 );
   return rc;
 }
