@@ -7813,10 +7813,17 @@ int sqlite3PagerWalBeginCommit(Pager *pPager) {
 }
 
 int sqlite3PagerWalEndCommit(Pager *pPager) {
+  int rc = SQLITE_ERROR;
   if (!pagerUseWal(pPager)) {
-    return SQLITE_ERROR;
+    return rc;
   }
-  return pPager->wal->methods.xEndWriteTransaction(pPager->wal->pData);
+  rc = pPager->wal->methods.xEndWriteTransaction(pPager->wal->pData);
+  if (rc != SQLITE_OK) {
+    return rc;
+  }
+  pager_reset(pPager);
+  pager_unlock(pPager);
+  return rc;
 }
 
 int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsigned int nBuf) {
