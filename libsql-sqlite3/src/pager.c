@@ -7821,6 +7821,7 @@ int sqlite3PagerWalEndCommit(Pager *pPager) {
   if (rc != SQLITE_OK) {
     return rc;
   }
+  pager_reset(pPager);
   pager_unlock(pPager);
   return rc;
 }
