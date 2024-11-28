@@ -5431,6 +5431,7 @@ dependencies = [
 name = "sql-experimental"
 version = "0.0.0"
 dependencies = [
+ "anyhow",
  "bytes",
  "cbindgen",
  "http 1.1.0",
