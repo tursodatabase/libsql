@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 	const char *err = NULL;
 	int retval = 0;
 	char db_path[1024];
+	char sync = 0;
 
 	if (argc > 1) {
 	    char* url = argv[1];
@@ -34,6 +35,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s\n", err);
             goto quit;
         }
+        sync = 1;
     } else {
         retval = libsql_open_ext(":memory:", &db, &err);
         if (retval != 0) {
@@ -48,36 +50,59 @@ int main(int argc, char *argv[])
 		goto quit;
 	}
 
-	retval = libsql_query(conn, "SELECT 1", &rows, &err);
+	retval = libsql_execute(conn, "CREATE TABLE IF NOT EXISTS guest_book_entries (text TEXT)", &err);
+	if (retval != 0) {
+        fprintf(stderr, "%s\n", err);
+        goto quit;
+    }
+
+	retval = libsql_execute(conn, "INSERT INTO guest_book_entries VALUES('hi there')", &err);
+	if (retval != 0) {
+        fprintf(stderr, "%s\n", err);
+        goto quit;
+    }
+
+	retval = libsql_execute(conn, "INSERT INTO guest_book_entries VALUES('some more hi there')", &err);
+	if (retval != 0) {
+        fprintf(stderr, "%s\n", err);
+        goto quit;
+    }
+
+	retval = libsql_query(conn, "SELECT text FROM guest_book_entries", &rows, &err);
 	if (retval != 0) {
 		fprintf(stderr, "%s\n", err);
 		goto quit;
 	}
 
-	int num_cols = libsql_column_count(rows);
-
 	while ((retval = libsql_next_row(rows, &row, &err)) == 0) {
 		if (!err && !row) {
 			break;
 		}
-		for (int col = 0; col < num_cols; col++) {
-			if (col > 0) {
-				printf(", ");
-			}
-			long long value;
-			retval = libsql_get_int(row, col, &value, &err);
-			if (retval != 0) {
-				fprintf(stderr, "%s\n", err);
-			} else {
-				printf("%lld\n", value);
-			}
-		}
+        const char * value = NULL;
+        retval = libsql_get_string(row, 0, &value, &err);
+        if (retval != 0) {
+            fprintf(stderr, "%s\n", err);
+        } else {
+            printf("%s\n", value);
+            libsql_free_string(value);
+            value = NULL;
+        }
 		err = NULL;
 	}
 
 	if (retval != 0) {
 		fprintf(stderr, "%s\n", err);
 		goto quit;
+	}
+
+    if (sync) {
+        printf("Syncing database to remote...\n");
+        retval = libsql_sync(db, &err);
+        if (retval != 0) {
+            fprintf(stderr, "%s\n", err);
+            goto quit;
+        }
+        printf("Done!\n");
 	}
 
 quit:
