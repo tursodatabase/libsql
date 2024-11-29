@@ -17,9 +17,18 @@ async fn main() {
 
     conn.query("select 1; select 1;", ()).await.unwrap();
 
-    conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ())
+    let tx = conn
+        .transaction_with_behavior(libsql::TransactionBehavior::Immediate)
         .await
         .unwrap();
+
+    tx.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ())
+        .await
+        .unwrap();
+
+        pause();
+
+    tx.commit().await.unwrap();
 
     let mut stmt = conn
         .prepare("INSERT INTO users (email) VALUES (?1)")
@@ -34,10 +43,24 @@ async fn main() {
         .unwrap();
 
     let mut rows = stmt.query(["foo@example.com"]).await.unwrap();
+    loop {
 
-    let row = rows.next().await.unwrap().unwrap();
+        let row = rows.next().await.unwrap().unwrap();
 
-    let value = row.get_value(0).unwrap();
+        let value = row.get_value(0).unwrap();
 
-    println!("Row: {:?}", value);
+        println!("Row: {:?}", value);
+    }
+}
+
+fn pause() {
+    let mut input = String::new();
+    println!("Press enter to continue..");
+    match std::io::stdin().read_line(&mut input) {
+        Ok(_) => {
+        }
+        Err(error) => {
+            eprintln!("Error reading input: {}", error);
+        }
+    }
 }

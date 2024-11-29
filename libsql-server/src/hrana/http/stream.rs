@@ -329,7 +329,7 @@ fn decode_baton(server: &Server, baton_str: &str) -> Result<(u64, u64)> {
 const EXPIRATION: Duration = Duration::from_secs(10);
 
 /// How long do we keep an expired stream in [`Handle::Expired`] state before removing it for good.
-const CLEANUP: Duration = Duration::from_secs(300);
+const CLEANUP: Duration = Duration::from_secs(5);
 
 fn mark_expire(state: &mut ServerStreamState, stream_id: u64) {
     let expire_at = roundup_instant(state, Instant::now() + EXPIRATION);
