@@ -10,11 +10,11 @@ macro_rules! cfg_core {
     }
 }
 
-macro_rules! cfg_replication_or_remote {
+macro_rules! cfg_replication_or_remote_or_sync {
     ($($item:item)*) => {
         $(
-            #[cfg(any(feature = "replication", feature = "remote"))]
-            #[cfg_attr(docsrs, doc(cfg(any(feature = "replication", feature = "remote"))))]
+            #[cfg(any(feature = "replication", feature = "sync", feature = "remote"))]
+            #[cfg_attr(docsrs, doc(cfg(any(feature = "replication", feature = "sync", feature = "remote"))))]
             $item
         )*
     }
@@ -35,6 +35,26 @@ macro_rules! cfg_replication {
         $(
             #[cfg(feature = "replication")]
             #[cfg_attr(docsrs, doc(cfg(feature = "replication")))]
+            $item
+        )*
+    }
+}
+
+macro_rules! cfg_sync {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "sync")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "sync")))]
+            $item
+        )*
+    }
+}
+
+macro_rules! cfg_replication_or_sync {
+    ($($item:item)*) => {
+        $(
+            #[cfg(any(feature = "replication", feature = "sync"))]
+            #[cfg_attr(docsrs, doc(cfg(any(feature = "replication", feature = "sync"))))]
             $item
         )*
     }

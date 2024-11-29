@@ -55,12 +55,21 @@ pub enum Error {
     TransactionalBatchError(String),
     #[error("Invalid blob size, expected {0}")]
     InvalidBlobSize(usize),
+    #[error("sync error: {0}")]
+    Sync(crate::BoxError),
 }
 
 #[cfg(feature = "hrana")]
 impl From<crate::hrana::HranaError> for Error {
     fn from(e: crate::hrana::HranaError) -> Self {
         Error::Hrana(e.into())
+    }
+}
+
+#[cfg(feature = "sync")]
+impl From<crate::sync::SyncError> for Error {
+    fn from(e: crate::sync::SyncError) -> Self {
+        Error::Sync(e.into())
     }
 }
 

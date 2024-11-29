@@ -57,13 +57,23 @@ impl Connection {
                 )));
             }
         }
-
-        Ok(Connection {
+        let conn = Connection {
             raw,
             drop_ref: Arc::new(()),
             #[cfg(feature = "replication")]
             writer: db.writer()?,
-        })
+        };
+        #[cfg(feature = "sync")]
+        if let Some(_) = db.sync_ctx {
+            // We need to make sure database is in WAL mode with checkpointing
+            // disabled so that we can sync our changes back to a remote
+            // server.
+            conn.query("PRAGMA journal_mode = WAL", Params::None)?;
+            unsafe {
+                ffi::libsql_wal_disable_checkpoint(conn.raw);
+            }
+        }
+        Ok(conn)
     }
 
     /// Get a raw handle to the underlying libSQL connection
@@ -434,6 +444,43 @@ impl Connection {
                 Err(errors::Error::SqliteFailure(err, err_msg))
             }
         }
+    }
+
+    pub(crate) fn wal_frame_count(&self) -> u32 {
+        let mut max_frame_no: std::os::raw::c_uint = 0;
+        unsafe { libsql_sys::ffi::libsql_wal_frame_count(self.handle(), &mut max_frame_no) };
+
+        max_frame_no
+    }
+
+    pub(crate) fn wal_get_frame(&self, frame_no: u32, page_size: u32) -> Result<bytes::BytesMut> {
+        use bytes::BufMut;
+
+        let frame_size: usize = 24 + page_size as usize;
+
+        // Use a BytesMut to provide cheaper clones of frame data (think retries)
+        // and more efficient buffer usage for extracting wal frames and spliting them off.
+        let mut buf = bytes::BytesMut::with_capacity(frame_size);
+
+        let rc = unsafe {
+            libsql_sys::ffi::libsql_wal_get_frame(
+                self.handle(),
+                frame_no,
+                buf.chunk_mut().as_mut_ptr() as *mut _,
+                frame_size as u32,
+            )
+        };
+
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("Failed to get frame: {}", frame_no),
+            ));
+        }
+
+        unsafe { buf.advance_mut(frame_size) };
+
+        Ok(buf)
     }
 }
 

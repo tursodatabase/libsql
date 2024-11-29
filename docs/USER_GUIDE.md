@@ -160,6 +160,10 @@ SNAPSHOT_FILE="$1"
 NAMESPACE="$2"
 
 echo "Generated incremental snapshot $SNAPSHOT_FILE for namespace $NAMESPACE"
+
+# At this point we can ship the snapshot file to whereever we would like but we
+# must delete it from its location on disk or else sqld will panic.
+rm $SNAPSHOT_FILE
 ```
 
 and then configure `sqld` to generate an incremental snapshot every 5 seconds and invoke the shell script when `sqld` generates a snapshot:
@@ -215,6 +219,12 @@ async fn main() {
     }
 }
 ```
+
+When applying snapshots the format of the file name gives certain information.
+The format is `{namespace}:{log_id}:{start_frame_no:020x}-{end_frame_no:020x}.snap` where log_id represents the unqiue write ahead log and then
+for each unique log_id there will be snapshots starting at frame `0` up until
+the end. Snapshots must be applied sequentially for each log_id starting at
+frame 0. 
 
 ## Multitenancy
 

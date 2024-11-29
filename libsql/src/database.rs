@@ -33,6 +33,39 @@ cfg_core! {
     }
 }
 
+cfg_replication_or_sync! {
+
+    pub type FrameNo = u64;
+
+    #[derive(Debug)]
+    // TODO(lucio): remove this once we use these fields in our sync code
+    #[allow(dead_code)]
+    pub struct Replicated {
+        pub(crate) frame_no: Option<FrameNo>,
+        pub(crate) frames_synced: usize,
+    }
+
+    impl Replicated {
+        /// The currently synced frame number. This can be used to track
+        /// where in the log you might be. Beware that this value can be reset to a lower value by the
+        /// server in certain situations. Please use `frames_synced` if you want to track the amount of
+        /// work a sync has done.
+        // TODO(lucio): remove this once we use these fields in our sync code
+        #[allow(dead_code)]
+        pub fn frame_no(&self) -> Option<FrameNo> {
+            self.frame_no
+        }
+
+        /// The count of frames synced during this call of `sync`. A frame is a 4kB frame from the
+        /// libsql write ahead log.
+        // TODO(lucio): remove this once we use these fields in our sync code
+        #[allow(dead_code)]
+        pub fn frames_synced(&self) -> usize {
+            self.frames_synced
+        }
+    }
+}
+
 enum DbType {
     #[cfg(feature = "core")]
     Memory { db: crate::local::Database },
@@ -47,6 +80,8 @@ enum DbType {
         db: crate::local::Database,
         encryption_config: Option<EncryptionConfig>,
     },
+    #[cfg(feature = "sync")]
+    Offline { db: crate::local::Database },
     #[cfg(feature = "remote")]
     Remote {
         url: String,
@@ -66,6 +101,8 @@ impl fmt::Debug for DbType {
             Self::File { .. } => write!(f, "File"),
             #[cfg(feature = "replication")]
             Self::Sync { .. } => write!(f, "Sync"),
+            #[cfg(feature = "sync")]
+            Self::Offline { .. } => write!(f, "Offline"),
             #[cfg(feature = "remote")]
             Self::Remote { .. } => write!(f, "Remote"),
             _ => write!(f, "no database type set"),
@@ -118,7 +155,6 @@ cfg_core! {
 
 cfg_replication! {
     use crate::Error;
-    use libsql_replication::frame::FrameNo;
 
 
     impl Database {
@@ -332,17 +368,19 @@ cfg_replication! {
 
         /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
-        pub async fn sync(&self) -> Result<crate::replication::Replicated> {
-            if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
-                db.sync().await
-            } else {
-                Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
+        pub async fn sync(&self) -> Result<Replicated> {
+            match &self.db_type {
+                #[cfg(feature = "replication")]
+                DbType::Sync { db, encryption_config: _ } => db.sync().await,
+                #[cfg(feature = "sync")]
+                DbType::Offline { db } => db.push().await,
+                _ => Err(Error::SyncNotSupported(format!("{:?}", self.db_type))),
             }
         }
 
         /// Sync database from remote until it gets to a given replication_index or further,
         /// and returns the committed frame_no after syncing, if applicable.
-        pub async fn sync_until(&self, replication_index: FrameNo) -> Result<crate::replication::Replicated> {
+        pub async fn sync_until(&self, replication_index: FrameNo) -> Result<Replicated> {
             if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.sync_until(replication_index).await
             } else {
@@ -595,6 +633,17 @@ impl Database {
                 Ok(Connection { conn })
             }
 
+            #[cfg(feature = "sync")]
+            DbType::Offline { db } => {
+                use crate::local::impls::LibsqlConnection;
+
+                let conn = db.connect()?;
+
+                let conn = std::sync::Arc::new(LibsqlConnection { conn });
+
+                Ok(Connection { conn })
+            }
+
             #[cfg(feature = "remote")]
             DbType::Remote {
                 url,
@@ -621,7 +670,8 @@ impl Database {
 
 #[cfg(any(
     all(feature = "tls", feature = "replication"),
-    all(feature = "tls", feature = "remote")
+    all(feature = "tls", feature = "remote"),
+    all(feature = "tls", feature = "sync")
 ))]
 fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     let mut http = hyper::client::HttpConnector::new();
@@ -638,7 +688,8 @@ fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnect
 
 #[cfg(any(
     all(not(feature = "tls"), feature = "replication"),
-    all(not(feature = "tls"), feature = "remote")
+    all(not(feature = "tls"), feature = "remote"),
+    all(not(feature = "tls"), feature = "sync")
 ))]
 fn connector() -> Result<hyper::client::HttpConnector> {
     panic!("The `tls` feature is disabled, you must provide your own http connector");

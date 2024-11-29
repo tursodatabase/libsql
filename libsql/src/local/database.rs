@@ -2,8 +2,7 @@ use std::sync::Once;
 
 cfg_replication!(
     use http::uri::InvalidUri;
-    use crate::database::EncryptionConfig;
-    use libsql_replication::frame::FrameNo;
+    use crate::database::{EncryptionConfig, FrameNo};
 
     use crate::replication::client::Client;
     use crate::replication::local_client::LocalClient;
@@ -19,6 +18,10 @@ cfg_replication!(
     }
 );
 
+cfg_sync! {
+    use crate::sync::SyncContext;
+}
+
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
 use libsql_sys::ffi;
@@ -29,6 +32,8 @@ pub struct Database {
     pub flags: OpenFlags,
     #[cfg(feature = "replication")]
     pub replication_ctx: Option<ReplicationContext>,
+    #[cfg(feature = "sync")]
+    pub sync_ctx: Option<tokio::sync::Mutex<SyncContext>>,
 }
 
 impl Database {
@@ -119,6 +124,30 @@ impl Database {
             client: Some(remote),
             read_your_writes,
         });
+
+        Ok(db)
+    }
+
+    #[cfg(feature = "sync")]
+    #[doc(hidden)]
+    pub async fn open_local_with_offline_writes(
+        connector: crate::util::ConnectorService,
+        db_path: impl Into<String>,
+        flags: OpenFlags,
+        endpoint: String,
+        auth_token: String,
+    ) -> Result<Database> {
+        let db_path = db_path.into();
+        let endpoint = if endpoint.starts_with("libsql:") {
+            endpoint.replace("libsql:", "https:")
+        } else {
+            endpoint
+        };
+        let mut db = Database::open(&db_path, flags)?;
+
+        let sync_ctx =
+            SyncContext::new(connector, db_path.into(), endpoint, Some(auth_token)).await?;
+        db.sync_ctx = Some(tokio::sync::Mutex::new(sync_ctx));
 
         Ok(db)
     }
@@ -229,6 +258,8 @@ impl Database {
             flags,
             #[cfg(feature = "replication")]
             replication_ctx: None,
+            #[cfg(feature = "sync")]
+            sync_ctx: None,
         }
     }
 
@@ -261,7 +292,7 @@ impl Database {
     #[cfg(feature = "replication")]
     /// Perform a sync step, returning the new replication index, or None, if the nothing was
     /// replicated yet
-    pub async fn sync_oneshot(&self) -> Result<crate::replication::Replicated> {
+    pub async fn sync_oneshot(&self) -> Result<crate::database::Replicated> {
         if let Some(ctx) = &self.replication_ctx {
             ctx.replicator.sync_oneshot().await
         } else {
@@ -274,7 +305,7 @@ impl Database {
 
     #[cfg(feature = "replication")]
     /// Sync with primary
-    pub async fn sync(&self) -> Result<crate::replication::Replicated> {
+    pub async fn sync(&self) -> Result<crate::database::Replicated> {
         Ok(self.sync_oneshot().await?)
     }
 
@@ -294,7 +325,10 @@ impl Database {
 
     #[cfg(feature = "replication")]
     /// Sync with primary at least to a given replication index
-    pub async fn sync_until(&self, replication_index: FrameNo) -> Result<crate::replication::Replicated> {
+    pub async fn sync_until(
+        &self,
+        replication_index: FrameNo,
+    ) -> Result<crate::database::Replicated> {
         if let Some(ctx) = &self.replication_ctx {
             let mut frame_no: Option<FrameNo> = ctx.replicator.committed_frame_no().await;
             let mut frames_synced: usize = 0;
@@ -303,7 +337,7 @@ impl Database {
                 frame_no = res.frame_no();
                 frames_synced += res.frames_synced();
             }
-            Ok(crate::replication::Replicated {
+            Ok(crate::database::Replicated {
                 frame_no,
                 frames_synced,
             })
@@ -349,6 +383,55 @@ impl Database {
                     .to_string(),
             ))
         }
+    }
+
+    #[cfg(feature = "sync")]
+    /// Push WAL frames to remote.
+    pub async fn push(&self) -> Result<crate::database::Replicated> {
+        let mut sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
+        let conn = self.connect()?;
+
+        let page_size = {
+            let rows = conn
+                .query("PRAGMA page_size", crate::params::Params::None)?
+                .unwrap();
+            let row = rows.next()?.unwrap();
+            let page_size = row.get::<u32>(0)?;
+            page_size
+        };
+
+        let max_frame_no = conn.wal_frame_count();
+
+        let generation = sync_ctx.generation(); // TODO: Probe from WAL.
+        let start_frame_no = sync_ctx.durable_frame_num() + 1;
+        let end_frame_no = max_frame_no;
+
+        let mut frame_no = start_frame_no;
+        while frame_no <= end_frame_no {
+            let frame = conn.wal_get_frame(frame_no, page_size)?;
+
+            // The server returns its maximum frame number. To avoid resending
+            // frames the server already knows about, we need to update the
+            // frame number to the one returned by the server.
+            let max_frame_no = sync_ctx
+                .push_one_frame(frame.freeze(), generation, frame_no)
+                .await?;
+
+            if max_frame_no > frame_no {
+                frame_no = max_frame_no;
+            }
+            frame_no += 1;
+        }
+
+        sync_ctx.write_metadata().await?;
+
+        // TODO(lucio): this can underflow if the server previously returned a higher max_frame_no
+        // than what we have stored here.
+        let frame_count = end_frame_no - start_frame_no + 1;
+        Ok(crate::database::Replicated {
+            frame_no: None,
+            frames_synced: frame_count as usize,
+        })
     }
 
     pub(crate) fn path(&self) -> &str {

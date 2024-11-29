@@ -279,3 +279,149 @@ fn export_dump() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn load_dump_with_attach_rejected() {
+    const DUMP: &str = r#"
+        PRAGMA foreign_keys=OFF;
+    BEGIN TRANSACTION;
+    CREATE TABLE test (x);
+    INSERT INTO test VALUES(42);
+    ATTACH foo/bar.sql
+    COMMIT;"#;
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    let tmp = tempdir().unwrap();
+    let tmp_path = tmp.path().to_path_buf();
+
+    std::fs::write(tmp_path.join("dump.sql"), DUMP).unwrap();
+
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async move {
+        let client = Client::new();
+
+        // path is not absolute is an error
+        let resp = client
+            .post(
+                "http://primary:9090/v1/namespaces/foo/create",
+                json!({ "dump_url": "file:dump.sql"}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+
+        // path doesn't exist is an error
+        let resp = client
+            .post(
+                "http://primary:9090/v1/namespaces/foo/create",
+                json!({ "dump_url": "file:/dump.sql"}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+
+        let resp = client
+            .post(
+                "http://primary:9090/v1/namespaces/foo/create",
+                json!({ "dump_url": format!("file:{}", tmp_path.join("dump.sql").display())}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::BAD_REQUEST,
+            "{}",
+            resp.json::<serde_json::Value>().await.unwrap_or_default()
+        );
+
+        assert_snapshot!(resp.body_string().await?);
+
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
+        let foo_conn = foo.connect()?;
+
+        let res = foo_conn.query("select count(*) from test", ()).await;
+        // This should error since the dump should have failed!
+        assert!(res.is_err());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn load_dump_with_invalid_sql() {
+    const DUMP: &str = r#"
+        PRAGMA foreign_keys=OFF;
+    BEGIN TRANSACTION;
+    CREATE TABLE test (x);
+    INSERT INTO test VALUES(42);
+    SELECT abs(-9223372036854775808) 
+    COMMIT;"#;
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    let tmp = tempdir().unwrap();
+    let tmp_path = tmp.path().to_path_buf();
+
+    std::fs::write(tmp_path.join("dump.sql"), DUMP).unwrap();
+
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async move {
+        let client = Client::new();
+
+        // path is not absolute is an error
+        let resp = client
+            .post(
+                "http://primary:9090/v1/namespaces/foo/create",
+                json!({ "dump_url": "file:dump.sql"}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+
+        // path doesn't exist is an error
+        let resp = client
+            .post(
+                "http://primary:9090/v1/namespaces/foo/create",
+                json!({ "dump_url": "file:/dump.sql"}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+
+        let resp = client
+            .post(
+                "http://primary:9090/v1/namespaces/foo/create",
+                json!({ "dump_url": format!("file:{}", tmp_path.join("dump.sql").display())}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::BAD_REQUEST,
+            "{}",
+            resp.json::<serde_json::Value>().await.unwrap_or_default()
+        );
+
+        assert_snapshot!(resp.body_string().await?);
+
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
+        let foo_conn = foo.connect()?;
+
+        let res = foo_conn.query("select count(*) from test", ()).await;
+        // This should error since the dump should have failed!
+        assert!(res.is_err());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

@@ -128,6 +128,8 @@ pub enum Error {
     RuntimeTaskJoinError(#[from] tokio::task::JoinError),
     #[error("wal error: {0}")]
     LibsqlWal(#[from] libsql_wal::error::Error),
+    #[error("database is not a primary")]
+    NotAPrimary,
 }
 
 impl AsRef<Self> for Error {
@@ -224,6 +226,7 @@ impl IntoResponse for &Error {
             AttachInMigration => self.format_err(StatusCode::BAD_REQUEST),
             RuntimeTaskJoinError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             LibsqlWal(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            NotAPrimary => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
 }
@@ -294,6 +297,8 @@ pub enum LoadDumpError {
     NoCommit,
     #[error("Path is not a file")]
     NotAFile,
+    #[error("The passed dump sql is invalid: {0}")]
+    InvalidSqlInput(String),
 }
 
 impl ResponseError for LoadDumpError {}
@@ -312,7 +317,8 @@ impl IntoResponse for &LoadDumpError {
             | NoTxn
             | NoCommit
             | NotAFile
-            | DumpFilePathNotAbsolute => self.format_err(StatusCode::BAD_REQUEST),
+            | DumpFilePathNotAbsolute
+            | InvalidSqlInput(_) => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
 }

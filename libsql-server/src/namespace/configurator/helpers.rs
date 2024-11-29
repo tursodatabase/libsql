@@ -11,6 +11,7 @@ use futures::Stream;
 use libsql_sys::EncryptionConfig;
 use libsql_wal::io::StdIO;
 use libsql_wal::registry::WalRegistry;
+use rusqlite::hooks::{AuthAction, AuthContext, Authorization};
 use tokio::io::AsyncBufReadExt as _;
 use tokio::task::JoinSet;
 use tokio_util::io::StreamReader;
@@ -328,8 +329,31 @@ where
             line = tokio::task::spawn_blocking({
                 let conn = conn.clone();
                 move || -> crate::Result<String, LoadDumpError> {
-                    conn.with_raw(|conn| conn.execute(&line, ())).map_err(|e| {
-                        LoadDumpError::Internal(format!("line: {}, error: {}", line_id, e))
+                    conn.with_raw(|conn| {
+                        conn.authorizer(Some(|auth: AuthContext<'_>| match auth.action {
+                            AuthAction::Attach { filename: _ } => Authorization::Deny,
+                            _ => Authorization::Allow,
+                        }));
+                        conn.execute(&line, ())
+                    })
+                    .map_err(|e| match e {
+                        rusqlite::Error::SqlInputError {
+                            msg, sql, offset, ..
+                        } => {
+                            let msg = if sql.to_lowercase().contains("attach") {
+                                format!(
+                                    "attach statements are not allowed in dumps, msg: {}, sql: {}, offset: {}",
+                                    msg,
+                                    sql,
+                                    offset
+                                )
+                            } else {
+                                format!("msg: {}, sql: {}, offset: {}", msg, sql, offset)
+                            };
+
+                            LoadDumpError::InvalidSqlInput(msg)
+                        }
+                        e => LoadDumpError::Internal(format!("line: {}, error: {}", line_id, e)),
                     })?;
                     Ok(line)
                 }

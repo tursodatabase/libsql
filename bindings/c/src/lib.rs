@@ -6,7 +6,8 @@ extern crate lazy_static;
 mod types;
 
 use crate::types::libsql_config;
-use libsql::{errors, LoadExtensionGuard};
+use http::Uri;
+use libsql::{errors, Builder, LoadExtensionGuard};
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
@@ -122,6 +123,102 @@ pub unsafe extern "C" fn libsql_open_sync_with_webpki(
     libsql_open_sync_with_config(config, out_db, out_err_msg)
 }
 
+/// Returns a new URI with the offline query parameter removed or None if the URI does not contain the offline query parameter.
+fn maybe_remove_offline_query_param(url: &str) -> anyhow::Result<Option<String>> {
+    let uri: Uri = url.try_into()?;
+    let Some(query) = uri.query() else {
+        return Ok(None);
+    };
+    let query = query.to_owned();
+    let query_segments = query.split('&').collect::<Vec<&str>>();
+    let segments_count = query_segments.len();
+    let query_segments = query_segments
+        .into_iter()
+        .filter(|s| s != &"offline" && !s.starts_with("offline="))
+        .collect::<Vec<&str>>();
+    if segments_count == query_segments.len() {
+        return Ok(None);
+    }
+    let query = query_segments.join("&");
+    let Some(query_idx) = url.find('?') else {
+        return Ok(None);
+    };
+    if query.is_empty() {
+        return Ok(Some(url[..query_idx].to_owned()));
+    }
+
+    Ok(Some(url[..query_idx].to_owned() + "?" + &query))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_remove_offline_query_param() {
+        let uri = "http://example.com";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri, None);
+
+        let uri = "http://example.com?";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri, None);
+
+        let uri = "http://example.com?foo=bar";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri, None);
+
+        let uri = "http://example.com?offline";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com"));
+
+        let uri = "http://example.com?offline=bar";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com"));
+
+        let uri = "http://example.com?offline&foo=bar";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?offline=true&foo=bar";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?foo=bar&offline";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?foo=bar&offline=true";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?foo=bar&offline&foo2=bar2";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(
+            new_uri.as_deref(),
+            Some("http://example.com?foo=bar&foo2=bar2")
+        );
+
+        let uri = "http://example.com?foo=bar&offline=true&foo2=bar2";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(
+            new_uri.as_deref(),
+            Some("http://example.com?foo=bar&foo2=bar2")
+        );
+
+        let uri = "http://example.com?offline&foo=bar&offline";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?offline&foo=bar&offline&foo2=bar2";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(
+            new_uri.as_deref(),
+            Some("http://example.com?foo=bar&foo2=bar2")
+        );
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn libsql_open_sync_with_config(
     config: libsql_config,
@@ -152,6 +249,41 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
             return 3;
         }
     };
+    let primary_url_with_offline_removed = match maybe_remove_offline_query_param(&primary_url) {
+        Ok(url) => url,
+        Err(e) => {
+            set_err_msg(format!("Wrong primary URL: {e}"), out_err_msg);
+            return 100;
+        }
+    };
+    if let Some(primary_url) = primary_url_with_offline_removed {
+        let mut builder =
+            Builder::new_synced_database(db_path, primary_url.to_owned(), auth_token.to_owned());
+        if config.with_webpki != 0 {
+            let https = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_webpki_roots()
+                .https_or_http()
+                .enable_http1()
+                .build();
+            builder = builder.connector(https);
+        }
+        match RT.block_on(builder.build()) {
+            Ok(db) => {
+                let db = Box::leak(Box::new(libsql_database { db }));
+                *out_db = libsql_database_t::from(db);
+                return 0;
+            }
+            Err(e) => {
+                set_err_msg(
+                    format!(
+                        "Error opening offline db path {db_path}, primary url {primary_url}: {e}"
+                    ),
+                    out_err_msg,
+                );
+                return 101;
+            }
+        }
+    }
     let mut builder = libsql::Builder::new_remote_replica(
         db_path,
         primary_url.to_string(),

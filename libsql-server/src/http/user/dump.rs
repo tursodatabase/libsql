@@ -98,11 +98,13 @@ pub(super) async fn handle_dump(
     let conn_maker = state
         .namespaces
         .with(namespace, |ns| {
-            assert!(ns.db.is_primary());
-            ns.db.connection_maker()
+            if !ns.db.is_primary() {
+                return Err(Error::NotAPrimary);
+            }
+
+            Ok::<_, crate::Error>(ns.db.connection_maker())
         })
-        .await
-        .unwrap();
+        .await??;
 
     let conn = conn_maker.create().await.unwrap();
 

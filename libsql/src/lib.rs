@@ -129,6 +129,10 @@ cfg_core! {
 
 pub mod params;
 
+cfg_sync! {
+    mod sync;
+}
+
 cfg_replication! {
     pub mod replication;
 }
@@ -171,7 +175,7 @@ cfg_hrana! {
 }
 
 pub use self::{
-    connection::Connection,
+    connection::{BatchRows, Connection},
     database::{Builder, Database},
     load_extension_guard::LoadExtensionGuard,
     rows::{Column, Row, Rows},
