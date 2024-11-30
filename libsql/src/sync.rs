@@ -43,6 +43,10 @@ pub enum SyncError {
     VerifyVersion(u32, u32),
     #[error("failed to verify metadata file hash: expected={0}, got={1}")]
     VerifyHash(u32, u32),
+    #[error("server returned a lower frame_no: sent={0}, got={1}")]
+    InvalidPushFrameNoLow(u32, u32),
+    #[error("server returned a higher frame_no: sent={0}, got={1}")]
+    InvalidPushFrameNoHigh(u32, u32),
 }
 
 impl SyncError {
@@ -91,7 +95,10 @@ impl SyncContext {
         };
 
         if let Err(e) = me.read_metadata().await {
-            tracing::error!("failed to read sync metadata file: {}", e);
+            tracing::error!(
+                "failed to read sync metadata file, resetting back to defaults: {}",
+                e
+            );
         }
 
         Ok(me)
@@ -114,6 +121,30 @@ impl SyncContext {
         tracing::debug!("pushing frame");
 
         let durable_frame_num = self.push_with_retry(uri, frame, self.max_retries).await?;
+
+        if durable_frame_num > frame_no {
+            tracing::error!(
+                "server returned durable_frame_num larger than what we sent: sent={}, got={}",
+                frame_no,
+                durable_frame_num
+            );
+
+            return Err(SyncError::InvalidPushFrameNoHigh(frame_no, durable_frame_num).into());
+        }
+
+        if durable_frame_num < frame_no {
+            // Update our knowledge of where the server is at frame wise.
+            self.durable_frame_num = durable_frame_num;
+
+            tracing::debug!(
+                "server returned durable_frame_num lower than what we sent: sent={}, got={}",
+                frame_no,
+                durable_frame_num
+            );
+
+            // Return an error and expect the caller to re-call push with the updated state.
+            return Err(SyncError::InvalidPushFrameNoLow(frame_no, durable_frame_num).into());
+        }
 
         tracing::debug!(?durable_frame_num, "frame successfully pushed");
 
@@ -232,6 +263,12 @@ impl SyncContext {
             return Err(SyncError::VerifyVersion(metadata.version, METADATA_VERSION).into());
         }
 
+        tracing::debug!(
+            "read sync metadata for db_path={:?}, metadata={:?}",
+            self.db_path,
+            metadata
+        );
+
         self.durable_frame_num = metadata.durable_frame_num;
         self.generation = metadata.generation;
 
@@ -239,7 +276,7 @@ impl SyncContext {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct MetadataJson {
     hash: u32,
     version: u32,
