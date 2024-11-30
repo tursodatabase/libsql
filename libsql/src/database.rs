@@ -373,7 +373,7 @@ cfg_replication! {
                 #[cfg(feature = "replication")]
                 DbType::Sync { db, encryption_config: _ } => db.sync().await,
                 #[cfg(feature = "sync")]
-                DbType::Offline { db } => db.push().await,
+                DbType::Offline { db } => db.sync_offline().await,
                 _ => Err(Error::SyncNotSupported(format!("{:?}", self.db_type))),
             }
         }
