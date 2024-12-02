@@ -89,6 +89,12 @@ impl Rows {
     }
 }
 
+impl fmt::Debug for Rows {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Rows").finish()
+    }
+}
+
 /// A libsql row.
 pub struct Row {
     pub(crate) inner: Box<dyn RowInner + Send + Sync>,
