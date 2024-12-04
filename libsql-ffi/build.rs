@@ -62,10 +62,28 @@ fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
     Ok(())
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
     let status = Command::new("cp")
         .arg("--no-preserve=mode,ownership")
+        .arg("-R")
+        .arg(src.as_ref().to_str().unwrap())
+        .arg(dst.as_ref().to_str().unwrap())
+        .status()?;
+
+    if !status.success() {
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to copy using cp",
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+    let status = Command::new("cp")
         .arg("-R")
         .arg(src.as_ref().to_str().unwrap())
         .arg(dst.as_ref().to_str().unwrap())
