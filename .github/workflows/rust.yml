@@ -129,13 +129,94 @@ jobs:
 
     - name: Run tests
       run: cargo nextest run
+  # test-custom-pager:
+  #   runs-on: ubuntu-latest
+  #   name: Run Tests
+  #   env:
+  #     RUSTFLAGS: -D warnings --cfg tokio_unstable
+  #   steps:
+  #   - uses: hecrj/setup-rust-action@v2
 
-    - name: Run tests with custom pager
-      env:
-        LIBSQL_EXPERIMENTAL_PAGER: 1000
-      run: cargo nextest run
-    - name: clean build dir
-      run: rm -rf libsql-ffi/bundled/SQLite3MultipleCiphers/build
+  #   # needed because we run out of disk space during tests
+  #   - name: Free Disk Space (Ubuntu)
+  #     uses: jlumbroso/free-disk-space@main
+  #     with:
+  #       # this might remove tools that are actually needed,
+  #       # when set to "true" but frees about 6 GB
+  #       tool-cache: true
+
+  #   - name: Install deps
+  #     run: sudo apt update && sudo apt install -y libclang-dev
+
+  #   - name: Install protoc
+  #     uses: taiki-e/install-action@v2
+  #     with:
+  #       tool: protoc@${{ env.PROTOC_VERSION }}
+
+  #   - uses: taiki-e/install-action@v2
+  #     with:
+  #       tool: nextest
+
+  #   - uses: actions/checkout@v3
+
+  #   - name: Set up cargo cache
+  #     uses: actions/cache@v3
+  #     continue-on-error: false
+  #     with:
+  #       path: |
+  #         ~/.cargo/bin/
+  #         ~/.cargo/registry/index/
+  #         ~/.cargo/registry/cache/
+  #         ~/.cargo/git/db/
+  #         target/
+  #       key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+  #       restore-keys: ${{ runner.os }}-cargo-
+  #   - name: Run tests with custom pager
+  #     env:
+  #       LIBSQL_EXPERIMENTAL_PAGER: 1000
+  #     run: cargo nextest run
+  test-encryption:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    env:
+      RUSTFLAGS: -D warnings --cfg tokio_unstable
+    steps:
+    - uses: hecrj/setup-rust-action@v2
+
+    # needed because we run out of disk space during tests
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # when set to "true" but frees about 6 GB
+        tool-cache: true
+
+    - name: Install deps
+      run: sudo apt update && sudo apt install -y libclang-dev
+
+    - name: Install protoc
+      uses: taiki-e/install-action@v2
+      with:
+        tool: protoc@${{ env.PROTOC_VERSION }}
+
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: nextest
+
+    - uses: actions/checkout@v3
+
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      continue-on-error: false
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-
     - name: embedded replica encryption tests
       run: cargo xtask test-encryption
   windows:
