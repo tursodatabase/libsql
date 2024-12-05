@@ -386,8 +386,8 @@ impl Database {
     }
 
     #[cfg(feature = "sync")]
-    /// Push WAL frames to remote.
-    pub async fn push(&self) -> Result<crate::database::Replicated> {
+    /// Sync WAL frames to remote.
+    pub async fn sync_offline(&self) -> Result<crate::database::Replicated> {
         use crate::sync::SyncError;
         use crate::Error;
 
@@ -425,6 +425,10 @@ impl Database {
 
         let max_frame_no = conn.wal_frame_count();
 
+        if max_frame_no == 0 {
+            return self.try_pull(&mut sync_ctx).await;
+        }
+
         let generation = sync_ctx.generation(); // TODO: Probe from WAL.
         let start_frame_no = sync_ctx.durable_frame_num() + 1;
         let end_frame_no = max_frame_no;
@@ -448,12 +452,43 @@ impl Database {
 
         sync_ctx.write_metadata().await?;
 
+        if start_frame_no > end_frame_no {
+            return self.try_pull(&mut sync_ctx).await;
+        }
+
         // TODO(lucio): this can underflow if the server previously returned a higher max_frame_no
         // than what we have stored here.
         let frame_count = end_frame_no - start_frame_no + 1;
         Ok(crate::database::Replicated {
             frame_no: None,
             frames_synced: frame_count as usize,
+        })
+    }
+
+    #[cfg(feature = "sync")]
+    async fn try_pull(&self, sync_ctx: &mut SyncContext) -> Result<crate::database::Replicated> {
+        let generation = sync_ctx.generation();
+        let mut frame_no = sync_ctx.durable_frame_num() + 1;
+        let conn = self.connect()?;
+        conn.wal_insert_begin()?;
+        loop {
+            match sync_ctx.pull_one_frame(generation, frame_no).await {
+                Ok(frame) => {
+                    conn.wal_insert_frame(&frame)?;
+                    frame_no += 1;
+                }
+                Err(e) => {
+                    println!("pull_one_frame error: {:?}", e);
+                    break;
+                }
+            }
+
+        }
+        conn.wal_insert_end()?;
+        sync_ctx.write_metadata().await?;
+        Ok(crate::database::Replicated {
+            frame_no: None,
+            frames_synced: 1,
         })
     }
 

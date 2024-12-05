@@ -482,6 +482,46 @@ impl Connection {
 
         Ok(buf)
     }
+
+    pub(crate) fn wal_insert_begin(&self) -> Result<()> {
+        let rc = unsafe { libsql_sys::ffi::libsql_wal_insert_begin(self.handle()) };
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("wal_insert_begin failed"),
+            ));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn wal_insert_end(&self) -> Result<()> {
+        let rc = unsafe { libsql_sys::ffi::libsql_wal_insert_end(self.handle()) };
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("wal_insert_end failed"),
+            ));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn wal_insert_frame(&self, frame: &[u8]) -> Result<()> {
+        let rc = unsafe { 
+            libsql_sys::ffi::libsql_wal_insert_frame(
+                self.handle(),
+                frame.len() as u32,
+                frame.as_ptr() as *mut std::ffi::c_void,
+                0
+            ) 
+        };
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("wal_insert_frame failed"),
+            ));
+        }
+        Ok(())
+    }
 }
 
 impl fmt::Debug for Connection {

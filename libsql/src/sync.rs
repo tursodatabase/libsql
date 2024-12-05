@@ -47,6 +47,8 @@ pub enum SyncError {
     InvalidPushFrameNoLow(u32, u32),
     #[error("server returned a higher frame_no: sent={0}, got={1}")]
     InvalidPushFrameNoHigh(u32, u32),
+    #[error("failed to pull frame: status={0}, error={1}")]
+    PullFrame(StatusCode, String),
 }
 
 impl SyncError {
@@ -102,6 +104,21 @@ impl SyncContext {
         }
 
         Ok(me)
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub(crate) async fn pull_one_frame(&mut self, generation: u32, frame_no: u32) -> Result<Bytes> {
+        let uri = format!(
+            "{}/sync/{}/{}/{}",
+            self.sync_url,
+            generation,
+            frame_no,
+            frame_no + 1
+        );
+        tracing::debug!("pulling frame");
+        let frame = self.pull_with_retry(uri, self.max_retries).await?;
+        self.durable_frame_num = frame_no;
+        Ok(frame)
     }
 
     #[tracing::instrument(skip(self, frame))]
@@ -207,6 +224,53 @@ impl SyncContext {
                 let msg = String::from_utf8_lossy(&res_body[..]);
 
                 return Err(SyncError::PushFrame(status, msg.to_string()).into());
+            }
+
+            let delay = std::time::Duration::from_millis(100 * (1 << nr_retries));
+            tokio::time::sleep(delay).await;
+            nr_retries += 1;
+        }
+    }
+
+    async fn pull_with_retry(&self, uri: String, max_retries: usize) -> Result<Bytes> {
+        let mut nr_retries = 0;
+        loop {
+            let mut req = http::Request::builder().method("GET").uri(uri.clone());
+
+            match &self.auth_token {
+                Some(auth_token) => {
+                    req = req.header("Authorization", auth_token);
+                }
+                None => {}
+            }
+
+            let req = req.body(Body::empty())
+                .expect("valid request");
+
+            let res = self
+                .client
+                .request(req)
+                .await
+                .map_err(SyncError::HttpDispatch)?;
+
+            if res.status().is_success() {
+                let frame = hyper::body::to_bytes(res.into_body())
+                    .await
+                    .map_err(SyncError::HttpBody)?;
+                return Ok(frame);
+            }
+            // If we've retried too many times or the error is not a server error,
+            // return the error.
+            if nr_retries > max_retries || !res.status().is_server_error() {
+                let status = res.status();
+
+                let res_body = hyper::body::to_bytes(res.into_body())
+                    .await
+                    .map_err(SyncError::HttpBody)?;
+
+                let msg = String::from_utf8_lossy(&res_body[..]);
+
+                return Err(SyncError::PullFrame(status, msg.to_string()).into());
             }
 
             let delay = std::time::Duration::from_millis(100 * (1 << nr_retries));
