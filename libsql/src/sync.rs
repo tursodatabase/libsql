@@ -244,8 +244,7 @@ impl SyncContext {
                 None => {}
             }
 
-            let req = req.body(Body::empty())
-                .expect("valid request");
+            let req = req.body(Body::empty()).expect("valid request");
 
             let res = self
                 .client
