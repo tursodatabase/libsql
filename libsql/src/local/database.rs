@@ -471,6 +471,9 @@ impl Database {
         let mut frame_no = sync_ctx.durable_frame_num() + 1;
         let conn = self.connect()?;
         conn.wal_insert_begin()?;
+
+        let mut err = None;
+
         loop {
             match sync_ctx.pull_one_frame(generation, frame_no).await {
                 Ok(frame) => {
@@ -478,18 +481,23 @@ impl Database {
                     frame_no += 1;
                 }
                 Err(e) => {
-                    println!("pull_one_frame error: {:?}", e);
+                    tracing::debug!("pull_one_frame error: {:?}", e);
+                    err.replace(e);
                     break;
                 }
             }
-
         }
         conn.wal_insert_end()?;
         sync_ctx.write_metadata().await?;
-        Ok(crate::database::Replicated {
-            frame_no: None,
-            frames_synced: 1,
-        })
+
+        if let Some(err) = err {
+            Err(err)
+        } else {
+            Ok(crate::database::Replicated {
+                frame_no: None,
+                frames_synced: 1,
+            })
+        }
     }
 
     pub(crate) fn path(&self) -> &str {
