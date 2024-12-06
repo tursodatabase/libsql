@@ -462,6 +462,13 @@ impl Connection {
         // and more efficient buffer usage for extracting wal frames and spliting them off.
         let mut buf = bytes::BytesMut::with_capacity(frame_size);
 
+        if frame_no == 0 {
+            return Err(errors::Error::SqliteFailure(
+                1,
+                "frame_no must be non-zero".to_string(),
+            ));
+        }
+
         let rc = unsafe {
             libsql_sys::ffi::libsql_wal_get_frame(
                 self.handle(),
