@@ -288,6 +288,18 @@ impl Wal for Sqlite3Wal {
         }
     }
 
+    fn checkpoint_seq_count(&self) -> Result<u32> {
+        let mut out: u32 = 0;
+        let rc = unsafe {
+            (self.inner.methods.xCheckpointSeqCount.unwrap())(self.inner.pData, &mut out)
+        };
+        if rc != 0 {
+            Err(Error::new(rc))
+        } else {
+            Ok(out)
+        }
+    }
+
     fn frame_count(&self, locked: i32) -> Result<u32> {
         let mut out: u32 = 0;
         let rc = unsafe {

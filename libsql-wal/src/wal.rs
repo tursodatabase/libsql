@@ -276,6 +276,11 @@ where
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
+    fn checkpoint_seq_count(&self) -> libsql_sys::wal::Result<u32> {
+        Err(libsql_sys::wal::Error::new(10)) // SQLITE_IOERR
+    }
+
+    #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn frame_count(&self, _locked: i32) -> libsql_sys::wal::Result<u32> {
         Err(libsql_sys::wal::Error::new(10)) // SQLITE_IOERR
     }

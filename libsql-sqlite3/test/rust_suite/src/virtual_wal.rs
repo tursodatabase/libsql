@@ -106,6 +106,10 @@ mod tests {
             self.0.read_frame_raw(page_no, buffer)
         }
 
+        fn checkpoint_seq_count(&self) -> libsql_sys::wal::Result<u32> {
+            self.0.checkpoint_seq_count()
+        }
+
         fn frame_count(&self, locked: i32) -> libsql_sys::wal::Result<u32> {
             self.0.frame_count(locked)
         }

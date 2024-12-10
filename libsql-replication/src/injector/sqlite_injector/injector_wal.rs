@@ -138,6 +138,10 @@ impl Wal for InjectorWal {
         self.inner.savepoint_undo(rollback_data)
     }
 
+    fn checkpoint_seq_count(&self) -> Result<u32> {
+        self.inner.checkpoint_seq_count()
+    }
+
     fn frame_count(&self, locked: i32) -> Result<u32> {
         self.inner.frame_count(locked)
     }

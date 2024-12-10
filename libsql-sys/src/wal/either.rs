@@ -81,6 +81,12 @@ macro_rules! create_either {
                 }
             }
 
+            fn checkpoint_seq_count(&self) -> super::Result<u32> {
+                match self {
+                    $( $name::$t(inner) => inner.checkpoint_seq_count() ),*
+                }
+            }
+
             fn frame_count(&self, locked: i32) -> super::Result<u32> {
                 match self {
                     $( $name::$t(inner) => inner.frame_count(locked) ),*

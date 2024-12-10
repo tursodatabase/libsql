@@ -89,6 +89,10 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
         unsafe { (*self.wrapper).savepoint_undo(&mut *self.wrapped, rollback_data) }
     }
 
+    fn checkpoint_seq_count(&self) -> super::Result<u32> {
+        unsafe { (*self.wrapper).checkpoint_seq_count(&*self.wrapped) }
+    }
+
     fn frame_count(&self, locked: i32) -> super::Result<u32> {
         unsafe { (*self.wrapper).frame_count(&*self.wrapped, locked) }
     }
@@ -272,6 +276,10 @@ where
             .savepoint_undo(&mut self.wrapped, rollback_data)
     }
 
+    fn checkpoint_seq_count(&self) -> super::Result<u32> {
+        self.wrapper.checkpoint_seq_count(&self.wrapped)
+    }
+
     fn frame_count(&self, locked: i32) -> super::Result<u32> {
         self.wrapper.frame_count(&self.wrapped, locked)
     }
@@ -407,6 +415,10 @@ pub trait WrapWal<W: Wal> {
 
     fn savepoint_undo(&mut self, wrapped: &mut W, rollback_data: &mut [u32]) -> super::Result<()> {
         wrapped.savepoint_undo(rollback_data)
+    }
+
+    fn checkpoint_seq_count(&self, wrapped: &W) -> super::Result<u32> {
+        wrapped.checkpoint_seq_count()
     }
 
     fn frame_count(&self, wrapped: &W, locked: i32) -> super::Result<u32> {
