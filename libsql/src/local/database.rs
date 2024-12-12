@@ -476,9 +476,12 @@ impl Database {
 
         loop {
             match sync_ctx.pull_one_frame(generation, frame_no).await {
-                Ok(frame) => {
+                Ok(Some(frame)) => {
                     conn.wal_insert_frame(&frame)?;
                     frame_no += 1;
+                }
+                Ok(None) => {
+                    break;
                 }
                 Err(e) => {
                     tracing::debug!("pull_one_frame error: {:?}", e);
