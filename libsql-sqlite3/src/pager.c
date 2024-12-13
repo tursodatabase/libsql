@@ -7852,6 +7852,7 @@ int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsign
   pghdr.pExtra = NULL;
   pghdr.pgno = pgno;
   pghdr.flags = 0;
+  pghdr.pPager = pPager;
 
   int isCommit = (nTruncate != 0);
 
