@@ -355,6 +355,11 @@ impl Connection {
         Transaction::begin(self.clone(), tx_behavior)
     }
 
+    pub fn interrupt(&self) -> Result<()> {
+        unsafe { ffi::sqlite3_interrupt(self.raw) };
+        Ok(())
+    }
+
     pub fn is_autocommit(&self) -> bool {
         unsafe { ffi::sqlite3_get_autocommit(self.raw) != 0 }
     }

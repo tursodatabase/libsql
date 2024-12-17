@@ -21,6 +21,8 @@ pub(crate) trait Conn {
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
 
+    fn interrupt(&self) -> Result<()>;
+
     fn is_autocommit(&self) -> bool;
 
     fn changes(&self) -> u64;
@@ -183,6 +185,11 @@ impl Connection {
     ) -> Result<Transaction> {
         tracing::trace!("starting {:?} transaction", tx_behavior);
         self.conn.transaction(tx_behavior).await
+    }
+
+    /// Cancel ongoing operations and return at earliest opportunity.
+    pub fn interrupt(&self) -> Result<()> {
+        self.conn.interrupt()
     }
 
     /// Check weather libsql is in `autocommit` or not.

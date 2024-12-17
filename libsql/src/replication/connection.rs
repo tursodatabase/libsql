@@ -503,6 +503,11 @@ impl Conn for RemoteConnection {
         })
     }
 
+    fn interrupt(&self) -> Result<()> {
+        // Interrupt is a no-op for remote connections.
+        Ok(())
+    }
+
     fn is_autocommit(&self) -> bool {
         self.is_state_init()
     }
