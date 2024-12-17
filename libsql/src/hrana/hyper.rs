@@ -163,6 +163,11 @@ impl Conn for HttpConnection<HttpSender> {
         })
     }
 
+    fn interrupt(&self) -> crate::Result<()> {
+        // Interrupt is a no-op for remote connections.
+        Ok(())
+    }
+
     fn is_autocommit(&self) -> bool {
         self.is_autocommit()
     }
@@ -341,6 +346,11 @@ impl Conn for HranaStream<HttpSender> {
         _tx_behavior: crate::TransactionBehavior,
     ) -> crate::Result<crate::transaction::Transaction> {
         todo!("sounds like nested transactions innit?")
+    }
+
+    fn interrupt(&self) -> crate::Result<()> {
+        // Interrupt is a no-op for remote connections.
+        Ok(())
     }
 
     fn is_autocommit(&self) -> bool {

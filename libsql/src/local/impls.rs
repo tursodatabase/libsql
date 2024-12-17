@@ -54,6 +54,10 @@ impl Conn for LibsqlConnection {
         })
     }
 
+    fn interrupt(&self) -> Result<()> {
+        self.conn.interrupt()
+    }
+
     fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }
