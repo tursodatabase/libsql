@@ -4024,6 +4024,11 @@ static int walFrames(
   return rc;
 }
 
+int sqlite3WalCheckpointSeqCount(Wal *pWal, unsigned int *pnCkpt){
+  *pnCkpt = pWal->nCkpt;
+  return SQLITE_OK;
+}
+
 int sqlite3WalFrameCount(Wal *pWal, int locked, unsigned int *pnFrames){
   int rc = SQLITE_OK;
   if( locked==0 ) {
@@ -4543,6 +4548,7 @@ static int sqlite3WalOpen(
     out->methods.xUndo = (int (*)(wal_impl *, int (*)(void *, unsigned int), void *))sqlite3WalUndo;
     out->methods.xSavepoint = (void (*)(wal_impl *, unsigned int *))sqlite3WalSavepoint;
     out->methods.xSavepointUndo = (int (*)(wal_impl *, unsigned int *))sqlite3WalSavepointUndo;
+    out->methods.xCheckpointSeqCount = (int (*)(wal_impl *, unsigned int *))sqlite3WalCheckpointSeqCount;
     out->methods.xFrameCount = (int (*)(wal_impl *, int, unsigned int *))sqlite3WalFrameCount;
     out->methods.xFrames = (int (*)(wal_impl *, int, libsql_pghdr *, unsigned int, int, int, int *))sqlite3WalFrames;
     out->methods.xCheckpoint = (int (*)(wal_impl *, sqlite3 *, int, int (*)(void *), void *, int, int, unsigned char *, int *, int *, int (*)(void*, int, const unsigned char*, int, int, int), void*))sqlite3WalCheckpoint;
