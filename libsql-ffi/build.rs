@@ -478,6 +478,8 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
             "Linux"
         } else if cc.contains("darwin") {
             "Darwin"
+        } else if cc.contains("w64") {
+            "Windows"
         } else {
             panic!("Unsupported cross target {}", cc)
         };
