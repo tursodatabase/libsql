@@ -1,5 +1,3 @@
-use std::sync::Once;
-
 cfg_replication!(
     use http::uri::InvalidUri;
     use crate::database::{EncryptionConfig, FrameNo};
@@ -24,7 +22,6 @@ cfg_sync! {
 
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
-use libsql_sys::ffi;
 
 // A libSQL database.
 pub struct Database {
@@ -230,29 +227,6 @@ impl Database {
     }
 
     pub fn new(db_path: String, flags: OpenFlags) -> Database {
-        static LIBSQL_INIT: Once = Once::new();
-
-        LIBSQL_INIT.call_once(|| {
-            // Ensure that we are configured with the correct threading model
-            // if this config is not set correctly the entire api is unsafe.
-            unsafe {
-                assert_eq!(
-                    ffi::sqlite3_config(ffi::SQLITE_CONFIG_SERIALIZED),
-                    ffi::SQLITE_OK,
-                    "libsql was configured with an incorrect threading configuration and
-                    the api is not safe to use. Please check that no multi-thread options have
-                    been set. If nothing was configured then please open an issue at:
-                    https://github.com/libsql/libsql"
-                );
-
-                assert_eq!(
-                    ffi::sqlite3_initialize(),
-                    ffi::SQLITE_OK,
-                    "libsql failed to initialize"
-                );
-            }
-        });
-
         Database {
             db_path,
             flags,
@@ -420,7 +394,11 @@ impl Database {
     }
 
     #[cfg(feature = "sync")]
-    async fn try_push(&self, sync_ctx: &mut SyncContext, conn: &Connection) -> Result<crate::database::Replicated> {
+    async fn try_push(
+        &self,
+        sync_ctx: &mut SyncContext,
+        conn: &Connection,
+    ) -> Result<crate::database::Replicated> {
         let page_size = {
             let rows = conn
                 .query("PRAGMA page_size", crate::params::Params::None)?
@@ -471,7 +449,11 @@ impl Database {
     }
 
     #[cfg(feature = "sync")]
-    async fn try_pull(&self, sync_ctx: &mut SyncContext, conn: &Connection) -> Result<crate::database::Replicated> {
+    async fn try_pull(
+        &self,
+        sync_ctx: &mut SyncContext,
+        conn: &Connection,
+    ) -> Result<crate::database::Replicated> {
         let generation = sync_ctx.generation();
         let mut frame_no = sync_ctx.durable_frame_num() + 1;
         conn.wal_insert_begin()?;

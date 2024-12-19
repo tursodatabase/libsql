@@ -38,14 +38,28 @@ impl Connection {
     pub(crate) fn connect(db: &Database) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
         let db_path = db.db_path.clone();
+        let flags: c_int = ffi::SQLITE_OPEN_FULLMUTEX | db.flags.bits();
+
         let err = unsafe {
+            if ffi::sqlite3_threadsafe() == 0 {
+                // https://sqlite.org/threadsafe.html
+                return Err(Error::ConnectionFailed(String::from(
+                    "SQLite thread safety check failed: SQLite was compiled without thread-safety support \
+                    (SQLITE_THREADSAFE=0). For libsql to operate correctly, SQLite must be compiled with either \
+                    serialized mode (SQLITE_THREADSAFE=1) or multi-threaded mode (SQLITE_THREADSAFE=2). \
+                    Thread-safety is required because libsql needs to ensure safe concurrent access to database \
+                    connections across multiple threads. \
+                    Please rebuild SQLite with the appropriate thread-safety options."
+                )));
+            }
+
             ffi::sqlite3_open_v2(
                 std::ffi::CString::new(db_path.as_str())
                     .unwrap()
                     .as_c_str()
                     .as_ptr() as *const _,
                 &mut raw,
-                db.flags.bits() as c_int,
+                flags,
                 std::ptr::null(),
             )
         };
