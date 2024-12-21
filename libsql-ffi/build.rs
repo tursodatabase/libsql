@@ -63,28 +63,12 @@ fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
     Ok(())
 }
 
-#[cfg(target_os = "linux")]
+/// This ensures that in sandboxed environments, such as Nix, permissions from other sources don't
+/// propagate into OUT_DIR. If not present, when trying to rewrite a file, a `Permission denied`
+/// error will occur.
 fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
     let status = Command::new("cp")
         .arg("--no-preserve=mode,ownership")
-        .arg("-R")
-        .arg(src.as_ref().to_str().unwrap())
-        .arg(dst.as_ref().to_str().unwrap())
-        .status()?;
-
-    if !status.success() {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to copy using cp",
-        ))
-    } else {
-        Ok(())
-    }
-}
-
-#[cfg(target_os = "macos")]
-fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    let status = Command::new("cp")
         .arg("-R")
         .arg(src.as_ref().to_str().unwrap())
         .arg(dst.as_ref().to_str().unwrap())
@@ -195,7 +179,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     }
 
     let dir = env!("CARGO_MANIFEST_DIR");
-    std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+    copy_with_cp(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
     let mut cfg = cc::Build::new();
     cfg.flag("-std=c11")
@@ -494,7 +478,12 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
 
         cmake_opts.push(&cmake_toolchain_opt);
         writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"{}\")", system_name).unwrap();
-        writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"{}\")", system_processor).unwrap();
+        writeln!(
+            toolchain_file,
+            "set(CMAKE_SYSTEM_PROCESSOR \"{}\")",
+            system_processor
+        )
+        .unwrap();
         writeln!(toolchain_file, "set(CMAKE_C_COMPILER {})", cc).unwrap();
     }
 
