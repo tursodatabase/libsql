@@ -103,12 +103,12 @@ fn make_amalgamation() {
         .output()
         .unwrap();
 
-    std::fs::copy(
+    copy_with_cp(
         (SQLITE_DIR.as_ref() as &Path).join("sqlite3.c"),
         (BUNDLED_DIR.as_ref() as &Path).join("src/sqlite3.c"),
     )
     .unwrap();
-    std::fs::copy(
+    copy_with_cp(
         (SQLITE_DIR.as_ref() as &Path).join("sqlite3.h"),
         (BUNDLED_DIR.as_ref() as &Path).join("src/sqlite3.h"),
     )
@@ -399,7 +399,7 @@ fn copy_multiple_ciphers(target: &str, out_dir: &str, out_path: &Path) {
         build_multiple_ciphers(target, out_path);
     }
 
-    std::fs::copy(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
+    copy_with_cp(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
     println!("cargo:rustc-link-lib=static=sqlite3mc");
     println!("cargo:rustc-link-search={out_dir}");
 }
@@ -415,9 +415,9 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
         bindings::write_to_out_dir(header, bindgen_rs_path.as_ref());
     }
     let dir = env!("CARGO_MANIFEST_DIR");
-    std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+    copy_with_cp(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
-    std::fs::copy(
+    copy_with_cp(
         (BUNDLED_DIR.as_ref() as &Path)
             .join("src")
             .join("sqlite3.c"),
