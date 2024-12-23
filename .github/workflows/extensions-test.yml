@@ -68,6 +68,9 @@ jobs:
       - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: install libs
+        run: |
+          sudo apt install libblas-dev liblapack-dev
       - name: build libsql and ffi bindings
         run: |
           cargo xtask build-bundled
