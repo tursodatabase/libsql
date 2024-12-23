@@ -53,6 +53,30 @@ impl Database {
         }
     }
 
+    /// Safety: this is like `open` but does not enfoce that sqlite_config has THREADSAFE set to
+    /// `SQLITE_CONFIG_SERIALIZED`, calling
+    pub unsafe fn open_raw<S: Into<String>>(db_path: S, flags: OpenFlags) -> Result<Database> {
+        let db_path = db_path.into();
+
+        if db_path.starts_with("libsql:")
+            || db_path.starts_with("http:")
+            || db_path.starts_with("https:")
+        {
+            Err(ConnectionFailed(format!(
+                "Unable to open local database {db_path} with Database::open()"
+            )))
+        } else {
+            Ok(Database {
+                db_path,
+                flags,
+                #[cfg(feature = "replication")]
+                replication_ctx: None,
+                #[cfg(feature = "sync")]
+                sync_ctx: None,
+            })
+        }
+    }
+
     #[cfg(feature = "replication")]
     pub async fn open_http_sync(
         connector: crate::util::ConnectorService,
@@ -420,7 +444,11 @@ impl Database {
     }
 
     #[cfg(feature = "sync")]
-    async fn try_push(&self, sync_ctx: &mut SyncContext, conn: &Connection) -> Result<crate::database::Replicated> {
+    async fn try_push(
+        &self,
+        sync_ctx: &mut SyncContext,
+        conn: &Connection,
+    ) -> Result<crate::database::Replicated> {
         let page_size = {
             let rows = conn
                 .query("PRAGMA page_size", crate::params::Params::None)?
@@ -471,7 +499,11 @@ impl Database {
     }
 
     #[cfg(feature = "sync")]
-    async fn try_pull(&self, sync_ctx: &mut SyncContext, conn: &Connection) -> Result<crate::database::Replicated> {
+    async fn try_pull(
+        &self,
+        sync_ctx: &mut SyncContext,
+        conn: &Connection,
+    ) -> Result<crate::database::Replicated> {
         let generation = sync_ctx.generation();
         let mut frame_no = sync_ctx.durable_frame_num() + 1;
         conn.wal_insert_begin()?;

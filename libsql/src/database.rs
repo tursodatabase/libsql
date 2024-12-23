@@ -666,6 +666,91 @@ impl Database {
             _ => unreachable!("no database type set"),
         }
     }
+
+    /// Connect to a database without safety checks. Using `connect` will enforce that sqlite is
+    /// compiled and configured correctly. This can conflict if you have other sqlite3 processes
+    /// due to sqlite3's global config. This function allows a user to bypass those checks in
+    /// exchanged for the user enforcing that sqlite3 is compiled AND enabled for serailized thread
+    /// saftey mode.
+    ///
+    /// SAFTEY: Users must ensure that sqlite3 has SERIALIZED thread safe mode enabled or else this
+    /// will produce UBs.
+    #[allow(unreachable_patterns)]
+    pub unsafe fn connect_raw(&self) -> Result<Connection> {
+        match &self.db_type {
+            #[cfg(feature = "core")]
+            DbType::Memory { db: _ } => {
+                unimplemented!("memory dbs are not supported in connect_raw")
+            }
+
+            #[cfg(feature = "core")]
+            DbType::File {
+                path,
+                flags,
+                encryption_config,
+            } => {
+                use crate::local::impls::LibsqlConnection;
+
+                let db = crate::local::Database::open_raw(path, *flags)?;
+                let conn = db.connect()?;
+
+                if !cfg!(feature = "encryption") && encryption_config.is_some() {
+                    return Err(crate::Error::Misuse(
+                        "Encryption is not enabled: enable the `encryption` feature in order to enable encryption-at-rest".to_string(),
+                    ));
+                }
+
+                #[cfg(feature = "encryption")]
+                if let Some(cfg) = encryption_config {
+                    if unsafe {
+                        libsql_sys::connection::set_encryption_cipher(conn.raw, cfg.cipher_id())
+                    } == -1
+                    {
+                        return Err(crate::Error::Misuse(
+                            "failed to set encryption cipher".to_string(),
+                        ));
+                    }
+                    if unsafe {
+                        libsql_sys::connection::set_encryption_key(conn.raw, &cfg.encryption_key)
+                    } != crate::ffi::SQLITE_OK
+                    {
+                        return Err(crate::Error::Misuse(
+                            "failed to set encryption key".to_string(),
+                        ));
+                    }
+                }
+
+                let conn = std::sync::Arc::new(LibsqlConnection { conn });
+
+                Ok(Connection { conn })
+            }
+
+            #[cfg(feature = "replication")]
+            DbType::Sync {
+                db: _,
+                encryption_config: _,
+            } => {
+                unimplemented!("embedded replica is not supported in connect_raw")
+            }
+
+            #[cfg(feature = "sync")]
+            DbType::Offline { db: _ } => {
+                unimplemented!("offline sync not supported in connect_raw")
+            }
+
+            #[cfg(feature = "remote")]
+            DbType::Remote {
+                url: _,
+                auth_token: _,
+                connector: _,
+                version: _,
+            } => {
+                unimplemented!("remote connections are not supported in connect_raw")
+            }
+
+            _ => unreachable!("no database type set"),
+        }
+    }
 }
 
 #[cfg(any(
