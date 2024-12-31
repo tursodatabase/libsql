@@ -84,9 +84,16 @@ pub(super) async fn make_primary_connection_maker(
 
     let bottomless_replicator = match primary_config.bottomless_replication {
         Some(ref options) => {
-            tracing::debug!("Checkpointing before initializing bottomless");
-            crate::replication::primary::logger::checkpoint_db(&db_path.join("data"))?;
-            tracing::debug!("Checkpointed before initializing bottomless");
+            // TODO: figure out why we really need this the fixme above is not clear enough but
+            // disabling this allows us to prevent checkpointing of the wal file.
+            if !std::env::var("LIBSQL_DISABLE_INIT_CHECKPOINTING").is_ok() {
+                tracing::debug!("Checkpointing before initializing bottomless");
+                crate::replication::primary::logger::checkpoint_db(&db_path.join("data"))?;
+                tracing::debug!("Checkpointed before initializing bottomless");
+            } else {
+                tracing::warn!("Disabling initial checkpoint before bottomless");
+            }
+
             let options = make_bottomless_options(options, bottomless_db_id, name.clone());
             let (replicator, did_recover) =
                 init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
