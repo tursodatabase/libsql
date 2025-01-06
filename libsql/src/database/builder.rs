@@ -39,6 +39,7 @@ impl Builder<()> {
                     path: path.as_ref().to_path_buf(),
                     flags: crate::OpenFlags::default(),
                     encryption_config: None,
+                    skip_safety_assert: false,
                 },
             }
         }
@@ -64,7 +65,8 @@ impl Builder<()> {
                     read_your_writes: true,
                     sync_interval: None,
                     http_request_callback: None,
-                    namespace: None
+                    namespace: None,
+                    skip_safety_assert: false,
                 },
             }
         }
@@ -137,6 +139,7 @@ cfg_core! {
         path: std::path::PathBuf,
         flags: crate::OpenFlags,
         encryption_config: Option<EncryptionConfig>,
+        skip_safety_assert: bool,
     }
 
     impl Builder<Local> {
@@ -155,10 +158,29 @@ cfg_core! {
             self
         }
 
+        /// Skip the saftey assert used to ensure that sqlite3 is configured correctly for the way
+        /// that libsql uses the ffi code. By default, libsql will try to use the SERIALIZED
+        /// threadsafe mode for sqlite3. This allows us to implement Send/Sync for all the types to
+        /// allow them to move between threads safely. Due to the fact that sqlite3 has a global
+        /// config this may conflict with other sqlite3 connections in the same process.
+        ///
+        /// Using this setting is very UNSAFE and you are expected to use the libsql in adherence
+        /// with the sqlite3 threadsafe rules or else you WILL create undefined behavior. Use at
+        /// your own risk.
+        pub unsafe fn skip_saftey_assert(mut self, skip: bool) -> Builder<Local> {
+            self.inner.skip_safety_assert = skip;
+            self
+        }
+
         /// Build the local database.
         pub async fn build(self) -> Result<Database> {
             let db = if self.inner.path == std::path::Path::new(":memory:") {
-                let db = crate::local::Database::open(":memory:", crate::OpenFlags::default())?;
+                let db = if !self.inner.skip_safety_assert {
+                    crate::local::Database::open(":memory:", crate::OpenFlags::default())?
+                } else {
+                    unsafe { crate::local::Database::open_raw(":memory:", crate::OpenFlags::default())? }
+                };
+
                 Database {
                     db_type: DbType::Memory { db } ,
                     max_write_replication_index: Default::default(),
@@ -176,6 +198,7 @@ cfg_core! {
                         path,
                         flags: self.inner.flags,
                         encryption_config: self.inner.encryption_config,
+                        skip_saftey_assert: self.inner.skip_safety_assert
                     },
                     max_write_replication_index: Default::default(),
                 }
@@ -196,6 +219,7 @@ cfg_replication! {
         sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
         namespace: Option<String>,
+        skip_safety_assert: bool,
     }
 
     /// Local replica configuration type in [`Builder`].
@@ -270,6 +294,20 @@ cfg_replication! {
             self
         }
 
+        /// Skip the saftey assert used to ensure that sqlite3 is configured correctly for the way
+        /// that libsql uses the ffi code. By default, libsql will try to use the SERIALIZED
+        /// threadsafe mode for sqlite3. This allows us to implement Send/Sync for all the types to
+        /// allow them to move between threads safely. Due to the fact that sqlite3 has a global
+        /// config this may conflict with other sqlite3 connections in the same process.
+        ///
+        /// Using this setting is very UNSAFE and you are expected to use the libsql in adherence
+        /// with the sqlite3 threadsafe rules or else you WILL create undefined behavior. Use at
+        /// your own risk.
+        pub unsafe fn skip_saftey_assert(mut self, skip: bool) -> Builder<RemoteReplica> {
+            self.inner.skip_safety_assert = skip;
+            self
+        }
+
         /// Build the remote embedded replica database.
         pub async fn build(self) -> Result<Database> {
             let RemoteReplica {
@@ -285,7 +323,8 @@ cfg_replication! {
                 read_your_writes,
                 sync_interval,
                 http_request_callback,
-                namespace
+                namespace,
+                skip_safety_assert
             } = self.inner;
 
             let connector = if let Some(connector) = connector {
@@ -303,19 +342,41 @@ cfg_replication! {
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
 
-            let db = crate::local::Database::open_http_sync_internal(
-                connector,
-                path,
-                url,
-                auth_token,
-                version,
-                read_your_writes,
-                encryption_config.clone(),
-                sync_interval,
-                http_request_callback,
-                namespace,
-            )
-            .await?;
+            let db = if !skip_safety_assert {
+                crate::local::Database::open_http_sync_internal(
+                    connector,
+                    path,
+                    url,
+                    auth_token,
+                    version,
+                    read_your_writes,
+                    encryption_config.clone(),
+                    sync_interval,
+                    http_request_callback,
+                    namespace,
+                )
+                .await?
+            } else {
+                // SAFETY: this can only be enabled via the unsafe config function
+                // `skip_safety_assert`.
+                unsafe  {
+                    crate::local::Database::open_http_sync_internal2(
+                        connector,
+                        path,
+                        url,
+                        auth_token,
+                        version,
+                        read_your_writes,
+                        encryption_config.clone(),
+                        sync_interval,
+                        http_request_callback,
+                        namespace,
+                    )
+                    .await?
+                }
+
+            };
+
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_config },
