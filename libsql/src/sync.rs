@@ -1,10 +1,10 @@
 use crate::{util::ConnectorService, Result};
 
-use std::path::Path;
+use std::{path::Path, str::FromStr};
 
 use bytes::Bytes;
 use chrono::Utc;
-use http::{HeaderValue, StatusCode};
+use http::{uri::InvalidUri, HeaderValue, StatusCode, Uri};
 use hyper::Body;
 use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
@@ -12,7 +12,7 @@ use uuid::Uuid;
 #[cfg(test)]
 mod test;
 
-const METADATA_VERSION: u32 = 0;
+const METADATA_VERSION: u32 = 1;
 
 const DEFAULT_MAX_RETRIES: usize = 5;
 
@@ -49,6 +49,10 @@ pub enum SyncError {
     InvalidPushFrameNoHigh(u32, u32),
     #[error("failed to pull frame: status={0}, error={1}")]
     PullFrame(StatusCode, String),
+    #[error("invalid sync uri: {0}")]
+    InvalidSyncUri(InvalidUri),
+    #[error("Unable to construct metadata filename: {0}")]
+    UnableToConstructMetadataFilename(String),
 }
 
 impl SyncError {
@@ -60,7 +64,7 @@ impl SyncError {
 pub struct SyncContext {
     db_path: String,
     client: hyper::Client<ConnectorService, Body>,
-    sync_url: String,
+    sync_url: Uri,
     auth_token: Option<HeaderValue>,
     max_retries: usize,
     /// Represents the max_frame_no from the server.
@@ -86,6 +90,8 @@ impl SyncContext {
             None => None,
         };
 
+        let sync_url = Uri::from_str(&sync_url).map_err(SyncError::InvalidSyncUri)?;
+
         let mut me = Self {
             db_path,
             sync_url,
@@ -107,7 +113,11 @@ impl SyncContext {
     }
 
     #[tracing::instrument(skip(self))]
-    pub(crate) async fn pull_one_frame(&mut self, generation: u32, frame_no: u32) -> Result<Option<Bytes>> {
+    pub(crate) async fn pull_one_frame(
+        &mut self,
+        generation: u32,
+        frame_no: u32,
+    ) -> Result<Option<Bytes>> {
         let uri = format!(
             "{}/sync/{}/{}/{}",
             self.sync_url,
@@ -294,7 +304,7 @@ impl SyncContext {
     }
 
     pub(crate) async fn write_metadata(&mut self) -> Result<()> {
-        let path = format!("{}-info", self.db_path);
+        let path = self.sync_metadata_filename()?;
 
         let mut metadata = MetadataJson {
             hash: 0,
@@ -313,9 +323,12 @@ impl SyncContext {
     }
 
     async fn read_metadata(&mut self) -> Result<()> {
-        let path = format!("{}-info", self.db_path);
+        let path = self.sync_metadata_filename()?;
 
-        if !Path::new(&path).try_exists().map_err(SyncError::io("metadata file exists"))? {
+        if !Path::new(&path)
+            .try_exists()
+            .map_err(SyncError::io("metadata file exists"))?
+        {
             tracing::debug!("no metadata info file found");
             return Ok(());
         }
@@ -343,6 +356,16 @@ impl SyncContext {
         self.generation = metadata.generation;
 
         Ok(())
+    }
+
+    fn sync_metadata_filename(&self) -> Result<String> {
+        let authority = self.sync_url.authority().ok_or_else(|| {
+            SyncError::UnableToConstructMetadataFilename("no authority set".into())
+        })?;
+
+        let host = authority.host();
+
+        Ok(format!("{}-{}-info", self.db_path, host))
     }
 }
 

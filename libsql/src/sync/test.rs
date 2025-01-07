@@ -113,8 +113,8 @@ async fn test_sync_context_corrupted_metadata() {
     assert_eq!(durable_frame, 0);
     assert_eq!(server.frame_count(), 1);
 
-    // Update metadata path to use -info instead of .meta
-    let metadata_path = format!("{}-info", db_path.to_str().unwrap());
+    // Inject invalid data into the metadata file to force a recovery
+    let metadata_path = sync_ctx.sync_metadata_filename().unwrap();
     std::fs::write(&metadata_path, b"invalid json data").unwrap();
 
     // Create new sync context with corrupted metadata
