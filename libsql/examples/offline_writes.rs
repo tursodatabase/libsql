@@ -1,10 +1,18 @@
 // Example of using a offline writes with libSQL.
 
 use libsql::{params, Builder};
+use std::net::TcpStream;
+
+fn is_online() -> bool {
+    // 8.8.8.8:53 is Google's public DNS server
+    TcpStream::connect("8.8.8.8:53").is_ok()
+}
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
+
+    let online = is_online();
 
     // The local database path where the data will be stored.
     let db_path = std::env::var("LIBSQL_DB_PATH")
@@ -40,12 +48,20 @@ async fn main() {
     let conn = db.connect().unwrap();
 
     println!("Syncing database from remote...");
-    db.sync().await.unwrap();
+    match db.sync().await {
+        Ok(_) => {}
+        Err(error) => {
+            if online {
+                eprintln!("Error syncing with remote server: {}", error);
+                return;
+            }
+        }
+    }
 
     conn.execute(
         r#"
         CREATE TABLE IF NOT EXISTS guest_book_entries (
-            text TEXT
+            comment TEXT
         )"#,
         (),
     )
@@ -57,10 +73,13 @@ async fn main() {
     match std::io::stdin().read_line(&mut input) {
         Ok(_) => {
             println!("You entered: {}", input);
-            let params = params![input.as_str()];
-            conn.execute("INSERT INTO guest_book_entries (text) VALUES (?)", params)
-                .await
-                .unwrap();
+            let params = params![input.as_str().trim()];
+            conn.execute(
+                "INSERT INTO guest_book_entries (comment) VALUES (?)",
+                params,
+            )
+            .await
+            .unwrap();
         }
         Err(error) => {
             eprintln!("Error reading input: {}", error);
@@ -77,6 +96,14 @@ async fn main() {
     }
 
     println!("Syncing database to remote...");
-    db.sync().await.unwrap();
+    match db.sync().await {
+        Ok(_) => {}
+        Err(error) => {
+            if online {
+                eprintln!("Error syncing with remote server: {}", error);
+                return;
+            }
+        }
+    }
     println!("Done!");
 }
