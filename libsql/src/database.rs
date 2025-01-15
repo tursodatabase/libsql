@@ -74,6 +74,7 @@ enum DbType {
         path: String,
         flags: OpenFlags,
         encryption_config: Option<EncryptionConfig>,
+        skip_saftey_assert: bool,
     },
     #[cfg(feature = "replication")]
     Sync {
@@ -146,6 +147,7 @@ cfg_core! {
                     path: db_path.into(),
                     flags,
                     encryption_config: None,
+                    skip_saftey_assert: false,
                 },
                 max_write_replication_index: Default::default(),
             })
@@ -429,7 +431,7 @@ cfg_replication! {
                DbType::Sync { db, .. } => {
                    let path = db.path().to_string();
                    Ok(Database {
-                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None},
+                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None, skip_saftey_assert: false },
                        max_write_replication_index: Default::default(),
                    })
                }
@@ -550,10 +552,16 @@ impl Database {
                 path,
                 flags,
                 encryption_config,
+                skip_saftey_assert,
             } => {
                 use crate::local::impls::LibsqlConnection;
 
-                let db = crate::local::Database::open(path, *flags)?;
+                let db = if !skip_saftey_assert {
+                    crate::local::Database::open(path, *flags)?
+                } else {
+                    unsafe { crate::local::Database::open_raw(path, *flags)? }
+                };
+
                 let conn = db.connect()?;
 
                 if !cfg!(feature = "encryption") && encryption_config.is_some() {
