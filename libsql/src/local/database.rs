@@ -478,9 +478,7 @@ impl Database {
                 Err(Error::Sync(err)) => {
                     // Retry the sync because we are ahead of the server and we need to push some older
                     // frames.
-                    if let Some(SyncError::InvalidPushFrameNoLow(_, _)) =
-                        err.downcast_ref::<SyncError>()
-                    {
+                    if let Some(SyncError::InvalidPushFrameNoLow(_, _)) = err.downcast_ref() {
                         tracing::debug!("got InvalidPushFrameNo, retrying push");
                         self.try_push(&mut sync_ctx, &conn).await
                     } else {
@@ -492,6 +490,22 @@ impl Database {
         } else {
             self.try_pull(&mut sync_ctx, &conn).await
         }
+        .or_else(|err| {
+            let Error::Sync(err) = err else {
+                return Err(err);
+            };
+
+            // TODO(levy): upcasting should be done *only* at the API boundary, doing this in
+            // internal code just sucks.
+            let Some(SyncError::HttpDispatch(_)) = err.downcast_ref() else {
+                return Err(Error::Sync(err));
+            };
+
+            Ok(crate::database::Replicated {
+                frame_no: None,
+                frames_synced: 0,
+            })
+        })
     }
 
     #[cfg(feature = "sync")]
