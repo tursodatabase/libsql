@@ -557,36 +557,28 @@ impl Database {
     ) -> Result<crate::database::Replicated> {
         let generation = sync_ctx.generation();
         let mut frame_no = sync_ctx.durable_frame_num() + 1;
-        conn.wal_insert_begin()?;
 
-        let mut err = None;
+        let insert_handle = conn.wal_insert_handle()?;
 
         loop {
             match sync_ctx.pull_one_frame(generation, frame_no).await {
                 Ok(Some(frame)) => {
-                    conn.wal_insert_frame(&frame)?;
+                    insert_handle.insert(&frame)?;
                     frame_no += 1;
                 }
                 Ok(None) => {
-                    break;
+                    sync_ctx.write_metadata().await?;
+                    return Ok(crate::database::Replicated {
+                        frame_no: None,
+                        frames_synced: 1,
+                    });
                 }
-                Err(e) => {
-                    tracing::debug!("pull_one_frame error: {:?}", e);
-                    err.replace(e);
-                    break;
+                Err(err) => {
+                    tracing::debug!("pull_one_frame error: {:?}", err);
+                    sync_ctx.write_metadata().await?;
+                    return Err(err);
                 }
             }
-        }
-        conn.wal_insert_end()?;
-        sync_ctx.write_metadata().await?;
-
-        if let Some(err) = err {
-            Err(err)
-        } else {
-            Ok(crate::database::Replicated {
-                frame_no: None,
-                frames_synced: 1,
-            })
         }
     }
 
