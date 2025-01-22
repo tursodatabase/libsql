@@ -91,7 +91,7 @@ impl Drop for LibsqlConnection {
     }
 }
 
-pub(crate) struct LibsqlStmt(pub(super) crate::local::Statement);
+pub(crate) struct LibsqlStmt(pub crate::local::Statement);
 
 #[async_trait::async_trait]
 impl Stmt for LibsqlStmt {

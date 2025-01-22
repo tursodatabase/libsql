@@ -305,14 +305,17 @@ impl Conn for HranaStream<HttpSender> {
         let parse = crate::parser::Statement::parse(sql);
         for s in parse {
             let s = s?;
-            if s.kind == crate::parser::StmtKind::TxnBegin
-                || s.kind == crate::parser::StmtKind::TxnBeginReadOnly
-                || s.kind == crate::parser::StmtKind::TxnEnd
-            {
+
+            use crate::parser::StmtKind;
+            if matches!(
+                s.kind,
+                StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly | StmtKind::TxnEnd
+            ) {
                 return Err(Error::TransactionalBatchError(
                     "Transactions forbidden inside transactional batch".to_string(),
                 ));
             }
+
             stmts.push(Stmt::new(s.stmt, false));
         }
         let res = self

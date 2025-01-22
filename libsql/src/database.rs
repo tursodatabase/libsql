@@ -8,9 +8,11 @@ pub use builder::Builder;
 pub use libsql_sys::{Cipher, EncryptionConfig};
 
 use crate::{Connection, Result};
-use std::fmt;
-use std::sync::atomic::AtomicU64;
-use std::sync::Arc;
+use std::{
+    fmt,
+    sync::{atomic::AtomicU64, Arc},
+};
+use tokio::sync::Mutex;
 
 cfg_core! {
     bitflags::bitflags! {
@@ -82,7 +84,14 @@ enum DbType {
         encryption_config: Option<EncryptionConfig>,
     },
     #[cfg(feature = "sync")]
-    Offline { db: crate::local::Database },
+    Offline {
+        db: crate::local::Database,
+        remote_writes: bool,
+        read_your_writes: bool,
+        url: String,
+        auth_token: String,
+        connector: crate::util::ConnectorService,
+    },
     #[cfg(feature = "remote")]
     Remote {
         url: String,
@@ -375,7 +384,7 @@ cfg_replication! {
                 #[cfg(feature = "replication")]
                 DbType::Sync { db, encryption_config: _ } => db.sync().await,
                 #[cfg(feature = "sync")]
-                DbType::Offline { db } => db.sync_offline().await,
+                DbType::Offline { db, .. } => db.sync_offline().await,
                 _ => Err(Error::SyncNotSupported(format!("{:?}", self.db_type))),
             }
         }
@@ -542,7 +551,7 @@ impl Database {
 
                 let conn = db.connect()?;
 
-                let conn = std::sync::Arc::new(LibsqlConnection { conn });
+                let conn = Arc::new(LibsqlConnection { conn });
 
                 Ok(Connection { conn })
             }
@@ -590,7 +599,7 @@ impl Database {
                     }
                 }
 
-                let conn = std::sync::Arc::new(LibsqlConnection { conn });
+                let conn = Arc::new(LibsqlConnection { conn });
 
                 Ok(Connection { conn })
             }
@@ -636,19 +645,47 @@ impl Database {
                     writer,
                     self.max_write_replication_index.clone(),
                 );
-                let conn = std::sync::Arc::new(remote);
+                let conn = Arc::new(remote);
 
                 Ok(Connection { conn })
             }
 
             #[cfg(feature = "sync")]
-            DbType::Offline { db } => {
-                use crate::local::impls::LibsqlConnection;
+            DbType::Offline {
+                db,
+                remote_writes,
+                read_your_writes,
+                url,
+                auth_token,
+                connector,
+            } => {
+                use crate::{
+                    hrana::{connection::HttpConnection, hyper::HttpSender},
+                    local::impls::LibsqlConnection,
+                    replication::connection::State,
+                    sync::connection::SyncedConnection,
+                };
 
-                let conn = db.connect()?;
+                let local = db.connect()?;
 
-                let conn = std::sync::Arc::new(LibsqlConnection { conn });
+                if *remote_writes {
+                    let synced = SyncedConnection {
+                        local,
+                        remote: HttpConnection::new(
+                            url.clone(),
+                            auth_token.clone(),
+                            HttpSender::new(connector.clone(), None),
+                        ),
+                        read_your_writes: *read_your_writes,
+                        context: db.sync_ctx.clone().unwrap(),
+                        state: Arc::new(Mutex::new(State::Init)),
+                    };
 
+                    let conn = Arc::new(synced);
+                    return Ok(Connection { conn });
+                }
+
+                let conn = Arc::new(LibsqlConnection { conn: local });
                 Ok(Connection { conn })
             }
 
@@ -659,7 +696,7 @@ impl Database {
                 connector,
                 version,
             } => {
-                let conn = std::sync::Arc::new(
+                let conn = Arc::new(
                     crate::hrana::connection::HttpConnection::new_with_connector(
                         url,
                         auth_token,
