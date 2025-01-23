@@ -20,11 +20,11 @@ cfg_replication!(
 
 cfg_sync! {
     use crate::sync::SyncContext;
+    use tokio::sync::Mutex;
 }
 
 use crate::{database::OpenFlags, local::connection::Connection, Error::ConnectionFailed, Result};
 use libsql_sys::ffi;
-use tokio::sync::Mutex;
 
 // A libSQL database.
 pub struct Database {
@@ -212,8 +212,6 @@ impl Database {
         endpoint: String,
         auth_token: String,
     ) -> Result<Database> {
-        use tokio::sync::Mutex;
-
         let db_path = db_path.into();
         let endpoint = if endpoint.starts_with("libsql:") {
             endpoint.replace("libsql:", "https:")
