@@ -10565,15 +10565,6 @@ SQLITE_API void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlit
 SQLITE_API int libsql_wal_disable_checkpoint(sqlite3 *db);
 
 /*
-** CAPI3REF: Get the checkpoint sequence counter of the WAL file
-** METHOD: sqlite3
-**
-** ^The [libsql_wal_checkpoint_seq_count(D,P)] interface returns the checkpoint sequence counter
-** of the WAL file for [database connection] D into *P.
-*/
-SQLITE_API int libsql_wal_checkpoint_seq_count(sqlite3 *db, unsigned int *pnCkpt);
-
-/*
 ** CAPI3REF: Get the number of frames in the WAL file
 ** METHOD: sqlite3
 **
@@ -13655,9 +13646,6 @@ typedef struct libsql_wal_methods {
   /* Move the write position of the WAL back to iFrame.  Called in
   ** response to a ROLLBACK TO command. */
   int (*xSavepointUndo)(wal_impl* pWal, unsigned int *aWalData);
-
-  /* Return the current checkpoint generation in the WAL file. */
-  int (*xCheckpointSeqCount)(wal_impl* pWal, unsigned int *pnCkpt);
 
   /* Return the number of frames in the WAL */
   int (*xFrameCount)(wal_impl* pWal, int, unsigned int *);

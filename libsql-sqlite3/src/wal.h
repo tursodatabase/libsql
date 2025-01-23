@@ -76,9 +76,6 @@ typedef struct libsql_wal_methods {
   ** response to a ROLLBACK TO command. */
   int (*xSavepointUndo)(wal_impl* pWal, unsigned int *aWalData);
 
-  /* Return the current checkpoint generation in the WAL file. */
-  int (*xCheckpointSeqCount)(wal_impl* pWal, unsigned int *pnCkpt);
-
   /* Return the number of frames in the WAL */
   int (*xFrameCount)(wal_impl* pWal, int, unsigned int *);
 

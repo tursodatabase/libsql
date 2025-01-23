@@ -270,10 +270,6 @@ impl Wal for DurableWal {
         todo!()
     }
 
-    fn checkpoint_seq_count(&self) -> Result<u32> {
-        todo!()
-    }
-
     fn frame_count(&self, _locked: i32) -> Result<u32> {
         todo!()
     }

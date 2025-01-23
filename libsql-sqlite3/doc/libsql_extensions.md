@@ -362,7 +362,6 @@ The libSQL has the following WAL API functions, which are useful for
 syncing the WAL between databases:
 
 * `libsql_wal_disable_checkpoint` -- Disable checkpointing, including on database close.
-* `libsql_wal_checkpoint_seq_count` -- Return the checkpoint sequence number of the WAL.
 * `libsql_wal_frame_count` -- Get the number of frames in the WAL.
 * `libsql_wal_get_frame` -- Get a frame from the WAL.
 * `libsql_wal_insert_begin` -- Begin WAL insertion.
