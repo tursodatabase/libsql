@@ -495,7 +495,7 @@ impl Connection {
         Ok(buf)
     }
 
-    pub(crate) fn wal_insert_begin(&self) -> Result<()> {
+    fn wal_insert_begin(&self) -> Result<()> {
         let rc = unsafe { libsql_sys::ffi::libsql_wal_insert_begin(self.handle()) };
         if rc != 0 {
             return Err(crate::errors::Error::SqliteFailure(
@@ -506,7 +506,7 @@ impl Connection {
         Ok(())
     }
 
-    pub(crate) fn wal_insert_end(&self) -> Result<()> {
+    fn wal_insert_end(&self) -> Result<()> {
         let rc = unsafe { libsql_sys::ffi::libsql_wal_insert_end(self.handle()) };
         if rc != 0 {
             return Err(crate::errors::Error::SqliteFailure(
@@ -517,7 +517,7 @@ impl Connection {
         Ok(())
     }
 
-    pub(crate) fn wal_insert_frame(&self, frame: &[u8]) -> Result<()> {
+    fn wal_insert_frame(&self, frame: &[u8]) -> Result<()> {
         let rc = unsafe {
             libsql_sys::ffi::libsql_wal_insert_frame(
                 self.handle(),
@@ -533,6 +533,30 @@ impl Connection {
             ));
         }
         Ok(())
+    }
+
+    pub(crate) fn wal_insert_handle(&self) -> Result<WalInsertHandle<'_>> {
+        self.wal_insert_begin()?;
+        Ok(WalInsertHandle { conn: self })
+    }
+}
+
+pub(crate) struct WalInsertHandle<'a> {
+    conn: &'a Connection,
+}
+
+impl WalInsertHandle<'_> {
+    pub fn insert(&self, frame: &[u8]) -> Result<()> {
+        self.conn.wal_insert_frame(frame)
+    }
+}
+
+impl Drop for WalInsertHandle<'_> {
+    fn drop(&mut self) {
+        if let Err(err) = self.conn.wal_insert_end() {
+            tracing::error!("{:?}", err);
+            Err(err).unwrap()
+        }
     }
 }
 

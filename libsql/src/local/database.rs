@@ -478,9 +478,7 @@ impl Database {
                 Err(Error::Sync(err)) => {
                     // Retry the sync because we are ahead of the server and we need to push some older
                     // frames.
-                    if let Some(SyncError::InvalidPushFrameNoLow(_, _)) =
-                        err.downcast_ref::<SyncError>()
-                    {
+                    if let Some(SyncError::InvalidPushFrameNoLow(_, _)) = err.downcast_ref() {
                         tracing::debug!("got InvalidPushFrameNo, retrying push");
                         self.try_push(&mut sync_ctx, &conn).await
                     } else {
@@ -492,6 +490,22 @@ impl Database {
         } else {
             self.try_pull(&mut sync_ctx, &conn).await
         }
+        .or_else(|err| {
+            let Error::Sync(err) = err else {
+                return Err(err);
+            };
+
+            // TODO(levy): upcasting should be done *only* at the API boundary, doing this in
+            // internal code just sucks.
+            let Some(SyncError::HttpDispatch(_)) = err.downcast_ref() else {
+                return Err(Error::Sync(err));
+            };
+
+            Ok(crate::database::Replicated {
+                frame_no: None,
+                frames_synced: 0,
+            })
+        })
     }
 
     #[cfg(feature = "sync")]
@@ -557,36 +571,28 @@ impl Database {
     ) -> Result<crate::database::Replicated> {
         let generation = sync_ctx.generation();
         let mut frame_no = sync_ctx.durable_frame_num() + 1;
-        conn.wal_insert_begin()?;
 
-        let mut err = None;
+        let insert_handle = conn.wal_insert_handle()?;
 
         loop {
             match sync_ctx.pull_one_frame(generation, frame_no).await {
                 Ok(Some(frame)) => {
-                    conn.wal_insert_frame(&frame)?;
+                    insert_handle.insert(&frame)?;
                     frame_no += 1;
                 }
                 Ok(None) => {
-                    break;
+                    sync_ctx.write_metadata().await?;
+                    return Ok(crate::database::Replicated {
+                        frame_no: None,
+                        frames_synced: 1,
+                    });
                 }
-                Err(e) => {
-                    tracing::debug!("pull_one_frame error: {:?}", e);
-                    err.replace(e);
-                    break;
+                Err(err) => {
+                    tracing::debug!("pull_one_frame error: {:?}", err);
+                    sync_ctx.write_metadata().await?;
+                    return Err(err);
                 }
             }
-        }
-        conn.wal_insert_end()?;
-        sync_ctx.write_metadata().await?;
-
-        if let Some(err) = err {
-            Err(err)
-        } else {
-            Ok(crate::database::Replicated {
-                frame_no: None,
-                frames_synced: 1,
-            })
         }
     }
 
