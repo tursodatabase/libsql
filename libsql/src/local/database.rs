@@ -1,4 +1,4 @@
-use std::sync::{Arc, Once};
+use std::sync::Once;
 
 cfg_replication!(
     use http::uri::InvalidUri;
@@ -21,6 +21,7 @@ cfg_replication!(
 cfg_sync! {
     use crate::sync::SyncContext;
     use tokio::sync::Mutex;
+    use std::sync::Arc;
 }
 
 use crate::{database::OpenFlags, local::connection::Connection, Error::ConnectionFailed, Result};

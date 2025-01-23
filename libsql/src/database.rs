@@ -8,11 +8,8 @@ pub use builder::Builder;
 pub use libsql_sys::{Cipher, EncryptionConfig};
 
 use crate::{Connection, Result};
-use std::{
-    fmt,
-    sync::{atomic::AtomicU64, Arc},
-};
-use tokio::sync::Mutex;
+use std::fmt;
+use std::sync::atomic::AtomicU64;
 
 cfg_core! {
     bitflags::bitflags! {
@@ -126,7 +123,7 @@ pub struct Database {
     db_type: DbType,
     /// The maximum replication index returned from a write performed using any connection created using this Database object.
     #[allow(dead_code)]
-    max_write_replication_index: Arc<AtomicU64>,
+    max_write_replication_index: std::sync::Arc<AtomicU64>,
 }
 
 cfg_core! {
@@ -551,7 +548,7 @@ impl Database {
 
                 let conn = db.connect()?;
 
-                let conn = Arc::new(LibsqlConnection { conn });
+                let conn = std::sync::Arc::new(LibsqlConnection { conn });
 
                 Ok(Connection { conn })
             }
@@ -599,7 +596,7 @@ impl Database {
                     }
                 }
 
-                let conn = Arc::new(LibsqlConnection { conn });
+                let conn = std::sync::Arc::new(LibsqlConnection { conn });
 
                 Ok(Connection { conn })
             }
@@ -645,7 +642,7 @@ impl Database {
                     writer,
                     self.max_write_replication_index.clone(),
                 );
-                let conn = Arc::new(remote);
+                let conn = std::sync::Arc::new(remote);
 
                 Ok(Connection { conn })
             }
@@ -665,6 +662,7 @@ impl Database {
                     replication::connection::State,
                     sync::connection::SyncedConnection,
                 };
+                use tokio::sync::Mutex;
 
                 let local = db.connect()?;
 
@@ -678,14 +676,14 @@ impl Database {
                         ),
                         read_your_writes: *read_your_writes,
                         context: db.sync_ctx.clone().unwrap(),
-                        state: Arc::new(Mutex::new(State::Init)),
+                        state: std::sync::Arc::new(Mutex::new(State::Init)),
                     };
 
-                    let conn = Arc::new(synced);
+                    let conn = std::sync::Arc::new(synced);
                     return Ok(Connection { conn });
                 }
 
-                let conn = Arc::new(LibsqlConnection { conn: local });
+                let conn = std::sync::Arc::new(LibsqlConnection { conn: local });
                 Ok(Connection { conn })
             }
 
@@ -696,7 +694,7 @@ impl Database {
                 connector,
                 version,
             } => {
-                let conn = Arc::new(
+                let conn = std::sync::Arc::new(
                     crate::hrana::connection::HttpConnection::new_with_connector(
                         url,
                         auth_token,
