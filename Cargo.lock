@@ -3168,6 +3168,7 @@ version = "0.5.0"
 dependencies = [
  "bindgen 0.66.1",
  "cc",
+ "glob",
  "libsql-wasmtime-bindings",
 ]
 

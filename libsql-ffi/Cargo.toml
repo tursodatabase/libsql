@@ -16,6 +16,7 @@ libsql-wasmtime-bindings = { version = "0.2.1", optional = true }
 [build-dependencies]
 bindgen = "0.66.1"
 cc = "1.0"
+glob = "0.3"
 
 [features]
 session = []
@@ -28,3 +29,17 @@ wasm32-wasi-vfs = []
 unlock_notify = []
 preupdate_hook = []
 sqlcipher = []
+sqlean-extension-uuid = []
+sqlean-extension-crypto = []
+sqlean-extension-fuzzy = []
+sqlean-extension-math = []
+sqlean-extension-stats = []
+sqlean-extension-text = []
+sqlean-extensions = [
+    "sqlean-extension-uuid",
+    "sqlean-extension-crypto",
+    "sqlean-extension-fuzzy",
+    "sqlean-extension-math",
+    "sqlean-extension-stats",
+    "sqlean-extension-text"
+]
