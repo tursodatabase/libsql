@@ -1,4 +1,4 @@
-use crate::{util::ConnectorService, Result};
+use crate::{local::Connection, util::ConnectorService, Error, Result};
 
 use std::path::Path;
 
@@ -11,6 +11,10 @@ use uuid::Uuid;
 
 #[cfg(test)]
 mod test;
+
+pub mod connection;
+pub mod statement;
+pub mod transaction;
 
 const METADATA_VERSION: u32 = 0;
 
@@ -107,7 +111,11 @@ impl SyncContext {
     }
 
     #[tracing::instrument(skip(self))]
-    pub(crate) async fn pull_one_frame(&mut self, generation: u32, frame_no: u32) -> Result<Option<Bytes>> {
+    pub(crate) async fn pull_one_frame(
+        &mut self,
+        generation: u32,
+        frame_no: u32,
+    ) -> Result<Option<Bytes>> {
         let uri = format!(
             "{}/sync/{}/{}/{}",
             self.sync_url,
@@ -315,7 +323,10 @@ impl SyncContext {
     async fn read_metadata(&mut self) -> Result<()> {
         let path = format!("{}-info", self.db_path);
 
-        if !Path::new(&path).try_exists().map_err(SyncError::io("metadata file exists"))? {
+        if !Path::new(&path)
+            .try_exists()
+            .map_err(SyncError::io("metadata file exists"))?
+        {
             tracing::debug!("no metadata info file found");
             return Ok(());
         }
@@ -418,4 +429,132 @@ async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
         .map_err(SyncError::io("atomic rename"))?;
 
     Ok(())
+}
+
+/// Sync WAL frames to remote.
+pub async fn sync_offline(
+    sync_ctx: &mut SyncContext,
+    conn: &Connection,
+) -> Result<crate::database::Replicated> {
+    let durable_frame_no = sync_ctx.durable_frame_num();
+    let max_frame_no = conn.wal_frame_count();
+
+    if max_frame_no > durable_frame_no {
+        match try_push(sync_ctx, conn).await {
+            Ok(rep) => Ok(rep),
+            Err(Error::Sync(err)) => {
+                // Retry the sync because we are ahead of the server and we need to push some older
+                // frames.
+                if let Some(SyncError::InvalidPushFrameNoLow(_, _)) = err.downcast_ref() {
+                    tracing::debug!("got InvalidPushFrameNo, retrying push");
+                    try_push(sync_ctx, conn).await
+                } else {
+                    Err(Error::Sync(err))
+                }
+            }
+            Err(e) => Err(e),
+        }
+    } else {
+        try_pull(sync_ctx, conn).await
+    }
+    .or_else(|err| {
+        let Error::Sync(err) = err else {
+            return Err(err);
+        };
+
+        // TODO(levy): upcasting should be done *only* at the API boundary, doing this in
+        // internal code just sucks.
+        let Some(SyncError::HttpDispatch(_)) = err.downcast_ref() else {
+            return Err(Error::Sync(err));
+        };
+
+        Ok(crate::database::Replicated {
+            frame_no: None,
+            frames_synced: 0,
+        })
+    })
+}
+
+async fn try_push(
+    sync_ctx: &mut SyncContext,
+    conn: &Connection,
+) -> Result<crate::database::Replicated> {
+    let page_size = {
+        let rows = conn
+            .query("PRAGMA page_size", crate::params::Params::None)?
+            .unwrap();
+        let row = rows.next()?.unwrap();
+        let page_size = row.get::<u32>(0)?;
+        page_size
+    };
+
+    let max_frame_no = conn.wal_frame_count();
+    if max_frame_no == 0 {
+        return Ok(crate::database::Replicated {
+            frame_no: None,
+            frames_synced: 0,
+        });
+    }
+
+    let generation = sync_ctx.generation(); // TODO: Probe from WAL.
+    let start_frame_no = sync_ctx.durable_frame_num() + 1;
+    let end_frame_no = max_frame_no;
+
+    let mut frame_no = start_frame_no;
+    while frame_no <= end_frame_no {
+        let frame = conn.wal_get_frame(frame_no, page_size)?;
+
+        // The server returns its maximum frame number. To avoid resending
+        // frames the server already knows about, we need to update the
+        // frame number to the one returned by the server.
+        let max_frame_no = sync_ctx
+            .push_one_frame(frame.freeze(), generation, frame_no)
+            .await?;
+
+        if max_frame_no > frame_no {
+            frame_no = max_frame_no;
+        }
+        frame_no += 1;
+    }
+
+    sync_ctx.write_metadata().await?;
+
+    // TODO(lucio): this can underflow if the server previously returned a higher max_frame_no
+    // than what we have stored here.
+    let frame_count = end_frame_no - start_frame_no + 1;
+    Ok(crate::database::Replicated {
+        frame_no: None,
+        frames_synced: frame_count as usize,
+    })
+}
+
+async fn try_pull(
+    sync_ctx: &mut SyncContext,
+    conn: &Connection,
+) -> Result<crate::database::Replicated> {
+    let generation = sync_ctx.generation();
+    let mut frame_no = sync_ctx.durable_frame_num() + 1;
+
+    let insert_handle = conn.wal_insert_handle()?;
+
+    loop {
+        match sync_ctx.pull_one_frame(generation, frame_no).await {
+            Ok(Some(frame)) => {
+                insert_handle.insert(&frame)?;
+                frame_no += 1;
+            }
+            Ok(None) => {
+                sync_ctx.write_metadata().await?;
+                return Ok(crate::database::Replicated {
+                    frame_no: None,
+                    frames_synced: 1,
+                });
+            }
+            Err(err) => {
+                tracing::debug!("pull_one_frame error: {:?}", err);
+                sync_ctx.write_metadata().await?;
+                return Err(err);
+            }
+        }
+    }
 }

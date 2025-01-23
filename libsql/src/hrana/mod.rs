@@ -3,7 +3,7 @@
 pub mod connection;
 
 cfg_remote! {
-    mod hyper;
+    pub mod hyper;
 }
 
 mod cursor;
