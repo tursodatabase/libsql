@@ -2884,12 +2884,6 @@ extern "C" {
     pub fn libsql_wal_disable_checkpoint(db: *mut sqlite3) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn libsql_wal_checkpoint_seq_count(
-        db: *mut sqlite3,
-        pnCkpt: *mut ::std::os::raw::c_uint,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
     pub fn libsql_wal_frame_count(
         arg1: *mut sqlite3,
         arg2: *mut ::std::os::raw::c_uint,
@@ -3871,12 +3865,6 @@ pub struct libsql_wal_methods {
         unsafe extern "C" fn(
             pWal: *mut wal_impl,
             aWalData: *mut ::std::os::raw::c_uint,
-        ) -> ::std::os::raw::c_int,
-    >,
-    pub xCheckpointSeqCount: ::std::option::Option<
-        unsafe extern "C" fn(
-            pWal: *mut wal_impl,
-            pnCkpt: *mut ::std::os::raw::c_uint,
         ) -> ::std::os::raw::c_int,
     >,
     pub xFrameCount: ::std::option::Option<
