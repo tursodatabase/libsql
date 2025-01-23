@@ -102,7 +102,9 @@ impl Builder<()> {
                         connector: None,
                         version: None,
                     },
-                    connector:None,
+                    connector: None,
+                    read_your_writes: true,
+                    remote_writes: false,
                 },
             }
         }
@@ -463,12 +465,24 @@ cfg_sync! {
         flags: crate::OpenFlags,
         remote: Remote,
         connector: Option<crate::util::ConnectorService>,
+        remote_writes: bool,
+        read_your_writes: bool,
     }
 
     impl Builder<SyncedDatabase> {
         #[doc(hidden)]
         pub fn version(mut self, version: String) -> Builder<SyncedDatabase> {
             self.inner.remote = self.inner.remote.version(version);
+            self
+        }
+
+        pub fn read_your_writes(mut self, v: bool) -> Builder<SyncedDatabase> {
+            self.inner.read_your_writes = v;
+            self
+        }
+
+        pub fn remote_writes(mut self, v: bool) -> Builder<SyncedDatabase> {
+            self.inner.remote_writes = v;
             self
         }
 
@@ -497,6 +511,8 @@ cfg_sync! {
                         version: _,
                     },
                 connector,
+                remote_writes,
+                read_your_writes,
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
@@ -515,16 +531,23 @@ cfg_sync! {
             let connector = crate::util::ConnectorService::new(svc);
 
             let db = crate::local::Database::open_local_with_offline_writes(
-                connector,
+                connector.clone(),
                 path,
                 flags,
-                url,
-                auth_token,
+                url.clone(),
+                auth_token.clone(),
             )
             .await?;
 
             Ok(Database {
-                db_type: DbType::Offline { db },
+                db_type: DbType::Offline {
+                    db,
+                    remote_writes,
+                    read_your_writes,
+                    url,
+                    auth_token,
+                    connector,
+                },
                 max_write_replication_index: Default::default(),
             })
         }

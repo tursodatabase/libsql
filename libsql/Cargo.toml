@@ -99,6 +99,8 @@ sync = [
   "parser",
   "serde",
   "stream",
+  "remote",
+  "replication",
   "dep:tower",
   "dep:hyper",
   "dep:http",

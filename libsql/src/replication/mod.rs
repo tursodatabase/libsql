@@ -30,7 +30,7 @@ use self::local_client::LocalClient;
 use self::remote_client::RemoteClient;
 
 pub(crate) mod client;
-mod connection;
+pub(crate) mod connection;
 pub(crate) mod local_client;
 pub(crate) mod remote_client;
 

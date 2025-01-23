@@ -40,7 +40,7 @@ struct Inner {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
-enum State {
+pub enum State {
     #[default]
     Init,
     Invalid,
@@ -106,7 +106,7 @@ fn predict_final_state<'a>(
 /// parsed. This means that we only take into account the entire passed sql statement set and
 /// for example will reject writes if we are in a readonly txn to start with even if we commit
 /// and start a new transaction with the write in it.
-fn should_execute_local(state: &mut State, stmts: &[parser::Statement]) -> Result<bool> {
+pub fn should_execute_local(state: &mut State, stmts: &[parser::Statement]) -> Result<bool> {
     let predicted_end_state = predict_final_state(*state, stmts.iter());
 
     let should_execute_local = match (*state, predicted_end_state) {
