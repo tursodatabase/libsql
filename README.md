@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD033 MD041 -->
+
 <p align="center">
   <a href="https://turso.tech/libsql">
     <img alt="libSQL by Turso" src="https://github.com/tursodatabase/libsql/assets/950181/6c8679e7-65a9-4777-b08a-2ddf4321160f" width="1000">
@@ -33,7 +35,7 @@
 
 ## Documentation
 
-We aim to evolve it to suit many more use cases than SQLite was originally designed for, and plan to use third-party OSS code wherever it makes sense. 
+We aim to evolve it to suit many more use cases than SQLite was originally designed for, and plan to use third-party OSS code wherever it makes sense.
 
 libSQL has many great features, including:
 
@@ -54,19 +56,22 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 ### Official Drivers
 
 * [TypeScript / JS](https://github.com/tursodatabase/libsql-client-ts)
-* [Rust](libsql) 
+* [Rust](libsql)
 * [Go](https://github.com/tursodatabase/go-libsql)
 * [Go (no CGO)](https://github.com/tursodatabase/libsql-client-go)
 
 ### Experimental Drivers
+
 * [Python](https://github.com/tursodatabase/libsql-experimental-python) (experimental)
 * [C](bindings/c) (experimental)
 
 ### Community Drivers
+
 * [PHP](https://github.com/tursodatabase/turso-client-php)
 * [D](https://github.com/pdenapo/libsql-d) (experimental, based on the C driver)
 
 ### GUI Support
+
 * [Beekeeper Studio](https://www.beekeeperstudio.io/db/libsql-client/) &mdash; macOS, Windows, and Linux
 * [Outerbase](https://www.outerbase.com) &mdash; Runs in the browser
 * [TablePlus](https://tableplus.com) &mdash; macOS, Windows, and Linux
@@ -95,6 +100,7 @@ libsql>
 ```
 
 ### Docker
+
 To run libSQL using docker, refer to the [Docker Docs](docs/DOCKER.md)
 
 ## Why a fork?
@@ -105,7 +111,7 @@ But despite having its code available, SQLite famously doesn't accept external c
 
 There have been other forks in the past, but they all focus on a specific technical difference. We aim to be a community where people can contribute from many different angles and motivations.
 
-We want to see a world where everyone can benefit from all of the great ideas and hard work that the SQLite community contributes back to the codebase. Community contributions work well, because we’ve done it before. If this was possible, what do you think SQLite could become?
+We want to see a world where everyone can benefit from all the great ideas and hard work that the SQLite community contributes back to the codebase. Community contributions work well, because we’ve done it before. If this was possible, what do you think SQLite could become?
 
 You can read more about our goals and motivation in our [product vision](https://turso.tech/libsql-manifesto).
 
@@ -113,7 +119,7 @@ You can read more about our goals and motivation in our [product vision](https:/
 
 Compatibility with SQLite is of great importance for us. But it can mean many things. So here's our stance:
 
-* **The file format**: libSQL will always be able to ingest and write the SQLite file format. We would love to add extensions like encryption, and CRC that require the file to be changed. But we commit to always doing so in a way that generates standard sqlite files if those features are not used.
+* **The file format**: libSQL will always be able to ingest and write the SQLite file format. We would love to add extensions like encryption, and CRC that require the file to be changed. But we commit to always doing so in a way that generates standard SQLite files if those features are not used.
 * **The API**: libSQL will keep 100% compatibility with the SQLite API, but we may add additional APIs.
 * **Embedded**: SQLite is an embedded database that can be consumed as a single .c file with its accompanying header. libSQL will always be embeddable, meaning it runs inside your process without needing a network connection. But we may change the distribution, so that object files are generated, instead of a single .c file.
 

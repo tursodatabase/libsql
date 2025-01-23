@@ -22,8 +22,9 @@ You can query sqld using one of the provided [client
 libraries](../libsql-server#client-libraries).
 
 You can also use the [turso cli](https://docs.turso.tech/reference/turso-cli) to connect to the sqld instance:
-```
-turso db shell http://127.0.0.1:8080    
+
+```console
+turso db shell http://127.0.0.1:8080
 ```
 
 ## Download a prebuilt binary
@@ -59,7 +60,7 @@ sqld --help
 ## Using a prebuilt Docker image
 
 The sqld release process publishes a Docker image to the GitHub Container
-Registry. The URL is https://ghcr.io/tursodatabase/libsql-server. You can run the latest image locally
+Registry. The URL is <https://ghcr.io/tursodatabase/libsql-server>. You can run the latest image locally
 on port 8080 with the following:
 
 ```bash
@@ -194,7 +195,5 @@ development.
 cargo xtask test
 ```
 
-
-[sqld releases page]: https://github.com/libsql/sqld/releases
 [sqld container release tags]: https://github.com/libsql/sqld/pkgs/container/sqld
 [sqld release tags]: https://github.com/libsql/sqld/releases

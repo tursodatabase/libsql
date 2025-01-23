@@ -1,4 +1,4 @@
-## Overview
+# Overview
 
 `sqld` is a server mode for [libSQL](https://libsql.org), which provides SQLite interface and dialect for use cases such as edge functions where it's impractical to embed a full database engine.
 
@@ -11,7 +11,7 @@ The `sqld` consists of a:
 * Replica servers (optional)
 * mvSQLite backend (optional)
 
-The client provides a SQLite ABI compatible inteface as a drop-in replacement for applications using libSQL or SQLite. The client library transforms SQLite C API calls into PostgreSQL wire protocol messages and sends them to the primary server.
+The client provides a SQLite ABI compatible interface as a drop-in replacement for applications using libSQL or SQLite. The client library transforms SQLite C API calls into PostgreSQL wire protocol messages and sends them to the primary server.
 
 The primary server is a `sqld` process, which servers SQLite dialect over the PostgreSQL wire protocol. The server can either be backed by single-node `libSQL` database or by a mvSQLite backend, which provides improved write concurrency, high availability, and fault tolerance using FoundationDB.
 
@@ -39,7 +39,7 @@ sequenceDiagram
 
 ### Writes
 
-Clients initialte writes with, for example, the `sqlite3_exec()` API by performing a `INSERT`, `UPDATE`, or `DELETE` SQL statement.
+Clients initiate writes with, for example, the `sqlite3_exec()` API by performing a `INSERT`, `UPDATE`, or `DELETE` SQL statement.
 The primary server is responsible for writes.
 The client sends writes to the primary server or a replica. If a replica receives a write, it delegates the write to the primary server.
 The primary server either performs the write against its local `libSQL` database or processes it via `mvSQLite`, which uses FoundationDB.

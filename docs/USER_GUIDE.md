@@ -4,15 +4,21 @@ Welcome to the `sqld` user guide!
 
 ## Table of Contents
 
-* [Overview](#overview)
-* [Replication](#replication)
-    * [TLS configuration](#tls-configuration)
-    * [Launching a primary server](#launching-a-primary-server)
-    * [Launching a replica server](#launching-a-replica-server)
-* [Client Authentication](#clientauthentication)
-* [Deployment](#deployment)
-    * [Deploying with Docker](#deploying-with-docker)
-    * [Deploying on Fly](#deploying-on-fly)
+- [`sqld` User Guide](#sqld-user-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Replication](#replication)
+    - [TLS configuration](#tls-configuration)
+    - [Launching a primary server](#launching-a-primary-server)
+    - [Launching a replica server](#launching-a-replica-server)
+  - [Client Authentication](#client-authentication)
+  - [Deployment](#deployment)
+    - [Deploying with Docker](#deploying-with-docker)
+    - [Deploying on Fly](#deploying-on-fly)
+  - [Incremental snapshots](#incremental-snapshots)
+  - [Multitenancy](#multitenancy)
+    - [Path based routing](#path-based-routing)
+    - [Wildcard domain for development](#wildcard-domain-for-development)
 
 ## Overview
 
@@ -37,13 +43,13 @@ In this section, we will walk you through how to set up a libsql cluster.
 
 The nodes in a `sqld` cluster communicate over gRPC with TLS. To set up a `sqld` cluster, you need the following TLS configuration:
 
-* Certificate authority (CA) certificate and private key
-* Primary server certificate and private key
-* Replica server certificates and private keys
+- Certificate authority (CA) certificate and private key
+- Primary server certificate and private key
+- Replica server certificates and private keys
 
 In TLS speak, the primary server is the server and the replica servers are the clients.
 
-For *development and testing* purposes, you can generate TLS keys and certificates with:
+For _development and testing_ purposes, you can generate TLS keys and certificates with:
 
 ```console
 python scripts/gen_certs.py
@@ -51,12 +57,12 @@ python scripts/gen_certs.py
 
 The script generates the following files:
 
-* `ca_cert.pem` -- certificate authority certificate
-* `ca_key.pem` -- certificate authority private key
-* `server_cert.pem` -- primary server certificate
-* `server_key.pem` -- primary server private key
-* `client_cert.pem` -- replica server certificate
-* `client_key.pem ` -- replica server private key
+- `ca_cert.pem` -- certificate authority certificate
+- `ca_key.pem` -- certificate authority private key
+- `server_cert.pem` -- primary server certificate
+- `server_key.pem` -- primary server private key
+- `client_cert.pem` -- replica server certificate
+- `client_key.pem` -- replica server private key
 
 ### Launching a primary server
 
@@ -126,20 +132,24 @@ You can find more information about the Docker image [here](./DOCKER.md).
 You can use the existing `fly.toml` file from this repository.
 
 Just run
+
 ```console
 flyctl launch
 ```
+
 ... then pick a name and respond "Yes" when the prompt asks you to deploy.
 
 You now have `sqld` running on Fly listening for HTTP connections.
 
 Give it a try with this snippet, replacing `$YOUR_APP` with your app name:
-```
+
+```console
 curl -X POST -d '{"statements": ["create table testme(a,b,c)"]}' $YOUR_APP.fly.dev
 curl -X POST -d '{"statements": ["insert into testme values(1,2,3)"]}' $YOUR_APP.fly.dev
 curl -X POST -d '{"statements": ["select * from testme"]}' $YOUR_APP.fly.dev
 ```
-```
+
+```json
 [{"b":2,"a":1,"c":3}]
 ```
 
@@ -161,7 +171,7 @@ NAMESPACE="$2"
 
 echo "Generated incremental snapshot $SNAPSHOT_FILE for namespace $NAMESPACE"
 
-# At this point we can ship the snapshot file to whereever we would like but we
+# At this point we can ship the snapshot file to wherever we would like but we
 # must delete it from its location on disk or else sqld will panic.
 rm $SNAPSHOT_FILE
 ```
@@ -221,10 +231,10 @@ async fn main() {
 ```
 
 When applying snapshots the format of the file name gives certain information.
-The format is `{namespace}:{log_id}:{start_frame_no:020x}-{end_frame_no:020x}.snap` where log_id represents the unqiue write ahead log and then
+The format is `{namespace}:{log_id}:{start_frame_no:020x}-{end_frame_no:020x}.snap` where log_id represents the unique write ahead log and then
 for each unique log_id there will be snapshots starting at frame `0` up until
 the end. Snapshots must be applied sequentially for each log_id starting at
-frame 0. 
+frame 0.
 
 ## Multitenancy
 
