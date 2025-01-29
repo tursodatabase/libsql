@@ -274,6 +274,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         cfg.file(&sqlean);
 
         cfg.include(format!("{BUNDLED_DIR}/sqlean/"));
+        cfg.include(format!("{BUNDLED_DIR}/src/"));
     }
 
     if cfg!(feature = "wasmtime-bindings") {
