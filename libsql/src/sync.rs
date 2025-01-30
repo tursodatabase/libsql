@@ -300,9 +300,6 @@ impl SyncContext {
                     .ok_or_else(|| SyncError::JsonValue(generation.clone()))?;
                 return Ok(PullResult::EndOfGeneration { max_generation: generation as u32 });
             }
-            if res.status() == StatusCode::BAD_REQUEST {
-                return Err(SyncError::PullFrame(res.status(), "Bad Request".to_string()).into());
-            }
             // If we've retried too many times or the error is not a server error,
             // return the error.
             if nr_retries > max_retries || !res.status().is_server_error() {
