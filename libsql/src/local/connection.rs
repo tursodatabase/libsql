@@ -584,9 +584,11 @@ impl WalInsertHandle<'_> {
 
 impl Drop for WalInsertHandle<'_> {
     fn drop(&mut self) {
-        if let Err(err) = self.conn.wal_insert_end() {
-            tracing::error!("{:?}", err);
-            Err(err).unwrap()
+        if *self.in_session.borrow() {
+            if let Err(err) = self.conn.wal_insert_end() {
+                tracing::error!("{:?}", err);
+                Err(err).unwrap()
+            }
         }
     }
 }
