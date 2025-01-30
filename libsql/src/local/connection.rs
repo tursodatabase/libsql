@@ -9,6 +9,7 @@ use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
+use std::cell::RefCell;
 use std::{ffi::c_int, fmt, path::Path, sync::Arc};
 
 /// A connection to a libSQL database.
@@ -451,6 +452,20 @@ impl Connection {
         }
     }
 
+    pub(crate) fn wal_checkpoint(&self, truncate: bool) -> Result<()> {
+        let rc = unsafe { libsql_sys::ffi::sqlite3_wal_checkpoint_v2(self.handle(), std::ptr::null(), truncate as i32, std::ptr::null_mut(), std::ptr::null_mut()) };
+        if rc != 0 {
+            let err_msg = unsafe { libsql_sys::ffi::sqlite3_errmsg(self.handle()) };
+            let err_msg = unsafe { std::ffi::CStr::from_ptr(err_msg) };
+            let err_msg = err_msg.to_string_lossy().to_string();
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("Failed to checkpoint WAL: {}", err_msg),
+            ));
+        }
+        Ok(())
+    }
+
     pub(crate) fn wal_frame_count(&self) -> u32 {
         let mut max_frame_no: std::os::raw::c_uint = 0;
         unsafe { libsql_sys::ffi::libsql_wal_frame_count(self.handle(), &mut max_frame_no) };
@@ -537,25 +552,43 @@ impl Connection {
 
     pub(crate) fn wal_insert_handle(&self) -> Result<WalInsertHandle<'_>> {
         self.wal_insert_begin()?;
-        Ok(WalInsertHandle { conn: self })
+        Ok(WalInsertHandle { conn: self, in_session: RefCell::new(true) })
     }
 }
 
 pub(crate) struct WalInsertHandle<'a> {
     conn: &'a Connection,
+    in_session: RefCell<bool>
 }
 
 impl WalInsertHandle<'_> {
     pub fn insert(&self, frame: &[u8]) -> Result<()> {
+        assert!(*self.in_session.borrow());
         self.conn.wal_insert_frame(frame)
+    }
+
+    pub fn begin(&self) -> Result<()> {
+        assert!(!*self.in_session.borrow());
+        self.conn.wal_insert_begin()?;
+        self.in_session.replace(true);
+        Ok(())
+    }
+
+    pub fn end(&self) -> Result<()> {
+        assert!(*self.in_session.borrow());
+        self.conn.wal_insert_end()?;
+        self.in_session.replace(false);
+        Ok(())
     }
 }
 
 impl Drop for WalInsertHandle<'_> {
     fn drop(&mut self) {
-        if let Err(err) = self.conn.wal_insert_end() {
-            tracing::error!("{:?}", err);
-            Err(err).unwrap()
+        if *self.in_session.borrow() {
+            if let Err(err) = self.conn.wal_insert_end() {
+                tracing::error!("{:?}", err);
+                Err(err).unwrap()
+            }
         }
     }
 }
