@@ -281,7 +281,9 @@ impl SyncContext {
                     .map_err(SyncError::HttpBody)?;
                 return Ok(PullResult::Frame(frame));
             }
-            if res.status() == StatusCode::BAD_REQUEST {
+            // BUG ALERT: The server returns a 500 error if the remote database is empty.
+            // This is a bug and should be fixed.
+            if res.status() == StatusCode::BAD_REQUEST || res.status() == StatusCode::INTERNAL_SERVER_ERROR {
                 let res_body = hyper::body::to_bytes(res.into_body())
                     .await
                     .map_err(SyncError::HttpBody)?;
