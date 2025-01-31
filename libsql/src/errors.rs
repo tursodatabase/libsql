@@ -57,6 +57,8 @@ pub enum Error {
     InvalidBlobSize(usize),
     #[error("sync error: {0}")]
     Sync(crate::BoxError),
+    #[error("WAL frame insert conflict")]
+    WalConflict,
 }
 
 #[cfg(feature = "hrana")]
