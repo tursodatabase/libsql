@@ -342,6 +342,28 @@ cfg_replication! {
                 crate::util::ConnectorService::new(svc)
             };
 
+            let client = hyper::client::Client::builder()
+                .build::<_, hyper::Body>(connector.clone());
+
+            let req = http::Request::get(format!("{url}/sync/0/0/0"))
+                .header("Authorization", format!("Bearer {}", auth_token))
+                .body(hyper::Body::empty())
+                .unwrap();
+
+            let res = client
+                .request(req)
+                .await
+                .map_err(|err| crate::Error::Sync(err.into()))?;
+
+            match res.status() {
+                hyper::StatusCode::OK => return Builder::new_synced_database(path, url, auth_token)
+                    .remote_writes(true)
+                    .read_your_writes(read_your_writes)
+                    .build()
+                    .await,
+                _ => {}
+            }
+
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
 
             let db = if !skip_safety_assert {
