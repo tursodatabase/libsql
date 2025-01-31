@@ -34,7 +34,7 @@ async fn test_sync_context_push_frame() {
 
     // Verify internal state was updated
     assert_eq!(sync_ctx.durable_frame_num(), 0);
-    assert_eq!(sync_ctx.generation(), 1);
+    assert_eq!(sync_ctx.durable_generation(), 1);
     assert_eq!(server.frame_count(), 1);
 }
 
@@ -129,7 +129,7 @@ async fn test_sync_context_corrupted_metadata() {
 
     // Verify that the context was reset to default values
     assert_eq!(sync_ctx.durable_frame_num(), 0);
-    assert_eq!(sync_ctx.generation(), 1);
+    assert_eq!(sync_ctx.durable_generation(), 1);
 }
 
 #[tokio::test]
@@ -174,7 +174,7 @@ async fn test_sync_restarts_with_lower_max_frame_no() {
 
     // Verify that the context was set to new fake values.
     assert_eq!(sync_ctx.durable_frame_num(), 3);
-    assert_eq!(sync_ctx.generation(), 1);
+    assert_eq!(sync_ctx.durable_generation(), 1);
 
     let frame_no = sync_ctx.durable_frame_num() + 1;
     // This push should fail because we are ahead of the server and thus should get an invalid
@@ -376,6 +376,7 @@ impl MockServer {
                             if req.uri().path().contains("/sync/") {
                                 // Return the max_frame_no that has been accepted
                                 let response = serde_json::json!({
+                                    "generation": 1,
                                     "max_frame_no": current_count
                                 });
 
