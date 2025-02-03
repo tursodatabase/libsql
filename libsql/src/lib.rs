@@ -135,6 +135,7 @@ cfg_sync! {
 
 cfg_replication! {
     pub mod replication;
+    pub use database::SyncProtocol;
 }
 
 cfg_core! {
