@@ -64,6 +64,9 @@ cfg_replication_or_sync! {
         }
     }
 
+}
+
+cfg_sync! {
     #[derive(Default)]
     pub enum SyncProtocol {
         #[default]

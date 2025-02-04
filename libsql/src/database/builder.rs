@@ -67,6 +67,7 @@ impl Builder<()> {
                     http_request_callback: None,
                     namespace: None,
                     skip_safety_assert: false,
+                    #[cfg(feature = "sync")]
                     sync_protocol: Default::default(),
                 },
             }
@@ -223,6 +224,7 @@ cfg_replication! {
         http_request_callback: Option<crate::util::HttpRequestCallback>,
         namespace: Option<String>,
         skip_safety_assert: bool,
+        #[cfg(feature = "sync")]
         sync_protocol: super::SyncProtocol,
     }
 
@@ -279,6 +281,7 @@ cfg_replication! {
         /// Set the duration at which the replicator will automatically call `sync` in the
         /// background. The sync will continue for the duration that the resulted `Database`
         /// type is alive for, once it is dropped the background task will get dropped and stop.
+        #[cfg(feature = "sync")]
         pub fn sync_protocol(mut self, protocol: super::SyncProtocol) -> Builder<RemoteReplica> {
             self.inner.sync_protocol = protocol;
             self
@@ -337,6 +340,7 @@ cfg_replication! {
                 http_request_callback,
                 namespace,
                 skip_safety_assert,
+                #[cfg(feature = "sync")]
                 sync_protocol,
             } = self.inner;
 
@@ -353,44 +357,46 @@ cfg_replication! {
                 crate::util::ConnectorService::new(svc)
             };
 
-            use super::SyncProtocol;
+            #[cfg(feature = "sync")]
+            {
+                use super::SyncProtocol;
+                match sync_protocol {
+                    p @ (SyncProtocol::Auto | SyncProtocol::V2) => {
+                        let client = hyper::client::Client::builder()
+                            .build::<_, hyper::Body>(connector.clone());
 
-            match sync_protocol {
-                p @ (SyncProtocol::Auto | SyncProtocol::V2) => {
-                    let client = hyper::client::Client::builder()
-                        .build::<_, hyper::Body>(connector.clone());
+                        let req = http::Request::get(format!("{url}/sync/0/0/0"))
+                            .header("Authorization", format!("Bearer {}", auth_token))
+                            .body(hyper::Body::empty())
+                            .unwrap();
 
-                    let req = http::Request::get(format!("{url}/sync/0/0/0"))
-                        .header("Authorization", format!("Bearer {}", auth_token))
-                        .body(hyper::Body::empty())
-                        .unwrap();
+                        let res = client
+                            .request(req)
+                            .await
+                            .map_err(|err| crate::Error::Sync(err.into()))?;
 
-                    let res = client
-                        .request(req)
-                        .await
-                        .map_err(|err| crate::Error::Sync(err.into()))?;
-
-                    if matches!(p, SyncProtocol::V2) {
-                        if !res.status().is_success() {
-                            let status = res.status();
-                            let body_bytes = hyper::body::to_bytes(res.into_body())
-                                .await
-                                .map_err(|err| crate::Error::Sync(err.into()))?;
-                            let error_message = String::from_utf8_lossy(&body_bytes);
-                            return Err(crate::Error::Sync(format!("HTTP error {}: {}", status, error_message).into()));
+                        if matches!(p, SyncProtocol::V2) {
+                            if !res.status().is_success() {
+                                let status = res.status();
+                                let body_bytes = hyper::body::to_bytes(res.into_body())
+                                    .await
+                                    .map_err(|err| crate::Error::Sync(err.into()))?;
+                                let error_message = String::from_utf8_lossy(&body_bytes);
+                                return Err(crate::Error::Sync(format!("HTTP error {}: {}", status, error_message).into()));
+                            }
                         }
-                    }
 
-                    if res.status().is_success() {
-                        return Builder::new_synced_database(path, url, auth_token)
-                            .remote_writes(true)
-                            .read_your_writes(read_your_writes)
-                            .build()
-                            .await;
-                    }
+                        if res.status().is_success() {
+                            return Builder::new_synced_database(path, url, auth_token)
+                                .remote_writes(true)
+                                .read_your_writes(read_your_writes)
+                                .build()
+                                .await;
+                        }
 
+                    }
+                    SyncProtocol::V1 => {}
                 }
-                SyncProtocol::V1 => {}
             }
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
