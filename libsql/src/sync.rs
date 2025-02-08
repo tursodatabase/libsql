@@ -538,19 +538,28 @@ async fn try_push(
 
     let mut frame_no = start_frame_no;
     while frame_no <= end_frame_no {
-        let frame = conn.wal_get_frame(frame_no, page_size)?;
+        let batch_size = 128.min(end_frame_no - frame_no + 1);
+        let mut frames = conn.wal_get_frame(frame_no, page_size)?;
+        if batch_size > 1 {
+            frames.reserve((batch_size - 1) as usize * frames.len());
+        }
+        for idx in 1..batch_size {
+            let frame = conn.wal_get_frame(frame_no + idx, page_size)?;
+            frames.extend_from_slice(frame.as_ref())
+        }
 
         // The server returns its maximum frame number. To avoid resending
         // frames the server already knows about, we need to update the
         // frame number to the one returned by the server.
         let max_frame_no = sync_ctx
-            .push_frames(frame.freeze(), generation, frame_no, 1)
+            .push_frames(frames.freeze(), generation, frame_no, batch_size)
             .await?;
 
         if max_frame_no > frame_no {
-            frame_no = max_frame_no;
+            frame_no = max_frame_no + 1;
+        } else {
+            frame_no += batch_size;
         }
-        frame_no += 1;
     }
 
     sync_ctx.write_metadata().await?;
