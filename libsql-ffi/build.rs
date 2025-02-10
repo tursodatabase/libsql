@@ -263,9 +263,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
 
         cfg.files(sqlean_sources);
 
-        let sqlean = Path::new(BUNDLED_DIR)
-            .join("src")
-            .join("sqlite3-sqlean-generated.c");
+        let sqlean = Path::new(&env::var("OUT_DIR").unwrap()).join("sqlite3-sqlean-generated.c");
         generate_sqlean(&enabled_extensions, &sqlean).unwrap();
         cfg.file(&sqlean);
 
