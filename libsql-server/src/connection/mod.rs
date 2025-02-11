@@ -13,12 +13,13 @@ use crate::error::Error;
 use crate::http::user::timing::sample_time;
 use crate::metrics::{
     CONCURRENT_CONNECTIONS_COUNT, CONNECTION_ALIVE_DURATION, CONNECTION_CREATE_TIME,
+    TOTAL_RESPONSE_SIZE_HIST,
 };
 use crate::namespace::meta_store::MetaStore;
 use crate::namespace::NamespaceName;
 use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
-use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
+use crate::query_result_builder::{IgnoreResult, QueryResultBuilder, TOTAL_RESPONSE_SIZE};
 use crate::replication::FrameNo;
 use crate::Result;
 
@@ -352,6 +353,8 @@ impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
             "Available semaphore units: {}",
             self.semaphore.available_permits()
         );
+        TOTAL_RESPONSE_SIZE_HIST
+            .record(TOTAL_RESPONSE_SIZE.load(std::sync::atomic::Ordering::Relaxed) as f64);
         let units = self.units_to_take();
         let waiters_guard = WaitersGuard::new(&self.waiters);
         if (waiters_guard.waiters.load(Ordering::Relaxed) as u64) >= self.max_concurrent_requests {
