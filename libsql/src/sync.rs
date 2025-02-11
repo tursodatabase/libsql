@@ -19,6 +19,7 @@ pub mod transaction;
 const METADATA_VERSION: u32 = 0;
 
 const DEFAULT_MAX_RETRIES: usize = 5;
+const DEFAULT_PUSH_BATCH_SIZE: u32 = 128;
 
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
@@ -74,6 +75,7 @@ pub struct SyncContext {
     sync_url: String,
     auth_token: Option<HeaderValue>,
     max_retries: usize,
+    push_batch_size: u32,
     /// The current durable generation.
     durable_generation: u32,
     /// Represents the max_frame_no from the server.
@@ -102,6 +104,7 @@ impl SyncContext {
             sync_url,
             auth_token,
             max_retries: DEFAULT_MAX_RETRIES,
+            push_batch_size: DEFAULT_PUSH_BATCH_SIZE,
             client,
             durable_generation: 1,
             durable_frame_num: 0,
@@ -115,6 +118,10 @@ impl SyncContext {
         }
 
         Ok(me)
+    }
+
+    pub fn set_push_batch_size(&mut self, push_batch_size: u32) {
+        self.push_batch_size = push_batch_size;
     }
 
     #[tracing::instrument(skip(self))]
@@ -134,25 +141,26 @@ impl SyncContext {
         self.pull_with_retry(uri, self.max_retries).await
     }
 
-    #[tracing::instrument(skip(self, frame))]
-    pub(crate) async fn push_one_frame(
+    #[tracing::instrument(skip(self, frames))]
+    pub(crate) async fn push_frames(
         &mut self,
-        frame: Bytes,
+        frames: Bytes,
         generation: u32,
         frame_no: u32,
+        frames_count: u32,
     ) -> Result<u32> {
         let uri = format!(
             "{}/sync/{}/{}/{}",
             self.sync_url,
             generation,
             frame_no,
-            frame_no + 1
+            frame_no + frames_count
         );
         tracing::debug!("pushing frame");
 
-        let (generation, durable_frame_num) = self.push_with_retry(uri, frame, self.max_retries).await?;
+        let (generation, durable_frame_num) = self.push_with_retry(uri, frames, self.max_retries).await?;
 
-        if durable_frame_num > frame_no {
+        if durable_frame_num > frame_no + frames_count - 1 {
             tracing::error!(
                 "server returned durable_frame_num larger than what we sent: sent={}, got={}",
                 frame_no,
@@ -162,7 +170,7 @@ impl SyncContext {
             return Err(SyncError::InvalidPushFrameNoHigh(frame_no, durable_frame_num).into());
         }
 
-        if durable_frame_num < frame_no {
+        if durable_frame_num < frame_no + frames_count - 1 {
             // Update our knowledge of where the server is at frame wise.
             self.durable_frame_num = durable_frame_num;
 
@@ -186,7 +194,7 @@ impl SyncContext {
         Ok(durable_frame_num)
     }
 
-    async fn push_with_retry(&self, uri: String, frame: Bytes, max_retries: usize) -> Result<(u32, u32)> {
+    async fn push_with_retry(&self, uri: String, body: Bytes, max_retries: usize) -> Result<(u32, u32)> {
         let mut nr_retries = 0;
         loop {
             let mut req = http::Request::post(uri.clone());
@@ -200,7 +208,7 @@ impl SyncContext {
                 None => {}
             }
 
-            let req = req.body(frame.clone().into()).expect("valid body");
+            let req = req.body(body.clone().into()).expect("valid body");
 
             let res = self
                 .client
@@ -537,19 +545,28 @@ async fn try_push(
 
     let mut frame_no = start_frame_no;
     while frame_no <= end_frame_no {
-        let frame = conn.wal_get_frame(frame_no, page_size)?;
+        let batch_size = sync_ctx.push_batch_size.min(end_frame_no - frame_no + 1);
+        let mut frames = conn.wal_get_frame(frame_no, page_size)?;
+        if batch_size > 1 {
+            frames.reserve((batch_size - 1) as usize * frames.len());
+        }
+        for idx in 1..batch_size {
+            let frame = conn.wal_get_frame(frame_no + idx, page_size)?;
+            frames.extend_from_slice(frame.as_ref())
+        }
 
         // The server returns its maximum frame number. To avoid resending
         // frames the server already knows about, we need to update the
         // frame number to the one returned by the server.
         let max_frame_no = sync_ctx
-            .push_one_frame(frame.freeze(), generation, frame_no)
+            .push_frames(frames.freeze(), generation, frame_no, batch_size)
             .await?;
 
         if max_frame_no > frame_no {
-            frame_no = max_frame_no;
+            frame_no = max_frame_no + 1;
+        } else {
+            frame_no += batch_size;
         }
-        frame_no += 1;
     }
 
     sync_ctx.write_metadata().await?;
