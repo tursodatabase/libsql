@@ -19,6 +19,7 @@ pub mod transaction;
 const METADATA_VERSION: u32 = 0;
 
 const DEFAULT_MAX_RETRIES: usize = 5;
+const DEFAULT_PUSH_BATCH_SIZE: u32 = 128;
 
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
@@ -74,6 +75,7 @@ pub struct SyncContext {
     sync_url: String,
     auth_token: Option<HeaderValue>,
     max_retries: usize,
+    push_batch_size: u32,
     /// The current durable generation.
     durable_generation: u32,
     /// Represents the max_frame_no from the server.
@@ -102,6 +104,7 @@ impl SyncContext {
             sync_url,
             auth_token,
             max_retries: DEFAULT_MAX_RETRIES,
+            push_batch_size: DEFAULT_PUSH_BATCH_SIZE,
             client,
             durable_generation: 1,
             durable_frame_num: 0,
@@ -538,7 +541,7 @@ async fn try_push(
 
     let mut frame_no = start_frame_no;
     while frame_no <= end_frame_no {
-        let batch_size = 128.min(end_frame_no - frame_no + 1);
+        let batch_size = sync_ctx.push_batch_size.min(end_frame_no - frame_no + 1);
         let mut frames = conn.wal_get_frame(frame_no, page_size)?;
         if batch_size > 1 {
             frames.reserve((batch_size - 1) as usize * frames.len());
