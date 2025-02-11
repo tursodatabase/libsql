@@ -107,6 +107,7 @@ impl Builder<()> {
                     connector: None,
                     read_your_writes: true,
                     remote_writes: false,
+                    push_batch_size: 0,
                 },
             }
         }
@@ -524,6 +525,7 @@ cfg_sync! {
         connector: Option<crate::util::ConnectorService>,
         remote_writes: bool,
         read_your_writes: bool,
+        push_batch_size: u32,
     }
 
     impl Builder<SyncedDatabase> {
@@ -540,6 +542,11 @@ cfg_sync! {
 
         pub fn remote_writes(mut self, v: bool) -> Builder<SyncedDatabase> {
             self.inner.remote_writes = v;
+            self
+        }
+
+        pub fn set_push_batch_size(mut self, v: u32) -> Builder<SyncedDatabase> {
+            self.inner.push_batch_size = v;
             self
         }
 
@@ -570,6 +577,7 @@ cfg_sync! {
                 connector,
                 remote_writes,
                 read_your_writes,
+                push_batch_size,
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
@@ -595,6 +603,10 @@ cfg_sync! {
                 auth_token.clone(),
             )
             .await?;
+
+            if push_batch_size > 0 {
+                db.sync_ctx.as_ref().unwrap().lock().await.set_push_batch_size(push_batch_size);
+            }
 
             Ok(Database {
                 db_type: DbType::Offline {

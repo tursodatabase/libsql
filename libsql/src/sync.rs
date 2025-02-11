@@ -120,6 +120,10 @@ impl SyncContext {
         Ok(me)
     }
 
+    pub fn set_push_batch_size(&mut self, push_batch_size: u32) {
+        self.push_batch_size = push_batch_size;
+    }
+
     #[tracing::instrument(skip(self))]
     pub(crate) async fn pull_one_frame(
         &mut self,
