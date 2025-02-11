@@ -180,9 +180,12 @@ pub(super) async fn make_primary_connection_maker(
         .await?
         .throttled(
             base_config.max_concurrent_connections.clone(),
-            Some(DB_CREATE_TIMEOUT),
+            base_config
+                .connection_creation_timeout
+                .or(Some(DB_CREATE_TIMEOUT)),
             base_config.max_total_response_size,
             base_config.max_concurrent_requests,
+            base_config.disable_intelligent_throttling,
         ),
     );
 

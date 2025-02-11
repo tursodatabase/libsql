@@ -101,6 +101,8 @@ pub struct DbConfig {
     pub snapshot_at_shutdown: bool,
     pub encryption_config: Option<EncryptionConfig>,
     pub max_concurrent_requests: u64,
+    pub disable_intelligent_throttling: bool,
+    pub connection_creation_timeout: Option<Duration>,
 }
 
 impl Default for DbConfig {
@@ -119,6 +121,8 @@ impl Default for DbConfig {
             snapshot_at_shutdown: false,
             encryption_config: None,
             max_concurrent_requests: 128,
+            disable_intelligent_throttling: false,
+            connection_creation_timeout: None,
         }
     }
 }

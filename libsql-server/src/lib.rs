@@ -634,6 +634,8 @@ where
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
             max_concurrent_requests: self.db_config.max_concurrent_requests,
             encryption_config: self.db_config.encryption_config.clone(),
+            disable_intelligent_throttling: self.db_config.disable_intelligent_throttling,
+            connection_creation_timeout: self.db_config.connection_creation_timeout,
         };
 
         let (metastore_conn_maker, meta_store_wal_manager) =

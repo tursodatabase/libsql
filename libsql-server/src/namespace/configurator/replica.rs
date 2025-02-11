@@ -253,9 +253,12 @@ impl ConfigureNamespace for ReplicaConfigurator {
                 )
                 .throttled(
                     self.base.max_concurrent_connections.clone(),
-                    Some(DB_CREATE_TIMEOUT),
+                    self.base
+                        .connection_creation_timeout
+                        .or(Some(DB_CREATE_TIMEOUT)),
                     self.base.max_total_response_size,
                     self.base.max_concurrent_requests,
+                    self.base.disable_intelligent_throttling,
                 ),
             );
 

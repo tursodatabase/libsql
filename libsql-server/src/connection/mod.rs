@@ -206,6 +206,7 @@ pub trait MakeConnection: Send + Sync + 'static {
         timeout: Option<Duration>,
         max_total_response_size: u64,
         max_concurrent_requests: u64,
+        disable_intelligent_throttling: bool,
     ) -> MakeThrottledConnection<Self>
     where
         Self: Sized,
@@ -216,6 +217,7 @@ pub trait MakeConnection: Send + Sync + 'static {
             timeout,
             max_total_response_size,
             max_concurrent_requests,
+            disable_intelligent_throttling,
         )
     }
 
@@ -281,6 +283,7 @@ pub struct MakeThrottledConnection<F> {
     max_total_response_size: u64,
     waiters: AtomicUsize,
     max_concurrent_requests: u64,
+    disable_intelligent_throttling: bool,
 }
 
 impl<F> MakeThrottledConnection<F> {
@@ -290,6 +293,7 @@ impl<F> MakeThrottledConnection<F> {
         timeout: Option<Duration>,
         max_total_response_size: u64,
         max_concurrent_requests: u64,
+        disable_intelligent_throttling: bool,
     ) -> Self {
         Self {
             semaphore,
@@ -298,12 +302,16 @@ impl<F> MakeThrottledConnection<F> {
             max_total_response_size,
             waiters: AtomicUsize::new(0),
             max_concurrent_requests,
+            disable_intelligent_throttling,
         }
     }
 
     // How many units should be acquired from the semaphore,
     // depending on current memory pressure.
     fn units_to_take(&self) -> u32 {
+        if self.disable_intelligent_throttling {
+            return 1;
+        }
         let total_response_size = crate::query_result_builder::TOTAL_RESPONSE_SIZE
             .load(std::sync::atomic::Ordering::Relaxed) as u64;
         if total_response_size * 2 > self.max_total_response_size {
@@ -522,6 +530,7 @@ pub mod test {
             Some(Duration::from_millis(100)),
             u64::MAX,
             u64::MAX,
+            false,
         );
 
         let mut conns = Vec::with_capacity(10);
