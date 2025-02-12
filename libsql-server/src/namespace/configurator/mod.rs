@@ -46,6 +46,8 @@ pub struct BaseNamespaceConfig {
     pub(crate) max_concurrent_connections: Arc<Semaphore>,
     pub(crate) max_concurrent_requests: u64,
     pub(crate) encryption_config: Option<EncryptionConfig>,
+    pub(crate) disable_intelligent_throttling: bool,
+    pub(crate) connection_creation_timeout: Option<Duration>,
 }
 
 #[derive(Clone)]

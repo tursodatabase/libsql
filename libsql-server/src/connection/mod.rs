@@ -13,12 +13,13 @@ use crate::error::Error;
 use crate::http::user::timing::sample_time;
 use crate::metrics::{
     CONCURRENT_CONNECTIONS_COUNT, CONNECTION_ALIVE_DURATION, CONNECTION_CREATE_TIME,
+    TOTAL_RESPONSE_SIZE_HIST,
 };
 use crate::namespace::meta_store::MetaStore;
 use crate::namespace::NamespaceName;
 use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
-use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
+use crate::query_result_builder::{IgnoreResult, QueryResultBuilder, TOTAL_RESPONSE_SIZE};
 use crate::replication::FrameNo;
 use crate::Result;
 
@@ -205,6 +206,7 @@ pub trait MakeConnection: Send + Sync + 'static {
         timeout: Option<Duration>,
         max_total_response_size: u64,
         max_concurrent_requests: u64,
+        disable_intelligent_throttling: bool,
     ) -> MakeThrottledConnection<Self>
     where
         Self: Sized,
@@ -215,6 +217,7 @@ pub trait MakeConnection: Send + Sync + 'static {
             timeout,
             max_total_response_size,
             max_concurrent_requests,
+            disable_intelligent_throttling,
         )
     }
 
@@ -280,6 +283,7 @@ pub struct MakeThrottledConnection<F> {
     max_total_response_size: u64,
     waiters: AtomicUsize,
     max_concurrent_requests: u64,
+    disable_intelligent_throttling: bool,
 }
 
 impl<F> MakeThrottledConnection<F> {
@@ -289,6 +293,7 @@ impl<F> MakeThrottledConnection<F> {
         timeout: Option<Duration>,
         max_total_response_size: u64,
         max_concurrent_requests: u64,
+        disable_intelligent_throttling: bool,
     ) -> Self {
         Self {
             semaphore,
@@ -297,12 +302,16 @@ impl<F> MakeThrottledConnection<F> {
             max_total_response_size,
             waiters: AtomicUsize::new(0),
             max_concurrent_requests,
+            disable_intelligent_throttling,
         }
     }
 
     // How many units should be acquired from the semaphore,
     // depending on current memory pressure.
     fn units_to_take(&self) -> u32 {
+        if self.disable_intelligent_throttling {
+            return 1;
+        }
         let total_response_size = crate::query_result_builder::TOTAL_RESPONSE_SIZE
             .load(std::sync::atomic::Ordering::Relaxed) as u64;
         if total_response_size * 2 > self.max_total_response_size {
@@ -352,6 +361,8 @@ impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
             "Available semaphore units: {}",
             self.semaphore.available_permits()
         );
+        TOTAL_RESPONSE_SIZE_HIST
+            .record(TOTAL_RESPONSE_SIZE.load(std::sync::atomic::Ordering::Relaxed) as f64);
         let units = self.units_to_take();
         let waiters_guard = WaitersGuard::new(&self.waiters);
         if (waiters_guard.waiters.load(Ordering::Relaxed) as u64) >= self.max_concurrent_requests {
@@ -519,6 +530,7 @@ pub mod test {
             Some(Duration::from_millis(100)),
             u64::MAX,
             u64::MAX,
+            false,
         );
 
         let mut conns = Vec::with_capacity(10);
