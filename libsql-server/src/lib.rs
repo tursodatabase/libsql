@@ -383,6 +383,7 @@ where
         }
         retry = match connection_maker.untracked().await {
             Ok(conn) => {
+                conn.with_raw(|c| c.busy_timeout(std::time::Duration::from_secs(5)))?;
                 if let Err(e) = conn.vacuum_if_needed().await {
                     tracing::warn!("vacuum failed: {}", e);
                 }
