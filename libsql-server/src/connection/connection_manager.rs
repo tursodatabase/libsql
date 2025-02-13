@@ -204,6 +204,8 @@ impl ManagedConnectionWalWrapper {
                 }
                 _ => {}
             }
+            // note, that it's important that we return SQLITE_BUSY error for CHECKPOINT starvation problem before that condition
+            // because after we will add something to the write_queue - we can't easily abort execution of acquire() method
             if current.as_mut().map_or(true, |slot| slot.id != self.id) && !enqueued {
                 self.manager
                     .write_queue
