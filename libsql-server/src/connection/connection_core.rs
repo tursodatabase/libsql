@@ -1,4 +1,3 @@
-use std::ffi::{c_int, c_void};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -87,18 +86,6 @@ impl<W: Wal + Send + 'static> CoreConnection<W> {
             rusqlite::limits::Limit::SQLITE_LIMIT_LENGTH,
             config.max_row_size as i32,
         );
-
-        unsafe {
-            const MAX_RETRIES: c_int = 8;
-            extern "C" fn do_nothing(_: *mut c_void, n: c_int) -> c_int {
-                (n < MAX_RETRIES) as _
-            }
-            libsql_sys::ffi::sqlite3_busy_handler(
-                conn.handle(),
-                Some(do_nothing),
-                std::ptr::null_mut(),
-            );
-        }
 
         let canceled = Arc::new(AtomicBool::new(false));
 
