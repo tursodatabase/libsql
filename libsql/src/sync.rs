@@ -54,6 +54,10 @@ pub enum SyncError {
     InvalidPushFrameNoHigh(u32, u32),
     #[error("failed to pull frame: status={0}, error={1}")]
     PullFrame(StatusCode, String),
+    #[error("failed to get location header for redirect: {0}")]
+    RedirectHeader(http::header::ToStrError),
+    #[error("redirect response with no location header")]
+    NoRedirectLocationHeader,
 }
 
 impl SyncError {
@@ -194,7 +198,7 @@ impl SyncContext {
         Ok(durable_frame_num)
     }
 
-    async fn push_with_retry(&self, uri: String, body: Bytes, max_retries: usize) -> Result<(u32, u32)> {
+    async fn push_with_retry(&self, mut uri: String, body: Bytes, max_retries: usize) -> Result<(u32, u32)> {
         let mut nr_retries = 0;
         loop {
             let mut req = http::Request::post(uri.clone());
@@ -243,6 +247,17 @@ impl SyncContext {
                 return Ok((generation as u32, max_frame_no as u32));
             }
 
+            if res.status().is_redirection() {
+                uri = match res.headers().get(hyper::header::LOCATION) {
+                    Some(loc) => loc.to_str().map_err(SyncError::RedirectHeader)?.to_string(),
+                    None => return Err(SyncError::NoRedirectLocationHeader.into()),
+                };
+                if nr_retries == 0 {
+                    nr_retries += 1;
+                    continue;
+                }
+            }
+
             // If we've retried too many times or the error is not a server error,
             // return the error.
             if nr_retries > max_retries || !res.status().is_server_error() {
@@ -263,7 +278,7 @@ impl SyncContext {
         }
     }
 
-    async fn pull_with_retry(&self, uri: String, max_retries: usize) -> Result<PullResult> {
+    async fn pull_with_retry(&self, mut uri: String, max_retries: usize) -> Result<PullResult> {
         let mut nr_retries = 0;
         loop {
             let mut req = http::Request::builder().method("GET").uri(uri.clone());
@@ -307,6 +322,16 @@ impl SyncContext {
                     .as_u64()
                     .ok_or_else(|| SyncError::JsonValue(generation.clone()))?;
                 return Ok(PullResult::EndOfGeneration { max_generation: generation as u32 });
+            }
+            if res.status().is_redirection() {
+                uri = match res.headers().get(hyper::header::LOCATION) {
+                    Some(loc) => loc.to_str().map_err(SyncError::RedirectHeader)?.to_string(),
+                    None => return Err(SyncError::NoRedirectLocationHeader.into()),
+                };
+                if nr_retries == 0 {
+                    nr_retries += 1;
+                    continue;
+                }
             }
             // If we've retried too many times or the error is not a server error,
             // return the error.
