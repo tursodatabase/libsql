@@ -914,10 +914,13 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   if( vdbeSafetyNotNull(v) ){
     return SQLITE_MISUSE_BKPT;
   }
-  if( v->isInterrupted ){
-    return SQLITE_INTERRUPT;
-  }
   db = v->db;
+  if( v->isInterrupted ){
+    rc = SQLITE_INTERRUPT;
+    v->rc = rc;
+    db->errCode = rc;
+    return rc;
+  }
   sqlite3_mutex_enter(db->mutex);
   while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
          && cnt++ < SQLITE_MAX_SCHEMA_RETRY ){
