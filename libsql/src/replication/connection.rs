@@ -732,6 +732,12 @@ impl Stmt for RemoteStatement {
         Ok(())
     }
 
+    fn interrupt(&mut self) -> Result<()> {
+        Err(Error::Misuse(
+            "interrupt is not supported for remote connections".to_string(),
+        ))
+    }
+
     fn reset(&mut self) {}
 
     fn parameter_count(&self) -> usize {

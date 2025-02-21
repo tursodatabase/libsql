@@ -82,6 +82,10 @@ impl Statement {
         unsafe { crate::ffi::sqlite3_step(self.raw_stmt) }
     }
 
+    pub fn interrupt(&self) {
+        unsafe { crate::ffi::libsql_stmt_interrupt(self.raw_stmt) }
+    }
+
     pub fn reset(&self) -> std::ffi::c_int {
         unsafe { crate::ffi::sqlite3_reset(self.raw_stmt) }
     }
