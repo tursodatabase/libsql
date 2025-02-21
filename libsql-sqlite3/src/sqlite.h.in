@@ -5390,6 +5390,8 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
 int sqlite3_reset(sqlite3_stmt *pStmt);
 
 
+void libsql_stmt_interrupt(sqlite3_stmt *stmt);
+
 /*
 ** CAPI3REF: Create Or Redefine SQL Functions
 ** KEYWORDS: {function creation routines}

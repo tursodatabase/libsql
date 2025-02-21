@@ -3612,6 +3612,7 @@ int sqlite3VdbeReset(Vdbe *p){
 #ifdef SQLITE_DEBUG
   p->nWrite = 0;
 #endif
+  p->isInterrupted = 0;
 
   /* Save profiling information from this VDBE run.
   */
