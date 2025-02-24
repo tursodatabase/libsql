@@ -120,6 +120,10 @@ impl Stmt for LibsqlStmt {
         stmt.run(&params)
     }
 
+    fn interrupt(&mut self) -> Result<()> {
+        self.0.interrupt()
+    }
+
     fn reset(&mut self) {
         self.0.reset();
     }
