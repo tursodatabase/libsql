@@ -366,7 +366,14 @@ cfg_replication! {
                         let client = hyper::client::Client::builder()
                             .build::<_, hyper::Body>(connector.clone());
 
-                        let req = http::Request::get(format!("{url}/sync/0/0/0"))
+                        let prefix = if url.starts_with("libsql://") {
+                            let mut result = "https://".to_string();
+                            result.push_str(&url["libsql://".len()..]);
+                            result
+                        } else {
+                            url.to_string()
+                        };
+                        let req = http::Request::get(format!("{prefix}/sync/0/0/0"))
                             .header("Authorization", format!("Bearer {}", auth_token))
                             .body(hyper::Body::empty())
                             .unwrap();
