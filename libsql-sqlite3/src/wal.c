@@ -4131,13 +4131,12 @@ static int sqlite3WalCheckpoint(
     */
     if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
       rc = walBusyLock(pWal, xBusy2, pBusyArg, WAL_WRITE_LOCK, 1);
-      if( rc==SQLITE_OK ){
-        pWal->writeLock = 1;
-      }else if( rc==SQLITE_BUSY ){
-        eMode2 = SQLITE_CHECKPOINT_PASSIVE;
-        xBusy2 = 0;
-        rc = SQLITE_OK;
+      if( rc!=SQLITE_OK ){
+        walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
+        pWal->ckptLock = 0;
+        return rc;
       }
+      pWal->writeLock = 1;
     }
   }
 
