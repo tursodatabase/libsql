@@ -281,6 +281,10 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         cfg.flag("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
     }
 
+    if cfg!(feature = "libsql-disable-checkpoint-downgrade") {
+        cfg.flag("-DLIBSQL_DISABLE_CHECKPOINT_DOWNGRADE=1");
+    }
+
     if cfg!(feature = "bundled-sqlcipher") {
         cfg.flag("-DSQLITE_HAS_CODEC").flag("-DSQLITE_TEMP_STORE=2");
 
