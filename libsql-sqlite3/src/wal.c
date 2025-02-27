@@ -4131,6 +4131,7 @@ static int sqlite3WalCheckpoint(
     */
     if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
       rc = walBusyLock(pWal, xBusy2, pBusyArg, WAL_WRITE_LOCK, 1);
+#ifndef LIBSQL_DISABLE_CHECKPOINT_DOWNGRADE
       if( rc==SQLITE_OK ){
         pWal->writeLock = 1;
       }else if( rc==SQLITE_BUSY ){
@@ -4138,6 +4139,13 @@ static int sqlite3WalCheckpoint(
         xBusy2 = 0;
         rc = SQLITE_OK;
       }
+#else
+      // checkpoint downgrade can be undesirable behaviour especially in case of custom VWal implementation
+      // LIBSQL_DISABLE_CHECKPOINT_DOWNGRADE compile time option disables downgrade of checkpoint mode
+      if( rc==SQLITE_OK ){
+        pWal->writeLock = 1;
+      }
+#endif
     }
   }
 
