@@ -379,7 +379,8 @@ static void sync_db(sqlite3 *db_primary, sqlite3 *db_backup){
   for(int i=1; i<=max_frame; i++){
     char frame[4096+24];
     libsql_wal_get_frame(db_primary, i, frame, sizeof(frame));
-    libsql_wal_insert_frame(db_backup, i, frame, sizeof(frame));
+    int conflict;
+    libsql_wal_insert_frame(db_backup, i, frame, sizeof(frame), &conflict);
   }
   libsql_wal_end_commit(db_backup);
 }

@@ -2557,7 +2557,8 @@ int libsql_wal_insert_frame(
   sqlite3* db,
   unsigned int iFrame,
   void *pBuf,
-  unsigned int nBuf
+  unsigned int nBuf,
+  int *pConflict
 ){
   int rc = SQLITE_OK;
   Pager *pPager;
@@ -2572,7 +2573,7 @@ int libsql_wal_insert_frame(
 
   sqlite3_mutex_enter(db->mutex);
   pPager = sqlite3BtreePager(db->aDb[0].pBt);
-  rc = sqlite3PagerWalInsert(pPager, iFrame, pBuf, nBuf);
+  rc = sqlite3PagerWalInsert(pPager, iFrame, pBuf, nBuf, pConflict);
   if (rc != SQLITE_OK) {
     goto out_unlock;
   }
