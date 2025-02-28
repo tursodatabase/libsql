@@ -13,11 +13,9 @@ case.
 ## Features
 
 * SQLite dialect layered on top of HTTP.
-* SQLite-compatible API that you can drop-in with `LD_PRELOAD` in your
-  application to switch from local database to a remote database.
+* SQLite-compatible API that is a drop-in replacement with `LD_PRELOAD` in your application to switch from local database to a remote database.
 * Read replica support.
-* Integration with [mvSQLite](https://github.com/losfair/mvsqlite) for high
-  availability and fault tolerance.
+* Integration with [mvSQLite](https://github.com/losfair/mvsqlite) for high availability and fault tolerance.
 
 ## Build and run
 
@@ -28,7 +26,7 @@ using Homebrew, Docker, or your own Rust toolchain.
 
 Run the command below to run all tests for `libsql` and `libsql-server`.
 
-```
+```bash
 cargo xtask test
 ```
 

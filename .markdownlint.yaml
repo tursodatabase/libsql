@@ -1,0 +1,25 @@
+# Default state for all rules
+default: true
+
+# MD010/no-hard-tabs : Hard tabs : https://github.com/DavidAnson/markdownlint/blob/v0.37.3/doc/md010.md
+MD010:
+  # Include code blocks
+  code_blocks: false
+  # Fenced code languages to ignore
+  ignore_code_languages: []
+  # Number of spaces for each hard tab
+  spaces_per_tab: 4
+
+# MD013/line-length : Line length : https://github.com/DavidAnson/markdownlint/blob/v0.37.3/doc/md013.md
+MD013: false
+
+# MD024/no-duplicate-heading : Multiple headings with the same content : https://github.com/DavidAnson/markdownlint/blob/v0.37.3/doc/md024.md
+MD024:
+  # Only check sibling headings
+  siblings_only: true
+
+# MD033/no-inline-html : Inline HTML : https://github.com/DavidAnson/markdownlint/blob/v0.37.3/doc/md033.md
+MD033:
+  # Allowed elements
+  allowed_elements:
+    - p

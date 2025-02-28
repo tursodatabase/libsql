@@ -1,8 +1,10 @@
+<!-- markdownlint-disable MD025 -->
+
 # Docker image quick reference
 
 ## Launch a primary instance
 
-```
+```console
 docker run --name some-sqld -p 8080:8080 -ti \
     -e SQLD_NODE=primary \
     ghcr.io/tursodatabase/libsql-server:latest
@@ -10,7 +12,7 @@ docker run --name some-sqld -p 8080:8080 -ti \
 
 ## Launch a replica instance
 
-```
+```console
 docker run --name some-sqld-replica -p 8081:8080 -ti \
     -e SQLD_NODE=replica \
     -e SQLD_PRIMARY_URL=https://<host>:<port> \
@@ -19,7 +21,7 @@ docker run --name some-sqld-replica -p 8081:8080 -ti \
 
 ## Running on Apple Silicon
 
-```
+```console
 docker run --name some-sqld  -p 8080:8080 -ti \
     -e SQLD_NODE=primary \
     --platform linux/amd64 \
@@ -36,13 +38,13 @@ and stable releases please use the x86_64 versions via Rosetta._
 
 # How to extend this image
 
-## Data Persistance
+## Data Persistence
 
-Database files are stored in the `/var/lib/sqld` in the image. To persist the 
-database across runs, mount this location to either a docker volume or a bind 
+Database files are stored in the `/var/lib/sqld` in the image. To persist the
+database across runs, mount this location to either a docker volume or a bind
 mount on your local disk.
 
-```
+```console
 docker run --name some-sqld -ti \
     -v $(pwd)/sqld-data:/var/lib/sqld \ # you can mount local path
     -e SQLD_NODE=primary \
@@ -119,7 +121,7 @@ inter-node communication. Recommended to leave this on default.
 
 Simple docker compose for local development:
 
-```
+```yaml
 version: "3"
 services:
   db:

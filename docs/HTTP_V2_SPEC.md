@@ -148,7 +148,7 @@ type ExecuteStreamResp = {
 }
 ```
 
-The `execute` request has the same semantics as the `execute` request in Hrana. 
+The `execute` request has the same semantics as the `execute` request in Hrana.
 
 ### Execute a batch
 

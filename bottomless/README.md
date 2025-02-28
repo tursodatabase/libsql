@@ -1,40 +1,51 @@
 # Bottomless S3-compatible virtual WAL for libSQL
-##### Work in heavy progress!
+
+## Work in heavy progress
 
 This project implements a virtual write-ahead log (WAL) which continuously backs up the data to S3-compatible storage and is able to restore it later.
 
 ## How to build
-```
+
+```shell
 LIBSQL_DIR=/path/to/your/libsql/directory make
 ```
+
 will produce a loadable `.so` libSQL extension with bottomless WAL implementation.
-```
+
+```shell
 LIBSQL_DIR=/path/to/your/libsql/directory make release
 ```
+
 will do the same, but for release mode.
 
 ## Configuration
-By default, the S3 storage is expected to be available at `http://localhost:9000` (e.g. a local development [minio](https://min.io) server), and the auth information is extracted via regular S3 SDK mechanisms, i.e. environment variables and `~/.aws/credentials` file, if present. Ref: https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_credentials_environment.html
+
+By default, the S3 storage is expected to be available at `http://localhost:9000` (e.g. a local development [minio](https://min.io) server), and the auth information is extracted via regular S3 SDK mechanisms, i.e. environment variables and `~/.aws/credentials` file, if present. Ref: <https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_credentials_environment.html>
 
 Default endpoint can be overridden by an environment variable too, and in the future it will be available directly from libSQL as an URI parameter:
-```
+
+```shell
 export LIBSQL_BOTTOMLESS_ENDPOINT='http://localhost:9042'
 ```
 
 Bucket used for replication can be configured with:
-```
+
+```shell
 export LIBSQL_BOTTOMLESS_BUCKET='custom-bucket'
 ```
 
 On top of that, bottomless is implemented on top of the official [Rust SDK for S3](https://crates.io/crates/aws-sdk-s3), so all AWS-specific environment variables like `AWS_DEFAULT_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` also work, as well as the `~/.aws/credentials` file.
 
 ## How to use
+
 From libSQL shell, load the extension and open a database file with `bottomless` WAL, e.g.:
+
 ```sql
 .load ../target/debug/bottomless
 .open file:test.db?wal=bottomless
 PRAGMA journal_mode=wal;
 ```
+
 Remember to set the journaling mode to `WAL`, which needs to be done at least once, before writing any content, otherwise the custom WAL implementation will not be used.
 
 In order to customize logging, use `RUST_LOG` env variable, e.g. `RUST_LOG=info ./libsql`.
@@ -46,14 +57,18 @@ LIBSQL_DIR=/path/to/your/libsql/directory make test
 ```
 
 ## CLI
+
 The command-line interface supports browsing, restoring and removing snapshot generations.
 It can be installed as a standalone executable with:
+
 ```sh
 RUSTFLAGS="--cfg uuid_unstable" cargo install bottomless-cli
 ```
+
 Alternatively, bottomless-cli is available from the repository by running `cargo run`.
 Available commands:
-```
+
+```console
 $ bottomless-cli --help
 Bottomless CLI
 
@@ -75,8 +90,9 @@ Options:
 ### Examples
 
 #### Listing generations
-```
-[sarna@sarna-pc test]$ bottomless-cli -e http://localhost:9000 ls -v -l3
+
+```console
+$ bottomless-cli -e http://localhost:9000 ls -v -l3
 e4eb3c21-ff53-7b2e-a6ea-ca396f4df9b1
 	created at (UTC):     2022-12-23 08:24:52.500
 	change counter:       [0, 0, 0, 51]
@@ -106,7 +122,8 @@ e4eb3c22-0941-73eb-85df-4e8552a0e88c
 ```
 
 #### Restoring the database
-```
+
+```console
 $ RUST_LOG=info bottomless-cli -e http://localhost:9000 restore
 2022-12-23T10:16:10.703557Z  INFO bottomless::replicator: Bucket bottomless exists and is accessible
 2022-12-23T10:16:10.709526Z  INFO bottomless_cli: Database: test.db
@@ -115,20 +132,24 @@ $ RUST_LOG=info bottomless-cli -e http://localhost:9000 restore
 ```
 
 #### Removing old snapshots
-```
+
+```console
 $ bottomless-cli -e http://localhost:9000 rm -v --older-than 2022-12-15
 Removed 4 generations
 ```
 
 ## Details
+
 All page writes committed to the database end up being asynchronously replicated to S3-compatible storage.
 On boot, if the main database file is empty, it will be restored with data coming from the remote storage.
 If the database file is newer, it will be uploaded to the remote location with a new generation number.
 If a local WAL file is present and detected to be newer than remote data, it will be uploaded as well.
 
 ### Tests
+
 A fully local test can be performed by using a local S3-compatible server, e.g. [Minio](https://min.io/). Assuming the server is available at HTTP port 9000,
 you can use the following scripts:
+
 ```sh
 cd test/
 export LIBSQL_BOTTOMLESS_ENDPOINT=http://localhost:9000
