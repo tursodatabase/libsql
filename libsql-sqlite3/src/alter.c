@@ -13,6 +13,7 @@
 ** that implements the ALTER TABLE command.
 */
 #include "sqliteInt.h"
+#include "vdbeInt.h"
 
 /*
 ** The code in this file only exists if we are not omitting the

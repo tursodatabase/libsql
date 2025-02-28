@@ -19,6 +19,7 @@ cc = "1.0"
 glob = "0.3"
 
 [features]
+zig-build = []
 session = []
 wasmtime-bindings = ["dep:libsql-wasmtime-bindings"]
 multiple-ciphers = []
