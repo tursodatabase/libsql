@@ -1,9 +1,8 @@
 use std::sync::Arc;
 use std::{fmt, path::Path};
 
-use crate::connection::BatchRows;
+use crate::connection::{Conn, BatchRows, Op};
 use crate::{
-    connection::Conn,
     params::Params,
     rows::{ColumnsInner, RowInner, RowsInner},
     statement::Stmt,
@@ -82,6 +81,10 @@ impl Conn for LibsqlConnection {
 
     fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
         self.conn.load_extension(dylib_path, entry_point)
+    }
+
+    fn add_update_hook(&self, cb: Box<dyn Fn(Op, &str, &str, i64) + Send + Sync>) -> Result<()> {
+        Ok(self.conn.add_update_hook(cb))
     }
 }
 
