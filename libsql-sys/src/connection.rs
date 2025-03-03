@@ -280,7 +280,7 @@ impl<W: Wal> Connection<W> {
                     crate::error::Error::Bug(
                         "invalid database path containing an internal nul byte",
                     )
-                })
+                })?
             };
             #[cfg(not(unix))]
             let path = path
