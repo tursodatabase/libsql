@@ -367,9 +367,7 @@ cfg_replication! {
                             .build::<_, hyper::Body>(connector.clone());
 
                         let prefix = if url.starts_with("libsql://") {
-                            let mut result = "https://".to_string();
-                            result.push_str(&url["libsql://".len()..]);
-                            result
+                            url.replacen("libsql://", "https://", 1)
                         } else {
                             url.to_string()
                         };
