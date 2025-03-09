@@ -7,7 +7,9 @@ use anyhow::{anyhow, bail};
 use arc_swap::ArcSwapOption;
 use async_compression::tokio::write::{GzipEncoder, ZstdEncoder};
 use aws_config::BehaviorVersion;
-use aws_sdk_s3::config::{Credentials, Region, SharedCredentialsProvider};
+use aws_sdk_s3::config::{
+    Credentials, Region, SharedCredentialsProvider, StalledStreamProtectionConfig,
+};
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
 use aws_sdk_s3::operation::get_object::GetObjectError;
@@ -125,6 +127,8 @@ pub struct Options {
     pub skip_snapshot: bool,
     /// Skip uploading snapshots on shutdown
     pub skip_shutdown_upload: bool,
+    /// Stall protection grace period duration for AWS S3 client
+    pub stall_protection_grace_period: std::time::Duration,
 }
 
 impl Options {
@@ -145,8 +149,13 @@ impl Options {
             "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
         ))?;
         let session_token: Option<String> = self.session_token.clone();
+
+        let mut stall_protection = StalledStreamProtectionConfig::enabled();
+        stall_protection.set_grace_period(Some(self.stall_protection_grace_period));
+
         let conf = loader
             .behavior_version(BehaviorVersion::latest())
+            .stalled_stream_protection(stall_protection.build())
             .region(Region::new(region))
             .credentials_provider(SharedCredentialsProvider::new(Credentials::new(
                 access_key_id,
@@ -245,6 +254,11 @@ impl Options {
         let skip_shutdown_upload =
             env_var_or("LIBSQL_BOTTOMLESS_SKIP_SHUTDOWN_UPLOAD", false).parse::<bool>()?;
 
+        let stall_protection_grace_period_sec =
+            env_var_or("LIBSQL_S3_STALL_PROTECTION_GRACE_PERIOD_SEC", 20).parse::<u64>()?;
+        let stall_protection_grace_period =
+            std::time::Duration::from_secs(stall_protection_grace_period_sec);
+
         Ok(Options {
             db_id,
             create_bucket_if_not_exists: true,
@@ -263,6 +277,7 @@ impl Options {
             s3_max_retries,
             skip_snapshot,
             skip_shutdown_upload,
+            stall_protection_grace_period,
         })
     }
 }
