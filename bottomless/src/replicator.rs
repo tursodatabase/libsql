@@ -1853,7 +1853,7 @@ impl Replicator {
                 }
             }
         }
-        last_key.map(String::from)
+        response.next_marker().map(|x| x.to_string())
     }
 
     async fn upload_remaining_files(&self, generation: &Uuid) -> Result<()> {
