@@ -720,13 +720,13 @@ pub unsafe extern "C" fn libsql_query_stmt(
         Ok(rows) => {
             let rows = Box::leak(Box::new(libsql_rows { result: rows }));
             *out_rows = libsql_rows_t::from(rows);
+            0
         }
         Err(e) => {
             set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
-            return 1;
+            1
         }
-    };
-    0
+    }
 }
 
 #[no_mangle]
