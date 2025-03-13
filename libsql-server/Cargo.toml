@@ -37,8 +37,7 @@ hyper-tungstenite = "0.11"
 itertools = "0.10.5"
 jsonwebtoken = "9"
 libsql = { path = "../libsql/", optional = true }
-libsql_replication = { path = "../libsql-replication", features = ["libsql_wal"] }
-libsql-wal = { path = "../libsql-wal/" }
+libsql_replication = { path = "../libsql-replication" }
 libsql-storage = { path = "../libsql-storage", optional = true }
 metrics = "0.21.1"
 metrics-util = "0.15"

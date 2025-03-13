@@ -1,5 +1,0 @@
----
-source: libsql-wal/src/bottomless/job.rs
-expression: "crc32fast::hash(&segment_index)"
----
-1844457043
