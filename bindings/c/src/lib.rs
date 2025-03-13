@@ -97,6 +97,7 @@ pub unsafe extern "C" fn libsql_open_sync(
         encryption_key,
         sync_interval: 0,
         with_webpki: 0,
+        offline: 0,
     };
     libsql_open_sync_with_config(config, out_db, out_err_msg)
 }
@@ -119,6 +120,7 @@ pub unsafe extern "C" fn libsql_open_sync_with_webpki(
         encryption_key,
         sync_interval: 0,
         with_webpki: 1,
+        offline: 0,
     };
     libsql_open_sync_with_config(config, out_db, out_err_msg)
 }
@@ -256,7 +258,9 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
             return 100;
         }
     };
-    if let Some(primary_url) = primary_url_with_offline_removed {
+    let offline = config.offline != 0 || primary_url_with_offline_removed.is_some();
+    if offline {
+        let primary_url = primary_url_with_offline_removed.unwrap_or(primary_url.to_owned());
         let mut builder =
             Builder::new_synced_database(db_path, primary_url.to_owned(), auth_token.to_owned());
         if config.with_webpki != 0 {
