@@ -8,6 +8,7 @@ use crate::{
     BatchRows, Error, Result, Statement, Transaction, TransactionBehavior,
 };
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::Mutex;
 
 use super::{statement::SyncedStatement, transaction::SyncedTx};
@@ -98,6 +99,10 @@ impl Conn for SyncedConnection {
 
     fn interrupt(&self) -> Result<()> {
         Ok(())
+    }
+
+    fn busy_timeout(&self, timeout: Duration) -> Result<()> {
+        self.remote.busy_timeout(timeout)
     }
 
     fn is_autocommit(&self) -> bool {

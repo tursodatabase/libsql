@@ -3,6 +3,7 @@
 use crate::local::rows::BatchedRows;
 use crate::params::Params;
 use crate::{connection::BatchRows, errors};
+use std::time::Duration;
 
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 
@@ -358,6 +359,11 @@ impl Connection {
 
     pub fn interrupt(&self) -> Result<()> {
         unsafe { ffi::sqlite3_interrupt(self.raw) };
+        Ok(())
+    }
+
+    pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
+        unsafe { ffi::sqlite3_busy_timeout(self.raw, timeout.as_millis() as i32) };
         Ok(())
     }
 
