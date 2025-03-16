@@ -266,7 +266,7 @@ impl<W: Wal> Connection<W> {
                 }
             }
 
-            conn.busy_timeout(std::time::Duration::from_secs(5000))?;
+            conn.busy_timeout(std::time::Duration::from_millis(100))?;
 
             conn
         };

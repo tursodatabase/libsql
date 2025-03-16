@@ -248,6 +248,13 @@ struct Cli {
     #[clap(long, default_value = "128", env = "SQLD_MAX_CONCURRENT_REQUESTS")]
     max_concurrent_requests: u64,
 
+    // disable throttling logic which adjust concurrency limits based on memory-pressure conditions
+    #[clap(long, env = "SQLD_DISABLE_INTELLIGENT_THROTTLING")]
+    disable_intelligent_throttling: bool,
+
+    #[clap(long, env = "SQLD_CONNECTION_CREATION_TIMEOUT_SEC")]
+    connection_creation_timeout_sec: Option<u64>,
+
     /// Allow meta store to recover config from filesystem from older version, if meta store is
     /// empty on startup
     #[clap(long, env = "SQLD_ALLOW_METASTORE_RECOVERY")]
@@ -421,6 +428,10 @@ fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
         snapshot_at_shutdown: config.snapshot_at_shutdown,
         encryption_config: encryption_config.clone(),
         max_concurrent_requests: config.max_concurrent_requests,
+        disable_intelligent_throttling: config.disable_intelligent_throttling,
+        connection_creation_timeout: config
+            .connection_creation_timeout_sec
+            .map(|x| Duration::from_secs(x)),
     })
 }
 

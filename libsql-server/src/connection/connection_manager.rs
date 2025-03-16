@@ -167,6 +167,45 @@ impl ManagedConnectionWalWrapper {
                     extended_code: 517, // stale read
                 });
             }
+            // If other connection is about to checkpoint - we better to immediately return.
+            //
+            // The reason is that write transaction are upgraded from read transactions in SQLite.
+            // Due to this, every write transaction need to hold SHARED-WAL lock and if we will
+            // block write transaction here - we will prevent checkpoint process from restarting the WAL
+            // (because it needs to acquire EXCLUSIVE-WAL lock)
+            //
+            // So, the scenario is following:
+            // T0: we have a bunch of SELECT queries which will execute till time T2
+            // T1: CHECKPOINT process is starting: it holds CKPT and WRITE lock and attempt to acquire
+            //     EXCLUSIVE-WAL locks one by one in order to check the position of readers. CHECKPOINT will
+            //     use busy handler and can potentially acquire lock not from the first attempt.
+            // T2: CHECKPOINT process were able to check all WAL reader positions (by acquiring lock or atomically check reader position)
+            //     and started to transfer WAL to the DB file
+            // T3: INSERT query starts executing: it started as a read transaction and holded SHARED-WAL lock but then it needs to
+            //     upgrade to write transaction through begin_write_txn call
+            // T4: CHECKPOINT transferred all pages from WAL to DB file and need to check if it can restart the WAL. In order to
+            //     do that it needs to hold all EXCLUSIVE-WAL locks to make sure that all readers use only DB file
+            //
+            // In the scenario above, if we will park INSERT at the time T3 - CHECKPOINT will be unable to hold EXCLUSIVE-WAL
+            // locks and so WAL will not be truncated.
+            // In case when DB has continious load with overlapping reads and writes - this problem became very noticeable
+            // as it can defer WAL truncation a lot.
+            //
+            // Also, such implementation is more aligned with LibSQL/SQLite behaviour where sqlite3WalBeginWriteTransaction
+            // immediately abort with SQLITE_BUSY error if it can't acquire WRITE lock (which CHECKPOINT also take before start of the work)
+            // and busy handler (e.g. retries) for writes are invoked by SQLite at upper layer of request processing.
+            match *current {
+                Some(Slot {
+                    id,
+                    state: SlotState::Acquired(SlotType::Checkpoint),
+                    ..
+                }) if id != self.id => {
+                    return Err(rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_BUSY));
+                }
+                _ => {}
+            }
+            // note, that it's important that we return SQLITE_BUSY error for CHECKPOINT starvation problem before that condition
+            // because after we will add something to the write_queue - we can't easily abort execution of acquire() method
             if current.as_mut().map_or(true, |slot| slot.id != self.id) && !enqueued {
                 self.manager
                     .write_queue
@@ -196,7 +235,7 @@ impl ManagedConnectionWalWrapper {
                         let since_started = slot.started_at.elapsed();
                         let deadline = slot.started_at + self.manager.txn_timeout_duration;
                         match slot.state {
-                            SlotState::Acquired => {
+                            SlotState::Acquired(..) => {
                                 if since_started >= self.manager.txn_timeout_duration {
                                     let id = slot.id;
                                     drop(current);
@@ -354,11 +393,17 @@ impl ManagedConnectionWalWrapper {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum SlotType {
+    WriteTxn,
+    Checkpoint,
+}
+
 #[derive(Copy, Clone, Debug)]
 enum SlotState {
     Notified,
     Acquiring,
-    Acquired,
+    Acquired(SlotType),
     Failure,
 }
 
@@ -389,7 +434,7 @@ impl WrapWal<InnerWal> for ManagedConnectionWalWrapper {
             Ok(_) => {
                 tracing::debug!("transaction acquired");
                 let mut lock = self.manager.current.lock();
-                lock.as_mut().unwrap().state = SlotState::Acquired;
+                lock.as_mut().unwrap().state = SlotState::Acquired(SlotType::WriteTxn);
 
                 Ok(())
             }
@@ -424,7 +469,8 @@ impl WrapWal<InnerWal> for ManagedConnectionWalWrapper {
     ) -> libsql_sys::wal::Result<()> {
         let before = Instant::now();
         self.acquire()?;
-        self.manager.current.lock().as_mut().unwrap().state = SlotState::Acquired;
+        self.manager.current.lock().as_mut().unwrap().state =
+            SlotState::Acquired(SlotType::Checkpoint);
 
         let mode = if rand::random::<f32>() < 0.1 {
             CheckpointMode::Truncate
@@ -476,7 +522,7 @@ impl WrapWal<InnerWal> for ManagedConnectionWalWrapper {
             // if the slot acquire the transaction lock
             if let Some(Slot {
                 id,
-                state: SlotState::Acquired,
+                state: SlotState::Acquired(..),
                 ..
             }) = *current
             {

@@ -30,7 +30,6 @@ pub(crate) fn construct_libsql_wal<W: Wal>(wal: *mut W) -> libsql_wal {
             xUndo: Some(undo::<W>),
             xSavepoint: Some(savepoint::<W>),
             xSavepointUndo: Some(savepoint_undo::<W>),
-            xCheckpointSeqCount: Some(checkpoint_seq_count::<W>),
             xFrameCount: Some(frame_count::<W>),
             xFrames: Some(frames::<W>),
             xCheckpoint: Some(checkpoint::<W>),
@@ -296,24 +295,6 @@ pub unsafe extern "C" fn savepoint_undo<T: Wal>(wal: *mut wal_impl, wal_data: *m
     }
 }
 
-pub unsafe extern "C" fn checkpoint_seq_count<T: Wal>(
-    wal: *mut wal_impl,
-    out: *mut c_uint,
-) -> c_int {
-    let this = &mut (*(wal as *mut T));
-    match this.checkpoint_seq_count() {
-        Ok(n) => {
-            if !out.is_null() {
-                unsafe {
-                    *out = n as _;
-                }
-            }
-            SQLITE_OK
-        }
-        Err(code) => code.extended_code,
-    }
-}
-
 pub unsafe extern "C" fn frame_count<T: Wal>(
     wal: *mut wal_impl,
     locked: i32,
@@ -365,7 +346,7 @@ pub unsafe extern "C" fn frames<T: Wal>(
     }
 }
 
-#[tracing::instrument(skip(wal, db))]
+#[tracing::instrument(skip(wal, db), level = "trace")]
 pub unsafe extern "C" fn checkpoint<T: Wal>(
     wal: *mut wal_impl,
     db: *mut libsql_ffi::sqlite3,

@@ -27,6 +27,16 @@ pub static CONCURRENT_CONNECTIONS_COUNT: Lazy<Gauge> = Lazy::new(|| {
     describe_gauge!(NAME, "number of concurrent connections");
     register_gauge!(NAME)
 });
+pub static TOTAL_RESPONSE_SIZE_HIST: Lazy<Histogram> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_total_response_size_before_lock";
+    describe_histogram!(NAME, "total response size value before connection lock");
+    register_histogram!(NAME)
+});
+pub static STREAM_HANDLES_COUNT: Lazy<Gauge> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_stream_handles";
+    describe_gauge!(NAME, "amount of in-memory stream handles");
+    register_gauge!(NAME)
+});
 pub static NAMESPACE_LOAD_LATENCY: Lazy<Histogram> = Lazy::new(|| {
     const NAME: &str = "libsql_server_namespace_load_latency";
     describe_histogram!(NAME, "latency is us when loading a namespace");

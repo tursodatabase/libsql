@@ -145,34 +145,6 @@ void test_sync_while_reading() {
     cmp_data(db_primary, db_backup); 
 }
 
-// This test case writes to a local database, force checkpoint, and then
-//verifies that checkpoint sequence number incremented, and the WAL is
-//truncated.
-static void test_checkpoint(void) {
-    sqlite3 *db_primary;
-    unsigned int max_frame, ckpt_seq;
-
-    open_db("primary_test_checkpoint.db", &db_primary);
-
-    ensure(sqlite3_exec(db_primary, "CREATE TABLE t (x)", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
-    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(4 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
-    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(1 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
-    ensure(sqlite3_exec(db_primary, "INSERT INTO t VALUES (randomblob(1 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
-
-    ensure(libsql_wal_checkpoint_seq_count(db_primary, &ckpt_seq) == SQLITE_OK, "failed to get checkpoint sequence count: %s\n", sqlite3_errmsg(db_primary));
-    assert(ckpt_seq == 0);
-    ensure(libsql_wal_frame_count(db_primary, &max_frame) == SQLITE_OK, "failed to get frames count: %s\n", sqlite3_errmsg(db_primary));
-    assert(max_frame == 7);
-
-    // force checkpoint
-    ensure(sqlite3_wal_checkpoint_v2(db_primary, NULL, SQLITE_CHECKPOINT_TRUNCATE, NULL, NULL) == SQLITE_OK, "failed to checkpoint: %s\n", sqlite3_errmsg(db_primary));
-
-    ensure(libsql_wal_checkpoint_seq_count(db_primary, &ckpt_seq) == SQLITE_OK, "failed to get checkpoint sequence count: %s\n", sqlite3_errmsg(db_primary));
-    assert(ckpt_seq == 1);
-    ensure(libsql_wal_frame_count(db_primary, &max_frame) == SQLITE_OK, "failed to get frames count: %s\n", sqlite3_errmsg(db_primary));
-    assert(max_frame == 0);
-}
-
 int main(int argc, char *argv[])
 {
     test_huge_payload();
@@ -183,9 +155,6 @@ int main(int argc, char *argv[])
 
     test_sync_while_reading();
     printf("============= OK test_sync_while_reading\n");
-
-    test_checkpoint();
-    printf("============= OK test_checkpoint\n");
 
     return 0;
 }

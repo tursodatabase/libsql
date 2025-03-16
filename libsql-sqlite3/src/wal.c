@@ -2134,9 +2134,11 @@ static int walCheckpoint(
           if (xCb) {
               rc = (xCb)(pCbData, mxSafeFrame, NULL, 0, 0, 0);
           }
-          i64 szDb = pWal->hdr.nPage*(i64)szPage;
-          testcase( IS_BIG_INT(szDb) );
-          rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
+          if( rc==SQLITE_OK ){
+            i64 szDb = pWal->hdr.nPage*(i64)szPage;
+            testcase( IS_BIG_INT(szDb) );
+            rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
+          }
           if( rc==SQLITE_OK ){
             rc = sqlite3OsSync(pWal->pDbFd, CKPT_SYNC_FLAGS(sync_flags));
           }
@@ -4024,11 +4026,6 @@ static int walFrames(
   return rc;
 }
 
-int sqlite3WalCheckpointSeqCount(Wal *pWal, unsigned int *pnCkpt){
-  *pnCkpt = pWal->nCkpt;
-  return SQLITE_OK;
-}
-
 int sqlite3WalFrameCount(Wal *pWal, int locked, unsigned int *pnFrames){
   int rc = SQLITE_OK;
   if( locked==0 ) {
@@ -4134,6 +4131,7 @@ static int sqlite3WalCheckpoint(
     */
     if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
       rc = walBusyLock(pWal, xBusy2, pBusyArg, WAL_WRITE_LOCK, 1);
+#ifndef LIBSQL_DISABLE_CHECKPOINT_DOWNGRADE
       if( rc==SQLITE_OK ){
         pWal->writeLock = 1;
       }else if( rc==SQLITE_BUSY ){
@@ -4141,6 +4139,13 @@ static int sqlite3WalCheckpoint(
         xBusy2 = 0;
         rc = SQLITE_OK;
       }
+#else
+      // checkpoint downgrade can be undesirable behaviour especially in case of custom VWal implementation
+      // LIBSQL_DISABLE_CHECKPOINT_DOWNGRADE compile time option disables downgrade of checkpoint mode
+      if( rc==SQLITE_OK ){
+        pWal->writeLock = 1;
+      }
+#endif
     }
   }
 
@@ -4548,7 +4553,6 @@ static int sqlite3WalOpen(
     out->methods.xUndo = (int (*)(wal_impl *, int (*)(void *, unsigned int), void *))sqlite3WalUndo;
     out->methods.xSavepoint = (void (*)(wal_impl *, unsigned int *))sqlite3WalSavepoint;
     out->methods.xSavepointUndo = (int (*)(wal_impl *, unsigned int *))sqlite3WalSavepointUndo;
-    out->methods.xCheckpointSeqCount = (int (*)(wal_impl *, unsigned int *))sqlite3WalCheckpointSeqCount;
     out->methods.xFrameCount = (int (*)(wal_impl *, int, unsigned int *))sqlite3WalFrameCount;
     out->methods.xFrames = (int (*)(wal_impl *, int, libsql_pghdr *, unsigned int, int, int, int *))sqlite3WalFrames;
     out->methods.xCheckpoint = (int (*)(wal_impl *, sqlite3 *, int, int (*)(void *), void *, int, int, unsigned char *, int *, int *, int (*)(void*, int, const unsigned char*, int, int, int), void*))sqlite3WalCheckpoint;

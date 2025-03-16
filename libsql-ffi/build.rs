@@ -274,10 +274,15 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         cfg.file(&sqlean);
 
         cfg.include(format!("{BUNDLED_DIR}/sqlean/"));
+        cfg.include(format!("{BUNDLED_DIR}/src/"));
     }
 
     if cfg!(feature = "wasmtime-bindings") {
         cfg.flag("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
+    }
+
+    if cfg!(feature = "libsql-disable-checkpoint-downgrade") {
+        cfg.flag("-DLIBSQL_DISABLE_CHECKPOINT_DOWNGRADE=1");
     }
 
     if cfg!(feature = "bundled-sqlcipher") {

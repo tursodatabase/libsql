@@ -942,6 +942,8 @@ mod test {
             max_concurrent_connections: Arc::new(Semaphore::new(10)),
             max_concurrent_requests: 10000,
             encryption_config: None,
+            connection_creation_timeout: None,
+            disable_intelligent_throttling: false,
         };
 
         let primary_config = PrimaryConfig {

@@ -5390,6 +5390,8 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
 int sqlite3_reset(sqlite3_stmt *pStmt);
 
 
+void libsql_stmt_interrupt(sqlite3_stmt *stmt);
+
 /*
 ** CAPI3REF: Create Or Redefine SQL Functions
 ** KEYWORDS: {function creation routines}
@@ -10563,15 +10565,6 @@ void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), vo
 ** connection is closed.
 */
 int libsql_wal_disable_checkpoint(sqlite3 *db);
-
-/*
-** CAPI3REF: Get the checkpoint sequence counter of the WAL file
-** METHOD: sqlite3
-**
-** ^The [libsql_wal_checkpoint_seq_count(D,P)] interface returns the checkpoint sequence counter
-** of the WAL file for [database connection] D into *P.
-*/
-int libsql_wal_checkpoint_seq_count(sqlite3 *db, unsigned int *pnCkpt);
 
 /*
 ** CAPI3REF: Get the number of frames in the WAL file

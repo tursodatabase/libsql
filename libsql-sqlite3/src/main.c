@@ -2450,30 +2450,6 @@ int libsql_wal_disable_checkpoint(sqlite3 *db) {
 }
 
 /*
-** Return the checkpoint sequence counter of the given database.
-*/
-int libsql_wal_checkpoint_seq_count(sqlite3 *db, unsigned int *pnCkpt) {
-  int rc = SQLITE_OK;
-  Pager *pPager;
-
-#ifdef SQLITE_OMIT_WAL
-  *pnFrame = 0;
-  return SQLITE_OK;
-#else
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
-#endif
-
-  sqlite3_mutex_enter(db->mutex);
-  pPager = sqlite3BtreePager(db->aDb[0].pBt);
-  rc = sqlite3PagerWalCheckpointSeqCount(pPager, pnCkpt);
-  sqlite3Error(db, rc);
-  sqlite3_mutex_leave(db->mutex);
-  return rc;
-#endif
-}
-
-/*
 ** Return the number of frames in the WAL of the given database.
 */
 int libsql_wal_frame_count(

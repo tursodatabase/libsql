@@ -7772,18 +7772,6 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
 }
 
 /**
-** Return the current checkpoint generation in the WAL file.
-**/
-int sqlite3PagerWalCheckpointSeqCount(Pager *pPager, unsigned int *pnCkpt){
-  if( pagerUseWal(pPager) ){
-    return pPager->wal->methods.xCheckpointSeqCount(pPager->wal->pData, pnCkpt);
-  } else {
-    *pnCkpt = 0;
-    return SQLITE_OK;
-  }
-}
-
-/**
 ** Return the number of frames in the WAL file.
 **
 ** If the pager is not in WAL mode or we failed to obtain an exclusive write lock, returns -1.
