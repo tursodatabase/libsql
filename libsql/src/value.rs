@@ -631,7 +631,7 @@ mod serde_ {
 
         serde::forward_to_deserialize_any! {
             i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
-                bytes byte_buf unit_struct newtype_struct seq tuple tuple_struct
+                bytes byte_buf unit_struct seq tuple tuple_struct
                 map struct identifier ignored_any
         }
 
@@ -760,6 +760,17 @@ mod serde_ {
                 )),
             }
         }
+
+        fn deserialize_newtype_struct<V>(
+            self,
+            _name: &'static str,
+            visitor: V,
+        ) -> std::result::Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            visitor.visit_newtype_struct(self)
+        }
     }
 
     impl<'de, E: de::Error> IntoDeserializer<'de, E> for Value {
@@ -792,6 +803,19 @@ mod serde_ {
                 B,
             }
 
+            #[derive(Deserialize, Debug, PartialEq)]
+            struct MyStringNewType(String);
+            #[derive(Deserialize, Debug, PartialEq)]
+            struct MyIntNewType(i64);
+            #[derive(Deserialize, Debug, PartialEq)]
+            struct MyFloatNewType(f64);
+            #[derive(Deserialize, Debug, PartialEq)]
+            struct MyBoolNewType(bool);
+            #[derive(Deserialize, Debug, PartialEq)]
+            struct MyVecNewType(Vec<u8>);
+            #[derive(Deserialize, Debug, PartialEq)]
+            struct MyOptionNewType(Option<i64>);
+
             assert_eq!(de::<MyEnum>(Value::Text("A".to_string())), Ok(MyEnum::A));
             assert_eq!(de::<()>(Value::Null), Ok(()));
             assert_eq!(de::<i64>(Value::Integer(123)), Ok(123));
@@ -816,6 +840,27 @@ mod serde_ {
             assert!(de::<MyEnum>(Value::Text("C".to_string())).is_err());
 
             assert_eq!(de::<[u8; 2]>(Value::Blob(b"aa".to_vec())), Ok([97, 97]));
+
+            assert_eq!(
+                de::<MyStringNewType>(Value::Text("abc".to_string())),
+                Ok(MyStringNewType("abc".to_string()))
+            );
+            assert_eq!(
+                de::<MyIntNewType>(Value::Integer(123)),
+                Ok(MyIntNewType(123))
+            );
+            assert_eq!(
+                de::<MyFloatNewType>(Value::Real(123.4)),
+                Ok(MyFloatNewType(123.4))
+            );
+            assert_eq!(
+                de::<MyVecNewType>(Value::Blob(b"abc".to_vec())),
+                Ok(MyVecNewType(b"abc".to_vec()))
+            );
+            assert_eq!(
+                de::<MyOptionNewType>(Value::Integer(123)),
+                Ok(MyOptionNewType(Some(123)))
+            );
         }
     }
 }
