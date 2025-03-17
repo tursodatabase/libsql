@@ -132,6 +132,7 @@ pub async fn metastore_connection_maker(
                 s3_max_retries: 10,
                 skip_snapshot: false,
                 skip_shutdown_upload: false,
+                stall_protection_grace_period: std::time::Duration::from_secs(5 * 60),
             };
             let mut replicator = bottomless::replicator::Replicator::with_options(
                 db_path.join("data").to_str().unwrap(),
