@@ -30,7 +30,6 @@ mod connection_core;
 pub mod connection_manager;
 pub mod dump;
 pub mod legacy;
-pub mod libsql;
 pub mod program;
 pub mod write_proxy;
 

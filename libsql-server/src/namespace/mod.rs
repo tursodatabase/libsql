@@ -32,7 +32,6 @@ pub type ResolveNamespacePathFn =
 
 pub enum ResetOp {
     Reset(NamespaceName),
-    Destroy(NamespaceName),
 }
 
 #[derive(Clone, Debug)]
