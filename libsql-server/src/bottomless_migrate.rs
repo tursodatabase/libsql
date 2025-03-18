@@ -13,10 +13,7 @@ use tokio::io::AsyncReadExt;
 use tokio_stream::StreamExt;
 use zerocopy::{FromBytes, FromZeroes};
 
-#[cfg(not(feature = "durable-wal"))]
 use libsql_sys::wal::either::Either as EitherWAL;
-#[cfg(feature = "durable-wal")]
-use libsql_sys::wal::either::Either3 as EitherWAL;
 
 use crate::namespace::broadcasters::BroadcasterRegistry;
 use crate::namespace::configurator::{
