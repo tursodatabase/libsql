@@ -57,47 +57,41 @@ fn main() {
     build_bundled(&out_dir, &out_path);
 }
 
-#[cfg(target_os = "windows")]
-fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    fs::copy(src, dst)?; // do a regular file copy on Windows
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+    let dst = dst.as_ref();
+    fs::create_dir_all(dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.join(entry.file_name()))?;
+        } else {
+            fs::copy(entry.path(), dst.join(entry.file_name()))?;
+        }
+    }
     Ok(())
 }
 
-#[cfg(target_os = "linux")]
-fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+/// This ensures that in sandboxed environments, such as Nix, permissions from other sources don't
+/// propagate into OUT_DIR. If not present, when trying to rewrite a file, a `Permission denied`
+/// error will occur.
+fn copy_with_cp(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> {
     let status = Command::new("cp")
         .arg("--no-preserve=mode,ownership")
         .arg("-R")
-        .arg(src.as_ref().to_str().unwrap())
-        .arg(dst.as_ref().to_str().unwrap())
+        .arg(from.as_ref().to_str().unwrap())
+        .arg(to.as_ref().to_str().unwrap())
         .status()?;
 
-    if !status.success() {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to copy using cp",
-        ))
-    } else {
-        Ok(())
+    if status.success() {
+        return Ok(());
     }
-}
 
-#[cfg(target_os = "macos")]
-fn copy_with_cp(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    let status = Command::new("cp")
-        .arg("-R")
-        .arg(src.as_ref().to_str().unwrap())
-        .arg(dst.as_ref().to_str().unwrap())
-        .status()?;
-
-    if !status.success() {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to copy using cp",
-        ))
-    } else {
-        Ok(())
-    }
+    return match fs::copy(from.as_ref(), to.as_ref()) {
+        Err(err) if err.kind() == io::ErrorKind::InvalidInput => copy_dir_all(from, to),
+        Ok(_) => Ok(()),
+        Err(err) => Err(err),
+    };
 }
 
 fn make_amalgamation() {
@@ -114,17 +108,19 @@ fn make_amalgamation() {
         .env("CFLAGS", flags.join(" "))
         .output()
         .unwrap();
+
     Command::new("make")
         .current_dir(SQLITE_DIR)
         .output()
         .unwrap();
 
-    std::fs::copy(
+    copy_with_cp(
         (SQLITE_DIR.as_ref() as &Path).join("sqlite3.c"),
         (BUNDLED_DIR.as_ref() as &Path).join("src/sqlite3.c"),
     )
     .unwrap();
-    std::fs::copy(
+
+    copy_with_cp(
         (SQLITE_DIR.as_ref() as &Path).join("sqlite3.h"),
         (BUNDLED_DIR.as_ref() as &Path).join("src/sqlite3.h"),
     )
@@ -195,7 +191,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     }
 
     let dir = env!("CARGO_MANIFEST_DIR");
-    std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+    copy_with_cp(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
     let mut cfg = cc::Build::new();
     cfg.flag("-std=c11")
@@ -267,9 +263,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
 
         cfg.files(sqlean_sources);
 
-        let sqlean = Path::new(BUNDLED_DIR)
-            .join("src")
-            .join("sqlite3-sqlean-generated.c");
+        let sqlean = Path::new(&env::var("OUT_DIR").unwrap()).join("sqlite3-sqlean-generated.c");
         generate_sqlean(&enabled_extensions, &sqlean).unwrap();
         cfg.file(&sqlean);
 
@@ -415,7 +409,7 @@ fn copy_multiple_ciphers(target: &str, out_dir: &str, out_path: &Path) {
         build_multiple_ciphers(target, out_path);
     }
 
-    std::fs::copy(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
+    copy_with_cp(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
     println!("cargo:rustc-link-lib=static=sqlite3mc");
     println!("cargo:rustc-link-search={out_dir}");
 }
@@ -426,32 +420,31 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
     } else {
         "bundled/bindings/bindgen.rs"
     };
+
     if std::env::var("LIBSQL_DEV").is_ok() {
         let header = HeaderLocation::FromPath(format!("{BUNDLED_DIR}/src/sqlite3.h"));
         bindings::write_to_out_dir(header, bindgen_rs_path.as_ref());
     }
-    let dir = env!("CARGO_MANIFEST_DIR");
-    std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
-    std::fs::copy(
-        (BUNDLED_DIR.as_ref() as &Path)
-            .join("src")
-            .join("sqlite3.c"),
-        (BUNDLED_DIR.as_ref() as &Path)
-            .join("SQLite3MultipleCiphers")
-            .join("src")
-            .join("sqlite3.c"),
+    let dir = env!("CARGO_MANIFEST_DIR");
+    copy_with_cp(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+
+    let out_dir = env::var("OUT_DIR").unwrap();
+
+    copy_with_cp(
+        dbg!(format!("{BUNDLED_DIR}/SQLite3MultipleCiphers")),
+        format!("{out_dir}/sqlite3mc"),
     )
     .unwrap();
 
-    let bundled_dir = env::current_dir()
-        .unwrap()
-        .join(BUNDLED_DIR)
-        .join("SQLite3MultipleCiphers");
-    let out_dir = env::var("OUT_DIR").unwrap();
+    copy_with_cp(
+        PathBuf::from(BUNDLED_DIR).join("src").join("sqlite3.c"),
+        format!("{out_dir}/sqlite3mc/src/sqlite3.c"),
+    )
+    .unwrap();
+
+    let bundled_dir = format!("{out_dir}/sqlite3mc");
     let sqlite3mc_build_dir = env::current_dir().unwrap().join(out_dir).join("sqlite3mc");
-    let _ = fs::remove_dir_all(sqlite3mc_build_dir.clone());
-    fs::create_dir_all(sqlite3mc_build_dir.clone()).unwrap();
 
     let mut cmake_opts: Vec<&str> = vec![];
 
@@ -474,15 +467,35 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
         .unwrap();
 
     if let Some(ref cc) = cross_cc {
-        if cc.contains("aarch64") && cc.contains("linux") {
-            cmake_opts.push(&cmake_toolchain_opt);
-            writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"Linux\")").unwrap();
-            writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"arm64\")").unwrap();
-        }
-    }
-    if let Some(cc) = cross_cc {
+        let system_name = if cc.contains("linux") {
+            "Linux"
+        } else if cc.contains("darwin") {
+            "Darwin"
+        } else if cc.contains("w64") {
+            "Windows"
+        } else {
+            panic!("Unsupported cross target {}", cc)
+        };
+
+        let system_processor = if cc.contains("x86_64") {
+            "x86_64"
+        } else if cc.contains("aarch64") {
+            "arm64"
+        } else {
+            panic!("Unsupported cross target {}", cc)
+        };
+
+        cmake_opts.push(&cmake_toolchain_opt);
+        writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"{}\")", system_name).unwrap();
+        writeln!(
+            toolchain_file,
+            "set(CMAKE_SYSTEM_PROCESSOR \"{}\")",
+            system_processor
+        )
+        .unwrap();
         writeln!(toolchain_file, "set(CMAKE_C_COMPILER {})", cc).unwrap();
     }
+
     if let Some(cxx) = cross_cxx {
         writeln!(toolchain_file, "set(CMAKE_CXX_COMPILER {})", cxx).unwrap();
     }
