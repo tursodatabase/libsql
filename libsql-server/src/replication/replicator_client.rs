@@ -1,6 +1,5 @@
 use std::path::Path;
 use std::pin::Pin;
-use std::sync::Arc;
 
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -13,8 +12,6 @@ use libsql_replication::rpc::replication::{
     verify_session_token, Frame as RpcFrame, HelloRequest, HelloResponse, LogOffset,
     NAMESPACE_METADATA_KEY, SESSION_TOKEN_KEY,
 };
-use libsql_wal::io::StdIO;
-use libsql_wal::shared_wal::SharedWal;
 use tokio::sync::watch;
 use tokio_stream::Stream;
 
@@ -29,12 +26,8 @@ use crate::metrics::{
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::replication::FrameNo;
-use crate::SqldStorage;
 
 pub enum WalImpl {
-    LibsqlWal {
-        shared: Arc<SharedWal<StdIO, SqldStorage>>,
-    },
     SqliteWal {
         meta: WalIndexMeta,
         current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
@@ -53,24 +46,8 @@ impl WalImpl {
         })
     }
 
-    pub fn new_libsql(shared: Arc<SharedWal<StdIO, SqldStorage>>) -> Self {
-        Self::LibsqlWal { shared }
-    }
-
-    fn next_frame_no(&self, first_since_handshake: bool) -> FrameNo {
+    fn next_frame_no(&self, _first_since_handshake: bool) -> FrameNo {
         match self {
-            WalImpl::LibsqlWal { shared } => {
-                if first_since_handshake {
-                    // with libsql-wal we only checkpoint frames that are durable. We will only
-                    // perform a handshake if we just started, or if the primary forced us to do it
-                    // again. In either cases, we want to start replicating again from the last
-                    // known durable replication index
-                    shared.durable_frame_no() + 1
-                } else {
-                    // otherwise we just query the next frame
-                    *shared.new_frame_notifier().borrow() + 1
-                }
-            }
             WalImpl::SqliteWal {
                 current_frame_no_notifier,
                 ..
@@ -83,7 +60,6 @@ impl WalImpl {
 
     fn handle_hello(&mut self, hello: HelloResponse) -> Result<(), Error> {
         match self {
-            WalImpl::LibsqlWal { .. } => Ok(()),
             WalImpl::SqliteWal {
                 meta,
                 current_frame_no_notifier,
@@ -97,7 +73,6 @@ impl WalImpl {
 
     async fn set_commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error> {
         match self {
-            WalImpl::LibsqlWal { .. } => Ok(()),
             WalImpl::SqliteWal {
                 meta,
                 current_frame_no_notifier,
@@ -111,14 +86,12 @@ impl WalImpl {
 
     fn commit_frame_no(&self) -> Option<FrameNo> {
         match self {
-            WalImpl::LibsqlWal { shared, .. } => Some(*shared.new_frame_notifier().borrow()),
             WalImpl::SqliteWal { meta, .. } => meta.current_frame_no(),
         }
     }
 
     fn flavor(&self) -> WalFlavor {
         match self {
-            WalImpl::LibsqlWal { .. } => WalFlavor::Libsql,
             WalImpl::SqliteWal { .. } => WalFlavor::Sqlite,
         }
     }

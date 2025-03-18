@@ -6,24 +6,19 @@ use std::time::{Duration, Instant};
 use crossbeam::deque::Steal;
 use crossbeam::sync::{Parker, Unparker};
 use hashbrown::HashMap;
-use libsql_sys::wal::either::Either;
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Sqlite3WalManager, Wal};
-use libsql_wal::io::StdIO;
-use libsql_wal::wal::{LibsqlWal, LibsqlWalManager};
 use metrics::atomics::AtomicU64;
 use parking_lot::{Mutex, MutexGuard};
 use rusqlite::ErrorCode;
-
-use crate::SqldStorage;
 
 use super::connection_core::CoreConnection;
 use super::TXN_TIMEOUT;
 
 pub type ConnId = u64;
-pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO, SqldStorage>>;
+pub type InnerWalManager = Sqlite3WalManager;
 
-pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO, SqldStorage>>;
+pub type InnerWal = Sqlite3Wal;
 pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, InnerWal>;
 
 #[derive(Copy, Clone, Debug)]
