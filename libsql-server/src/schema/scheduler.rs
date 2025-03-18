@@ -818,10 +818,7 @@ async fn step_job_run_success(
 #[cfg(test)]
 mod test {
     use insta::assert_debug_snapshot;
-    #[cfg(not(feature = "durable-wal"))]
     use libsql_sys::wal::either::Either as EitherWAL;
-    #[cfg(feature = "durable-wal")]
-    use libsql_sys::wal::either::Either3 as EitherWAL;
     use libsql_sys::wal::Sqlite3WalManager;
     use std::path::Path;
     use tempfile::tempdir;

@@ -384,10 +384,7 @@ impl<W: Wal + Send + 'static> CoreConnection<W> {
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
-    #[cfg(not(feature = "durable-wal"))]
     use libsql_sys::wal::either::Either as EitherWAL;
-    #[cfg(feature = "durable-wal")]
-    use libsql_sys::wal::either::Either3 as EitherWAL;
     use libsql_sys::wal::wrapper::PassthroughWalWrapper;
     use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
     use rand::Rng;

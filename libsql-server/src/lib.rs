@@ -40,13 +40,8 @@ use hyper::client::HttpConnector;
 use hyper::Uri;
 use hyper_rustls::HttpsConnector;
 use libsql_replication::rpc::replication::BoxReplicationService;
-#[cfg(feature = "durable-wal")]
-use libsql_storage::{DurableWalManager, LockManager};
 use libsql_sys::wal::either::Either;
-#[cfg(not(feature = "durable-wal"))]
 use libsql_sys::wal::either::Either as EitherWAL;
-#[cfg(feature = "durable-wal")]
-use libsql_sys::wal::either::Either3 as EitherWAL;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::checkpointer::LibsqlCheckpointer;
 use libsql_wal::io::StdIO;
@@ -153,8 +148,6 @@ static GLOBAL: rheaper::Allocator<std::alloc::System> =
 #[derive(clap::ValueEnum, PartialEq, Clone, Copy, Debug)]
 pub enum CustomWAL {
     LibsqlWal,
-    #[cfg(feature = "durable-wal")]
-    DurableWal,
 }
 
 pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpConnector>> {
@@ -840,13 +833,6 @@ where
         scripted_backup: Option<ScriptBackupManager>,
         meta_store: MetaStore,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
-        #[cfg(feature = "durable-wal")]
-        if let Some(CustomWAL::DurableWal) = self.use_custom_wal {
-            if self.db_config.bottomless_replication.is_some() {
-                anyhow::bail!("bottomless not supported with durable WAL");
-            }
-        }
-
         match self.use_custom_wal {
             Some(CustomWAL::LibsqlWal) => {
                 self.libsql_wal_configurators(
@@ -859,13 +845,6 @@ where
                 )
                 .await
             }
-            #[cfg(feature = "durable-wal")]
-            Some(CustomWAL::DurableWal) => self.durable_wal_configurators(
-                base_config,
-                client_config,
-                migration_scheduler_handle,
-                scripted_backup,
-            ),
             None => {
                 self.legacy_configurators(
                     base_config,
@@ -1058,65 +1037,6 @@ where
                 configurators.with_schema(schema_configurator);
             }
         }
-
-        Ok((configurators, make_replication_svc))
-    }
-
-    #[cfg(feature = "durable-wal")]
-    fn durable_wal_configurators(
-        &self,
-        base_config: BaseNamespaceConfig,
-        client_config: Option<(Channel, Uri)>,
-        migration_scheduler_handle: SchedulerHandle,
-        scripted_backup: Option<ScriptBackupManager>,
-    ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
-        tracing::info!("using durable wal");
-        let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
-        let namespace_resolver = |path: &Path| {
-            NamespaceName::from_string(
-                path.parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-            )
-            .unwrap()
-            .into()
-        };
-        let wal = DurableWalManager::new(
-            lock_manager,
-            namespace_resolver,
-            self.storage_server_address.clone(),
-        );
-        let make_wal_manager = Arc::new(move || EitherWAL::C(wal.clone()));
-        let configurators = self.configurators_common(
-            base_config,
-            client_config,
-            make_wal_manager,
-            migration_scheduler_handle,
-            scripted_backup,
-        )?;
-
-        let make_replication_svc = Box::new({
-            let disable_namespaces = self.disable_namespaces;
-            move |store,
-                  client_auth,
-                  idle_shutdown,
-                  collect_stats,
-                  is_internal|
-                  -> BoxReplicationService {
-                Box::new(ReplicationLogService::new(
-                    store,
-                    idle_shutdown,
-                    client_auth,
-                    disable_namespaces,
-                    collect_stats,
-                    is_internal,
-                ))
-            }
-        });
 
         Ok((configurators, make_replication_svc))
     }
