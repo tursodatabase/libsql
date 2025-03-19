@@ -56,7 +56,9 @@ static void sync_db(sqlite3 *db_primary, sqlite3 *db_backup){
   for(int i=1; i<=max_frame; i++){
     char frame[4096+24];
     ensure(libsql_wal_get_frame(db_primary, i, frame, sizeof(frame)) == SQLITE_OK, "can't get frame: %s\n", sqlite3_errmsg(db_primary));
-    ensure(libsql_wal_insert_frame(db_backup, i, frame, sizeof(frame)) == SQLITE_OK, "can't inject frame: %s\n", sqlite3_errmsg(db_backup));
+    int conflict;
+    ensure(libsql_wal_insert_frame(db_backup, i, frame, sizeof(frame), &conflict) == SQLITE_OK, "can't inject frame: %s\n", sqlite3_errmsg(db_backup));
+    ensure(conflict == 0, "conflict at frame %d\n", i);
   }
   ensure(libsql_wal_insert_end(db_backup) == SQLITE_OK, "can't end commit: %s\n", sqlite3_errmsg(db_backup));
 }
@@ -110,7 +112,9 @@ void test_sync_by_parts() {
         in_commit = 1;
         ensure(libsql_wal_insert_begin(db_backup) == SQLITE_OK, "can't begin commit: %s\n", sqlite3_errmsg(db_backup));
       }
-      ensure(libsql_wal_insert_frame(db_backup, i, frame, sizeof(frame)) == SQLITE_OK, "can't inject frame: %s\n", sqlite3_errmsg(db_backup));
+      int conflict; 
+      ensure(libsql_wal_insert_frame(db_backup, i, frame, sizeof(frame), &conflict) == SQLITE_OK, "can't inject frame: %s\n", sqlite3_errmsg(db_backup));
+      ensure(conflict == 0, "conflict at frame %d\n", i);
       if (is_commit) {
         ensure(libsql_wal_insert_end(db_backup) == SQLITE_OK, "can't end commit: %s\n", sqlite3_errmsg(db_backup));
         in_commit = 0;
@@ -145,6 +149,44 @@ void test_sync_while_reading() {
     cmp_data(db_primary, db_backup); 
 }
 
+// This test case writes to two different databases and then attempts to sync them to a third database.
+// Only the first database should be synced, the second database sync should return a conflict error
+void test_conflict() {    
+  sqlite3 *db1, *db2, *db_synced;
+  open_db("test_conflict_1.db", &db1);
+  open_db("test_conflict_2.db", &db2);
+  open_db("test_conflict_synced.db", &db_synced);
+
+  ensure(sqlite3_exec(db1, "CREATE TABLE t (x)", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+  ensure(sqlite3_exec(db1, "INSERT INTO t VALUES (randomblob(4 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+
+  sync_db(db1, db_synced);
+
+  ensure(sqlite3_exec(db2, "CREATE TABLE t (x)", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+  ensure(sqlite3_exec(db2, "INSERT INTO t VALUES (randomblob(4 * 1024))", 0, 0, 0) == SQLITE_OK, "failed to insert data\n");
+
+  unsigned int max_frame;
+  ensure(libsql_wal_frame_count(db2, &max_frame) == SQLITE_OK, "can't get frame count: %s\n", sqlite3_errmsg(db2));
+  ensure(libsql_wal_insert_begin(db_synced) == SQLITE_OK, "can't begin commit: %s\n", sqlite3_errmsg(db_synced));
+  // First 3 frames should not conflict.
+  for(int i=1; i<=3; i++){
+    char frame[4096+24];
+    ensure(libsql_wal_get_frame(db2, i, frame, sizeof(frame)) == SQLITE_OK, "can't get frame: %s\n", sqlite3_errmsg(db2));
+    int conflict;
+    ensure(libsql_wal_insert_frame(db_synced, i, frame, sizeof(frame), &conflict) == SQLITE_OK, "conflict detected: %s\n", sqlite3_errmsg(db_synced));
+    ensure(conflict == 0, "conflict at frame %d\n", i);
+  }
+  // The rest should conflict.
+  for(int i=4; i<=max_frame; i++){
+    char frame[4096+24];
+    ensure(libsql_wal_get_frame(db2, i, frame, sizeof(frame)) == SQLITE_OK, "can't get frame: %s\n", sqlite3_errmsg(db2));
+    int conflict;
+    ensure(libsql_wal_insert_frame(db_synced, i, frame, sizeof(frame), &conflict) == SQLITE_ERROR, "conflict not detected: %s\n", sqlite3_errmsg(db_synced));
+    ensure(conflict == 1, "no conflict at frame %d\n", i);
+  }
+  ensure(libsql_wal_insert_end(db_synced) == SQLITE_OK, "can't end commit: %s\n", sqlite3_errmsg(db_synced));
+}
+
 int main(int argc, char *argv[])
 {
     test_huge_payload();
@@ -155,6 +197,9 @@ int main(int argc, char *argv[])
 
     test_sync_while_reading();
     printf("============= OK test_sync_while_reading\n");
+
+    test_conflict();
+    printf("============= OK test_conflict\n");
 
     return 0;
 }

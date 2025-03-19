@@ -7826,9 +7826,12 @@ int sqlite3PagerWalEndCommit(Pager *pPager) {
   return rc;
 }
 
-int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsigned int nBuf) {
+int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsigned int nBuf, int *pConflict) {
   int rc = SQLITE_OK;
 
+  if( pConflict ) {
+    *pConflict = 0;
+  }
   if (!pagerUseWal(pPager)) {
     return SQLITE_ERROR;
   }
@@ -7838,6 +7841,22 @@ int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsign
     return rc;
   }
   if (iFrame <= mxFrame) {
+    unsigned long frame_len = nBuf-24;
+    unsigned char current[frame_len];
+    rc = pPager->wal->methods.xReadFrame(pPager->wal->pData, iFrame, frame_len, current);
+    if (rc != SQLITE_OK) {
+      return rc;
+    }
+    int conflict = 0;
+    if (memcmp(pBuf+24, current, frame_len) != 0) {
+      conflict = 1;
+    }
+    if (pConflict) {
+      *pConflict = conflict;
+    }
+    if (conflict) {
+      return SQLITE_ERROR;
+    }
     return SQLITE_OK;
   }
   u8 *aFrame = (u8*)pBuf;
