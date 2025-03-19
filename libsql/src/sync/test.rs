@@ -376,6 +376,7 @@ impl MockServer {
                             if req.uri().path().contains("/sync/") {
                                 // Return the max_frame_no that has been accepted
                                 let response = serde_json::json!({
+                                    "status": "ok",
                                     "generation": 1,
                                     "max_frame_no": current_count
                                 });
