@@ -10602,7 +10602,7 @@ int libsql_wal_insert_end(sqlite3*);
 ** CAPI3REF: Insert a frame into the WAL
 ** METHOD: sqlite3
 */
-int libsql_wal_insert_frame(sqlite3*, unsigned int, void *, unsigned int);
+int libsql_wal_insert_frame(sqlite3*, unsigned int, void *, unsigned int, int *);
 
 /*
 ** CAPI3REF: Low-level system error code
