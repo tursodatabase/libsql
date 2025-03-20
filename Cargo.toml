@@ -32,6 +32,7 @@ license = "MIT"
 repository = "https://github.com/tursodatabase/libsql"
 
 [workspace.dependencies]
+libsql-ffi = { path = "libsql-ffi", version = "0.9.0" }
 libsql-sys = { path = "libsql-sys", version = "0.9.0", default-features = false }
 libsql-hrana = { path = "libsql-hrana", version = "0.9.0" }
 libsql_replication = { path = "libsql-replication", version = "0.9.0" }
