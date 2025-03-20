@@ -381,6 +381,10 @@ cfg_replication! {
                             .await
                             .map_err(|err| crate::Error::Sync(err.into()))?;
 
+                        if res.status() == http::StatusCode::UNAUTHORIZED {
+                            return Err(crate::Error::Sync("Unauthorized".into()));
+                        }
+
                         if matches!(p, SyncProtocol::V2) {
                             if !res.status().is_success() {
                                 let status = res.status();
