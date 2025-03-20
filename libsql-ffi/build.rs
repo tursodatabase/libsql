@@ -33,15 +33,15 @@ fn main() {
     }
 
     let bindgen_rs_path = if cfg!(feature = "session") {
-        "bundled/bindings/session_bindgen.rs"
+        Path::new("bundled/bindings/session_bindgen.rs")
     } else {
-        "bundled/bindings/bindgen.rs"
+        Path::new("bundled/bindings/bindgen.rs")
     };
 
     let dir = env!("CARGO_MANIFEST_DIR");
 
     let full_src_path = Path::new(dir).join(bindgen_rs_path);
-    copy_with_cp(full_src_path, &out_path).unwrap();
+    platform_copy(full_src_path, &out_path).unwrap();
 
     println!("cargo:lib_dir={out_dir}");
 
@@ -75,7 +75,8 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
 /// This ensures that in sandboxed environments, such as Nix, permissions from other sources don't
 /// propagate into OUT_DIR. If not present, when trying to rewrite a file, a `Permission denied`
 /// error will occur.
-fn copy_with_cp(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> {
+#[cfg(unix)]
+fn platform_copy(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> {
     let status = Command::new("cp")
         .arg("--no-preserve=mode,ownership")
         .arg("-R")
@@ -92,6 +93,25 @@ fn copy_with_cp(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> 
         Ok(_) => Ok(()),
         Err(err) => Err(err),
     };
+}
+
+#[cfg(windows)]
+fn platform_copy(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> {
+    let from = from.as_ref();
+    let to = to.as_ref();
+    if let Some(parent) = to.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    if from.is_file() {
+        fs::copy(from, to).map(|_| ())
+    } else if from.is_dir() {
+        copy_dir_all(from, to)
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Source path is neither a file nor a directory",
+        ))
+    }
 }
 
 fn make_amalgamation() {
@@ -114,15 +134,15 @@ fn make_amalgamation() {
         .output()
         .unwrap();
 
-    copy_with_cp(
+    platform_copy(
         (SQLITE_DIR.as_ref() as &Path).join("sqlite3.c"),
-        (BUNDLED_DIR.as_ref() as &Path).join("src/sqlite3.c"),
+        (BUNDLED_DIR.as_ref() as &Path).join("src").join("sqlite3.c"),
     )
     .unwrap();
 
-    copy_with_cp(
+    platform_copy(
         (SQLITE_DIR.as_ref() as &Path).join("sqlite3.h"),
-        (BUNDLED_DIR.as_ref() as &Path).join("src/sqlite3.h"),
+        (BUNDLED_DIR.as_ref() as &Path).join("src").join("sqlite3.c"),
     )
     .unwrap();
 }
@@ -180,9 +200,9 @@ int core_init(const char* dummy) {
 
 pub fn build_bundled(out_dir: &str, out_path: &Path) {
     let bindgen_rs_path = if cfg!(feature = "session") {
-        "bundled/bindings/session_bindgen.rs"
+        Path::new("bundled/bindings/session_bindgen.rs")
     } else {
-        "bundled/bindings/bindgen.rs"
+        Path::new("bundled/bindings/bindgen.rs")
     };
 
     if std::env::var("LIBSQL_DEV").is_ok() {
@@ -190,8 +210,8 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         bindings::write_to_out_dir(header, bindgen_rs_path.as_ref());
     }
 
-    let dir = env!("CARGO_MANIFEST_DIR");
-    copy_with_cp(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    platform_copy(dir.join(bindgen_rs_path), out_path).unwrap();
 
     let mut cfg = cc::Build::new();
     cfg.flag("-std=c11")
@@ -409,16 +429,16 @@ fn copy_multiple_ciphers(target: &str, out_dir: &str, out_path: &Path) {
         build_multiple_ciphers(target, out_path);
     }
 
-    copy_with_cp(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
+    platform_copy(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
     println!("cargo:rustc-link-lib=static=sqlite3mc");
     println!("cargo:rustc-link-search={out_dir}");
 }
 
 fn build_multiple_ciphers(target: &str, out_path: &Path) {
     let bindgen_rs_path = if cfg!(feature = "session") {
-        "bundled/bindings/session_bindgen.rs"
+        Path::new("bundled/bindings/session_bindgen.rs")
     } else {
-        "bundled/bindings/bindgen.rs"
+        Path::new("bundled/bindings/bindgen.rs")
     };
 
     if std::env::var("LIBSQL_DEV").is_ok() {
@@ -426,18 +446,18 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
         bindings::write_to_out_dir(header, bindgen_rs_path.as_ref());
     }
 
-    let dir = env!("CARGO_MANIFEST_DIR");
-    copy_with_cp(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    platform_copy(dir.join(bindgen_rs_path), out_path).unwrap();
 
     let out_dir = env::var("OUT_DIR").unwrap();
 
-    copy_with_cp(
+    platform_copy(
         dbg!(format!("{BUNDLED_DIR}/SQLite3MultipleCiphers")),
         format!("{out_dir}/sqlite3mc"),
     )
     .unwrap();
 
-    copy_with_cp(
+    platform_copy(
         PathBuf::from(BUNDLED_DIR).join("src").join("sqlite3.c"),
         format!("{out_dir}/sqlite3mc/src/sqlite3.c"),
     )
