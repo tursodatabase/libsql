@@ -1,11 +1,12 @@
 [package]
 name = "libsql-ffi"
-version = "0.5.0"
-edition = "2021"
-build = "build.rs"
-license = "MIT"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Native bindings to libSQL"
-repository = "https://github.com/tursodatabase/libsql"
+build = "build.rs"
 exclude = ["bundled/SQLite3MultipleCiphers/build", "bundled/SQLite3MultipleCiphers/test"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
