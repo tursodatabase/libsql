@@ -7842,18 +7842,25 @@ int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsign
   }
   if (iFrame <= mxFrame) {
     unsigned long frame_len = nBuf-24;
-    unsigned char current[frame_len];
+    unsigned char *current;
+
+    current = (unsigned char *)sqlite3MallocZero(frame_len);
+    if (current == NULL) {
+      return SQLITE_NOMEM;
+    }
     rc = pPager->wal->methods.xReadFrame(pPager->wal->pData, iFrame, frame_len, current);
     if (rc != SQLITE_OK) {
+      sqlite3_free(current);
       return rc;
     }
     int conflict = 0;
-    if (memcmp(pBuf+24, current, frame_len) != 0) {
+    if (memcmp((unsigned char*)pBuf+24, current, frame_len) != 0) {
       conflict = 1;
     }
     if (pConflict) {
       *pConflict = conflict;
     }
+    sqlite3_free(current);
     if (conflict) {
       return SQLITE_ERROR;
     }
