@@ -40,6 +40,10 @@ impl Stmt for SyncedStatement {
         result
     }
 
+    fn interrupt(&mut self) -> Result<()> {
+        self.inner.interrupt()
+    }
+
     fn reset(&mut self) {
         self.inner.reset()
     }

@@ -67,6 +67,8 @@ impl Builder<()> {
                     http_request_callback: None,
                     namespace: None,
                     skip_safety_assert: false,
+                    #[cfg(feature = "sync")]
+                    sync_protocol: Default::default(),
                 },
             }
         }
@@ -105,6 +107,7 @@ impl Builder<()> {
                     connector: None,
                     read_your_writes: true,
                     remote_writes: false,
+                    push_batch_size: 0,
                 },
             }
         }
@@ -222,6 +225,8 @@ cfg_replication! {
         http_request_callback: Option<crate::util::HttpRequestCallback>,
         namespace: Option<String>,
         skip_safety_assert: bool,
+        #[cfg(feature = "sync")]
+        sync_protocol: super::SyncProtocol,
     }
 
     /// Local replica configuration type in [`Builder`].
@@ -271,6 +276,15 @@ cfg_replication! {
         /// type is alive for, once it is dropped the background task will get dropped and stop.
         pub fn sync_interval(mut self, duration: std::time::Duration) -> Builder<RemoteReplica> {
             self.inner.sync_interval = Some(duration);
+            self
+        }
+
+        /// Set the duration at which the replicator will automatically call `sync` in the
+        /// background. The sync will continue for the duration that the resulted `Database`
+        /// type is alive for, once it is dropped the background task will get dropped and stop.
+        #[cfg(feature = "sync")]
+        pub fn sync_protocol(mut self, protocol: super::SyncProtocol) -> Builder<RemoteReplica> {
+            self.inner.sync_protocol = protocol;
             self
         }
 
@@ -326,7 +340,9 @@ cfg_replication! {
                 sync_interval,
                 http_request_callback,
                 namespace,
-                skip_safety_assert
+                skip_safety_assert,
+                #[cfg(feature = "sync")]
+                sync_protocol,
             } = self.inner;
 
             let connector = if let Some(connector) = connector {
@@ -341,6 +357,63 @@ cfg_replication! {
 
                 crate::util::ConnectorService::new(svc)
             };
+
+            #[cfg(feature = "sync")]
+            {
+                use super::SyncProtocol;
+                match sync_protocol {
+                    p @ (SyncProtocol::Auto | SyncProtocol::V2) => {
+                        tracing::trace!("Probing for sync protocol version for {}", url);
+                        let client = hyper::client::Client::builder()
+                            .build::<_, hyper::Body>(connector.clone());
+
+                        let prefix = if url.starts_with("libsql://") {
+                            url.replacen("libsql://", "https://", 1)
+                        } else {
+                            url.to_string()
+                        };
+                        let req = http::Request::get(format!("{prefix}/sync/0/0/0"))
+                            .header("Authorization", format!("Bearer {}", auth_token))
+                            .body(hyper::Body::empty())
+                            .unwrap();
+
+                        let res = client
+                            .request(req)
+                            .await
+                            .map_err(|err| crate::Error::Sync(err.into()))?;
+
+                        tracing::trace!("Probe for sync protocol version for {} returned status {}", url, res.status());
+
+                        if res.status() == http::StatusCode::UNAUTHORIZED {
+                            return Err(crate::Error::Sync("Unauthorized".into()));
+                        }
+
+                        if matches!(p, SyncProtocol::V2) {
+                            if !res.status().is_success() {
+                                let status = res.status();
+                                let body_bytes = hyper::body::to_bytes(res.into_body())
+                                    .await
+                                    .map_err(|err| crate::Error::Sync(err.into()))?;
+                                let error_message = String::from_utf8_lossy(&body_bytes);
+                                return Err(crate::Error::Sync(format!("HTTP error {}: {}", status, error_message).into()));
+                            }
+                        }
+
+                        if res.status().is_success() {
+                            tracing::trace!("Using sync protocol v2 for {}", url);
+                            return Builder::new_synced_database(path, url, auth_token)
+                                .remote_writes(true)
+                                .read_your_writes(read_your_writes)
+                                .build()
+                                .await;
+                        }
+                        tracing::trace!("Using sync protocol v1 for {} based on probe results", url);
+                    }
+                    SyncProtocol::V1 => {
+                        tracing::trace!("Using sync protocol v1 for {}", url);
+                    }
+                }
+            }
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
 
@@ -467,6 +540,7 @@ cfg_sync! {
         connector: Option<crate::util::ConnectorService>,
         remote_writes: bool,
         read_your_writes: bool,
+        push_batch_size: u32,
     }
 
     impl Builder<SyncedDatabase> {
@@ -483,6 +557,11 @@ cfg_sync! {
 
         pub fn remote_writes(mut self, v: bool) -> Builder<SyncedDatabase> {
             self.inner.remote_writes = v;
+            self
+        }
+
+        pub fn set_push_batch_size(mut self, v: u32) -> Builder<SyncedDatabase> {
+            self.inner.push_batch_size = v;
             self
         }
 
@@ -513,6 +592,7 @@ cfg_sync! {
                 connector,
                 remote_writes,
                 read_your_writes,
+                push_batch_size,
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
@@ -538,6 +618,10 @@ cfg_sync! {
                 auth_token.clone(),
             )
             .await?;
+
+            if push_batch_size > 0 {
+                db.sync_ctx.as_ref().unwrap().lock().await.set_push_batch_size(push_batch_size);
+            }
 
             Ok(Database {
                 db_type: DbType::Offline {

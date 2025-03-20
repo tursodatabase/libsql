@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use std::{fmt, path::Path};
+use std::time::Duration;
 
 use crate::connection::BatchRows;
 use crate::{
@@ -56,6 +57,10 @@ impl Conn for LibsqlConnection {
 
     fn interrupt(&self) -> Result<()> {
         self.conn.interrupt()
+    }
+
+    fn busy_timeout(&self, timeout: Duration) -> Result<()> {
+        self.conn.busy_timeout(timeout)
     }
 
     fn is_autocommit(&self) -> bool {
@@ -118,6 +123,10 @@ impl Stmt for LibsqlStmt {
         let stmt = self.0.clone();
 
         stmt.run(&params)
+    }
+
+    fn interrupt(&mut self) -> Result<()> {
+        self.0.interrupt()
     }
 
     fn reset(&mut self) {

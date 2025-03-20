@@ -63,6 +63,17 @@ cfg_replication_or_sync! {
             self.frames_synced
         }
     }
+
+}
+
+cfg_sync! {
+    #[derive(Default)]
+    pub enum SyncProtocol {
+        #[default]
+        Auto,
+        V1,
+        V2,
+    }
 }
 
 enum DbType {

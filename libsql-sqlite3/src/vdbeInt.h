@@ -528,6 +528,7 @@ struct Vdbe {
   int nScan;              /* Entries in aScan[] */
   ScanStatus *aScan;      /* Scan definitions for sqlite3_stmt_scanstatus() */
 #endif
+  u8 isInterrupted;      /* True if the statement has been interrupted */
 };
 
 void libsql_inc_row_read(Vdbe *p, int count);

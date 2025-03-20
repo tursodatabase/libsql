@@ -16,6 +16,7 @@ use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
 use std::io::ErrorKind;
 use std::sync::Arc;
+use std::time::Duration;
 
 use super::StmtResultRows;
 
@@ -168,6 +169,11 @@ impl Conn for HttpConnection<HttpSender> {
         Ok(())
     }
 
+    fn busy_timeout(&self, _timeout: Duration) -> crate::Result<()> {
+        // Busy timeout is a no-op for remote connections.
+        Ok(())
+    }
+
     fn is_autocommit(&self) -> bool {
         self.is_autocommit()
     }
@@ -203,6 +209,12 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
 
     async fn run(&mut self, params: &Params) -> crate::Result<()> {
         self.run(params).await
+    }
+
+    fn interrupt(&mut self) -> crate::Result<()> {
+        Err(crate::Error::Misuse(
+            "interrupt is not supported for remote connections".to_string(),
+        ))
     }
 
     fn reset(&mut self) {}
@@ -353,6 +365,11 @@ impl Conn for HranaStream<HttpSender> {
 
     fn interrupt(&self) -> crate::Result<()> {
         // Interrupt is a no-op for remote connections.
+        Ok(())
+    }
+
+    fn busy_timeout(&self, _timeout: Duration) -> crate::Result<()> {
+        // Busy timeout is a no-op for remote connections.
         Ok(())
     }
 

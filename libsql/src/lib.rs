@@ -131,6 +131,7 @@ pub mod params;
 
 cfg_sync! {
     mod sync;
+    pub use database::SyncProtocol;
 }
 
 cfg_replication! {

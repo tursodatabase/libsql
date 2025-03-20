@@ -1,5 +1,6 @@
 // TODO(lucio): Move this to `remote/mod.rs`
 
+use std::time::Duration;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
@@ -508,6 +509,11 @@ impl Conn for RemoteConnection {
         Ok(())
     }
 
+    fn busy_timeout(&self, _timeout: Duration) -> Result<()> {
+        // Busy timeout is a no-op for remote connections.
+        Ok(())
+    }
+
     fn is_autocommit(&self) -> bool {
         self.is_state_init()
     }
@@ -730,6 +736,12 @@ impl Stmt for RemoteStatement {
         }
 
         Ok(())
+    }
+
+    fn interrupt(&mut self) -> Result<()> {
+        Err(Error::Misuse(
+            "interrupt is not supported for remote connections".to_string(),
+        ))
     }
 
     fn reset(&mut self) {}

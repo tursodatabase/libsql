@@ -346,7 +346,7 @@ pub unsafe extern "C" fn frames<T: Wal>(
     }
 }
 
-#[tracing::instrument(skip(wal, db))]
+#[tracing::instrument(skip(wal, db), level = "trace")]
 pub unsafe extern "C" fn checkpoint<T: Wal>(
     wal: *mut wal_impl,
     db: *mut libsql_ffi::sqlite3,

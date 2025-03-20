@@ -43,3 +43,4 @@ sqlean-extensions = [
     "sqlean-extension-stats",
     "sqlean-extension-text"
 ]
+libsql-disable-checkpoint-downgrade = []

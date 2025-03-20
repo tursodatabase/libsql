@@ -17,7 +17,6 @@ use crate::pager::{make_pager, PAGER_CACHE_SIZE};
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
 use crate::rpc::proxy::ProxyService;
 use crate::rpc::replica_proxy::ReplicaProxyService;
-use crate::rpc::replication::libsql_replicator::LibsqlReplicationService;
 use crate::rpc::replication::replication_log::rpc::replication_log_server::ReplicationLog;
 use crate::rpc::replication::replication_log::ReplicationLogService;
 use crate::rpc::replication::replication_log_proxy::ReplicationLogProxyService;
@@ -26,10 +25,6 @@ use crate::schema::Scheduler;
 use crate::stats::Stats;
 use anyhow::Context as AnyhowContext;
 use auth::Auth;
-use aws_config::retry::RetryConfig;
-use aws_config::{BehaviorVersion, Region};
-use aws_sdk_s3::config::{Credentials, SharedCredentialsProvider};
-use aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder;
 use config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
 };
@@ -40,21 +35,7 @@ use hyper::client::HttpConnector;
 use hyper::Uri;
 use hyper_rustls::HttpsConnector;
 use libsql_replication::rpc::replication::BoxReplicationService;
-#[cfg(feature = "durable-wal")]
-use libsql_storage::{DurableWalManager, LockManager};
-use libsql_sys::wal::either::Either;
-#[cfg(not(feature = "durable-wal"))]
-use libsql_sys::wal::either::Either as EitherWAL;
-#[cfg(feature = "durable-wal")]
-use libsql_sys::wal::either::Either3 as EitherWAL;
 use libsql_sys::wal::Sqlite3WalManager;
-use libsql_wal::checkpointer::LibsqlCheckpointer;
-use libsql_wal::io::StdIO;
-use libsql_wal::registry::WalRegistry;
-use libsql_wal::segment::sealed::SealedSegment;
-use libsql_wal::storage::async_storage::{AsyncStorage, AsyncStorageInitConfig};
-use libsql_wal::storage::backend::s3::S3Backend;
-use libsql_wal::storage::NoStorage;
 use namespace::meta_store::MetaStoreHandle;
 use namespace::NamespaceName;
 use net::Connector;
@@ -65,18 +46,15 @@ use tokio::runtime::Runtime;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::Duration;
-use tokio_stream::StreamExt as _;
 use tonic::transport::Channel;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
-use self::bottomless_migrate::bottomless_migrate;
 use self::config::MetaStoreConfig;
 use self::connection::connection_manager::InnerWalManager;
 use self::connection::MakeThrottledConnection;
 use self::namespace::configurator::{
-    BaseNamespaceConfig, LibsqlPrimaryConfigurator, LibsqlReplicaConfigurator,
-    LibsqlSchemaConfigurator, NamespaceConfigurators, PrimaryConfig, PrimaryConfigurator,
+    BaseNamespaceConfig, NamespaceConfigurators, PrimaryConfig, PrimaryConfigurator,
     ReplicaConfigurator, SchemaConfigurator,
 };
 use self::namespace::NamespaceStore;
@@ -95,7 +73,6 @@ pub mod version;
 
 pub use hrana::proto as hrana_proto;
 
-mod bottomless_migrate;
 mod database;
 mod error;
 mod h2c;
@@ -115,7 +92,6 @@ mod stats;
 #[cfg(test)]
 mod test;
 mod utils;
-pub mod wal_toolkit;
 
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
@@ -150,13 +126,6 @@ type MakeReplicationSvc = Box<
 static GLOBAL: rheaper::Allocator<std::alloc::System> =
     rheaper::Allocator::from_allocator(std::alloc::System);
 
-#[derive(clap::ValueEnum, PartialEq, Clone, Copy, Debug)]
-pub enum CustomWAL {
-    LibsqlWal,
-    #[cfg(feature = "durable-wal")]
-    DurableWal,
-}
-
 pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpConnector>> {
     pub path: Arc<Path>,
     pub db_config: DbConfig,
@@ -174,7 +143,6 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub meta_store_config: MetaStoreConfig,
     pub max_concurrent_connections: usize,
     pub shutdown_timeout: std::time::Duration,
-    pub use_custom_wal: Option<CustomWAL>,
     pub storage_server_address: String,
     pub connector: Option<D>,
     pub migrate_bottomless: bool,
@@ -204,7 +172,6 @@ impl<C, A, D> Default for Server<C, A, D> {
             meta_store_config: Default::default(),
             max_concurrent_connections: 128,
             shutdown_timeout: Duration::from_secs(30),
-            use_custom_wal: None,
             storage_server_address: Default::default(),
             connector: None,
             migrate_bottomless: false,
@@ -350,9 +317,6 @@ where
     }
 }
 
-pub type SqldStorage =
-    Either<AsyncStorage<S3Backend<StdIO>, SealedSegment<std::fs::File>>, NoStorage>;
-
 #[tracing::instrument(skip(connection_maker))]
 async fn run_periodic_checkpoint<C>(
     connection_maker: Arc<MakeThrottledConnection<C>>,
@@ -383,6 +347,7 @@ where
         }
         retry = match connection_maker.untracked().await {
             Ok(conn) => {
+                conn.with_raw(|c| c.busy_timeout(std::time::Duration::from_secs(5)))?;
                 if let Err(e) = conn.vacuum_if_needed().await {
                     tracing::warn!("vacuum failed: {}", e);
                 }
@@ -634,6 +599,8 @@ where
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
             max_concurrent_requests: self.db_config.max_concurrent_requests,
             encryption_config: self.db_config.encryption_config.clone(),
+            disable_intelligent_throttling: self.db_config.disable_intelligent_throttling,
+            connection_creation_timeout: self.db_config.connection_creation_timeout,
         };
 
         let (metastore_conn_maker, meta_store_wal_manager) =
@@ -832,290 +799,18 @@ where
         &self,
         base_config: BaseNamespaceConfig,
         client_config: Option<(Channel, Uri)>,
-        task_manager: &mut TaskManager,
+        _task_manager: &mut TaskManager,
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
-        meta_store: MetaStore,
+        _meta_store: MetaStore,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
-        #[cfg(feature = "durable-wal")]
-        if let Some(CustomWAL::DurableWal) = self.use_custom_wal {
-            if self.db_config.bottomless_replication.is_some() {
-                anyhow::bail!("bottomless not supported with durable WAL");
-            }
-        }
-
-        match self.use_custom_wal {
-            Some(CustomWAL::LibsqlWal) => {
-                self.libsql_wal_configurators(
-                    base_config,
-                    client_config,
-                    task_manager,
-                    migration_scheduler_handle,
-                    scripted_backup,
-                    meta_store,
-                )
-                .await
-            }
-            #[cfg(feature = "durable-wal")]
-            Some(CustomWAL::DurableWal) => self.durable_wal_configurators(
-                base_config,
-                client_config,
-                migration_scheduler_handle,
-                scripted_backup,
-            ),
-            None => {
-                self.legacy_configurators(
-                    base_config,
-                    client_config,
-                    migration_scheduler_handle,
-                    scripted_backup,
-                )
-                .await
-            }
-        }
-    }
-
-    async fn libsql_wal_configurators(
-        &self,
-        base_config: BaseNamespaceConfig,
-        client_config: Option<(Channel, Uri)>,
-        task_manager: &mut TaskManager,
-        migration_scheduler_handle: SchedulerHandle,
-        scripted_backup: Option<ScriptBackupManager>,
-        meta_store: MetaStore,
-    ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
-        tracing::info!("using libsql wal");
-        let (sender, receiver) = tokio::sync::mpsc::channel(64);
-        let storage: Arc<_> = if let Some(ref opt) = self.db_config.bottomless_replication {
-            if client_config.is_some() {
-                anyhow::bail!("bottomless cannot be enabled on replicas");
-            }
-
-            let config = aws_config::load_defaults(BehaviorVersion::latest()).await;
-
-            let http_client = HyperClientBuilder::new().build(self.connector.clone().unwrap());
-            let mut builder = config.into_builder();
-            builder.set_http_client(Some(http_client));
-            builder.set_endpoint_url(opt.aws_endpoint.clone());
-            builder.set_retry_config(RetryConfig::standard().with_max_attempts(10).into());
-            builder.set_region(Region::new(
-                opt.region.clone().expect("expected aws region"),
-            ));
-            let cred = Credentials::new(
-                opt.access_key_id.as_ref().unwrap(),
-                opt.secret_access_key.as_ref().unwrap(),
-                None,
-                None,
-                "Static",
-            );
-            builder.set_credentials_provider(Some(SharedCredentialsProvider::new(cred)));
-            let config = builder.build();
-            let backend = S3Backend::from_sdk_config(
-                config,
-                opt.bucket_name.clone(),
-                opt.db_id.clone().expect("expected db id"),
-            )
-            .await?;
-            let config = AsyncStorageInitConfig {
-                backend: Arc::new(backend),
-                max_in_flight_jobs: 16,
-            };
-            let (storage, storage_loop) = AsyncStorage::new(config).await;
-
-            task_manager.spawn_with_shutdown_notify(|_| async move {
-                storage_loop.run().await;
-                Ok(())
-            });
-
-            Either::A(storage)
-        } else {
-            Either::B(NoStorage)
-        }
-        .into();
-
-        let primary_config = PrimaryConfig {
-            max_log_size: self.db_config.max_log_size,
-            max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
-            bottomless_replication: self.db_config.bottomless_replication.clone(),
-            scripted_backup,
-            checkpoint_interval: self.db_config.checkpoint_interval,
-        };
-
-        // perform migration before creating the actual registry creation
-        let did_migrate = self
-            .maybe_migrate_bottomless(meta_store.clone(), &base_config, &primary_config)
-            .await?;
-
-        if self.rpc_server_config.is_some() && matches!(*storage, Either::B(_)) {
-            anyhow::bail!("replication without bottomless not supported yet");
-        }
-
-        let registry = Arc::new(WalRegistry::new(storage, sender)?);
-        let checkpointer = LibsqlCheckpointer::new(registry.clone(), receiver, 8);
-        task_manager.spawn_with_shutdown_notify(|_| async move {
-            checkpointer.run().await;
-            Ok(())
-        });
-
-        // If we performed a migration from bottomless to libsql-wal earlier, then we need to
-        // forecefully load all the wals, to trigger segment storage with the actual storage. This
-        // is because migration didn't actually send anything to storage, but just created the
-        // segments.
-        if did_migrate || self.should_sync_from_storage || self.force_load_wals {
-            // eagerly load all namespaces, then call sync_all on the registry
-            // TODO: do conccurently
-            let dbs_path = base_config.base_path.join("dbs");
-            let stream = meta_store.namespaces();
-            tokio::pin!(stream);
-            while let Some(conf) = stream.next().await {
-                let registry = registry.clone();
-                let namespace = conf.namespace().clone();
-                let path = dbs_path.join(namespace.as_str());
-                tokio::fs::create_dir_all(&path).await?;
-                tokio::task::spawn_blocking(move || {
-                    registry.open(&path.join("data"), &namespace.into())
-                })
-                .await
-                .unwrap()?;
-            }
-
-            if self.should_sync_from_storage {
-                registry.sync_all(self.sync_conccurency).await?;
-            }
-        }
-
-        let namespace_resolver = Arc::new(|path: &Path| {
-            NamespaceName::from_string(
-                path.parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-            )
-            .unwrap()
-            .into()
-        });
-
-        task_manager.spawn_with_shutdown_notify(|shutdown| {
-            let registry = registry.clone();
-            async move {
-                shutdown.notified().await;
-                registry.shutdown().await?;
-                Ok(())
-            }
-        });
-
-        let make_replication_svc = Box::new({
-            let registry = registry.clone();
-            let disable_namespaces = self.disable_namespaces;
-            move |store, user_auth, _, _, service_internal| -> BoxReplicationService {
-                Box::new(LibsqlReplicationService::new(
-                    registry.clone(),
-                    store,
-                    user_auth,
-                    disable_namespaces,
-                    service_internal,
-                ))
-            }
-        });
-        let mut configurators = NamespaceConfigurators::empty();
-
-        match client_config {
-            // configure replica
-            Some((channel, uri)) => {
-                let replica_configurator = LibsqlReplicaConfigurator::new(
-                    base_config,
-                    registry.clone(),
-                    uri,
-                    channel,
-                    namespace_resolver,
-                );
-                configurators.with_replica(replica_configurator);
-            }
-            // configure primary
-            None => {
-                let primary_configurator = LibsqlPrimaryConfigurator::new(
-                    base_config.clone(),
-                    primary_config.clone(),
-                    registry.clone(),
-                    namespace_resolver.clone(),
-                );
-
-                let schema_configurator = LibsqlSchemaConfigurator::new(
-                    base_config,
-                    primary_config,
-                    migration_scheduler_handle,
-                    registry,
-                    namespace_resolver,
-                );
-
-                configurators.with_primary(primary_configurator);
-                configurators.with_schema(schema_configurator);
-            }
-        }
-
-        Ok((configurators, make_replication_svc))
-    }
-
-    #[cfg(feature = "durable-wal")]
-    fn durable_wal_configurators(
-        &self,
-        base_config: BaseNamespaceConfig,
-        client_config: Option<(Channel, Uri)>,
-        migration_scheduler_handle: SchedulerHandle,
-        scripted_backup: Option<ScriptBackupManager>,
-    ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
-        tracing::info!("using durable wal");
-        let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
-        let namespace_resolver = |path: &Path| {
-            NamespaceName::from_string(
-                path.parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-            )
-            .unwrap()
-            .into()
-        };
-        let wal = DurableWalManager::new(
-            lock_manager,
-            namespace_resolver,
-            self.storage_server_address.clone(),
-        );
-        let make_wal_manager = Arc::new(move || EitherWAL::C(wal.clone()));
-        let configurators = self.configurators_common(
+        self.legacy_configurators(
             base_config,
             client_config,
-            make_wal_manager,
             migration_scheduler_handle,
             scripted_backup,
-        )?;
-
-        let make_replication_svc = Box::new({
-            let disable_namespaces = self.disable_namespaces;
-            move |store,
-                  client_auth,
-                  idle_shutdown,
-                  collect_stats,
-                  is_internal|
-                  -> BoxReplicationService {
-                Box::new(ReplicationLogService::new(
-                    store,
-                    idle_shutdown,
-                    client_auth,
-                    disable_namespaces,
-                    collect_stats,
-                    is_internal,
-                ))
-            }
-        });
-
-        Ok((configurators, make_replication_svc))
+        )
+        .await
     }
 
     async fn legacy_configurators(
@@ -1125,7 +820,7 @@ where
         migration_scheduler_handle: SchedulerHandle,
         scripted_backup: Option<ScriptBackupManager>,
     ) -> anyhow::Result<(NamespaceConfigurators, MakeReplicationSvc)> {
-        let make_wal_manager = Arc::new(|| EitherWAL::A(Sqlite3WalManager::default()));
+        let make_wal_manager = Arc::new(|| Sqlite3WalManager::default());
         let configurators = self.configurators_common(
             base_config,
             client_config,
@@ -1230,61 +925,6 @@ where
             Some(ref config) => Ok(Some(config.configure().await?)),
             None => Ok(None),
         }
-    }
-
-    /// perform migration from bottomless_wal to libsql_wal if necessary. This only happens if
-    /// all:
-    /// - bottomless is enabled
-    /// - this is a primary
-    /// - we are operating in libsql-wal mode
-    /// - migrate_bottomless flag is raised
-    /// - there hasn't been a previous successfull migration (wals directory is either absent,
-    /// or emtpy)
-    /// returns whether the migration was performed
-    async fn maybe_migrate_bottomless(
-        &self,
-        meta_store: MetaStore,
-        base_config: &BaseNamespaceConfig,
-        primary_config: &PrimaryConfig,
-    ) -> anyhow::Result<bool> {
-        let is_primary = self.rpc_client_config.is_none();
-        if self.migrate_bottomless && is_primary {
-            let is_previous_migration_successful = self.check_previous_migration_success()?;
-            let is_libsql_wal = matches!(self.use_custom_wal, Some(CustomWAL::LibsqlWal));
-            let is_bottomless_enabled = self.db_config.bottomless_replication.is_some();
-            let should_attempt_migration =
-                is_bottomless_enabled && !is_previous_migration_successful && is_libsql_wal;
-
-            if should_attempt_migration {
-                bottomless_migrate(meta_store, base_config.clone(), primary_config.clone()).await?;
-                return Ok(true);
-            } else {
-                // the wals directory is present and so is the _dbs. This means that a crash occured
-                // before we could remove it. clean it up now. see code in `bottomless_migrate.rs`
-                let tmp_dbs_path = base_config.base_path.join("_dbs");
-                if tmp_dbs_path.try_exists()? {
-                    tracing::info!("removed dangling `_dbs` folder");
-                    tokio::fs::remove_dir_all(&tmp_dbs_path).await?;
-                }
-
-                tracing::info!("bottomless already migrated, skipping...");
-            }
-        }
-
-        Ok(false)
-    }
-
-    fn check_previous_migration_success(&self) -> anyhow::Result<bool> {
-        todo!("not usings wal directory anymore");
-        // let wals_path = self.path.join("wals");
-        // if !wals_path.try_exists()? {
-        //     return Ok(false);
-        // }
-        //
-        // let dir = std::fs::read_dir(&wals_path)?;
-        //
-        // // wals dir exist and is not empty
-        // Ok(dir.count() != 0)
     }
 }
 

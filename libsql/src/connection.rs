@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::fmt;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::params::{IntoParams, Params};
 use crate::rows::Rows;
@@ -22,6 +23,8 @@ pub(crate) trait Conn {
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
 
     fn interrupt(&self) -> Result<()>;
+
+    fn busy_timeout(&self, timeout: Duration) -> Result<()>;
 
     fn is_autocommit(&self) -> bool;
 
@@ -190,6 +193,10 @@ impl Connection {
     /// Cancel ongoing operations and return at earliest opportunity.
     pub fn interrupt(&self) -> Result<()> {
         self.conn.interrupt()
+    }
+
+    pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
+        self.conn.busy_timeout(timeout)
     }
 
     /// Check weather libsql is in `autocommit` or not.

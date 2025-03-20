@@ -14,6 +14,8 @@ pub(crate) trait Stmt {
 
     async fn run(&mut self, params: &Params) -> Result<()>;
 
+    fn interrupt(&mut self) -> Result<()>;
+
     fn reset(&mut self);
 
     fn parameter_count(&self) -> usize;
@@ -58,6 +60,11 @@ impl Statement {
         tracing::trace!("run for prepared statement");
         self.inner.run(&params.into_params()?).await?;
         Ok(())
+    }
+
+    /// Interrupt the statement.
+    pub fn interrupt(&mut self) -> Result<()> {
+        self.inner.interrupt()
     }
 
     /// Execute a query that returns the first [`Row`].

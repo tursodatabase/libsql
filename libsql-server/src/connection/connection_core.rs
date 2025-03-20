@@ -1,4 +1,3 @@
-use std::ffi::{c_int, c_void};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -87,18 +86,6 @@ impl<W: Wal + Send + 'static> CoreConnection<W> {
             rusqlite::limits::Limit::SQLITE_LIMIT_LENGTH,
             config.max_row_size as i32,
         );
-
-        unsafe {
-            const MAX_RETRIES: c_int = 8;
-            extern "C" fn do_nothing(_: *mut c_void, n: c_int) -> c_int {
-                (n < MAX_RETRIES) as _
-            }
-            libsql_sys::ffi::sqlite3_busy_handler(
-                conn.handle(),
-                Some(do_nothing),
-                std::ptr::null_mut(),
-            );
-        }
 
         let canceled = Arc::new(AtomicBool::new(false));
 
@@ -397,10 +384,6 @@ impl<W: Wal + Send + 'static> CoreConnection<W> {
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
-    #[cfg(not(feature = "durable-wal"))]
-    use libsql_sys::wal::either::Either as EitherWAL;
-    #[cfg(feature = "durable-wal")]
-    use libsql_sys::wal::either::Either3 as EitherWAL;
     use libsql_sys::wal::wrapper::PassthroughWalWrapper;
     use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
     use rand::Rng;
@@ -470,7 +453,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();
@@ -516,7 +499,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();
@@ -567,7 +550,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();
@@ -650,7 +633,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();
@@ -743,7 +726,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();

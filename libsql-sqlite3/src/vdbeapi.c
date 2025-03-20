@@ -889,6 +889,18 @@ end_of_step:
 }
 
 /*
+** Interrupt the statement.
+*/
+void libsql_stmt_interrupt(sqlite3_stmt *pStmt){
+  Vdbe *v = (Vdbe*)pStmt;  /* the prepared statement */
+  if( vdbeSafetyNotNull(v) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return;
+  }
+  v->isInterrupted = 1;
+}
+
+/*
 ** This is the top-level implementation of sqlite3_step().  Call
 ** sqlite3Step() to do most of the work.  If a schema error occurs,
 ** call sqlite3Reprepare() and try again.
@@ -903,6 +915,12 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     return SQLITE_MISUSE_BKPT;
   }
   db = v->db;
+  if( v->isInterrupted ){
+    rc = SQLITE_INTERRUPT;
+    v->rc = rc;
+    db->errCode = rc;
+    return rc;
+  }
   sqlite3_mutex_enter(db->mutex);
   while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
          && cnt++ < SQLITE_MAX_SCHEMA_RETRY ){

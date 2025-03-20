@@ -5390,6 +5390,8 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
 int sqlite3_reset(sqlite3_stmt *pStmt);
 
 
+void libsql_stmt_interrupt(sqlite3_stmt *stmt);
+
 /*
 ** CAPI3REF: Create Or Redefine SQL Functions
 ** KEYWORDS: {function creation routines}
@@ -10600,7 +10602,7 @@ int libsql_wal_insert_end(sqlite3*);
 ** CAPI3REF: Insert a frame into the WAL
 ** METHOD: sqlite3
 */
-int libsql_wal_insert_frame(sqlite3*, unsigned int, void *, unsigned int);
+int libsql_wal_insert_frame(sqlite3*, unsigned int, void *, unsigned int, int *);
 
 /*
 ** CAPI3REF: Low-level system error code

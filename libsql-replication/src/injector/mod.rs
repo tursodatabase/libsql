@@ -1,8 +1,6 @@
 use std::future::Future;
 
 use super::rpc::replication::Frame as RpcFrame;
-#[cfg(feature = "libsql_wal")]
-pub use libsql_injector::LibsqlInjector;
 pub use sqlite_injector::SqliteInjector;
 
 use crate::frame::FrameNo;
@@ -11,8 +9,6 @@ pub use error::Error;
 use error::Result;
 
 mod error;
-#[cfg(feature = "libsql_wal")]
-mod libsql_injector;
 mod sqlite_injector;
 
 pub trait Injector {

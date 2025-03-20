@@ -1,6 +1,6 @@
 [package]
 name = "libsql-server"
-version = "0.24.31"
+version = "0.24.32"
 edition = "2021"
 default-run = "sqld"
 repository = "https://github.com/tursodatabase/libsql"
@@ -37,9 +37,7 @@ hyper-tungstenite = "0.11"
 itertools = "0.10.5"
 jsonwebtoken = "9"
 libsql = { path = "../libsql/", optional = true }
-libsql_replication = { path = "../libsql-replication", features = ["libsql_wal"] }
-libsql-wal = { path = "../libsql-wal/" }
-libsql-storage = { path = "../libsql-storage", optional = true }
+libsql_replication = { path = "../libsql-replication" }
 metrics = "0.21.1"
 metrics-util = "0.15"
 metrics-exporter-prometheus = "0.12.2"
@@ -92,7 +90,7 @@ async-recursion = "1"
 mimalloc = "0.1.42"
 rheaper = { git = "https://github.com/MarinPostma/rheaper.git", tag = "v0.2.0", default-features = false, features = ["allocator"] }
 tar = "0.4.41"
-aws-config = "1"
+aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-s3 = "1"
 aws-smithy-runtime = "1.6.2"
 dialoguer = { version = "0.11.0", features = ["history"] }
@@ -127,4 +125,3 @@ wasm-udfs = ["rusqlite/libsql-wasm-experimental"]
 unix-excl-vfs = ["libsql-sys/unix-excl-vfs"]
 encryption = ["dep:aes", "dep:cbc", "libsql-sys/encryption", "libsql_replication/encryption", "bottomless/encryption"]
 test-encryption = ["libsql/encryption"]
-durable-wal = ["libsql-storage"]
