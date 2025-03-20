@@ -7854,7 +7854,7 @@ int sqlite3PagerWalInsert(Pager *pPager, unsigned int iFrame, void *pBuf, unsign
       return rc;
     }
     int conflict = 0;
-    if (memcmp(pBuf+24, current, frame_len) != 0) {
+    if (memcmp((unsigned char*)pBuf+24, current, frame_len) != 0) {
       conflict = 1;
     }
     if (pConflict) {
