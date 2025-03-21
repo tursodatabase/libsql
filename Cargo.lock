@@ -3362,7 +3362,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-rusqlite"
-version = "0.33.0"
+version = "0.9.0"
 dependencies = [
  "bencher",
  "bitflags 2.9.0",
