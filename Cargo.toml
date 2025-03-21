@@ -25,18 +25,18 @@ exclude = [
 ]
 
 [workspace.package]
-version = "0.9.0"
+version = "0.9.1-pre.1"
 authors = ["the libSQL authors"]
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/tursodatabase/libsql"
 
 [workspace.dependencies]
-libsql-ffi = { path = "libsql-ffi", version = "0.9.0" }
-libsql-sys = { path = "libsql-sys", version = "0.9.0", default-features = false }
-libsql-hrana = { path = "libsql-hrana", version = "0.9.0" }
-libsql_replication = { path = "libsql-replication", version = "0.9.0" }
-rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.9.0", default-features = false, features = [
+libsql-ffi = { path = "libsql-ffi", version = "0.9.1-pre.1" }
+libsql-sys = { path = "libsql-sys", version = "0.9.1-pre.1", default-features = false }
+libsql-hrana = { path = "libsql-hrana", version = "0.9.1-pre.1" }
+libsql_replication = { path = "libsql-replication", version = "0.9.1-pre.1" }
+rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.9.1-pre.1", default-features = false, features = [
     "libsql-experimental",
     "column_decltype",
     "load_extension",
