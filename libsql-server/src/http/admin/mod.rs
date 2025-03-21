@@ -102,7 +102,7 @@ where
                 crate::metrics::TOKIO_RUNTIME_BLOCKING_QUEUE_DEPTH
                     .set(metrics.blocking_queue_depth() as f64);
                 crate::metrics::TOKIO_RUNTIME_INJECTION_QUEUE_DEPTH
-                    .set(metrics.injection_queue_depth() as f64);
+                    .set(metrics.global_queue_depth() as f64);
                 crate::metrics::TOKIO_RUNTIME_NUM_BLOCKING_THREADS
                     .set(metrics.num_blocking_threads() as f64);
                 crate::metrics::TOKIO_RUNTIME_NUM_IDLE_BLOCKING_THREADS
