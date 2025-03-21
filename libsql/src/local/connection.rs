@@ -3,6 +3,7 @@
 use crate::local::rows::BatchedRows;
 use crate::params::Params;
 use crate::{connection::BatchRows, errors};
+use crate::value::Value;
 use std::time::Duration;
 
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
@@ -567,6 +568,18 @@ impl Connection {
     pub(crate) fn wal_insert_handle(&self) -> Result<WalInsertHandle<'_>> {
         self.wal_insert_begin()?;
         Ok(WalInsertHandle { conn: self, in_session: RefCell::new(true) })
+    }
+
+    pub(crate) fn check_integrity(&self) -> Result<bool> {
+        let stmt = self.prepare("PRAGMA integrity_check")?;
+        let rows = stmt.query(&Params::None)?;
+        let mut result = true;
+        if let Some(row) = rows.next()? {
+            if row.get_value(0)? != Value::Text("ok".to_string()) {
+                result = false;
+            }
+        }
+        Ok(result)
     }
 }
 
