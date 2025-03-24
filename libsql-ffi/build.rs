@@ -370,6 +370,11 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         cfg.flag("-DSQLITE_ENABLE_SESSION");
     }
 
+    if let Ok(parser_stack_limit) = env::var("YYSTACKDEPTH") {
+        cfg.flag(&format!("-DYYSTACKDEPTH={parser_stack_limit}"));
+    }
+    println!("cargo:rerun-if-env-changed=YYSTACKDEPTH");
+
     if let Ok(limit) = env::var("SQLITE_MAX_VARIABLE_NUMBER") {
         cfg.flag(&format!("-DSQLITE_MAX_VARIABLE_NUMBER={limit}"));
     }
