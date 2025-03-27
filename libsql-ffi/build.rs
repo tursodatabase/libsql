@@ -76,22 +76,20 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
 /// propagate into OUT_DIR. If not present, when trying to rewrite a file, a `Permission denied`
 /// error will occur.
 fn copy_with_cp(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> {
-    let status = Command::new("cp")
+    match Command::new("cp")
         .arg("--no-preserve=mode,ownership")
         .arg("-R")
         .arg(from.as_ref().to_str().unwrap())
         .arg(to.as_ref().to_str().unwrap())
-        .status()?;
-
-    if status.success() {
-        return Ok(());
+        .status()
+    {
+        Ok(status) if status.success() => Ok(()),
+        _ => match fs::copy(from.as_ref(), to.as_ref()) {
+            Err(err) if err.kind() == io::ErrorKind::InvalidInput => copy_dir_all(from, to),
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        },
     }
-
-    return match fs::copy(from.as_ref(), to.as_ref()) {
-        Err(err) if err.kind() == io::ErrorKind::InvalidInput => copy_dir_all(from, to),
-        Ok(_) => Ok(()),
-        Err(err) => Err(err),
-    };
 }
 
 fn make_amalgamation() {
