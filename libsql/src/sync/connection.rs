@@ -49,8 +49,6 @@ impl SyncedConnection {
                 state
             };
 
-            dbg!((&state, sql, &predicted_end_state));
-
             let should_execute_local = match (*state, predicted_end_state) {
                 (State::Init, State::Init) => stmts.iter().all(parser::Statement::is_read_only),
 
