@@ -67,7 +67,7 @@ libsql-hrana = { path = "../libsql-hrana" }
 sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 tempfile = "3.7.0"
 thiserror = "1.0.38"
-tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
+tokio = { version = "=1.38", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
 tokio-stream = { version = "0.1.11", features = ["sync"] }
 tokio-tungstenite = "0.20"
 tokio-util = { version = "0.7.8", features = ["io", "io-util"] }
