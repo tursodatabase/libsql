@@ -656,6 +656,7 @@ async fn try_pull(
         match sync_ctx.pull_one_frame(generation, frame_no).await {
             Ok(PullResult::Frame(frame)) => {
                 insert_handle.insert(&frame)?;
+                assert!(conn.check_integrity()?);
                 sync_ctx.durable_frame_num = frame_no;
             }
             Ok(PullResult::EndOfGeneration { max_generation }) => {
@@ -666,8 +667,10 @@ async fn try_pull(
                 insert_handle.end()?;
                 sync_ctx.write_metadata().await?;
 
+                assert!(conn.check_integrity()?);
                 // TODO: Make this crash-proof.
                 conn.wal_checkpoint(true)?;
+                assert!(conn.check_integrity()?);
 
                 sync_ctx.next_generation();
                 sync_ctx.write_metadata().await?;
