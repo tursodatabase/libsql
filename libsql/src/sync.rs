@@ -44,6 +44,8 @@ pub enum SyncError {
     JsonEncode(serde_json::Error),
     #[error("failed to push frame: status={0}, error={1}")]
     PushFrame(StatusCode, String),
+    #[error("no baton from WAL push operation")]
+    NoBatonFromPush,
     #[error("failed to verify metadata file version: expected={0}, got={1}")]
     VerifyVersion(u32, u32),
     #[error("failed to verify metadata file hash: expected={0}, got={1}")]
@@ -79,7 +81,7 @@ pub struct PushResult {
 }
 
 pub enum PushStatus {
-    Ok,
+    Ok { baton: String },
     Conflict,
 }
 
@@ -174,12 +176,13 @@ impl SyncContext {
     #[tracing::instrument(skip(self, frames))]
     pub(crate) async fn push_frames(
         &mut self,
+        baton: Option<String>,
         frames: Bytes,
         generation: u32,
         frame_no: u32,
         frames_count: u32,
-    ) -> Result<u32> {
-        let uri = format!(
+    ) -> Result<(Option<String>, u32)> {
+        let mut uri = format!(
             "{}/sync/{}/{}/{}",
             self.sync_url,
             generation,
@@ -187,15 +190,19 @@ impl SyncContext {
             frame_no + frames_count
         );
         tracing::debug!("pushing frame(frame_no={}, count={}, generation={})", frame_no, frames_count, generation);
+        if let Some(baton) = baton {
+            uri += &format!("/{}", baton);
+        }
+
 
         let result = self.push_with_retry(uri, frames, self.max_retries).await?;
-
-        match result.status {
+                
+        let baton = match result.status {
             PushStatus::Conflict => {
                 return Err(SyncError::InvalidPushFrameConflict(frame_no, result.max_frame_no).into());
             }
-            _ => {}
-        }
+            PushStatus::Ok { baton } => baton,
+        };
         let generation = result.generation;
         let durable_frame_num = result.max_frame_no;
 
@@ -230,7 +237,7 @@ impl SyncContext {
         self.durable_generation = generation;
         self.durable_frame_num = durable_frame_num;
 
-        Ok(durable_frame_num)
+        Ok((Some(baton), durable_frame_num))
     }
 
     async fn push_with_retry(&self, mut uri: String, body: Bytes, max_retries: usize) -> Result<PushResult> {
@@ -263,6 +270,11 @@ impl SyncContext {
                 let resp = serde_json::from_slice::<serde_json::Value>(&res_body[..])
                     .map_err(SyncError::JsonDecode)?;
 
+                let baton: Option<String> = resp
+                    .get("baton")
+                    .map(|v| v.as_str().map(String::from))
+                    .flatten();
+
                 let status = resp
                     .get("status")
                     .ok_or_else(|| SyncError::JsonValue(resp.clone()))?;
@@ -288,7 +300,13 @@ impl SyncContext {
                     .ok_or_else(|| SyncError::JsonValue(max_frame_no.clone()))?;
 
                 let status = match status {
-                    "ok" => PushStatus::Ok,
+                    "ok" => {
+                        if let Some(baton) = baton {
+                            PushStatus::Ok { baton }
+                        } else {
+                            return Err(SyncError::NoBatonFromPush.into());
+                        }
+                    },
                     "conflict" => PushStatus::Conflict,
                     _ => return Err(SyncError::JsonValue(resp.clone()).into()),
                 };
@@ -729,6 +747,7 @@ async fn try_push(
         });
     }
 
+    let mut baton: Option<String> = None;
     let generation = sync_ctx.durable_generation();
     let start_frame_no = sync_ctx.durable_frame_num() + 1;
     let end_frame_no = max_frame_no;
@@ -748,9 +767,11 @@ async fn try_push(
         // The server returns its maximum frame number. To avoid resending
         // frames the server already knows about, we need to update the
         // frame number to the one returned by the server.
-        let max_frame_no = sync_ctx
-            .push_frames(frames.freeze(), generation, frame_no, batch_size)
+        let (new_baton, max_frame_no) = sync_ctx
+            .push_frames(baton.clone(), frames.freeze(), generation, frame_no, batch_size)
             .await?;
+
+        baton = new_baton;
 
         if max_frame_no > frame_no {
             frame_no = max_frame_no + 1;
