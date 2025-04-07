@@ -129,7 +129,7 @@ async fn test_sync_context_corrupted_metadata() {
 
     // Verify that the context was reset to default values
     assert_eq!(sync_ctx.durable_frame_num(), 0);
-    assert_eq!(sync_ctx.durable_generation(), 1);
+    assert_eq!(sync_ctx.durable_generation(), 0);
 }
 
 #[tokio::test]
