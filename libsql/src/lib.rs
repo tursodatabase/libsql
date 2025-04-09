@@ -153,6 +153,7 @@ pub use errors::Error;
 
 pub use params::params_from_iter;
 
+mod auth;
 mod connection;
 mod database;
 mod load_extension_guard;
@@ -176,7 +177,8 @@ cfg_hrana! {
 }
 
 pub use self::{
-    connection::{BatchRows, Connection},
+    auth::{AuthAction, AuthContext, Authorization},
+    connection::{AuthHook, BatchRows, Connection},
     database::{Builder, Database},
     load_extension_guard::LoadExtensionGuard,
     rows::{Column, Row, Rows},

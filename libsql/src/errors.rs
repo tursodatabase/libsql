@@ -21,6 +21,8 @@ pub enum Error {
     SyncNotSupported(String), // Not in rusqlite
     #[error("Loading extension is only supported in local databases.")]
     LoadExtensionNotSupported, // Not in rusqlite
+    #[error("Authorizer is only supported in local databases.")]
+    AuthorizerNotSupported, // Not in rusqlite
     #[error("Column not found: {0}")]
     ColumnNotFound(i32), // Not in rusqlite
     #[error("Hrana: `{0}`")]

@@ -4,11 +4,12 @@ use futures::{StreamExt, TryStreamExt};
 use libsql::{
     named_params, params,
     params::{IntoParams, IntoValue},
-    Connection, Database, Value,
+    AuthAction, Authorization, Connection, Database, Result, Value,
 };
 use rand::distributions::Uniform;
 use rand::prelude::*;
 use std::collections::HashSet;
+use std::sync::Arc;
 
 async fn setup() -> Connection {
     let db = Database::open(":memory:").unwrap();
@@ -781,5 +782,75 @@ async fn vector_fuzz_test() {
             }
         }
         let _ = conn.execute("REINDEX users;", ()).await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn test_deny_authorizer() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER, name TEXT)", ())
+        .await
+        .unwrap();
+    conn.authorizer(Some(Arc::new(|ctx| {
+        assert_eq!(
+            ctx.action,
+            AuthAction::Insert {
+                table_name: "users"
+            }
+        );
+        assert_eq!(ctx.database_name, Some("main"));
+        assert_eq!(ctx.accessor, None);
+        Authorization::Deny
+    })))
+    .unwrap();
+    let res = conn
+        .execute("INSERT INTO users (id, name) VALUES (1, 'Alice')", ())
+        .await;
+    assert_sqlite_error(res, libsql::ffi::SQLITE_AUTH);
+    conn.authorizer(None).unwrap();
+    conn.execute("INSERT INTO users (id, name) VALUES (1, 'Alice')", ())
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn test_ignore_authorizer() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER, name TEXT)", ())
+        .await
+        .unwrap();
+    conn.authorizer(Some(Arc::new(|ctx| {
+        assert_eq!(
+            ctx.action,
+            AuthAction::Insert {
+                table_name: "users"
+            }
+        );
+        assert_eq!(ctx.database_name, Some("main"));
+        assert_eq!(ctx.accessor, None);
+        Authorization::Ignore
+    })))
+    .unwrap();
+    conn.execute("INSERT INTO users (id, name) VALUES (1, 'Alice')", ())
+        .await
+        .unwrap();
+    conn.authorizer(None).unwrap();
+    let rows = conn.query("SELECT * FROM users", ()).await.unwrap();
+    // There should be no rows
+    assert_eq!(rows.into_stream().count().await, 0);
+}
+
+fn assert_sqlite_error<T>(res: Result<T>, code: i32) {
+    match res {
+        Ok(_) => panic!("Expected error, got Ok"),
+        Err(e) => {
+            if let libsql::Error::SqliteFailure(c, _) = e {
+                assert!(c == code, "Expected error code {}, got {}", code, c);
+            } else {
+                panic!("Expected SqliteFailure, got {:?}", e);
+            }
+        }
     }
 }
