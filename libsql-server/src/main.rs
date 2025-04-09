@@ -9,7 +9,6 @@ use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
 use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_keys, user_auth_strategies, Auth};
-use libsql_server::wal_toolkit::{S3Args, WalToolkitCommand};
 use tokio::sync::Notify;
 use tokio::time::Duration;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -22,7 +21,6 @@ use libsql_server::config::{
 };
 use libsql_server::net::AddrIncoming;
 use libsql_server::version::Version;
-use libsql_server::CustomWAL;
 use libsql_server::Server;
 use libsql_sys::{Cipher, EncryptionConfig};
 
@@ -264,9 +262,6 @@ struct Cli {
     #[clap(long, env = "SQLD_SHUTDOWN_TIMEOUT")]
     shutdown_timeout: Option<u64>,
 
-    #[clap(value_enum, long)]
-    use_custom_wal: Option<CustomWAL>,
-
     #[clap(
         long,
         env = "LIBSQL_STORAGE_SERVER_ADDR",
@@ -328,14 +323,6 @@ enum UtilsSubcommands {
         namespace: Option<String>,
         #[clap(long)]
         auth: Option<String>,
-    },
-    WalToolkit {
-        #[arg(long, short, default_value = ".compactor")]
-        path: PathBuf,
-        #[clap(flatten)]
-        s3_args: S3Args,
-        #[clap(subcommand)]
-        command: WalToolkitCommand,
     },
 }
 
@@ -729,7 +716,6 @@ async fn build_server(
             .shutdown_timeout
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(30)),
-        use_custom_wal: config.use_custom_wal,
         storage_server_address: config.storage_server_address.clone(),
         connector: Some(https),
         migrate_bottomless: config.migrate_bottomless,
@@ -787,13 +773,6 @@ async fn main() -> Result<()> {
                 if let Some(ns) = namespace {
                     client.run_namespace(ns).await?;
                 }
-            }
-            UtilsSubcommands::WalToolkit {
-                command,
-                path,
-                s3_args,
-            } => {
-                command.exec(path, s3_args).await?;
             }
         }
 

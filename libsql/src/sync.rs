@@ -52,12 +52,18 @@ pub enum SyncError {
     InvalidPushFrameNoLow(u32, u32),
     #[error("server returned a higher frame_no: sent={0}, got={1}")]
     InvalidPushFrameNoHigh(u32, u32),
+    #[error("server returned a conflict: sent={0}, got={1}")]
+    InvalidPushFrameConflict(u32, u32),
     #[error("failed to pull frame: status={0}, error={1}")]
     PullFrame(StatusCode, String),
     #[error("failed to get location header for redirect: {0}")]
     RedirectHeader(http::header::ToStrError),
     #[error("redirect response with no location header")]
     NoRedirectLocationHeader,
+    #[error("failed to pull db export: status={0}, error={1}")]
+    PullDb(StatusCode, String),
+    #[error("server returned a lower generation than local: local={0}, remote={1}")]
+    InvalidLocalGeneration(u32, u32),
 }
 
 impl SyncError {
@@ -66,11 +72,27 @@ impl SyncError {
     }
 }
 
+pub struct PushResult {
+    status: PushStatus,
+    generation: u32,
+    max_frame_no: u32,
+}
+
+pub enum PushStatus {
+    Ok,
+    Conflict,
+}
+
 pub enum PullResult {
     /// A frame was successfully pulled.
     Frame(Bytes),
     /// We've reached the end of the generation.
     EndOfGeneration { max_generation: u32 },
+}
+
+#[derive(serde::Deserialize)]
+struct InfoResult {
+    current_generation: u32,
 }
 
 pub struct SyncContext {
@@ -84,6 +106,9 @@ pub struct SyncContext {
     durable_generation: u32,
     /// Represents the max_frame_no from the server.
     durable_frame_num: u32,
+    /// whenever sync is called very first time, we will call the remote server
+    /// to get the generation information and sync the db file if needed
+    initial_server_sync: bool,
 }
 
 impl SyncContext {
@@ -110,8 +135,9 @@ impl SyncContext {
             max_retries: DEFAULT_MAX_RETRIES,
             push_batch_size: DEFAULT_PUSH_BATCH_SIZE,
             client,
-            durable_generation: 1,
+            durable_generation: 0,
             durable_frame_num: 0,
+            initial_server_sync: false,
         };
 
         if let Err(e) = me.read_metadata().await {
@@ -160,9 +186,18 @@ impl SyncContext {
             frame_no,
             frame_no + frames_count
         );
-        tracing::debug!("pushing frame");
+        tracing::debug!("pushing frame(frame_no={}, count={}, generation={})", frame_no, frames_count, generation);
 
-        let (generation, durable_frame_num) = self.push_with_retry(uri, frames, self.max_retries).await?;
+        let result = self.push_with_retry(uri, frames, self.max_retries).await?;
+
+        match result.status {
+            PushStatus::Conflict => {
+                return Err(SyncError::InvalidPushFrameConflict(frame_no, result.max_frame_no).into());
+            }
+            _ => {}
+        }
+        let generation = result.generation;
+        let durable_frame_num = result.max_frame_no;
 
         if durable_frame_num > frame_no + frames_count - 1 {
             tracing::error!(
@@ -198,7 +233,7 @@ impl SyncContext {
         Ok(durable_frame_num)
     }
 
-    async fn push_with_retry(&self, mut uri: String, body: Bytes, max_retries: usize) -> Result<(u32, u32)> {
+    async fn push_with_retry(&self, mut uri: String, body: Bytes, max_retries: usize) -> Result<PushResult> {
         let mut nr_retries = 0;
         loop {
             let mut req = http::Request::post(uri.clone());
@@ -228,6 +263,14 @@ impl SyncContext {
                 let resp = serde_json::from_slice::<serde_json::Value>(&res_body[..])
                     .map_err(SyncError::JsonDecode)?;
 
+                let status = resp
+                    .get("status")
+                    .ok_or_else(|| SyncError::JsonValue(resp.clone()))?;
+
+                let status = status
+                    .as_str()
+                    .ok_or_else(|| SyncError::JsonValue(status.clone()))?;
+
                 let generation = resp
                     .get("generation")
                     .ok_or_else(|| SyncError::JsonValue(resp.clone()))?;
@@ -244,7 +287,14 @@ impl SyncContext {
                     .as_u64()
                     .ok_or_else(|| SyncError::JsonValue(max_frame_no.clone()))?;
 
-                return Ok((generation as u32, max_frame_no as u32));
+                let status = match status {
+                    "ok" => PushStatus::Ok,
+                    "conflict" => PushStatus::Conflict,
+                    _ => return Err(SyncError::JsonValue(resp.clone()).into()),
+                };
+                let generation = generation as u32; 
+                let max_frame_no = max_frame_no as u32;
+                return Ok(PushResult { status, generation, max_frame_no });
             }
 
             if res.status().is_redirection() {
@@ -421,6 +471,105 @@ impl SyncContext {
 
         Ok(())
     }
+
+    /// get_remote_info calls the remote server to get the current generation information.
+    async fn get_remote_info(&self) -> Result<InfoResult> {
+        let uri = format!("{}/info", self.sync_url);
+        let mut req = http::Request::builder().method("GET").uri(&uri);
+
+        if let Some(auth_token) = &self.auth_token {
+            req = req.header("Authorization", auth_token);
+        }
+
+        let req = req.body(Body::empty()).expect("valid request");
+
+        let res = self
+            .client
+            .request(req)
+            .await
+            .map_err(SyncError::HttpDispatch)?;
+
+        if !res.status().is_success() {
+            let status = res.status();
+            let body = hyper::body::to_bytes(res.into_body())
+                .await
+                .map_err(SyncError::HttpBody)?;
+            return Err(
+                SyncError::PullDb(status, String::from_utf8_lossy(&body).to_string()).into(),
+            );
+        }
+
+        let body = hyper::body::to_bytes(res.into_body())
+            .await
+            .map_err(SyncError::HttpBody)?;
+
+        let info = serde_json::from_slice(&body).map_err(SyncError::JsonDecode)?;
+
+        Ok(info)
+    }
+
+    async fn sync_db_if_needed(&mut self, generation: u32) -> Result<()> {
+        // we will get the export file only if the remote generation is different from the one we have
+        if generation == self.durable_generation {
+            return Ok(());
+        }
+        // somehow we are ahead of the remote in generations. following should not happen because
+        // we checkpoint only if the remote server tells us to do so.
+        if self.durable_generation > generation {
+            tracing::error!(
+                "server returned a lower generation than what we have: sent={}, got={}",
+                self.durable_generation,
+                generation
+            );
+            return Err(
+                SyncError::InvalidLocalGeneration(self.durable_generation, generation).into(),
+            );
+        }
+        tracing::debug!(
+            "syncing db file from remote server, generation={}",
+            generation
+        );
+        self.sync_db(generation).await
+    }
+
+    /// sync_db will download the db file from the remote server and replace the local file.
+    async fn sync_db(&mut self, generation: u32) -> Result<()> {
+        let uri = format!("{}/export/{}", self.sync_url, generation);
+        let mut req = http::Request::builder().method("GET").uri(&uri);
+
+        if let Some(auth_token) = &self.auth_token {
+            req = req.header("Authorization", auth_token);
+        }
+
+        let req = req.body(Body::empty()).expect("valid request");
+
+        let res = self
+            .client
+            .request(req)
+            .await
+            .map_err(SyncError::HttpDispatch)?;
+
+        if !res.status().is_success() {
+            let status = res.status();
+            let body = hyper::body::to_bytes(res.into_body())
+                .await
+                .map_err(SyncError::HttpBody)?;
+            return Err(
+                SyncError::PullFrame(status, String::from_utf8_lossy(&body).to_string()).into(),
+            );
+        }
+
+        // todo: do streaming write to the disk
+        let bytes = hyper::body::to_bytes(res.into_body())
+            .await
+            .map_err(SyncError::HttpBody)?;
+
+        atomic_write(&self.db_path, &bytes).await?;
+        self.durable_generation = generation;
+        self.durable_frame_num = 0;
+        self.write_metadata().await?;
+        Ok(())
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -518,6 +667,22 @@ pub async fn sync_offline(
             Err(e) => Err(e),
         }
     } else {
+        // todo: we are checking with the remote server only during initialisation. ideally,
+        // we should check everytime we try to sync with the remote server. However, we need to close
+        // all the ongoing connections since we replace `.db` file and remove the `.db-wal` file
+        if !sync_ctx.initial_server_sync {
+            // sync is being called first time. so we will call remote, get the generation information
+            // if we are lagging behind, then we will call the export API and get to the latest
+            // generation directly.
+            let info = sync_ctx.get_remote_info().await?;
+            sync_ctx
+                .sync_db_if_needed(info.current_generation)
+                .await?;
+            // when sync_ctx is initialised, we set durable_generation to 0. however, once
+            // sync_db is called, it should be > 0.
+            assert!(sync_ctx.durable_generation > 0, "generation should be > 0");
+            sync_ctx.initial_server_sync = true;
+        }
         try_pull(sync_ctx, conn).await
     }
     .or_else(|err| {

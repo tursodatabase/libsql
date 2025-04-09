@@ -539,20 +539,28 @@ impl Connection {
     }
 
     fn wal_insert_frame(&self, frame: &[u8]) -> Result<()> {
+        let mut conflict = 0i32;
         let rc = unsafe {
             libsql_sys::ffi::libsql_wal_insert_frame(
                 self.handle(),
                 frame.len() as u32,
                 frame.as_ptr() as *mut std::ffi::c_void,
                 0,
+                &mut conflict,
             )
         };
+
         if rc != 0 {
-            return Err(crate::errors::Error::SqliteFailure(
+            return Err(errors::Error::SqliteFailure(
                 rc as std::ffi::c_int,
-                format!("wal_insert_frame failed"),
+                "wal_insert_frame failed".to_string(),
             ));
         }
+
+        if conflict != 0 {
+            return Err(errors::Error::WalConflict);
+        }
+
         Ok(())
     }
 

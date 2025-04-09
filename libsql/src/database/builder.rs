@@ -363,6 +363,7 @@ cfg_replication! {
                 use super::SyncProtocol;
                 match sync_protocol {
                     p @ (SyncProtocol::Auto | SyncProtocol::V2) => {
+                        tracing::trace!("Probing for sync protocol version for {}", url);
                         let client = hyper::client::Client::builder()
                             .build::<_, hyper::Body>(connector.clone());
 
@@ -381,6 +382,12 @@ cfg_replication! {
                             .await
                             .map_err(|err| crate::Error::Sync(err.into()))?;
 
+                        tracing::trace!("Probe for sync protocol version for {} returned status {}", url, res.status());
+
+                        if res.status() == http::StatusCode::UNAUTHORIZED {
+                            return Err(crate::Error::Sync("Unauthorized".into()));
+                        }
+
                         if matches!(p, SyncProtocol::V2) {
                             if !res.status().is_success() {
                                 let status = res.status();
@@ -393,15 +400,18 @@ cfg_replication! {
                         }
 
                         if res.status().is_success() {
+                            tracing::trace!("Using sync protocol v2 for {}", url);
                             return Builder::new_synced_database(path, url, auth_token)
                                 .remote_writes(true)
                                 .read_your_writes(read_your_writes)
                                 .build()
                                 .await;
                         }
-
+                        tracing::trace!("Using sync protocol v1 for {} based on probe results", url);
                     }
-                    SyncProtocol::V1 => {}
+                    SyncProtocol::V1 => {
+                        tracing::trace!("Using sync protocol v1 for {}", url);
+                    }
                 }
             }
 

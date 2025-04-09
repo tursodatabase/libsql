@@ -6,38 +6,19 @@ use std::time::{Duration, Instant};
 use crossbeam::deque::Steal;
 use crossbeam::sync::{Parker, Unparker};
 use hashbrown::HashMap;
-#[cfg(feature = "durable-wal")]
-use libsql_storage::{DurableWal, DurableWalManager};
-#[cfg(not(feature = "durable-wal"))]
-use libsql_sys::wal::either::Either;
-#[cfg(feature = "durable-wal")]
-use libsql_sys::wal::either::Either3;
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Sqlite3WalManager, Wal};
-use libsql_wal::io::StdIO;
-use libsql_wal::wal::{LibsqlWal, LibsqlWalManager};
 use metrics::atomics::AtomicU64;
 use parking_lot::{Mutex, MutexGuard};
 use rusqlite::ErrorCode;
-
-use crate::SqldStorage;
 
 use super::connection_core::CoreConnection;
 use super::TXN_TIMEOUT;
 
 pub type ConnId = u64;
-#[cfg(feature = "durable-wal")]
+pub type InnerWalManager = Sqlite3WalManager;
 
-pub type InnerWalManager =
-    Either3<Sqlite3WalManager, LibsqlWalManager<StdIO, SqldStorage>, DurableWalManager>;
-#[cfg(feature = "durable-wal")]
-pub type InnerWal = Either3<Sqlite3Wal, LibsqlWal<StdIO, SqldStorage>, DurableWal>;
-
-#[cfg(not(feature = "durable-wal"))]
-pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO, SqldStorage>>;
-
-#[cfg(not(feature = "durable-wal"))]
-pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO, SqldStorage>>;
+pub type InnerWal = Sqlite3Wal;
 pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, InnerWal>;
 
 #[derive(Copy, Clone, Debug)]

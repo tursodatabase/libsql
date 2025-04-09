@@ -818,10 +818,6 @@ async fn step_job_run_success(
 #[cfg(test)]
 mod test {
     use insta::assert_debug_snapshot;
-    #[cfg(not(feature = "durable-wal"))]
-    use libsql_sys::wal::either::Either as EitherWAL;
-    #[cfg(feature = "durable-wal")]
-    use libsql_sys::wal::either::Either3 as EitherWAL;
     use libsql_sys::wal::Sqlite3WalManager;
     use std::path::Path;
     use tempfile::tempdir;
@@ -954,7 +950,7 @@ mod test {
             checkpoint_interval: None,
         };
 
-        let make_wal_manager = Arc::new(|| EitherWAL::A(Sqlite3WalManager::default()));
+        let make_wal_manager = Arc::new(|| Sqlite3WalManager::default());
 
         configurators.with_schema(SchemaConfigurator::new(
             base_config.clone(),

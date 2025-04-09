@@ -1,24 +1,19 @@
 [workspace]
 resolver = "2"
 members = [
-  "libsql",
   "bindings/c",
   "bindings/wasm",
-  "libsql-sys",
-  "libsql-server",
   "bottomless",
   "bottomless-cli",
-  "libsql-replication",
+  "libsql",
   "libsql-ffi",
   "libsql-hrana",
-
+  "libsql-replication",
+  "libsql-server",
+  "libsql-sys",
   "vendored/rusqlite",
   "vendored/sqlite3-parser",
-
-  "xtask", "libsql-hrana",
-  "libsql-wal",
-  "libsql-storage",
-  "libsql-storage-server",
+  "xtask",
 ]
 
 exclude = [
@@ -29,12 +24,19 @@ exclude = [
     "tools/fuzz",
 ]
 
-[profile.release]
-codegen-units = 1
-panic = "unwind"
+[workspace.package]
+version = "0.9.2"
+authors = ["the libSQL authors"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/tursodatabase/libsql"
 
 [workspace.dependencies]
-rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.33", default-features = false, features = [
+libsql-ffi = { path = "libsql-ffi", version = "0.9.2" }
+libsql-sys = { path = "libsql-sys", version = "0.9.2", default-features = false }
+libsql-hrana = { path = "libsql-hrana", version = "0.9.2" }
+libsql_replication = { path = "libsql-replication", version = "0.9.2" }
+rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.9.2", default-features = false, features = [
     "libsql-experimental",
     "column_decltype",
     "load_extension",
@@ -46,6 +48,10 @@ rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = 
 hyper = { version = "0.14" }
 tower = { version = "0.4.13" }
 zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
+
+[profile.release]
+codegen-units = 1
+panic = "unwind"
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]

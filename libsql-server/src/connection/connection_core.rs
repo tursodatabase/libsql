@@ -384,10 +384,6 @@ impl<W: Wal + Send + 'static> CoreConnection<W> {
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
-    #[cfg(not(feature = "durable-wal"))]
-    use libsql_sys::wal::either::Either as EitherWAL;
-    #[cfg(feature = "durable-wal")]
-    use libsql_sys::wal::either::Either3 as EitherWAL;
     use libsql_sys::wal::wrapper::PassthroughWalWrapper;
     use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
     use rand::Rng;
@@ -457,7 +453,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();
@@ -503,7 +499,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();
@@ -554,7 +550,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();
@@ -637,7 +633,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();
@@ -730,7 +726,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap();

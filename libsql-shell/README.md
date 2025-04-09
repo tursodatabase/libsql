@@ -4,17 +4,20 @@ This project contains [libSQL](https://libsql.org)'s new shell,
 implemented in Rust on top of a few industry standard crates: `rusqlite`, `rustyline`, `clap`, `tracing`, etc.
 
 The long-term goal of this project is to:
- - Match all features of the original libSQL shell (inherited from SQLite and implemented in C),
- - Add new features on top, for instance:
-   - importing and exporting additional formats (Parquet and friends);
-   - accessing network resources.
- - Make contributions to libSQL as easy as possible.
+
+- Match all features of the original libSQL shell (inherited from SQLite and implemented in C),
+- Add new features on top, for instance:
+  - importing and exporting additional formats (Parquet and friends);
+  - accessing network resources.
+- Make contributions to libSQL as easy as possible.
 
 ## Status
+
 This project is still in early development phase, so expect missing items!
 
 ## Example
-```
+
+```console
 $ ./libsql
 libSQL version 0.2.0
 Connected to a transient in-memory database.
