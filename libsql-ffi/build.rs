@@ -486,6 +486,8 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
             "x86_64"
         } else if cc.contains("aarch64") {
             "arm64"
+        } else if cc.contains("arm") {
+            "arm"
         } else {
             panic!("Unsupported cross target {}", cc)
         };
