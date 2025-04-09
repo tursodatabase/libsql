@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use crate::auth::{AuthAction, AuthContext, Authorization};
+use crate::connection::AuthHook;
 use crate::local::rows::BatchedRows;
 use crate::params::Params;
 use crate::{connection::BatchRows, errors};
@@ -22,6 +24,8 @@ pub struct Connection {
 
     #[cfg(feature = "replication")]
     pub(crate) writer: Option<crate::replication::Writer>,
+
+    authorizer: RefCell<Option<AuthHook>>,
 }
 
 impl Drop for Connection {
@@ -64,6 +68,7 @@ impl Connection {
             drop_ref: Arc::new(()),
             #[cfg(feature = "replication")]
             writer: db.writer()?,
+            authorizer: RefCell::new(None),
         };
         #[cfg(feature = "sync")]
         if let Some(_) = db.sync_ctx {
@@ -90,11 +95,19 @@ impl Connection {
             drop_ref: Arc::new(()),
             #[cfg(feature = "replication")]
             writer: None,
+            authorizer: RefCell::new(None),
         }
     }
 
     /// Disconnect from the database.
     pub fn disconnect(&mut self) {
+        // Clean up the authorizer before closing
+        unsafe {
+            let rc = libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), None, std::ptr::null_mut());
+            if rc != ffi::SQLITE_OK {
+                tracing::error!("Failed to clear authorizer during disconnect");
+            }
+        }
         if Arc::get_mut(&mut self.drop_ref).is_some() {
             unsafe { libsql_sys::ffi::sqlite3_close_v2(self.raw) };
         }
@@ -458,6 +471,38 @@ impl Connection {
         }
     }
 
+    pub fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
+        unsafe {
+            let rc = libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), None, std::ptr::null_mut());
+            if rc != ffi::SQLITE_OK {
+                return Err(crate::errors::Error::SqliteFailure(
+                    rc as std::ffi::c_int,
+                    "Failed to clear authorizer".to_string(),
+                ));
+            }
+        }
+
+        *self.authorizer.borrow_mut() = hook.clone();
+
+        let (callback, user_data) = match hook {
+            Some(_) => {
+                let callback = authorizer_callback as unsafe extern "C" fn(_, _, _, _, _, _) -> _;
+                let user_data = self as *const Connection as *mut ::std::os::raw::c_void;
+                (Some(callback), user_data)
+            },
+            None => (None, std::ptr::null_mut()),
+        };
+
+        let rc = unsafe { libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), callback, user_data) };
+        if rc != ffi::SQLITE_OK {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                "Failed to set authorizer".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
     pub(crate) fn wal_checkpoint(&self, truncate: bool) -> Result<()> {
         let rc = unsafe { libsql_sys::ffi::sqlite3_wal_checkpoint_v2(self.handle(), std::ptr::null(), truncate as i32, std::ptr::null_mut(), std::ptr::null_mut()) };
         if rc != 0 {
@@ -567,6 +612,54 @@ impl Connection {
     pub(crate) fn wal_insert_handle(&self) -> Result<WalInsertHandle<'_>> {
         self.wal_insert_begin()?;
         Ok(WalInsertHandle { conn: self, in_session: RefCell::new(true) })
+    }
+}
+
+unsafe extern "C" fn authorizer_callback(
+    user_data: *mut ::std::os::raw::c_void,
+    code: ::std::os::raw::c_int,
+    arg1: *const ::std::os::raw::c_char,
+    arg2: *const ::std::os::raw::c_char,
+    database_name: *const ::std::os::raw::c_char,
+    accessor: *const ::std::os::raw::c_char,
+) -> ::std::os::raw::c_int {
+    let conn = user_data as *const Connection;
+    let hook = unsafe { (*conn).authorizer.borrow() };
+    let hook = match &*hook {
+        Some(hook) => hook,
+        None => return ffi::SQLITE_OK,
+    };
+    let arg1 = if arg1.is_null() {
+        None
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(arg1).to_str().ok() }
+    };
+
+    let arg2 = if arg2.is_null() {
+        None
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(arg2).to_str().ok() }
+    };
+    let database_name = if database_name.is_null() {
+        None
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(database_name).to_str().ok() }
+    };
+    let accessor = if accessor.is_null() {
+        None
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(accessor).to_str().ok() }
+    };
+    let action = AuthAction::from_raw(code, arg1, arg2);
+    let auth_context = AuthContext {
+        action,
+        database_name,
+        accessor,
+    };
+    match hook(&auth_context) {
+        Authorization::Allow => ffi::SQLITE_OK,
+        Authorization::Deny => ffi::SQLITE_DENY,
+        Authorization::Ignore => ffi::SQLITE_IGNORE,
     }
 }
 
