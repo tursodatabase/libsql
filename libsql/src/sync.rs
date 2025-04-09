@@ -684,6 +684,28 @@ async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
     Ok(())
 }
 
+/// bootstrap_db brings the .db file from remote, if required. If the .db file already exists, then
+/// it does nothing. Calling this function multiple times is safe.
+pub async fn bootstrap_db(sync_ctx: &mut SyncContext) -> Result<()> {
+    // todo: we are checking with the remote server only during initialisation. ideally,
+    // we need to do this when we notice a large gap in generations, when bootstrapping is cheaper
+    // than pulling each frame
+    if !sync_ctx.initial_server_sync {
+        // sync is being called first time. so we will call remote, get the generation information
+        // if we are lagging behind, then we will call the export API and get to the latest
+        // generation directly.
+        let info = sync_ctx.get_remote_info().await?;
+        sync_ctx
+            .sync_db_if_needed(info.current_generation)
+            .await?;
+        // when sync_ctx is initialised, we set durable_generation to 0. however, once
+        // sync_db is called, it should be > 0.
+        assert!(sync_ctx.durable_generation > 0, "generation should be > 0");
+        sync_ctx.initial_server_sync = true;
+    }
+    Ok(())
+}
+
 /// Sync WAL frames to remote.
 pub async fn sync_offline(
     sync_ctx: &mut SyncContext,
@@ -705,22 +727,6 @@ pub async fn sync_offline(
             Err(e) => Err(e),
         }
     } else {
-        // todo: we are checking with the remote server only during initialisation. ideally,
-        // we should check everytime we try to sync with the remote server. However, we need to close
-        // all the ongoing connections since we replace `.db` file and remove the `.db-wal` file
-        if !sync_ctx.initial_server_sync {
-            // sync is being called first time. so we will call remote, get the generation information
-            // if we are lagging behind, then we will call the export API and get to the latest
-            // generation directly.
-            let info = sync_ctx.get_remote_info().await?;
-            sync_ctx
-                .sync_db_if_needed(info.current_generation)
-                .await?;
-            // when sync_ctx is initialised, we set durable_generation to 0. however, once
-            // sync_db is called, it should be > 0.
-            assert!(sync_ctx.durable_generation > 0, "generation should be > 0");
-            sync_ctx.initial_server_sync = true;
-        }
         try_pull(sync_ctx, conn).await
     }
     .or_else(|err| {
