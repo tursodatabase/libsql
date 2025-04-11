@@ -682,6 +682,18 @@ impl Database {
                 };
                 use tokio::sync::Mutex;
 
+                let _ = tokio::task::block_in_place(move || {
+                    let rt = tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                        .unwrap();
+                    rt.block_on(async {
+                        // we will ignore if any errors occurred during the bootstrapping the db,
+                        // because the client could be offline when trying to connect.
+                        let _ = db.bootstrap_db().await;
+                    })
+                });
+
                 let local = db.connect()?;
 
                 if *remote_writes {
