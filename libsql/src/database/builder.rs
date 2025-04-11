@@ -402,6 +402,7 @@ cfg_replication! {
                         if res.status().is_success() {
                             tracing::trace!("Using sync protocol v2 for {}", url);
                             return Builder::new_synced_database(path, url, auth_token)
+                                .connector(connector)
                                 .remote_writes(true)
                                 .read_your_writes(read_your_writes)
                                 .build()
