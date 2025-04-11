@@ -686,6 +686,8 @@ async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
 
 /// bootstrap_db brings the .db file from remote, if required. If the .db file already exists, then
 /// it does nothing. Calling this function multiple times is safe.
+/// However, make sure there are no existing active connections to the db file as this method can
+/// replace it
 pub async fn bootstrap_db(sync_ctx: &mut SyncContext) -> Result<()> {
     // todo: we are checking with the remote server only during initialisation. ideally,
     // we need to do this when we notice a large gap in generations, when bootstrapping is cheaper
