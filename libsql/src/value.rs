@@ -631,7 +631,7 @@ mod serde_ {
 
         serde::forward_to_deserialize_any! {
             i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
-                bytes byte_buf unit_struct newtype_struct seq tuple tuple_struct
+                bytes byte_buf unit_struct newtype_struct seq tuple_struct
                 map struct identifier ignored_any
         }
 
@@ -665,6 +665,31 @@ mod serde_ {
                 _ => Err(de::Error::invalid_value(
                     de::Unexpected::Other(&format!("{:?}", self.value)),
                     &"a valid sqlite boolean representation (0 or 1)",
+                )),
+            }
+        }
+
+        fn deserialize_tuple<V>(
+            self,
+            len: usize,
+            visitor: V,
+        ) -> std::result::Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            match self.value {
+                Value::Blob(b) => {
+                    if len != b.len() {
+                        return Err(de::Error::invalid_value(
+                            de::Unexpected::Other(&format!("{:?}", Value::Blob(b))),
+                            &"expected and provided buffers don't match in length",
+                        ));
+                    }
+                    visitor.visit_seq(SeqDeserializer::new(b.into_iter()))
+                }
+                _ => Err(de::Error::invalid_value(
+                    de::Unexpected::Other(&format!("{:?}", self.value)),
+                    &"a blob of a certain length",
                 )),
             }
         }
@@ -815,7 +840,16 @@ mod serde_ {
             assert!(de::<f64>(Value::Blob(b"abc".to_vec())).is_err());
             assert!(de::<MyEnum>(Value::Text("C".to_string())).is_err());
 
-            assert_eq!(de::<[u8; 2]>(Value::Blob(b"aa".to_vec())), Ok([97, 97]));
+            assert_eq!(
+                de::<[u8; 0]>(Value::Blob(b"".to_vec())).unwrap(),
+                [] as [u8; 0]
+            );
+            assert_eq!(
+                de::<[u8; 2]>(Value::Blob(b"aa".to_vec())).unwrap(),
+                [97, 97]
+            );
+            assert!(de::<[u8; 2]>(Value::Blob(b"aaa".to_vec())).is_err());
+            assert!(de::<[u8; 3]>(Value::Blob(b"aa".to_vec())).is_err());
         }
     }
 }
