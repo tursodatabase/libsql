@@ -814,7 +814,7 @@ async fn try_push(
     })
 }
 
-async fn try_pull(
+pub async fn try_pull(
     sync_ctx: &mut SyncContext,
     conn: &Connection,
 ) -> Result<crate::database::Replicated> {

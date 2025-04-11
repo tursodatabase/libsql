@@ -22,21 +22,21 @@ impl Stmt for SyncedStatement {
     async fn execute(&mut self, params: &Params) -> Result<usize> {
         let result = self.inner.execute(params).await;
         let mut context = self.context.lock().await;
-        let _ = crate::sync::sync_offline(&mut context, &self.conn).await;
+        crate::sync::try_pull(&mut context, &self.conn).await?;
         result
     }
 
     async fn query(&mut self, params: &Params) -> Result<Rows> {
         let result = self.inner.query(params).await;
         let mut context = self.context.lock().await;
-        let _ = crate::sync::sync_offline(&mut context, &self.conn).await;
+        crate::sync::try_pull(&mut context, &self.conn).await?;
         result
     }
 
     async fn run(&mut self, params: &Params) -> Result<()> {
         let result = self.inner.run(params).await;
         let mut context = self.context.lock().await;
-        let _ = crate::sync::sync_offline(&mut context, &self.conn).await;
+        crate::sync::try_pull(&mut context, &self.conn).await?;
         result
     }
 
