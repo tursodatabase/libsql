@@ -473,6 +473,13 @@ impl Database {
         crate::sync::sync_offline(&mut sync_ctx, &conn).await
     }
 
+    #[cfg(feature = "sync")]
+    /// Brings the .db file from server, if required.
+    pub async fn bootstrap_db(&self) -> Result<()> {
+        let mut sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
+        crate::sync::bootstrap_db(&mut sync_ctx).await
+    }
+
     pub(crate) fn path(&self) -> &str {
         &self.db_path
     }
