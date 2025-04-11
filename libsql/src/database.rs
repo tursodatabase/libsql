@@ -392,7 +392,14 @@ cfg_replication! {
                 #[cfg(feature = "replication")]
                 DbType::Sync { db, encryption_config: _ } => db.sync().await,
                 #[cfg(feature = "sync")]
-                DbType::Offline { db, .. } => db.sync_offline().await,
+                DbType::Offline { db, remote_writes: false, .. } => db.sync_offline().await,
+                #[cfg(feature = "sync")]
+                DbType::Offline { db, remote_writes: true, .. } => {
+                    let mut sync_ctx = db.sync_ctx.as_ref().unwrap().lock().await;
+                    crate::sync::bootstrap_db(&mut sync_ctx).await?;
+                    let conn = db.connect()?;
+                    crate::sync::try_pull(&mut sync_ctx, &conn).await
+                },
                 _ => Err(Error::SyncNotSupported(format!("{:?}", self.db_type))),
             }
         }
