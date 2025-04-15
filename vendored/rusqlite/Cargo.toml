@@ -1,7 +1,7 @@
 [package]
 name = "libsql-rusqlite"
 # Note: Update version in README.md when you change this.
-version = "0.9.3"
+version = "0.9.4"
 authors = ["The rusqlite developers"]
 edition = "2018"
 description = "Ergonomic wrapper for SQLite (libsql fork)"
