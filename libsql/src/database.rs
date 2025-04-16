@@ -682,17 +682,37 @@ impl Database {
                 };
                 use tokio::sync::Mutex;
 
-                let _ = tokio::task::block_in_place(move || {
-                    let rt = tokio::runtime::Builder::new_current_thread()
-                        .enable_all()
-                        .build()
-                        .unwrap();
-                    rt.block_on(async {
-                        // we will ignore if any errors occurred during the bootstrapping the db,
-                        // because the client could be offline when trying to connect.
-                        let _ = db.bootstrap_db().await;
-                    })
-                });
+                if let Some(sync_ctx) = &db.sync_ctx {
+                    let sync_ctx = sync_ctx.clone();
+                    // we will ignore if any errors occurred during the bootstrapping the db,
+                    // because the client could be offline when trying to connect.
+                    match tokio::runtime::Handle::try_current() {
+                        Ok(_) => {
+                            std::thread::spawn(move || {
+                                let rt = tokio::runtime::Builder::new_current_thread()
+                                    .enable_all()
+                                    .build()
+                                    .unwrap();
+                                rt.block_on(async {
+                                    let mut locked_ctx = sync_ctx.lock().await;
+                                    let _ = crate::sync::bootstrap_db(&mut locked_ctx).await;
+                                });
+                            })
+                            .join()
+                            .expect("bootstrap thread panicked");
+                        }
+                        Err(_) => {
+                            let rt = tokio::runtime::Builder::new_current_thread()
+                                .enable_all()
+                                .build()
+                                .unwrap();
+                            rt.block_on(async {
+                                let mut locked_ctx = sync_ctx.lock().await;
+                                let _ = crate::sync::bootstrap_db(&mut locked_ctx).await;
+                            });
+                        }
+                    }
+                }
 
                 let local = db.connect()?;
 
