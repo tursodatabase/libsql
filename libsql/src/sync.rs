@@ -78,6 +78,7 @@ pub struct PushResult {
     status: PushStatus,
     generation: u32,
     max_frame_no: u32,
+    baton: Option<String>,
 }
 
 pub enum PushStatus {
@@ -95,6 +96,11 @@ pub enum PullResult {
 #[derive(serde::Deserialize)]
 struct InfoResult {
     current_generation: u32,
+}
+
+struct PushFramesResult {
+    max_frame_no: u32,
+    baton: Option<String>,
 }
 
 pub struct SyncContext {
@@ -180,15 +186,30 @@ impl SyncContext {
         generation: u32,
         frame_no: u32,
         frames_count: u32,
-    ) -> Result<u32> {
-        let uri = format!(
-            "{}/sync/{}/{}/{}",
-            self.sync_url,
-            generation,
+        baton: Option<String>,
+    ) -> Result<PushFramesResult> {
+        let uri = {
+            let mut uri = format!(
+                "{}/sync/{}/{}/{}",
+                self.sync_url,
+                generation,
+                frame_no,
+                frame_no + frames_count
+            );
+            if let Some(ref baton) = baton {
+                uri.push_str(&format!("/{}", baton));
+            }
+            uri
+        };
+
+        tracing::debug!(
+            "pushing frame(frame_no={} (to={}), count={}, generation={}, baton={:?})",
             frame_no,
-            frame_no + frames_count
+            frame_no + frames_count,
+            frames_count,
+            generation,
+            baton
         );
-        tracing::debug!("pushing frame(frame_no={}, count={}, generation={})", frame_no, frames_count, generation);
 
         let result = self.push_with_retry(uri, frames, self.max_retries).await?;
 
@@ -200,6 +221,7 @@ impl SyncContext {
         }
         let generation = result.generation;
         let durable_frame_num = result.max_frame_no;
+        let baton = result.baton;
 
         if durable_frame_num > frame_no + frames_count - 1 {
             tracing::error!(
@@ -232,7 +254,10 @@ impl SyncContext {
         self.durable_generation = generation;
         self.durable_frame_num = durable_frame_num;
 
-        Ok(durable_frame_num)
+        Ok(PushFramesResult {
+            max_frame_no: durable_frame_num,
+            baton,
+        })
     }
 
     async fn push_with_retry(&self, mut uri: String, body: Bytes, max_retries: usize) -> Result<PushResult> {
@@ -289,14 +314,32 @@ impl SyncContext {
                     .as_u64()
                     .ok_or_else(|| SyncError::JsonValue(max_frame_no.clone()))?;
 
+                let baton = resp
+                    .get("baton")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+
+                tracing::trace!(
+                    ?baton,
+                    ?generation,
+                    ?max_frame_no,
+                    ?status,
+                    "pushed frame to server"
+                );
+
                 let status = match status {
                     "ok" => PushStatus::Ok,
                     "conflict" => PushStatus::Conflict,
                     _ => return Err(SyncError::JsonValue(resp.clone()).into()),
                 };
-                let generation = generation as u32; 
+                let generation = generation as u32;
                 let max_frame_no = max_frame_no as u32;
-                return Ok(PushResult { status, generation, max_frame_no });
+                return Ok(PushResult {
+                    status,
+                    generation,
+                    max_frame_no,
+                    baton,
+                });
             }
 
             if res.status().is_redirection() {
@@ -778,6 +821,7 @@ async fn try_push(
     let generation = sync_ctx.durable_generation();
     let start_frame_no = sync_ctx.durable_frame_num() + 1;
     let end_frame_no = max_frame_no;
+    let mut baton = None;
 
     let mut frame_no = start_frame_no;
     while frame_no <= end_frame_no {
@@ -794,9 +838,12 @@ async fn try_push(
         // The server returns its maximum frame number. To avoid resending
         // frames the server already knows about, we need to update the
         // frame number to the one returned by the server.
-        let max_frame_no = sync_ctx
-            .push_frames(frames.freeze(), generation, frame_no, batch_size)
+        let result = sync_ctx
+            .push_frames(frames.freeze(), generation, frame_no, batch_size, baton)
             .await?;
+        // if the server sent us a baton, then we will reuse it for the next request
+        baton = result.baton;
+        let max_frame_no = result.max_frame_no;
 
         if max_frame_no > frame_no {
             frame_no = max_frame_no + 1;
