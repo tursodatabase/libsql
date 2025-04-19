@@ -98,6 +98,7 @@ struct InfoResult {
     current_generation: u32,
 }
 
+#[derive(Debug)]
 struct PushFramesResult {
     max_frame_no: u32,
     baton: Option<String>,
