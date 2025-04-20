@@ -64,6 +64,8 @@ pub enum SyncError {
     PullDb(StatusCode, String),
     #[error("server returned a lower generation than local: local={0}, remote={1}")]
     InvalidLocalGeneration(u32, u32),
+    #[error("invalid local state: {0}")]
+    InvalidLocalState(String),
 }
 
 impl SyncError {
@@ -509,15 +511,11 @@ impl SyncContext {
     }
 
     async fn sync_db_if_needed(&mut self, generation: u32) -> Result<()> {
-        // we will get the export file only if the remote generation is different from the one we have
-        if generation == self.durable_generation {
-            return Ok(());
-        }
         // somehow we are ahead of the remote in generations. following should not happen because
         // we checkpoint only if the remote server tells us to do so.
         if self.durable_generation > generation {
             tracing::error!(
-                "server returned a lower generation than what we have: sent={}, got={}",
+                "server returned a lower generation than what we have: local={}, remote={}",
                 self.durable_generation,
                 generation
             );
@@ -525,11 +523,51 @@ impl SyncContext {
                 SyncError::InvalidLocalGeneration(self.durable_generation, generation).into(),
             );
         }
-        tracing::debug!(
-            "syncing db file from remote server, generation={}",
-            generation
-        );
-        self.sync_db(generation).await
+        // we use the following heuristic to determine if we need to sync the db file
+        // 1. if no db file or the metadata file exists, then user is starting from scratch
+        //    and we will do the sync
+        // 2. if the db file exists, but the metadata file does not exist (or other way around),
+        //    then local db is in an incorrect state. we stop and return with an error
+        // 3. if the db file exists and the metadata file exists, then we don't need to do the
+        //    sync
+        let metadata_exists = check_if_file_exists(&format!("{}-info", self.db_path))?;
+        let db_file_exists = check_if_file_exists(&self.db_path)?;
+        match (metadata_exists, db_file_exists) {
+            (false, false) => {
+                // neither the db file nor the metadata file exists, lets bootstrap from remote
+                tracing::debug!(
+                    "syncing db file from remote server, generation={}",
+                    generation
+                );
+                self.sync_db(generation).await
+            }
+            (false, true) => {
+                // kinda inconsistent state: DB exists but metadata missing
+                // however, this generally not an issue. For a fresh db, a user might do writes
+                // locally and then try to do sync later. So in this case, we will not
+                // bootstrap the db file and let the user proceed. If it is not a fresh db, the
+                // push will fail anyways later.
+                // if metadata file does not exist, then generation should be zero
+                assert_eq!(self.durable_generation, 0);
+                // lets initialise it to first generation
+                self.durable_generation = 1;
+                Ok(())
+            }
+            (true, false) => {
+                // inconsistent state: Metadata exists but DB missing
+                tracing::error!(
+                    "local state is incorrect, metadata file exists but db file does not"
+                );
+                Err(SyncError::InvalidLocalState(
+                    "metadata file exists but db file does not".to_string(),
+                )
+                .into())
+            }
+            (true, true) => {
+                // both files exists, no need to sync
+                Ok(())
+            }
+        }
     }
 
     /// sync_db will download the db file from the remote server and replace the local file.
@@ -646,6 +684,30 @@ async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
     Ok(())
 }
 
+/// bootstrap_db brings the .db file from remote, if required. If the .db file already exists, then
+/// it does nothing. Calling this function multiple times is safe.
+/// However, make sure there are no existing active connections to the db file as this method can
+/// replace it
+pub async fn bootstrap_db(sync_ctx: &mut SyncContext) -> Result<()> {
+    // todo: we are checking with the remote server only during initialisation. ideally,
+    // we need to do this when we notice a large gap in generations, when bootstrapping is cheaper
+    // than pulling each frame
+    if !sync_ctx.initial_server_sync {
+        // sync is being called first time. so we will call remote, get the generation information
+        // if we are lagging behind, then we will call the export API and get to the latest
+        // generation directly.
+        let info = sync_ctx.get_remote_info().await?;
+        sync_ctx
+            .sync_db_if_needed(info.current_generation)
+            .await?;
+        // when sync_ctx is initialised, we set durable_generation to 0. however, once
+        // sync_db is called, it should be > 0.
+        assert!(sync_ctx.durable_generation > 0, "generation should be > 0");
+        sync_ctx.initial_server_sync = true;
+    }
+    Ok(())
+}
+
 /// Sync WAL frames to remote.
 pub async fn sync_offline(
     sync_ctx: &mut SyncContext,
@@ -667,22 +729,6 @@ pub async fn sync_offline(
             Err(e) => Err(e),
         }
     } else {
-        // todo: we are checking with the remote server only during initialisation. ideally,
-        // we should check everytime we try to sync with the remote server. However, we need to close
-        // all the ongoing connections since we replace `.db` file and remove the `.db-wal` file
-        if !sync_ctx.initial_server_sync {
-            // sync is being called first time. so we will call remote, get the generation information
-            // if we are lagging behind, then we will call the export API and get to the latest
-            // generation directly.
-            let info = sync_ctx.get_remote_info().await?;
-            sync_ctx
-                .sync_db_if_needed(info.current_generation)
-                .await?;
-            // when sync_ctx is initialised, we set durable_generation to 0. however, once
-            // sync_db is called, it should be > 0.
-            assert!(sync_ctx.durable_generation > 0, "generation should be > 0");
-            sync_ctx.initial_server_sync = true;
-        }
         try_pull(sync_ctx, conn).await
     }
     .or_else(|err| {
@@ -770,7 +816,7 @@ async fn try_push(
     })
 }
 
-async fn try_pull(
+pub async fn try_pull(
     sync_ctx: &mut SyncContext,
     conn: &Connection,
 ) -> Result<crate::database::Replicated> {
@@ -830,4 +876,10 @@ async fn try_pull(
             frames_synced: 1,
         })
     }
+}
+
+fn check_if_file_exists(path: &str) -> core::result::Result<bool, SyncError> {
+    Path::new(&path)
+        .try_exists()
+        .map_err(SyncError::io("metadata file exists"))
 }

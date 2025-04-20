@@ -465,9 +465,19 @@ impl Database {
     /// Sync WAL frames to remote.
     pub async fn sync_offline(&self) -> Result<crate::database::Replicated> {
         let mut sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
+        // it is important we call `bootstrap` before we `sync`. Because sync uses a connection
+        // to the db and during bootstrap we replace the sqlite db file. This can lead to
+        // inconsistencies and data corruption.
+        crate::sync::bootstrap_db(&mut sync_ctx).await?;
         let conn = self.connect()?;
-
         crate::sync::sync_offline(&mut sync_ctx, &conn).await
+    }
+
+    #[cfg(feature = "sync")]
+    /// Brings the .db file from server, if required.
+    pub async fn bootstrap_db(&self) -> Result<()> {
+        let mut sync_ctx = self.sync_ctx.as_ref().unwrap().lock().await;
+        crate::sync::bootstrap_db(&mut sync_ctx).await
     }
 
     pub(crate) fn path(&self) -> &str {

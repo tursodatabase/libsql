@@ -4,11 +4,14 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::auth::{AuthContext, Authorization};
 use crate::params::{IntoParams, Params};
 use crate::rows::Rows;
 use crate::statement::Statement;
 use crate::transaction::Transaction;
 use crate::{Result, TransactionBehavior};
+
+pub type AuthHook = Arc<dyn Fn(&AuthContext) -> Authorization>;
 
 #[async_trait::async_trait]
 pub(crate) trait Conn {
@@ -42,6 +45,10 @@ pub(crate) trait Conn {
 
     fn load_extension(&self, _dylib_path: &Path, _entry_point: Option<&str>) -> Result<()> {
         Err(crate::Error::LoadExtensionNotSupported)
+    }
+
+    fn authorizer(&self, _hook: Option<AuthHook>) -> Result<()> {
+        Err(crate::Error::AuthorizerNotSupported)
     }
 }
 
@@ -257,6 +264,10 @@ impl Connection {
         entry_point: Option<&str>,
     ) -> Result<()> {
         self.conn.load_extension(dylib_path.as_ref(), entry_point)
+    }
+
+    pub fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
+        self.conn.authorizer(hook)
     }
 }
 
