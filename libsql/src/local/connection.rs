@@ -101,13 +101,6 @@ impl Connection {
 
     /// Disconnect from the database.
     pub fn disconnect(&mut self) {
-        // Clean up the authorizer before closing
-        unsafe {
-            let rc = libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), None, std::ptr::null_mut());
-            if rc != ffi::SQLITE_OK {
-                tracing::error!("Failed to clear authorizer during disconnect");
-            }
-        }
         if Arc::get_mut(&mut self.drop_ref).is_some() {
             unsafe { libsql_sys::ffi::sqlite3_close_v2(self.raw) };
         }
