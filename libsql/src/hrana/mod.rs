@@ -21,6 +21,7 @@ use libsql_hrana::proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 use std::collections::VecDeque;
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
@@ -122,7 +123,7 @@ where
 
 impl<T> Statement<T>
 where
-    T: HttpSend,
+    T: HttpSend + Send + Sync + 'static,
 {
     pub(crate) fn new(stream: HranaStream<T>, sql: String, want_rows: bool) -> crate::Result<Self> {
         // in SQLite when a multiple statements are glued together into one string, only the first one is
@@ -170,12 +171,12 @@ where
     pub(crate) async fn query_raw(
         &mut self,
         params: &Params,
-    ) -> crate::Result<HranaRows<T::Stream>> {
+    ) -> crate::Result<HranaRows<T::Stream, T>> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
         let cursor = self.stream.cursor(Batch::single(stmt)).await?;
-        let rows = HranaRows::from_cursor(cursor).await?;
+        let rows = HranaRows::from_cursor(cursor, self.stream.clone()).await?;
 
         Ok(rows)
     }
@@ -183,7 +184,7 @@ where
 
 impl<T> Statement<T>
 where
-    T: HttpSend,
+    T: HttpSend + Send + Sync + 'static,
     <T as HttpSend>::Stream: Send + Sync + 'static,
 {
     pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
@@ -192,20 +193,23 @@ where
     }
 }
 
-pub struct HranaRows<S> {
+pub struct HranaRows<S, T: HttpSend> {
     cursor_step: OwnedCursorStep<S>,
     column_types: Option<Vec<ValueType>>,
+    stream: HranaStream<T>,
 }
 
-impl<S> HranaRows<S>
+impl<S, T> HranaRows<S, T>
 where
+    T: HttpSend + Send + Sync + 'static,
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
-    async fn from_cursor(cursor: Cursor<S>) -> Result<Self> {
+    async fn from_cursor(cursor: Cursor<S>, stream: HranaStream<T>) -> Result<Self> {
         let cursor_step = cursor.next_step_owned().await?;
         Ok(HranaRows {
             cursor_step,
             column_types: None,
+            stream,
         })
     }
 
@@ -213,7 +217,13 @@ where
         let row = match self.cursor_step.next().await {
             Some(Ok(row)) => row,
             Some(Err(e)) => return Err(crate::Error::Hrana(Box::new(e))),
-            None => return Ok(None),
+            None => {
+                self.stream
+                    .inner
+                    .affected_row_count
+                    .store(self.cursor_step.affected_rows().into(), Ordering::SeqCst);
+                return Ok(None);
+            }
         };
 
         if self.column_types.is_none() {
@@ -254,8 +264,9 @@ where
 }
 
 #[async_trait::async_trait]
-impl<S> RowsInner for HranaRows<S>
+impl<S, T> RowsInner for HranaRows<S, T>
 where
+    T: HttpSend + Send + Sync + 'static,
     S: Stream<Item = std::io::Result<Bytes>> + Send + Sync + Unpin,
 {
     async fn next(&mut self) -> crate::Result<Option<super::Row>> {
@@ -263,8 +274,9 @@ where
     }
 }
 
-impl<S> ColumnsInner for HranaRows<S>
+impl<S, T> ColumnsInner for HranaRows<S, T>
 where
+    T: HttpSend + Send + Sync + 'static,
     S: Stream<Item = std::io::Result<Bytes>> + Send + Sync + Unpin,
 {
     fn column_count(&self) -> i32 {

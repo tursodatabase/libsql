@@ -2,12 +2,13 @@ use crate::hrana::cursor::{Cursor, CursorReq};
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
 use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result};
 use bytes::{Bytes, BytesMut};
-use futures::Stream;
+use futures::{Stream, StreamExt};
 use libsql_hrana::proto::{
     BatchStreamReq, CloseSqlStreamReq, CloseStreamReq, CloseStreamResp, DescribeStreamReq,
     GetAutocommitStreamReq, PipelineReqBody, PipelineRespBody, SequenceStreamReq,
     StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResult,
 };
+use std::pin::pin;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -30,7 +31,7 @@ pub struct HranaStream<T>
 where
     T: HttpSend,
 {
-    inner: Arc<Inner<T>>,
+    pub inner: Arc<Inner<T>>,
 }
 
 impl<T> Clone for HranaStream<T>
@@ -94,7 +95,9 @@ where
             (0, 0)
         };
 
-        self.inner.total_changes.fetch_add(affected_row_count, Ordering::SeqCst);
+        self.inner
+            .total_changes
+            .fetch_add(affected_row_count, Ordering::SeqCst);
         self.inner
             .affected_row_count
             .store(affected_row_count, Ordering::SeqCst);
@@ -279,11 +282,11 @@ where
 }
 
 #[derive(Debug)]
-struct Inner<T>
+pub struct Inner<T>
 where
     T: HttpSend,
 {
-    affected_row_count: AtomicU64,
+    pub affected_row_count: AtomicU64,
     total_changes: AtomicU64,
     last_insert_rowid: AtomicI64,
     is_autocommit: AtomicBool,

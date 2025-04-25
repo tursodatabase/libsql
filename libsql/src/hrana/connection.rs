@@ -28,7 +28,7 @@ where
 
 impl<T> HttpConnection<T>
 where
-    T: HttpSend,
+    T: HttpSend + Send + Sync + 'static,
 {
     pub fn new(url: String, token: String, inner: T) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
