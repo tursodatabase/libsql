@@ -2,13 +2,12 @@ use crate::hrana::cursor::{Cursor, CursorReq};
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
 use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result};
 use bytes::{Bytes, BytesMut};
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use libsql_hrana::proto::{
     BatchStreamReq, CloseSqlStreamReq, CloseStreamReq, CloseStreamResp, DescribeStreamReq,
     GetAutocommitStreamReq, PipelineReqBody, PipelineRespBody, SequenceStreamReq,
     StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResult,
 };
-use std::pin::pin;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;

@@ -48,7 +48,7 @@ cfg_cloudflare! {
 #[derive(Debug, Clone)]
 pub struct Connection<T>
 where
-    T: HttpSend,
+    T: HttpSend + Sync + Send + 'static,
 {
     conn: HttpConnection<T>,
 }
@@ -65,7 +65,7 @@ cfg_cloudflare! {
 
 impl<T> Connection<T>
 where
-    T: HttpSend,
+    T: HttpSend + Sync + Send + 'static,
     <T as HttpSend>::Stream: 'static,
 {
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
@@ -126,14 +126,14 @@ where
 #[derive(Debug, Clone)]
 pub struct Transaction<T>
 where
-    T: HttpSend,
+    T: HttpSend + Sync + Send + 'static,
 {
     inner: HttpTransaction<T>,
 }
 
 impl<T> Transaction<T>
 where
-    T: HttpSend,
+    T: HttpSend + Sync + Send + 'static,
     <T as HttpSend>::Stream: 'static,
 {
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
