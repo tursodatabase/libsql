@@ -30,7 +30,7 @@ pub struct HranaStream<T>
 where
     T: HttpSend,
 {
-    inner: Arc<Inner<T>>,
+    pub inner: Arc<Inner<T>>,
 }
 
 impl<T> Clone for HranaStream<T>
@@ -94,7 +94,9 @@ where
             (0, 0)
         };
 
-        self.inner.total_changes.fetch_add(affected_row_count, Ordering::SeqCst);
+        self.inner
+            .total_changes
+            .fetch_add(affected_row_count, Ordering::SeqCst);
         self.inner
             .affected_row_count
             .store(affected_row_count, Ordering::SeqCst);
@@ -279,11 +281,11 @@ where
 }
 
 #[derive(Debug)]
-struct Inner<T>
+pub struct Inner<T>
 where
     T: HttpSend,
 {
-    affected_row_count: AtomicU64,
+    pub affected_row_count: AtomicU64,
     total_changes: AtomicU64,
     last_insert_rowid: AtomicI64,
     is_autocommit: AtomicBool,
