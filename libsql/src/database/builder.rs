@@ -2,11 +2,7 @@ cfg_core! {
     use crate::EncryptionConfig;
 }
 
-use std::sync::Arc;
-
-use tracing::Instrument as _;
-
-use crate::{sync::DropAbort, Database, Result};
+use crate::{Database, Result};
 
 use super::DbType;
 
@@ -600,6 +596,8 @@ cfg_sync! {
 
         /// Build a connection to a local database that can be synced to remote server.
         pub async fn build(self) -> Result<Database> {
+            use tracing::Instrument as _;
+
             let SyncedDatabase {
                 path,
                 flags,
@@ -645,7 +643,7 @@ cfg_sync! {
                 db.sync_ctx.as_ref().unwrap().lock().await.set_push_batch_size(push_batch_size);
             }
 
-            let mut bg_abort: Option<Arc<DropAbort>> = None;
+            let mut bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>> = None;
             let conn = db.connect()?;
 
             let sync_ctx = db.sync_ctx.as_ref().unwrap().clone();
@@ -656,17 +654,22 @@ cfg_sync! {
                         loop {
                             tracing::trace!("trying to sync");
                             let mut ctx = sync_ctx.lock().await;
-                            if let Err(e) = crate::sync::try_pull(&mut ctx, &conn).await {
-                                tracing::error!("sync error: {}", e);
+                            if remote_writes {
+                                if let Err(e) = crate::sync::try_pull(&mut ctx, &conn).await {
+                                    tracing::error!("sync error: {}", e);
+                                }
+                            } else {
+                                if let Err(e) = crate::sync::sync_offline(&mut ctx, &conn).await {
+                                    tracing::error!("sync error: {}", e);
+                                }
                             }
-
                             tokio::time::sleep(sync_interval).await;
                         }
                     }
                     .instrument(tracing::info_span!("sync_interval")),
                 );
 
-                bg_abort.replace(Arc::new(DropAbort(jh.abort_handle())));
+                bg_abort.replace(std::sync::Arc::new(crate::sync::DropAbort(jh.abort_handle())));
             }
 
             Ok(Database {
