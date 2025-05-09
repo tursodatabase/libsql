@@ -656,10 +656,15 @@ cfg_sync! {
                         loop {
                             tracing::trace!("trying to sync");
                             let mut ctx = sync_ctx.lock().await;
-                            if let Err(e) = crate::sync::try_pull(&mut ctx, &conn).await {
-                                tracing::error!("sync error: {}", e);
+                            if remote_writes {
+                                if let Err(e) = crate::sync::try_pull(&mut ctx, &conn).await {
+                                    tracing::error!("sync error: {}", e);
+                                }
+                            } else {
+                                if let Err(e) = crate::sync::sync_offline(&mut ctx, &conn).await {
+                                    tracing::error!("sync error: {}", e);
+                                }
                             }
-
                             tokio::time::sleep(sync_interval).await;
                         }
                     }
