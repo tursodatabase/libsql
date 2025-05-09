@@ -7,7 +7,10 @@ license.workspace = true
 repository.workspace = true
 description = "Native bindings to libSQL"
 build = "build.rs"
-exclude = ["bundled/SQLite3MultipleCiphers/build", "bundled/SQLite3MultipleCiphers/test"]
+exclude = [
+  "bundled/SQLite3MultipleCiphers/build",
+  "bundled/SQLite3MultipleCiphers/test",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -37,11 +40,12 @@ sqlean-extension-math = []
 sqlean-extension-stats = []
 sqlean-extension-text = []
 sqlean-extensions = [
-    "sqlean-extension-uuid",
-    "sqlean-extension-crypto",
-    "sqlean-extension-fuzzy",
-    "sqlean-extension-math",
-    "sqlean-extension-stats",
-    "sqlean-extension-text"
+  "sqlean-extension-uuid",
+  "sqlean-extension-crypto",
+  "sqlean-extension-fuzzy",
+  "sqlean-extension-math",
+  "sqlean-extension-stats",
+  "sqlean-extension-text",
 ]
 libsql-disable-checkpoint-downgrade = []
+libsql-checkpoint-callback-on-any-frame-written = []
