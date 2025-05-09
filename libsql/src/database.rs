@@ -7,9 +7,11 @@ pub use builder::Builder;
 #[cfg(feature = "core")]
 pub use libsql_sys::{Cipher, EncryptionConfig};
 
+use crate::sync::DropAbort;
 use crate::{Connection, Result};
 use std::fmt;
 use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
 
 cfg_core! {
     bitflags::bitflags! {
@@ -99,6 +101,7 @@ enum DbType {
         url: String,
         auth_token: String,
         connector: crate::util::ConnectorService,
+        _bg_abort: Option<Arc<DropAbort>>,
     },
     #[cfg(feature = "remote")]
     Remote {
@@ -673,9 +676,10 @@ impl Database {
                 url,
                 auth_token,
                 connector,
+                ..
             } => {
                 use crate::{
-                    hrana::{connection::HttpConnection, hyper::HttpSender},
+                    hrana::connection::HttpConnection,
                     local::impls::LibsqlConnection,
                     replication::connection::State,
                     sync::connection::SyncedConnection,
@@ -699,10 +703,11 @@ impl Database {
                 if *remote_writes {
                     let synced = SyncedConnection {
                         local,
-                        remote: HttpConnection::new(
+                        remote: HttpConnection::new_with_connector(
                             url.clone(),
                             auth_token.clone(),
-                            HttpSender::new(connector.clone(), None),
+                            connector.clone(),
+                            None,
                         ),
                         read_your_writes: *read_your_writes,
                         context: db.sync_ctx.clone().unwrap(),
