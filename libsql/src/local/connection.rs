@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::lazy::lazy::LAZY_VFS_NAME;
 use crate::local::rows::BatchedRows;
 use crate::params::Params;
 use crate::{connection::BatchRows, errors};
@@ -41,6 +42,11 @@ impl Connection {
         let mut raw = std::ptr::null_mut();
         let db_path = db.db_path.clone();
         let err = unsafe {
+            let mut vfs_ptr = std::ptr::null();
+            #[cfg(feature = "lazy")]
+            if let Some(_) = db.lazy_ctx {
+                vfs_ptr = LAZY_VFS_NAME.as_ptr() as *const i8;
+            }
             ffi::sqlite3_open_v2(
                 std::ffi::CString::new(db_path.as_str())
                     .unwrap()
@@ -48,7 +54,7 @@ impl Connection {
                     .as_ptr() as *const _,
                 &mut raw,
                 db.flags.bits() as c_int,
-                std::ptr::null(),
+                vfs_ptr,
             )
         };
         match err {
@@ -67,6 +73,16 @@ impl Connection {
         };
         #[cfg(feature = "sync")]
         if let Some(_) = db.sync_ctx {
+            // We need to make sure database is in WAL mode with checkpointing
+            // disabled so that we can sync our changes back to a remote
+            // server.
+            conn.query("PRAGMA journal_mode = WAL", Params::None)?;
+            unsafe {
+                ffi::libsql_wal_disable_checkpoint(conn.raw);
+            }
+        }
+        #[cfg(feature = "lazy")]
+        if let Some(_) = db.lazy_ctx {
             // We need to make sure database is in WAL mode with checkpointing
             // disabled so that we can sync our changes back to a remote
             // server.
@@ -459,7 +475,15 @@ impl Connection {
     }
 
     pub(crate) fn wal_checkpoint(&self, truncate: bool) -> Result<()> {
-        let rc = unsafe { libsql_sys::ffi::sqlite3_wal_checkpoint_v2(self.handle(), std::ptr::null(), truncate as i32, std::ptr::null_mut(), std::ptr::null_mut()) };
+        let rc = unsafe {
+            libsql_sys::ffi::sqlite3_wal_checkpoint_v2(
+                self.handle(),
+                std::ptr::null(),
+                truncate as i32,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        };
         if rc != 0 {
             let err_msg = unsafe { libsql_sys::ffi::sqlite3_errmsg(self.handle()) };
             let err_msg = unsafe { std::ffi::CStr::from_ptr(err_msg) };
@@ -566,13 +590,16 @@ impl Connection {
 
     pub(crate) fn wal_insert_handle(&self) -> Result<WalInsertHandle<'_>> {
         self.wal_insert_begin()?;
-        Ok(WalInsertHandle { conn: self, in_session: RefCell::new(true) })
+        Ok(WalInsertHandle {
+            conn: self,
+            in_session: RefCell::new(true),
+        })
     }
 }
 
 pub(crate) struct WalInsertHandle<'a> {
     conn: &'a Connection,
-    in_session: RefCell<bool>
+    in_session: RefCell<bool>,
 }
 
 impl WalInsertHandle<'_> {

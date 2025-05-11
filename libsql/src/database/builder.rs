@@ -2,6 +2,9 @@ cfg_core! {
     use crate::EncryptionConfig;
 }
 
+use anyhow::anyhow;
+use hyper::server::conn;
+
 use crate::{Database, Result};
 
 use super::DbType;
@@ -123,6 +126,18 @@ impl Builder<()> {
                     connector: None,
                     version: None,
                 },
+            }
+        }
+    }
+
+    cfg_lazy! {
+        pub fn new_lazy(
+            path: impl AsRef<std::path::Path>,
+            url: String,
+            auth_token: String,
+        ) -> Builder<LazyReplica> {
+            Builder {
+                inner: LazyReplica { path: todo!(), remote: todo!(), read_your_writes: todo!(), sync_interval: todo!() }
             }
         }
     }
@@ -531,6 +546,84 @@ cfg_replication! {
     }
 }
 
+pub struct LazyReplica {
+    path: std::path::PathBuf,
+    remote: Remote,
+    read_your_writes: bool,
+    sync_interval: Option<std::time::Duration>,
+}
+
+impl Builder<LazyReplica> {
+    /// Set weather you want writes to be visible locally before the write query returns. This
+    /// means that you will be able to read your own writes if this is set to `true`.
+    ///
+    /// # Default
+    ///
+    /// This defaults to `true`.
+    pub fn read_your_writes(mut self, read_your_writes: bool) -> Builder<LazyReplica> {
+        self.inner.read_your_writes = read_your_writes;
+        self
+    }
+
+    /// Set the duration at which the replicator will automatically call `sync` in the
+    /// background. The sync will continue for the duration that the resulted `Database`
+    /// type is alive for, once it is dropped the background task will get dropped and stop.
+    pub fn sync_interval(mut self, duration: std::time::Duration) -> Builder<LazyReplica> {
+        self.inner.sync_interval = Some(duration);
+        self
+    }
+
+    /// Build the remote embedded replica database.
+    pub async fn build(self) -> Result<Database> {
+        let LazyReplica {
+            path,
+            remote:
+                Remote {
+                    url,
+                    auth_token,
+                    connector,
+                    version,
+                },
+            read_your_writes,
+            sync_interval,
+        } = self.inner;
+
+        let connector = if let Some(connector) = connector {
+            connector
+        } else {
+            let https = super::connector()?;
+            use tower::ServiceExt;
+
+            let svc = https
+                .map_err(|e| e.into())
+                .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
+
+            crate::util::ConnectorService::new(svc)
+        };
+
+        let path = path
+            .to_str()
+            .ok_or(anyhow!("unable to convert path to string"))?
+            .to_owned();
+        Ok(Database {
+            db_type: DbType::Lazy {
+                db: crate::local::Database::open_local_lazy(
+                    connector.clone(),
+                    path,
+                    crate::OpenFlags::default(),
+                    url.clone(),
+                    auth_token.clone(),
+                )
+                .await?,
+                url,
+                auth_token,
+                connector,
+            },
+            max_write_replication_index: Default::default(),
+        })
+    }
+}
+
 cfg_sync! {
     /// Remote replica configuration type in [`Builder`].
     pub struct SyncedDatabase {
@@ -694,7 +787,7 @@ cfg_remote! {
 }
 
 cfg_replication_or_remote_or_sync! {
-    fn wrap_connector<C>(connector: C) -> crate::util::ConnectorService
+pub(crate) fn wrap_connector<C>(connector: C) -> crate::util::ConnectorService
     where
         C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
         C::Response: crate::util::Socket,

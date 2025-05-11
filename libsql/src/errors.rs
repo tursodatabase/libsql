@@ -57,6 +57,8 @@ pub enum Error {
     InvalidBlobSize(usize),
     #[error("sync error: {0}")]
     Sync(crate::BoxError),
+    #[error("lazy error: {0}")]
+    Lazy(crate::BoxError),
     #[error("WAL frame insert conflict")]
     WalConflict,
 }
@@ -72,6 +74,13 @@ impl From<crate::hrana::HranaError> for Error {
 impl From<crate::sync::SyncError> for Error {
     fn from(e: crate::sync::SyncError) -> Self {
         Error::Sync(e.into())
+    }
+}
+
+#[cfg(feature = "lazy")]
+impl From<anyhow::Error> for Error {
+    fn from(e: anyhow::Error) -> Self {
+        Error::Lazy(e.into())
     }
 }
 

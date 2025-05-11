@@ -495,7 +495,7 @@ impl MetadataJson {
     }
 }
 
-async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
+pub async fn atomic_write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
     // Create a temporary file in the same directory as the target file
     let directory = path.as_ref().parent().ok_or_else(|| {
         SyncError::io("parent path")(std::io::Error::other(

@@ -14,7 +14,7 @@ thiserror = "1.0.40"
 futures = { version = "0.3.28", optional = true }
 libsql-sys = { workspace = true, optional = true, default-features = true }
 libsql-hrana = { workspace = true, optional = true }
-tokio = { version = "1.29.1", features = ["sync"], optional = true }
+tokio = { version = "1.29.1", features = ["rt-multi-thread", "sync"], optional = true }
 tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
 hyper = { version = "0.14", features = ["client", "http1", "http2", "stream", "runtime"], optional = true }
@@ -46,6 +46,10 @@ async-stream = { version = "0.3.5", optional = true }
 
 crc32fast = { version = "1", optional = true }
 chrono = { version = "0.4", optional = true }
+zstd = "0.13.3"
+rand = "0.8.5"
+lazy_static = "1.5.0"
+arc-swap = "1.7.1"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports", "async", "async_futures", "async_tokio"] }
@@ -57,7 +61,7 @@ tempfile = { version = "3.7.0" }
 rand = "0.8.5"
 
 [features]
-default = ["core", "replication", "remote", "sync", "tls"]
+default = ["core", "replication", "remote", "sync", "tls", "lazy"]
 core = [
   "libsql-sys",
   "dep:bitflags",
@@ -96,6 +100,27 @@ replication = [
   "dep:libsql_replication",
 ]
 sync = [
+  "core",
+  "parser",
+  "serde",
+  "stream",
+  "remote",
+  "replication",
+  "dep:tower",
+  "dep:hyper",
+  "dep:http",
+  "dep:tokio",
+  "dep:zerocopy",
+  "dep:bytes",
+  "dep:tokio",
+  "dep:futures",
+  "dep:serde_json",
+  "dep:crc32fast",
+  "dep:chrono",
+  "dep:uuid",
+  "tokio/fs"
+]
+lazy = [
   "core",
   "parser",
   "serde",

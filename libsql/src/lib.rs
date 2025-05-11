@@ -134,6 +134,10 @@ cfg_sync! {
     pub use database::SyncProtocol;
 }
 
+cfg_lazy! {
+    mod lazy;
+}
+
 cfg_replication! {
     pub mod replication;
 }

@@ -226,7 +226,7 @@ dependencies = [
  "memchr",
  "pin-project-lite",
  "tokio",
- "zstd 0.13.2",
+ "zstd 0.13.3",
  "zstd-safe 7.2.0",
 ]
 
@@ -2899,6 +2899,7 @@ name = "libsql"
 version = "0.9.2"
 dependencies = [
  "anyhow",
+ "arc-swap",
  "async-stream",
  "async-trait",
  "base64 0.21.7",
@@ -2913,6 +2914,7 @@ dependencies = [
  "http 0.2.12",
  "hyper",
  "hyper-rustls 0.25.0",
+ "lazy_static",
  "libsql-hrana",
  "libsql-sqlite3-parser",
  "libsql-sys",
@@ -2937,6 +2939,7 @@ dependencies = [
  "uuid",
  "worker",
  "zerocopy",
+ "zstd 0.13.3",
 ]
 
 [[package]]
@@ -6703,9 +6706,9 @@ dependencies = [
 
 [[package]]
 name = "zstd"
-version = "0.13.2"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcf2b778a664581e31e389454a7072dab1647606d44f7feea22cd5abb9c9f3f9"
+checksum = "e91ee311a569c327171651566e07972200e76fcfe2242a4fa446149a3881c08a"
 dependencies = [
  "zstd-safe 7.2.0",
 ]

@@ -76,7 +76,7 @@ cfg_sync! {
     }
 }
 
-enum DbType {
+pub(crate) enum DbType {
     #[cfg(feature = "core")]
     Memory { db: crate::local::Database },
     #[cfg(feature = "core")]
@@ -107,6 +107,13 @@ enum DbType {
         connector: crate::util::ConnectorService,
         version: Option<String>,
     },
+    #[cfg(feature = "lazy")]
+    Lazy {
+        db: crate::local::Database,
+        url: String,
+        auth_token: String,
+        connector: crate::util::ConnectorService,
+    },
 }
 
 impl fmt::Debug for DbType {
@@ -131,10 +138,10 @@ impl fmt::Debug for DbType {
 /// A struct that knows how to build [`Connection`]'s, this type does
 /// not do much work until the [`Database::connect`] fn is called.
 pub struct Database {
-    db_type: DbType,
+    pub(crate) db_type: DbType,
     /// The maximum replication index returned from a write performed using any connection created using this Database object.
     #[allow(dead_code)]
-    max_write_replication_index: std::sync::Arc<AtomicU64>,
+    pub(crate) max_write_replication_index: std::sync::Arc<AtomicU64>,
 }
 
 cfg_core! {
@@ -727,7 +734,7 @@ impl Database {
     all(feature = "tls", feature = "remote"),
     all(feature = "tls", feature = "sync")
 ))]
-fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
+pub(crate) fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     let mut http = hyper::client::HttpConnector::new();
     http.enforce_http(false);
     http.set_nodelay(true);

@@ -24,7 +24,13 @@ cfg_sync! {
     use std::sync::Arc;
 }
 
-use crate::{database::OpenFlags, local::connection::Connection, Error::ConnectionFailed, Result};
+use crate::{
+    database::OpenFlags,
+    lazy::lazy::{LazyContext, TursoPageServer},
+    local::connection::Connection,
+    Error::ConnectionFailed,
+    Result,
+};
 use libsql_sys::ffi;
 
 // A libSQL database.
@@ -35,6 +41,8 @@ pub struct Database {
     pub replication_ctx: Option<ReplicationContext>,
     #[cfg(feature = "sync")]
     pub sync_ctx: Option<Arc<Mutex<SyncContext>>>,
+    #[cfg(feature = "lazy")]
+    pub lazy_ctx: Option<Arc<Mutex<LazyContext<TursoPageServer>>>>,
 }
 
 impl Database {
@@ -74,6 +82,8 @@ impl Database {
                 replication_ctx: None,
                 #[cfg(feature = "sync")]
                 sync_ctx: None,
+                #[cfg(feature = "lazy")]
+                lazy_ctx: None,
             })
         }
     }
@@ -228,6 +238,39 @@ impl Database {
         Ok(db)
     }
 
+    #[cfg(feature = "lazy")]
+    #[doc(hidden)]
+    pub async fn open_local_lazy(
+        connector: crate::util::ConnectorService,
+        db_path: impl Into<String>,
+        flags: OpenFlags,
+        endpoint: String,
+        auth_token: String,
+    ) -> Result<Database> {
+        use arc_swap::ArcSwap;
+
+        use crate::lazy::lazy::LazyContext;
+
+        let db_path = db_path.into();
+        let endpoint = if endpoint.starts_with("libsql:") {
+            endpoint.replace("libsql:", "https:")
+        } else {
+            endpoint
+        };
+        let mut db = Database::open(&db_path, flags)?;
+        let meta_path = format!("{}-metadata", db_path);
+        let encoding = "raw".into();
+        let page_server = Arc::new(TursoPageServer {
+            endpoint,
+            auth_token: Some(auth_token),
+            client: hyper::client::Client::builder().build::<_, hyper::Body>(connector),
+            revision: ArcSwap::new(Arc::new("".to_string())),
+        });
+        let lazy_ctx = LazyContext::new(db_path, meta_path, encoding, page_server).await?;
+        db.lazy_ctx = Some(Arc::new(Mutex::new(lazy_ctx)));
+        Ok(db)
+    }
+
     #[cfg(feature = "replication")]
     pub async fn open_local_sync(
         db_path: impl Into<String>,
@@ -336,6 +379,8 @@ impl Database {
             replication_ctx: None,
             #[cfg(feature = "sync")]
             sync_ctx: None,
+            #[cfg(feature = "lazy")]
+            lazy_ctx: None,
         }
     }
 
