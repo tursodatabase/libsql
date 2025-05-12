@@ -119,13 +119,22 @@ where
     stream: HranaStream<T>,
     close_stream: bool,
     inner: Stmt,
+    cols: Vec<String>,
 }
 
 impl<T> Statement<T>
 where
     T: HttpSend + Send + Sync + 'static,
 {
-    pub(crate) fn new(stream: HranaStream<T>, sql: String, want_rows: bool) -> crate::Result<Self> {
+    pub(crate) async fn new(
+        stream: HranaStream<T>,
+        sql: String,
+        want_rows: bool,
+    ) -> crate::Result<Self> {
+        let desc = stream.describe(&sql).await?;
+
+        let cols: Vec<_> = desc.cols.into_iter().map(|col| col.name).collect();
+
         // in SQLite when a multiple statements are glued together into one string, only the first one is
         // executed and then a handle to continue execution is returned. However Hrana API doesn't allow
         // passing multi-statement strings, so we just pick first one.
@@ -147,6 +156,7 @@ where
                     stream,
                     close_stream,
                     inner,
+                    cols,
                 })
             }
         }

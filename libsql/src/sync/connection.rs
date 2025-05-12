@@ -128,7 +128,7 @@ impl Conn for SyncedConnection {
             })
         } else {
             let stmt = Statement {
-                inner: Box::new(self.remote.prepare(sql)?),
+                inner: Box::new(self.remote.prepare(sql).await?),
             };
 
             if self.read_your_writes {
