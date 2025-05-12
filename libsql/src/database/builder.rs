@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use tracing::Instrument as _;
 
-use crate::{sync::DropAbort, Database, Result};
+use crate::{Database, Result};
 
 use super::DbType;
 
@@ -645,7 +645,7 @@ cfg_sync! {
                 db.sync_ctx.as_ref().unwrap().lock().await.set_push_batch_size(push_batch_size);
             }
 
-            let mut bg_abort: Option<Arc<DropAbort>> = None;
+            let mut bg_abort: Option<Arc<crate::sync::DropAbort>> = None;
             let conn = db.connect()?;
 
             let sync_ctx = db.sync_ctx.as_ref().unwrap().clone();
@@ -654,6 +654,7 @@ cfg_sync! {
                 let jh = tokio::spawn(
                     async move {
                         loop {
+                            tokio::time::sleep(sync_interval).await;
                             tracing::trace!("trying to sync");
                             let mut ctx = sync_ctx.lock().await;
                             if remote_writes {
@@ -665,13 +666,12 @@ cfg_sync! {
                                     tracing::error!("sync error: {}", e);
                                 }
                             }
-                            tokio::time::sleep(sync_interval).await;
                         }
                     }
                     .instrument(tracing::info_span!("sync_interval")),
                 );
 
-                bg_abort.replace(Arc::new(DropAbort(jh.abort_handle())));
+                bg_abort.replace(Arc::new(crate::sync::DropAbort(jh.abort_handle())));
             }
 
             Ok(Database {

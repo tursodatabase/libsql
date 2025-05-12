@@ -128,8 +128,10 @@ impl Conn for SyncedConnection {
             })
         } else {
             let stmt = Statement {
-                inner: Box::new(self.remote.prepare(sql)?),
+                inner: Box::new(self.remote.prepare(sql).await?),
             };
+
+            dbg!(stmt.columns().iter().map(|c| c.name()).collect::<Vec<_>>());
 
             if self.read_your_writes {
                 Ok(Statement {
