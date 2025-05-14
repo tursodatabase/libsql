@@ -80,9 +80,9 @@ where
         )
     }
 
-    pub fn prepare(&self, sql: &str) -> crate::Result<Statement<T>> {
+    pub async fn prepare(&self, sql: &str) -> crate::Result<Statement<T>> {
         let stream = self.current_stream().clone();
-        Statement::new(stream, sql.to_string(), true)
+        Statement::new(stream, sql.to_string(), true).await
     }
 }
 

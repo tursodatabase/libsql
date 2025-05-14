@@ -99,7 +99,7 @@ fn basic_metrics() {
 
         let snapshot = snapshot_metrics();
         snapshot.assert_counter("libsql_server_libsql_execute_program", 3);
-        snapshot.assert_counter("libsql_server_user_http_response", 3);
+        snapshot.assert_counter("libsql_server_user_http_response", 4);
 
         for (key, (_, _, val)) in snapshot.snapshot() {
             if key.kind() == metrics_util::MetricKind::Counter
@@ -107,7 +107,7 @@ fn basic_metrics() {
             {
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-remote-"));
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(3));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(4));
             }
         }
 
