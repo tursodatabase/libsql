@@ -99,6 +99,7 @@ enum DbType {
         url: String,
         auth_token: String,
         connector: crate::util::ConnectorService,
+        _bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>>,
     },
     #[cfg(feature = "remote")]
     Remote {
@@ -673,12 +674,11 @@ impl Database {
                 url,
                 auth_token,
                 connector,
+                ..
             } => {
                 use crate::{
-                    hrana::{connection::HttpConnection, hyper::HttpSender},
-                    local::impls::LibsqlConnection,
-                    replication::connection::State,
-                    sync::connection::SyncedConnection,
+                    hrana::connection::HttpConnection, local::impls::LibsqlConnection,
+                    replication::connection::State, sync::connection::SyncedConnection,
                 };
                 use tokio::sync::Mutex;
 
@@ -699,10 +699,11 @@ impl Database {
                 if *remote_writes {
                     let synced = SyncedConnection {
                         local,
-                        remote: HttpConnection::new(
+                        remote: HttpConnection::new_with_connector(
                             url.clone(),
                             auth_token.clone(),
-                            HttpSender::new(connector.clone(), None),
+                            connector.clone(),
+                            None,
                         ),
                         read_your_writes: *read_your_writes,
                         context: db.sync_ctx.clone().unwrap(),

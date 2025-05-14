@@ -108,6 +108,7 @@ impl Builder<()> {
                     read_your_writes: true,
                     remote_writes: false,
                     push_batch_size: 0,
+                    sync_interval: None,
                 },
             }
         }
@@ -401,12 +402,18 @@ cfg_replication! {
 
                         if res.status().is_success() {
                             tracing::trace!("Using sync protocol v2 for {}", url);
-                            return Builder::new_synced_database(path, url, auth_token)
+                            let builder = Builder::new_synced_database(path, url, auth_token)
                                 .connector(connector)
                                 .remote_writes(true)
-                                .read_your_writes(read_your_writes)
-                                .build()
-                                .await;
+                                .read_your_writes(read_your_writes);
+
+                            let builder = if let Some(sync_interval) = sync_interval {
+                                builder.sync_interval(sync_interval)
+                            } else {
+                                builder
+                            };
+
+                            return builder.build().await;
                         }
                         tracing::trace!("Using sync protocol v1 for {} based on probe results", url);
                     }
@@ -542,6 +549,7 @@ cfg_sync! {
         remote_writes: bool,
         read_your_writes: bool,
         push_batch_size: u32,
+        sync_interval: Option<std::time::Duration>,
     }
 
     impl Builder<SyncedDatabase> {
@@ -566,6 +574,14 @@ cfg_sync! {
             self
         }
 
+        /// Set the duration at which the replicator will automatically call `sync` in the
+        /// background. The sync will continue for the duration that the resulted `Database`
+        /// type is alive for, once it is dropped the background task will get dropped and stop.
+        pub fn sync_interval(mut self, duration: std::time::Duration) -> Builder<SyncedDatabase> {
+            self.inner.sync_interval = Some(duration);
+            self
+        }
+
         /// Provide a custom http connector that will be used to create http connections.
         pub fn connector<C>(mut self, connector: C) -> Builder<SyncedDatabase>
         where
@@ -580,6 +596,8 @@ cfg_sync! {
 
         /// Build a connection to a local database that can be synced to remote server.
         pub async fn build(self) -> Result<Database> {
+            use tracing::Instrument as _;
+
             let SyncedDatabase {
                 path,
                 flags,
@@ -594,6 +612,7 @@ cfg_sync! {
                 remote_writes,
                 read_your_writes,
                 push_batch_size,
+                sync_interval,
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
@@ -624,6 +643,35 @@ cfg_sync! {
                 db.sync_ctx.as_ref().unwrap().lock().await.set_push_batch_size(push_batch_size);
             }
 
+            let mut bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>> = None;
+            let conn = db.connect()?;
+
+            let sync_ctx = db.sync_ctx.as_ref().unwrap().clone();
+
+            if let Some(sync_interval) = sync_interval {
+                let jh = tokio::spawn(
+                    async move {
+                        loop {
+                            tracing::trace!("trying to sync");
+                            let mut ctx = sync_ctx.lock().await;
+                            if remote_writes {
+                                if let Err(e) = crate::sync::try_pull(&mut ctx, &conn).await {
+                                    tracing::error!("sync error: {}", e);
+                                }
+                            } else {
+                                if let Err(e) = crate::sync::sync_offline(&mut ctx, &conn).await {
+                                    tracing::error!("sync error: {}", e);
+                                }
+                            }
+                            tokio::time::sleep(sync_interval).await;
+                        }
+                    }
+                    .instrument(tracing::info_span!("sync_interval")),
+                );
+
+                bg_abort.replace(std::sync::Arc::new(crate::sync::DropAbort(jh.abort_handle())));
+            }
+
             Ok(Database {
                 db_type: DbType::Offline {
                     db,
@@ -632,6 +680,7 @@ cfg_sync! {
                     url,
                     auth_token,
                     connector,
+                    _bg_abort: bg_abort,
                 },
                 max_write_replication_index: Default::default(),
             })
