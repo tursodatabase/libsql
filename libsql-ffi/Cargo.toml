@@ -48,4 +48,4 @@ sqlean-extensions = [
   "sqlean-extension-text",
 ]
 libsql-disable-checkpoint-downgrade = []
-libsql-checkpoint-callback-on-any-frame-written = []
+libsql-checkpoint-only-full= []

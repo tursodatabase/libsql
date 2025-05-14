@@ -276,8 +276,8 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     if cfg!(feature = "libsql-disable-checkpoint-downgrade") {
         cfg.flag("-DLIBSQL_DISABLE_CHECKPOINT_DOWNGRADE=1");
     }
-    if cfg!(feature = "libsql-checkpoint-callback-on-any-frame-written") {
-        cfg.flag("-DLIBSQL_CHECKPOINT_CALLBACK_ON_ANY_FRAME_WRITTEN=1");
+    if cfg!(feature = "libsql-checkpoint-only-full") {
+        cfg.flag("-DLIBSQL_CHECKPOINT_ONLY_FULL=1");
     }
 
     if cfg!(feature = "bundled-sqlcipher") {
