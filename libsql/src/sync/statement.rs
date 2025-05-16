@@ -56,6 +56,10 @@ impl Stmt for SyncedStatement {
         self.inner.parameter_name(idx)
     }
 
+    fn column_count(&self) -> usize {
+        self.inner.column_count()
+    }
+
     fn columns(&self) -> Vec<Column> {
         self.inner.columns()
     }
