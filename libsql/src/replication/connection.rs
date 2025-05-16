@@ -779,6 +779,16 @@ impl Stmt for RemoteStatement {
         }
     }
 
+    fn column_count(&self) -> usize {
+        if let Some(stmt) = self.local_statement.as_ref() {
+            return stmt.column_count();
+        }
+        match self.metas.first() {
+            Some(meta) => meta.columns.len(),
+            None => 0,
+        }
+    }
+
     fn columns(&self) -> Vec<Column> {
         if let Some(stmt) = self.local_statement.as_ref() {
             return stmt.columns();

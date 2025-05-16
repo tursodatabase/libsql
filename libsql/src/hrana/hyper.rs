@@ -234,6 +234,10 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
         Some(&named_param.name)
     }
 
+    fn column_count(&self) -> usize {
+        self.cols.len()
+    }
+
     fn columns(&self) -> Vec<crate::Column> {
         //FIXME: there are several blockers here:
         // 1. We cannot know the column types before sending a query, so this method will never return results right

@@ -22,6 +22,8 @@ pub(crate) trait Stmt {
 
     fn parameter_name(&self, idx: i32) -> Option<&str>;
 
+    fn column_count(&self) -> usize;
+
     fn columns(&self) -> Vec<Column>;
 }
 
@@ -93,6 +95,11 @@ impl Statement {
     /// Fetch the parameter name at the provided index.
     pub fn parameter_name(&self, idx: i32) -> Option<&str> {
         self.inner.parameter_name(idx)
+    }
+
+    /// Fetch the number of columns for the prepared statement.
+    pub fn column_count(&self) -> usize {
+        self.inner.column_count()
     }
 
     /// Fetch the list of columns for the prepared statement.

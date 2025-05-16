@@ -145,6 +145,10 @@ impl Stmt for LibsqlStmt {
         self.0.parameter_name(idx)
     }
 
+    fn column_count(&self) -> usize {
+        self.0.column_count()
+    }
+
     fn columns(&self) -> Vec<Column> {
         self.0.columns()
     }
