@@ -452,7 +452,7 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
     let bundled_dir = format!("{out_dir}/sqlite3mc");
     let sqlite3mc_build_dir = env::current_dir().unwrap().join(out_dir).join("sqlite3mc");
 
-    let mut cmake_opts: Vec<&str> = vec![];
+    let mut cmake_opts: Vec<String> = vec![];
 
     let target_postfix = target.to_string().replace("-", "_");
     let cross_cc_var_name = format!("CC_{}", target_postfix);
@@ -462,8 +462,15 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
     let cross_cxx_var_name = format!("CXX_{}", target_postfix);
     let cross_cxx = env::var(&cross_cxx_var_name).ok();
 
-    let toolchain_path = sqlite3mc_build_dir.join("toolchain.cmake");
-    let cmake_toolchain_opt = "-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake".to_string();
+    let ndk_cmake_toolchain_path = env::var("CARGO_NDK_CMAKE_TOOLCHAIN_PATH").ok();
+    let toolchain_path = ndk_cmake_toolchain_path
+        .clone()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| sqlite3mc_build_dir.join("toolchain.cmake"));
+    let cmake_toolchain_opt = ndk_cmake_toolchain_path
+        .clone()
+        .map(|path| format!("-DCMAKE_TOOLCHAIN_FILE={}", path))
+        .unwrap_or_else(|| "-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake".to_string());
 
     let mut toolchain_file = OpenOptions::new()
         .create(true)
@@ -493,7 +500,7 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
             panic!("Unsupported cross target {}", cc)
         };
 
-        cmake_opts.push(&cmake_toolchain_opt);
+        cmake_opts.push(cmake_toolchain_opt.clone());
         writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"{}\")", system_name).unwrap();
         writeln!(
             toolchain_file,
@@ -508,20 +515,58 @@ fn build_multiple_ciphers(target: &str, out_path: &Path) {
         writeln!(toolchain_file, "set(CMAKE_CXX_COMPILER {})", cxx).unwrap();
     }
 
-    cmake_opts.push("-DCMAKE_BUILD_TYPE=Release");
-    cmake_opts.push("-DSQLITE3MC_STATIC=ON");
-    cmake_opts.push("-DCODEC_TYPE=AES256");
-    cmake_opts.push("-DSQLITE3MC_BUILD_SHELL=OFF");
-    cmake_opts.push("-DSQLITE_SHELL_IS_UTF8=OFF");
-    cmake_opts.push("-DSQLITE_USER_AUTHENTICATION=OFF");
-    cmake_opts.push("-DSQLITE_SECURE_DELETE=OFF");
-    cmake_opts.push("-DSQLITE_ENABLE_COLUMN_METADATA=ON");
-    cmake_opts.push("-DSQLITE_USE_URI=ON");
-    cmake_opts.push("-DCMAKE_POSITION_INDEPENDENT_CODE=ON");
+    cmake_opts.push("-DCMAKE_BUILD_TYPE=Release".to_string());
+    cmake_opts.push("-DSQLITE3MC_STATIC=ON".to_string());
+    cmake_opts.push("-DCODEC_TYPE=AES256".to_string());
+    cmake_opts.push("-DSQLITE3MC_BUILD_SHELL=OFF".to_string());
+    cmake_opts.push("-DSQLITE_SHELL_IS_UTF8=OFF".to_string());
+    cmake_opts.push("-DSQLITE_USER_AUTHENTICATION=OFF".to_string());
+    cmake_opts.push("-DSQLITE_SECURE_DELETE=OFF".to_string());
+    cmake_opts.push("-DSQLITE_ENABLE_COLUMN_METADATA=ON".to_string());
+    cmake_opts.push("-DSQLITE_USE_URI=ON".to_string());
+    cmake_opts.push("-DCMAKE_POSITION_INDEPENDENT_CODE=ON".to_string());
 
     if target.contains("musl") {
-        cmake_opts.push("-DCMAKE_C_FLAGS=\"-U_FORTIFY_SOURCE\" -D_FILE_OFFSET_BITS=32");
-        cmake_opts.push("-DCMAKE_CXX_FLAGS=\"-U_FORTIFY_SOURCE\" -D_FILE_OFFSET_BITS=32");
+        cmake_opts.push("-DCMAKE_C_FLAGS=\"-U_FORTIFY_SOURCE\" -D_FILE_OFFSET_BITS=32".to_string());
+        cmake_opts
+            .push("-DCMAKE_CXX_FLAGS=\"-U_FORTIFY_SOURCE\" -D_FILE_OFFSET_BITS=32".to_string());
+    }
+
+    if target.contains("android") {
+        let android_abi = match target {
+            "aarch64-linux-android" => "arm64-v8a",
+            "armv7-linux-androideabi" => "armeabi-v7a",
+            "i686-linux-android" => "x86",
+            "x86_64-linux-android" => "x86_64",
+            _ => panic!("Unsupported Android target: {}", target),
+        };
+        let android_platform = std::env::var("ANDROID_PLATFORM")
+            .expect("ANDROID_PLATFORM environment variable must be set");
+
+        cmake_opts.push(cmake_toolchain_opt);
+        cmake_opts.push(format!("-DANDROID_ABI={}", android_abi));
+        cmake_opts.push(format!("-DANDROID_PLATFORM=android-{}", android_platform));
+    }
+
+    if target.contains("ios") {
+        cmake_opts.push("-DCMAKE_SYSTEM_NAME=iOS".to_string());
+
+        let (arch, processor, sysroot) = if target.contains("x86_64") {
+            ("x86_64", "x86_64", "iphonesimulator")
+        } else if target.contains("aarch64") {
+            let sysroot = if target.contains("sim") {
+                "iphonesimulator"
+            } else {
+                "iphoneos"
+            };
+            ("arm64", "arm64", sysroot)
+        } else {
+            panic!("Unsupported iOS target: {}", target);
+        };
+
+        cmake_opts.push(format!("-DCMAKE_OSX_ARCHITECTURES={}", arch));
+        cmake_opts.push(format!("-DCMAKE_SYSTEM_PROCESSOR={}", processor));
+        cmake_opts.push(format!("-DCMAKE_OSX_SYSROOT={}", sysroot));
     }
 
     let mut cmake = Command::new("cmake");

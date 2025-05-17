@@ -3,6 +3,7 @@ CFLAGS := -Iinclude
 LDFLAGS := -lm
 ARCHS_IOS = x86_64-apple-ios aarch64-apple-ios aarch64-apple-ios-sim
 ARCHS_ANDROID = aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+ANDROID_PLATFORM := 31
 LIB = libsql_experimental.a
 HEADER = libsql.h
 XCFRAMEWORK = libsql.xcframework
@@ -35,7 +36,7 @@ android: $(ARCHS_ANDROID)
 	cp ../../target/i686-linux-android/release/$(LIB) generated/jniLibs/x86/$(LIB)
 
 $(ARCHS_ANDROID): %: 
-	cargo ndk --target $@ --platform 31 build --release
+	ANDROID_PLATFORM=$(ANDROID_PLATFORM) cargo ndk --target $@ --platform $(ANDROID_PLATFORM) build --release
 
 ios: $(XCFRAMEWORK)
 

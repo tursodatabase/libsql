@@ -273,14 +273,17 @@ if(MSVC)
   )
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux"
-    OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Android"
+    OR CMAKE_SYSTEM_NAME STREQUAL "Darwin"
+    OR CMAKE_SYSTEM_NAME STREQUAL "iOS"
+    OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
   # Do not set `-maes -msee4.2` when we are on arm which doesn't support
   # this instruction set.
   if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64"
+      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm"
       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
-      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm")
+      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7-a")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   else()
@@ -293,15 +296,17 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux"
     dl
     m
   )
-  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin"
+     OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(APPEND SQLITE3MC_LINK_LIBRARIES "-framework Security")
   endif()
   set(SHARED_LIB_EXPORT_DEFINITION "__attribute__((visibility(\"default\")))")
 else()
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND NOT (
       CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64"
-      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm"
+      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
+      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7-a"
   ))
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -maes")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -maes")
@@ -311,8 +316,9 @@ endif()
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT (
       CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64"
-      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm"
+      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
+      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7-a"
   ))
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -maes -Wno-error=incompatible-function-pointer-types")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -maes")
