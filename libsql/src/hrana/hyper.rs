@@ -26,17 +26,19 @@ pub type ByteStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Syn
 pub struct HttpSender {
     inner: hyper::Client<ConnectorService, hyper::Body>,
     version: HeaderValue,
+    #[cfg(feature = "sync")]
+    remote_encryption: Option<crate::sync::EncryptionContext>,
 }
 
 impl HttpSender {
-    pub fn new(connector: ConnectorService, version: Option<&str>) -> Self {
+    pub fn new(connector: ConnectorService, version: Option<&str>, #[cfg(feature = "sync")] remote_encryption: Option<crate::sync::EncryptionContext>) -> Self {
         let ver = version.unwrap_or(env!("CARGO_PKG_VERSION"));
 
         let version = HeaderValue::try_from(format!("libsql-remote-{ver}")).unwrap();
 
         let inner = hyper::Client::builder().build(connector);
 
-        Self { inner, version }
+        Self { inner, version, #[cfg(feature = "sync")] remote_encryption }
     }
 
     async fn send(
@@ -45,11 +47,23 @@ impl HttpSender {
         auth: Arc<str>,
         body: String,
     ) -> Result<super::HttpBody<ByteStream>> {
-        let req = hyper::Request::post(url.as_ref())
+        let mut req = hyper::Request::post(url.as_ref())
             .header(AUTHORIZATION, auth.as_ref())
-            .header("x-libsql-client-version", self.version.clone())
-            .body(hyper::Body::from(body))
+            .header("x-libsql-client-version", self.version.clone());
+
+        if let Some(remote_encryption) = &self.remote_encryption {
+            if remote_encryption.decrypt_pull {
+                req = req.header("x-turso-decrypt-response", "true");
+            }
+            if remote_encryption.push_is_encrypted {
+                req = req.header("x-turso-encrypted-request", "true");
+            }
+            req = req.header("x-turso-encryption-key", remote_encryption.key_16_bytes_base64_encoded.as_str());
+        }
+
+        let req = req.body(hyper::Body::from(body))
             .map_err(|err| HranaError::Http(format!("{:?}", err)))?;
+
 
         let resp = self.inner.request(req).await.map_err(HranaError::from)?;
 
@@ -109,8 +123,10 @@ impl HttpConnection<HttpSender> {
         token: impl Into<String>,
         connector: ConnectorService,
         version: Option<&str>,
+        #[cfg(feature = "sync")]
+        remote_encryption: Option<crate::sync::EncryptionContext>,
     ) -> Self {
-        let inner = HttpSender::new(connector, version);
+        let inner = HttpSender::new(connector, version, #[cfg(feature = "sync")] remote_encryption);
         Self::new(url.into(), token.into(), inner)
     }
 }

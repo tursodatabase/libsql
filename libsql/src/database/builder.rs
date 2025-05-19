@@ -6,6 +6,8 @@ use crate::{Database, Result};
 
 use super::DbType;
 
+pub use crate::sync::EncryptionContext;
+
 /// A builder for [`Database`]. This struct can be used to build
 /// all variants of [`Database`]. These variants include:
 ///
@@ -51,6 +53,8 @@ impl Builder<()> {
             path: impl AsRef<std::path::Path>,
             url: String,
             auth_token: String,
+            #[cfg(feature = "sync")]
+            remote_encryption: Option<crate::sync::EncryptionContext>,
         ) -> Builder<RemoteReplica> {
             Builder {
                 inner: RemoteReplica {
@@ -69,6 +73,8 @@ impl Builder<()> {
                     skip_safety_assert: false,
                     #[cfg(feature = "sync")]
                     sync_protocol: Default::default(),
+                    #[cfg(feature = "sync")]
+                    remote_encryption,
                 },
             }
         }
@@ -93,6 +99,7 @@ impl Builder<()> {
             path: impl AsRef<std::path::Path>,
             url: String,
             auth_token: String,
+            remote_encryption: Option<EncryptionContext>,
         ) -> Builder<SyncedDatabase> {
             Builder {
                 inner: SyncedDatabase {
@@ -108,6 +115,7 @@ impl Builder<()> {
                     read_your_writes: true,
                     remote_writes: false,
                     push_batch_size: 0,
+                    remote_encryption,
                 },
             }
         }
@@ -227,6 +235,8 @@ cfg_replication! {
         skip_safety_assert: bool,
         #[cfg(feature = "sync")]
         sync_protocol: super::SyncProtocol,
+        #[cfg(feature = "sync")]
+        remote_encryption: Option<crate::sync::EncryptionContext>,
     }
 
     /// Local replica configuration type in [`Builder`].
@@ -343,6 +353,8 @@ cfg_replication! {
                 skip_safety_assert,
                 #[cfg(feature = "sync")]
                 sync_protocol,
+                #[cfg(feature = "sync")]
+                remote_encryption,
             } = self.inner;
 
             let connector = if let Some(connector) = connector {
@@ -401,7 +413,7 @@ cfg_replication! {
 
                         if res.status().is_success() {
                             tracing::trace!("Using sync protocol v2 for {}", url);
-                            return Builder::new_synced_database(path, url, auth_token)
+                            return Builder::new_synced_database(path, url, auth_token, remote_encryption)
                                 .connector(connector)
                                 .remote_writes(true)
                                 .read_your_writes(read_your_writes)
@@ -542,6 +554,7 @@ cfg_sync! {
         remote_writes: bool,
         read_your_writes: bool,
         push_batch_size: u32,
+        remote_encryption: Option<crate::sync::EncryptionContext>,
     }
 
     impl Builder<SyncedDatabase> {
@@ -594,6 +607,7 @@ cfg_sync! {
                 remote_writes,
                 read_your_writes,
                 push_batch_size,
+                remote_encryption,
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
@@ -617,6 +631,7 @@ cfg_sync! {
                 flags,
                 url.clone(),
                 auth_token.clone(),
+                remote_encryption.clone(),
             )
             .await?;
 
@@ -632,6 +647,8 @@ cfg_sync! {
                     url,
                     auth_token,
                     connector,
+                    #[cfg(feature = "sync")]
+                    remote_encryption,
                 },
                 max_write_replication_index: Default::default(),
             })
