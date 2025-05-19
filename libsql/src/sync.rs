@@ -118,6 +118,16 @@ struct PushFramesResult {
     baton: Option<String>,
 }
 
+#[derive(Debug, Clone)]
+pub struct EncryptionContext {
+    /// The base64-encoded key for the encryption, sent on every request.
+    pub key_16_bytes_base64_encoded: String,
+    /// Whether the pushed frames are already encrypted.
+    pub push_is_encrypted: bool,
+    /// Whether to request the server to decrypt the pulled frames.
+    pub decrypt_pull: bool,
+}
+
 pub struct SyncContext {
     db_path: String,
     client: hyper::Client<ConnectorService, Body>,
@@ -133,6 +143,8 @@ pub struct SyncContext {
     /// whenever sync is called very first time, we will call the remote server
     /// to get the generation information and sync the db file if needed
     initial_server_sync: bool,
+    /// The encryption context for the sync.
+    remote_encryption: Option<EncryptionContext>,
 }
 
 impl SyncContext {
@@ -141,6 +153,7 @@ impl SyncContext {
         db_path: String,
         sync_url: String,
         auth_token: Option<String>,
+        remote_encryption: Option<EncryptionContext>,
     ) -> Result<Self> {
         let client = hyper::client::Client::builder().build::<_, hyper::Body>(connector);
 
@@ -163,6 +176,7 @@ impl SyncContext {
             durable_generation: 0,
             durable_frame_num: 0,
             initial_server_sync: false,
+            remote_encryption,
         };
 
         if let Err(e) = me.read_metadata().await {
@@ -303,6 +317,16 @@ impl SyncContext {
                 None => {}
             }
 
+            if let Some(remote_encryption) = &self.remote_encryption {
+                if remote_encryption.decrypt_pull {
+                    req = req.header("x-turso-decrypt-response", "true");
+                }
+                if remote_encryption.push_is_encrypted {
+                    req = req.header("x-turso-encrypted-request", "true");
+                }
+                req = req.header("x-turso-encryption-key", remote_encryption.key_16_bytes_base64_encoded.as_str());
+            }
+
             let req = req.body(body.clone().into()).expect("valid body");
 
             let res = self
@@ -412,6 +436,16 @@ impl SyncContext {
                     req = req.header("Authorization", auth_token);
                 }
                 None => {}
+            }
+
+            if let Some(remote_encryption) = &self.remote_encryption {
+                if remote_encryption.decrypt_pull {
+                    req = req.header("x-turso-decrypt-response", "true");
+                }
+                if remote_encryption.push_is_encrypted {
+                    req = req.header("x-turso-encrypted-request", "true");
+                }
+                req = req.header("x-turso-encryption-key", remote_encryption.key_16_bytes_base64_encoded.as_str());
             }
 
             let req = req.body(Body::empty()).expect("valid request");
@@ -577,6 +611,16 @@ impl SyncContext {
             req = req.header("Authorization", auth_token);
         }
 
+        if let Some(remote_encryption) = &self.remote_encryption {
+            if remote_encryption.decrypt_pull {
+                req = req.header("x-turso-decrypt-response", "true");
+            }
+            if remote_encryption.push_is_encrypted {
+                req = req.header("x-turso-encrypted-request", "true");
+            }
+            req = req.header("x-turso-encryption-key", remote_encryption.key_16_bytes_base64_encoded.as_str());
+        }
+
         let req = req.body(Body::empty()).expect("valid request");
 
         let res = self
@@ -671,6 +715,16 @@ impl SyncContext {
 
         if let Some(auth_token) = &self.auth_token {
             req = req.header("Authorization", auth_token);
+        }
+
+        if let Some(remote_encryption) = &self.remote_encryption {
+            if remote_encryption.decrypt_pull {
+                req = req.header("x-turso-decrypt-response", "true");
+            }
+            if remote_encryption.push_is_encrypted {
+                req = req.header("x-turso-encrypted-request", "true");
+            }
+            req = req.header("x-turso-encryption-key", remote_encryption.key_16_bytes_base64_encoded.as_str());
         }
 
         let req = req.body(Body::empty()).expect("valid request");

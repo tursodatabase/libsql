@@ -100,6 +100,7 @@ enum DbType {
         auth_token: String,
         connector: crate::util::ConnectorService,
         _bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>>,
+        remote_encryption: Option<crate::sync::EncryptionContext>,
     },
     #[cfg(feature = "remote")]
     Remote {
@@ -214,7 +215,7 @@ cfg_replication! {
                 endpoint,
                 auth_token,
                 https,
-                encryption_config
+                encryption_config,
             ).await
         }
 
@@ -524,7 +525,7 @@ cfg_remote! {
             url: impl Into<String>,
             auth_token: impl Into<String>,
             connector: C,
-            version: Option<String>
+            version: Option<String>,
         ) -> Result<Self>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -677,6 +678,7 @@ impl Database {
                 url,
                 auth_token,
                 connector,
+                remote_encryption,
                 ..
             } => {
                 use crate::{
@@ -708,6 +710,7 @@ impl Database {
                             connector.clone(),
                             None,
                             None,
+                            remote_encryption.clone()
                         ),
                         read_your_writes: *read_your_writes,
                         context: db.sync_ctx.clone().unwrap(),
@@ -738,6 +741,7 @@ impl Database {
                         connector.clone(),
                         version.as_ref().map(|s| s.as_str()),
                         namespace.as_ref().map(|s| s.as_str()),
+                        None,
                     ),
                 );
 
