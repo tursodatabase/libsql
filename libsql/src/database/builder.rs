@@ -2,9 +2,8 @@ cfg_core! {
     use crate::EncryptionConfig;
 }
 
-use crate::{Database, Result};
-
 use super::DbType;
+use crate::{Database, Result};
 
 /// A builder for [`Database`]. This struct can be used to build
 /// all variants of [`Database`]. These variants include:
@@ -646,9 +645,16 @@ cfg_sync! {
             let mut bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>> = None;
 
             if let Some(sync_interval) = sync_interval {
-                let conn = db.connect()?;
                 let sync_ctx = db.sync_ctx.as_ref().unwrap().clone();
+                {
+                    let mut ctx = sync_ctx.lock().await;
+                    crate::sync::bootstrap_db(&mut ctx).await?;
+                }
 
+                // db.connect creates a local db file, so it is important that we always call
+                // `bootstrap_db` (for synced dbs) before calling connect. Otherwise, the sync
+                // protocol skips calling `export` endpoint causing slowdown in initial bootstrap.
+                let conn = db.connect()?;
                 let jh = tokio::spawn(
                     async move {
                         loop {
