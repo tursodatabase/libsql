@@ -644,11 +644,11 @@ cfg_sync! {
             }
 
             let mut bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>> = None;
-            let conn = db.connect()?;
-
-            let sync_ctx = db.sync_ctx.as_ref().unwrap().clone();
 
             if let Some(sync_interval) = sync_interval {
+                let conn = db.connect()?;
+                let sync_ctx = db.sync_ctx.as_ref().unwrap().clone();
+
                 let jh = tokio::spawn(
                     async move {
                         loop {
