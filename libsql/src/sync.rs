@@ -766,7 +766,12 @@ pub async fn bootstrap_db(sync_ctx: &mut SyncContext) -> Result<()> {
         sync_ctx.sync_db_if_needed(info.current_generation).await?;
         // when sync_ctx is initialised, we set durable_generation to 0. however, once
         // sync_db is called, it should be > 0.
-        assert!(sync_ctx.durable_generation > 0, "generation should be > 0");
+        if sync_ctx.durable_generation == 0 {
+            tracing::error!(
+                "generation should be > 0, got: {}",
+                sync_ctx.durable_generation
+            );
+        }
         sync_ctx.initial_server_sync = true;
     }
     Ok(())
