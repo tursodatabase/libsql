@@ -645,10 +645,14 @@ cfg_sync! {
             let mut bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>> = None;
 
             if let Some(sync_interval) = sync_interval {
+                let sync_span = tracing::debug_span!("sync_interval");
+                let _enter = sync_span.enter();
+
                 let sync_ctx = db.sync_ctx.as_ref().unwrap().clone();
                 {
                     let mut ctx = sync_ctx.lock().await;
                     crate::sync::bootstrap_db(&mut ctx).await?;
+                    tracing::debug!("finished bootstrap with sync interval");
                 }
 
                 // db.connect creates a local db file, so it is important that we always call
@@ -657,8 +661,13 @@ cfg_sync! {
                 let conn = db.connect()?;
                 let jh = tokio::spawn(
                     async move {
+                        let mut interval = tokio::time::interval(sync_interval);
+
                         loop {
-                            tracing::trace!("trying to sync");
+                            tracing::info!("trying to sync");
+
+                            interval.tick().await;
+
                             let mut ctx = sync_ctx.lock().await;
                             if remote_writes {
                                 if let Err(e) = crate::sync::try_pull(&mut ctx, &conn).await {
@@ -669,10 +678,9 @@ cfg_sync! {
                                     tracing::error!("sync error: {}", e);
                                 }
                             }
-                            tokio::time::sleep(sync_interval).await;
                         }
                     }
-                    .instrument(tracing::info_span!("sync_interval")),
+                    .instrument(tracing::debug_span!("sync interval thread")),
                 );
 
                 bg_abort.replace(std::sync::Arc::new(crate::sync::DropAbort(jh.abort_handle())));

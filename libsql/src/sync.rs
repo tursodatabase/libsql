@@ -846,6 +846,8 @@ async fn try_push(
 
     let mut frame_no = start_frame_no;
     while frame_no <= end_frame_no {
+        tokio::task::yield_now().await;
+
         let batch_size = sync_ctx.push_batch_size.min(end_frame_no - frame_no + 1);
         let mut frames = conn.wal_get_frame(frame_no, page_size)?;
         if batch_size > 1 {
@@ -893,6 +895,8 @@ pub async fn try_pull(
     let mut err = None;
 
     loop {
+        tokio::task::yield_now().await;
+
         let generation = sync_ctx.durable_generation();
         let frame_no = sync_ctx.durable_frame_num() + 1;
         match sync_ctx.pull_one_frame(generation, frame_no).await {
