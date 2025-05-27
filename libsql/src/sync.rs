@@ -6,7 +6,7 @@ use bytes::Bytes;
 use chrono::Utc;
 use http::{HeaderValue, StatusCode};
 use hyper::Body;
-use tokio::{io::AsyncWriteExt as _, task::AbortHandle};
+use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
 
 #[cfg(test)]
@@ -81,11 +81,14 @@ pub struct PushResult {
     baton: Option<String>,
 }
 
-pub struct DropAbort(pub AbortHandle);
+pub struct DropAbort(pub Option<tokio::sync::oneshot::Sender<()>>);
 
 impl Drop for DropAbort {
     fn drop(&mut self) {
-        self.0.abort();
+        tracing::debug!("aborting");
+        if let Some(sender) = self.0.take() {
+            let _ = sender.send(());
+        }
     }
 }
 
@@ -846,8 +849,6 @@ async fn try_push(
 
     let mut frame_no = start_frame_no;
     while frame_no <= end_frame_no {
-        tokio::task::yield_now().await;
-
         let batch_size = sync_ctx.push_batch_size.min(end_frame_no - frame_no + 1);
         let mut frames = conn.wal_get_frame(frame_no, page_size)?;
         if batch_size > 1 {
@@ -895,8 +896,6 @@ pub async fn try_pull(
     let mut err = None;
 
     loop {
-        tokio::task::yield_now().await;
-
         let generation = sync_ctx.durable_generation();
         let frame_no = sync_ctx.durable_frame_num() + 1;
         match sync_ctx.pull_one_frame(generation, frame_no).await {
