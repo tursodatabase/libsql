@@ -6,7 +6,7 @@ use bytes::Bytes;
 use chrono::Utc;
 use http::{HeaderValue, StatusCode};
 use hyper::Body;
-use tokio::{io::AsyncWriteExt as _, task::AbortHandle};
+use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
 
 #[cfg(test)]
@@ -81,11 +81,14 @@ pub struct PushResult {
     baton: Option<String>,
 }
 
-pub struct DropAbort(pub AbortHandle);
+pub struct DropAbort(pub Option<tokio::sync::oneshot::Sender<()>>);
 
 impl Drop for DropAbort {
     fn drop(&mut self) {
-        self.0.abort();
+        tracing::debug!("aborting");
+        if let Some(sender) = self.0.take() {
+            let _ = sender.send(());
+        }
     }
 }
 

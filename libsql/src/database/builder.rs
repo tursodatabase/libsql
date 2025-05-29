@@ -644,38 +644,54 @@ cfg_sync! {
 
             let mut bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>> = None;
 
+
             if let Some(sync_interval) = sync_interval {
+                let (cancel_tx, mut cancel_rx) = tokio::sync::oneshot::channel::<()>();
+
+                let sync_span = tracing::debug_span!("sync_interval");
+                let _enter = sync_span.enter();
+
                 let sync_ctx = db.sync_ctx.as_ref().unwrap().clone();
                 {
                     let mut ctx = sync_ctx.lock().await;
                     crate::sync::bootstrap_db(&mut ctx).await?;
+                    tracing::debug!("finished bootstrap with sync interval");
                 }
 
                 // db.connect creates a local db file, so it is important that we always call
                 // `bootstrap_db` (for synced dbs) before calling connect. Otherwise, the sync
                 // protocol skips calling `export` endpoint causing slowdown in initial bootstrap.
                 let conn = db.connect()?;
-                let jh = tokio::spawn(
+
+                tokio::spawn(
                     async move {
+                        let mut interval = tokio::time::interval(sync_interval);
+
                         loop {
-                            tracing::trace!("trying to sync");
-                            let mut ctx = sync_ctx.lock().await;
-                            if remote_writes {
-                                if let Err(e) = crate::sync::try_pull(&mut ctx, &conn).await {
-                                    tracing::error!("sync error: {}", e);
-                                }
-                            } else {
-                                if let Err(e) = crate::sync::sync_offline(&mut ctx, &conn).await {
-                                    tracing::error!("sync error: {}", e);
+                            tokio::select! {
+                                _ = &mut cancel_rx => break,
+                                _ = interval.tick() => {
+                                    tracing::debug!("trying to sync");
+
+                                    let mut ctx = sync_ctx.lock().await;
+
+                                    let result = if remote_writes {
+                                        crate::sync::try_pull(&mut ctx, &conn).await
+                                    } else {
+                                        crate::sync::sync_offline(&mut ctx, &conn).await
+                                    };
+
+                                    if let Err(e) = result {
+                                        tracing::error!("Error syncing database: {}", e);
+                                    }
                                 }
                             }
-                            tokio::time::sleep(sync_interval).await;
                         }
                     }
-                    .instrument(tracing::info_span!("sync_interval")),
+                    .instrument(tracing::debug_span!("sync interval thread")),
                 );
 
-                bg_abort.replace(std::sync::Arc::new(crate::sync::DropAbort(jh.abort_handle())));
+                bg_abort.replace(std::sync::Arc::new(crate::sync::DropAbort(Some(cancel_tx))));
             }
 
             Ok(Database {
