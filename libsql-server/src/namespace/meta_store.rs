@@ -562,6 +562,10 @@ impl MetaStore {
         self.inner.configs.lock().await.contains_key(namespace)
     }
 
+    pub async fn list_names(&self) -> Vec<NamespaceName> {
+        self.inner.configs.lock().await.keys().cloned().collect()
+    }
+
     pub(crate) async fn shutdown(&self) -> crate::Result<()> {
         let replicator = self.inner.wal_manager.wrapper().as_ref();
 
