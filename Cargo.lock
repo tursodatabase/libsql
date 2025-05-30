@@ -2896,7 +2896,7 @@ dependencies = [
 
 [[package]]
 name = "libsql"
-version = "0.9.8"
+version = "0.9.9"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -2956,7 +2956,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-ffi"
-version = "0.9.8"
+version = "0.9.9"
 dependencies = [
  "bindgen",
  "cc",
@@ -2966,7 +2966,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-hrana"
-version = "0.9.8"
+version = "0.9.9"
 dependencies = [
  "base64 0.21.7",
  "bytes",
@@ -2977,7 +2977,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-rusqlite"
-version = "0.9.8"
+version = "0.9.9"
 dependencies = [
  "bencher",
  "bitflags 2.6.0",
@@ -3120,7 +3120,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-sys"
-version = "0.9.8"
+version = "0.9.9"
 dependencies = [
  "bytes",
  "libsql-ffi",
@@ -3151,7 +3151,7 @@ dependencies = [
 
 [[package]]
 name = "libsql_replication"
-version = "0.9.8"
+version = "0.9.9"
 dependencies = [
  "aes",
  "arbitrary",
