@@ -1696,3 +1696,103 @@ fn schema_db() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn remote_namespace_header_support() {
+    let tmp_host = tempdir().unwrap();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let db_url = "http://primary:8080";
+
+        let remote = libsql::Builder::new_remote(db_url.to_string(), String::new())
+            .namespace("foo")
+            .connector(TurmoilConnector)
+            .build()
+            .await
+            .unwrap();
+
+        let conn = remote.connect().unwrap();
+
+        conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
+            .await?;
+
+        conn.execute("INSERT into user(id) values (1);", ()).await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn remote_replica_namespace_header_support() {
+    let tmp_host = tempdir().unwrap();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let db_url = "http://primary:8080";
+
+        let remote = libsql::Builder::new_remote(db_url.to_string(), String::new())
+            .namespace("foo")
+            .connector(TurmoilConnector)
+            .build()
+            .await
+            .unwrap();
+
+        let conn = remote.connect().unwrap();
+
+        conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
+            .await?;
+
+        conn.execute("INSERT into user(id) values (1);", ()).await?;
+
+        let path = tmp_embedded_path.join("embedded");
+
+        let remote_replica = libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            db_url.to_string(),
+            String::new(),
+        )
+        .namespace("foo")
+        .connector(TurmoilConnector)
+        .build()
+        .await
+        .unwrap();
+
+        let rep = remote_replica.sync().await.unwrap();
+        assert_eq!(rep.frame_no(), Some(2));
+        assert_eq!(rep.frames_synced(), 3);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
