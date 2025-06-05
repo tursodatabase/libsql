@@ -386,6 +386,11 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     }
     println!("cargo:rerun-if-env-changed=SQLITE_MAX_EXPR_DEPTH");
 
+    if let Ok(limit) = env::var("SQLITE_LIMIT_COMPOUND_SELECT") {
+        cfg.flag(&format!("-DSQLITE_LIMIT_COMPOUND_SELECT={limit}"));
+    }
+    println!("cargo:rerun-if-env-changed=SQLITE_LIMIT_COMPOUND_SELECT");
+
     if let Ok(limit) = env::var("SQLITE_MAX_COLUMN") {
         cfg.flag(&format!("-DSQLITE_MAX_COLUMN={limit}"));
     }
