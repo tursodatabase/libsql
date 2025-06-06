@@ -374,7 +374,7 @@ cfg_replication! {
                         } else {
                             url.to_string()
                         };
-                        let req = http::Request::get(format!("{prefix}/sync/0/0/0"))
+                        let req = http::Request::get(format!("{prefix}/info"))
                             .header("Authorization", format!("Bearer {}", auth_token))
                             .body(hyper::Body::empty())
                             .unwrap();
