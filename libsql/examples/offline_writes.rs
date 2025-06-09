@@ -41,42 +41,5 @@ async fn main() {
 
     println!("Syncing database from remote...");
     db.sync().await.unwrap();
-
-    conn.execute(
-        r#"
-        CREATE TABLE IF NOT EXISTS guest_book_entries (
-            text TEXT
-        )"#,
-        (),
-    )
-    .await
-    .unwrap();
-
-    let mut input = String::new();
-    println!("Please write your entry to the guestbook:");
-    match std::io::stdin().read_line(&mut input) {
-        Ok(_) => {
-            println!("You entered: {}", input);
-            let params = params![input.as_str()];
-            conn.execute("INSERT INTO guest_book_entries (text) VALUES (?)", params)
-                .await
-                .unwrap();
-        }
-        Err(error) => {
-            eprintln!("Error reading input: {}", error);
-        }
-    }
-    let mut results = conn
-        .query("SELECT * FROM guest_book_entries", ())
-        .await
-        .unwrap();
-    println!("Guest book entries:");
-    while let Some(row) = results.next().await.unwrap() {
-        let text: String = row.get(0).unwrap();
-        println!("  {}", text);
-    }
-
-    println!("Syncing database to remote...");
-    db.sync().await.unwrap();
     println!("Done!");
 }
