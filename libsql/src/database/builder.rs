@@ -175,7 +175,7 @@ cfg_core! {
         /// Using this setting is very UNSAFE and you are expected to use the libsql in adherence
         /// with the sqlite3 threadsafe rules or else you WILL create undefined behavior. Use at
         /// your own risk.
-        pub unsafe fn skip_saftey_assert(mut self, skip: bool) -> Builder<Local> {
+        pub unsafe fn skip_safety_assert(mut self, skip: bool) -> Builder<Local> {
             self.inner.skip_safety_assert = skip;
             self
         }
@@ -206,7 +206,7 @@ cfg_core! {
                         path,
                         flags: self.inner.flags,
                         encryption_config: self.inner.encryption_config,
-                        skip_saftey_assert: self.inner.skip_safety_assert
+                        skip_safety_assert: self.inner.skip_safety_assert
                     },
                     max_write_replication_index: Default::default(),
                 }
@@ -321,7 +321,7 @@ cfg_replication! {
         /// Using this setting is very UNSAFE and you are expected to use the libsql in adherence
         /// with the sqlite3 threadsafe rules or else you WILL create undefined behavior. Use at
         /// your own risk.
-        pub unsafe fn skip_saftey_assert(mut self, skip: bool) -> Builder<RemoteReplica> {
+        pub unsafe fn skip_safety_assert(mut self, skip: bool) -> Builder<RemoteReplica> {
             self.inner.skip_safety_assert = skip;
             self
         }
