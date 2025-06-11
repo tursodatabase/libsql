@@ -468,7 +468,7 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
         .define("SQLITE_ENABLE_COLUMN_METADATA", "ON")
         .define("SQLITE_USE_URI", "ON")
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
-        .define("CMAKE_BUILD_TYPE", "Release");
+        .profile("Release");
 
     if cfg!(feature = "wasmtime-bindings") {
         config.define("LIBSQL_ENABLE_WASM_RUNTIME", "1");
