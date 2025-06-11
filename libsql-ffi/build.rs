@@ -50,7 +50,7 @@ fn main() {
     }
 
     if cfg!(feature = "multiple-ciphers") {
-        copy_multiple_ciphers(&out_dir, &out_path);
+        copy_multiple_ciphers(&out_path);
         return;
     }
 
@@ -409,16 +409,11 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     println!("cargo:lib_dir={out_dir}");
 }
 
-fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
+fn copy_multiple_ciphers(out_path: &Path) {
     let dst = dbg!(build_multiple_ciphers(out_path));
 
-    copy_with_cp(
-        dbg!(dst.join("build").join("libsqlite3mc_static.a")),
-        dbg!(format!("{out_dir}/libsqlite3mc.a")),
-    )
-    .unwrap();
-    println!("cargo:rustc-link-lib=static=sqlite3mc");
-    println!("cargo:rustc-link-search={out_dir}");
+    println!("cargo:rustc-link-lib=static=sqlite3mc_static");
+    println!("cargo:rustc-link-search={}", dst.join("build").display());
 }
 
 fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
