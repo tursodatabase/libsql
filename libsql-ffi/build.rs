@@ -412,8 +412,16 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
 fn copy_multiple_ciphers(out_path: &Path) {
     let dst = dbg!(build_multiple_ciphers(out_path));
 
-    println!("cargo:rustc-link-lib=static=sqlite3mc_static");
     println!("cargo:rustc-link-search={}", dst.join("build").display());
+    println!(
+        "cargo:rustc-link-search={}",
+        dst.join("build").join("Release").display()
+    );
+    println!(
+        "cargo:rustc-link-search={}",
+        dst.join("build").join("Debug").display()
+    );
+    println!("cargo:rustc-link-lib=static=sqlite3mc_static");
 }
 
 fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
@@ -450,7 +458,7 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
     let mut config = cmake::Config::new(&bundled_dir);
 
     config
-        .define("CMAKE_BUILD_TYPE", "Release")
+        .build_target("sqlite3mc_static")
         .define("SQLITE3MC_STATIC", "ON")
         .define("CODEC_TYPE", "AES256")
         .define("SQLITE3MC_BUILD_SHELL", "OFF")
