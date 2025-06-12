@@ -470,6 +470,12 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
         .profile("Release");
 
+    let target = env::var("TARGET").unwrap();
+
+    if target.ends_with("apple-ios") {
+        config.define("SQLITE3MC_OMIT_AES_HARDWARE_SUPPORT", "ON");
+    }
+
     if cfg!(feature = "wasmtime-bindings") {
         config.define("LIBSQL_ENABLE_WASM_RUNTIME", "1");
     }
@@ -478,6 +484,14 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
         config
             .define("SQLITE_ENABLE_PREUPDATE_HOOK", "ON")
             .define("SQLITE_ENABLE_SESSION", "ON");
+    }
+
+    if let Ok(abi) = env::var("CARGO_NDK_ANDROID_TARGET") {
+        config.define("ANDROID_ABI", abi);
+    }
+
+    if let Ok(platform) = env::var("ANDROID_PLATFORM") {
+        config.define("ANDROID_PLATFORM", platform);
     }
 
     config.build()
