@@ -313,11 +313,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT (
       CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64"
       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm"
+      OR CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a"
+      OR CMAKE_ANDROID_ARCH_ABI STREQUAL "armeabi-v7a"
   ))
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -maes -Wno-error=incompatible-function-pointer-types")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -maes")
 endif()
-
 set(_LIB_DIFINITIONS
   _LIB
 )
