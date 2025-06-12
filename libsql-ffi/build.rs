@@ -470,6 +470,18 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
         .profile("Release");
 
+    if let Ok(cc) = env::var("CMAKE_C_COMPILER") {
+        let mut build = cc::Build::new();
+        build.compiler(cc);
+        config.init_c_cfg(build);
+    }
+
+    if let Ok(cxx) = env::var("CMAKE_CXX_COMPILER") {
+        let mut build = cc::Build::new();
+        build.compiler(cxx);
+        config.init_cxx_cfg(build);
+    }
+
     if cfg!(feature = "wasmtime-bindings") {
         config.define("LIBSQL_ENABLE_WASM_RUNTIME", "1");
     }
