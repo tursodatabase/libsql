@@ -329,16 +329,7 @@ where
             self.pipeline_url = Arc::from(format!("{base_url}/v3/pipeline"));
             self.cursor_url = Arc::from(format!("{base_url}/v3/cursor"));
         }
-        match response.baton.take() {
-            None => {
-                tracing::trace!("client stream has been closed by the server");
-                self.reset();
-            } // stream has been closed by the server
-            Some(baton) => {
-                tracing::trace!("client stream has been assigned with baton: `{}`", baton);
-                self.baton = Some(baton)
-            }
-        }
+        self.reset();
         Ok(cursor)
     }
 
