@@ -279,6 +279,9 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     if cfg!(feature = "libsql-checkpoint-only-full") {
         cfg.flag("-DLIBSQL_CHECKPOINT_ONLY_FULL=1");
     }
+    if cfg!(feature = "libsql-disable-direct-overflow-read") {
+        cfg.flag("-DSQLITE_DIRECT_OVERFLOW_READ=0");
+    }
 
     if cfg!(feature = "bundled-sqlcipher") {
         cfg.flag("-DSQLITE_HAS_CODEC").flag("-DSQLITE_TEMP_STORE=2");

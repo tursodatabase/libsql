@@ -49,4 +49,5 @@ sqlean-extensions = [
   "sqlean-extension-text",
 ]
 libsql-disable-checkpoint-downgrade = []
-libsql-checkpoint-only-full= []
+libsql-checkpoint-only-full = []
+libsql-disable-direct-overflow-read = []
