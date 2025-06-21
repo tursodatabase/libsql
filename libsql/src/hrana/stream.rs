@@ -176,7 +176,7 @@ where
 
     pub async fn cursor(&self, batch: Batch) -> Result<Cursor<T::Stream>> {
         let mut client = self.inner.stream.lock().await;
-        let cursor = client.open_cursor(batch).await?;
+        let cursor = client.open_cursor(batch, !self.is_autocommit()).await?;
         Ok(cursor)
     }
 
@@ -314,7 +314,7 @@ where
         Ok(resp)
     }
 
-    pub async fn open_cursor(&mut self, batch: Batch) -> Result<Cursor<T::Stream>> {
+    pub async fn open_cursor(&mut self, batch: Batch, use_baton: bool) -> Result<Cursor<T::Stream>> {
         let msg = CursorReq {
             baton: self.baton.clone(),
             batch,
@@ -329,7 +329,16 @@ where
             self.pipeline_url = Arc::from(format!("{base_url}/v3/pipeline"));
             self.cursor_url = Arc::from(format!("{base_url}/v3/cursor"));
         }
-        self.reset();
+        match response.baton.take() {
+            Some(baton) if use_baton => {
+                tracing::trace!("client stream has been assigned with baton: `{}`", baton);
+                self.baton = Some(baton)
+            }
+            _ => {
+                tracing::trace!("client stream has been closed by the server");
+                self.reset();
+            }
+        }
         Ok(cursor)
     }
 
