@@ -13,7 +13,6 @@ use uuid::Uuid;
 mod test;
 
 pub mod connection;
-pub mod statement;
 pub mod transaction;
 
 const METADATA_VERSION: u32 = 0;
