@@ -15,7 +15,7 @@ use std::sync::{
 use std::time::Duration;
 use tokio::sync::Mutex;
 
-use super::transaction::SyncedTx;
+use super::{statement::SyncedStatement, transaction::SyncedTx};
 
 #[derive(Clone)]
 pub struct SyncedConnection {
@@ -110,9 +110,10 @@ impl Conn for SyncedConnection {
 
     async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         if self.should_execute_local(sql).await? {
-            if self.needs_pull.swap(false, Ordering::Relaxed) {
+            if self.needs_pull.load(Ordering::Relaxed) {
                 let mut context = self.context.lock().await;
                 crate::sync::try_pull(&mut context, &self.local).await?;
+                self.needs_pull.store(false, Ordering::Relaxed);
             }
             self.local.execute_batch(sql)
         } else {
@@ -122,9 +123,10 @@ impl Conn for SyncedConnection {
 
     async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows> {
         if self.should_execute_local(sql).await? {
-            if self.needs_pull.swap(false, Ordering::Relaxed) {
+            if self.needs_pull.load(Ordering::Relaxed) {
                 let mut context = self.context.lock().await;
                 crate::sync::try_pull(&mut context, &self.local).await?;
+                self.needs_pull.store(false, Ordering::Relaxed);
             }
             self.local.execute_transactional_batch(sql)?;
             Ok(BatchRows::empty())
@@ -135,12 +137,17 @@ impl Conn for SyncedConnection {
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {
         if self.should_execute_local(sql).await? {
-            if self.needs_pull.swap(false, Ordering::Relaxed) {
-                let mut context = self.context.lock().await;
-                crate::sync::try_pull(&mut context, &self.local).await?;
-            }
-            Ok(Statement {
+            let stmt = Statement {
                 inner: Box::new(LibsqlStmt(self.local.prepare(sql)?)),
+            };
+
+            Ok(Statement {
+                inner: Box::new(SyncedStatement {
+                    conn: self.local.clone(),
+                    inner: stmt,
+                    context: self.context.clone(),
+                    needs_pull: self.needs_pull.clone(),
+                }),
             })
         } else {
             let stmt = Statement {
