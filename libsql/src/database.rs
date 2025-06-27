@@ -712,6 +712,7 @@ impl Database {
                         read_your_writes: *read_your_writes,
                         context: db.sync_ctx.clone().unwrap(),
                         state: std::sync::Arc::new(Mutex::new(State::Init)),
+                        needs_pull: std::sync::atomic::AtomicBool::new(false).into(),
                     };
 
                     let conn = std::sync::Arc::new(synced);
