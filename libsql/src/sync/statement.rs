@@ -4,13 +4,14 @@ use crate::{
     statement::Stmt,
     sync::SyncContext, Column, Result, Rows, Statement,
 };
-use std::sync::Arc;
+use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 use tokio::sync::Mutex;
 
 pub struct SyncedStatement {
     pub conn: local::Connection,
-    pub context: Arc<Mutex<SyncContext>>,
     pub inner: Statement,
+    pub context: Arc<Mutex<SyncContext>>,
+    pub needs_pull: Arc<AtomicBool>,
 }
 
 #[async_trait::async_trait]
@@ -20,24 +21,30 @@ impl Stmt for SyncedStatement {
     }
 
     async fn execute(&mut self, params: &Params) -> Result<usize> {
-        let result = self.inner.execute(params).await;
-        let mut context = self.context.lock().await;
-        crate::sync::try_pull(&mut context, &self.conn).await?;
-        result
+        if self.needs_pull.load(Ordering::Relaxed) {
+            let mut context = self.context.lock().await;
+            crate::sync::try_pull(&mut context, &self.conn).await?;
+            self.needs_pull.store(false, Ordering::Relaxed);
+        }
+        self.inner.execute(params).await
     }
 
     async fn query(&mut self, params: &Params) -> Result<Rows> {
-        let result = self.inner.query(params).await;
-        let mut context = self.context.lock().await;
-        crate::sync::try_pull(&mut context, &self.conn).await?;
-        result
+        if self.needs_pull.load(Ordering::Relaxed) {
+            let mut context = self.context.lock().await;
+            crate::sync::try_pull(&mut context, &self.conn).await?;
+            self.needs_pull.store(false, Ordering::Relaxed);
+        }
+        self.inner.query(params).await
     }
 
     async fn run(&mut self, params: &Params) -> Result<()> {
-        let result = self.inner.run(params).await;
-        let mut context = self.context.lock().await;
-        crate::sync::try_pull(&mut context, &self.conn).await?;
-        result
+        if self.needs_pull.load(Ordering::Relaxed) {
+            let mut context = self.context.lock().await;
+            crate::sync::try_pull(&mut context, &self.conn).await?;
+            self.needs_pull.store(false, Ordering::Relaxed);
+        }
+        self.inner.run(params).await
     }
 
     fn interrupt(&mut self) -> Result<()> {
@@ -64,3 +71,4 @@ impl Stmt for SyncedStatement {
         self.inner.columns()
     }
 }
+

@@ -8,7 +8,10 @@ use crate::{
     sync::SyncContext,
     BatchRows, Error, Result, Statement, Transaction, TransactionBehavior,
 };
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use std::time::Duration;
 use tokio::sync::Mutex;
 
@@ -21,6 +24,7 @@ pub struct SyncedConnection {
     pub read_your_writes: bool,
     pub context: Arc<Mutex<SyncContext>>,
     pub state: Arc<Mutex<State>>,
+    pub needs_pull: Arc<AtomicBool>,
 }
 
 impl SyncedConnection {
@@ -89,7 +93,7 @@ impl SyncedConnection {
                 _ => {
                     *state = predicted_end_state;
                     false
-                },
+                }
             };
 
             Ok(should_execute_local)
@@ -106,6 +110,11 @@ impl Conn for SyncedConnection {
 
     async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         if self.should_execute_local(sql).await? {
+            if self.needs_pull.load(Ordering::Relaxed) {
+                let mut context = self.context.lock().await;
+                crate::sync::try_pull(&mut context, &self.local).await?;
+                self.needs_pull.store(false, Ordering::Relaxed);
+            }
             self.local.execute_batch(sql)
         } else {
             self.remote.execute_batch(sql).await
@@ -114,6 +123,11 @@ impl Conn for SyncedConnection {
 
     async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows> {
         if self.should_execute_local(sql).await? {
+            if self.needs_pull.load(Ordering::Relaxed) {
+                let mut context = self.context.lock().await;
+                crate::sync::try_pull(&mut context, &self.local).await?;
+                self.needs_pull.store(false, Ordering::Relaxed);
+            }
             self.local.execute_transactional_batch(sql)?;
             Ok(BatchRows::empty())
         } else {
@@ -123,8 +137,17 @@ impl Conn for SyncedConnection {
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {
         if self.should_execute_local(sql).await? {
-            Ok(Statement {
+            let stmt = Statement {
                 inner: Box::new(LibsqlStmt(self.local.prepare(sql)?)),
+            };
+
+            Ok(Statement {
+                inner: Box::new(SyncedStatement {
+                    conn: self.local.clone(),
+                    inner: stmt,
+                    context: self.context.clone(),
+                    needs_pull: self.needs_pull.clone(),
+                }),
             })
         } else {
             let stmt = Statement {
@@ -132,16 +155,10 @@ impl Conn for SyncedConnection {
             };
 
             if self.read_your_writes {
-                Ok(Statement {
-                    inner: Box::new(SyncedStatement {
-                        conn: self.local.clone(),
-                        context: self.context.clone(),
-                        inner: stmt,
-                    }),
-                })
-            } else {
-                Ok(stmt)
+                self.needs_pull.store(true, Ordering::Relaxed);
             }
+
+            Ok(stmt)
         }
     }
 
