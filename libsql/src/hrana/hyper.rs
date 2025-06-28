@@ -70,7 +70,7 @@ impl HttpSender {
         if let Some(remote_encryption) = &self.remote_encryption {
             req_builder = req_builder.header(
                 "x-turso-encryption-key",
-                remote_encryption.key_16_bytes_base64_encoded.as_str(),
+                remote_encryption.key_32_bytes_base64_encoded.as_str(),
             );
         }
 

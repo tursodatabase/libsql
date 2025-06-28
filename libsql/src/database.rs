@@ -710,7 +710,7 @@ impl Database {
                             connector.clone(),
                             None,
                             None,
-                            remote_encryption.clone()
+                            remote_encryption.clone(),
                         ),
                         read_your_writes: *read_your_writes,
                         context: db.sync_ctx.clone().unwrap(),
