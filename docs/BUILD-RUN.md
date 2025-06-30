@@ -68,7 +68,7 @@ docker run -p 8080:8080 -d ghcr.io/tursodatabase/libsql-server:latest
 ```
 
 Or you can run a specific version using one of the [sqld container release
-tags] in the following form for version X.Y.Z:
+tags](https://github.com/tursodatabase/libsql/pkgs/container/libsql-server) in the following form for version X.Y.Z:
 
 ```bash
 docker run -p 8080:8080 -d ghcr.io/tursodatabase/libsql-server:vX.Y.Z
