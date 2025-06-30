@@ -1,6 +1,6 @@
 // Example of using offline writes with encryption
 
-use libsql::{params, Builder, EncryptionContext};
+use libsql::{params, Builder, EncryptionContext, EncryptionKey};
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +18,7 @@ async fn main() {
     // Optional encryption key for the database, if provided.
     let encryption = if let Ok(key) = std::env::var("LIBSQL_ENCRYPTION_KEY") {
         Some(EncryptionContext {
-            key_32_bytes_base64_encoded: key.to_string(),
+            key: EncryptionKey::Base64Encoded(key),
         })
     } else {
         None

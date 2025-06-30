@@ -133,6 +133,7 @@ cfg_sync! {
     mod sync;
     pub use database::SyncProtocol;
     pub use sync::EncryptionContext;
+    pub use sync::EncryptionKey;
 }
 
 cfg_replication! {

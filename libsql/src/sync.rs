@@ -1,11 +1,12 @@
 use crate::{local::Connection, util::ConnectorService, Error, Result};
 
-use std::path::Path;
-
+use base64::engine::general_purpose;
+use base64::Engine;
 use bytes::Bytes;
 use chrono::Utc;
 use http::{HeaderValue, StatusCode};
 use hyper::Body;
+use std::path::Path;
 use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
 
@@ -119,9 +120,26 @@ struct PushFramesResult {
 }
 
 #[derive(Debug, Clone)]
+pub enum EncryptionKey {
+    /// The key is a base64-encoded string.
+    Base64Encoded(String),
+    /// The key is a byte array.
+    Bytes(Vec<u8>),
+}
+
+impl EncryptionKey {
+    pub fn as_string(&self) -> String {
+        match self {
+            EncryptionKey::Base64Encoded(s) => s.clone(),
+            EncryptionKey::Bytes(b) => general_purpose::STANDARD.encode(b),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct EncryptionContext {
     /// The base64-encoded key for the encryption, sent on every request.
-    pub key_32_bytes_base64_encoded: String,
+    pub key: EncryptionKey,
 }
 
 pub struct SyncContext {
@@ -314,10 +332,7 @@ impl SyncContext {
             }
 
             if let Some(remote_encryption) = &self.remote_encryption {
-                req = req.header(
-                    "x-turso-encryption-key",
-                    remote_encryption.key_32_bytes_base64_encoded.as_str(),
-                );
+                req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
             }
 
             let req = req.body(body.clone().into()).expect("valid body");
@@ -432,10 +447,7 @@ impl SyncContext {
             }
 
             if let Some(remote_encryption) = &self.remote_encryption {
-                req = req.header(
-                    "x-turso-encryption-key",
-                    remote_encryption.key_32_bytes_base64_encoded.as_str(),
-                );
+                req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
             }
 
             let req = req.body(Body::empty()).expect("valid request");
@@ -602,10 +614,7 @@ impl SyncContext {
         }
 
         if let Some(remote_encryption) = &self.remote_encryption {
-            req = req.header(
-                "x-turso-encryption-key",
-                remote_encryption.key_32_bytes_base64_encoded.as_str(),
-            );
+            req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
         }
 
         let req = req.body(Body::empty()).expect("valid request");
@@ -705,10 +714,7 @@ impl SyncContext {
         }
 
         if let Some(remote_encryption) = &self.remote_encryption {
-            req = req.header(
-                "x-turso-encryption-key",
-                remote_encryption.key_32_bytes_base64_encoded.as_str(),
-            );
+            req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
         }
 
         let req = req.body(Body::empty()).expect("valid request");
