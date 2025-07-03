@@ -240,6 +240,16 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
+      - name: Set up MSVC Build Tools
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install CMake
+        uses: lukka/get-cmake@v3.27.2
+
+      - name: Check for C/C++ compilers
+        run: |
+          where cl
+          cmake --version    
       - name: build libsql all features
         run: cargo build -p libsql --all-features 
 
