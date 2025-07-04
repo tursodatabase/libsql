@@ -102,6 +102,7 @@ sync = [
   "stream",
   "remote",
   "replication",
+  "dep:base64",
   "dep:tower",
   "dep:hyper",
   "dep:http",
@@ -131,6 +132,7 @@ hrana = [
 serde = ["dep:serde"]
 remote = [
   "hrana",
+  "dep:base64",
   "dep:tower",
   "dep:hyper",
   "dep:hyper",

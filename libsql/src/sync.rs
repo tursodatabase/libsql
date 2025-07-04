@@ -1,7 +1,6 @@
 use crate::{local::Connection, util::ConnectorService, Error, Result};
 
-use base64::engine::general_purpose;
-use base64::Engine;
+use crate::database::EncryptionContext;
 use bytes::Bytes;
 use chrono::Utc;
 use http::{HeaderValue, StatusCode};
@@ -117,29 +116,6 @@ struct InfoResult {
 struct PushFramesResult {
     max_frame_no: u32,
     baton: Option<String>,
-}
-
-#[derive(Debug, Clone)]
-pub enum EncryptionKey {
-    /// The key is a base64-encoded string.
-    Base64Encoded(String),
-    /// The key is a byte array.
-    Bytes(Vec<u8>),
-}
-
-impl EncryptionKey {
-    pub fn as_string(&self) -> String {
-        match self {
-            EncryptionKey::Base64Encoded(s) => s.clone(),
-            EncryptionKey::Bytes(b) => general_purpose::STANDARD.encode(b),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct EncryptionContext {
-    /// The base64-encoded key for the encryption, sent on every request.
-    pub key: EncryptionKey,
 }
 
 pub struct SyncContext {

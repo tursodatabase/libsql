@@ -27,8 +27,8 @@ pub struct HttpSender {
     inner: hyper::Client<ConnectorService, hyper::Body>,
     version: HeaderValue,
     namespace: Option<HeaderValue>,
-    #[cfg(feature = "sync")]
-    remote_encryption: Option<crate::sync::EncryptionContext>,
+    #[cfg(any(feature = "remote", feature = "sync"))]
+    remote_encryption: Option<crate::database::EncryptionContext>,
 }
 
 impl HttpSender {
@@ -36,7 +36,9 @@ impl HttpSender {
         connector: ConnectorService,
         version: Option<&str>,
         namespace: Option<&str>,
-        #[cfg(feature = "sync")] remote_encryption: Option<crate::sync::EncryptionContext>,
+        #[cfg(any(feature = "remote", feature = "sync"))] remote_encryption: Option<
+            crate::database::EncryptionContext,
+        >,
     ) -> Self {
         let ver = version.unwrap_or(env!("CARGO_PKG_VERSION"));
 
@@ -48,7 +50,7 @@ impl HttpSender {
             inner,
             version,
             namespace,
-            #[cfg(feature = "sync")]
+            #[cfg(any(feature = "remote", feature = "sync"))]
             remote_encryption,
         }
     }
@@ -67,6 +69,7 @@ impl HttpSender {
             req_builder = req_builder.header("x-namespace", namespace);
         }
 
+        #[cfg(any(feature = "remote", feature = "sync"))]
         if let Some(remote_encryption) = &self.remote_encryption {
             req_builder =
                 req_builder.header("x-turso-encryption-key", remote_encryption.key.as_string());
@@ -135,13 +138,15 @@ impl HttpConnection<HttpSender> {
         connector: ConnectorService,
         version: Option<&str>,
         namespace: Option<&str>,
-        #[cfg(feature = "sync")] remote_encryption: Option<crate::sync::EncryptionContext>,
+        #[cfg(any(feature = "remote", feature = "sync"))] remote_encryption: Option<
+            crate::database::EncryptionContext,
+        >,
     ) -> Self {
         let inner = HttpSender::new(
             connector,
             version,
             namespace,
-            #[cfg(feature = "sync")]
+            #[cfg(any(feature = "remote", feature = "sync"))]
             remote_encryption,
         );
         Self::new(url.into(), token.into(), inner)

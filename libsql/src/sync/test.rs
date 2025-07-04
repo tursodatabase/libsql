@@ -20,6 +20,7 @@ async fn test_sync_context_push_frame() {
         db_path.to_str().unwrap().to_string(),
         server.url(),
         None,
+        None,
     )
     .await
     .unwrap();
@@ -49,6 +50,7 @@ async fn test_sync_context_with_auth() {
         db_path.to_str().unwrap().to_string(),
         server.url(),
         Some("test_token".to_string()),
+        None,
     )
     .await
     .unwrap();
@@ -72,6 +74,7 @@ async fn test_sync_context_multiple_frames() {
         server.connector(),
         db_path.to_str().unwrap().to_string(),
         server.url(),
+        None,
         None,
     )
     .await
@@ -102,6 +105,7 @@ async fn test_sync_context_corrupted_metadata() {
         db_path.to_str().unwrap().to_string(),
         server.url(),
         None,
+        None,
     )
     .await
     .unwrap();
@@ -122,6 +126,7 @@ async fn test_sync_context_corrupted_metadata() {
         server.connector(),
         db_path.to_str().unwrap().to_string(),
         server.url(),
+        None,
         None,
     )
     .await
@@ -145,6 +150,7 @@ async fn test_sync_restarts_with_lower_max_frame_no() {
         server.connector(),
         db_path.to_str().unwrap().to_string(),
         server.url(),
+        None,
         None,
     )
     .await
@@ -170,6 +176,7 @@ async fn test_sync_restarts_with_lower_max_frame_no() {
         server.connector(),
         db_path.to_str().unwrap().to_string(),
         server.url(),
+        None,
         None,
     )
     .await
@@ -209,6 +216,7 @@ async fn test_sync_context_retry_on_error() {
         server.connector(),
         db_path.to_str().unwrap().to_string(),
         server.url(),
+        None,
         None,
     )
     .await

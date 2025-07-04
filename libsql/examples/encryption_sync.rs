@@ -1,6 +1,7 @@
 // Example of using offline writes with encryption
 
-use libsql::{params, Builder, EncryptionContext, EncryptionKey};
+use libsql::{params, Builder};
+use libsql::{EncryptionContext, EncryptionKey};
 
 #[tokio::main]
 async fn main() {
@@ -24,7 +25,8 @@ async fn main() {
         None
     };
 
-    let db_builder = Builder::new_synced_database(db_path, sync_url, auth_token, encryption);
+    let db_builder =
+        Builder::new_synced_database(db_path, sync_url, auth_token).remote_encryption(encryption);
 
     let db = match db_builder.build().await {
         Ok(db) => db,

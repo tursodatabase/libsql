@@ -212,7 +212,7 @@ impl Database {
         flags: OpenFlags,
         endpoint: String,
         auth_token: String,
-        remote_encryption: Option<crate::sync::EncryptionContext>,
+        remote_encryption: Option<crate::database::EncryptionContext>,
     ) -> Result<Database> {
         let db_path = db_path.into();
         let endpoint = if endpoint.starts_with("libsql:") {
@@ -222,8 +222,14 @@ impl Database {
         };
         let mut db = Database::open(&db_path, flags)?;
 
-        let sync_ctx =
-            SyncContext::new(connector, db_path.into(), endpoint, Some(auth_token), remote_encryption).await?;
+        let sync_ctx = SyncContext::new(
+            connector,
+            db_path.into(),
+            endpoint,
+            Some(auth_token),
+            remote_encryption,
+        )
+        .await?;
         db.sync_ctx = Some(Arc::new(Mutex::new(sync_ctx)));
 
         Ok(db)
