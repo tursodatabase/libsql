@@ -5,6 +5,9 @@ cfg_core! {
 use super::DbType;
 use crate::{Database, Result};
 
+#[cfg(any(feature = "remote", feature = "sync"))]
+pub use crate::database::EncryptionContext;
+
 /// A builder for [`Database`]. This struct can be used to build
 /// all variants of [`Database`]. These variants include:
 ///
@@ -60,6 +63,8 @@ impl Builder<()> {
                         connector: None,
                         version: None,
                         namespace: None,
+                        #[cfg(any(feature = "remote", feature = "sync"))]
+                        remote_encryption: None,
                     },
                     encryption_config: None,
                     read_your_writes: true,
@@ -68,6 +73,8 @@ impl Builder<()> {
                     skip_safety_assert: false,
                     #[cfg(feature = "sync")]
                     sync_protocol: Default::default(),
+                    #[cfg(feature = "sync")]
+                    remote_encryption: None
                 },
             }
         }
@@ -103,12 +110,14 @@ impl Builder<()> {
                         connector: None,
                         version: None,
                         namespace: None,
+                        remote_encryption: None,
                     },
                     connector: None,
                     read_your_writes: true,
                     remote_writes: false,
                     push_batch_size: 0,
                     sync_interval: None,
+                    remote_encryption: None,
                 },
             }
         }
@@ -124,6 +133,7 @@ impl Builder<()> {
                     connector: None,
                     version: None,
                     namespace: None,
+                    remote_encryption: None,
                 },
             }
         }
@@ -138,6 +148,8 @@ cfg_replication_or_remote_or_sync! {
         connector: Option<crate::util::ConnectorService>,
         version: Option<String>,
         namespace: Option<String>,
+        #[cfg(any(feature = "remote", feature = "sync"))]
+        remote_encryption: Option<EncryptionContext>,
     }
 }
 
@@ -229,6 +241,8 @@ cfg_replication! {
         skip_safety_assert: bool,
         #[cfg(feature = "sync")]
         sync_protocol: super::SyncProtocol,
+        #[cfg(feature = "sync")]
+        remote_encryption: Option<EncryptionContext>,
     }
 
     /// Local replica configuration type in [`Builder`].
@@ -290,6 +304,13 @@ cfg_replication! {
             self
         }
 
+        /// Set the encryption context if the database is encrypted in remote server.
+        #[cfg(feature = "sync")]
+        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<RemoteReplica> {
+            self.inner.remote_encryption = encryption_context;
+            self
+        }
+
         pub fn http_request_callback<F>(mut self, f: F) -> Builder<RemoteReplica>
         where
             F: Fn(&mut http::Request<()>) + Send + Sync + 'static
@@ -337,6 +358,7 @@ cfg_replication! {
                         connector,
                         version,
                         namespace,
+                        ..
                     },
                 encryption_config,
                 read_your_writes,
@@ -345,6 +367,8 @@ cfg_replication! {
                 skip_safety_assert,
                 #[cfg(feature = "sync")]
                 sync_protocol,
+                #[cfg(feature = "sync")]
+                remote_encryption,
             } = self.inner;
 
             let connector = if let Some(connector) = connector {
@@ -406,7 +430,8 @@ cfg_replication! {
                             let builder = Builder::new_synced_database(path, url, auth_token)
                                 .connector(connector)
                                 .remote_writes(true)
-                                .read_your_writes(read_your_writes);
+                                .read_your_writes(read_your_writes)
+                                .remote_encryption(remote_encryption);
 
                             let builder = if let Some(sync_interval) = sync_interval {
                                 builder.sync_interval(sync_interval)
@@ -463,7 +488,10 @@ cfg_replication! {
 
 
             Ok(Database {
-                db_type: DbType::Sync { db, encryption_config },
+                db_type: DbType::Sync {
+                    db,
+                    encryption_config,
+                },
                 max_write_replication_index: Default::default(),
             })
         }
@@ -503,6 +531,7 @@ cfg_replication! {
                 connector,
                 version,
                 namespace,
+                ..
             }) = remote
             {
                 let connector = if let Some(connector) = connector {
@@ -553,6 +582,7 @@ cfg_sync! {
         read_your_writes: bool,
         push_batch_size: u32,
         sync_interval: Option<std::time::Duration>,
+        remote_encryption: Option<EncryptionContext>,
     }
 
     impl Builder<SyncedDatabase> {
@@ -585,6 +615,12 @@ cfg_sync! {
             self
         }
 
+         /// Set the encryption context if the database is encrypted in remote server.
+        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<SyncedDatabase> {
+            self.inner.remote_encryption = encryption_context;
+            self
+        }
+
         /// Provide a custom http connector that will be used to create http connections.
         pub fn connector<C>(mut self, connector: C) -> Builder<SyncedDatabase>
         where
@@ -611,12 +647,14 @@ cfg_sync! {
                         connector: _,
                         version: _,
                         namespace: _,
+                        ..
                     },
                 connector,
                 remote_writes,
                 read_your_writes,
                 push_batch_size,
                 sync_interval,
+                remote_encryption,
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
@@ -640,6 +678,7 @@ cfg_sync! {
                 flags,
                 url.clone(),
                 auth_token.clone(),
+                remote_encryption.clone(),
             )
             .await?;
 
@@ -708,6 +747,8 @@ cfg_sync! {
                     auth_token,
                     connector,
                     _bg_abort: bg_abort,
+                    #[cfg(feature = "sync")]
+                    remote_encryption,
                 },
                 max_write_replication_index: Default::default(),
             })
@@ -742,6 +783,12 @@ cfg_remote! {
             self
         }
 
+        /// Set the encryption context if the database is encrypted in remote server.
+        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<Remote> {
+            self.inner.remote_encryption = encryption_context;
+            self
+        }
+
         /// Build the remote database client.
         pub async fn build(self) -> Result<Database> {
             let Remote {
@@ -750,6 +797,7 @@ cfg_remote! {
                 connector,
                 version,
                 namespace,
+                remote_encryption,
             } = self.inner;
 
             let connector = if let Some(connector) = connector {
@@ -772,6 +820,7 @@ cfg_remote! {
                     connector,
                     version,
                     namespace,
+                    remote_encryption
                 },
                 max_write_replication_index: Default::default(),
             })
