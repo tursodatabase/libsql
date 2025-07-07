@@ -63,6 +63,7 @@ core = [
   "dep:bitflags",
   "dep:bytes",
   "dep:futures",
+  "dep:parking_lot",
 ]
 stream = [
   "dep:futures",
