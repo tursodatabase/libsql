@@ -34,10 +34,10 @@ cargo xtask test
 
 The following client libraries enable your app to query `sqld` programmatically:
 
-* [TypeScript and JavaScript](https://github.com/libsql/libsql-client-ts)
+* [TypeScript and JavaScript](https://github.com/tursodatabase/libsql-client-ts)
 * [Rust](https://github.com/libsql/libsql-client-rs)
-* [Go](https://github.com/libsql/libsql-client-go)
-* [Python](https://github.com/libsql/libsql-client-py)
+* [Go](https://github.com/tursodatabase/libsql-client-go)
+* [Python](https://github.com/tursodatabase/libsql-python)
 
 ## SQLite extensions support
 

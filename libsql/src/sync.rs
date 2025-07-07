@@ -1,11 +1,11 @@
 use crate::{local::Connection, util::ConnectorService, Error, Result};
 
-use std::path::Path;
-
+use crate::database::EncryptionContext;
 use bytes::Bytes;
 use chrono::Utc;
 use http::{HeaderValue, StatusCode};
 use hyper::Body;
+use std::path::Path;
 use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
 
@@ -133,6 +133,8 @@ pub struct SyncContext {
     /// whenever sync is called very first time, we will call the remote server
     /// to get the generation information and sync the db file if needed
     initial_server_sync: bool,
+    /// The encryption context for the sync.
+    remote_encryption: Option<EncryptionContext>,
 }
 
 impl SyncContext {
@@ -141,6 +143,7 @@ impl SyncContext {
         db_path: String,
         sync_url: String,
         auth_token: Option<String>,
+        remote_encryption: Option<EncryptionContext>,
     ) -> Result<Self> {
         let client = hyper::client::Client::builder().build::<_, hyper::Body>(connector);
 
@@ -163,6 +166,7 @@ impl SyncContext {
             durable_generation: 0,
             durable_frame_num: 0,
             initial_server_sync: false,
+            remote_encryption,
         };
 
         if let Err(e) = me.read_metadata().await {
@@ -303,6 +307,10 @@ impl SyncContext {
                 None => {}
             }
 
+            if let Some(remote_encryption) = &self.remote_encryption {
+                req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
+            }
+
             let req = req.body(body.clone().into()).expect("valid body");
 
             let res = self
@@ -412,6 +420,10 @@ impl SyncContext {
                     req = req.header("Authorization", auth_token);
                 }
                 None => {}
+            }
+
+            if let Some(remote_encryption) = &self.remote_encryption {
+                req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
             }
 
             let req = req.body(Body::empty()).expect("valid request");
@@ -577,6 +589,10 @@ impl SyncContext {
             req = req.header("Authorization", auth_token);
         }
 
+        if let Some(remote_encryption) = &self.remote_encryption {
+            req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
+        }
+
         let req = req.body(Body::empty()).expect("valid request");
 
         let res = self
@@ -671,6 +687,10 @@ impl SyncContext {
 
         if let Some(auth_token) = &self.auth_token {
             req = req.header("Authorization", auth_token);
+        }
+
+        if let Some(remote_encryption) = &self.remote_encryption {
+            req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
         }
 
         let req = req.body(Body::empty()).expect("valid request");
