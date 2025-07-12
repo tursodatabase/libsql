@@ -399,9 +399,14 @@ cfg_replication! {
                             url.to_string()
                         };
                         let req = http::Request::get(format!("{prefix}/info"))
-                            .header("Authorization", format!("Bearer {}", auth_token))
-                            .body(hyper::Body::empty())
-                            .unwrap();
+                            .header("Authorization", format!("Bearer {}", auth_token));
+
+                        let req = if let Some(ref remote_encryption) = remote_encryption {
+                            req.header("x-turso-encryption-key", remote_encryption.key.as_string())
+                        } else {
+                            req
+                        };
+                        let req = req.body(hyper::Body::empty()).unwrap();
 
                         let res = client
                             .request(req)
