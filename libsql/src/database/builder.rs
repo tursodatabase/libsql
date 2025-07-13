@@ -306,8 +306,8 @@ cfg_replication! {
 
         /// Set the encryption context if the database is encrypted in remote server.
         #[cfg(feature = "sync")]
-        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<RemoteReplica> {
-            self.inner.remote_encryption = encryption_context;
+        pub fn remote_encryption(mut self, encryption_context: EncryptionContext) -> Builder<RemoteReplica> {
+            self.inner.remote_encryption = Some(encryption_context);
             self
         }
 
@@ -432,11 +432,14 @@ cfg_replication! {
 
                         if res.status().is_success() {
                             tracing::trace!("Using sync protocol v2 for {}", url);
-                            let builder = Builder::new_synced_database(path, url, auth_token)
+                            let mut builder = Builder::new_synced_database(path, url, auth_token)
                                 .connector(connector)
                                 .remote_writes(true)
-                                .read_your_writes(read_your_writes)
-                                .remote_encryption(remote_encryption);
+                                .read_your_writes(read_your_writes);
+
+                            if let Some(encryption) = remote_encryption {
+                                builder = builder.remote_encryption(encryption);
+                            }
 
                             let builder = if let Some(sync_interval) = sync_interval {
                                 builder.sync_interval(sync_interval)
@@ -621,8 +624,8 @@ cfg_sync! {
         }
 
          /// Set the encryption context if the database is encrypted in remote server.
-        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<SyncedDatabase> {
-            self.inner.remote_encryption = encryption_context;
+        pub fn remote_encryption(mut self, encryption_context: EncryptionContext) -> Builder<SyncedDatabase> {
+            self.inner.remote_encryption = Some(encryption_context);
             self
         }
 
@@ -789,8 +792,8 @@ cfg_remote! {
         }
 
         /// Set the encryption context if the database is encrypted in remote server.
-        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<Remote> {
-            self.inner.remote_encryption = encryption_context;
+        pub fn remote_encryption(mut self, encryption_context: EncryptionContext) -> Builder<Remote> {
+            self.inner.remote_encryption = Some(encryption_context);
             self
         }
 
