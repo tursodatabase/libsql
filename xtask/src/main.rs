@@ -76,7 +76,13 @@ fn build_wasm(_arg: &str) -> Result<()> {
 
 fn run_tests(arg: &str) -> Result<()> {
     println!("installing nextest");
-    run_cargo(&["install", "cargo-nextest"])?;
+    run_cargo(&[
+        "install",
+        "--locked",
+        "--version",
+        "0.9.98",
+        "cargo-nextest",
+    ])?;
     println!("running nextest run");
     run_cargo(&["nextest", "run", arg])?;
 
@@ -85,7 +91,14 @@ fn run_tests(arg: &str) -> Result<()> {
 
 fn run_tests_encryption(arg: &str) -> Result<()> {
     println!("installing nextest");
-    run_cargo(&["install", "--force", "cargo-nextest"])?;
+    run_cargo(&[
+        "install",
+        "--force",
+        "--locked",
+        "--version",
+        "0.9.98",
+        "cargo-nextest",
+    ])?;
     println!("running nextest run");
     run_cargo(&[
         "nextest",
