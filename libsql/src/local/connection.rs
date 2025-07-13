@@ -12,8 +12,8 @@ use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
-use std::cell::RefCell;
 use std::{ffi::c_int, fmt, path::Path, sync::Arc};
+use parking_lot::RwLock;
 
 /// A connection to a libSQL database.
 #[derive(Clone)]
@@ -25,7 +25,7 @@ pub struct Connection {
     #[cfg(feature = "replication")]
     pub(crate) writer: Option<crate::replication::Writer>,
 
-    authorizer: RefCell<Option<AuthHook>>,
+    authorizer: Arc<RwLock<Option<AuthHook>>>,
 }
 
 impl Drop for Connection {
@@ -68,7 +68,7 @@ impl Connection {
             drop_ref: Arc::new(()),
             #[cfg(feature = "replication")]
             writer: db.writer()?,
-            authorizer: RefCell::new(None),
+            authorizer: Arc::new(RwLock::new(None)),
         };
         #[cfg(feature = "sync")]
         if let Some(_) = db.sync_ctx {
@@ -95,7 +95,7 @@ impl Connection {
             drop_ref: Arc::new(()),
             #[cfg(feature = "replication")]
             writer: None,
-            authorizer: RefCell::new(None),
+            authorizer: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -475,7 +475,7 @@ impl Connection {
             }
         }
 
-        *self.authorizer.borrow_mut() = hook.clone();
+        *self.authorizer.write() = hook.clone();
 
         let (callback, user_data) = match hook {
             Some(_) => {
@@ -604,7 +604,7 @@ impl Connection {
 
     pub(crate) fn wal_insert_handle(&self) -> Result<WalInsertHandle<'_>> {
         self.wal_insert_begin()?;
-        Ok(WalInsertHandle { conn: self, in_session: RefCell::new(true) })
+        Ok(WalInsertHandle { conn: self, in_session: RwLock::new(true) })
     }
 }
 
@@ -617,7 +617,7 @@ unsafe extern "C" fn authorizer_callback(
     accessor: *const ::std::os::raw::c_char,
 ) -> ::std::os::raw::c_int {
     let conn = user_data as *const Connection;
-    let hook = unsafe { (*conn).authorizer.borrow() };
+    let hook = unsafe { (*conn).authorizer.read() };
     let hook = match &*hook {
         Some(hook) => hook,
         None => return ffi::SQLITE_OK,
@@ -658,33 +658,33 @@ unsafe extern "C" fn authorizer_callback(
 
 pub(crate) struct WalInsertHandle<'a> {
     conn: &'a Connection,
-    in_session: RefCell<bool>
+    in_session: RwLock<bool>
 }
 
 impl WalInsertHandle<'_> {
     pub fn insert(&self, frame: &[u8]) -> Result<()> {
-        assert!(*self.in_session.borrow());
+        assert!(*self.in_session.read());
         self.conn.wal_insert_frame(frame)
     }
 
     pub fn begin(&self) -> Result<()> {
-        assert!(!*self.in_session.borrow());
+        assert!(!*self.in_session.read());
         self.conn.wal_insert_begin()?;
-        self.in_session.replace(true);
+        *self.in_session.write() = true;
         Ok(())
     }
 
     pub fn end(&self) -> Result<()> {
-        assert!(*self.in_session.borrow());
+        assert!(*self.in_session.read());
         self.conn.wal_insert_end()?;
-        self.in_session.replace(false);
+        *self.in_session.write() = false;
         Ok(())
     }
 }
 
 impl Drop for WalInsertHandle<'_> {
     fn drop(&mut self) {
-        if *self.in_session.borrow() {
+        if *self.in_session.read() {
             if let Err(err) = self.conn.wal_insert_end() {
                 tracing::error!("{:?}", err);
                 Err(err).unwrap()
