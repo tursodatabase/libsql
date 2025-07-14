@@ -25,8 +25,11 @@ async fn main() {
         None
     };
 
-    let db_builder =
-        Builder::new_synced_database(db_path, sync_url, auth_token).remote_encryption(encryption);
+    let mut db_builder = Builder::new_synced_database(db_path, sync_url, auth_token);
+
+    if let Some(enc) = encryption {
+        db_builder = db_builder.remote_encryption(enc);
+    }
 
     let db = match db_builder.build().await {
         Ok(db) => db,

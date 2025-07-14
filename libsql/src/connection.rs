@@ -137,7 +137,7 @@ impl Connection {
     ///
     /// # Return
     ///
-    /// This returns a `BatchRows` currently only the `remote`  and `local` connection supports this feature and
+    /// This returns a `BatchRows` currently only the `remote` and `local` connection supports this feature and
     /// all other connection types will return an empty set always.
     pub async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         tracing::trace!("executing batch `{}`", sql);
@@ -206,7 +206,7 @@ impl Connection {
         self.conn.busy_timeout(timeout)
     }
 
-    /// Check weather libsql is in `autocommit` or not.
+    /// Check whether libsql is in `autocommit` or not.
     pub fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }

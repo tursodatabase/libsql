@@ -25,7 +25,7 @@ pub use crate::database::EncryptionContext;
 ///
 /// # Note
 ///
-/// Embedded replica's require a clean database (no database file) or a previously synced database or else it will
+/// Embedded replicas require a clean database (no database file) or a previously synced database or else it will
 /// throw an error to prevent any misuse. To work around this error a user can delete the database
 /// and let it resync and create the wal_index metadata file.
 pub struct Builder<T = ()> {
@@ -276,7 +276,7 @@ cfg_replication! {
             self
         }
 
-        /// Set weather you want writes to be visible locally before the write query returns. This
+        /// Set whether you want writes to be visible locally before the write query returns. This
         /// means that you will be able to read your own writes if this is set to `true`.
         ///
         /// # Default
@@ -306,8 +306,8 @@ cfg_replication! {
 
         /// Set the encryption context if the database is encrypted in remote server.
         #[cfg(feature = "sync")]
-        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<RemoteReplica> {
-            self.inner.remote_encryption = encryption_context;
+        pub fn remote_encryption(mut self, encryption_context: EncryptionContext) -> Builder<RemoteReplica> {
+            self.inner.remote_encryption = Some(encryption_context);
             self
         }
 
@@ -333,7 +333,7 @@ cfg_replication! {
             self
         }
 
-        /// Skip the saftey assert used to ensure that sqlite3 is configured correctly for the way
+        /// Skip the safety assert used to ensure that sqlite3 is configured correctly for the way
         /// that libsql uses the ffi code. By default, libsql will try to use the SERIALIZED
         /// threadsafe mode for sqlite3. This allows us to implement Send/Sync for all the types to
         /// allow them to move between threads safely. Due to the fact that sqlite3 has a global
@@ -399,9 +399,14 @@ cfg_replication! {
                             url.to_string()
                         };
                         let req = http::Request::get(format!("{prefix}/info"))
-                            .header("Authorization", format!("Bearer {}", auth_token))
-                            .body(hyper::Body::empty())
-                            .unwrap();
+                            .header("Authorization", format!("Bearer {}", auth_token));
+
+                        let req = if let Some(ref remote_encryption) = remote_encryption {
+                            req.header("x-turso-encryption-key", remote_encryption.key.as_string())
+                        } else {
+                            req
+                        };
+                        let req = req.body(hyper::Body::empty()).unwrap();
 
                         let res = client
                             .request(req)
@@ -427,11 +432,14 @@ cfg_replication! {
 
                         if res.status().is_success() {
                             tracing::trace!("Using sync protocol v2 for {}", url);
-                            let builder = Builder::new_synced_database(path, url, auth_token)
+                            let mut builder = Builder::new_synced_database(path, url, auth_token)
                                 .connector(connector)
                                 .remote_writes(true)
-                                .read_your_writes(read_your_writes)
-                                .remote_encryption(remote_encryption);
+                                .read_your_writes(read_your_writes);
+
+                            if let Some(encryption) = remote_encryption {
+                                builder = builder.remote_encryption(encryption);
+                            }
 
                             let builder = if let Some(sync_interval) = sync_interval {
                                 builder.sync_interval(sync_interval)
@@ -616,8 +624,8 @@ cfg_sync! {
         }
 
          /// Set the encryption context if the database is encrypted in remote server.
-        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<SyncedDatabase> {
-            self.inner.remote_encryption = encryption_context;
+        pub fn remote_encryption(mut self, encryption_context: EncryptionContext) -> Builder<SyncedDatabase> {
+            self.inner.remote_encryption = Some(encryption_context);
             self
         }
 
@@ -784,8 +792,8 @@ cfg_remote! {
         }
 
         /// Set the encryption context if the database is encrypted in remote server.
-        pub fn remote_encryption(mut self, encryption_context: Option<EncryptionContext>) -> Builder<Remote> {
-            self.inner.remote_encryption = encryption_context;
+        pub fn remote_encryption(mut self, encryption_context: EncryptionContext) -> Builder<Remote> {
+            self.inner.remote_encryption = Some(encryption_context);
             self
         }
 
