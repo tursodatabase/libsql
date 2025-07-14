@@ -584,14 +584,14 @@ impl Connection {
         Ok(())
     }
 
-    fn wal_insert_frame(&self, frame: &[u8]) -> Result<()> {
+    fn wal_insert_frame(&self, frame_no: u32, frame: &[u8]) -> Result<()> {
         let mut conflict = 0i32;
         let rc = unsafe {
             libsql_sys::ffi::libsql_wal_insert_frame(
                 self.handle(),
-                frame.len() as u32,
+                frame_no,
                 frame.as_ptr() as *mut std::ffi::c_void,
-                0,
+                frame.len() as u32,
                 &mut conflict,
             )
         };
@@ -666,13 +666,13 @@ unsafe extern "C" fn authorizer_callback(
 
 pub(crate) struct WalInsertHandle<'a> {
     conn: &'a Connection,
-    in_session: RefCell<bool>
+    in_session: RefCell<bool>,
 }
 
 impl WalInsertHandle<'_> {
-    pub fn insert(&self, frame: &[u8]) -> Result<()> {
+    pub fn insert_at(&self, frame_no: u32, frame: &[u8]) -> Result<()> {
         assert!(*self.in_session.borrow());
-        self.conn.wal_insert_frame(frame)
+        self.conn.wal_insert_frame(frame_no, frame)
     }
 
     pub fn begin(&self) -> Result<()> {

@@ -974,8 +974,8 @@ pub async fn try_pull(
                     );
                     return Err(SyncError::InvalidPullFrameBytes(frames.len()).into());
                 }
-                for chunk in frames.chunks(FRAME_SIZE) {
-                    let r = insert_handle.insert(&chunk);
+                for (i, chunk) in frames.chunks(FRAME_SIZE).enumerate() {
+                    let r = insert_handle.insert_at(frame_no + i as u32, &chunk);
                     if let Err(e) = r {
                         tracing::error!(
                             "insert error (frame= {}) : {:?}",
