@@ -706,3 +706,54 @@ impl fmt::Debug for Connection {
         f.debug_struct("Connection").finish()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        local::{Connection, Database},
+        params::Params,
+        OpenFlags,
+    };
+
+    #[tokio::test]
+    pub async fn test_kek() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let path1 = temp_dir.path().join("local1.db");
+        let db1 = Database::new(path1.to_str().unwrap().to_string(), OpenFlags::default());
+        let conn1 = Connection::connect(&db1).unwrap();
+        conn1
+            .query("PRAGMA journal_mode = WAL", Params::None)
+            .unwrap();
+        conn1.wal_disable_checkpoint().unwrap();
+
+        let path2 = temp_dir.path().join("local2.db");
+        let db2 = Database::new(path2.to_str().unwrap().to_string(), OpenFlags::default());
+        let conn2 = Connection::connect(&db2).unwrap();
+        conn2
+            .query("PRAGMA journal_mode = WAL", Params::None)
+            .unwrap();
+        conn2.wal_disable_checkpoint().unwrap();
+
+        conn1.execute("CREATE TABLE t(x)", Params::None).unwrap();
+        const CNT: usize = 32;
+        for _ in 0..CNT {
+            conn1
+                .execute(
+                    "INSERT INTO t VALUES (randomblob(1024 * 1024))",
+                    Params::None,
+                )
+                .unwrap();
+        }
+        let handle = conn2.wal_insert_handle().unwrap();
+        let frame_count = conn1.wal_frame_count();
+        for frame_no in 0..frame_count {
+            let frame = conn1.wal_get_frame(frame_no + 1, 4096).unwrap();
+            handle.insert_at(frame_no as u32 + 1, &frame).unwrap();
+        }
+        let result = conn2.query("SELECT COUNT(*) FROM t", Params::None).unwrap();
+        let row = result.unwrap().next().unwrap().unwrap();
+        let column = row.get_value(0).unwrap();
+        let cnt = *column.as_integer().unwrap();
+        assert_eq!(cnt, 32 as i64);
+    }
+}
