@@ -76,9 +76,7 @@ impl Connection {
             // disabled so that we can sync our changes back to a remote
             // server.
             conn.query("PRAGMA journal_mode = WAL", Params::None)?;
-            unsafe {
-                ffi::libsql_wal_disable_checkpoint(conn.raw);
-            }
+            conn.wal_disable_checkpoint()?;
         }
         Ok(conn)
     }
@@ -554,6 +552,16 @@ impl Connection {
         Ok(buf)
     }
 
+    fn wal_disable_checkpoint(&self) -> Result<()> {
+        let rc = unsafe { libsql_sys::ffi::libsql_wal_disable_checkpoint(self.handle()) };
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("wal_disable_checkpoint failed"),
+            ));
+        }
+        Ok(())
+    }
     fn wal_insert_begin(&self) -> Result<()> {
         let rc = unsafe { libsql_sys::ffi::libsql_wal_insert_begin(self.handle()) };
         if rc != 0 {
