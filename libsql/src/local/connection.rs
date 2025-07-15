@@ -675,6 +675,10 @@ impl WalInsertHandle<'_> {
         self.conn.wal_insert_frame(frame_no, frame)
     }
 
+    pub fn in_session(&self) -> bool {
+        *self.in_session.borrow()
+    }
+
     pub fn begin(&self) -> Result<()> {
         assert!(!*self.in_session.borrow());
         self.conn.wal_insert_begin()?;
