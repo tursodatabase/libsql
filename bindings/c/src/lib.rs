@@ -98,6 +98,7 @@ pub unsafe extern "C" fn libsql_open_sync(
         sync_interval: 0,
         with_webpki: 0,
         offline: 0,
+        remote_encryption_key: std::ptr::null(),
     };
     libsql_open_sync_with_config(config, out_db, out_err_msg)
 }
@@ -121,6 +122,7 @@ pub unsafe extern "C" fn libsql_open_sync_with_webpki(
         sync_interval: 0,
         with_webpki: 1,
         offline: 0,
+        remote_encryption_key: std::ptr::null(),
     };
     libsql_open_sync_with_config(config, out_db, out_err_msg)
 }
@@ -271,6 +273,19 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
                 .build();
             builder = builder.connector(https);
         }
+        if !config.remote_encryption_key.is_null() {
+            let key = unsafe { std::ffi::CStr::from_ptr(config.remote_encryption_key) };
+            let key = match key.to_str() {
+                Ok(k) => k,
+                Err(e) => {
+                    set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
+                    return 5;
+                }
+            };
+            builder = builder.remote_encryption(libsql::EncryptionContext {
+                key: libsql::EncryptionKey::Base64Encoded(key.to_string()),
+            });
+        };
         match RT.block_on(builder.build()) {
             Ok(db) => {
                 let db = Box::leak(Box::new(libsql_database { db }));
@@ -324,6 +339,19 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
         let key = bytes::Bytes::copy_from_slice(key.as_bytes());
         let config = libsql::EncryptionConfig::new(libsql::Cipher::Aes256Cbc, key);
         builder = builder.encryption_config(config)
+    };
+    if !config.remote_encryption_key.is_null() {
+        let key = unsafe { std::ffi::CStr::from_ptr(config.remote_encryption_key) };
+        let key = match key.to_str() {
+            Ok(k) => k,
+            Err(e) => {
+                set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
+                return 5;
+            }
+        };
+        builder = builder.remote_encryption(libsql::EncryptionContext {
+            key: libsql::EncryptionKey::Base64Encoded(key.to_string()),
+        });
     };
     match RT.block_on(builder.build()) {
         Ok(db) => {
