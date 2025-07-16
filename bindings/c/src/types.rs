@@ -15,6 +15,7 @@ pub struct libsql_config {
     pub sync_interval: std::ffi::c_int,
     pub with_webpki: std::ffi::c_char,
     pub offline: std::ffi::c_char,
+    pub remote_encryption_key: *const std::ffi::c_char,
 }
 
 #[derive(Clone, Debug)]
