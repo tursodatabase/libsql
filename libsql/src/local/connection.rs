@@ -495,7 +495,22 @@ impl Connection {
     }
 
     pub(crate) fn wal_checkpoint(&self, truncate: bool) -> Result<()> {
-        let rc = unsafe { libsql_sys::ffi::sqlite3_wal_checkpoint_v2(self.handle(), std::ptr::null(), truncate as i32, std::ptr::null_mut(), std::ptr::null_mut()) };
+        let mut pn_log = 0i32;
+        let mut pn_ckpt = 0i32;
+        let checkpoint_mode = if truncate {
+            libsql_sys::ffi::SQLITE_CHECKPOINT_TRUNCATE
+        } else {
+            0
+        };
+        let rc = unsafe {
+            libsql_sys::ffi::sqlite3_wal_checkpoint_v2(
+                self.handle(),
+                std::ptr::null(),
+                checkpoint_mode,
+                &mut pn_log,
+                &mut pn_ckpt,
+            )
+        };
         if rc != 0 {
             let err_msg = unsafe { libsql_sys::ffi::sqlite3_errmsg(self.handle()) };
             let err_msg = unsafe { std::ffi::CStr::from_ptr(err_msg) };
@@ -503,6 +518,12 @@ impl Connection {
             return Err(crate::errors::Error::SqliteFailure(
                 rc as std::ffi::c_int,
                 format!("Failed to checkpoint WAL: {}", err_msg),
+            ));
+        }
+        if truncate && (pn_log != 0 || pn_ckpt != 0) {
+            return Err(crate::errors::Error::SqliteFailure(
+                libsql_sys::ffi::SQLITE_ERROR,
+                "unable to truncate WAL".to_string(),
             ));
         }
         Ok(())
