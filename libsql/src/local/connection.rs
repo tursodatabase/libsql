@@ -500,7 +500,7 @@ impl Connection {
         let checkpoint_mode = if truncate {
             libsql_sys::ffi::SQLITE_CHECKPOINT_TRUNCATE
         } else {
-            0
+            libsql_sys::ffi::SQLITE_CHECKPOINT_PASSIVE
         };
         let rc = unsafe {
             libsql_sys::ffi::sqlite3_wal_checkpoint_v2(
