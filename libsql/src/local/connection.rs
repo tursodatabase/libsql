@@ -596,15 +596,14 @@ impl Connection {
             )
         };
 
+        if conflict != 0 {
+            return Err(errors::Error::WalConflict);
+        }
         if rc != 0 {
             return Err(errors::Error::SqliteFailure(
                 rc as std::ffi::c_int,
                 "wal_insert_frame failed".to_string(),
             ));
-        }
-
-        if conflict != 0 {
-            return Err(errors::Error::WalConflict);
         }
 
         Ok(())
