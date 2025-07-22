@@ -480,7 +480,7 @@ impl Connection {
                 let callback = authorizer_callback as unsafe extern "C" fn(_, _, _, _, _, _) -> _;
                 let user_data = self as *const Connection as *mut ::std::os::raw::c_void;
                 (Some(callback), user_data)
-            },
+            }
             None => (None, std::ptr::null_mut()),
         };
 
@@ -630,9 +630,11 @@ impl Connection {
         Ok(())
     }
 
-    pub(crate) fn wal_insert_handle(&self) -> Result<WalInsertHandle<'_>> {
-        self.wal_insert_begin()?;
-        Ok(WalInsertHandle { conn: self, in_session: RefCell::new(true) })
+    pub(crate) fn wal_insert_handle(&self) -> WalInsertHandle<'_> {
+        WalInsertHandle {
+            conn: self,
+            in_session: RefCell::new(false),
+        }
     }
 }
 
@@ -768,7 +770,9 @@ mod tests {
                 )
                 .unwrap();
         }
-        let handle = conn2.wal_insert_handle().unwrap();
+        let handle = conn2.wal_insert_handle();
+        handle.begin().unwrap();
+
         let frame_count = conn1.wal_frame_count();
         for frame_no in 0..frame_count {
             let frame = conn1.wal_get_frame(frame_no + 1, 4096).unwrap();

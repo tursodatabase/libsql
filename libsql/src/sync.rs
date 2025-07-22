@@ -961,7 +961,7 @@ pub async fn try_pull(
 
     // libsql maintain consistent state about WAL sync session locally in the insert_handle
     // note, that insert_handle will always close the session on drop - so we never keep active WAL session after we exit from the method
-    let insert_handle = conn.wal_insert_handle()?;
+    let insert_handle = conn.wal_insert_handle();
 
     loop {
         // get current generation (it may be updated multiple times during execution)
@@ -990,8 +990,7 @@ pub async fn try_pull(
                     if !insert_handle.in_session() {
                         tracing::debug!(
                             "pull_frames: generation={}, frame={}, start wal transaction session",
-                            generation,
-                            next_frame_no
+                            generation, next_frame_no
                         );
                         insert_handle.begin()?;
                     }
