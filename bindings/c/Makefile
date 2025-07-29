@@ -1,7 +1,7 @@
 OS := $(shell uname)
 CFLAGS := -Iinclude
 LDFLAGS := -lm
-ARCHS_IOS = x86_64-apple-ios aarch64-apple-ios aarch64-apple-ios-sim
+ARCHS_IOS = aarch64-apple-ios aarch64-apple-ios-sim
 ARCHS_ANDROID = aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
 LIB = libsql_experimental.a
 HEADER = libsql.h
@@ -40,9 +40,19 @@ $(ARCHS_ANDROID): %:
 ios: $(XCFRAMEWORK)
 
 $(ARCHS_IOS): %:
-	cargo build --release --target $@
+	cargo build  --release --target $@
 
-$(XCFRAMEWORK): $(ARCHS_IOS)
+x86_64-apple-ios:
+	SDKROOT=$$(xcrun --sdk iphonesimulator --show-sdk-path) \
+	CFLAGS_x86_64_apple_ios="-target x86_64-apple-ios-simulator" \
+	CXXFLAGS_x86_64_apple_ios="-target x86_64-apple-ios-simulator" \
+	CC_x86_64_apple_ios=$$(xcrun --sdk iphonesimulator --find clang) \
+	CXX_x86_64_apple_ios=$$(xcrun --sdk iphonesimulator --find clang++) \
+	CMAKE_SYSTEM_NAME=iOS \
+	CMAKE_OSX_SYSROOT=$$(xcrun --sdk iphonesimulator --show-sdk-path) \
+	cargo build --release --target x86_64-apple-ios
+
+$(XCFRAMEWORK): $(ARCHS_IOS) x86_64-apple-ios
 	rm -rf generated
 	mkdir -p generated/simulator_fat
 	rm -rf $@

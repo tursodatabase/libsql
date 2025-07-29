@@ -41,6 +41,7 @@ typedef struct {
   int sync_interval;
   char with_webpki;
   char offline;
+  const char *remote_encryption_key;
 } libsql_config;
 
 typedef const libsql_connection *libsql_connection_t;
