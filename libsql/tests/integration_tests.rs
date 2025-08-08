@@ -600,7 +600,7 @@ async fn debug_print_row() {
     .await
     .unwrap();
 
-    let mut stmt = conn.prepare("SELECT * FROM users").await.unwrap();
+    let stmt = conn.prepare("SELECT * FROM users").await.unwrap();
     let mut rows = stmt.query(()).await.unwrap();
     assert_eq!(
         format!("{:?}", rows.next().await.unwrap().unwrap()),

@@ -170,7 +170,7 @@ impl Connection {
     /// For more info on how to pass params check [`IntoParams`]'s docs and on how to
     /// extract values out of the rows check the [`Rows`] docs.
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> Result<Rows> {
-        let mut stmt = self.prepare(sql).await?;
+        let stmt = self.prepare(sql).await?;
 
         stmt.query(params).await
     }

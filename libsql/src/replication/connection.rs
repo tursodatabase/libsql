@@ -654,8 +654,8 @@ async fn fetch_metas(
 impl Stmt for RemoteStatement {
     fn finalize(&mut self) {}
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn execute(&self, params: &Params) -> Result<usize> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.execute(params.clone()).await;
         }
 
@@ -688,8 +688,8 @@ impl Stmt for RemoteStatement {
         Ok(affected_row_count as usize)
     }
 
-    async fn query(&mut self, params: &Params) -> Result<Rows> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn query(&self, params: &Params) -> Result<Rows> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.query(params.clone()).await;
         }
 
@@ -722,8 +722,8 @@ impl Stmt for RemoteStatement {
         Ok(Rows::new(RemoteRows(rows, 0)))
     }
 
-    async fn run(&mut self, params: &Params) -> Result<()> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn run(&self, params: &Params) -> Result<()> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.run(params.clone()).await;
         }
 
@@ -749,13 +749,13 @@ impl Stmt for RemoteStatement {
         Ok(())
     }
 
-    fn interrupt(&mut self) -> Result<()> {
+    fn interrupt(&self) -> Result<()> {
         Err(Error::Misuse(
             "interrupt is not supported for remote connections".to_string(),
         ))
     }
 
-    fn reset(&mut self) {}
+    fn reset(&self) {}
 
     fn parameter_count(&self) -> usize {
         if let Some(stmt) = self.local_statement.as_ref() {
