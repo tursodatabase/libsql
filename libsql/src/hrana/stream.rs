@@ -445,7 +445,8 @@ where
     T: HttpSend,
 {
     fn drop(&mut self) {
-        if let Some(baton) = self.baton.borrow_mut().take() {
+        let baton = self.baton.get_mut().take();
+        if let Some(baton) = baton {
             // only send a close request if stream was ever used to send the data
             tracing::trace!("closing client stream (baton: `{}`)", baton);
             let req = serde_json::to_string(&PipelineReqBody {
