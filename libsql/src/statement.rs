@@ -12,7 +12,7 @@ pub(crate) trait Stmt {
 
     async fn query(&self, params: &Params) -> Result<Rows>;
 
-    async fn run(&mut self, params: &Params) -> Result<()>;
+    async fn run(&self, params: &Params) -> Result<()>;
 
     fn interrupt(&self) -> Result<()>;
 
@@ -58,7 +58,7 @@ impl Statement {
     /// provided to execute any type of SQL statement.
     ///
     /// Note: This is an extension to the Rusqlite API.
-    pub async fn run(&mut self, params: impl IntoParams) -> Result<()> {
+    pub async fn run(&self, params: impl IntoParams) -> Result<()> {
         tracing::trace!("run for prepared statement");
         self.inner.run(&params.into_params()?).await?;
         Ok(())

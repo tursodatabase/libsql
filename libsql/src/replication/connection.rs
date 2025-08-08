@@ -722,8 +722,8 @@ impl Stmt for RemoteStatement {
         Ok(Rows::new(RemoteRows(rows, 0)))
     }
 
-    async fn run(&mut self, params: &Params) -> Result<()> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn run(&self, params: &Params) -> Result<()> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.run(params.clone()).await;
         }
 

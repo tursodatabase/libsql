@@ -170,7 +170,7 @@ where
         Ok(result.affected_row_count as usize)
     }
 
-    pub async fn run(&mut self, params: &Params) -> crate::Result<()> {
+    pub async fn run(&self, params: &Params) -> crate::Result<()> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 

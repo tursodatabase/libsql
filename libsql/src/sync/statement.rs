@@ -38,7 +38,7 @@ impl Stmt for SyncedStatement {
         self.inner.query(params).await
     }
 
-    async fn run(&mut self, params: &Params) -> Result<()> {
+    async fn run(&self, params: &Params) -> Result<()> {
         if self.needs_pull.load(Ordering::Relaxed) {
             let mut context = self.context.lock().await;
             crate::sync::try_pull(&mut context, &self.conn).await?;
