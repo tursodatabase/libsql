@@ -8,6 +8,7 @@ use libsql_hrana::proto::{
     GetAutocommitStreamReq, PipelineReqBody, PipelineRespBody, SequenceStreamReq,
     StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResult,
 };
+use std::cell::RefCell;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -66,8 +67,8 @@ where
                     pipeline_url,
                     cursor_url,
                     auth_token,
-                    sql_id_generator: 0,
-                    baton: None,
+                    sql_id_generator: RefCell::new(0),
+                    baton: RefCell::new(None),
                 }),
             }),
         }
@@ -77,7 +78,7 @@ where
     /// Returns true if request was finalized correctly, false if stream was already closed.
     pub(super) async fn finalize(&mut self, req: StreamRequest) -> Result<bool> {
         let mut client = self.inner.stream.lock().await;
-        if client.baton.is_none() {
+        if client.baton.borrow().is_none() {
             tracing::trace!("baton not found - skipping finalize for {:?}", req);
             return Ok(false);
         }
@@ -298,11 +299,11 @@ where
     T: HttpSend,
 {
     client: T,
-    baton: Option<String>,
+    baton: RefCell<Option<String>>,
     pipeline_url: Arc<str>,
     cursor_url: Arc<str>,
     auth_token: Arc<str>,
-    sql_id_generator: SqlId,
+    sql_id_generator: RefCell<SqlId>,
 }
 
 impl<T> RawStream<T>
@@ -316,7 +317,7 @@ where
 
     pub async fn open_cursor(&mut self, batch: Batch) -> Result<Cursor<T::Stream>> {
         let msg = CursorReq {
-            baton: self.baton.clone(),
+            baton: self.baton.borrow().clone(),
             batch,
         };
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
@@ -336,7 +337,7 @@ where
             } // stream has been closed by the server
             Some(baton) => {
                 tracing::trace!("client stream has been assigned with baton: `{}`", baton);
-                self.baton = Some(baton)
+                *self.baton.borrow_mut() = Some(baton)
             }
         }
         Ok(cursor)
@@ -349,11 +350,11 @@ where
         tracing::trace!(
             "client stream sending {} requests with baton `{}`: {:?}",
             N,
-            self.baton.as_deref().unwrap_or_default(),
+            self.baton.borrow().as_deref().unwrap_or_default(),
             requests
         );
         let msg = PipelineReqBody {
-            baton: self.baton.clone(),
+            baton: self.baton.borrow().clone(),
             requests: Vec::from(requests),
         };
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
@@ -375,7 +376,7 @@ where
             } // stream has been closed by the server
             Some(baton) => {
                 tracing::trace!("client stream has been assigned with baton: `{}`", baton);
-                self.baton = Some(baton)
+                *self.baton.borrow_mut() = Some(baton)
             }
         }
 
@@ -424,16 +425,17 @@ where
         Ok((resp, is_autocommit))
     }
 
-    fn reset(&mut self) {
-        if let Some(baton) = self.baton.take() {
+    fn reset(&self) {
+        if let Some(baton) = self.baton.borrow_mut().take() {
             tracing::trace!("closing client stream (baton: `{}`)", baton);
         }
-        self.sql_id_generator = 0;
+        *self.sql_id_generator.borrow_mut() = 0;
     }
 
     fn next_sql_id(&mut self) -> SqlId {
-        self.sql_id_generator = self.sql_id_generator.wrapping_add(1);
-        self.sql_id_generator
+        let mut gen = self.sql_id_generator.borrow_mut();
+        *gen = gen.wrapping_add(1);
+        *gen
     }
 }
 
@@ -443,7 +445,7 @@ where
     T: HttpSend,
 {
     fn drop(&mut self) {
-        if let Some(baton) = self.baton.take() {
+        if let Some(baton) = self.baton.borrow_mut().take() {
             // only send a close request if stream was ever used to send the data
             tracing::trace!("closing client stream (baton: `{}`)", baton);
             let req = serde_json::to_string(&PipelineReqBody {

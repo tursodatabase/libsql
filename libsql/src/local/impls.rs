@@ -133,7 +133,7 @@ impl Stmt for LibsqlStmt {
         self.0.interrupt()
     }
 
-    fn reset(&mut self) {
+    fn reset(&self) {
         self.0.reset();
     }
 

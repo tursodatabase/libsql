@@ -755,7 +755,7 @@ impl Stmt for RemoteStatement {
         ))
     }
 
-    fn reset(&mut self) {}
+    fn reset(&self) {}
 
     fn parameter_count(&self) -> usize {
         if let Some(stmt) = self.local_statement.as_ref() {

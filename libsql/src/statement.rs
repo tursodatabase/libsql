@@ -16,7 +16,7 @@ pub(crate) trait Stmt {
 
     fn interrupt(&self) -> Result<()>;
 
-    fn reset(&mut self);
+    fn reset(&self);
 
     fn parameter_count(&self) -> usize;
 
@@ -83,7 +83,7 @@ impl Statement {
     }
 
     /// Reset the state of this prepared statement.
-    pub fn reset(&mut self) {
+    pub fn reset(&self) {
         self.inner.reset();
     }
 

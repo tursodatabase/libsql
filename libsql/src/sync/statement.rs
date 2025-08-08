@@ -51,7 +51,7 @@ impl Stmt for SyncedStatement {
         self.inner.interrupt()
     }
 
-    fn reset(&mut self) {
+    fn reset(&self) {
         self.inner.reset()
     }
 

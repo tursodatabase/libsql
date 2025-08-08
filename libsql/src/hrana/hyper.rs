@@ -255,7 +255,7 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
         ))
     }
 
-    fn reset(&mut self) {}
+    fn reset(&self) {}
 
     fn parameter_count(&self) -> usize {
         let stmt = &self.inner;
