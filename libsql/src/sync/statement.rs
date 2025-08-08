@@ -47,7 +47,7 @@ impl Stmt for SyncedStatement {
         self.inner.run(params).await
     }
 
-    fn interrupt(&mut self) -> Result<()> {
+    fn interrupt(&self) -> Result<()> {
         self.inner.interrupt()
     }
 

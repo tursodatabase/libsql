@@ -14,7 +14,7 @@ pub(crate) trait Stmt {
 
     async fn run(&mut self, params: &Params) -> Result<()>;
 
-    fn interrupt(&mut self) -> Result<()>;
+    fn interrupt(&self) -> Result<()>;
 
     fn reset(&mut self);
 
@@ -65,7 +65,7 @@ impl Statement {
     }
 
     /// Interrupt the statement.
-    pub fn interrupt(&mut self) -> Result<()> {
+    pub fn interrupt(&self) -> Result<()> {
         self.inner.interrupt()
     }
 

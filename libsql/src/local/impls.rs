@@ -129,7 +129,7 @@ impl Stmt for LibsqlStmt {
         stmt.run(&params)
     }
 
-    fn interrupt(&mut self) -> Result<()> {
+    fn interrupt(&self) -> Result<()> {
         self.0.interrupt()
     }
 

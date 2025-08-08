@@ -249,7 +249,7 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
         self.run(params).await
     }
 
-    fn interrupt(&mut self) -> crate::Result<()> {
+    fn interrupt(&self) -> crate::Result<()> {
         Err(crate::Error::Misuse(
             "interrupt is not supported for remote connections".to_string(),
         ))

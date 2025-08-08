@@ -749,7 +749,7 @@ impl Stmt for RemoteStatement {
         Ok(())
     }
 
-    fn interrupt(&mut self) -> Result<()> {
+    fn interrupt(&self) -> Result<()> {
         Err(Error::Misuse(
             "interrupt is not supported for remote connections".to_string(),
         ))
