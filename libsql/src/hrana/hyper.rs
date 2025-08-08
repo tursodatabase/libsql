@@ -237,7 +237,7 @@ impl Conn for HttpConnection<HttpSender> {
 impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
     fn finalize(&mut self) {}
 
-    async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
+    async fn execute(&self, params: &Params) -> crate::Result<usize> {
         self.execute(params).await
     }
 

@@ -20,7 +20,7 @@ impl Stmt for SyncedStatement {
         self.inner.finalize()
     }
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
+    async fn execute(&self, params: &Params) -> Result<usize> {
         if self.needs_pull.load(Ordering::Relaxed) {
             let mut context = self.context.lock().await;
             crate::sync::try_pull(&mut context, &self.conn).await?;

@@ -8,7 +8,7 @@ use crate::{Row, Rows};
 pub(crate) trait Stmt {
     fn finalize(&mut self);
 
-    async fn execute(&mut self, params: &Params) -> Result<usize>;
+    async fn execute(&self, params: &Params) -> Result<usize>;
 
     async fn query(&self, params: &Params) -> Result<Rows>;
 
@@ -39,7 +39,7 @@ impl Statement {
     }
 
     /// Execute queries on the statement, check [`Connection::execute`] for usage.
-    pub async fn execute(&mut self, params: impl IntoParams) -> Result<usize> {
+    pub async fn execute(&self, params: impl IntoParams) -> Result<usize> {
         tracing::trace!("execute for prepared statement");
         self.inner.execute(&params.into_params()?).await
     }

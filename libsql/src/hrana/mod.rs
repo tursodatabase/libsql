@@ -162,7 +162,7 @@ where
         }
     }
 
-    pub async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
+    pub async fn execute(&self, params: &Params) -> crate::Result<usize> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 

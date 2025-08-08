@@ -654,8 +654,8 @@ async fn fetch_metas(
 impl Stmt for RemoteStatement {
     fn finalize(&mut self) {}
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn execute(&self, params: &Params) -> Result<usize> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.execute(params.clone()).await;
         }
 

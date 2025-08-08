@@ -108,7 +108,7 @@ impl Stmt for LibsqlStmt {
         self.0.finalize();
     }
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
+    async fn execute(&self, params: &Params) -> Result<usize> {
         let params = params.clone();
         let stmt = self.0.clone();
 
