@@ -179,7 +179,7 @@ where
     }
 
     pub(crate) async fn query_raw(
-        &mut self,
+        &self,
         params: &Params,
     ) -> crate::Result<HranaRows<T::Stream, T>> {
         let mut stmt = self.inner.clone();
@@ -197,7 +197,7 @@ where
     T: HttpSend + Send + Sync + 'static,
     <T as HttpSend>::Stream: Send + Sync + 'static,
 {
-    pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
+    pub async fn query(&self, params: &Params) -> crate::Result<super::Rows> {
         let rows = self.query_raw(params).await?;
         Ok(super::Rows::new(rows))
     }

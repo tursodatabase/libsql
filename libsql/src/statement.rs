@@ -10,7 +10,7 @@ pub(crate) trait Stmt {
 
     async fn execute(&mut self, params: &Params) -> Result<usize>;
 
-    async fn query(&mut self, params: &Params) -> Result<Rows>;
+    async fn query(&self, params: &Params) -> Result<Rows>;
 
     async fn run(&mut self, params: &Params) -> Result<()>;
 
@@ -45,7 +45,7 @@ impl Statement {
     }
 
     /// Execute a query on the statement, check [`Connection::query`] for usage.
-    pub async fn query(&mut self, params: impl IntoParams) -> Result<Rows> {
+    pub async fn query(&self, params: impl IntoParams) -> Result<Rows> {
         tracing::trace!("query for prepared statement");
         self.inner.query(&params.into_params()?).await
     }

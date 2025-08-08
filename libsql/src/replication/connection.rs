@@ -688,8 +688,8 @@ impl Stmt for RemoteStatement {
         Ok(affected_row_count as usize)
     }
 
-    async fn query(&mut self, params: &Params) -> Result<Rows> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn query(&self, params: &Params) -> Result<Rows> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.query(params.clone()).await;
         }
 

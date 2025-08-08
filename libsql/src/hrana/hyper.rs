@@ -241,7 +241,7 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
         self.execute(params).await
     }
 
-    async fn query(&mut self, params: &Params) -> crate::Result<Rows> {
+    async fn query(&self, params: &Params) -> crate::Result<Rows> {
         self.query(params).await
     }
 
