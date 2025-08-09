@@ -30,14 +30,14 @@ async fn main() {
         .await
         .unwrap();
 
-    let mut stmt = conn
+    let stmt = conn
         .prepare("INSERT INTO users (email) VALUES (?1)")
         .await
         .unwrap();
 
     stmt.execute(["foo@example.com"]).await.unwrap();
 
-    let mut stmt = conn
+    let stmt = conn
         .prepare("SELECT * FROM users WHERE email = ?1")
         .await
         .unwrap();

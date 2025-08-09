@@ -8,15 +8,15 @@ use crate::{Row, Rows};
 pub(crate) trait Stmt {
     fn finalize(&mut self);
 
-    async fn execute(&mut self, params: &Params) -> Result<usize>;
+    async fn execute(&self, params: &Params) -> Result<usize>;
 
-    async fn query(&mut self, params: &Params) -> Result<Rows>;
+    async fn query(&self, params: &Params) -> Result<Rows>;
 
-    async fn run(&mut self, params: &Params) -> Result<()>;
+    async fn run(&self, params: &Params) -> Result<()>;
 
-    fn interrupt(&mut self) -> Result<()>;
+    fn interrupt(&self) -> Result<()>;
 
-    fn reset(&mut self);
+    fn reset(&self);
 
     fn parameter_count(&self) -> usize;
 
@@ -39,13 +39,13 @@ impl Statement {
     }
 
     /// Execute queries on the statement, check [`Connection::execute`] for usage.
-    pub async fn execute(&mut self, params: impl IntoParams) -> Result<usize> {
+    pub async fn execute(&self, params: impl IntoParams) -> Result<usize> {
         tracing::trace!("execute for prepared statement");
         self.inner.execute(&params.into_params()?).await
     }
 
     /// Execute a query on the statement, check [`Connection::query`] for usage.
-    pub async fn query(&mut self, params: impl IntoParams) -> Result<Rows> {
+    pub async fn query(&self, params: impl IntoParams) -> Result<Rows> {
         tracing::trace!("query for prepared statement");
         self.inner.query(&params.into_params()?).await
     }
@@ -58,14 +58,14 @@ impl Statement {
     /// provided to execute any type of SQL statement.
     ///
     /// Note: This is an extension to the Rusqlite API.
-    pub async fn run(&mut self, params: impl IntoParams) -> Result<()> {
+    pub async fn run(&self, params: impl IntoParams) -> Result<()> {
         tracing::trace!("run for prepared statement");
         self.inner.run(&params.into_params()?).await?;
         Ok(())
     }
 
     /// Interrupt the statement.
-    pub fn interrupt(&mut self) -> Result<()> {
+    pub fn interrupt(&self) -> Result<()> {
         self.inner.interrupt()
     }
 
@@ -83,7 +83,7 @@ impl Statement {
     }
 
     /// Reset the state of this prepared statement.
-    pub fn reset(&mut self) {
+    pub fn reset(&self) {
         self.inner.reset();
     }
 

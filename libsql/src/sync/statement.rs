@@ -20,7 +20,7 @@ impl Stmt for SyncedStatement {
         self.inner.finalize()
     }
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
+    async fn execute(&self, params: &Params) -> Result<usize> {
         if self.needs_pull.load(Ordering::Relaxed) {
             let mut context = self.context.lock().await;
             crate::sync::try_pull(&mut context, &self.conn).await?;
@@ -29,7 +29,7 @@ impl Stmt for SyncedStatement {
         self.inner.execute(params).await
     }
 
-    async fn query(&mut self, params: &Params) -> Result<Rows> {
+    async fn query(&self, params: &Params) -> Result<Rows> {
         if self.needs_pull.load(Ordering::Relaxed) {
             let mut context = self.context.lock().await;
             crate::sync::try_pull(&mut context, &self.conn).await?;
@@ -38,7 +38,7 @@ impl Stmt for SyncedStatement {
         self.inner.query(params).await
     }
 
-    async fn run(&mut self, params: &Params) -> Result<()> {
+    async fn run(&self, params: &Params) -> Result<()> {
         if self.needs_pull.load(Ordering::Relaxed) {
             let mut context = self.context.lock().await;
             crate::sync::try_pull(&mut context, &self.conn).await?;
@@ -47,11 +47,11 @@ impl Stmt for SyncedStatement {
         self.inner.run(params).await
     }
 
-    fn interrupt(&mut self) -> Result<()> {
+    fn interrupt(&self) -> Result<()> {
         self.inner.interrupt()
     }
 
-    fn reset(&mut self) {
+    fn reset(&self) {
         self.inner.reset()
     }
 

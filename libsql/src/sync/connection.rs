@@ -104,7 +104,7 @@ impl SyncedConnection {
 #[async_trait::async_trait]
 impl Conn for SyncedConnection {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
-        let mut stmt = self.prepare(sql).await?;
+        let stmt = self.prepare(sql).await?;
         stmt.execute(params).await.map(|v| v as u64)
     }
 

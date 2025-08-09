@@ -22,7 +22,7 @@ async fn main() {
     .await
     .unwrap();
 
-    let mut stmt = conn
+    let stmt = conn
         .prepare("INSERT INTO users (name, age, vision, avatar) VALUES (?1, ?2, ?3, ?4)")
         .await
         .unwrap();
@@ -30,7 +30,7 @@ async fn main() {
         .await
         .unwrap();
 
-    let mut stmt = conn
+    let stmt = conn
         .prepare("SELECT * FROM users WHERE name = ?1")
         .await
         .unwrap();

@@ -162,7 +162,7 @@ where
         }
     }
 
-    pub async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
+    pub async fn execute(&self, params: &Params) -> crate::Result<usize> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
@@ -170,7 +170,7 @@ where
         Ok(result.affected_row_count as usize)
     }
 
-    pub async fn run(&mut self, params: &Params) -> crate::Result<()> {
+    pub async fn run(&self, params: &Params) -> crate::Result<()> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
@@ -179,7 +179,7 @@ where
     }
 
     pub(crate) async fn query_raw(
-        &mut self,
+        &self,
         params: &Params,
     ) -> crate::Result<HranaRows<T::Stream, T>> {
         let mut stmt = self.inner.clone();
@@ -197,7 +197,7 @@ where
     T: HttpSend + Send + Sync + 'static,
     <T as HttpSend>::Stream: Send + Sync + 'static,
 {
-    pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
+    pub async fn query(&self, params: &Params) -> crate::Result<super::Rows> {
         let rows = self.query_raw(params).await?;
         Ok(super::Rows::new(rows))
     }

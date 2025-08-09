@@ -422,7 +422,7 @@ async fn insert_rows(conn: &Connection, start: u32, count: u32) -> libsql::Resul
 
 async fn insert_rows_with_args(conn: &Connection, start: u32, count: u32) -> libsql::Result<()> {
     for i in start..(start + count) {
-        let mut stmt = conn.prepare("INSERT INTO test(a, b) VALUES(?,?)").await?;
+        let stmt = conn.prepare("INSERT INTO test(a, b) VALUES(?,?)").await?;
         stmt.execute(params![i, i]).await?;
     }
     Ok(())

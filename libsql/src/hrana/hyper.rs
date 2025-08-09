@@ -237,25 +237,25 @@ impl Conn for HttpConnection<HttpSender> {
 impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
     fn finalize(&mut self) {}
 
-    async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
+    async fn execute(&self, params: &Params) -> crate::Result<usize> {
         self.execute(params).await
     }
 
-    async fn query(&mut self, params: &Params) -> crate::Result<Rows> {
+    async fn query(&self, params: &Params) -> crate::Result<Rows> {
         self.query(params).await
     }
 
-    async fn run(&mut self, params: &Params) -> crate::Result<()> {
+    async fn run(&self, params: &Params) -> crate::Result<()> {
         self.run(params).await
     }
 
-    fn interrupt(&mut self) -> crate::Result<()> {
+    fn interrupt(&self) -> crate::Result<()> {
         Err(crate::Error::Misuse(
             "interrupt is not supported for remote connections".to_string(),
         ))
     }
 
-    fn reset(&mut self) {}
+    fn reset(&self) {}
 
     fn parameter_count(&self) -> usize {
         let stmt = &self.inner;

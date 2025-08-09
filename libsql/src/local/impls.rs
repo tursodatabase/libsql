@@ -108,32 +108,32 @@ impl Stmt for LibsqlStmt {
         self.0.finalize();
     }
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
+    async fn execute(&self, params: &Params) -> Result<usize> {
         let params = params.clone();
         let stmt = self.0.clone();
 
         stmt.execute(&params).map(|i| i as usize)
     }
 
-    async fn query(&mut self, params: &Params) -> Result<Rows> {
+    async fn query(&self, params: &Params) -> Result<Rows> {
         let params = params.clone();
         let stmt = self.0.clone();
 
         stmt.query(&params).map(LibsqlRows).map(Rows::new)
     }
 
-    async fn run(&mut self, params: &Params) -> Result<()> {
+    async fn run(&self, params: &Params) -> Result<()> {
         let params = params.clone();
         let stmt = self.0.clone();
 
         stmt.run(&params)
     }
 
-    fn interrupt(&mut self) -> Result<()> {
+    fn interrupt(&self) -> Result<()> {
         self.0.interrupt()
     }
 
-    fn reset(&mut self) {
+    fn reset(&self) {
         self.0.reset();
     }
 
