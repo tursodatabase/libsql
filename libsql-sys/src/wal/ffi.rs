@@ -446,8 +446,8 @@ pub unsafe extern "C" fn checkpoint<T: Wal>(
         _ => panic!("invalid checkpoint mode"),
     };
 
-    let in_wal = (!frames_in_wal_out.is_null()).then_some(&mut *frames_in_wal_out);
-    let backfilled = (!checkpointed_frames_out.is_null()).then_some(&mut *checkpointed_frames_out);
+    let in_wal = (!frames_in_wal_out.is_null()).then(|| &mut *frames_in_wal_out);
+    let backfilled = (!checkpointed_frames_out.is_null()).then(|| &mut *checkpointed_frames_out);
     let mut db = Sqlite3Db { inner: db };
     match this.checkpoint(
         &mut db,
