@@ -29,6 +29,9 @@
 #include "sqliteInt.h"
 #include "vectorInt.h"
 
+/* Include the implementation of vector_concat and vector_slice functions */
+#include "../../vector_func_impl.c"
+
 #define MAX_FLOAT_CHAR_SZ  1024
 
 /**************************************************************************
