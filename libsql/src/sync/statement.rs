@@ -4,14 +4,14 @@ use crate::{
     statement::Stmt,
     sync::SyncContext, Column, Result, Rows, Statement,
 };
-use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub struct SyncedStatement {
     pub conn: local::Connection,
     pub inner: Statement,
     pub context: Arc<Mutex<SyncContext>>,
-    pub needs_pull: Arc<AtomicBool>,
+    pub read_your_writes: bool,
 }
 
 #[async_trait::async_trait]
@@ -21,30 +21,30 @@ impl Stmt for SyncedStatement {
     }
 
     async fn execute(&self, params: &Params) -> Result<usize> {
-        if self.needs_pull.load(Ordering::Relaxed) {
+        let result = self.inner.execute(params).await;
+        if self.read_your_writes {
             let mut context = self.context.lock().await;
             crate::sync::try_pull(&mut context, &self.conn).await?;
-            self.needs_pull.store(false, Ordering::Relaxed);
         }
-        self.inner.execute(params).await
+        result
     }
 
     async fn query(&self, params: &Params) -> Result<Rows> {
-        if self.needs_pull.load(Ordering::Relaxed) {
+        let result = self.inner.query(params).await;
+        if self.read_your_writes {
             let mut context = self.context.lock().await;
             crate::sync::try_pull(&mut context, &self.conn).await?;
-            self.needs_pull.store(false, Ordering::Relaxed);
         }
-        self.inner.query(params).await
+        result
     }
 
     async fn run(&self, params: &Params) -> Result<()> {
-        if self.needs_pull.load(Ordering::Relaxed) {
+        let result = self.inner.run(params).await;
+        if self.read_your_writes {
             let mut context = self.context.lock().await;
             crate::sync::try_pull(&mut context, &self.conn).await?;
-            self.needs_pull.store(false, Ordering::Relaxed);
         }
-        self.inner.run(params).await
+        result
     }
 
     fn interrupt(&self) -> Result<()> {
