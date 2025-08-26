@@ -621,7 +621,14 @@ impl SyncContext {
         Ok(info)
     }
 
-    async fn sync_db_if_needed(&mut self, generation: u32) -> Result<()> {
+    async fn sync_db_if_needed(&mut self) -> Result<()> {
+        let db_file_exists = check_if_file_exists(&self.db_path)?;
+        let metadata_exists = check_if_file_exists(&format!("{}-info", self.db_path))?;
+        if db_file_exists && metadata_exists {
+            return Ok(());
+        }
+        let info = self.get_remote_info().await?;
+        let generation = info.current_generation;
         // somehow we are ahead of the remote in generations. following should not happen because
         // we checkpoint only if the remote server tells us to do so.
         if self.durable_generation > generation {
@@ -641,8 +648,6 @@ impl SyncContext {
         //    then local db is in an incorrect state. we stop and return with an error
         // 3. if the db file exists and the metadata file exists, then we don't need to do the
         //    sync
-        let metadata_exists = check_if_file_exists(&format!("{}-info", self.db_path))?;
-        let db_file_exists = check_if_file_exists(&self.db_path)?;
         match (metadata_exists, db_file_exists) {
             (false, false) => {
                 // neither the db file nor the metadata file exists, lets bootstrap from remote
@@ -653,16 +658,14 @@ impl SyncContext {
                 self.sync_db(generation).await
             }
             (false, true) => {
-                // kinda inconsistent state: DB exists but metadata missing
-                // however, this generally not an issue. For a fresh db, a user might do writes
-                // locally and then try to do sync later. So in this case, we will not
-                // bootstrap the db file and let the user proceed. If it is not a fresh db, the
-                // push will fail anyways later.
-                // if metadata file does not exist, then generation should be zero
-                assert_eq!(self.durable_generation, 0);
-                // lets initialise it to first generation
-                self.durable_generation = 1;
-                Ok(())
+                // inconsistent state: DB exists but metadata missing
+                tracing::error!(
+                    "local state is incorrect, db file exists but metadata file does not"
+                );
+                Err(SyncError::InvalidLocalState(
+                    "db file exists but metadata file does not".to_string(),
+                )
+                .into())
             }
             (true, false) => {
                 // inconsistent state: Metadata exists but DB missing
@@ -675,8 +678,8 @@ impl SyncContext {
                 .into())
             }
             (true, true) => {
-                // both files exists, no need to sync
-                Ok(())
+                // We already handled this case earlier in the function.
+                unreachable!();
             }
         }
     }
@@ -820,11 +823,7 @@ pub async fn bootstrap_db(sync_ctx: &mut SyncContext) -> Result<()> {
     // we need to do this when we notice a large gap in generations, when bootstrapping is cheaper
     // than pulling each frame
     if !sync_ctx.initial_server_sync {
-        // sync is being called first time. so we will call remote, get the generation information
-        // if we are lagging behind, then we will call the export API and get to the latest
-        // generation directly.
-        let info = sync_ctx.get_remote_info().await?;
-        sync_ctx.sync_db_if_needed(info.current_generation).await?;
+        sync_ctx.sync_db_if_needed().await?;
         // when sync_ctx is initialised, we set durable_generation to 0. however, once
         // sync_db is called, it should be > 0.
         assert!(sync_ctx.durable_generation > 0, "generation should be > 0");
