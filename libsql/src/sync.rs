@@ -525,6 +525,8 @@ impl SyncContext {
     pub(crate) async fn write_metadata(&mut self) -> Result<()> {
         let path = format!("{}-info", self.db_path);
 
+        assert!(self.durable_generation > 0);
+
         let mut metadata = MetadataJson {
             hash: 0,
             version: METADATA_VERSION,
