@@ -658,16 +658,14 @@ impl SyncContext {
                 self.sync_db(generation).await
             }
             (false, true) => {
-                // kinda inconsistent state: DB exists but metadata missing
-                // however, this generally not an issue. For a fresh db, a user might do writes
-                // locally and then try to do sync later. So in this case, we will not
-                // bootstrap the db file and let the user proceed. If it is not a fresh db, the
-                // push will fail anyways later.
-                // if metadata file does not exist, then generation should be zero
-                assert_eq!(self.durable_generation, 0);
-                // lets initialise it to first generation
-                self.durable_generation = 1;
-                Ok(())
+                // inconsistent state: DB exists but metadata missing
+                tracing::error!(
+                    "local state is incorrect, db file exists but metadata file does not"
+                );
+                Err(SyncError::InvalidLocalState(
+                    "db file exists but metadata file does not".to_string(),
+                )
+                .into())
             }
             (true, false) => {
                 // inconsistent state: Metadata exists but DB missing
