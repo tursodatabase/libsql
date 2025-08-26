@@ -14,6 +14,7 @@ async fn test_sync_context_push_frame() {
     let server = MockServer::start();
     let temp_dir = tempdir().unwrap();
     let db_path = temp_dir.path().join("test.db");
+    gen_metadata_file(&db_path, 3278479626, 0, 0, 1);
 
     let sync_ctx = SyncContext::new(
         server.connector(),
@@ -44,6 +45,7 @@ async fn test_sync_context_with_auth() {
     let server = MockServer::start();
     let temp_dir = tempdir().unwrap();
     let db_path = temp_dir.path().join("test.db");
+    gen_metadata_file(&db_path, 3278479626, 0, 0, 1);
 
     let sync_ctx = SyncContext::new(
         server.connector(),
@@ -69,6 +71,7 @@ async fn test_sync_context_multiple_frames() {
     let server = MockServer::start();
     let temp_dir = tempdir().unwrap();
     let db_path = temp_dir.path().join("test.db");
+    gen_metadata_file(&db_path, 3278479626, 0, 0, 1);
 
     let sync_ctx = SyncContext::new(
         server.connector(),
@@ -98,6 +101,7 @@ async fn test_sync_context_corrupted_metadata() {
     let server = MockServer::start();
     let temp_dir = tempdir().unwrap();
     let db_path = temp_dir.path().join("test.db");
+    gen_metadata_file(&db_path, 3278479626, 0, 0, 1);
 
     // Create initial sync context and push a frame
     let sync_ctx = SyncContext::new(
@@ -129,12 +133,9 @@ async fn test_sync_context_corrupted_metadata() {
         None,
         None,
     )
-    .await
-    .unwrap();
+    .await;
 
-    // Verify that the context was reset to default values
-    assert_eq!(sync_ctx.durable_frame_num(), 0);
-    assert_eq!(sync_ctx.durable_generation(), 0);
+    assert!(sync_ctx.is_err());
 }
 
 #[tokio::test]
@@ -144,6 +145,7 @@ async fn test_sync_restarts_with_lower_max_frame_no() {
     let server = MockServer::start();
     let temp_dir = tempdir().unwrap();
     let db_path = temp_dir.path().join("test.db");
+    gen_metadata_file(&db_path, 3278479626, 0, 0, 1);
 
     // Create initial sync context and push a frame
     let sync_ctx = SyncContext::new(
@@ -211,6 +213,7 @@ async fn test_sync_context_retry_on_error() {
     let server = MockServer::start();
     let temp_dir = tempdir().unwrap();
     let db_path = temp_dir.path().join("test.db");
+    gen_metadata_file(&db_path, 3278479626, 0, 0, 1);
 
     let sync_ctx = SyncContext::new(
         server.connector(),
@@ -474,4 +477,16 @@ impl hyper::client::connect::Connection for MockConnection {
     fn connected(&self) -> hyper::client::connect::Connected {
         hyper::client::connect::Connected::new()
     }
+}
+
+fn gen_metadata_file(db_path: &Path, hash: u32, version: u32, durable_frame_num: u32, generation: u32) {
+    let metadata_path = format!("{}-info", db_path.to_str().unwrap());
+    std::fs::write(
+        &metadata_path,
+        format!(
+            "{{\"hash\": {hash}, \"version\": {version}, \"durable_frame_num\": {durable_frame_num}, \"generation\": {generation}}}"
+        )
+        .as_bytes(),
+    )
+    .unwrap();
 }
