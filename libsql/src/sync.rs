@@ -169,14 +169,10 @@ impl SyncContext {
             initial_server_sync: false,
             remote_encryption,
         };
-
-        if let Err(e) = me.read_metadata().await {
-            tracing::error!(
-                "failed to read sync metadata file, resetting back to defaults: {}",
-                e
-            );
+        me.read_metadata().await?;
+        if me.durable_generation == 0 {
+            return Err(SyncError::InvalidLocalState("generation is 0".to_string()).into());
         }
-
         Ok(me)
     }
 
