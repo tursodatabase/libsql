@@ -68,6 +68,8 @@ pub enum SyncError {
     InvalidLocalGeneration(u32, u32),
     #[error("invalid local state: {0}")]
     InvalidLocalState(String),
+    #[error("invalid remote state: {0}")]
+    InvalidRemoteState(String),
     #[error("server returned invalid length of frames: {0}")]
     InvalidPullFrameBytes(usize),
 }
@@ -614,8 +616,10 @@ impl SyncContext {
             .await
             .map_err(SyncError::HttpBody)?;
 
-        let info = serde_json::from_slice(&body).map_err(SyncError::JsonDecode)?;
-
+        let info: InfoResult = serde_json::from_slice(&body).map_err(SyncError::JsonDecode)?;
+        if info.current_generation == 0 {
+            return Err(SyncError::InvalidRemoteState("generation is 0".to_string()).into());
+        }
         Ok(info)
     }
 
