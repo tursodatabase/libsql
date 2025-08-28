@@ -296,7 +296,7 @@ fn tokenize_sql_keywords(text: &str) -> Vec<String> {
     let mut current_token = String::new();
     let mut in_string_literal = false;
     let mut string_delimiter = '\0';
-    
+
     while let Some(ch) = chars.next() {
         match ch {
             '\'' | '"' => {
@@ -328,7 +328,7 @@ fn tokenize_sql_keywords(text: &str) -> Vec<String> {
     if !current_token.is_empty() && !in_string_literal {
         tokens.push(current_token.to_uppercase());
     }
-    
+
     tokens
 }
 
@@ -336,7 +336,7 @@ fn is_complete_sql_statement(sql: &str) -> bool {
     let tokens = tokenize_sql_keywords(sql);
     let mut begin_end_depth = 0;
     let mut case_depth = 0;
-    
+
     for (i, token) in tokens.iter().enumerate() {
         match token.as_str() {
             "CASE" => {
@@ -358,7 +358,8 @@ fn is_complete_sql_statement(sql: &str) -> bool {
                     case_depth -= 1;
                 } else {
                     // This is a block-ending END (BEGIN/END, IF/END IF, etc.)
-                    let is_control_flow_end = tokens.get(i + 1)
+                    let is_control_flow_end = tokens
+                        .get(i + 1)
                         .map(|next| matches!(next.as_str(), "IF" | "LOOP" | "WHILE"))
                         .unwrap_or(false);
 

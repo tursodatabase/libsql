@@ -461,7 +461,11 @@ fn load_dump_with_trigger() {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
 
-        let db = Database::open_remote_with_connector("http://debug_test.primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector(
+            "http://debug_test.primary:8080",
+            "",
+            TurmoilConnector,
+        )?;
         let conn = db.connect()?;
 
         // Original INSERT: 1, Trigger INSERT: 999 = 2 total rows
@@ -518,7 +522,11 @@ fn load_dump_with_case_trigger() {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
 
-        let db = Database::open_remote_with_connector("http://case_test.primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector(
+            "http://case_test.primary:8080",
+            "",
+            TurmoilConnector,
+        )?;
         let conn = db.connect()?;
 
         let mut rows = conn.query("SELECT id, rate FROM test", ()).await?;
@@ -580,11 +588,18 @@ fn load_dump_with_nested_case() {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
 
-        let db = Database::open_remote_with_connector("http://nested_test.primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector(
+            "http://nested_test.primary:8080",
+            "",
+            TurmoilConnector,
+        )?;
         let conn = db.connect()?;
 
-        conn.execute("UPDATE orders SET status = 'completed' WHERE id = 1", ()).await?;
-        let mut rows = conn.query("SELECT amount FROM orders WHERE id = 1", ()).await?;
+        conn.execute("UPDATE orders SET status = 'completed' WHERE id = 1", ())
+            .await?;
+        let mut rows = conn
+            .query("SELECT amount FROM orders WHERE id = 1", ())
+            .await?;
         let row = rows.next().await?.unwrap();
         assert!((row.get::<f64>(0)? - 90.0).abs() < 0.001);
 
