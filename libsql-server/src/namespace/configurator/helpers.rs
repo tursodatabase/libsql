@@ -290,6 +290,94 @@ async fn run_periodic_compactions(logger: Arc<ReplicationLogger>) -> anyhow::Res
     }
 }
 
+fn tokenize_sql_keywords(text: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut chars = text.chars().peekable();
+    let mut current_token = String::new();
+    let mut in_string_literal = false;
+    let mut string_delimiter = '\0';
+    
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\'' | '"' => {
+                if !in_string_literal {
+                    in_string_literal = true;
+                    string_delimiter = ch;
+                } else if ch == string_delimiter {
+                    in_string_literal = false;
+                }
+            }
+            c if c.is_whitespace() || "(){}[];,".contains(c) => {
+                if in_string_literal {
+                    continue;
+                }
+                if !current_token.is_empty() {
+                    tokens.push(current_token.to_uppercase());
+                    current_token.clear();
+                }
+            }
+            // Regular characters
+            _ => {
+                if !in_string_literal {
+                    current_token.push(ch);
+                }
+            }
+        }
+    }
+
+    if !current_token.is_empty() && !in_string_literal {
+        tokens.push(current_token.to_uppercase());
+    }
+    
+    tokens
+}
+
+fn is_complete_sql_statement(sql: &str) -> bool {
+    let tokens = tokenize_sql_keywords(sql);
+    let mut begin_end_depth = 0;
+    let mut case_depth = 0;
+    
+    for (i, token) in tokens.iter().enumerate() {
+        match token.as_str() {
+            "CASE" => {
+                case_depth += 1;
+            }
+            "BEGIN" => {
+                let next_token = tokens.get(i + 1).map(|s| s.as_str());
+                let is_transaction_keyword = matches!(
+                    next_token,
+                    Some("TRANSACTION") | Some("IMMEDIATE") | Some("EXCLUSIVE") | Some("DEFERRED")
+                );
+
+                if !is_transaction_keyword {
+                    begin_end_depth += 1;
+                }
+            }
+            "END" => {
+                if case_depth > 0 {
+                    case_depth -= 1;
+                } else {
+                    // This is a block-ending END (BEGIN/END, IF/END IF, etc.)
+                    let is_control_flow_end = tokens.get(i + 1)
+                        .map(|next| matches!(next.as_str(), "IF" | "LOOP" | "WHILE"))
+                        .unwrap_or(false);
+
+                    if !is_control_flow_end {
+                        begin_end_depth -= 1;
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        if begin_end_depth < 0 {
+            return false;
+        }
+    }
+
+    begin_end_depth == 0 && case_depth == 0
+}
+
 async fn load_dump<S>(dump: S, conn: PrimaryConnection) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
@@ -311,12 +399,11 @@ where
             curr.clear();
             continue;
         }
-        // FIXME: it's well known bug that comment ending with semicolon will be handled incorrectly by currend dump processing code
-        let statement_end = trimmed.ends_with(';');
 
         // we want to concat original(non-trimmed) lines as trimming will join all them in one
         // single-line statement which is incorrect if comments in the end are present
         line.push_str(&curr);
+        let statement_end = trimmed.ends_with(';') && is_complete_sql_statement(&line);
         curr.clear();
 
         // This is a hack to ignore the libsql_wasm_func_table table because it is already created
@@ -373,6 +460,13 @@ where
         }
     }
     tracing::debug!("loaded {} lines from dump", line_id);
+
+    if !line.trim().is_empty() {
+        return Err(LoadDumpError::InvalidSqlInput(format!(
+            "Incomplete SQL statement at end of dump: {}",
+            line.trim()
+        )));
+    }
 
     if !conn.is_autocommit().await.unwrap() {
         tokio::task::spawn_blocking({
