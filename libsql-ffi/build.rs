@@ -451,8 +451,10 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
     )
     .unwrap();
 
+    // Copy the patched version of sqlite3.c that includes the necessary hooks
+    // for SQLite3 Multiple Ciphers (like sqlite3mcHandleAttachKey)
     copy_with_cp(
-        PathBuf::from(BUNDLED_DIR).join("src").join("sqlite3.c"),
+        PathBuf::from(BUNDLED_DIR).join("SQLite3MultipleCiphers").join("src").join("sqlite3patched.c"),
         format!("{out_dir}/sqlite3mc/src/sqlite3.c"),
     )
     .unwrap();
