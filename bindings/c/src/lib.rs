@@ -980,7 +980,10 @@ pub unsafe extern "C" fn libsql_stmt_parameter_name(
             }
         }
     } else {
-        set_err_msg(format!("There is no named parameter at index {}", index), out_err_msg);
+        set_err_msg(
+            format!("There is no named parameter at index {}", index),
+            out_err_msg,
+        );
         return 1;
     }
 }
