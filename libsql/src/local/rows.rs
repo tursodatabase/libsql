@@ -82,6 +82,12 @@ impl AsRef<Statement> for Rows {
     }
 }
 
+impl Drop for Rows {
+    fn drop(&mut self) {
+        self.stmt.reset();
+    }
+}
+
 pub struct RowsFuture {
     pub(crate) conn: Connection,
     pub(crate) sql: String,
