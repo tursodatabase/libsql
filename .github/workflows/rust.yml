@@ -130,6 +130,9 @@ jobs:
 
     - name: Run tests
       run: cargo nextest run
+
+    - name: Run libsql encryption tests
+      run: cargo test --features encryption --color=always --test encryption test_encryption
   # test-custom-pager:
   #   runs-on: ubuntu-latest
   #   name: Run Tests
