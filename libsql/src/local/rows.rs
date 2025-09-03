@@ -46,8 +46,14 @@ impl Rows {
             err_msg = errors::error_from_handle(self.stmt.conn.raw);
         }
         match err {
-            libsql_sys::ffi::SQLITE_OK => Ok(None),
-            libsql_sys::ffi::SQLITE_DONE => Ok(None),
+            libsql_sys::ffi::SQLITE_OK => {
+                self.stmt.reset();
+                Ok(None)
+            }
+            libsql_sys::ffi::SQLITE_DONE => {
+                self.stmt.reset();
+                Ok(None)
+            }
             libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row {
                 stmt: self.stmt.clone(),
             })),
@@ -82,11 +88,6 @@ impl AsRef<Statement> for Rows {
     }
 }
 
-impl Drop for Rows {
-    fn drop(&mut self) {
-        self.stmt.reset();
-    }
-}
 
 pub struct RowsFuture {
     pub(crate) conn: Connection,
