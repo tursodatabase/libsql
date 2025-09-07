@@ -494,7 +494,7 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
     if cfg!(feature = "wasmtime-bindings") {
         config.define("LIBSQL_ENABLE_WASM_RUNTIME", "1");
     }
-    config.define("LIBSQL_ENCRYPTION", "1");
+    config.define("LIBSQL_EXTRA_URI_PARAMS", "1");
 
     if cfg!(feature = "session") {
         config
