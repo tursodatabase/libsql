@@ -61,10 +61,6 @@ int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName){
 int libsql_handle_extra_attach_params(sqlite3* db, const char* zName, const char* zPath, sqlite3_value* pKey, char** zErrDyn);
 #endif
 
-#ifdef LIBSQL_ENCRYPTION
-SQLITE_PRIVATE int sqlite3mcHandleAttachKey(sqlite3*, const char*, const char*, sqlite3_value*, char**);
-#endif
-
 /*
 ** An SQL user-function registered to do the work of an ATTACH statement. The
 ** three arguments to the function come directly from an attach statement:
@@ -221,19 +217,11 @@ static void attachFunc(
   }
 #ifdef LIBSQL_EXTRA_URI_PARAMS
   if (rc == SQLITE_OK) {
-    rc = libsql_handle_extra_attach_params(db, zName, zPath, argv, &zErrDyn);
-  }
-#endif
-
-#ifdef LIBSQL_ENCRYPTION
-  /* If the ATTACH statement came with key parameter, then lets handle it here. */
-  if( rc==SQLITE_OK ){
-    if( argv != NULL && argv[0] != NULL && argv[1] != NULL && argv[2] != NULL ){
-      rc = sqlite3mcHandleAttachKey(db, zName, zPath, argv[2], &zErrDyn);
+    if (argv != NULL && argv[0] != NULL && argv[1] != NULL && argv[2] != NULL) {
+      rc = libsql_handle_extra_attach_params(db, zName, zPath, argv[2], &zErrDyn);
     }
   }
 #endif
-
   sqlite3_free_filename( zPath );
 
   /* If the file was opened successfully, read the schema for the new database.
