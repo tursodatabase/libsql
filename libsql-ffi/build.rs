@@ -255,8 +255,8 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     if cfg!(feature = "sqlean-extension-regexp") {
         enabled_extensions.push("regexp");
         sqlean_patterns.push("regexp/*.c");
+        sqlean_patterns.push("regexp/pcre2/pcre2_internal.h");
         sqlean_patterns.push("regexp/pcre2/*.c");
-        sqlean_patterns.push("regexp/pcre2/*.h");
     }
 
     if sqlean_patterns.is_empty() {
@@ -271,6 +271,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         }
 
         if cfg!(feature = "sqlean-extension-regexp") {
+            // PCRE2 needs some macroses defined externally in constants.h file
             cfg.flag("-include")
                 .flag(format!("{BUNDLED_DIR}/sqlean/regexp/constants.h"));
         }
