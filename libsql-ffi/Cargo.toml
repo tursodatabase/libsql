@@ -40,6 +40,7 @@ sqlean-extension-fuzzy = []
 sqlean-extension-math = []
 sqlean-extension-stats = []
 sqlean-extension-text = []
+sqlean-extension-regexp = []
 sqlean-extensions = [
   "sqlean-extension-uuid",
   "sqlean-extension-crypto",
@@ -47,6 +48,7 @@ sqlean-extensions = [
   "sqlean-extension-math",
   "sqlean-extension-stats",
   "sqlean-extension-text",
+  "sqlean-extension-regexp",
 ]
 libsql-disable-checkpoint-downgrade = []
 libsql-checkpoint-only-full= []

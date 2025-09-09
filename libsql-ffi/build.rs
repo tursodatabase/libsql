@@ -252,6 +252,11 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         sqlean_patterns.push("uuid/*.c");
     }
 
+    if cfg!(feature = "sqlean-extension-regexp") {
+        enabled_extensions.push("regexp");
+        sqlean_patterns.push("regexp/*.c");
+    }
+
     if sqlean_patterns.is_empty() {
         cfg.file(format!("{BUNDLED_DIR}/src/sqlite3.c"));
     } else {
