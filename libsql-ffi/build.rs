@@ -268,6 +268,11 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
             sqlean_sources.extend(glob(&full_pattern).unwrap().filter_map(Result::ok));
         }
 
+        if cfg!(feature = "sqlean-extension-regexp") {
+            cfg.flag("-include")
+                .flag(format!("{BUNDLED_DIR}/sqlean/regexp/constants.h"));
+        }
+
         cfg.files(sqlean_sources);
 
         let sqlean = Path::new(&env::var("OUT_DIR").unwrap()).join("sqlite3-sqlean-generated.c");
