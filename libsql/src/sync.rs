@@ -172,9 +172,6 @@ impl SyncContext {
             remote_encryption,
         };
         me.read_metadata().await?;
-        if me.durable_generation == 0 {
-            return Err(SyncError::InvalidLocalState("generation is 0".to_string()).into());
-        }
         Ok(me)
     }
 
@@ -574,6 +571,10 @@ impl SyncContext {
             self.db_path,
             metadata
         );
+
+        if metadata.generation == 0 {
+            return Err(SyncError::InvalidLocalState("generation is 0".to_string()).into());
+        }
 
         self.durable_generation = metadata.generation;
         self.durable_frame_num = metadata.durable_frame_num;
@@ -991,7 +992,8 @@ pub async fn try_pull(
                     if !insert_handle.in_session() {
                         tracing::debug!(
                             "pull_frames: generation={}, frame={}, start wal transaction session",
-                            generation, next_frame_no
+                            generation,
+                            next_frame_no
                         );
                         insert_handle.begin()?;
                     }
