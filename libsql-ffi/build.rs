@@ -252,6 +252,13 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         sqlean_patterns.push("uuid/*.c");
     }
 
+    if cfg!(feature = "sqlean-extension-regexp") {
+        enabled_extensions.push("regexp");
+        sqlean_patterns.push("regexp/*.c");
+        sqlean_patterns.push("regexp/pcre2/pcre2_internal.h");
+        sqlean_patterns.push("regexp/pcre2/*.c");
+    }
+
     if sqlean_patterns.is_empty() {
         cfg.file(format!("{BUNDLED_DIR}/src/sqlite3.c"));
     } else {
@@ -261,6 +268,12 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         for pattern in sqlean_patterns {
             let full_pattern = format!("{BUNDLED_DIR}/sqlean/{}", pattern);
             sqlean_sources.extend(glob(&full_pattern).unwrap().filter_map(Result::ok));
+        }
+
+        if cfg!(feature = "sqlean-extension-regexp") {
+            // PCRE2 needs some macroses defined externally in constants.h file
+            cfg.flag("-include")
+                .flag(format!("{BUNDLED_DIR}/sqlean/regexp/constants.h"));
         }
 
         cfg.files(sqlean_sources);
