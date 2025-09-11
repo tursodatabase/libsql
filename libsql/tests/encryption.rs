@@ -45,6 +45,17 @@ async fn test_encryption() {
         assert_eq!(text, "the only winning move is not to play");
     }
 
+    // let's test encryption with connection string
+    {
+        let conn_str = format!("file:{}?key=s3cR3t", tempdir.join("encrypted.db").display());
+        let db = Builder::new_local(&conn_str).build().await.unwrap();
+        let conn = db.connect().unwrap();
+        let mut results = conn.query("SELECT * FROM messages", ()).await.unwrap();
+        let row = results.next().await.unwrap().unwrap();
+        let text: String = row.get(0).unwrap();
+        assert_eq!(text, "the only winning move is not to play");
+    }
+
     {
         let _ = std::fs::remove_file(&encrypted_path);
         let _ = std::fs::remove_file(&base_path);
