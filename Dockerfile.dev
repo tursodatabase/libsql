@@ -49,7 +49,10 @@ RUN set -eux; \
 
 # runtime
 FROM debian:bullseye-slim
-RUN apt update
+RUN apt update \
+    && apt install -y curl \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 5001 8080
 VOLUME [ "/var/lib/sqld" ]
