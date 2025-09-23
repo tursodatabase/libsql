@@ -282,9 +282,11 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
                     return 5;
                 }
             };
-            builder = builder.remote_encryption(libsql::EncryptionContext {
-                key: libsql::EncryptionKey::Base64Encoded(key.to_string()),
-            });
+            if !key.is_empty() {
+                builder = builder.remote_encryption(libsql::EncryptionContext {
+                    key: libsql::EncryptionKey::Base64Encoded(key.to_string()),
+                });
+            }
         };
         match RT.block_on(builder.build()) {
             Ok(db) => {
