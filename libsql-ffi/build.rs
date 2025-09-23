@@ -487,6 +487,10 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
         .profile("Release");
 
+    if let Ok(ndk_home) = env::var("ANDROID_NDK_HOME") {
+        config.define("CMAKE_ANDROID_NDK", ndk_home);
+    }
+
     if let Ok(cc) = env::var("CMAKE_C_COMPILER") {
         let mut build = cc::Build::new();
         build.compiler(cc);
