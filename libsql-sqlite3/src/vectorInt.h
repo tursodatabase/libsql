@@ -134,6 +134,16 @@ float vectorFB16DistanceL2(const Vector *, const Vector *);
 float vectorF32DistanceL2 (const Vector *, const Vector *);
 double vectorF64DistanceL2(const Vector *, const Vector *);
 
+/*
+ * Add/sub vectors
+*/
+void vectorAdd   (Vector *, const Vector *);
+void vectorF32Add(Vector *, const Vector *);
+void vectorF64Add(Vector *, const Vector *);
+void vectorSub   (Vector *, const Vector *);
+void vectorF32Sub(Vector *, const Vector *);
+void vectorF64Sub(Vector *, const Vector *);
+
 /* 
  * Serializes vector to the sqlite_blob in little-endian format according to the IEEE-754 standard
  * LibSQL can append one trailing byte in the end of final blob. This byte will be later used to determine type of the blob
