@@ -12,8 +12,8 @@ use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
-use std::{ffi::c_int, fmt, path::Path, sync::Arc};
 use parking_lot::RwLock;
+use std::{ffi::c_int, fmt, path::Path, sync::Arc};
 
 /// A connection to a libSQL database.
 #[derive(Clone)]
@@ -636,6 +636,34 @@ impl Connection {
             in_session: RwLock::new(false),
         }
     }
+
+    fn reserved_bytes(&self, reserve: Option<i32>) -> Result<i32> {
+        let mut reserve_value = reserve.unwrap_or(0) as std::ffi::c_int;
+        let rc = unsafe {
+            ffi::sqlite3_file_control(
+                self.raw,
+                "main\0".as_ptr() as *const _,
+                ffi::SQLITE_FCNTL_RESERVE_BYTES,
+                &mut reserve_value as *mut _ as *mut std::ffi::c_void,
+            )
+        };
+        if rc != ffi::SQLITE_OK {
+            return Err(Error::SqliteFailure(
+                rc,
+                errors::error_from_handle(self.raw),
+            ));
+        }
+        Ok(reserve_value as i32)
+    }
+
+    pub fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<()> {
+        self.reserved_bytes(Some(reserved_bytes))?;
+        Ok(())
+    }
+
+    pub fn get_reserved_bytes(&self) -> Result<i32> {
+        self.reserved_bytes(None)
+    }
 }
 
 unsafe extern "C" fn authorizer_callback(
@@ -783,5 +811,49 @@ mod tests {
         let column = row.get_value(0).unwrap();
         let cnt = *column.as_integer().unwrap();
         assert_eq!(cnt, 32 as i64);
+    }
+
+    #[tokio::test]
+    pub async fn test_reserved_bytes() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db_path = temp_dir.path().join("local1.db");
+        let reserved_bytes = 28;
+
+        {
+            let db = Database::new(db_path.to_str().unwrap().to_string(), OpenFlags::default());
+            let conn = Connection::connect(&db).unwrap();
+            conn.query("PRAGMA journal_mode = WAL", Params::None)
+                .unwrap();
+            conn.set_reserved_bytes(reserved_bytes).unwrap();
+            conn.query("VACUUM", Params::None).unwrap();
+            let reserved = conn.get_reserved_bytes().unwrap();
+            assert_eq!(reserved, reserved_bytes);
+        }
+
+        // let's verify we can see this from another connection
+        {
+            let db = Database::new(db_path.to_str().unwrap().to_string(), OpenFlags::default());
+            let conn = Connection::connect(&db).unwrap();
+            let reserved = conn.get_reserved_bytes().unwrap();
+            assert_eq!(reserved, reserved_bytes);
+        }
+
+        // lets make some inserts, checkpoint and verify again
+        {
+            let db = Database::new(db_path.to_str().unwrap().to_string(), OpenFlags::default());
+            let conn = Connection::connect(&db).unwrap();
+            conn.execute("CREATE TABLE t(x)", Params::None).unwrap();
+            const CNT: usize = 8;
+            for _ in 0..CNT {
+                conn.execute(
+                    "INSERT INTO t VALUES (randomblob(1024 * 1024))",
+                    Params::None,
+                )
+                .unwrap();
+            }
+            conn.wal_checkpoint(true).unwrap();
+            let reserved = conn.get_reserved_bytes().unwrap();
+            assert_eq!(reserved, reserved_bytes);
+        }
     }
 }
