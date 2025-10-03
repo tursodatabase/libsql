@@ -385,6 +385,31 @@ impl<W: Wal> Connection<W> {
         };
         Ok(counter)
     }
+
+    fn reserved_bytes(&self, reserve: Option<i32>) -> Result<i32, std::ffi::c_int> {
+        let mut reserve_value = reserve.unwrap_or(0) as std::ffi::c_int;
+        let rc = unsafe {
+            libsql_ffi::sqlite3_file_control(
+                self.handle(),
+                "main\0".as_ptr() as *const _,
+                libsql_ffi::SQLITE_FCNTL_RESERVE_BYTES,
+                &mut reserve_value as *mut _ as *mut _,
+            )
+        };
+        if rc != libsql_ffi::SQLITE_OK {
+            return Err(rc);
+        }
+        Ok(reserve_value as i32)
+    }
+
+    pub fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<(), std::ffi::c_int> {
+        self.reserved_bytes(Some(reserved_bytes))?;
+        Ok(())
+    }
+
+    pub fn get_reserved_bytes(&self) -> Result<i32, std::ffi::c_int> {
+        self.reserved_bytes(None)
+    }
 }
 // pub struct Connection<'a> {
 //     pub conn: *mut crate::ffi::sqlite3,
