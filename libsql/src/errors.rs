@@ -61,6 +61,8 @@ pub enum Error {
     Sync(crate::BoxError),
     #[error("WAL frame insert conflict")]
     WalConflict,
+    #[error("Reserved bytes not supported")]
+    ReservedBytesNotSupported,
 }
 
 #[cfg(feature = "hrana")]
