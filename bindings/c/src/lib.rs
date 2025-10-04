@@ -562,6 +562,7 @@ pub unsafe extern "C" fn libsql_set_reserved_bytes(
     let conn = conn.get_ref();
     if let Err(err) = conn.set_reserved_bytes(reserved_bytes) {
         set_err_msg(err.to_string(), out_err_msg);
+        return 1;
     }
     0
 }
@@ -579,7 +580,10 @@ pub unsafe extern "C" fn libsql_get_reserved_bytes(
     let conn = conn.get_ref();
     match conn.get_reserved_bytes() {
         Ok(v) => *reserved_bytes = v,
-        Err(err) => set_err_msg(err.to_string(), out_err_msg),
+        Err(err) => {
+            set_err_msg(err.to_string(), out_err_msg);
+            return 1;
+        }
     }
     0
 }
