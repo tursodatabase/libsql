@@ -39,6 +39,14 @@ pub(crate) trait Conn {
 
     async fn reset(&self);
 
+    fn set_reserved_bytes(&self, _reserved_bytes: i32) -> Result<()> {
+        Err(crate::Error::ReservedBytesNotSupported)
+    }
+
+    fn get_reserved_bytes(&self) -> Result<i32> {
+        Err(crate::Error::ReservedBytesNotSupported)
+    }
+
     fn enable_load_extension(&self, _onoff: bool) -> Result<()> {
         Err(crate::Error::LoadExtensionNotSupported)
     }
@@ -228,6 +236,14 @@ impl Connection {
 
     pub async fn reset(&self) {
         self.conn.reset().await
+    }
+
+    pub fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<()> {
+        self.conn.set_reserved_bytes(reserved_bytes)
+    }
+
+    pub fn get_reserved_bytes(&self) -> Result<i32> {
+        self.conn.get_reserved_bytes()
     }
 
     /// Enable loading SQLite extensions from SQL queries and Rust API.

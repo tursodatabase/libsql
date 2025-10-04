@@ -81,6 +81,14 @@ impl Conn for LibsqlConnection {
 
     async fn reset(&self) {}
 
+    fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<()> {
+        self.conn.set_reserved_bytes(reserved_bytes)
+    }
+
+    fn get_reserved_bytes(&self) -> Result<i32> {
+        self.conn.get_reserved_bytes()
+    }
+
     fn enable_load_extension(&self, onoff: bool) -> Result<()> {
         self.conn.enable_load_extension(onoff)
     }

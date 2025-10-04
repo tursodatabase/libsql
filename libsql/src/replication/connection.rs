@@ -542,6 +542,14 @@ impl Conn for RemoteConnection {
     }
 
     async fn reset(&self) {}
+
+    fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<()> {
+        self.local.set_reserved_bytes(reserved_bytes)
+    }
+
+    fn get_reserved_bytes(&self) -> Result<i32> {
+        self.local.get_reserved_bytes()
+    }
 }
 
 pub struct ColumnMeta {

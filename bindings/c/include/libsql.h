@@ -107,6 +107,10 @@ int libsql_load_extension(libsql_connection_t conn,
                           const char *entry_point,
                           const char **out_err_msg);
 
+int libsql_set_reserved_bytes(libsql_connection_t conn, int32_t reserved_bytes, const char **out_err_msg);
+
+int libsql_get_reserved_bytes(libsql_connection_t conn, int32_t *reserved_bytes, const char **out_err_msg);
+
 int libsql_reset(libsql_connection_t conn, const char **out_err_msg);
 
 void libsql_disconnect(libsql_connection_t conn);
