@@ -550,6 +550,41 @@ pub unsafe extern "C" fn libsql_load_extension(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_set_reserved_bytes(
+    conn: libsql_connection_t,
+    reserved_bytes: i32,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if conn.is_null() {
+        set_err_msg("Null connection".to_string(), out_err_msg);
+        return 1;
+    }
+    let conn = conn.get_ref();
+    if let Err(err) = conn.set_reserved_bytes(reserved_bytes) {
+        set_err_msg(err.to_string(), out_err_msg);
+    }
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_get_reserved_bytes(
+    conn: libsql_connection_t,
+    reserved_bytes: *mut i32,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if conn.is_null() {
+        set_err_msg("Null connection".to_string(), out_err_msg);
+        return 1;
+    }
+    let conn = conn.get_ref();
+    match conn.get_reserved_bytes() {
+        Ok(v) => *reserved_bytes = v,
+        Err(err) => set_err_msg(err.to_string(), out_err_msg),
+    }
+    0
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_reset(
     conn: libsql_connection_t,
     out_err_msg: *mut *const std::ffi::c_char,
