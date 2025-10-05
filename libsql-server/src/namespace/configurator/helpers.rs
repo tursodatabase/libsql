@@ -7,10 +7,13 @@ use anyhow::Context as _;
 use bottomless::replicator::Options;
 use bytes::Bytes;
 use enclose::enclose;
+use fallible_iterator::FallibleIterator;
 use futures::Stream;
 use libsql_sys::EncryptionConfig;
 use rusqlite::hooks::{AuthAction, AuthContext, Authorization};
-use tokio::io::AsyncBufReadExt as _;
+use sqlite3_parser::ast::{Cmd, Stmt};
+use sqlite3_parser::lexer::sql::{Parser, ParserError};
+use tokio::io::AsyncReadExt;
 use tokio::task::JoinSet;
 use tokio_util::io::StreamReader;
 
@@ -32,9 +35,6 @@ use crate::stats::Stats;
 use crate::{StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT};
 
 use super::{BaseNamespaceConfig, PrimaryConfig};
-
-const WASM_TABLE_CREATE: &str =
-    "CREATE TABLE libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID;";
 
 #[tracing::instrument(skip_all)]
 pub(super) async fn make_primary_connection_maker(
@@ -295,84 +295,89 @@ where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     let mut reader = tokio::io::BufReader::new(StreamReader::new(dump));
-    let mut curr = String::new();
-    let mut line = String::new();
+    let mut dump_content = String::new();
+    reader
+        .read_to_string(&mut dump_content)
+        .await
+        .map_err(|e| LoadDumpError::Internal(format!("Failed to read dump content: {}", e)))?;
+
+    if dump_content.to_lowercase().contains("attach") {
+        return Err(LoadDumpError::InvalidSqlInput(
+            "attach statements are not allowed in dumps".to_string(),
+        ));
+    }
+
+    let mut parser = Box::new(Parser::new(dump_content.as_bytes()));
     let mut skipped_wasm_table = false;
     let mut n_stmt = 0;
-    let mut line_id = 0;
 
-    while let Ok(n) = reader.read_line(&mut curr).await {
-        line_id += 1;
-        if n == 0 {
-            break;
-        }
-        let trimmed = curr.trim();
-        if trimmed.is_empty() || trimmed.starts_with("--") {
-            curr.clear();
-            continue;
-        }
-        // FIXME: it's well known bug that comment ending with semicolon will be handled incorrectly by currend dump processing code
-        let statement_end = trimmed.ends_with(';');
+    loop {
+        match parser.next() {
+            Ok(Some(cmd)) => {
+                n_stmt += 1;
 
-        // we want to concat original(non-trimmed) lines as trimming will join all them in one
-        // single-line statement which is incorrect if comments in the end are present
-        line.push_str(&curr);
-        curr.clear();
-
-        // This is a hack to ignore the libsql_wasm_func_table table because it is already created
-        // by the system.
-        if !skipped_wasm_table && line.trim() == WASM_TABLE_CREATE {
-            skipped_wasm_table = true;
-            line.clear();
-            continue;
-        }
-
-        if statement_end {
-            n_stmt += 1;
-            // dump must be performd within a txn
-            if n_stmt > 2 && conn.is_autocommit().await.unwrap() {
-                return Err(LoadDumpError::NoTxn);
-            }
-
-            line = tokio::task::spawn_blocking({
-                let conn = conn.clone();
-                move || -> crate::Result<String, LoadDumpError> {
-                    conn.with_raw(|conn| {
-                        conn.authorizer(Some(|auth: AuthContext<'_>| match auth.action {
-                            AuthAction::Attach { filename: _ } => Authorization::Deny,
-                            _ => Authorization::Allow,
-                        }));
-                        conn.execute(&line, ())
-                    })
-                    .map_err(|e| match e {
-                        rusqlite::Error::SqlInputError {
-                            msg, sql, offset, ..
-                        } => {
-                            let msg = if sql.to_lowercase().contains("attach") {
-                                format!(
-                                    "attach statements are not allowed in dumps, msg: {}, sql: {}, offset: {}",
-                                    msg,
-                                    sql,
-                                    offset
-                                )
-                            } else {
-                                format!("msg: {}, sql: {}, offset: {}", msg, sql, offset)
-                            };
-
-                            LoadDumpError::InvalidSqlInput(msg)
+                if !skipped_wasm_table {
+                    if let Cmd::Stmt(Stmt::CreateTable { tbl_name, .. }) = &cmd {
+                        if tbl_name.name.0 == "libsql_wasm_func_table" {
+                            skipped_wasm_table = true;
+                            tracing::debug!("Skipping WASM table creation");
+                            continue;
                         }
-                        e => LoadDumpError::Internal(format!("line: {}, error: {}", line_id, e)),
-                    })?;
-                    Ok(line)
+                    }
                 }
-            })
-            .await??;
-            line.clear();
-        } else {
-            line.push(' ');
+
+                if n_stmt > 2 && conn.is_autocommit().await.unwrap() {
+                    return Err(LoadDumpError::NoTxn);
+                }
+
+                let stmt_sql = cmd.to_string();
+                tokio::task::spawn_blocking({
+                    let conn = conn.clone();
+                    move || -> crate::Result<(), LoadDumpError> {
+                        conn.with_raw(|conn| {
+                            conn.authorizer(Some(|auth: AuthContext<'_>| match auth.action {
+                                AuthAction::Attach { filename: _ } => Authorization::Deny,
+                                _ => Authorization::Allow,
+                            }));
+                            conn.execute(&stmt_sql, ())
+                        })
+                        .map_err(|e| match e {
+                            rusqlite::Error::SqlInputError {
+                                msg, sql, offset, ..
+                            } => LoadDumpError::InvalidSqlInput(format!(
+                                "msg: {}, sql: {}, offset: {}",
+                                msg, sql, offset
+                            )),
+                            e => LoadDumpError::Internal(format!(
+                                "statement: {}, error: {}",
+                                n_stmt, e
+                            )),
+                        })?;
+                        Ok(())
+                    }
+                })
+                .await??;
+            }
+            Ok(None) => break,
+            Err(e) => {
+                let error_msg = match e {
+                    sqlite3_parser::lexer::sql::Error::ParserError(
+                        ParserError::SyntaxError { token_type, found },
+                        Some((line, col)),
+                    ) => {
+                        let near_token = found.as_deref().unwrap_or(&token_type);
+                        format!(
+                            "syntax error near '{}' at line {}, column {}",
+                            near_token, line, col
+                        )
+                    }
+                    _ => format!("parse error: {}", e),
+                };
+
+                return Err(LoadDumpError::InvalidSqlInput(error_msg));
+            }
         }
     }
-    tracing::debug!("loaded {} lines from dump", line_id);
 
     if !conn.is_autocommit().await.unwrap() {
         tokio::task::spawn_blocking({
