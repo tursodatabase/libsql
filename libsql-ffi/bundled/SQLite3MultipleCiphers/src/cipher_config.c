@@ -1167,3 +1167,11 @@ sqlite3mcHandleMainKey(sqlite3* db, const char* zPath)
   }
   return rc;
 }
+
+int libsql_handle_extra_attach_params(sqlite3* db, const char* zName, const char* zPath, sqlite3_value* pKey, char** zErrDyn) {
+    return sqlite3mcHandleAttachKey(db, zName, zPath, pKey, zErrDyn);
+}
+
+int libsql_handle_extra_uri_params(sqlite3 *db, const char *zOpen) {
+    return sqlite3mcHandleMainKey(db, zOpen);
+}
