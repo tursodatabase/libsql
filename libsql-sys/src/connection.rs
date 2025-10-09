@@ -284,6 +284,7 @@ impl<W: Wal> Connection<W> {
             };
             #[cfg(not(unix))]
             let path = path
+                .as_ref()
                 .to_str()
                 .ok_or_else(|| crate::error::Error::Bug("database path is not valid unicode"))
                 .and_then(|x| {
