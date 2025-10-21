@@ -93,6 +93,12 @@ int libsql_open_file(const char *url, libsql_database_t *out_db, const char **ou
 
 int libsql_open_remote(const char *url, const char *auth_token, libsql_database_t *out_db, const char **out_err_msg);
 
+int libsql_open_remote_with_remote_encryption(const char *url,
+                                              const char *auth_token,
+                                              const char *remote_encryption_key,
+                                              libsql_database_t *out_db,
+                                              const char **out_err_msg);
+
 int libsql_open_remote_with_webpki(const char *url,
                                    const char *auth_token,
                                    libsql_database_t *out_db,
