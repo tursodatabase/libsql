@@ -24,7 +24,7 @@ fn main() {
     println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/sqlite3.c");
 
     if cfg!(feature = "multiple-ciphers") {
-        println!("cargo:rerun-if-changed={out_dir}/sqlite3mc/libsqlite3mc_static.a");
+        println!("cargo:rerun-if-changed={BUNDLED_DIR}/SQLite3MultipleCiphers");
     }
 
     if std::env::var("LIBSQL_DEV").is_ok() {
