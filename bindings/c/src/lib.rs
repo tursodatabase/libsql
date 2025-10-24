@@ -414,7 +414,32 @@ pub unsafe extern "C" fn libsql_open_remote(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    libsql_open_remote_internal(url, auth_token, false, out_db, out_err_msg)
+    libsql_open_remote_internal(
+        url,
+        auth_token,
+        std::ptr::null(),
+        false,
+        out_db,
+        out_err_msg,
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_remote_with_remote_encryption(
+    url: *const std::ffi::c_char,
+    auth_token: *const std::ffi::c_char,
+    remote_encryption_key: *const std::ffi::c_char,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    libsql_open_remote_internal(
+        url,
+        auth_token,
+        remote_encryption_key,
+        false,
+        out_db,
+        out_err_msg,
+    )
 }
 
 #[no_mangle]
@@ -424,12 +449,13 @@ pub unsafe extern "C" fn libsql_open_remote_with_webpki(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    libsql_open_remote_internal(url, auth_token, true, out_db, out_err_msg)
+    libsql_open_remote_internal(url, auth_token, std::ptr::null(), true, out_db, out_err_msg)
 }
 
 unsafe fn libsql_open_remote_internal(
     url: *const std::ffi::c_char,
     auth_token: *const std::ffi::c_char,
+    remote_encryption_key: *const std::ffi::c_char,
     with_webpki: bool,
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
@@ -451,6 +477,21 @@ unsafe fn libsql_open_remote_internal(
         }
     };
     let mut builder = libsql::Builder::new_remote(url.to_string(), auth_token.to_string());
+
+    if !remote_encryption_key.is_null() {
+        let key = unsafe { std::ffi::CStr::from_ptr(remote_encryption_key) };
+        let key = match key.to_str() {
+            Ok(k) => k,
+            Err(e) => {
+                set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
+                return 5;
+            }
+        };
+        builder = builder.remote_encryption(libsql::EncryptionContext {
+            key: libsql::EncryptionKey::Base64Encoded(key.to_string()),
+        });
+    };
+
     if with_webpki {
         let https = hyper_rustls::HttpsConnectorBuilder::new()
             .with_webpki_roots()
