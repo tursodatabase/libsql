@@ -820,6 +820,29 @@ pub unsafe extern "C" fn libsql_bind_blob(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_stmt_parameter_count(
+    stmt: libsql_stmt_t,
+    out_count: *mut std::ffi::c_int,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    match stmt.stmt.parameter_count().try_into() as Result<i32, _> {
+        Ok(i) => {
+            *out_count = i;
+            return 0;
+        }
+        Err(e) => {
+            set_err_msg(format!("Error getting parameter count: {}", e), out_err_msg);
+            return 1;
+        }
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_query_stmt(
     stmt: libsql_stmt_t,
     out_rows: *mut libsql_rows_t,
@@ -874,6 +897,20 @@ pub unsafe extern "C" fn libsql_reset_stmt(
     let stmt = stmt.get_ref_mut();
     stmt.params.clear();
     stmt.stmt.reset();
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_stmt_finalize(
+    stmt: libsql_stmt_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    stmt.stmt.finalize();
     0
 }
 
@@ -998,6 +1035,38 @@ pub unsafe extern "C" fn libsql_column_name(
             set_err_msg(format!("Invalid name: {}", e), out_err_msg);
             1
         }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_stmt_parameter_name(
+    stmt: libsql_stmt_t,
+    index: std::ffi::c_int,
+    out_name: *mut *const std::ffi::c_char,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    if let Some(name) = stmt.stmt.parameter_name(index) {
+        match std::ffi::CString::new(name) {
+            Ok(name) => {
+                *out_name = name.into_raw();
+                return 0;
+            }
+            Err(e) => {
+                set_err_msg(format!("Error getting parameter name: {}", e), out_err_msg);
+                return 1;
+            }
+        }
+    } else {
+        set_err_msg(
+            format!("There is no named parameter at index {}", index),
+            out_err_msg,
+        );
+        return 1;
     }
 }
 
