@@ -159,6 +159,7 @@ mod auth;
 mod connection;
 mod database;
 mod load_extension_guard;
+mod udf;
 
 cfg_parser! {
     mod parser;
@@ -186,6 +187,7 @@ pub use self::{
     rows::{Column, Row, Rows},
     statement::Statement,
     transaction::{Transaction, TransactionBehavior},
+    udf::ScalarFunctionDef,
 };
 
 /// Convenient alias for `Result` using the `libsql::Error` type.

@@ -1,6 +1,6 @@
 use std::sync::Arc;
-use std::{fmt, path::Path};
 use std::time::Duration;
+use std::{fmt, path::Path};
 
 use crate::connection::BatchRows;
 use crate::{
@@ -9,8 +9,8 @@ use crate::{
     rows::{ColumnsInner, RowInner, RowsInner},
     statement::Stmt,
     transaction::Tx,
-    Column, Connection, Result, Row, Rows, Statement, Transaction, TransactionBehavior, Value,
-    ValueType,
+    Column, Connection, Result, Row, Rows, ScalarFunctionDef, Statement, Transaction,
+    TransactionBehavior, Value, ValueType,
 };
 
 #[derive(Clone)]
@@ -99,6 +99,10 @@ impl Conn for LibsqlConnection {
 
     fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
         self.conn.authorizer(hook)
+    }
+
+    fn create_scalar_function(&self, def: ScalarFunctionDef) -> Result<()> {
+        self.conn.create_scalar_function(def)
     }
 }
 

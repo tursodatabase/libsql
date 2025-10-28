@@ -9,6 +9,7 @@ use crate::params::{IntoParams, Params};
 use crate::rows::Rows;
 use crate::statement::Statement;
 use crate::transaction::Transaction;
+use crate::udf::ScalarFunctionDef;
 use crate::{Result, TransactionBehavior};
 
 pub type AuthHook = Arc<dyn Fn(&AuthContext) -> Authorization>;
@@ -57,6 +58,10 @@ pub(crate) trait Conn {
 
     fn authorizer(&self, _hook: Option<AuthHook>) -> Result<()> {
         Err(crate::Error::AuthorizerNotSupported)
+    }
+
+    fn create_scalar_function(&self, _def: ScalarFunctionDef) -> Result<()> {
+        Err(crate::Error::UserDefinedFunctionsNotSupported)
     }
 }
 
@@ -284,6 +289,11 @@ impl Connection {
 
     pub fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
         self.conn.authorizer(hook)
+    }
+
+    /// Create a user-defined scalar function that can be called from SQL.
+    pub fn create_scalar_function(&self, def: ScalarFunctionDef) -> Result<()> {
+        self.conn.create_scalar_function(def)
     }
 }
 
