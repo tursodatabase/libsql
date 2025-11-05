@@ -8,6 +8,12 @@
 */
 
 /*
+** Forward declaration for pager codec cache update function.
+** This should be called after encryption is added, removed, or changed.
+*/
+void libsql_pager_update_codec_cache(struct Pager *pPager);
+
+/*
 ** "Special" version of function sqlite3BtreeSetPageSize
 ** This version allows to reduce the number of reserved bytes per page,
 ** while the original version allows only to increase it.
@@ -585,6 +591,8 @@ leave_rekey:
     {
       sqlite3mcSetIsEncrypted(codec, 0);
     }
+    /* Update the pager's cached codec status after changing encryption */
+    libsql_pager_update_codec_cache(pPager);
   }
   else
   {

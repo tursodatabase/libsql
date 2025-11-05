@@ -630,6 +630,7 @@ struct Pager {
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
   u8 memVfs;                  /* VFS-implemented memory database */
+  u8 hasCodec;                /* True if pager has encryption codec */
 
   /**************************************************************************
   ** The following block contains those class members that change during
@@ -719,6 +720,15 @@ int libsql_pager_has_codec(struct Pager *_p) {
 #else
   return 0;
 #endif
+}
+
+/*
+** Update the cached codec status.
+** This should be called after encryption is added, removed, or changed
+** via sqlite3_rekey_v2() to ensure the cached hasCodec value is correct.
+*/
+void libsql_pager_update_codec_cache(struct Pager *pPager) {
+  pPager->hasCodec = libsql_pager_has_codec(pPager);
 }
 
 int libsql_pager_codec(libsql_pghdr *hdr, void **ret) {
@@ -858,7 +868,7 @@ static const unsigned char aJournalMagic[] = {
 int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
   if( pPager->fd->pMethods==0 ) return 0;
   if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0;
-  if( libsql_pager_has_codec(pPager) != 0 ) return 0;
+  if( pPager->hasCodec ) return 0;
 #ifndef SQLITE_OMIT_WAL
   if( pagerUseWal(pPager) ){
     u32 iRead = 0;
@@ -1081,7 +1091,7 @@ static void setGetterMethod(Pager *pPager){
   if( pPager->errCode ){
     pPager->xGet = getPageError;
 #if SQLITE_MAX_MMAP_SIZE>0
-  }else if( USEFETCH(pPager) && libsql_pager_has_codec(pPager) == 0 ){
+  }else if( USEFETCH(pPager) && !pPager->hasCodec ){
     pPager->xGet = getPageMMap;
 #endif /* SQLITE_MAX_MMAP_SIZE>0 */
   }else{
@@ -5103,6 +5113,8 @@ act_like_temp_file:
   /* pPager->xBusyHandler = 0; */
   /* pPager->pBusyHandlerArg = 0; */
   pPager->xReiniter = xReinit;
+  /* Cache the codec check result to avoid expensive VFS stack traversal on every page read */
+  pPager->hasCodec = libsql_pager_has_codec(pPager);
   setGetterMethod(pPager);
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
   /* pPager->szMmap = SQLITE_DEFAULT_MMAP_SIZE // will be set by btree.c */
