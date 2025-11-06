@@ -15,6 +15,7 @@ tempfile = "3.3"
 wabt = "0.10.0"
 hex = "0.4.3"
 rustc-hash = "1"
+which = "=4.4.0"
 
 [features]
 default = []
