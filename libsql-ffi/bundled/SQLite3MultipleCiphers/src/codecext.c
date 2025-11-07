@@ -8,10 +8,10 @@
 */
 
 /*
-** Forward declaration for pager codec cache update function.
-** This should be called after encryption is added, removed, or changed.
+** Forward declaration for db codec check function.
+** Used to update cached codec status after encryption changes.
 */
-void libsql_pager_update_codec_cache(struct Pager *pPager);
+int libsql_db_has_codec(sqlite3_vfs* pVfs, const char* zFilename);
 
 /*
 ** "Special" version of function sqlite3BtreeSetPageSize
@@ -591,8 +591,8 @@ leave_rekey:
     {
       sqlite3mcSetIsEncrypted(codec, 0);
     }
-    /* Update the pager's cached codec status after changing encryption */
-    libsql_pager_update_codec_cache(pPager);
+    /* Update both pager and database cached codec status after changing encryption */
+    db->aDb[dbIndex].hasCodec = pPager->hasCodec = libsql_db_has_codec(pPager->pVfs, pPager->zFilename);
   }
   else
   {

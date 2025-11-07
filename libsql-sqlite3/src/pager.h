@@ -124,7 +124,8 @@ int sqlite3PagerOpen(
   int,
   int,
   int,
-  void(*)(DbPage*)
+  void(*)(DbPage*),
+  int                    /* hasCodec from connection-level cache */
 );
 int sqlite3PagerClose(Pager *pPager, sqlite3*);
 int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);

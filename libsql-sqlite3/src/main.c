@@ -3445,9 +3445,13 @@ static const char *uriParameter(const char *zFilename, const char *zParam){
 int libsql_handle_extra_uri_params(sqlite3 *db, const char *zOpen);
 #endif
 
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+int libsql_db_has_codec(sqlite3_vfs* pVfs, const char* zFilename);
+#endif
+
 /*
 ** This routine does the work of opening a database on behalf of
-** sqlite3_open() and sqlite3_open16(). The database filename "zFilename" 
+** sqlite3_open() and sqlite3_open16(). The database filename "zFilename"
 ** is UTF-8 encoded.
 */
 static int openDatabase(
@@ -3700,9 +3704,17 @@ static int openDatabase(
   }
 #endif
 
+  /* Cache encryption status at database open time to avoid expensive
+  ** VFS stack traversal and file lookup on every pager initialization */
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+  db->aDb[0].hasCodec = libsql_db_has_codec(db->pVfs, zOpen);
+#else
+  db->aDb[0].hasCodec = 0;
+#endif
+
   /* Open the backend database driver */
   rc = sqlite3BtreeOpen(db->pVfs, zOpen, db, &db->aDb[0].pBt, 0,
-                        flags | SQLITE_OPEN_MAIN_DB);
+                        flags | SQLITE_OPEN_MAIN_DB, db->aDb[0].hasCodec);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_IOERR_NOMEM ){
       rc = SQLITE_NOMEM_BKPT;

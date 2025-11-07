@@ -72,8 +72,8 @@ static int SQLITE_TCLAPI btree_open(
   rc = make_ref_counted_wal_manager(sqlite3_wal_manager, &wal_manager);
   if (rc) return rc;
   sDb.wal_manager = wal_manager;
-  rc = sqlite3BtreeOpen(sDb.pVfs, zFilename, &sDb, &pBt, 0, 
-     SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
+  rc = sqlite3BtreeOpen(sDb.pVfs, zFilename, &sDb, &pBt, 0,
+     SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB, 0);
   destroy_wal_manager(sDb.wal_manager);
   sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){
