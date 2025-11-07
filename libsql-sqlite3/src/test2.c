@@ -65,7 +65,7 @@ static int SQLITE_TCLAPI pager_open(
   if (rc) return rc;
   rc = sqlite3PagerOpen(sqlite3_vfs_find(0), wal_manager, &pPager, argv[1], 0, 0,
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB,
-      pager_test_reiniter);
+      pager_test_reiniter, 0);
   destroy_wal_manager(wal_manager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
