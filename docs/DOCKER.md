@@ -122,7 +122,6 @@ inter-node communication. Recommended to leave this on default.
 Simple docker compose for local development:
 
 ```yaml
-version: "3"
 services:
   db:
     image: ghcr.io/tursodatabase/libsql-server:latest
