@@ -643,9 +643,11 @@ async fn deserialize_row() {
     .await
     .unwrap();
 
+    use std::collections::HashMap;
+
     use serde::Deserialize;
 
-    #[derive(Deserialize, Debug)]
+    #[derive(Deserialize, Debug, PartialEq)]
     struct Data {
         id: i64,
         name: String,
@@ -684,6 +686,51 @@ async fn deserialize_row() {
     assert_eq!(data.none, None);
     assert_eq!(data.status, Status::Draft);
     assert_eq!(data.wrapper, Wrapper(Status::Published));
+
+    #[derive(Deserialize, Debug)]
+    struct Newtype(Data);
+    let newtype: Newtype = libsql::de::from_row(&row).unwrap();
+    assert_eq!(newtype.0, data);
+
+    let tuple: (i64, String, f64, Vec<u8>, Option<i64>, Status, Wrapper) =
+        libsql::de::from_row(&row).unwrap();
+    assert_eq!(
+        tuple,
+        (
+            123,
+            "potato".to_string(),
+            42.0,
+            vec![0xde, 0xad, 0xbe, 0xef],
+            None,
+            Status::Draft,
+            Wrapper(Status::Published)
+        )
+    );
+
+    let row2 = conn
+        .query("SELECT name, status, wrapper FROM users", ())
+        .await
+        .unwrap()
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
+    let arr: Vec<String> = libsql::de::from_row(&row2).unwrap();
+    assert_eq!(arr, vec!["potato", "Draft", "Published"]);
+
+    let map: HashMap<String, String> = libsql::de::from_row(&row2).unwrap();
+    assert_eq!(
+        map,
+        HashMap::from_iter(
+            [
+                ("name", "potato"),
+                ("status", "Draft"),
+                ("wrapper", "Published"),
+            ]
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+        )
+    );
 }
 
 #[tokio::test]
