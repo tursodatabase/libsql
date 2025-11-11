@@ -4,12 +4,13 @@ use crate::auth::{AuthAction, AuthContext, Authorization};
 use crate::connection::AuthHook;
 use crate::local::rows::BatchedRows;
 use crate::params::Params;
+use crate::udf::{ScalarFunctionCallback, ScalarFunctionDef};
 use crate::{connection::BatchRows, errors};
+use crate::{TransactionBehavior, Value};
+use std::ffi::CString;
 use std::time::Duration;
 
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
-
-use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
 use parking_lot::RwLock;
@@ -494,6 +495,28 @@ impl Connection {
         Ok(())
     }
 
+    pub(crate) fn create_scalar_function(&self, def: ScalarFunctionDef) -> Result<()> {
+        let userdata = Box::into_raw(Box::new(Arc::into_raw(def.callback)));
+        let userdata_c = userdata as *mut ::std::os::raw::c_void;
+
+        let name = CString::new(def.name).unwrap();
+        unsafe {
+            ffi::sqlite3_create_function_v2(
+                self.raw,
+                name.as_ptr(),
+                def.num_args,
+                ffi::SQLITE_UTF8,
+                userdata_c,
+                Some(scalar_function_callback),
+                None,
+                None,
+                Some(drop_scalar_function_callback),
+            );
+        }
+
+        Ok(())
+    }
+
     pub(crate) fn wal_checkpoint(&self, truncate: bool) -> Result<()> {
         let mut pn_log = 0i32;
         let mut pn_ckpt = 0i32;
@@ -664,6 +687,56 @@ impl Connection {
     pub fn get_reserved_bytes(&self) -> Result<i32> {
         self.reserved_bytes(None)
     }
+}
+
+unsafe extern "C" fn scalar_function_callback(
+    context: *mut ffi::sqlite3_context,
+    argc: i32,
+    args: *mut *mut ffi::sqlite3_value,
+) {
+    let callback = Box::from_raw(ffi::sqlite3_user_data(context) as *mut ScalarFunctionCallback);
+
+    let values = (0..argc)
+        .map(|i| {
+            let arg_ptr = *args.add(i as usize);
+            Value::from(libsql_sys::Value { raw_value: arg_ptr })
+        })
+        .collect::<Vec<_>>();
+
+    let result = (callback)(values);
+    std::mem::forget(callback);
+
+    match result {
+        Ok(value) => match value {
+            Value::Null => ffi::sqlite3_result_null(context),
+            Value::Integer(i) => ffi::sqlite3_result_int64(context, i),
+            Value::Real(d) => ffi::sqlite3_result_double(context, d),
+            Value::Text(t) => {
+                ffi::sqlite3_result_text(
+                    context,
+                    t.as_ptr() as *const i8,
+                    t.len() as i32,
+                    ffi::SQLITE_TRANSIENT(),
+                );
+            }
+            Value::Blob(b) => {
+                ffi::sqlite3_result_blob(
+                    context,
+                    b.as_ptr() as *const ::std::os::raw::c_void,
+                    b.len() as i32,
+                    ffi::SQLITE_TRANSIENT(),
+                );
+            }
+        },
+        Err(e) => {
+            let e_msg = e.to_string();
+            ffi::sqlite3_result_error(context, e_msg.as_ptr() as *const i8, e_msg.len() as i32);
+        }
+    }
+}
+
+unsafe extern "C" fn drop_scalar_function_callback(userdata: *mut ::std::os::raw::c_void) {
+    drop(Box::from_raw(userdata as *mut ScalarFunctionCallback));
 }
 
 unsafe extern "C" fn authorizer_callback(
