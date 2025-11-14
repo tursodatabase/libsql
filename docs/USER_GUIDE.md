@@ -25,6 +25,7 @@ Welcome to the `sqld` user guide!
 The `sqld` program provides libsql over HTTP and supports transparent replication.
 
 ![libsql cluster overview.](sqld-overview.png)
+
 <p align="center">
 Figure 1. Overview of libsql clustering.
 </p>
@@ -82,7 +83,7 @@ You now have a `sqld` primary server listening to SQL over HTTP at `127.0.0.1:80
 
 ### Launching a replica server
 
-To start a a `sqld` server in replica mode, run:
+To start a `sqld` server in replica mode, run:
 
 ```console
 sqld \
@@ -150,7 +151,7 @@ curl -X POST -d '{"statements": ["select * from testme"]}' $YOUR_APP.fly.dev
 ```
 
 ```json
-[{"b":2,"a":1,"c":3}]
+[{ "b": 2, "a": 1, "c": 3 }]
 ```
 
 ## Incremental snapshots
@@ -182,7 +183,7 @@ and then configure `sqld` to generate an incremental snapshot every 5 seconds an
 sqld --snapshot-exec ./snapshot.sh --max-log-duration 5
 ```
 
-When you write to the `sqld` database, you will eventually see log line such as:
+When you write to the `sqld` database, you will eventually see a log line such as:
 
 ```console
 2023-08-11T08:21:04.183564Z  INFO sqld::replication::snapshot: snapshot `e126f594-90f4-45be-9350-bc8a01160de9-0-2.snap` successfully created
@@ -254,7 +255,7 @@ For example, if you have the following entries in your `/etc/hosts` file:
 127.0.0.1       db2.local
 ```
 
-You can access `db1` with the `http://db1.local:8080`URL and `db2` with `http://db2.local:8080`.
+You can access `db1` with the `http://db1.local:8080` URL and `db2` with `http://db2.local:8080`.
 The database files for the databases are stored in `<data dir>/dbs/db1` and `<data dir/dbs/db2`, respectively.
 
 ### Path based routing
