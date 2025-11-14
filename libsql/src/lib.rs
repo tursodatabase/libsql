@@ -180,7 +180,7 @@ cfg_hrana! {
 
 pub use self::{
     auth::{AuthAction, AuthContext, Authorization},
-    connection::{AuthHook, BatchRows, Connection},
+    connection::{AuthHook, BatchRows, Connection, Op},
     database::{Builder, Database},
     load_extension_guard::LoadExtensionGuard,
     rows::{Column, Row, Rows},

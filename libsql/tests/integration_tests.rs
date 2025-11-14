@@ -4,12 +4,12 @@ use futures::{StreamExt, TryStreamExt};
 use libsql::{
     named_params, params,
     params::{IntoParams, IntoValue},
-    AuthAction, Authorization, Connection, Database, Result, Value,
+    AuthAction, Authorization, Connection, Database, Op, Result, Value,
 };
 use rand::distributions::Uniform;
 use rand::prelude::*;
 use std::collections::HashSet;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 async fn setup() -> Connection {
     let db = Database::open(":memory:").unwrap();
@@ -26,6 +26,77 @@ async fn enable_disable_extension() {
     let conn = db.connect().unwrap();
     conn.load_extension_enable().unwrap();
     conn.load_extension_disable().unwrap();
+}
+
+#[tokio::test]
+async fn add_update_hook() {
+    let conn = setup().await;
+
+    #[derive(PartialEq, Debug)]
+    struct Data {
+        op: Op,
+        db: String,
+        table: String,
+        row_id: i64,
+    }
+
+    let d = Arc::new(Mutex::new(None::<Data>));
+
+    let d_clone = d.clone();
+    conn.add_update_hook(Box::new(move |op, db, table, row_id| {
+        *d_clone.lock().unwrap() = Some(Data {
+            op,
+            db: db.to_string(),
+            table: table.to_string(),
+            row_id,
+        });
+    }))
+    .unwrap();
+
+    let _ = conn
+        .execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
+        .await
+        .unwrap();
+
+    assert_eq!(
+        *d.lock().unwrap().as_ref().unwrap(),
+        Data {
+            op: Op::Insert,
+            db: "main".to_string(),
+            table: "users".to_string(),
+            row_id: 1,
+        }
+    );
+
+    let _ = conn
+        .execute("UPDATE users SET name = 'Bob' WHERE id = 2", ())
+        .await
+        .unwrap();
+
+    assert_eq!(
+        *d.lock().unwrap().as_ref().unwrap(),
+        Data {
+            op: Op::Update,
+            db: "main".to_string(),
+            table: "users".to_string(),
+            row_id: 1,
+        }
+    );
+
+    let _ = conn
+        .execute("DELETE FROM users WHERE id = 2", ())
+        .await
+        .unwrap();
+
+    assert_eq!(
+        *d.lock().unwrap().as_ref().unwrap(),
+        Data {
+            op: Op::Delete,
+            db: "main".to_string(),
+            table: "users".to_string(),
+            row_id: 1,
+        }
+    );
 }
 
 #[tokio::test]
