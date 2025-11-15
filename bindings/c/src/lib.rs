@@ -8,11 +8,12 @@ mod types;
 use crate::types::libsql_config;
 use http::Uri;
 use libsql::{errors, Builder, LoadExtensionGuard};
+use std::ffi::c_int;
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
     libsql_row_t, libsql_rows, libsql_rows_future_t, libsql_rows_t, libsql_stmt, libsql_stmt_t,
-    replicated, stmt,
+    libsql_tx, libsql_tx_t, replicated, stmt,
 };
 
 lazy_static! {
@@ -152,6 +153,111 @@ fn maybe_remove_offline_query_param(url: &str) -> anyhow::Result<Option<String>>
     }
 
     Ok(Some(url[..query_idx].to_owned() + "?" + &query))
+}
+
+fn to_tx_behavior(b: c_int) -> libsql::TransactionBehavior {
+    match b {
+        1 => libsql::TransactionBehavior::Immediate,
+        2 => libsql::TransactionBehavior::Exclusive,
+        3 => libsql::TransactionBehavior::ReadOnly,
+        _ => libsql::TransactionBehavior::Deferred,
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_tx_begin(
+    conn: libsql_connection_t,
+    behavior: c_int,
+    out_tx: *mut libsql_tx_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> c_int {
+    if out_tx.is_null() {
+        set_err_msg("Null out_tx".to_string(), out_err_msg);
+        return 1;
+    }
+    if conn.is_null() {
+        set_err_msg("Null connection".to_string(), out_err_msg);
+        return 2;
+    }
+
+    let c = conn.get_ref();
+    let beh = to_tx_behavior(behavior);
+
+    let tx_res = match beh {
+        libsql::TransactionBehavior::Deferred => RT.block_on(c.transaction()),
+        _ => RT.block_on(c.transaction_with_behavior(beh)),
+    };
+
+    match tx_res {
+        Ok(tx) => {
+            let handle = Box::new(libsql_tx { tx: Some(tx) });
+            *out_tx = libsql_tx_t::from(Box::leak(handle));
+            0
+        }
+        Err(e) => {
+            set_err_msg(format!("Error beginning transaction: {}", e), out_err_msg);
+            3
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_tx_commit(
+    tx: libsql_tx_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> c_int {
+    if tx.is_null() {
+        set_err_msg("Null transaction".to_string(), out_err_msg);
+        return 1;
+    }
+
+    let mut handle: Box<libsql_tx> = Box::from_raw(tx.as_const_ptr() as *mut libsql_tx);
+    let Some(inner) = handle.tx.take() else {
+        return 0;
+    };
+
+    match RT.block_on(inner.commit()) {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err_msg(format!("Error committing transaction: {}", e), out_err_msg);
+            2
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_tx_rollback(
+    tx: libsql_tx_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> c_int {
+    if tx.is_null() {
+        set_err_msg("Null transaction".to_string(), out_err_msg);
+        return 1;
+    }
+
+    let mut handle: Box<libsql_tx> = Box::from_raw(tx.as_const_ptr() as *mut libsql_tx);
+    let Some(inner) = handle.tx.take() else {
+        return 0;
+    };
+
+    match RT.block_on(inner.rollback()) {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err_msg(
+                format!("Error rolling back transaction: {}", e),
+                out_err_msg,
+            );
+            2
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_tx_free(tx: libsql_tx_t) {
+    if tx.is_null() {
+        return;
+    }
+    let _ = Box::from_raw(tx.as_const_ptr() as *mut libsql_tx);
 }
 
 #[cfg(test)]
