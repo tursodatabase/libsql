@@ -17,7 +17,7 @@ docker run --name some-sqld-replica -p 8081:8080 -ti \
     -e SQLD_NODE=replica \
     -e SQLD_PRIMARY_URL=https://<host>:<port> \
     ghcr.io/tursodatabase/libsql-server:latest
-````
+```
 
 ## Running on Apple Silicon
 
@@ -122,7 +122,6 @@ inter-node communication. Recommended to leave this on default.
 Simple docker compose for local development:
 
 ```yaml
-version: "3"
 services:
   db:
     image: ghcr.io/tursodatabase/libsql-server:latest
