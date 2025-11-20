@@ -13,6 +13,15 @@ use crate::{Result, TransactionBehavior};
 
 pub type AuthHook = Arc<dyn Fn(&AuthContext) -> Authorization>;
 
+pub type UpdateHook = dyn Fn(Op, &str, &str, i64) + Send + Sync;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Op {
+    Insert = 0,
+    Delete = 1,
+    Update = 2,
+}
+
 #[async_trait::async_trait]
 pub(crate) trait Conn {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64>;
@@ -57,6 +66,10 @@ pub(crate) trait Conn {
 
     fn authorizer(&self, _hook: Option<AuthHook>) -> Result<()> {
         Err(crate::Error::AuthorizerNotSupported)
+    }
+
+    fn add_update_hook(&self, _cb: Box<dyn Fn(Op, &str, &str, i64) + Send + Sync>) -> Result<()> {
+        Err(crate::Error::UpdateHookNotSupported)
     }
 }
 
@@ -284,6 +297,10 @@ impl Connection {
 
     pub fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
         self.conn.authorizer(hook)
+    }
+
+    pub fn add_update_hook(&self, cb: Box<UpdateHook>) -> Result<()> {
+        self.conn.add_update_hook(cb)
     }
 }
 

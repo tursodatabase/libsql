@@ -142,6 +142,18 @@ fn build_bundled() -> Result<()> {
         "libsql-ffi/bundled/src/sqlite3.h",
     ])?;
 
+    // Also update SQLite3MultipleCiphers bundled files
+    // These are used when building with --features multiple-ciphers
+    run_cp(&[
+        "libsql-sqlite3/sqlite3.c",
+        "libsql-ffi/bundled/SQLite3MultipleCiphers/src/sqlite3.c",
+    ])?;
+
+    run_cp(&[
+        "libsql-sqlite3/sqlite3.h",
+        "libsql-ffi/bundled/SQLite3MultipleCiphers/src/sqlite3.h",
+    ])?;
+
     Ok(())
 }
 

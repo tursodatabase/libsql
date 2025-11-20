@@ -49,7 +49,8 @@ int sqlite3BtreeOpen(
   sqlite3 *db,             /* Associated database connection */
   Btree **ppBtree,         /* Return open Btree* here */
   int flags,               /* Flags */
-  int vfsFlags             /* Flags passed through to VFS open */
+  int vfsFlags,            /* Flags passed through to VFS open */
+  int hasCodec             /* True if this database has encryption codec */
 );
 
 /* The flags parameter to sqlite3BtreeOpen can be the bitwise or of the

@@ -1347,13 +1347,18 @@ sqlite3mcCheckVfs(const char* zVfs)
   return rc;
 }
 
-int libsql_pager_has_codec_impl(struct Pager* pPager)
+/*
+** Check if a database file is encrypted at connection open time.
+** This checks both the VFS stack and the specific file encryption status.
+** The result is cached at the connection level to avoid expensive checks
+** on every pager initialization.
+*/
+int libsql_db_has_codec(sqlite3_vfs* pVfs, const char* zFilename)
 {
   int hasCodec = 0;
   sqlite3mc_vfs* pVfsMC = NULL;
-  sqlite3_vfs* pVfs = pPager->pVfs;
 
-  /* Check whether the VFS stack of the pager contains a Multiple Ciphers VFS */
+  /* Check whether the VFS stack contains a Multiple Ciphers VFS */
   for (; pVfs; pVfs = pVfs->pNext)
   {
     if (pVfs && pVfs->xOpen == mcVfsOpen)
@@ -1367,7 +1372,7 @@ int libsql_pager_has_codec_impl(struct Pager* pPager)
   /* Check whether codec is enabled for associated database file */
   if (pVfsMC)
   {
-    sqlite3mc_file* mcFile = mcFindDbMainFileName(pVfsMC, pPager->zFilename);
+    sqlite3mc_file* mcFile = mcFindDbMainFileName(pVfsMC, zFilename);
     if (mcFile)
     {
       Codec* codec = mcFile->codec;

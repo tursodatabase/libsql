@@ -8,6 +8,12 @@
 */
 
 /*
+** Forward declaration for db codec check function.
+** Used to update cached codec status after encryption changes.
+*/
+int libsql_db_has_codec(sqlite3_vfs* pVfs, const char* zFilename);
+
+/*
 ** "Special" version of function sqlite3BtreeSetPageSize
 ** This version allows to reduce the number of reserved bytes per page,
 ** while the original version allows only to increase it.
@@ -585,6 +591,8 @@ leave_rekey:
     {
       sqlite3mcSetIsEncrypted(codec, 0);
     }
+    /* Update both pager and database cached codec status after changing encryption */
+    db->aDb[dbIndex].hasCodec = pPager->hasCodec = libsql_db_has_codec(pPager->pVfs, pPager->zFilename);
   }
   else
   {

@@ -1452,6 +1452,7 @@ struct Db {
   Btree *pBt;          /* The B*Tree structure for this database file */
   u8 safety_level;     /* How aggressive at syncing data to disk */
   u8 bSyncSet;         /* True if "PRAGMA synchronous=N" has been run */
+  u8 hasCodec;         /* True if this database has encryption codec */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
 };
 

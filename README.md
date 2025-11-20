@@ -33,6 +33,9 @@
 
 ---
 
+> [!NOTE]
+> This repository contains libSQL, a fork of SQLite developed by Turso. For the full SQLite rewriten in Rust (also by Turso), please visit [tursodatabase/turso](https://github.com/tursodatabase/turso).
+
 ## Documentation
 
 We aim to evolve it to suit many more use cases than SQLite was originally designed for, and plan to use third-party OSS code wherever it makes sense.
@@ -69,6 +72,7 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 
 * [PHP](https://github.com/tursodatabase/turso-client-php)
 * [D](https://github.com/pdenapo/libsql-d) (experimental, based on the C driver)
+* [Ring](https://github.com/ysdragon/ring-libsql) (experimental, based on the C driver)
 
 ### GUI Support
 

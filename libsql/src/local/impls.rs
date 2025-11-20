@@ -1,10 +1,9 @@
 use std::sync::Arc;
-use std::{fmt, path::Path};
 use std::time::Duration;
+use std::{fmt, path::Path};
 
-use crate::connection::BatchRows;
 use crate::{
-    connection::{AuthHook, Conn},
+    connection::{AuthHook, BatchRows, Conn, UpdateHook},
     params::Params,
     rows::{ColumnsInner, RowInner, RowsInner},
     statement::Stmt,
@@ -99,6 +98,10 @@ impl Conn for LibsqlConnection {
 
     fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
         self.conn.authorizer(hook)
+    }
+
+    fn add_update_hook(&self, cb: Box<UpdateHook>) -> Result<()> {
+        Ok(self.conn.add_update_hook(cb))
     }
 }
 

@@ -23,6 +23,8 @@ pub enum Error {
     LoadExtensionNotSupported, // Not in rusqlite
     #[error("Authorizer is only supported in local databases.")]
     AuthorizerNotSupported, // Not in rusqlite
+    #[error("Update hooks are only supported in local databases.")]
+    UpdateHookNotSupported, // Not in rusqlite
     #[error("Column not found: {0}")]
     ColumnNotFound(i32), // Not in rusqlite
     #[error("Hrana: `{0}`")]

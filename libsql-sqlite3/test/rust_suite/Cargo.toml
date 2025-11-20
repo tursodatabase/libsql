@@ -16,6 +16,7 @@ wabt = "0.9.1"
 hex = "0.4.3"
 rustc-hash = "1"
 home = { version = "=0.5.9" }
+which = "=4.4.0"
 
 [features]
 default = []
