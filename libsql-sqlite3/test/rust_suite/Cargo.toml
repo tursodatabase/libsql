@@ -12,9 +12,10 @@ libsql-sys = { path = "../../../libsql-sys", features = ["wal", "wasmtime-bindin
 
 itertools = "0.10"
 tempfile = "3.3"
-wabt = "0.10.0"
+wabt = "0.9.1"
 hex = "0.4.3"
 rustc-hash = "1"
+home = { version = "=0.5.9" }
 which = "=4.4.0"
 
 [features]
