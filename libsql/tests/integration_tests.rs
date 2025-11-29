@@ -925,3 +925,36 @@ fn assert_sqlite_error<T>(res: Result<T>, code: i32) {
         }
     }
 }
+
+#[tokio::test]
+async fn test_prepared_statement_reset() {
+    // Test for issue #2135
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+
+    conn.execute("CREATE TABLE domain (name TEXT)", ())
+        .await
+        .unwrap();
+
+    let stmt = conn
+        .prepare("INSERT INTO domain VALUES (?1)")
+        .await
+        .unwrap();
+
+    let domains = ["example.com", "example.org", "example.net"];
+    for domain in domains {
+        stmt.execute([domain]).await.unwrap();
+    }
+
+    let mut rows = conn
+        .query("SELECT name FROM domain ORDER BY name", ())
+        .await
+        .unwrap();
+    let mut results = Vec::new();
+    while let Some(row) = rows.next().await.unwrap() {
+        let name: String = row.get(0).unwrap();
+        results.push(name);
+    }
+
+    assert_eq!(results, vec!["example.com", "example.net", "example.org"]);
+}
