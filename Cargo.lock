@@ -3005,7 +3005,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-server"
-version = "0.24.32"
+version = "0.24.33"
 dependencies = [
  "aes",
  "anyhow",
