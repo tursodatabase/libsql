@@ -504,7 +504,7 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
     }
     let target = env::var("TARGET").unwrap();
 
-    if target.ends_with("apple-ios") {
+    if target.ends_with("apple-ios") || target.contains("android") {
         config.define("SQLITE3MC_OMIT_AES_HARDWARE_SUPPORT", "ON");
     }
 
