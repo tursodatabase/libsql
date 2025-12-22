@@ -1,3 +1,6 @@
+OS := $(shell uname)
+CFLAGS := -Iinclude
+LDFLAGS := -lm
 ARCHS_IOS = aarch64-apple-ios aarch64-apple-ios-sim
 ARCHS_ANDROID = aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
 IOS_LIB_FILE = libsql_experimental.dylib
@@ -5,6 +8,17 @@ IOS_FINAL_LIB_FILE = libsql_experimental
 LIB_FILE = libsql_experimental.so
 XCFRAMEWORK = libsql_experimental.xcframework
 HEADER = libsql.h
+
+ifeq ($(OS),Darwin)
+	CFLAGS += -framework Security -framework CoreServices
+endif
+
+.PHONY: all $(ARCHS_IOS) ios $(ARCHS_ANDROID) android
+
+all: example
+
+example: example.c
+	$(CC) -o $@ $(CFLAGS) $< $(LIBSQL_EXPERIMENTAL_PATH) $(LDFLAGS)
 
 notify:
 	osascript -e 'display notification "Build completed" with title "libsql"'
