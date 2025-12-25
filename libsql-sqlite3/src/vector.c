@@ -153,6 +153,32 @@ float vectorDistanceL2(const Vector *pVector1, const Vector *pVector2){
   return 0;
 }
 
+void vectorAdd(Vector *pVector1, const Vector *pVector2){
+  assert( pVector1->type == pVector2->type );
+  switch (pVector1->type) {
+    case VECTOR_TYPE_FLOAT32:
+      return vectorF32Add(pVector1, pVector2);
+    case VECTOR_TYPE_FLOAT64:
+      return vectorF64Add(pVector1, pVector2);
+    default:
+      assert(0);
+  }
+  return;
+}
+
+void vectorSub(Vector *pVector1, const Vector *pVector2){
+  assert( pVector1->type == pVector2->type );
+  switch (pVector1->type) {
+    case VECTOR_TYPE_FLOAT32:
+      return vectorF32Sub(pVector1, pVector2);
+    case VECTOR_TYPE_FLOAT64:
+      return vectorF64Sub(pVector1, pVector2);
+    default:
+      assert(0);
+  }
+  return;
+}
+
 const char *sqlite3_type_repr(int type){
   switch( type ){
     case SQLITE_NULL:
@@ -1244,6 +1270,130 @@ static void vectorDistanceL2Func(sqlite3_context *context, int argc, sqlite3_val
 }
 
 /*
+** Implementation of vector_add(X, Y) function.
+*/
+static void vectorAddFn(sqlite3_context *context, int argc, sqlite3_value **argv){
+  char *pzErrMsg = NULL;
+  Vector *pVector1 = NULL, *pVector2 = NULL;
+  int type1, type2;
+  int dims1, dims2;
+  if( argc < 2 ) {
+    return;
+  }
+  if( detectVectorParameters(argv[0], 0, &type1, &dims1, &pzErrMsg) != 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( detectVectorParameters(argv[1], 0, &type2, &dims2, &pzErrMsg) != 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( type1 != type2 ){
+    pzErrMsg = sqlite3_mprintf("vector_add: vectors must have the same type: %d != %d", type1, type2);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( dims1 != dims2 ){
+    pzErrMsg = sqlite3_mprintf("vector_add: vectors must have the same length: %d != %d", dims1, dims2);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  pVector1 = vectorContextAlloc(context, type1, dims1);
+  if( pVector1==NULL ){
+    goto out_free;
+  }
+  pVector2 = vectorContextAlloc(context, type2, dims2);
+  if( pVector2==NULL ){
+    goto out_free;
+  }
+  if( vectorParseWithType(argv[0], pVector1, &pzErrMsg)<0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( vectorParseWithType(argv[1], pVector2, &pzErrMsg)<0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  vectorAdd(pVector1, pVector2);
+  vectorSerializeWithMeta(context, pVector1);
+out_free:
+  if( pVector2 ){
+    vectorFree(pVector2);
+  }
+  if( pVector1 ){
+    vectorFree(pVector1);
+  }
+}
+
+/*
+** Implementation of vector_sub(X, Y) function.
+*/
+static void vectorSubFn(sqlite3_context *context, int argc, sqlite3_value **argv){
+  char *pzErrMsg = NULL;
+  Vector *pVector1 = NULL, *pVector2 = NULL;
+  int type1, type2;
+  int dims1, dims2;
+  if( argc < 2 ) {
+    return;
+  }
+  if( detectVectorParameters(argv[0], 0, &type1, &dims1, &pzErrMsg) != 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( detectVectorParameters(argv[1], 0, &type2, &dims2, &pzErrMsg) != 0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( type1 != type2 ){
+    pzErrMsg = sqlite3_mprintf("vector_add: vectors must have the same type: %d != %d", type1, type2);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( dims1 != dims2 ){
+    pzErrMsg = sqlite3_mprintf("vector_add: vectors must have the same length: %d != %d", dims1, dims2);
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  pVector1 = vectorContextAlloc(context, type1, dims1);
+  if( pVector1==NULL ){
+    goto out_free;
+  }
+  pVector2 = vectorContextAlloc(context, type2, dims2);
+  if( pVector2==NULL ){
+    goto out_free;
+  }
+  if( vectorParseWithType(argv[0], pVector1, &pzErrMsg)<0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( vectorParseWithType(argv[1], pVector2, &pzErrMsg)<0 ){
+    sqlite3_result_error(context, pzErrMsg, -1);
+    sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  vectorSub(pVector1, pVector2);
+  vectorSerializeWithMeta(context, pVector1);
+out_free:
+  if( pVector2 ){
+    vectorFree(pVector2);
+  }
+  if( pVector1 ){
+    vectorFree(pVector1);
+  }
+}
+
+/*
  * Marker function which is used in index creation syntax: CREATE INDEX idx ON t(libsql_vector_idx(emb));
 */
 static void libsqlVectorIdx(sqlite3_context *context, int argc, sqlite3_value **argv){ 
@@ -1266,6 +1416,8 @@ void sqlite3RegisterVectorFunctions(void){
     FUNCTION(vector_extract,      1, 0, 0, vectorExtractFunc),
     FUNCTION(vector_distance_cos, 2, 0, 0, vectorDistanceCosFunc),
     FUNCTION(vector_distance_l2,  2, 0, 0, vectorDistanceL2Func),
+    FUNCTION(vector_add,          2, 0, 0, vectorAddFn),
+    FUNCTION(vector_sub,          2, 0, 0, vectorSubFn),
 
     FUNCTION(libsql_vector_idx,  -1, 0, 0, libsqlVectorIdx),
   };
