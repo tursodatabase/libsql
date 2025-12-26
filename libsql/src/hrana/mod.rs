@@ -326,7 +326,7 @@ impl Row {
 
 impl RowInner for Row {
     fn column_value(&self, idx: i32) -> crate::Result<crate::Value> {
-        let v = self.inner.get(idx as usize).cloned().unwrap();
+        let v = self.inner.get(idx as usize).cloned().ok_or_else(|| crate::Error::InvalidColumnIndex)?;
         Ok(into_value2(v))
     }
 
