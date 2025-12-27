@@ -73,6 +73,7 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 * [PHP](https://github.com/tursodatabase/turso-client-php)
 * [D](https://github.com/pdenapo/libsql-d) (experimental, based on the C driver)
 * [Ring](https://github.com/ysdragon/ring-libsql) (experimental, based on the C driver)
+* [Java](https://github.com/akbertram/hrana-client-java) (under development, https-only with protobuf)
 
 ### GUI Support
 
