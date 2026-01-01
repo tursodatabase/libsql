@@ -1,9 +1,9 @@
 use std::sync::Arc;
+use std::time::Duration;
 use std::{fmt, path::Path};
 
-use crate::connection::BatchRows;
 use crate::{
-    connection::Conn,
+    connection::{AuthHook, BatchRows, Conn, UpdateHook},
     params::Params,
     rows::{ColumnsInner, RowInner, RowsInner},
     statement::Stmt,
@@ -54,6 +54,14 @@ impl Conn for LibsqlConnection {
         })
     }
 
+    fn interrupt(&self) -> Result<()> {
+        self.conn.interrupt()
+    }
+
+    fn busy_timeout(&self, timeout: Duration) -> Result<()> {
+        self.conn.busy_timeout(timeout)
+    }
+
     fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }
@@ -72,12 +80,28 @@ impl Conn for LibsqlConnection {
 
     async fn reset(&self) {}
 
+    fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<()> {
+        self.conn.set_reserved_bytes(reserved_bytes)
+    }
+
+    fn get_reserved_bytes(&self) -> Result<i32> {
+        self.conn.get_reserved_bytes()
+    }
+
     fn enable_load_extension(&self, onoff: bool) -> Result<()> {
         self.conn.enable_load_extension(onoff)
     }
 
     fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
         self.conn.load_extension(dylib_path, entry_point)
+    }
+
+    fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
+        self.conn.authorizer(hook)
+    }
+
+    fn add_update_hook(&self, cb: Box<UpdateHook>) -> Result<()> {
+        Ok(self.conn.add_update_hook(cb))
     }
 }
 
@@ -87,7 +111,7 @@ impl Drop for LibsqlConnection {
     }
 }
 
-pub(crate) struct LibsqlStmt(pub(super) crate::local::Statement);
+pub(crate) struct LibsqlStmt(pub crate::local::Statement);
 
 #[async_trait::async_trait]
 impl Stmt for LibsqlStmt {
@@ -95,28 +119,32 @@ impl Stmt for LibsqlStmt {
         self.0.finalize();
     }
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
+    async fn execute(&self, params: &Params) -> Result<usize> {
         let params = params.clone();
         let stmt = self.0.clone();
 
         stmt.execute(&params).map(|i| i as usize)
     }
 
-    async fn query(&mut self, params: &Params) -> Result<Rows> {
+    async fn query(&self, params: &Params) -> Result<Rows> {
         let params = params.clone();
         let stmt = self.0.clone();
 
         stmt.query(&params).map(LibsqlRows).map(Rows::new)
     }
 
-    async fn run(&mut self, params: &Params) -> Result<()> {
+    async fn run(&self, params: &Params) -> Result<()> {
         let params = params.clone();
         let stmt = self.0.clone();
 
         stmt.run(&params)
     }
 
-    fn reset(&mut self) {
+    fn interrupt(&self) -> Result<()> {
+        self.0.interrupt()
+    }
+
+    fn reset(&self) {
         self.0.reset();
     }
 
@@ -126,6 +154,10 @@ impl Stmt for LibsqlStmt {
 
     fn parameter_name(&self, idx: i32) -> Option<&str> {
         self.0.parameter_name(idx)
+    }
+
+    fn column_count(&self) -> usize {
+        self.0.column_count()
     }
 
     fn columns(&self) -> Vec<Column> {

@@ -8,9 +8,10 @@ pub use builder::Builder;
 pub use libsql_sys::{Cipher, EncryptionConfig};
 
 use crate::{Connection, Result};
+#[cfg(any(feature = "remote", feature = "sync"))]
+use base64::{engine::general_purpose, Engine};
 use std::fmt;
 use std::sync::atomic::AtomicU64;
-use std::sync::Arc;
 
 cfg_core! {
     bitflags::bitflags! {
@@ -64,6 +65,17 @@ cfg_replication_or_sync! {
             self.frames_synced
         }
     }
+
+}
+
+cfg_sync! {
+    #[derive(Default)]
+    pub enum SyncProtocol {
+        #[default]
+        Auto,
+        V1,
+        V2,
+    }
 }
 
 enum DbType {
@@ -74,6 +86,7 @@ enum DbType {
         path: String,
         flags: OpenFlags,
         encryption_config: Option<EncryptionConfig>,
+        skip_safety_assert: bool,
     },
     #[cfg(feature = "replication")]
     Sync {
@@ -81,13 +94,24 @@ enum DbType {
         encryption_config: Option<EncryptionConfig>,
     },
     #[cfg(feature = "sync")]
-    Offline { db: crate::local::Database },
+    Offline {
+        db: crate::local::Database,
+        remote_writes: bool,
+        read_your_writes: bool,
+        url: String,
+        auth_token: String,
+        connector: crate::util::ConnectorService,
+        _bg_abort: Option<std::sync::Arc<crate::sync::DropAbort>>,
+        remote_encryption: Option<EncryptionContext>,
+    },
     #[cfg(feature = "remote")]
     Remote {
         url: String,
         auth_token: String,
         connector: crate::util::ConnectorService,
         version: Option<String>,
+        namespace: Option<String>,
+        remote_encryption: Option<EncryptionContext>,
     },
 }
 
@@ -116,7 +140,7 @@ pub struct Database {
     db_type: DbType,
     /// The maximum replication index returned from a write performed using any connection created using this Database object.
     #[allow(dead_code)]
-    max_write_replication_index: Arc<AtomicU64>,
+    max_write_replication_index: std::sync::Arc<AtomicU64>,
 }
 
 cfg_core! {
@@ -146,6 +170,7 @@ cfg_core! {
                     path: db_path.into(),
                     flags,
                     encryption_config: None,
+                    skip_safety_assert: false,
                 },
                 max_write_replication_index: Default::default(),
             })
@@ -193,7 +218,7 @@ cfg_replication! {
                 endpoint,
                 auth_token,
                 https,
-                encryption_config
+                encryption_config,
             ).await
         }
 
@@ -229,6 +254,7 @@ cfg_replication! {
                 None,
                 OpenFlags::default(),
                 encryption_config.clone(),
+                None,
                 None,
             ).await?;
 
@@ -373,7 +399,14 @@ cfg_replication! {
                 #[cfg(feature = "replication")]
                 DbType::Sync { db, encryption_config: _ } => db.sync().await,
                 #[cfg(feature = "sync")]
-                DbType::Offline { db } => db.push().await,
+                DbType::Offline { db, remote_writes: false, .. } => db.sync_offline().await,
+                #[cfg(feature = "sync")]
+                DbType::Offline { db, remote_writes: true, .. } => {
+                    let mut sync_ctx = db.sync_ctx.as_ref().unwrap().lock().await;
+                    crate::sync::bootstrap_db(&mut sync_ctx).await?;
+                    let conn = db.connect()?;
+                    crate::sync::try_pull(&mut sync_ctx, &conn).await
+                },
                 _ => Err(Error::SyncNotSupported(format!("{:?}", self.db_type))),
             }
         }
@@ -429,7 +462,7 @@ cfg_replication! {
                DbType::Sync { db, .. } => {
                    let path = db.path().to_string();
                    Ok(Database {
-                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None},
+                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None, skip_safety_assert: false },
                        max_write_replication_index: Default::default(),
                    })
                }
@@ -495,7 +528,7 @@ cfg_remote! {
             url: impl Into<String>,
             auth_token: impl Into<String>,
             connector: C,
-            version: Option<String>
+            version: Option<String>,
         ) -> Result<Self>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -514,6 +547,8 @@ cfg_remote! {
                     auth_token: auth_token.into(),
                     connector: crate::util::ConnectorService::new(svc),
                     version,
+                    namespace: None,
+                    remote_encryption: None
                 },
                 max_write_replication_index: Default::default(),
             })
@@ -550,10 +585,16 @@ impl Database {
                 path,
                 flags,
                 encryption_config,
+                skip_safety_assert,
             } => {
                 use crate::local::impls::LibsqlConnection;
 
-                let db = crate::local::Database::open(path, *flags)?;
+                let db = if !skip_safety_assert {
+                    crate::local::Database::open(path, *flags)?
+                } else {
+                    unsafe { crate::local::Database::open_raw(path, *flags)? }
+                };
+
                 let conn = db.connect()?;
 
                 if !cfg!(feature = "encryption") && encryption_config.is_some() {
@@ -634,13 +675,56 @@ impl Database {
             }
 
             #[cfg(feature = "sync")]
-            DbType::Offline { db } => {
-                use crate::local::impls::LibsqlConnection;
+            DbType::Offline {
+                db,
+                remote_writes,
+                read_your_writes,
+                url,
+                auth_token,
+                connector,
+                remote_encryption,
+                ..
+            } => {
+                use crate::{
+                    hrana::connection::HttpConnection, local::impls::LibsqlConnection,
+                    replication::connection::State, sync::connection::SyncedConnection,
+                };
+                use tokio::sync::Mutex;
 
-                let conn = db.connect()?;
+                tokio::task::block_in_place(move || {
+                    let rt = tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                        .unwrap();
+                    rt.block_on(async {
+                        db.bootstrap_db().await?;
+                        Ok::<(), crate::Error>(())
+                    })
+                })?;
 
-                let conn = std::sync::Arc::new(LibsqlConnection { conn });
+                let local = db.connect()?;
 
+                if *remote_writes {
+                    let synced = SyncedConnection {
+                        local,
+                        remote: HttpConnection::new_with_connector(
+                            url.clone(),
+                            auth_token.clone(),
+                            connector.clone(),
+                            None,
+                            None,
+                            remote_encryption.clone(),
+                        ),
+                        read_your_writes: *read_your_writes,
+                        context: db.sync_ctx.clone().unwrap(),
+                        state: std::sync::Arc::new(Mutex::new(State::Init)),
+                    };
+
+                    let conn = std::sync::Arc::new(synced);
+                    return Ok(Connection { conn });
+                }
+
+                let conn = std::sync::Arc::new(LibsqlConnection { conn: local });
                 Ok(Connection { conn })
             }
 
@@ -650,6 +734,8 @@ impl Database {
                 auth_token,
                 connector,
                 version,
+                namespace,
+                remote_encryption,
             } => {
                 let conn = std::sync::Arc::new(
                     crate::hrana::connection::HttpConnection::new_with_connector(
@@ -657,6 +743,8 @@ impl Database {
                         auth_token,
                         connector.clone(),
                         version.as_ref().map(|s| s.as_str()),
+                        namespace.as_ref().map(|s| s.as_str()),
+                        remote_encryption.clone(),
                     ),
                 );
 
@@ -699,4 +787,30 @@ impl std::fmt::Debug for Database {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Database").finish()
     }
+}
+
+#[cfg(any(feature = "remote", feature = "sync"))]
+#[derive(Debug, Clone)]
+pub enum EncryptionKey {
+    /// The key is a base64-encoded string.
+    Base64Encoded(String),
+    /// The key is a byte array.
+    Bytes(Vec<u8>),
+}
+
+#[cfg(any(feature = "remote", feature = "sync"))]
+impl EncryptionKey {
+    pub fn as_string(&self) -> String {
+        match self {
+            EncryptionKey::Base64Encoded(s) => s.clone(),
+            EncryptionKey::Bytes(b) => general_purpose::STANDARD.encode(b),
+        }
+    }
+}
+
+#[cfg(any(feature = "remote", feature = "sync"))]
+#[derive(Debug, Clone)]
+pub struct EncryptionContext {
+    /// The base64-encoded key for the encryption, sent on every request.
+    pub key: EncryptionKey,
 }

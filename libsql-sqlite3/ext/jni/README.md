@@ -3,7 +3,7 @@ SQLite3 via JNI
 
 This directory houses a Java Native Interface (JNI) binding for the
 sqlite3 API. If you are reading this from the distribution ZIP file,
-links to resources in the canonical source tree will note work. The
+links to resources in the canonical source tree will not work. The
 canonical copy of this file can be browsed at:
 
   <https://sqlite.org/src/doc/trunk/ext/jni/README.md>
@@ -35,7 +35,7 @@ Project goals/requirements:
   build-level dependencies for specific IDEs and toolchains.  We
   welcome the addition of build files for arbitrary environments
   insofar as they neither interfere with each other nor become
-  a maintenance burden for the sqlite developers.
+  a maintenance burden for the SQLite developers.
 
 Non-goals:
 
@@ -47,7 +47,7 @@ Non-goals:
 
 - Support for mixed-mode operation, where client code accesses SQLite
   both via the Java-side API and the C API via their own native
-  code. Such cases would be a minefield of potential mis-interactions
+  code. Such cases would be a minefield of potential misinteractions
   between this project's JNI bindings and mixed-mode client code.
 
 
@@ -169,7 +169,7 @@ deliberately return an error code, instead of segfaulting, when passed
 a `null`.
 
 Client-defined callbacks _must never throw exceptions_ unless _very
-explitly documented_ as being throw-safe. Exceptions are generally
+explicitly documented_ as being throw-safe. Exceptions are generally
 reserved for higher-level bindings which are constructed to
 specifically deal with them and ensure that they do not leak C-level
 resources. In some cases, callback handlers are permitted to throw, in

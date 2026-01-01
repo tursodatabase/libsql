@@ -76,7 +76,13 @@ fn build_wasm(_arg: &str) -> Result<()> {
 
 fn run_tests(arg: &str) -> Result<()> {
     println!("installing nextest");
-    run_cargo(&["install", "cargo-nextest"])?;
+    run_cargo(&[
+        "install",
+        "--locked",
+        "--version",
+        "0.9.98",
+        "cargo-nextest",
+    ])?;
     println!("running nextest run");
     run_cargo(&["nextest", "run", arg])?;
 
@@ -85,7 +91,14 @@ fn run_tests(arg: &str) -> Result<()> {
 
 fn run_tests_encryption(arg: &str) -> Result<()> {
     println!("installing nextest");
-    run_cargo(&["install", "--force", "cargo-nextest"])?;
+    run_cargo(&[
+        "install",
+        "--force",
+        "--locked",
+        "--version",
+        "0.9.98",
+        "cargo-nextest",
+    ])?;
     println!("running nextest run");
     run_cargo(&[
         "nextest",
@@ -127,6 +140,18 @@ fn build_bundled() -> Result<()> {
     run_cp(&[
         "libsql-sqlite3/sqlite3.h",
         "libsql-ffi/bundled/src/sqlite3.h",
+    ])?;
+
+    // Also update SQLite3MultipleCiphers bundled files
+    // These are used when building with --features multiple-ciphers
+    run_cp(&[
+        "libsql-sqlite3/sqlite3.c",
+        "libsql-ffi/bundled/SQLite3MultipleCiphers/src/sqlite3.c",
+    ])?;
+
+    run_cp(&[
+        "libsql-sqlite3/sqlite3.h",
+        "libsql-ffi/bundled/SQLite3MultipleCiphers/src/sqlite3.h",
     ])?;
 
     Ok(())

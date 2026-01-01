@@ -1,4 +1,5 @@
 use crate::hrana::HranaRows;
+use crate::hrana::HttpSend;
 use crate::Row;
 use bytes::Bytes;
 use futures::Stream;
@@ -42,8 +43,9 @@ pub(super) trait RowsInner {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<S> RowsInner for HranaRows<S>
+impl<S, T> RowsInner for HranaRows<S, T>
 where
+    T: HttpSend + Sync + Send + 'static,
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn next(&mut self) -> crate::Result<Option<Row>> {

@@ -1,13 +1,14 @@
 // TODO(lucio): Move this to `remote/mod.rs`
 
-use std::str::FromStr;
-use std::sync::Arc;
-use std::sync::atomic::AtomicU64;
 use libsql_replication::rpc::proxy::{
     describe_result, query_result::RowResult, Cond, DescribeResult, ExecuteResults, NotCond,
     OkCond, Positional, Query, ResultRows, State as RemoteState, Step,
 };
 use parking_lot::Mutex;
+use std::str::FromStr;
+use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
+use std::time::Duration;
 
 use crate::parser;
 use crate::parser::StmtKind;
@@ -40,7 +41,7 @@ struct Inner {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
-enum State {
+pub enum State {
     #[default]
     Init,
     Invalid,
@@ -106,7 +107,7 @@ fn predict_final_state<'a>(
 /// parsed. This means that we only take into account the entire passed sql statement set and
 /// for example will reject writes if we are in a readonly txn to start with even if we commit
 /// and start a new transaction with the write in it.
-fn should_execute_local(state: &mut State, stmts: &[parser::Statement]) -> Result<bool> {
+pub fn should_execute_local(state: &mut State, stmts: &[parser::Statement]) -> Result<bool> {
     let predicted_end_state = predict_final_state(*state, stmts.iter());
 
     let should_execute_local = match (*state, predicted_end_state) {
@@ -167,7 +168,11 @@ impl From<RemoteState> for State {
 }
 
 impl RemoteConnection {
-    pub(crate) fn new(local: LibsqlConnection, writer: Option<Writer>, max_write_replication_index: Arc<AtomicU64>) -> Self {
+    pub(crate) fn new(
+        local: LibsqlConnection,
+        writer: Option<Writer>,
+        max_write_replication_index: Arc<AtomicU64>,
+    ) -> Self {
         let state = Arc::new(Mutex::new(Inner::default()));
         Self {
             local,
@@ -179,9 +184,16 @@ impl RemoteConnection {
 
     fn update_max_write_replication_index(&self, index: Option<u64>) {
         if let Some(index) = index {
-            let mut current = self.max_write_replication_index.load(std::sync::atomic::Ordering::SeqCst);
+            let mut current = self
+                .max_write_replication_index
+                .load(std::sync::atomic::Ordering::SeqCst);
             while index > current {
-                match self.max_write_replication_index.compare_exchange(current, index, std::sync::atomic::Ordering::SeqCst, std::sync::atomic::Ordering::SeqCst) {
+                match self.max_write_replication_index.compare_exchange(
+                    current,
+                    index,
+                    std::sync::atomic::Ordering::SeqCst,
+                    std::sync::atomic::Ordering::SeqCst,
+                ) {
                     Ok(_) => break,
                     Err(new_current) => current = new_current,
                 }
@@ -503,6 +515,16 @@ impl Conn for RemoteConnection {
         })
     }
 
+    fn interrupt(&self) -> Result<()> {
+        // Interrupt is a no-op for remote connections.
+        Ok(())
+    }
+
+    fn busy_timeout(&self, _timeout: Duration) -> Result<()> {
+        // Busy timeout is a no-op for remote connections.
+        Ok(())
+    }
+
     fn is_autocommit(&self) -> bool {
         self.is_state_init()
     }
@@ -520,6 +542,14 @@ impl Conn for RemoteConnection {
     }
 
     async fn reset(&self) {}
+
+    fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<()> {
+        self.local.set_reserved_bytes(reserved_bytes)
+    }
+
+    fn get_reserved_bytes(&self) -> Result<i32> {
+        self.local.get_reserved_bytes()
+    }
 }
 
 pub struct ColumnMeta {
@@ -632,8 +662,8 @@ async fn fetch_metas(
 impl Stmt for RemoteStatement {
     fn finalize(&mut self) {}
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn execute(&self, params: &Params) -> Result<usize> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.execute(params.clone()).await;
         }
 
@@ -666,8 +696,8 @@ impl Stmt for RemoteStatement {
         Ok(affected_row_count as usize)
     }
 
-    async fn query(&mut self, params: &Params) -> Result<Rows> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn query(&self, params: &Params) -> Result<Rows> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.query(params.clone()).await;
         }
 
@@ -700,8 +730,8 @@ impl Stmt for RemoteStatement {
         Ok(Rows::new(RemoteRows(rows, 0)))
     }
 
-    async fn run(&mut self, params: &Params) -> Result<()> {
-        if let Some(stmt) = &mut self.local_statement {
+    async fn run(&self, params: &Params) -> Result<()> {
+        if let Some(stmt) = &self.local_statement {
             return stmt.run(params.clone()).await;
         }
 
@@ -727,7 +757,13 @@ impl Stmt for RemoteStatement {
         Ok(())
     }
 
-    fn reset(&mut self) {}
+    fn interrupt(&self) -> Result<()> {
+        Err(Error::Misuse(
+            "interrupt is not supported for remote connections".to_string(),
+        ))
+    }
+
+    fn reset(&self) {}
 
     fn parameter_count(&self) -> usize {
         if let Some(stmt) = self.local_statement.as_ref() {
@@ -748,6 +784,16 @@ impl Stmt for RemoteStatement {
         match self.metas.first() {
             Some(meta) => meta.param_names.get(idx as usize).map(|s| s.as_str()),
             None => None,
+        }
+    }
+
+    fn column_count(&self) -> usize {
+        if let Some(stmt) = self.local_statement.as_ref() {
+            return stmt.column_count();
+        }
+        match self.metas.first() {
+            Some(meta) => meta.columns.len(),
+            None => 0,
         }
     }
 

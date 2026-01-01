@@ -1,5 +1,6 @@
 ---
-source: sqld/tests/cluster/mod.rs
+source: libsql-server/tests/cluster/mod.rs
 expression: e.to_string()
+snapshot_kind: text
 ---
-Hrana: `api error: `{"error":"Namespace `foo` doesn't exist"}``
+Hrana: `api error: `status=404 Not Found, body={"error":"Namespace `foo` doesn't exist"}``

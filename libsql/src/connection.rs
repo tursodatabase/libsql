@@ -2,12 +2,25 @@ use std::collections::VecDeque;
 use std::fmt;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration;
 
+use crate::auth::{AuthContext, Authorization};
 use crate::params::{IntoParams, Params};
 use crate::rows::Rows;
 use crate::statement::Statement;
 use crate::transaction::Transaction;
 use crate::{Result, TransactionBehavior};
+
+pub type AuthHook = Arc<dyn Fn(&AuthContext) -> Authorization>;
+
+pub type UpdateHook = dyn Fn(Op, &str, &str, i64) + Send + Sync;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Op {
+    Insert = 0,
+    Delete = 1,
+    Update = 2,
+}
 
 #[async_trait::async_trait]
 pub(crate) trait Conn {
@@ -21,6 +34,10 @@ pub(crate) trait Conn {
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
 
+    fn interrupt(&self) -> Result<()>;
+
+    fn busy_timeout(&self, timeout: Duration) -> Result<()>;
+
     fn is_autocommit(&self) -> bool;
 
     fn changes(&self) -> u64;
@@ -31,12 +48,28 @@ pub(crate) trait Conn {
 
     async fn reset(&self);
 
+    fn set_reserved_bytes(&self, _reserved_bytes: i32) -> Result<()> {
+        Err(crate::Error::ReservedBytesNotSupported)
+    }
+
+    fn get_reserved_bytes(&self) -> Result<i32> {
+        Err(crate::Error::ReservedBytesNotSupported)
+    }
+
     fn enable_load_extension(&self, _onoff: bool) -> Result<()> {
         Err(crate::Error::LoadExtensionNotSupported)
     }
 
     fn load_extension(&self, _dylib_path: &Path, _entry_point: Option<&str>) -> Result<()> {
         Err(crate::Error::LoadExtensionNotSupported)
+    }
+
+    fn authorizer(&self, _hook: Option<AuthHook>) -> Result<()> {
+        Err(crate::Error::AuthorizerNotSupported)
+    }
+
+    fn add_update_hook(&self, _cb: Box<dyn Fn(Op, &str, &str, i64) + Send + Sync>) -> Result<()> {
+        Err(crate::Error::UpdateHookNotSupported)
     }
 }
 
@@ -125,7 +158,7 @@ impl Connection {
     ///
     /// # Return
     ///
-    /// This returns a `BatchRows` currently only the `remote`  and `local` connection supports this feature and
+    /// This returns a `BatchRows` currently only the `remote` and `local` connection supports this feature and
     /// all other connection types will return an empty set always.
     pub async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         tracing::trace!("executing batch `{}`", sql);
@@ -158,7 +191,7 @@ impl Connection {
     /// For more info on how to pass params check [`IntoParams`]'s docs and on how to
     /// extract values out of the rows check the [`Rows`] docs.
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> Result<Rows> {
-        let mut stmt = self.prepare(sql).await?;
+        let stmt = self.prepare(sql).await?;
 
         stmt.query(params).await
     }
@@ -185,7 +218,16 @@ impl Connection {
         self.conn.transaction(tx_behavior).await
     }
 
-    /// Check weather libsql is in `autocommit` or not.
+    /// Cancel ongoing operations and return at earliest opportunity.
+    pub fn interrupt(&self) -> Result<()> {
+        self.conn.interrupt()
+    }
+
+    pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
+        self.conn.busy_timeout(timeout)
+    }
+
+    /// Check whether libsql is in `autocommit` or not.
     pub fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }
@@ -207,6 +249,14 @@ impl Connection {
 
     pub async fn reset(&self) {
         self.conn.reset().await
+    }
+
+    pub fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<()> {
+        self.conn.set_reserved_bytes(reserved_bytes)
+    }
+
+    pub fn get_reserved_bytes(&self) -> Result<i32> {
+        self.conn.get_reserved_bytes()
     }
 
     /// Enable loading SQLite extensions from SQL queries and Rust API.
@@ -243,6 +293,14 @@ impl Connection {
         entry_point: Option<&str>,
     ) -> Result<()> {
         self.conn.load_extension(dylib_path.as_ref(), entry_point)
+    }
+
+    pub fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
+        self.conn.authorizer(hook)
+    }
+
+    pub fn add_update_hook(&self, cb: Box<UpdateHook>) -> Result<()> {
+        self.conn.add_update_hook(cb)
     }
 }
 

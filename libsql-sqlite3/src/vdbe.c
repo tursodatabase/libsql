@@ -4552,9 +4552,10 @@ case OP_OpenEphemeral: {     /* ncycle */
     pCx = allocateCursor(p, pOp->p1, pOp->p2, CURTYPE_BTREE);
     if( pCx==0 ) goto no_mem;
     pCx->isEphemeral = 1;
-    rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->ub.pBtx, 
+    rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->ub.pBtx,
                           BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5,
-                          vfsFlags);
+                          vfsFlags,
+                          0);  /* Ephemeral tables are never encrypted */
     if( rc==SQLITE_OK ){
       rc = sqlite3BtreeBeginTrans(pCx->ub.pBtx, 1, 0);
       if( rc==SQLITE_OK ){

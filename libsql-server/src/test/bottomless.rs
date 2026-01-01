@@ -96,6 +96,8 @@ async fn configure_server(
             snapshot_at_shutdown: false,
             encryption_config: None,
             max_concurrent_requests: 128,
+            connection_creation_timeout: None,
+            disable_intelligent_throttling: false,
         },
         admin_api_config: None,
         disable_namespaces: true,

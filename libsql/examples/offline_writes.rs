@@ -39,6 +39,9 @@ async fn main() {
 
     let conn = db.connect().unwrap();
 
+    println!("Syncing database from remote...");
+    db.sync().await.unwrap();
+
     conn.execute(
         r#"
         CREATE TABLE IF NOT EXISTS guest_book_entries (

@@ -1,9 +1,10 @@
 ---
 source: libsql-server/tests/namespaces/shared_schema.rs
 expression: "conn.execute(\"create table test (x)\", ()).await.unwrap_err()"
+snapshot_kind: text
 ---
 Hrana(
     Api(
-        "{\"error\":\"Authorization forbidden: DDL statements not permitted on namespace ns1\"}",
+        "status=403 Forbidden, body={\"error\":\"Authorization forbidden: DDL statements not permitted on namespace ns1\"}",
     ),
 )

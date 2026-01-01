@@ -48,7 +48,7 @@ cfg_cloudflare! {
 #[derive(Debug, Clone)]
 pub struct Connection<T>
 where
-    T: HttpSend,
+    T: HttpSend + Sync + Send + 'static,
 {
     conn: HttpConnection<T>,
 }
@@ -65,16 +65,16 @@ cfg_cloudflare! {
 
 impl<T> Connection<T>
 where
-    T: HttpSend,
+    T: HttpSend + Sync + Send + 'static,
     <T as HttpSend>::Stream: 'static,
 {
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
         tracing::trace!("executing `{}`", sql);
-        let mut stmt = crate::hrana::Statement::new(
+        let stmt = crate::hrana::Statement::new(
             self.conn.current_stream().clone(),
             sql.to_string(),
             true,
-        )?;
+        ).await?;
         let rows = stmt.execute(&params.into_params()?).await?;
         Ok(rows as u64)
     }
@@ -100,11 +100,11 @@ where
 
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
         tracing::trace!("querying `{}`", sql);
-        let mut stmt = crate::hrana::Statement::new(
+        let stmt = crate::hrana::Statement::new(
             self.conn.current_stream().clone(),
             sql.to_string(),
             true,
-        )?;
+        ).await?;
         let rows = stmt.query_raw(&params.into_params()?).await?;
         Ok(Rows {
             inner: Box::new(rows),
@@ -126,20 +126,20 @@ where
 #[derive(Debug, Clone)]
 pub struct Transaction<T>
 where
-    T: HttpSend,
+    T: HttpSend + Sync + Send + 'static,
 {
     inner: HttpTransaction<T>,
 }
 
 impl<T> Transaction<T>
 where
-    T: HttpSend,
+    T: HttpSend + Sync + Send + 'static,
     <T as HttpSend>::Stream: 'static,
 {
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
         tracing::trace!("querying `{}`", sql);
         let stream = self.inner.stream().clone();
-        let mut stmt = crate::hrana::Statement::new(stream, sql.to_string(), true)?;
+        let stmt = crate::hrana::Statement::new(stream, sql.to_string(), true).await?;
         let rows = stmt.query_raw(&params.into_params()?).await?;
         Ok(Rows {
             inner: Box::new(rows),
@@ -149,7 +149,7 @@ where
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
         tracing::trace!("executing `{}`", sql);
         let stream = self.inner.stream().clone();
-        let mut stmt = crate::hrana::Statement::new(stream, sql.to_string(), true)?;
+        let stmt = crate::hrana::Statement::new(stream, sql.to_string(), true).await?;
         let rows = stmt.execute(&params.into_params()?).await?;
         Ok(rows as u64)
     }

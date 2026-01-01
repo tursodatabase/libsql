@@ -50,6 +50,8 @@ pub fn namespace_from_headers(
 
     if let Some(from_metadata) = headers.get(NAMESPACE_METADATA_KEY) {
         try_namespace_from_metadata(from_metadata)
+    } else if let Some(from_ns_header) = headers.get("x-namespace") {
+        try_namespace_from_header(from_ns_header)
     } else if let Some(from_host) = headers.get("host") {
         try_namespace_from_host(from_host, disable_default_namespace)
     } else if !disable_default_namespace {
@@ -57,6 +59,11 @@ pub fn namespace_from_headers(
     } else {
         Err(Error::InvalidHost("missing host header".into()))
     }
+}
+
+fn try_namespace_from_header(header: &axum::http::HeaderValue) -> Result<NamespaceName, Error> {
+    NamespaceName::from_bytes(header.as_bytes().to_vec().into())
+        .map_err(|_| Error::InvalidNamespace)
 }
 
 fn try_namespace_from_host(

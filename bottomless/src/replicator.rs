@@ -935,6 +935,14 @@ impl Replicator {
         })?;
         tracing::trace!("Local change counter: {change_counter}");
 
+        // TODO: we shouldn't leak the connection here but for some reason when this connection get
+        // dropped it seems to checkpoint the database
+        if std::env::var("LIBSQL_BOTTOMLESS_DISABLE_INIT_CHECKPOINTING").is_ok()
+            || std::env::var("LIBSQL_DISABLE_INIT_CHECKPOINTING").is_ok()
+        {
+            std::mem::forget(conn);
+        }
+
         Ok(change_counter.to_be_bytes())
     }
 

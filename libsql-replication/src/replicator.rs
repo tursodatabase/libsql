@@ -224,9 +224,9 @@ where
                 }
                 Err(Error::Client(e)) if !error_printed => {
                     if e.downcast_ref::<uuid::Error>().is_some() {
-                        tracing::error!("error connecting to primary. retrying. Verify that the libsql server version is `>=0.22` error: {e}");
+                        tracing::warn!("error connecting to primary. retrying. Verify that the libsql server version is `>=0.22` error: {e}");
                     } else {
-                        tracing::error!("error connecting to primary. retrying. error: {e}");
+                        tracing::warn!("error connecting to primary. retrying. error: {e}");
                     }
 
                     error_printed = true;

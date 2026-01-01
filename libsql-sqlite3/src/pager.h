@@ -124,7 +124,8 @@ int sqlite3PagerOpen(
   int,
   int,
   int,
-  void(*)(DbPage*)
+  void(*)(DbPage*),
+  int                    /* hasCodec from connection-level cache */
 );
 int sqlite3PagerClose(Pager *pPager, sqlite3*);
 int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
@@ -137,7 +138,7 @@ int sqlite3PagerWalFrameCount(Pager *, unsigned int *);
 int sqlite3PagerWalReadFrame(Pager *, unsigned int, void *, unsigned int);
 int sqlite3PagerWalBeginCommit(Pager*);
 int sqlite3PagerWalEndCommit(Pager*);
-int sqlite3PagerWalInsert(Pager*, unsigned int, void *, unsigned int);
+int sqlite3PagerWalInsert(Pager*, unsigned int, void *, unsigned int, int *);
 
 void sqlite3PagerSetCachesize(Pager*, int);
 int sqlite3PagerSetSpillsize(Pager*, int);

@@ -14,13 +14,13 @@ The `Value` type represents an SQLite value. It has 4 variants:
 - Blob: some binary data, encoded in base64
 - Null: the null value.
 
-All these types map to JSON straightforwardly, except for blobs, that are represented as an object with { "base64": /* base64 encoded blob */}
+All these types map to JSON straightforwardly, except for blobs, that are represented as an object with `{ "base64": /* base64 encoded blob */ }`
 
 ### Response format
 
 Responses to queries can either succeed or fail. When they succeed a payload specific to the endpoint being called is returned with a HTTP 200 (OK) status code.
 
-In the case of a failure, a specific `Error` response is returned with the approriate HTTP status code. The `Error` response has the following structure:
+In the case of a failure, a specific `Error` response is returned with the appropriate HTTP status code. The `Error` response has the following structure:
 
 ```ts
 type Error = {
@@ -40,7 +40,7 @@ Where `T` is the type of the payload in case of success.
 
 #### Queries
 
-```
+```HTTP
 POST /
 ```
 
@@ -66,6 +66,7 @@ Queries are either simple strings or `ParamQuery` that accept parameter bindings
 ##### Response Format
 
 On success, a request to `POST /` returns a response with an HTTP 200 code and a JSON body with the following structure:
+
 ```ts
 type BatchResponse = Array<QueryResult>|Error
 
@@ -91,39 +92,38 @@ The `Query` can either be a plain query string, such as `SELECT * FROM users` or
 Queries with bound parameters come in two types:
 
 1. Named bound parameters, where the parameter is referred to by a name and is prefixed with a `:`, a `@` or a `$`. If the query uses named parameters, then the `params` field of the query should be an object mapping parameters to their value.
+   - Example: a query with named bound parameters
 
-- Example: a query with named bound parameters
+   ```json
+   {
+       "q": "SELECT * FROM users WHERE name = :name AND age = &age AND height > @height AND address = $address",
+       "params": {
+           ":name": "adhoc",
+           "age" : "18",
+           "@height" : "170",
+           "$address" : "very nice place",
+       }
+   }
+   ```
 
-```json
-{
-    "q": "SELECT * FROM users WHERE name = :name AND age = &age AND height > @height AND address = $address",
-    "params": {
-        ":name": "adhoc",
-        "age" : "18",
-        "@height" : "170",
-        "$address" : "very nice place",
-    }
-}
-```
-The prefix of the parameter does not have to be specified in the `params` field (i.e, `name` instead of `:name`). If a
-param `name` is given in `params` it will be binded to `:name`, `$name` and `@name` unless `params` contain a better
-match. `:name` is a better match for `:name` than `name`.
-One named parameter can occur in a query multiple times but does not have to be repeated in `params`.
+   The prefix of the parameter does not have to be specified in the `params` field (i.e, `name` instead of `:name`). If a
+   param `name` is given in `params` it will be bound to `:name`, `$name` and `@name` unless `params` contain a better
+   match. `:name` is a better match for `:name` than `name`.
+   One named parameter can occur in a query multiple times but does not have to be repeated in `params`.
 
 2. Positional query parameters, bound by their position in the parameter list, and prefixed `?`. If the query uses positional parameters, the values should be provided as an array to the `params` field.
+   - Example: a query with positional bound parameters
 
-- Example: a query with positional bound parameters
-
-```json
-{
-    "q": "SELECT * FROM users WHERE name = ?",
-    "params": ["adhoc"]
-}
-```
+   ```json
+   {
+       "q": "SELECT * FROM users WHERE name = ?",
+       "params": ["adhoc"]
+   }
+   ```
 
 #### Health
 
-```
+```HTTP
 GET /health
 ```
 
@@ -131,7 +131,7 @@ The health route return an `HTTP 200 (OK)` if the server is up and running.
 
 #### Version
 
-```
+```HTTP
 GET /version
 ```
 

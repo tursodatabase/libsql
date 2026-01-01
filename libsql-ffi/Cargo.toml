@@ -1,12 +1,16 @@
 [package]
 name = "libsql-ffi"
-version = "0.5.0"
-edition = "2021"
-build = "build.rs"
-license = "MIT"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Native bindings to libSQL"
-repository = "https://github.com/tursodatabase/libsql"
-exclude = ["bundled/SQLite3MultipleCiphers/build", "bundled/SQLite3MultipleCiphers/test"]
+build = "build.rs"
+exclude = [
+  "bundled/SQLite3MultipleCiphers/build",
+  "bundled/SQLite3MultipleCiphers/test",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,8 +18,10 @@ exclude = ["bundled/SQLite3MultipleCiphers/build", "bundled/SQLite3MultipleCiphe
 libsql-wasmtime-bindings = { version = "0.2.1", optional = true }
 
 [build-dependencies]
+cmake = "0.1.54"
 bindgen = "0.66.1"
 cc = "1.0"
+glob = "0.3"
 
 [features]
 session = []
@@ -28,3 +34,21 @@ wasm32-wasi-vfs = []
 unlock_notify = []
 preupdate_hook = []
 sqlcipher = []
+sqlean-extension-uuid = []
+sqlean-extension-crypto = []
+sqlean-extension-fuzzy = []
+sqlean-extension-math = []
+sqlean-extension-stats = []
+sqlean-extension-text = []
+sqlean-extension-regexp = []
+sqlean-extensions = [
+  "sqlean-extension-uuid",
+  "sqlean-extension-crypto",
+  "sqlean-extension-fuzzy",
+  "sqlean-extension-math",
+  "sqlean-extension-stats",
+  "sqlean-extension-text",
+  "sqlean-extension-regexp",
+]
+libsql-disable-checkpoint-downgrade = []
+libsql-checkpoint-only-full= []

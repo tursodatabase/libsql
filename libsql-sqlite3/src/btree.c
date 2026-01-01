@@ -2477,7 +2477,8 @@ int sqlite3BtreeOpen(
   sqlite3 *db,             /* Associated database handle */
   Btree **ppBtree,         /* Pointer to new Btree object written here */
   int flags,               /* Options */
-  int vfsFlags             /* Flags passed through to sqlite3_vfs.xOpen() */
+  int vfsFlags,            /* Flags passed through to sqlite3_vfs.xOpen() */
+  int hasCodec             /* True if this database has encryption codec */
 ){
   BtShared *pBt = 0;             /* Shared part of btree structure */
   Btree *p;                      /* Handle to return */
@@ -2622,7 +2623,7 @@ int sqlite3BtreeOpen(
       goto btree_open_out;
     }
     rc = sqlite3PagerOpen(pVfs, db->wal_manager ,&pBt->pPager, zFilename,
-                          sizeof(MemPage), flags, vfsFlags, pageReinit);
+                          sizeof(MemPage), flags, vfsFlags, pageReinit, hasCodec);
     if( rc==SQLITE_OK ){
       sqlite3PagerSetMmapLimit(pBt->pPager, db->szMmap);
       rc = sqlite3PagerReadFileheader(pBt->pPager,sizeof(zDbHeader),zDbHeader);

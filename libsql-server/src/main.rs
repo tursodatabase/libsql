@@ -9,7 +9,6 @@ use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
 use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_keys, user_auth_strategies, Auth};
-use libsql_server::wal_toolkit::{S3Args, WalToolkitCommand};
 use tokio::sync::Notify;
 use tokio::time::Duration;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -22,7 +21,6 @@ use libsql_server::config::{
 };
 use libsql_server::net::AddrIncoming;
 use libsql_server::version::Version;
-use libsql_server::CustomWAL;
 use libsql_server::Server;
 use libsql_sys::{Cipher, EncryptionConfig};
 
@@ -248,6 +246,13 @@ struct Cli {
     #[clap(long, default_value = "128", env = "SQLD_MAX_CONCURRENT_REQUESTS")]
     max_concurrent_requests: u64,
 
+    // disable throttling logic which adjust concurrency limits based on memory-pressure conditions
+    #[clap(long, env = "SQLD_DISABLE_INTELLIGENT_THROTTLING")]
+    disable_intelligent_throttling: bool,
+
+    #[clap(long, env = "SQLD_CONNECTION_CREATION_TIMEOUT_SEC")]
+    connection_creation_timeout_sec: Option<u64>,
+
     /// Allow meta store to recover config from filesystem from older version, if meta store is
     /// empty on startup
     #[clap(long, env = "SQLD_ALLOW_METASTORE_RECOVERY")]
@@ -256,9 +261,6 @@ struct Cli {
     /// Shutdown timeout duration in seconds, defaults to 30 seconds.
     #[clap(long, env = "SQLD_SHUTDOWN_TIMEOUT")]
     shutdown_timeout: Option<u64>,
-
-    #[clap(value_enum, long)]
-    use_custom_wal: Option<CustomWAL>,
 
     #[clap(
         long,
@@ -321,14 +323,6 @@ enum UtilsSubcommands {
         namespace: Option<String>,
         #[clap(long)]
         auth: Option<String>,
-    },
-    WalToolkit {
-        #[arg(long, short, default_value = ".compactor")]
-        path: PathBuf,
-        #[clap(flatten)]
-        s3_args: S3Args,
-        #[clap(subcommand)]
-        command: WalToolkitCommand,
     },
 }
 
@@ -421,6 +415,10 @@ fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
         snapshot_at_shutdown: config.snapshot_at_shutdown,
         encryption_config: encryption_config.clone(),
         max_concurrent_requests: config.max_concurrent_requests,
+        disable_intelligent_throttling: config.disable_intelligent_throttling,
+        connection_creation_timeout: config
+            .connection_creation_timeout_sec
+            .map(|x| Duration::from_secs(x)),
     })
 }
 
@@ -718,7 +716,6 @@ async fn build_server(
             .shutdown_timeout
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(30)),
-        use_custom_wal: config.use_custom_wal,
         storage_server_address: config.storage_server_address.clone(),
         connector: Some(https),
         migrate_bottomless: config.migrate_bottomless,
@@ -776,13 +773,6 @@ async fn main() -> Result<()> {
                 if let Some(ns) = namespace {
                     client.run_namespace(ns).await?;
                 }
-            }
-            UtilsSubcommands::WalToolkit {
-                command,
-                path,
-                s3_args,
-            } => {
-                command.exec(path, s3_args).await?;
             }
         }
 

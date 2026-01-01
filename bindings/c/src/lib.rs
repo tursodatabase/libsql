@@ -6,7 +6,8 @@ extern crate lazy_static;
 mod types;
 
 use crate::types::libsql_config;
-use libsql::{errors, LoadExtensionGuard};
+use http::Uri;
+use libsql::{errors, Builder, LoadExtensionGuard};
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
@@ -96,6 +97,8 @@ pub unsafe extern "C" fn libsql_open_sync(
         encryption_key,
         sync_interval: 0,
         with_webpki: 0,
+        offline: 0,
+        remote_encryption_key: std::ptr::null(),
     };
     libsql_open_sync_with_config(config, out_db, out_err_msg)
 }
@@ -118,8 +121,106 @@ pub unsafe extern "C" fn libsql_open_sync_with_webpki(
         encryption_key,
         sync_interval: 0,
         with_webpki: 1,
+        offline: 0,
+        remote_encryption_key: std::ptr::null(),
     };
     libsql_open_sync_with_config(config, out_db, out_err_msg)
+}
+
+/// Returns a new URI with the offline query parameter removed or None if the URI does not contain the offline query parameter.
+fn maybe_remove_offline_query_param(url: &str) -> anyhow::Result<Option<String>> {
+    let uri: Uri = url.try_into()?;
+    let Some(query) = uri.query() else {
+        return Ok(None);
+    };
+    let query = query.to_owned();
+    let query_segments = query.split('&').collect::<Vec<&str>>();
+    let segments_count = query_segments.len();
+    let query_segments = query_segments
+        .into_iter()
+        .filter(|s| s != &"offline" && !s.starts_with("offline="))
+        .collect::<Vec<&str>>();
+    if segments_count == query_segments.len() {
+        return Ok(None);
+    }
+    let query = query_segments.join("&");
+    let Some(query_idx) = url.find('?') else {
+        return Ok(None);
+    };
+    if query.is_empty() {
+        return Ok(Some(url[..query_idx].to_owned()));
+    }
+
+    Ok(Some(url[..query_idx].to_owned() + "?" + &query))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_remove_offline_query_param() {
+        let uri = "http://example.com";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri, None);
+
+        let uri = "http://example.com?";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri, None);
+
+        let uri = "http://example.com?foo=bar";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri, None);
+
+        let uri = "http://example.com?offline";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com"));
+
+        let uri = "http://example.com?offline=bar";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com"));
+
+        let uri = "http://example.com?offline&foo=bar";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?offline=true&foo=bar";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?foo=bar&offline";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?foo=bar&offline=true";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?foo=bar&offline&foo2=bar2";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(
+            new_uri.as_deref(),
+            Some("http://example.com?foo=bar&foo2=bar2")
+        );
+
+        let uri = "http://example.com?foo=bar&offline=true&foo2=bar2";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(
+            new_uri.as_deref(),
+            Some("http://example.com?foo=bar&foo2=bar2")
+        );
+
+        let uri = "http://example.com?offline&foo=bar&offline";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(new_uri.as_deref(), Some("http://example.com?foo=bar"));
+
+        let uri = "http://example.com?offline&foo=bar&offline&foo2=bar2";
+        let new_uri = maybe_remove_offline_query_param(uri).unwrap();
+        assert_eq!(
+            new_uri.as_deref(),
+            Some("http://example.com?foo=bar&foo2=bar2")
+        );
+    }
 }
 
 #[no_mangle]
@@ -152,6 +253,58 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
             return 3;
         }
     };
+    let primary_url_with_offline_removed = match maybe_remove_offline_query_param(&primary_url) {
+        Ok(url) => url,
+        Err(e) => {
+            set_err_msg(format!("Wrong primary URL: {e}"), out_err_msg);
+            return 100;
+        }
+    };
+    let offline = config.offline != 0 || primary_url_with_offline_removed.is_some();
+    if offline {
+        let primary_url = primary_url_with_offline_removed.unwrap_or(primary_url.to_owned());
+        let mut builder =
+            Builder::new_synced_database(db_path, primary_url.to_owned(), auth_token.to_owned());
+        if config.with_webpki != 0 {
+            let https = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_webpki_roots()
+                .https_or_http()
+                .enable_http1()
+                .build();
+            builder = builder.connector(https);
+        }
+        if !config.remote_encryption_key.is_null() {
+            let key = unsafe { std::ffi::CStr::from_ptr(config.remote_encryption_key) };
+            let key = match key.to_str() {
+                Ok(k) => k,
+                Err(e) => {
+                    set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
+                    return 5;
+                }
+            };
+            if !key.is_empty() {
+                builder = builder.remote_encryption(libsql::EncryptionContext {
+                    key: libsql::EncryptionKey::Base64Encoded(key.to_string()),
+                });
+            }
+        };
+        match RT.block_on(builder.build()) {
+            Ok(db) => {
+                let db = Box::leak(Box::new(libsql_database { db }));
+                *out_db = libsql_database_t::from(db);
+                return 0;
+            }
+            Err(e) => {
+                set_err_msg(
+                    format!(
+                        "Error opening offline db path {db_path}, primary url {primary_url}: {e}"
+                    ),
+                    out_err_msg,
+                );
+                return 101;
+            }
+        }
+    }
     let mut builder = libsql::Builder::new_remote_replica(
         db_path,
         primary_url.to_string(),
@@ -188,6 +341,19 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
         let key = bytes::Bytes::copy_from_slice(key.as_bytes());
         let config = libsql::EncryptionConfig::new(libsql::Cipher::Aes256Cbc, key);
         builder = builder.encryption_config(config)
+    };
+    if !config.remote_encryption_key.is_null() {
+        let key = unsafe { std::ffi::CStr::from_ptr(config.remote_encryption_key) };
+        let key = match key.to_str() {
+            Ok(k) => k,
+            Err(e) => {
+                set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
+                return 5;
+            }
+        };
+        builder = builder.remote_encryption(libsql::EncryptionContext {
+            key: libsql::EncryptionKey::Base64Encoded(key.to_string()),
+        });
     };
     match RT.block_on(builder.build()) {
         Ok(db) => {
@@ -248,7 +414,32 @@ pub unsafe extern "C" fn libsql_open_remote(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    libsql_open_remote_internal(url, auth_token, false, out_db, out_err_msg)
+    libsql_open_remote_internal(
+        url,
+        auth_token,
+        std::ptr::null(),
+        false,
+        out_db,
+        out_err_msg,
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_remote_with_remote_encryption(
+    url: *const std::ffi::c_char,
+    auth_token: *const std::ffi::c_char,
+    remote_encryption_key: *const std::ffi::c_char,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    libsql_open_remote_internal(
+        url,
+        auth_token,
+        remote_encryption_key,
+        false,
+        out_db,
+        out_err_msg,
+    )
 }
 
 #[no_mangle]
@@ -258,12 +449,13 @@ pub unsafe extern "C" fn libsql_open_remote_with_webpki(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    libsql_open_remote_internal(url, auth_token, true, out_db, out_err_msg)
+    libsql_open_remote_internal(url, auth_token, std::ptr::null(), true, out_db, out_err_msg)
 }
 
 unsafe fn libsql_open_remote_internal(
     url: *const std::ffi::c_char,
     auth_token: *const std::ffi::c_char,
+    remote_encryption_key: *const std::ffi::c_char,
     with_webpki: bool,
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
@@ -285,6 +477,21 @@ unsafe fn libsql_open_remote_internal(
         }
     };
     let mut builder = libsql::Builder::new_remote(url.to_string(), auth_token.to_string());
+
+    if !remote_encryption_key.is_null() {
+        let key = unsafe { std::ffi::CStr::from_ptr(remote_encryption_key) };
+        let key = match key.to_str() {
+            Ok(k) => k,
+            Err(e) => {
+                set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
+                return 5;
+            }
+        };
+        builder = builder.remote_encryption(libsql::EncryptionContext {
+            key: libsql::EncryptionKey::Base64Encoded(key.to_string()),
+        });
+    };
+
     if with_webpki {
         let https = hyper_rustls::HttpsConnectorBuilder::new()
             .with_webpki_roots()
@@ -380,6 +587,45 @@ pub unsafe extern "C" fn libsql_load_extension(
             return 6;
         }
     };
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_set_reserved_bytes(
+    conn: libsql_connection_t,
+    reserved_bytes: i32,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if conn.is_null() {
+        set_err_msg("Null connection".to_string(), out_err_msg);
+        return 1;
+    }
+    let conn = conn.get_ref();
+    if let Err(err) = conn.set_reserved_bytes(reserved_bytes) {
+        set_err_msg(err.to_string(), out_err_msg);
+        return 1;
+    }
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_get_reserved_bytes(
+    conn: libsql_connection_t,
+    reserved_bytes: *mut i32,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if conn.is_null() {
+        set_err_msg("Null connection".to_string(), out_err_msg);
+        return 1;
+    }
+    let conn = conn.get_ref();
+    match conn.get_reserved_bytes() {
+        Ok(v) => *reserved_bytes = v,
+        Err(err) => {
+            set_err_msg(err.to_string(), out_err_msg);
+            return 1;
+        }
+    }
     0
 }
 
@@ -588,13 +834,13 @@ pub unsafe extern "C" fn libsql_query_stmt(
         Ok(rows) => {
             let rows = Box::leak(Box::new(libsql_rows { result: rows }));
             *out_rows = libsql_rows_t::from(rows);
+            0
         }
         Err(e) => {
             set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
-            return 1;
+            1
         }
-    };
-    0
+    }
 }
 
 #[no_mangle]
@@ -659,13 +905,13 @@ pub unsafe extern "C" fn libsql_query(
         Ok(rows) => {
             let rows = Box::leak(Box::new(libsql_rows { result: rows }));
             *out_rows = libsql_rows_t::from(rows);
+            0
         }
         Err(e) => {
             set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
-            return 1;
+            1
         }
-    };
-    0
+    }
 }
 
 #[no_mangle]

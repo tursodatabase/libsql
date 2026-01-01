@@ -12,6 +12,7 @@ use tokio::time::{Duration, Instant};
 
 use crate::connection::MakeConnection;
 use crate::database::Connection;
+use crate::metrics::STREAM_HANDLES_COUNT;
 
 use super::super::ProtocolError;
 use super::Server;
@@ -169,6 +170,8 @@ pub async fn acquire<'srv>(
                 baton_seq: rand::random(),
             });
             state.handles.insert(stream.stream_id, Handle::Acquired);
+            STREAM_HANDLES_COUNT.increment(1.0);
+
             tracing::debug!(
                 "Stream {} was created with baton seq {}",
                 stream.stream_id,
@@ -253,6 +256,7 @@ impl<'srv> Drop for Guard<'srv> {
             tracing::debug!("Stream {stream_id} was released for further use");
         } else {
             tracing::debug!("Stream {stream_id} was closed");
+            STREAM_HANDLES_COUNT.decrement(1.0);
         }
     }
 }
@@ -374,6 +378,7 @@ fn pump_expire(state: &mut ServerStreamState, cx: &mut task::Context) {
 
         match state.handles.get_mut(&stream_id) {
             Some(handle @ Handle::Available(_)) => {
+                STREAM_HANDLES_COUNT.decrement(1.0);
                 *handle = Handle::Expired;
             }
             _ => continue,

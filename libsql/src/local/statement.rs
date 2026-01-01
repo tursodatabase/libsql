@@ -134,6 +134,12 @@ impl Statement {
         }
     }
 
+    /// Interrupt the statement.
+    pub fn interrupt(&self) -> Result<()> {
+        self.inner.interrupt();
+        Ok(())
+    }
+
     /// Reset the prepared statement to initial state for reuse.
     pub fn reset(&self) {
         self.inner.reset();

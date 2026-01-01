@@ -1,15 +1,26 @@
 #![allow(dead_code)]
 
+use crate::auth::{AuthAction, AuthContext, Authorization};
+use crate::connection::AuthHook;
 use crate::local::rows::BatchedRows;
 use crate::params::Params;
-use crate::{connection::BatchRows, errors};
+use crate::{
+    connection::{BatchRows, Op, UpdateHook},
+    errors,
+};
+use std::time::Duration;
 
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 
 use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
+use parking_lot::RwLock;
 use std::{ffi::c_int, fmt, path::Path, sync::Arc};
+
+struct Container {
+    cb: Box<UpdateHook>,
+}
 
 /// A connection to a libSQL database.
 #[derive(Clone)]
@@ -20,6 +31,8 @@ pub struct Connection {
 
     #[cfg(feature = "replication")]
     pub(crate) writer: Option<crate::replication::Writer>,
+
+    authorizer: Arc<RwLock<Option<AuthHook>>>,
 }
 
 impl Drop for Connection {
@@ -62,6 +75,7 @@ impl Connection {
             drop_ref: Arc::new(()),
             #[cfg(feature = "replication")]
             writer: db.writer()?,
+            authorizer: Arc::new(RwLock::new(None)),
         };
         #[cfg(feature = "sync")]
         if let Some(_) = db.sync_ctx {
@@ -69,9 +83,7 @@ impl Connection {
             // disabled so that we can sync our changes back to a remote
             // server.
             conn.query("PRAGMA journal_mode = WAL", Params::None)?;
-            unsafe {
-                ffi::libsql_wal_disable_checkpoint(conn.raw);
-            }
+            conn.wal_disable_checkpoint()?;
         }
         Ok(conn)
     }
@@ -88,6 +100,7 @@ impl Connection {
             drop_ref: Arc::new(()),
             #[cfg(feature = "replication")]
             writer: None,
+            authorizer: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -355,6 +368,16 @@ impl Connection {
         Transaction::begin(self.clone(), tx_behavior)
     }
 
+    pub fn interrupt(&self) -> Result<()> {
+        unsafe { ffi::sqlite3_interrupt(self.raw) };
+        Ok(())
+    }
+
+    pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
+        unsafe { ffi::sqlite3_busy_timeout(self.raw, timeout.as_millis() as i32) };
+        Ok(())
+    }
+
     pub fn is_autocommit(&self) -> bool {
         unsafe { ffi::sqlite3_get_autocommit(self.raw) != 0 }
     }
@@ -382,6 +405,24 @@ impl Connection {
             w.new_client_id();
             w
         })
+    }
+
+    /// Installs update hook
+    pub fn add_update_hook(&self, cb: Box<UpdateHook>) {
+        let c = Box::new(Container { cb });
+        let ptr: *mut Container = std::ptr::from_mut(Box::leak(c));
+
+        let old_data = unsafe {
+            ffi::sqlite3_update_hook(
+                self.raw,
+                Some(update_hook_cb),
+                ptr as *mut ::std::os::raw::c_void,
+            )
+        };
+
+        if !old_data.is_null() {
+            let _ = unsafe { Box::from_raw(old_data as *mut Container) };
+        }
     }
 
     pub fn enable_load_extension(&self, onoff: bool) -> Result<()> {
@@ -446,6 +487,75 @@ impl Connection {
         }
     }
 
+    pub fn authorizer(&self, hook: Option<AuthHook>) -> Result<()> {
+        unsafe {
+            let rc =
+                libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), None, std::ptr::null_mut());
+            if rc != ffi::SQLITE_OK {
+                return Err(crate::errors::Error::SqliteFailure(
+                    rc as std::ffi::c_int,
+                    "Failed to clear authorizer".to_string(),
+                ));
+            }
+        }
+
+        *self.authorizer.write() = hook.clone();
+
+        let (callback, user_data) = match hook {
+            Some(_) => {
+                let callback = authorizer_callback as unsafe extern "C" fn(_, _, _, _, _, _) -> _;
+                let user_data = self as *const Connection as *mut ::std::os::raw::c_void;
+                (Some(callback), user_data)
+            }
+            None => (None, std::ptr::null_mut()),
+        };
+
+        let rc =
+            unsafe { libsql_sys::ffi::sqlite3_set_authorizer(self.handle(), callback, user_data) };
+        if rc != ffi::SQLITE_OK {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                "Failed to set authorizer".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn wal_checkpoint(&self, truncate: bool) -> Result<()> {
+        let mut pn_log = 0i32;
+        let mut pn_ckpt = 0i32;
+        let checkpoint_mode = if truncate {
+            libsql_sys::ffi::SQLITE_CHECKPOINT_TRUNCATE
+        } else {
+            libsql_sys::ffi::SQLITE_CHECKPOINT_PASSIVE
+        };
+        let rc = unsafe {
+            libsql_sys::ffi::sqlite3_wal_checkpoint_v2(
+                self.handle(),
+                std::ptr::null(),
+                checkpoint_mode,
+                &mut pn_log,
+                &mut pn_ckpt,
+            )
+        };
+        if rc != 0 {
+            let err_msg = unsafe { libsql_sys::ffi::sqlite3_errmsg(self.handle()) };
+            let err_msg = unsafe { std::ffi::CStr::from_ptr(err_msg) };
+            let err_msg = err_msg.to_string_lossy().to_string();
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("Failed to checkpoint WAL: {}", err_msg),
+            ));
+        }
+        if truncate && (pn_log != 0 || pn_ckpt != 0) {
+            return Err(crate::errors::Error::SqliteFailure(
+                libsql_sys::ffi::SQLITE_ERROR,
+                "unable to truncate WAL".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
     pub(crate) fn wal_frame_count(&self) -> u32 {
         let mut max_frame_no: std::os::raw::c_uint = 0;
         unsafe { libsql_sys::ffi::libsql_wal_frame_count(self.handle(), &mut max_frame_no) };
@@ -461,6 +571,13 @@ impl Connection {
         // Use a BytesMut to provide cheaper clones of frame data (think retries)
         // and more efficient buffer usage for extracting wal frames and spliting them off.
         let mut buf = bytes::BytesMut::with_capacity(frame_size);
+
+        if frame_no == 0 {
+            return Err(errors::Error::SqliteFailure(
+                1,
+                "frame_no must be non-zero".to_string(),
+            ));
+        }
 
         let rc = unsafe {
             libsql_sys::ffi::libsql_wal_get_frame(
@@ -482,10 +599,310 @@ impl Connection {
 
         Ok(buf)
     }
+
+    fn wal_disable_checkpoint(&self) -> Result<()> {
+        let rc = unsafe { libsql_sys::ffi::libsql_wal_disable_checkpoint(self.handle()) };
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("wal_disable_checkpoint failed"),
+            ));
+        }
+        Ok(())
+    }
+    fn wal_insert_begin(&self) -> Result<()> {
+        let rc = unsafe { libsql_sys::ffi::libsql_wal_insert_begin(self.handle()) };
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("wal_insert_begin failed"),
+            ));
+        }
+        Ok(())
+    }
+
+    fn wal_insert_end(&self) -> Result<()> {
+        let rc = unsafe { libsql_sys::ffi::libsql_wal_insert_end(self.handle()) };
+        if rc != 0 {
+            return Err(crate::errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                format!("wal_insert_end failed"),
+            ));
+        }
+        Ok(())
+    }
+
+    fn wal_insert_frame(&self, frame_no: u32, frame: &[u8]) -> Result<()> {
+        let mut conflict = 0i32;
+        let rc = unsafe {
+            libsql_sys::ffi::libsql_wal_insert_frame(
+                self.handle(),
+                frame_no,
+                frame.as_ptr() as *mut std::ffi::c_void,
+                frame.len() as u32,
+                &mut conflict,
+            )
+        };
+
+        if conflict != 0 {
+            return Err(errors::Error::WalConflict);
+        }
+        if rc != 0 {
+            return Err(errors::Error::SqliteFailure(
+                rc as std::ffi::c_int,
+                "wal_insert_frame failed".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn wal_insert_handle(&self) -> WalInsertHandle<'_> {
+        WalInsertHandle {
+            conn: self,
+            in_session: RwLock::new(false),
+        }
+    }
+
+    fn reserved_bytes(&self, reserve: Option<i32>) -> Result<i32> {
+        let mut reserve_value = reserve.unwrap_or(0) as std::ffi::c_int;
+        let rc = unsafe {
+            ffi::sqlite3_file_control(
+                self.raw,
+                "main\0".as_ptr() as *const _,
+                ffi::SQLITE_FCNTL_RESERVE_BYTES,
+                &mut reserve_value as *mut _ as *mut std::ffi::c_void,
+            )
+        };
+        if rc != ffi::SQLITE_OK {
+            return Err(Error::SqliteFailure(
+                rc,
+                errors::error_from_handle(self.raw),
+            ));
+        }
+        Ok(reserve_value as i32)
+    }
+
+    pub fn set_reserved_bytes(&self, reserved_bytes: i32) -> Result<()> {
+        self.reserved_bytes(Some(reserved_bytes))?;
+        Ok(())
+    }
+
+    pub fn get_reserved_bytes(&self) -> Result<i32> {
+        self.reserved_bytes(None)
+    }
+}
+
+unsafe extern "C" fn authorizer_callback(
+    user_data: *mut ::std::os::raw::c_void,
+    code: ::std::os::raw::c_int,
+    arg1: *const ::std::os::raw::c_char,
+    arg2: *const ::std::os::raw::c_char,
+    database_name: *const ::std::os::raw::c_char,
+    accessor: *const ::std::os::raw::c_char,
+) -> ::std::os::raw::c_int {
+    let conn = user_data as *const Connection;
+    let hook = unsafe { (*conn).authorizer.read() };
+    let hook = match &*hook {
+        Some(hook) => hook,
+        None => return ffi::SQLITE_OK,
+    };
+    let arg1 = if arg1.is_null() {
+        None
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(arg1).to_str().ok() }
+    };
+
+    let arg2 = if arg2.is_null() {
+        None
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(arg2).to_str().ok() }
+    };
+    let database_name = if database_name.is_null() {
+        None
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(database_name).to_str().ok() }
+    };
+    let accessor = if accessor.is_null() {
+        None
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(accessor).to_str().ok() }
+    };
+    let action = AuthAction::from_raw(code, arg1, arg2);
+    let auth_context = AuthContext {
+        action,
+        database_name,
+        accessor,
+    };
+    match hook(&auth_context) {
+        Authorization::Allow => ffi::SQLITE_OK,
+        Authorization::Deny => ffi::SQLITE_DENY,
+        Authorization::Ignore => ffi::SQLITE_IGNORE,
+    }
+}
+
+pub(crate) struct WalInsertHandle<'a> {
+    conn: &'a Connection,
+    in_session: RwLock<bool>,
+}
+
+impl WalInsertHandle<'_> {
+    pub fn insert_at(&self, frame_no: u32, frame: &[u8]) -> Result<()> {
+        assert!(*self.in_session.read());
+        self.conn.wal_insert_frame(frame_no, frame)
+    }
+
+    pub fn in_session(&self) -> bool {
+        *self.in_session.read()
+    }
+
+    pub fn begin(&self) -> Result<()> {
+        assert!(!*self.in_session.read());
+        self.conn.wal_insert_begin()?;
+        *self.in_session.write() = true;
+        Ok(())
+    }
+
+    pub fn end(&self) -> Result<()> {
+        assert!(*self.in_session.read());
+        self.conn.wal_insert_end()?;
+        *self.in_session.write() = false;
+        Ok(())
+    }
+}
+
+impl Drop for WalInsertHandle<'_> {
+    fn drop(&mut self) {
+        if *self.in_session.read() {
+            if let Err(err) = self.conn.wal_insert_end() {
+                tracing::error!("{:?}", err);
+                Err(err).unwrap()
+            }
+        }
+    }
 }
 
 impl fmt::Debug for Connection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Connection").finish()
+    }
+}
+
+#[no_mangle]
+extern "C" fn update_hook_cb(
+    data: *mut ::std::os::raw::c_void,
+    op: ::std::os::raw::c_int,
+    db_name: *const ::std::os::raw::c_char,
+    table_name: *const ::std::os::raw::c_char,
+    row_id: i64,
+) {
+    let db = unsafe { std::ffi::CStr::from_ptr(db_name).to_string_lossy() };
+    let table = unsafe { std::ffi::CStr::from_ptr(table_name).to_string_lossy() };
+
+    let c = unsafe { &mut *(data as *mut Container) };
+    let o = match op {
+        9 => Op::Delete,
+        18 => Op::Insert,
+        23 => Op::Update,
+        _ => unreachable!("Unknown operation {op}"),
+    };
+
+    (*c.cb)(o, &db, &table, row_id);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        local::{Connection, Database},
+        params::Params,
+        OpenFlags,
+    };
+
+    #[tokio::test]
+    pub async fn test_kek() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let path1 = temp_dir.path().join("local1.db");
+        let db1 = Database::new(path1.to_str().unwrap().to_string(), OpenFlags::default());
+        let conn1 = Connection::connect(&db1).unwrap();
+        conn1
+            .query("PRAGMA journal_mode = WAL", Params::None)
+            .unwrap();
+        conn1.wal_disable_checkpoint().unwrap();
+
+        let path2 = temp_dir.path().join("local2.db");
+        let db2 = Database::new(path2.to_str().unwrap().to_string(), OpenFlags::default());
+        let conn2 = Connection::connect(&db2).unwrap();
+        conn2
+            .query("PRAGMA journal_mode = WAL", Params::None)
+            .unwrap();
+        conn2.wal_disable_checkpoint().unwrap();
+
+        conn1.execute("CREATE TABLE t(x)", Params::None).unwrap();
+        const CNT: usize = 32;
+        for _ in 0..CNT {
+            conn1
+                .execute(
+                    "INSERT INTO t VALUES (randomblob(1024 * 1024))",
+                    Params::None,
+                )
+                .unwrap();
+        }
+        let handle = conn2.wal_insert_handle();
+        handle.begin().unwrap();
+
+        let frame_count = conn1.wal_frame_count();
+        for frame_no in 0..frame_count {
+            let frame = conn1.wal_get_frame(frame_no + 1, 4096).unwrap();
+            handle.insert_at(frame_no as u32 + 1, &frame).unwrap();
+        }
+        let result = conn2.query("SELECT COUNT(*) FROM t", Params::None).unwrap();
+        let row = result.unwrap().next().unwrap().unwrap();
+        let column = row.get_value(0).unwrap();
+        let cnt = *column.as_integer().unwrap();
+        assert_eq!(cnt, 32 as i64);
+    }
+
+    #[tokio::test]
+    pub async fn test_reserved_bytes() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db_path = temp_dir.path().join("local1.db");
+        let reserved_bytes = 28;
+
+        {
+            let db = Database::new(db_path.to_str().unwrap().to_string(), OpenFlags::default());
+            let conn = Connection::connect(&db).unwrap();
+            conn.query("PRAGMA journal_mode = WAL", Params::None)
+                .unwrap();
+            conn.set_reserved_bytes(reserved_bytes).unwrap();
+            conn.query("VACUUM", Params::None).unwrap();
+            let reserved = conn.get_reserved_bytes().unwrap();
+            assert_eq!(reserved, reserved_bytes);
+        }
+
+        // let's verify we can see this from another connection
+        {
+            let db = Database::new(db_path.to_str().unwrap().to_string(), OpenFlags::default());
+            let conn = Connection::connect(&db).unwrap();
+            let reserved = conn.get_reserved_bytes().unwrap();
+            assert_eq!(reserved, reserved_bytes);
+        }
+
+        // lets make some inserts, checkpoint and verify again
+        {
+            let db = Database::new(db_path.to_str().unwrap().to_string(), OpenFlags::default());
+            let conn = Connection::connect(&db).unwrap();
+            conn.execute("CREATE TABLE t(x)", Params::None).unwrap();
+            const CNT: usize = 8;
+            for _ in 0..CNT {
+                conn.execute(
+                    "INSERT INTO t VALUES (randomblob(1024 * 1024))",
+                    Params::None,
+                )
+                .unwrap();
+            }
+            conn.wal_checkpoint(true).unwrap();
+            let reserved = conn.get_reserved_bytes().unwrap();
+            assert_eq!(reserved, reserved_bytes);
+        }
     }
 }

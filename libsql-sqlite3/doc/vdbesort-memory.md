@@ -5,8 +5,8 @@
 
 Memory allocation is slightly different depending on:
 
-  * whether or not SQLITE_CONFIG_SMALL_MALLOC is set, and
-  * whether or not worker threads are enabled.
+* whether or not SQLITE_CONFIG_SMALL_MALLOC is set, and
+* whether or not worker threads are enabled.
 
 ## SQLITE_CONFIG_SMALL_MALLOC=0
 
@@ -27,7 +27,7 @@ main thread to continue to accumulate keys. Buffers are reused once they
 have been flushed, so in this case at most (nWorker+1) buffers are allocated
 and used, where nWorker is the number of configured worker threads.
 
-There are no other significant users of heap memory in the sorter module. 
+There are no other significant users of heap memory in the sorter module.
 Once sorted buffers of keys have been flushed to disk, they are read back
 either by mapping the file (via sqlite3_file.xFetch()) or else read back
 in one page at a time.

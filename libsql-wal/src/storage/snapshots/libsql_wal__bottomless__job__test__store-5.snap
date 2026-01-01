@@ -1,5 +1,0 @@
----
-source: libsql-wal/src/bottomless/job.rs
-expression: "crc32fast::hash(&data)"
----
-558161692

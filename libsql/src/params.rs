@@ -141,6 +141,13 @@ impl IntoParams for Params {
     }
 }
 
+impl Sealed for &Params {}
+impl IntoParams for &Params {
+    fn into_params(self) -> Result<Params> {
+        Ok(self.clone())
+    }
+}
+
 impl<T: IntoValue> Sealed for Vec<T> {}
 impl<T: IntoValue> IntoParams for Vec<T> {
     fn into_params(self) -> Result<Params> {

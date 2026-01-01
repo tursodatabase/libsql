@@ -1,6 +1,0 @@
-
-  CREATE VIRTUAL TABLE t1 USING fts3(x);
-
-
-  CREATE VIRTUAL TABLE t1 USING fts4(x);
-

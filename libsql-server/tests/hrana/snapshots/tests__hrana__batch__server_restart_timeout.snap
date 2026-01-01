@@ -1,0 +1,6 @@
+---
+source: libsql-server/tests/hrana/batch.rs
+expression: err
+snapshot_kind: text
+---
+Hrana: `api error: `status=400 Bad Request, body={"message":"The stream has expired due to inactivity","code":"STREAM_EXPIRED"}``

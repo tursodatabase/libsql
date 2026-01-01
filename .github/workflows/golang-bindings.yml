@@ -68,8 +68,7 @@ jobs:
         path: "go-libsql"
 
     - name: Copy sql-experimental library to go-libsql
-      run: cp target/release/libsql_experimental.a go-libsql/lib/darwin_amd64/
-           && cp target/release/libsql_experimental.a go-libsql/lib/darwin_arm64/
+      run: cp target/release/libsql_experimental.a go-libsql/lib/darwin_arm64/
            && cp target/release/libsql_experimental.a go-libsql/lib/linux_amd64/
            && cp target/release/libsql_experimental.a go-libsql/lib/linux_arm64/
            && cp bindings/c/include/libsql.h go-libsql/lib/include/

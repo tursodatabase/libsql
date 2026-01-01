@@ -170,10 +170,6 @@ pub struct LegacyConnection<T> {
 #[cfg(test)]
 impl LegacyConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
     pub async fn new_test(path: &Path) -> Self {
-        #[cfg(not(feature = "durable-wal"))]
-        use libsql_sys::wal::either::Either as EitherWAL;
-        #[cfg(feature = "durable-wal")]
-        use libsql_sys::wal::either::Either3 as EitherWAL;
         use libsql_sys::wal::Sqlite3WalManager;
 
         Self::new(
@@ -188,7 +184,7 @@ impl LegacyConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
             Default::default(),
             Arc::new(|_| unreachable!()),
             ConnectionManager::new(TXN_TIMEOUT),
-            Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
+            Arc::new(|| Sqlite3WalManager::default()),
         )
         .await
         .unwrap()

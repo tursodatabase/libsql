@@ -48,8 +48,6 @@ Both encodings support forward compatibility: when a peer (client or server)
 receives a protocol structure that includes an unrecognized field (object
 property in JSON or a message field in Protobuf), it must ignore this field.
 
-
-
 ## Hrana over WebSocket
 
 Hrana over WebSocket runs on top of the [WebSocket protocol][rfc6455].
@@ -68,7 +66,7 @@ the Hrana protocol and forward compatibility with newer versions.
 
 The WebSocket subprotocols defined in all Hrana versions are as follows:
 
-| Subprotocol | Version | Encoding | 
+| Subprotocol | Version | Encoding |
 |-------------|---------|----------|
 | `hrana1`    |       1 |     JSON |
 | `hrana2`    |       2 |     JSON |
@@ -581,8 +579,6 @@ For example, this means that a client can send an `open_stream` request
 immediately followed by a batch of `execute` requests on that stream and the
 server will always process them in correct order.
 
-
-
 ## Hrana over HTTP
 
 Hrana over HTTP runs on top of HTTP. Any version of the HTTP protocol can be
@@ -624,7 +620,7 @@ specified method and URL.
 
 #### Check support for version 3 (JSON)
 
-```
+```HTTP
 GET v3
 ```
 
@@ -633,7 +629,7 @@ should return a 2xx response to this request.
 
 #### Check support for version 3 (Protobuf)
 
-```
+```text
 GET v3-protobuf
 ```
 
@@ -642,7 +638,7 @@ should return a 2xx response to this request.
 
 #### Execute a pipeline of requests (JSON)
 
-```
+```HTTP
 POST v3/pipeline
 -> JSON: PipelineReqBody
 <- JSON: PipelineRespBody
@@ -703,7 +699,7 @@ executes all requests, even if some of them return errors.
 
 #### Execute a pipeline of requests (Protobuf)
 
-```
+```text
 POST v3-protobuf/pipeline
 -> Protobuf: PipelineReqBody
 <- Protobuf: PipelineRespBody
@@ -714,7 +710,7 @@ the request and response body using Protobuf.
 
 #### Execute a batch using a cursor (JSON)
 
-```
+```HTTP
 POST v3/cursor
 -> JSON: CursorReqBody
 <- line of JSON: CursorRespBody
@@ -745,7 +741,7 @@ response have the same meaning as in the `v3/pipeline` endpoint.
 
 #### Execute a batch using a cursor (Protobuf)
 
-```
+```text
 POST v3-protobuf/cursor
 -> Protobuf: CursorReqBody
 <- length-delimited Protobuf: CursorRespBody
@@ -756,7 +752,7 @@ The `v3-protobuf/cursor` endpoint is the same as `v3/cursor` endpoint, but the
 request and response are encoded using Protobuf.
 
 In the response body, the structures are prefixed with a length delimiter: a
-Protobuf varint that encodes the length of the structure. The first structure is
+Protobuf variant that encodes the length of the structure. The first structure is
 `CursorRespBody`, followed by an arbitrary number of `CursorEntry` structures.
 
 ### Requests
@@ -818,7 +814,7 @@ type ExecuteStreamResp = {
 ```
 
 The `execute` request has the same semantics as the `execute` request in Hrana
-over WebSocket. 
+over WebSocket.
 
 > This request was introduced in Hrana 2.
 
@@ -946,8 +942,6 @@ the encoding indicated by the `Content-Type` response header), but the client
 must be able to handle responses with different bodies, such as plaintext or
 HTML, which might be returned by various components in the HTTP stack.
 
-
-
 ## Shared structures
 
 This section describes protocol structures that are common for both Hrana over
@@ -1051,7 +1045,7 @@ table. The rowid value is a 64-bit signed integer encoded as a string in JSON.
 For other statements, the value is undefined.
 
 > This structure was introduced in Hrana 1. The `decltype` field in the `Col`
-> strucure was added in Hrana 2.
+> structure was added in Hrana 2.
 
 ### Batches
 
@@ -1161,7 +1155,7 @@ At the beginning of every batch step that is executed, the server produces a
 `step_begin` entry. This entry specifies the index of the step (which refers to
 the `steps` array in the `Batch` structure). The server sends entries for steps
 in the order in which they are executed. If a step is skipped (because its
-condition evalated to false), the server does not send any entry for it.
+condition evaluated to false), the server does not send any entry for it.
 
 After a `step_begin` entry, the server sends an arbitrary number of `row`
 entries that encode the individual rows produced by the statement, terminated by
@@ -1283,9 +1277,6 @@ depends on the `type` field:
 - `blob`: a binary blob with. In JSON, the value is base64-encoded.
 
 > This structure was introduced in Hrana 1.
-
-
-
 
 ## Protobuf schema
 

@@ -1,9 +1,10 @@
 ---
 source: libsql-server/tests/cluster/replication.rs
 expression: "conn.execute(\"create table test (x)\", ()).await.unwrap_err()"
+snapshot_kind: text
 ---
 Hrana(
     Api(
-        "{\"error\":\"Replicator error: Requested namespace doesn't exist\"}",
+        "status=404 Not Found, body={\"error\":\"Replicator error: Requested namespace doesn't exist\"}",
     ),
 )

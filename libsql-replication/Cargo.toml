@@ -1,18 +1,16 @@
 [package]
 name = "libsql_replication"
-version = "0.6.0"
-edition = "2021"
-description = "libSQL replication protocol"
-repository = "https://github.com/tursodatabase/libsql"
-license = "MIT"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Replication protocol for libSQL"
 
 [dependencies]
 tonic = { version = "0.11", default-features = false, features = ["codegen", "prost"] }
 prost = "0.12"
-libsql-sys = { version = "0.8", path = "../libsql-sys", default-features = false, features = ["wal", "rusqlite", "api"] }
-libsql-wal = { version = "0.1.0-alpha.1", path = "../libsql-wal/", optional = true }
+libsql-sys = { workspace = true, default-features = false, features = ["wal", "rusqlite", "api"] }
 rusqlite = { workspace = true }
 parking_lot = "0.12.1"
 bytes = { version = "1.5.0", features = ["serde"] } 
@@ -38,4 +36,3 @@ tonic-build = "0.11"
 
 [features]
 encryption = ["libsql-sys/encryption"]
-libsql_wal = ["dep:libsql-wal"]

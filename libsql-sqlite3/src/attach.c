@@ -61,6 +61,14 @@ int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName){
 int libsql_handle_extra_attach_params(sqlite3* db, const char* zName, const char* zPath, sqlite3_value* pKey, char** zErrDyn);
 #endif
 
+#ifdef LIBSQL_ENCRYPTION
+SQLITE_PRIVATE int sqlite3mcHandleAttachKey(sqlite3*, const char*, const char*, sqlite3_value*, char**);
+#endif
+
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+int libsql_db_has_codec(sqlite3_vfs* pVfs, const char* zFilename);
+#endif
+
 /*
 ** An SQL user-function registered to do the work of an ATTACH statement. The
 ** three arguments to the function come directly from an attach statement:
@@ -113,7 +121,8 @@ static void attachFunc(
     Btree *pNewBt = 0;
     pVfs = sqlite3_vfs_find("memdb");
     if( pVfs==0 ) return;
-    rc = sqlite3BtreeOpen(pVfs, "x\0", db, &pNewBt, 0, SQLITE_OPEN_MAIN_DB);
+    rc = sqlite3BtreeOpen(pVfs, "x\0", db, &pNewBt, 0, SQLITE_OPEN_MAIN_DB,
+                          0);  /* Memdb databases are never encrypted */
     if( rc==SQLITE_OK ){
       Schema *pNewSchema = sqlite3SchemaGet(db, pNewBt);
       if( pNewSchema ){
@@ -182,7 +191,13 @@ static void attachFunc(
     }
     assert( pVfs );
     flags |= SQLITE_OPEN_MAIN_DB;
-    rc = sqlite3BtreeOpen(pVfs, zPath, db, &pNew->pBt, 0, flags);
+    /* Check encryption status for this database file */
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+    pNew->hasCodec = libsql_db_has_codec(pVfs, zPath);
+#else
+    pNew->hasCodec = 0;
+#endif
+    rc = sqlite3BtreeOpen(pVfs, zPath, db, &pNew->pBt, 0, flags, pNew->hasCodec);
     db->nDb++;
     pNew->zDbSName = sqlite3DbStrDup(db, zName);
   }
@@ -220,6 +235,16 @@ static void attachFunc(
     rc = libsql_handle_extra_attach_params(db, zName, zPath, argv, &zErrDyn);
   }
 #endif
+
+#ifdef LIBSQL_ENCRYPTION
+  /* If the ATTACH statement came with key parameter, then lets handle it here. */
+  if( rc==SQLITE_OK ){
+    if( argv != NULL && argv[0] != NULL && argv[1] != NULL && argv[2] != NULL ){
+      rc = sqlite3mcHandleAttachKey(db, zName, zPath, argv[2], &zErrDyn);
+    }
+  }
+#endif
+
   sqlite3_free_filename( zPath );
 
   /* If the file was opened successfully, read the schema for the new database.

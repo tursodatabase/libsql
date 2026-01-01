@@ -99,7 +99,7 @@ fn basic_metrics() {
 
         let snapshot = snapshot_metrics();
         snapshot.assert_counter("libsql_server_libsql_execute_program", 3);
-        snapshot.assert_counter("libsql_server_user_http_response", 3);
+        snapshot.assert_counter("libsql_server_user_http_response", 4);
 
         for (key, (_, _, val)) in snapshot.snapshot() {
             if key.kind() == metrics_util::MetricKind::Counter
@@ -107,7 +107,7 @@ fn basic_metrics() {
             {
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-remote-"));
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(3));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(4));
             }
         }
 
@@ -422,7 +422,7 @@ async fn insert_rows(conn: &Connection, start: u32, count: u32) -> libsql::Resul
 
 async fn insert_rows_with_args(conn: &Connection, start: u32, count: u32) -> libsql::Result<()> {
     for i in start..(start + count) {
-        let mut stmt = conn.prepare("INSERT INTO test(a, b) VALUES(?,?)").await?;
+        let stmt = conn.prepare("INSERT INTO test(a, b) VALUES(?,?)").await?;
         stmt.execute(params![i, i]).await?;
     }
     Ok(())

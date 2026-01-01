@@ -18,7 +18,7 @@ use tonic::metadata::AsciiMetadataValue;
 use tonic::{Response, Status};
 use zerocopy::FromBytes;
 
-async fn time<O>(fut: impl Future<Output = O>) -> (O, Duration) {
+pub(crate) async fn time<O>(fut: impl Future<Output = O>) -> (O, Duration) {
     let before = Instant::now();
     let out = fut.await;
     (out, before.elapsed())

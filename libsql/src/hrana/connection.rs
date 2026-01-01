@@ -28,7 +28,7 @@ where
 
 impl<T> HttpConnection<T>
 where
-    T: HttpSend,
+    T: HttpSend + Send + Sync + 'static,
 {
     pub fn new(url: String, token: String, inner: T) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
@@ -80,9 +80,9 @@ where
         )
     }
 
-    pub fn prepare(&self, sql: &str) -> crate::Result<Statement<T>> {
+    pub async fn prepare(&self, sql: &str) -> crate::Result<Statement<T>> {
         let stream = self.current_stream().clone();
-        Statement::new(stream, sql.to_string(), true)
+        Statement::new(stream, sql.to_string(), true).await
     }
 }
 

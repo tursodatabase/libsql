@@ -2,7 +2,7 @@
 
 Version 1 of the HTTP API ("Hrana over HTTP") is designed to complement the
 WebSocket-based Hrana protocol for use cases that don't require stateful
-database connections and for which the additional network rountrip required by
+database connections and for which the additional network roundtrip required by
 WebSockets relative to HTTP is not necessary.
 
 This API aims to be of production quality and it is primarily intended to be
@@ -25,7 +25,7 @@ All request and response bodies are encoded in JSON, with content type
 
 ## Execute a statement
 
-```
+```HTTP
 POST /v1/execute
 
 -> {
@@ -44,7 +44,7 @@ Hrana.
 
 ## Execute a batch
 
-```
+```HTTP
 POST /v1/batch
 
 -> {

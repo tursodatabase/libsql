@@ -40,6 +40,8 @@ typedef struct {
   const char *encryption_key;
   int sync_interval;
   char with_webpki;
+  char offline;
+  const char *remote_encryption_key;
 } libsql_config;
 
 typedef const libsql_connection *libsql_connection_t;
@@ -91,6 +93,12 @@ int libsql_open_file(const char *url, libsql_database_t *out_db, const char **ou
 
 int libsql_open_remote(const char *url, const char *auth_token, libsql_database_t *out_db, const char **out_err_msg);
 
+int libsql_open_remote_with_remote_encryption(const char *url,
+                                              const char *auth_token,
+                                              const char *remote_encryption_key,
+                                              libsql_database_t *out_db,
+                                              const char **out_err_msg);
+
 int libsql_open_remote_with_webpki(const char *url,
                                    const char *auth_token,
                                    libsql_database_t *out_db,
@@ -104,6 +112,10 @@ int libsql_load_extension(libsql_connection_t conn,
                           const char *path,
                           const char *entry_point,
                           const char **out_err_msg);
+
+int libsql_set_reserved_bytes(libsql_connection_t conn, int32_t reserved_bytes, const char **out_err_msg);
+
+int libsql_get_reserved_bytes(libsql_connection_t conn, int32_t *reserved_bytes, const char **out_err_msg);
 
 int libsql_reset(libsql_connection_t conn, const char **out_err_msg);
 

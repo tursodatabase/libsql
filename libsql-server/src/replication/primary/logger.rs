@@ -177,6 +177,10 @@ impl LogFile {
     }
 
     pub fn commit(&mut self) -> anyhow::Result<()> {
+        // Ensure frame data is durable before updating the header.
+        // Without this, a crash could leave the header claiming more frames
+        // than actually exist on disk.
+        self.file.sync_data()?;
         self.header.frame_count += self.uncommitted_frame_count.into();
         self.uncommitted_frame_count = 0;
         self.commited_checksum = self.uncommitted_checksum;
@@ -193,6 +197,7 @@ impl LogFile {
     pub fn write_header(&mut self) -> anyhow::Result<()> {
         self.file.write_all_at(self.header.as_bytes(), 0)?;
         self.file.flush()?;
+        self.file.sync_all()?;
 
         Ok(())
     }
@@ -387,7 +392,7 @@ impl LogFile {
             ..self.header
         };
         new_log_file.header = new_header;
-        new_log_file.write_header().unwrap();
+        new_log_file.write_header()?;
         // swap old and new snapshot
         // FIXME(marin): the dest path never changes, store it somewhere.
         atomic_rename(&to_compact_log_path, path.join("wallog")).unwrap();

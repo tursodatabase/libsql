@@ -100,11 +100,12 @@ impl ReplicationLoggerWalWrapper {
 
     /// write buffered pages to the logger, without committing.
     fn flush(&mut self, size_after: u32) -> anyhow::Result<()> {
-        if !self.buffer.is_empty() {
-            self.buffer.last_mut().unwrap().size_after = size_after;
-            self.logger.write_pages(&self.buffer)?;
-            self.buffer.clear();
-        }
+        let Some(last_page) = self.buffer.last_mut() else {
+            return Ok(());
+        };
+        last_page.size_after = size_after;
+        self.logger.write_pages(&self.buffer)?;
+        self.buffer.clear();
 
         Ok(())
     }

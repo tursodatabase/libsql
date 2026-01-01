@@ -204,11 +204,6 @@ impl NamespaceStore {
                             tracing::error!("error resetting namespace `{ns}`: {e}");
                         }
                     }
-                    ResetOp::Destroy(ns) => {
-                        if let Err(e) = this.destroy(ns.clone(), false).await {
-                            tracing::error!("error destroying namesace `{ns}`: {e}",);
-                        }
-                    }
                 }
             });
         })

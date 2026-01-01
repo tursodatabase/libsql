@@ -27,7 +27,7 @@ impl CloudflareSender {
             &RequestInit {
                 body: Some(JsValue::from(body)),
                 headers: {
-                    let mut headers = Headers::new();
+                    let headers = Headers::new();
                     headers.append("Authorization", auth.as_ref())?;
                     headers
                 },

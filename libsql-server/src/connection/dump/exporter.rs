@@ -50,10 +50,10 @@ impl<W: Write> DumpState<W> {
                 let table_str = std::str::from_utf8(table)?;
                 writeln!(
                     self.writer,
-                    "INSERT INTO sqlite_schema(type,name,tbl_name,rootpage,sql) VALUES('table','{}','{}',0,'{}');",
+                    "INSERT INTO sqlite_schema(type,name,tbl_name,rootpage,sql)VALUES('table','{}','{}',0,{});",
                     table_str,
                     table_str,
-                    std::str::from_utf8(sql)?
+                    Escaped(std::str::from_utf8(sql)?)
                 )?;
                 continue;
             } else {
@@ -535,5 +535,26 @@ mod test {
         export_dump(&mut conn, &mut out, true).unwrap();
 
         insta::assert_snapshot!(std::str::from_utf8(&out).unwrap());
+    }
+
+    #[test]
+    fn virtual_table_sql_escaping() {
+        let tmp = tempdir().unwrap();
+        let mut conn = Connection::open(tmp.path().join("data")).unwrap();
+
+        conn.execute(r#"CREATE VIRTUAL TABLE test_fts USING fts5(content)"#, ())
+            .unwrap();
+
+        conn.execute(
+            r#"CREATE VIRTUAL TABLE test_vocab USING fts5vocab(test_fts, 'row')"#,
+            (),
+        )
+        .unwrap();
+
+        let mut out = Vec::new();
+        export_dump(&mut conn, &mut out, false).unwrap();
+        let dump_output = std::str::from_utf8(&out).unwrap();
+
+        assert!(dump_output.contains("''row''"));
     }
 }

@@ -17,13 +17,9 @@ tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
 hyper-rustls = { version = "0.25", features = ["webpki-roots"]}
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
-
-[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+http = "1.1.0"
+anyhow = "1.0.86"
 libsql = { path = "../../libsql", features = ["encryption"] }
-
-# Disable encryption for ios and android targets
-[target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
-libsql = { path = "../../libsql"}
 
 
 # The produced binaries are too large for mobiles

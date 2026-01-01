@@ -1,4 +1,5 @@
 use anyhow::{anyhow, bail, Result};
+use metrics::counter;
 use std::collections::HashMap;
 
 use super::result_builder::SingleStatementBuilder;
@@ -206,39 +207,46 @@ fn catch_stmt_error(sqld_error: SqldError) -> anyhow::Error {
 }
 
 pub fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, SqldError> {
-    Ok(match sqld_error {
-        SqldError::LibSqlInvalidQueryParams(source) => StmtError::ArgsInvalid { source },
-        SqldError::LibSqlTxTimeout => StmtError::TransactionTimeout,
-        SqldError::LibSqlTxBusy => StmtError::TransactionBusy,
+    let result = match sqld_error {
+        SqldError::LibSqlInvalidQueryParams(source) => Ok(StmtError::ArgsInvalid { source }),
+        SqldError::LibSqlTxTimeout => Ok(StmtError::TransactionTimeout),
+        SqldError::LibSqlTxBusy => Ok(StmtError::TransactionBusy),
         SqldError::BuilderError(QueryResultBuilderError::ResponseTooLarge(_)) => {
-            StmtError::ResponseTooLarge
+            Ok(StmtError::ResponseTooLarge)
         }
-        SqldError::Blocked(reason) => StmtError::Blocked { reason },
-        SqldError::RpcQueryError(e) => StmtError::Proxy(e.message),
+        SqldError::Blocked(reason) => Ok(StmtError::Blocked { reason }),
+        SqldError::RpcQueryError(e) => Ok(StmtError::Proxy(e.message)),
         SqldError::RusqliteError(rusqlite_error)
         | SqldError::RusqliteErrorExtended(rusqlite_error, _) => match rusqlite_error {
-            rusqlite::Error::SqliteFailure(sqlite_error, Some(message)) => StmtError::SqliteError {
-                source: sqlite_error,
-                message,
-            },
-            rusqlite::Error::SqliteFailure(sqlite_error, None) => StmtError::SqliteError {
+            rusqlite::Error::SqliteFailure(sqlite_error, Some(message)) => {
+                Ok(StmtError::SqliteError {
+                    source: sqlite_error,
+                    message,
+                })
+            }
+            rusqlite::Error::SqliteFailure(sqlite_error, None) => Ok(StmtError::SqliteError {
                 message: sqlite_error.to_string(),
                 source: sqlite_error,
-            },
+            }),
             rusqlite::Error::SqlInputError {
                 error: sqlite_error,
                 msg: message,
                 offset,
                 ..
-            } => StmtError::SqlInputError {
+            } => Ok(StmtError::SqlInputError {
                 source: sqlite_error,
                 message,
                 offset,
-            },
-            rusqlite_error => return Err(SqldError::RusqliteError(rusqlite_error)),
+            }),
+            rusqlite_error => Err(SqldError::RusqliteError(rusqlite_error)),
         },
-        sqld_error => return Err(sqld_error),
-    })
+        sqld_error => Err(sqld_error),
+    };
+
+    let code = result.as_ref().map(|x| x.code()).unwrap_or("UKNOWN");
+    counter!("libsql_server_hrana_step_errors", 1, "code" => code);
+
+    result
 }
 
 pub fn proto_error_from_stmt_error(error: &StmtError) -> hrana::proto::Error {

@@ -1,0 +1,35 @@
+[workspace]
+members = ["cargo:."]
+
+# Config for 'dist'
+[dist]
+# The preferred dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.28.3"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = ["shell", "homebrew"]
+# A GitHub repo to push Homebrew formulas to
+tap = "libsql/homebrew-sqld"
+# Customize the Homebrew formula name
+formula = "sqld"
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
+# Publish jobs to run in CI
+publish-jobs = ["homebrew"]
+# Whether dist should create a Github Release or use an existing draft
+create-release = true
+# Which actions to run on pull requests
+pr-run-mode = "plan"
+# A prefix git tags must include for dist to care about them
+tag-namespace = "libsql-server"
+# Whether to install an updater program
+install-updater = false
+# additional setup steps
+github-build-setup = "../templates/libsql-server-release-build-setup.yml"
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
+
+[github-custom-runners]
+aarch64-apple-darwin = "macos-14"
+aarch64-unknown-linux-gnu = "buildjet-8vcpu-ubuntu-2204-arm"

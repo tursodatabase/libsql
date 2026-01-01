@@ -1,24 +1,19 @@
 [workspace]
 resolver = "2"
 members = [
-  "libsql",
   "bindings/c",
   "bindings/wasm",
-  "libsql-sys",
-  "libsql-server",
   "bottomless",
   "bottomless-cli",
-  "libsql-replication",
+  "libsql",
   "libsql-ffi",
   "libsql-hrana",
-
+  "libsql-replication",
+  "libsql-server",
+  "libsql-sys",
   "vendored/rusqlite",
   "vendored/sqlite3-parser",
-
-  "xtask", "libsql-hrana",
-  "libsql-wal",
-  "libsql-storage",
-  "libsql-storage-server",
+  "xtask",
 ]
 
 exclude = [
@@ -29,12 +24,19 @@ exclude = [
     "tools/fuzz",
 ]
 
-[profile.release]
-codegen-units = 1
-panic = "unwind"
+[workspace.package]
+version = "0.9.29"
+authors = ["the libSQL authors"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/tursodatabase/libsql"
 
 [workspace.dependencies]
-rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.33", default-features = false, features = [
+libsql-ffi = { path = "libsql-ffi", version = "0.9.29" }
+libsql-sys = { path = "libsql-sys", version = "0.9.29", default-features = false }
+libsql-hrana = { path = "libsql-hrana", version = "0.9.29" }
+libsql_replication = { path = "libsql-replication", version = "0.9.29" }
+rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.9.29", default-features = false, features = [
     "libsql-experimental",
     "column_decltype",
     "load_extension",
@@ -47,38 +49,9 @@ hyper = { version = "0.14" }
 tower = { version = "0.4.13" }
 zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
 
-# Config for 'cargo dist'
-[workspace.metadata.dist]
-# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.21.0"
-# CI backends to support
-ci = "github"
-# The installers to generate for each app
-installers = ["shell", "homebrew"]
-# A GitHub repo to push Homebrew formulas to
-tap = "libsql/homebrew-sqld"
-# Customize the Homebrew formula name
-formula = "sqld"
-# Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
-# Publish jobs to run in CI
-publish-jobs = ["homebrew"]
-# Whether cargo-dist should create a Github Release or use an existing draft
-create-release = true
-# Which actions to run on pull requests
-pr-run-mode = "plan"
-# A prefix git tags must include for cargo-dist to care about them
-tag-namespace = "libsql-server"
-# Whether to install an updater program
-install-updater = false
-# additional setup steps
-github-build-setup = "../templates/libsql-server-release-build-setup.yml"
-# Path that installers should place binaries in
-install-path = "CARGO_HOME"
-
-[workspace.metadata.dist.github-custom-runners]
-aarch64-apple-darwin = "macos-14"
-aarch64-unknown-linux-gnu = "buildjet-8vcpu-ubuntu-2204-arm"
+[profile.release]
+codegen-units = 1
+panic = "unwind"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

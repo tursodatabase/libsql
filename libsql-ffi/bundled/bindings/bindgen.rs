@@ -1539,6 +1539,9 @@ extern "C" {
     pub fn sqlite3_reset(pStmt: *mut sqlite3_stmt) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn libsql_stmt_interrupt(stmt: *mut sqlite3_stmt);
+}
+extern "C" {
     pub fn sqlite3_create_function(
         db: *mut sqlite3,
         zFunctionName: *const ::std::os::raw::c_char,
@@ -2892,6 +2895,7 @@ extern "C" {
         arg2: ::std::os::raw::c_uint,
         arg3: *mut ::std::os::raw::c_void,
         arg4: ::std::os::raw::c_uint,
+        arg5: *mut ::std::os::raw::c_int,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
