@@ -291,7 +291,7 @@ impl From<Params> for libsql_replication::rpc::proxy::query::Params {
             Params::Positional(values) => {
                 let values = values
                     .iter()
-                    .map(|v| bincode::serialize(v).unwrap())
+                    .map(|v| wincode::serialize(v).unwrap())
                     .map(|data| proxy::Value { data })
                     .collect::<Vec<_>>();
                 proxy::query::Params::Positional(proxy::Positional { values })
@@ -300,7 +300,7 @@ impl From<Params> for libsql_replication::rpc::proxy::query::Params {
                 let (names, values) = values
                     .into_iter()
                     .map(|(name, value)| {
-                        let data = bincode::serialize(&value).unwrap();
+                        let data = wincode::serialize(&value).unwrap();
                         let value = proxy::Value { data };
                         (name, value)
                     })
