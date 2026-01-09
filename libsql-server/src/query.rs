@@ -4,7 +4,7 @@ use anyhow::{anyhow, ensure, Context};
 use rusqlite::types::{ToSqlOutput, ValueRef};
 use rusqlite::ToSql;
 use serde::{Deserialize, Serialize};
-use wincode::{SchemaWrite, SchemaRead};
+use wincode::{SchemaRead, SchemaWrite};
 
 use crate::query_analysis::Statement;
 

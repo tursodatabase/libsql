@@ -11,7 +11,7 @@ use crate::query::Value;
 fn test_wincode_produces_same_bytes_as_bincode() {
     // Test that wincode produces identical bytes to what bincode 1.3.3 would produce.
     // This is critical for maintaining wire protocol compatibility.
-    
+
     let test_cases = vec![
         ("Null", Value::Null, vec![0, 0, 0, 0]),
         (
@@ -48,7 +48,7 @@ fn test_wincode_produces_same_bytes_as_bincode() {
 
     for (name, value, expected_bytes) in test_cases {
         let serialised = wincode::serialize(&value).expect("wincode serialisation failed");
-        
+
         assert_eq!(
             serialised, expected_bytes,
             "{}: wincode output differs from expected bincode output",
@@ -56,9 +56,9 @@ fn test_wincode_produces_same_bytes_as_bincode() {
         );
 
         // Also verify roundtrip
-        let deserialised: Value = wincode::deserialize(&serialised)
-            .expect("wincode deserialisation failed");
-        
+        let deserialised: Value =
+            wincode::deserialize(&serialised).expect("wincode deserialisation failed");
+
         assert_eq!(
             format!("{:?}", value),
             format!("{:?}", deserialised),
