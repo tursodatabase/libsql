@@ -23,6 +23,9 @@ pub mod replica_proxy;
 pub mod replication;
 pub mod streaming_exec;
 
+#[cfg(test)]
+mod wincode_compat_test;
+
 pub async fn run_rpc_server<A: crate::net::Accept>(
     proxy_service: ProxyService,
     acceptor: A,
