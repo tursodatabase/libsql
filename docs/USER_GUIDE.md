@@ -116,6 +116,86 @@ curl -d '{"statements": ["SELECT * FROM users"]}' 127.0.0.1:8081
 You can configure client authentication by passing the `--auth-jwt-key-file FILENAME` command line option to `sqld`.
 The key is either a PKCS#8-encoded Ed25519 public key in PEM, or just plain bytes of the Ed25519 public key in URL-safe base64.
 
+### Generate Keys using Node/Bun
+
+Generate a private key and public key pair for JWT authentication:
+
+```typescript
+import fs from "node:fs";
+import { generateKeyPairSync } from "crypto";
+
+const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+// Export private key in PKCS#8 PEM format
+const privPem = privateKey.export({ format: "pem", type: "pkcs8" });
+fs.writeFileSync("private.pem", privPem);
+
+// Export public key in SPKI PEM format
+const pubPem = publicKey.export({ format: "pem", type: "spki" });
+fs.writeFileSync("public.pem", pubPem);
+```
+
+The snippet code generate two files: `private.pem` and `public.pem`, use the `public.pem` in the configuration `--auth-jwt-key-file public.pem`.
+
+> [!CAUTION]
+> Always keep in mind that the `private.pem` file must not be shared publicly; you should store it in a secure location, unlike the `public.pem` file, which can be shared without any risk.
+
+### Generate a Token using Node/Bun
+
+For generate the JWT you can install `jose` library and sign a JWT using the `private.pem`.
+
+```console
+npm install jose
+```
+
+```typescript
+import fs from "node:fs";
+import { importPKCS8, SignJWT } from "jose";
+
+const privateKeyPem = fs.readFileSync("private.pem", "utf-8");
+const privateKey = await importPKCS8(privateKeyPem, "EdDSA");
+
+const payload = {
+  sub: "username",
+  name: "Name User",
+};
+const jwt = await new SignJWT(payload)
+  .setProtectedHeader({ alg: "EdDSA" })
+  .setIssuedAt() // Issued At
+  .setExpirationTime("1h") // Expiration time in 1 hour
+  .sign(privateKey); // Pass the private key object
+
+fs.writeFileSync("token.txt", jwt);
+```
+
+The generated token could be used for authentication:
+
+```console
+npm install @libsql/client
+```
+
+```typescript
+import { createClient } from "@libsql/client";
+
+const client = createClient({
+  url: "https://example.domain/",
+  authToken: jwt,
+});
+
+await client.batch(
+  [
+    "CREATE TABLE IF NOT EXISTS users (email TEXT)",
+    "INSERT INTO users VALUES ('a@example.com')",
+    "INSERT INTO users VALUES ('b@example.com')",
+    "INSERT INTO users VALUES ('c@example.com')",
+  ],
+  "write",
+);
+
+const result = await client.execute("SELECT * FROM users");
+
+console.log("Users:", result.rows);
+```
+
 ## Deployment
 
 ### Deploying with Docker
