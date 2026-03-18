@@ -118,7 +118,7 @@ The key is either a PKCS#8-encoded Ed25519 public key in PEM, or just plain byte
 
 ### Generate Keys using Node/Bun
 
-Generate a private key and public key pair for JWT authentication:
+To generate a public and private key pair for JWT authentication, you can use the built-in Node.js `crypto` module:
 
 ```typescript
 import fs from "node:fs";
@@ -134,14 +134,14 @@ const pubPem = publicKey.export({ format: "pem", type: "spki" });
 fs.writeFileSync("public.pem", pubPem);
 ```
 
-The snippet code generate two files: `private.pem` and `public.pem`, use the `public.pem` in the configuration `--auth-jwt-key-file public.pem`.
+This snippet generates two files: `private.pem` and `public.pem`. Pass the `public.pem` file to your server using the `--auth-jwt-key-file public.pem` flag.
 
 > [!CAUTION]
-> Always keep in mind that the `private.pem` file must not be shared publicly; you should store it in a secure location, unlike the `public.pem` file, which can be shared without any risk.
+> Never share your `private.pem` file. It must be stored in a secure location. The `public.pem` file, however, is safe to distribute publicly.
 
 ### Generate a Token using Node/Bun
 
-For generate the JWT you can install `jose` library and sign a JWT using the `private.pem`.
+To generate the JWT, install the `jose` library and sign a new token using your `private.pem` file:
 
 ```console
 npm install jose
@@ -166,8 +166,10 @@ const jwt = await new SignJWT(payload)
 
 fs.writeFileSync("token.txt", jwt);
 ```
+> [!NOTE]
+> Token Expiration: In the example above, the token is configured to be valid for exactly one hour. Once this hour passes, the token will expire and the client will lose access. You will need to generate and provide a new token to re-authenticate.
 
-The generated token could be used for authentication:
+You can now use the generated token to authenticate your `@libsql/client`:
 
 ```console
 npm install @libsql/client
