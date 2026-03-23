@@ -106,11 +106,6 @@ jobs:
 
     steps:
       - uses: hecrj/setup-rust-action@v2
-      - name: set git to use LF on windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          git config --global core.autocrlf false
-          git config --global core.eol lf
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up cargo cache
@@ -167,7 +162,7 @@ jobs:
         run: |
           sed -i 's/\r$//' configure VERSION
           ./configure
-          make libsql
+          make liblibsql.la
 
       - name: build libsql on macos
         if: matrix.os == 'macos-latest'
