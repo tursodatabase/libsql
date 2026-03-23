@@ -16,7 +16,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-libsql:
+    runs-on: ubuntu-latest
+    name: Build libsql (shared)
+
+    steps:
+      - uses: hecrj/setup-rust-action@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: build libsql
+        working-directory: libsql-sqlite3
+        run: |
+          ./configure
+          make libsql
+      - name: build bundled sqlite for ffi
+        run: |
+          cargo xtask build-bundled
+      - name: upload shared build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsql-build-output
+          path: |
+            libsql-sqlite3/sqlite3.c
+            libsql-sqlite3/sqlite3.h
+            libsql-ffi/bundled/src/sqlite3.c
+            libsql-ffi/bundled/src/sqlite3.h
+            libsql-ffi/bundled/SQLite3MultipleCiphers/src/sqlite3.c
+            libsql-ffi/bundled/SQLite3MultipleCiphers/src/sqlite3.h
+
   c-tests:
+    needs: build-libsql
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,10 +58,13 @@ jobs:
       - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: build libsql
-        run: |
-          ./configure
-          make libsql
+      - name: Set up cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: download shared build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: libsql-build-output
+          path: .
       - name: build
         run: |
           cd ext/crr
@@ -41,6 +75,7 @@ jobs:
           make test
 
   rs-tests:
+    needs: build-libsql
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -51,16 +86,20 @@ jobs:
       - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: build libsql
-        run: |
-          ./configure
-          make libsql
+      - name: Set up cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: download shared build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: libsql-build-output
+          path: .
       - name: test
         run: |
           cd ext/crr/rs/core
           cargo test --features=loadable_extension
 
   extensions-tests:
+    needs: build-libsql
     runs-on: ubuntu-latest
     name: Extensions Tests
 
@@ -68,12 +107,17 @@ jobs:
       - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Set up cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: download shared build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: libsql-build-output
+          path: .
       - name: install libs
         run: |
-          sudo apt install libblas-dev liblapack-dev
-      - name: build libsql and ffi bindings
-        run: |
-          cargo xtask build-bundled
+          sudo apt update
+          sudo apt install -y libblas-dev liblapack-dev
       - name: download extensions
         run: |
           cd libsql-sqlite3/test/rust_suite
@@ -85,3 +129,42 @@ jobs:
           cd libsql-sqlite3/test/rust_suite
           # Only execute extensions tests
           cargo test --features=extensions extensions
+
+  cross-platform-build-checks:
+    name: Cross-platform build checks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    steps:
+      - uses: hecrj/setup-rust-action@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up cargo cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: setup msys2 for windows
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: mingw-w64-x86_64-toolchain make base-devel
+          msystem: mingw64
+          path-type: inherit
+
+      - name: build libsql on windows
+        if: matrix.os == 'windows-latest'
+        shell: msys2 {0}
+        working-directory: libsql-sqlite3
+        run: |
+          ./configure
+          make libsql
+
+      - name: build libsql on macos
+        if: matrix.os == 'macos-latest'
+        working-directory: libsql-sqlite3
+        run: |
+          ./configure
+          make libsql
