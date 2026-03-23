@@ -41,6 +41,7 @@ jobs:
           path: |
             libsql-sqlite3/sqlite3.c
             libsql-sqlite3/sqlite3.h
+            libsql-sqlite3/sqlite3ext.h
             libsql-ffi/bundled/src/sqlite3.c
             libsql-ffi/bundled/src/sqlite3.h
             libsql-ffi/bundled/SQLite3MultipleCiphers/src/sqlite3.c
@@ -56,6 +57,11 @@ jobs:
 
     steps:
       - uses: hecrj/setup-rust-action@v2
+      - name: set git to use LF on windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up cargo cache
