@@ -17,8 +17,10 @@ libsql-hrana = { workspace = true, optional = true }
 tokio = { version = "1.29.1", features = ["sync"], optional = true }
 tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
-hyper = { version = "0.14", features = ["client", "http1", "http2", "stream", "runtime"], optional = true }
-hyper-rustls = { version = "0.25", features = ["webpki-roots"], optional = true }
+hyper = { version = "1.0", features = ["client", "http1", "http2"], optional = true }
+hyper-rustls = { version = "0.27", features = ["webpki-roots"], optional = true }
+http-body-util = { version = "0.1", optional = true }
+hyper-util = { version = "0.1", features = ["client", "tokio"], optional = true }
 base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", features = ["float_roundtrip"], optional = true }
@@ -32,10 +34,10 @@ anyhow = { version = "1.0.71", optional = true }
 bytes = { version = "1.4.0", features = ["serde"], optional = true }
 uuid = { version = "1.4.0", features = ["v4", "serde"], optional = true }
 tokio-stream = { version = "0.1.14", optional = true }
-tonic = { version = "0.11", optional = true}
-tonic-web = { version = "0.11", optional = true }
-tower-http = { version = "0.4.4", features = ["trace", "set-header", "util"], optional = true }
-http = { version = "0.2", optional = true }
+tonic = { version = "0.12", optional = true}
+tonic-web = { version = "0.12", optional = true }
+tower-http = { version = "0.5", features = ["trace", "set-header", "util"], optional = true }
+http = { version = "1.0", optional = true }
 zerocopy = { version = "0.7.28", optional = true }
 
 sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", version = "0.13", optional = true }
@@ -81,6 +83,8 @@ replication = [
   "dep:tower",
   "dep:hyper",
   "dep:http",
+  "dep:http-body-util",
+  "dep:hyper-util",
   "dep:tokio",
   "dep:anyhow",
   "dep:bincode",

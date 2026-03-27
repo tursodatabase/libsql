@@ -390,8 +390,8 @@ cfg_replication! {
                 match sync_protocol {
                     p @ (SyncProtocol::Auto | SyncProtocol::V2) => {
                         tracing::trace!("Probing for sync protocol version for {}", url);
-                        let client = hyper::client::Client::builder()
-                            .build::<_, hyper::Body>(connector.clone());
+                        let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+                            .build(connector.clone());
 
                         let prefix = if url.starts_with("libsql://") {
                             url.replacen("libsql://", "https://", 1)
@@ -406,7 +406,7 @@ cfg_replication! {
                         } else {
                             req
                         };
-                        let req = req.body(hyper::Body::empty()).unwrap();
+                        let req = req.body(http_body_util::Empty::<bytes::Bytes>::new()).unwrap();
 
                         let res = client
                             .request(req)
@@ -422,9 +422,10 @@ cfg_replication! {
                         if matches!(p, SyncProtocol::V2) {
                             if !res.status().is_success() {
                                 let status = res.status();
-                                let body_bytes = hyper::body::to_bytes(res.into_body())
+                                let body_bytes = http_body_util::BodyExt::collect(res.into_body())
                                     .await
-                                    .map_err(|err| crate::Error::Sync(err.into()))?;
+                                    .map_err(|err| crate::Error::Sync(err.into()))?
+                                    .to_bytes();
                                 let error_message = String::from_utf8_lossy(&body_bytes);
                                 return Err(crate::Error::Sync(format!("HTTP error {}: {}", status, error_message).into()));
                             }

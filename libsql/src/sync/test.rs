@@ -395,6 +395,64 @@ impl Service<http::Uri> for MockConnector {
     }
 }
 
+// Wrapper for DuplexStream to implement hyper 1.0's Read/Write traits
+struct HyperStream {
+    inner: DuplexStream,
+}
+
+impl HyperStream {
+    fn new(inner: DuplexStream) -> Self {
+        Self { inner }
+    }
+}
+
+impl hyper::rt::Read for HyperStream {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        mut buf: hyper::rt::ReadBufCursor<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        // Create a temporary buffer with the available capacity
+        let capacity = unsafe { buf.as_mut().len() };
+        let mut temp_buf = vec![0u8; capacity];
+        let mut read_buf = tokio::io::ReadBuf::new(&mut temp_buf);
+        
+        match Pin::new(&mut self.inner).poll_read(cx, &mut read_buf)? {
+            Poll::Ready(()) => {
+                let filled = read_buf.filled().len();
+                if filled > 0 {
+                    // Copy the filled bytes to the output buffer
+                    let dest = unsafe { buf.as_mut().as_mut_ptr() } as *mut u8;
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(temp_buf.as_ptr(), dest, filled);
+                        buf.advance(filled);
+                    }
+                }
+                Poll::Ready(Ok(()))
+            }
+            Poll::Pending => Poll::Pending,
+        }
+    }
+}
+
+impl hyper::rt::Write for HyperStream {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<std::io::Result<usize>> {
+        Pin::new(&mut self.inner).poll_write(cx, buf)
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut self.inner).poll_flush(cx)
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut self.inner).poll_shutdown(cx)
+    }
+}
+
 #[allow(dead_code)]
 struct MockServer {
     url: String,
@@ -452,19 +510,23 @@ impl MockServer {
 
         tokio::spawn(async move {
             while let Some(server_stream) = rx.recv().await {
+                let server_stream = HyperStream::new(server_stream);
                 let frame_count_clone = frame_count_clone.clone();
                 let return_error_clone = return_error_clone.clone();
                 let request_count_clone = request_count_clone.clone();
                 let export_bytes_clone = export_bytes_clone.clone();
 
                 tokio::spawn(async move {
-                    use hyper::server::conn::Http;
+                    use http_body_util::Full;
+                    use hyper::body::Incoming;
+                    use hyper::server::conn::http1;
                     use hyper::service::service_fn;
+                    use std::convert::Infallible;
 
                     let frame_count_clone = frame_count_clone.clone();
                     let return_error_clone = return_error_clone.clone();
                     let request_count_clone = request_count_clone.clone();
-                    let service = service_fn(move |req: http::Request<Body>| {
+                    let service = service_fn(move |req: http::Request<Incoming>| {
                         let frame_count = frame_count_clone.clone();
                         let return_error = return_error_clone.clone();
                         let request_count = request_count_clone.clone();
@@ -472,10 +534,10 @@ impl MockServer {
                         async move {
                             request_count.fetch_add(1, Ordering::SeqCst);
                             if return_error.load(Ordering::SeqCst) {
-                                return Ok::<_, hyper::Error>(
+                                return Ok::<_, Infallible>(
                                     http::Response::builder()
                                         .status(500)
-                                        .body(Body::from("Internal Server Error"))
+                                        .body(Full::new(Bytes::from("Internal Server Error")))
                                         .unwrap(),
                                 );
                             }
@@ -490,39 +552,40 @@ impl MockServer {
                                     "max_frame_no": current_count
                                 });
 
-                                Ok::<_, hyper::Error>(
+                                Ok::<_, Infallible>(
                                     http::Response::builder()
                                         .status(200)
-                                        .body(Body::from(response.to_string()))
+                                        .body(Full::new(Bytes::from(response.to_string())))
                                         .unwrap(),
                                 )
                             } else if req.uri().path().eq("/info") {
                                 let response = serde_json::json!({
                                     "current_generation": 1
                                 });
-                                Ok::<_, hyper::Error>(
+                                Ok::<_, Infallible>(
                                     http::Response::builder()
                                         .status(200)
-                                        .body(Body::from(response.to_string()))
+                                        .body(Full::new(Bytes::from(response.to_string())))
                                         .unwrap(),
                                 )
                             } else if req.uri().path().starts_with("/export/") {
-                                Ok::<_, hyper::Error>(
+                                Ok::<_, Infallible>(
                                     http::Response::builder()
                                         .status(200)
-                                        .body(Body::from(export_bytes.as_ref().clone()))
+                                        .body(Full::new(Bytes::from(export_bytes.as_ref().clone())))
                                         .unwrap(),
                                 )
                             } else {
                                 Ok(http::Response::builder()
                                     .status(404)
-                                    .body(Body::empty())
+                                    .body(Full::new(Bytes::new()))
                                     .unwrap())
                             }
                         }
                     });
 
-                    if let Err(e) = Http::new().serve_connection(server_stream, service).await {
+                    let conn = http1::Builder::new().serve_connection(server_stream, service);
+                    if let Err(e) = conn.await {
                         eprintln!("Error serving connection: {}", e);
                     }
                 });
@@ -582,9 +645,55 @@ impl AsyncWrite for MockConnection {
     }
 }
 
-impl hyper::client::connect::Connection for MockConnection {
-    fn connected(&self) -> hyper::client::connect::Connected {
-        hyper::client::connect::Connected::new()
+// hyper 1.0 compatibility: implement hyper::rt::Read and hyper::rt::Write
+impl hyper::rt::Read for MockConnection {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        mut buf: hyper::rt::ReadBufCursor<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        let capacity = unsafe { buf.as_mut().len() };
+        let mut temp_buf = vec![0u8; capacity];
+        let mut read_buf = tokio::io::ReadBuf::new(&mut temp_buf);
+        
+        match Pin::new(&mut self.stream).poll_read(cx, &mut read_buf)? {
+            Poll::Ready(()) => {
+                let filled = read_buf.filled().len();
+                if filled > 0 {
+                    let dest = unsafe { buf.as_mut().as_mut_ptr() } as *mut u8;
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(temp_buf.as_ptr(), dest, filled);
+                        buf.advance(filled);
+                    }
+                }
+                Poll::Ready(Ok(()))
+            }
+            Poll::Pending => Poll::Pending,
+        }
+    }
+}
+
+impl hyper::rt::Write for MockConnection {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<std::io::Result<usize>> {
+        Pin::new(&mut self.stream).poll_write(cx, buf)
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut self.stream).poll_flush(cx)
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut self.stream).poll_shutdown(cx)
+    }
+}
+
+impl hyper_util::client::legacy::connect::Connection for MockConnection {
+    fn connected(&self) -> hyper_util::client::legacy::connect::Connected {
+        hyper_util::client::legacy::connect::Connected::new()
     }
 }
 

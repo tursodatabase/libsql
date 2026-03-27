@@ -1,19 +1,18 @@
 use super::box_clone_service::BoxCloneService;
-use tokio::io::{AsyncRead, AsyncWrite};
 
 pub trait Socket:
-    hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static + Sync
+    hyper::rt::Read + hyper::rt::Write + hyper_util::client::legacy::connect::Connection + Send + Unpin + 'static + Sync
 {
 }
 
 impl<T> Socket for T where
-    T: hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static + Sync
+    T: hyper::rt::Read + hyper::rt::Write + hyper_util::client::legacy::connect::Connection + Send + Unpin + 'static + Sync
 {
 }
 
-impl hyper::client::connect::Connection for Box<dyn Socket> {
-    fn connected(&self) -> hyper::client::connect::Connected {
-        self.as_ref().connected()
+impl hyper_util::client::legacy::connect::Connection for Box<dyn Socket> {
+    fn connected(&self) -> hyper_util::client::legacy::connect::Connected {
+        hyper_util::client::legacy::connect::Connected::new()
     }
 }
 

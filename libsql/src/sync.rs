@@ -4,7 +4,7 @@ use crate::database::EncryptionContext;
 use bytes::Bytes;
 use chrono::Utc;
 use http::{HeaderValue, StatusCode};
-use hyper::Body;
+use http_body_util::Full;
 use std::path::Path;
 use tokio::io::AsyncWriteExt as _;
 use uuid::Uuid;
@@ -35,9 +35,9 @@ pub enum SyncError {
     #[error("invalid auth header: {0}")]
     InvalidAuthHeader(http::header::InvalidHeaderValue),
     #[error("http dispatch error: {0}")]
-    HttpDispatch(hyper::Error),
+    HttpDispatch(hyper_util::client::legacy::Error),
     #[error("body error: {0}")]
-    HttpBody(hyper::Error),
+    HttpBody(Box<dyn std::error::Error + Send + Sync>),
     #[error("json decode error: {0}")]
     JsonDecode(serde_json::Error),
     #[error("json value error, unexpected value: {0}")]
@@ -123,7 +123,7 @@ struct PushFramesResult {
 
 pub struct SyncContext {
     db_path: String,
-    client: hyper::Client<ConnectorService, Body>,
+    client: hyper_util::client::legacy::Client<ConnectorService, Full<Bytes>>,
     sync_url: String,
     auth_token: Option<HeaderValue>,
     max_retries: usize,
@@ -148,7 +148,7 @@ impl SyncContext {
         auth_token: Option<String>,
         remote_encryption: Option<EncryptionContext>,
     ) -> Result<Self> {
-        let client = hyper::client::Client::builder().build::<_, hyper::Body>(connector);
+        let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new()).build(connector);
 
         let auth_token = match auth_token {
             Some(t) => Some(
@@ -316,9 +316,9 @@ impl SyncContext {
                 .map_err(SyncError::HttpDispatch)?;
 
             if res.status().is_success() {
-                let res_body = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(SyncError::HttpBody)?;
+                let res_body = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
 
                 let resp = serde_json::from_slice::<serde_json::Value>(&res_body[..])
                     .map_err(SyncError::JsonDecode)?;
@@ -391,9 +391,9 @@ impl SyncContext {
             if nr_retries > max_retries || !res.status().is_server_error() {
                 let status = res.status();
 
-                let res_body = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(SyncError::HttpBody)?;
+                let res_body = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
 
                 let msg = String::from_utf8_lossy(&res_body[..]);
 
@@ -422,7 +422,7 @@ impl SyncContext {
                 req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
             }
 
-            let req = req.body(Body::empty()).expect("valid request");
+            let req = req.body(Full::new(Bytes::new())).expect("valid request");
 
             let res = self
                 .client
@@ -431,9 +431,9 @@ impl SyncContext {
                 .map_err(SyncError::HttpDispatch)?;
 
             if res.status().is_success() {
-                let frames = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(SyncError::HttpBody)?;
+                let frames = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
                 // a success result should always return some frames
                 if frames.is_empty() {
                     tracing::error!("server returned empty frames in pull response");
@@ -456,9 +456,9 @@ impl SyncContext {
                 || res.status() == StatusCode::INTERNAL_SERVER_ERROR
             {
                 let status = res.status();
-                let res_body = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(SyncError::HttpBody)?;
+                let res_body = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
                 tracing::trace!(
                     "server returned: {} body: {}",
                     status,
@@ -493,9 +493,9 @@ impl SyncContext {
             if nr_retries > max_retries || !res.status().is_server_error() {
                 let status = res.status();
 
-                let res_body = hyper::body::to_bytes(res.into_body())
-                    .await
-                    .map_err(SyncError::HttpBody)?;
+                let res_body = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
 
                 let msg = String::from_utf8_lossy(&res_body[..]);
 
@@ -595,7 +595,7 @@ impl SyncContext {
             req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
         }
 
-        let req = req.body(Body::empty()).expect("valid request");
+        let req = req.body(Full::new(Bytes::new())).expect("valid request");
 
         let res = self
             .client
@@ -605,17 +605,17 @@ impl SyncContext {
 
         if !res.status().is_success() {
             let status = res.status();
-            let body = hyper::body::to_bytes(res.into_body())
-                .await
-                .map_err(SyncError::HttpBody)?;
+            let body = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
             return Err(
                 SyncError::PullDb(status, String::from_utf8_lossy(&body).to_string()).into(),
             );
         }
 
-        let body = hyper::body::to_bytes(res.into_body())
-            .await
-            .map_err(SyncError::HttpBody)?;
+        let body = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
 
         let info: InfoResult = serde_json::from_slice(&body).map_err(SyncError::JsonDecode)?;
         if info.current_generation == 0 {
@@ -700,7 +700,7 @@ impl SyncContext {
             req = req.header("x-turso-encryption-key", remote_encryption.key.as_string());
         }
 
-        let req = req.body(Body::empty()).expect("valid request");
+        let req = req.body(Full::new(Bytes::new())).expect("valid request");
 
         let (res, http_duration) =
             crate::replication::remote_client::time(self.client.request(req)).await;
@@ -708,9 +708,9 @@ impl SyncContext {
 
         if !res.status().is_success() {
             let status = res.status();
-            let body = hyper::body::to_bytes(res.into_body())
-                .await
-                .map_err(SyncError::HttpBody)?;
+            let body = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
             tracing::error!(
                 "failed to pull db file from remote server, status={}, body={}, url={}, duration={:?}",
                 status,
@@ -731,9 +731,9 @@ impl SyncContext {
         );
 
         // todo: do streaming write to the disk
-        let bytes = hyper::body::to_bytes(res.into_body())
-            .await
-            .map_err(SyncError::HttpBody)?;
+        let bytes = http_body_util::BodyExt::collect(res.into_body()).await
+                    .map_err(|e| SyncError::HttpBody(Box::new(e)))?
+                    .to_bytes();
 
         atomic_write(&self.db_path, &bytes).await?;
         self.durable_generation = generation;

@@ -3,6 +3,7 @@ use std::task::{Context, Poll};
 
 use anyhow::Context as _;
 use http::Uri;
+use http_body_util::BodyExt;
 use libsql_replication::rpc::proxy::{
     proxy_client::ProxyClient, DescribeRequest, DescribeResult, ExecuteResults, ProgramReq,
 };
@@ -13,25 +14,16 @@ use tonic::{
     metadata::{AsciiMetadataValue, BinaryMetadataValue},
     service::Interceptor,
 };
-use tonic_web::{GrpcWebCall, GrpcWebClientService};
+
 use tower::{Service, ServiceBuilder};
-use tower_http::{
-    classify::{self, GrpcCode, GrpcErrorsAsFailures, SharedClassifier},
-    trace::{self, TraceLayer},
-};
+use tower_http::trace::TraceLayer;
 use uuid::Uuid;
 
 use crate::util::{ConnectorService, HttpRequestCallback};
 
 use crate::util::box_clone_service::BoxCloneService;
 
-type ResponseBody = trace::ResponseBody<
-    GrpcWebCall<hyper::Body>,
-    classify::GrpcEosErrorsAsFailures,
-    trace::DefaultOnBodyChunk,
-    trace::DefaultOnEos,
-    trace::DefaultOnFailure,
->;
+type ResponseBody = tonic::body::BoxBody;
 
 #[derive(Debug, Clone)]
 pub struct Client {
@@ -128,7 +120,7 @@ impl Client {
 
 #[derive(Debug, Clone)]
 pub struct GrpcChannel {
-    client: BoxCloneService<http::Request<BoxBody>, http::Response<ResponseBody>, hyper::Error>,
+    client: BoxCloneService<http::Request<BoxBody>, http::Response<ResponseBody>, hyper_util::client::legacy::Error>,
 }
 
 impl GrpcChannel {
@@ -136,16 +128,12 @@ impl GrpcChannel {
         connector: ConnectorService,
         http_request_callback: Option<HttpRequestCallback>,
     ) -> Self {
-        let client = hyper::Client::builder()
+        let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
             .pool_idle_timeout(None)
             .pool_max_idle_per_host(3)
             .build(connector);
-        let client = GrpcWebClientService::new(client);
-
-        let classifier = GrpcErrorsAsFailures::new().with_success(GrpcCode::FailedPrecondition);
 
         let svc = ServiceBuilder::new()
-            .layer(TraceLayer::new(SharedClassifier::new(classifier)))
             .map_request(move |request: http::Request<BoxBody>| {
                 if let Some(cb) = &http_request_callback {
                     let (parts, body) = request.into_parts();
@@ -159,6 +147,17 @@ impl GrpcChannel {
                     request
                 }
             })
+            // Map response body from TraceLayer's ResponseBody<Incoming> to BoxBody
+            // Note: TraceLayer wraps the inner service, so the response body type is
+            // ResponseBody<Incoming>. We need to convert it to BoxBody.
+            .map_response(|res: http::Response<tower_http::trace::ResponseBody<hyper::body::Incoming, tower_http::classify::GrpcEosErrorsAsFailures>>| {
+                res.map(|body| {
+                    body.map_err(|e| tonic::Status::internal(format!("body error: {}", e)))
+                        .boxed_unsync()
+                })
+            })
+            // Add TraceLayer for gRPC request/response tracing
+            .layer(TraceLayer::new_for_grpc())
             .service(client);
 
         let client = BoxCloneService::new(svc);
@@ -169,7 +168,7 @@ impl GrpcChannel {
 
 impl Service<http::Request<BoxBody>> for GrpcChannel {
     type Response = http::Response<ResponseBody>;
-    type Error = hyper::Error;
+    type Error = hyper_util::client::legacy::Error;
     type Future =
         Pin<Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
