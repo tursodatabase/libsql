@@ -431,13 +431,19 @@ where
                 .with_state(state);
 
             // Merge the grpc based axum router into our regular http router
-            let replication = ReplicationLogServer::new(self.replication_service);
-            let write_proxy = ProxyServer::new(self.proxy_service);
+            let replication = ReplicationLogServer::new(self.replication_service.clone());
+            let write_proxy = ProxyServer::new(self.proxy_service.clone());
+            
+            // Add native gRPC services (HTTP/2) alongside gRPC-Web (HTTP/1.1)
+            let native_replication = ReplicationLogServer::new(self.replication_service);
+            let native_write_proxy = ProxyServer::new(self.proxy_service);
 
             let grpc_router = Server::builder()
                 .accept_http1(true)
                 .add_service(tonic_web::enable(replication))
-                .add_service(tonic_web::enable(write_proxy));
+                .add_service(tonic_web::enable(write_proxy))
+                .add_service(native_replication)
+                .add_service(native_write_proxy);
             // Convert to axum Router - into_router() is deprecated but functional
             #[allow(deprecated)]
             let grpc_router = grpc_router.into_router();
