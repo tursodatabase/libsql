@@ -98,7 +98,7 @@ pub async fn run_rpc_server<A: Accept>(
 
         // Create a stream of connections from the acceptor
         let incoming = plain_incoming_stream(acceptor);
-        
+
         tracing::info!("Starting gRPC server with incoming stream");
 
         // Serve with tonic's native server
@@ -116,7 +116,10 @@ struct TlsIncomingStream<A: Accept> {
 
 impl<A: Accept> TlsIncomingStream<A> {
     fn new(acceptor: A, tls_acceptor: TlsAcceptor) -> Self {
-        Self { acceptor, tls_acceptor }
+        Self {
+            acceptor,
+            tls_acceptor,
+        }
     }
 }
 
