@@ -72,7 +72,7 @@ jobs:
 
     - name: Start sqld server
       run: |
-        RUST_LOG=trace ./target/release/sqld --http-listen-addr 127.0.0.1:8080 --grpc-listen-addr 127.0.0.1:5001 &
+        ./target/release/sqld --http-listen-addr 127.0.0.1:8080 --grpc-listen-addr 127.0.0.1:5001 &
         # Wait for server to be ready
         for i in {1..30}; do
           if curl -s http://127.0.0.1:8080/health > /dev/null 2>&1; then
@@ -87,7 +87,6 @@ jobs:
 
     - name: Run go-libsql tests
       working-directory: go-libsql
-      run: go test -v -count=1 -run TestAutoSync ./... 2>&1 | head -100
+      run: go test -v -count=1 ./...
       env:
         LIBSQL_PRIMARY_URL: "http://127.0.0.1:8080"
-        RUST_LOG: "trace"
