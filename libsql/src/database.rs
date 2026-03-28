@@ -772,6 +772,7 @@ fn connector(
         .map_err(crate::Error::InvalidTlsConfiguration)?
         .https_or_http()
         .enable_http1()
+        .enable_http2()
         .wrap_connector(http))
 }
 

@@ -12,6 +12,7 @@ async fn main() {
             .with_webpki_roots()
             .https_or_http()
             .enable_http1()
+            .enable_http2()
             .build();
 
         Builder::new_remote(url, token)
