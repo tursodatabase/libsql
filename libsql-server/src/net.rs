@@ -35,39 +35,8 @@ impl<S> HyperStream<S> {
     }
 }
 
-impl<S: AsyncRead + AsyncWrite + Unpin> AsyncRead for HyperStream<S> {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
-    ) -> Poll<std::io::Result<()>> {
-        // SAFETY: HyperStream is Unpin if S is Unpin
-        let this = unsafe { self.get_unchecked_mut() };
-        Pin::new(&mut this.inner).poll_read(cx, buf)
-    }
-}
-
-impl<S: AsyncRead + AsyncWrite + Unpin> AsyncWrite for HyperStream<S> {
-    fn poll_write(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<std::io::Result<usize>> {
-        let this = unsafe { self.get_unchecked_mut() };
-        Pin::new(&mut this.inner).poll_write(cx, buf)
-    }
-
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
-        let this = unsafe { self.get_unchecked_mut() };
-        Pin::new(&mut this.inner).poll_flush(cx)
-    }
-
-    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
-        let this = unsafe { self.get_unchecked_mut() };
-        Pin::new(&mut this.inner).poll_shutdown(cx)
-    }
-}
-
+// Note: HyperStream only implements hyper's Read/Write traits, not tokio's AsyncRead/AsyncWrite
+// TokioIo already bridges between tokio and hyper traits internally
 impl<S: AsyncRead + AsyncWrite + Unpin> Read for HyperStream<S> {
     fn poll_read(
         self: Pin<&mut Self>,

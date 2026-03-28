@@ -84,7 +84,9 @@ where
 
     fn call(&mut self, req: hyper::Request<hyper::body::Incoming>) -> Self::Future {
         // Convert Incoming body to tonic's BoxBody
+        // Need to map the error type from io::Error to tonic::Status
         let (parts, body) = req.into_parts();
+        let body = body.map_err(|e| tonic::Status::internal(format!("body error: {}", e)));
         let body = tonic::body::BoxBody::new(body);
         let req = hyper::Request::from_parts(parts, body);
         self.inner.call(req)
