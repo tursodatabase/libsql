@@ -7,9 +7,9 @@ use std::sync::Once;
 use std::task::{Context, Poll};
 
 use futures_core::Future;
-use hyper::Uri;
 use hyper::rt::{Read, Write};
-use hyper_util::client::legacy::connect::{Connection, Connected};
+use hyper::Uri;
+use hyper_util::client::legacy::connect::{Connected, Connection};
 use metrics_util::debugging::DebuggingRecorder;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tower::Service;
@@ -114,7 +114,7 @@ impl Read for TurmoilStream {
     ) -> Poll<std::io::Result<()>> {
         // SAFETY: We're creating a tokio ReadBuf from the hyper ReadBufCursor
         let mut read_buf = unsafe { tokio::io::ReadBuf::uninit(buf.as_mut()) };
-        
+
         match self.project().inner.poll_read(cx, &mut read_buf) {
             Poll::Ready(Ok(())) => {
                 let filled = read_buf.filled().len();
@@ -236,18 +236,18 @@ where
     F: StdFuture<Output = T>,
 {
     fn now_or_never(self) -> Option<T> {
-        use std::task::Wake;
         use std::sync::Arc;
-        
+        use std::task::Wake;
+
         struct NoopWaker;
         impl Wake for NoopWaker {
             fn wake(self: Arc<Self>) {}
         }
-        
+
         let waker = std::task::Waker::from(Arc::new(NoopWaker));
         let mut cx = std::task::Context::from_waker(&waker);
         let mut future = Box::pin(self);
-        
+
         match future.as_mut().poll(&mut cx) {
             Poll::Ready(val) => Some(val),
             Poll::Pending => None,

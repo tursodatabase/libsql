@@ -39,9 +39,9 @@ impl Response {
 impl Client {
     pub fn new() -> Self {
         let connector = TurmoilConnector;
-        let client = hyper_util::client::legacy::Client::builder(
-            hyper_util::rt::TokioExecutor::new()
-        ).build(connector);
+        let client =
+            hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+                .build(connector);
         Self { inner: client }
     }
 
@@ -51,7 +51,11 @@ impl Client {
         Ok(Response(self.inner.request(req).await?))
     }
 
-    pub(crate) async fn post<T: serde::Serialize>(&self, url: &str, body: T) -> anyhow::Result<Response> {
+    pub(crate) async fn post<T: serde::Serialize>(
+        &self,
+        url: &str,
+        body: T,
+    ) -> anyhow::Result<Response> {
         self.post_with_headers(url, &[], body).await
     }
 

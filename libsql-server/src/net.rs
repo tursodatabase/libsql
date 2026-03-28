@@ -28,7 +28,7 @@ impl<S> HyperStream<S> {
             inner: TokioIo::new(stream),
         }
     }
-    
+
     pub fn into_inner(self) -> S {
         self.inner.into_inner()
     }
@@ -219,7 +219,7 @@ where
     ) -> Poll<std::io::Result<()>> {
         // SAFETY: We're creating a tokio ReadBuf from the hyper ReadBufCursor
         let mut read_buf = unsafe { tokio::io::ReadBuf::uninit(buf.as_mut()) };
-        
+
         match self.project().stream.poll_read(cx, &mut read_buf) {
             Poll::Ready(Ok(())) => {
                 let filled = read_buf.filled().len();

@@ -14,7 +14,6 @@ use std::sync::Arc;
 use anyhow::Context;
 use axum::body::Body;
 use axum::extract::Request;
-use http_body_util::BodyExt;
 use axum::extract::{FromRef, FromRequest, FromRequestParts, Path as AxumPath, State as AxumState};
 use axum::http::request::Parts;
 use axum::http::HeaderValue;
@@ -26,6 +25,7 @@ use axum_extra::middleware::option_layer;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use http::{header, HeaderMap, StatusCode};
+use http_body_util::BodyExt;
 use libsql_replication::rpc::replication::replication_log_server::{
     ReplicationLog, ReplicationLogServer,
 };
@@ -232,7 +232,11 @@ async fn handle_hrana_pipeline(
         .await?;
     // Convert Full<Bytes> body to axum Body
     let (parts, body) = response.into_parts();
-    let bytes = body.collect().await.map_err(|e| Error::Internal(format!("body error: {}", e)))?.to_bytes();
+    let bytes = body
+        .collect()
+        .await
+        .map_err(|e| Error::Internal(format!("body error: {}", e)))?
+        .to_bytes();
     Ok(Response::from_parts(parts, Body::from(bytes)))
 }
 
@@ -351,7 +355,11 @@ where
                             .await?;
                         // Convert Full<Bytes> body to axum Body
                         let (parts, body) = response.into_parts();
-                        let bytes = body.collect().await.map_err(|e| Error::Internal(format!("body error: {}", e)))?.to_bytes();
+                        let bytes = body
+                            .collect()
+                            .await
+                            .map_err(|e| Error::Internal(format!("body error: {}", e)))?
+                            .to_bytes();
                         Ok(Response::from_parts(parts, Body::from(bytes)))
                     }
                     handle_hrana
@@ -461,7 +469,7 @@ where
             task_manager.spawn_with_shutdown_notify(|shutdown| async move {
                 let builder =
                     hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
-                
+
                 let mut acceptor = acceptor;
 
                 let shutdown = shutdown.notified();

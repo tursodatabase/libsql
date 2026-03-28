@@ -761,7 +761,8 @@ impl Database {
     all(feature = "tls", feature = "remote"),
     all(feature = "tls", feature = "sync")
 ))]
-fn connector() -> Result<hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>> {
+fn connector(
+) -> Result<hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>> {
     let mut http = hyper_util::client::legacy::connect::HttpConnector::new();
     http.enforce_http(false);
     http.set_nodelay(true);

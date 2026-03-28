@@ -30,8 +30,8 @@ use config::{
 };
 use futures::future::ready;
 use futures::Future;
-use hyper::Uri;
 use http::user::UserApi;
+use hyper::Uri;
 use libsql_replication::rpc::replication::BoxReplicationService;
 use libsql_sys::wal::Sqlite3WalManager;
 use namespace::meta_store::MetaStoreHandle;

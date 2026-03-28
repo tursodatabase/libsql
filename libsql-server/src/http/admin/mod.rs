@@ -1,4 +1,5 @@
 use anyhow::Context as _;
+use axum::body::Body;
 use axum::extract::{FromRef, Path, State};
 use axum::middleware::Next;
 use axum::response::Response;
@@ -7,7 +8,6 @@ use axum::Json;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
 use futures::{SinkExt, StreamExt};
-use axum::body::Body;
 use http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use hyper_util::client::legacy::Client as HyperClient;
@@ -216,7 +216,9 @@ pub fn router_to_service(
     hyper::Request<hyper::body::Incoming>,
     Response = hyper::Response<axum::body::Body>,
     Error = std::io::Error,
-    Future = impl std::future::Future<Output = Result<hyper::Response<axum::body::Body>, std::io::Error>>,
+    Future = impl std::future::Future<
+        Output = Result<hyper::Response<axum::body::Body>, std::io::Error>,
+    >,
 > + Clone {
     // Create a service from the router that handles Request<Incoming>
     // Using hyper::service::service_fn which implements hyper::service::Service
@@ -226,13 +228,14 @@ pub fn router_to_service(
             // Convert Incoming body to axum Body
             // by collecting the body into bytes first
             let (parts, body) = req.into_parts();
-            let collected = body.collect().await.map_err(|e| {
-                std::io::Error::new(std::io::ErrorKind::Other, e)
-            })?;
+            let collected = body
+                .collect()
+                .await
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
             let bytes = collected.to_bytes();
             let body = axum::body::Body::from(bytes);
             let req = hyper::Request::from_parts(parts, body);
-            
+
             // Call the router and convert Infallible error to io::Error
             router.call(req).await.map_err(|e| match e {})
         }
@@ -249,7 +252,6 @@ where
     A: crate::net::Accept,
 {
     use std::future::poll_fn;
-    
 
     let shutdown = shutdown.notified();
     tokio::pin!(shutdown);
@@ -272,9 +274,8 @@ where
 
         let svc = router_to_service(router.clone());
         tokio::spawn(async move {
-            let builder = hyper_util::server::conn::auto::Builder::new(
-                hyper_util::rt::TokioExecutor::new(),
-            );
+            let builder =
+                hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
             let _ = builder
                 .serve_connection(hyper_util::rt::tokio::TokioIo::new(conn), svc)
                 .await;
@@ -500,7 +501,9 @@ async fn handle_create_namespace(
         Some(ref _url) => {
             // TODO: Re-enable dump from URL after fixing connector for hyper 1.0
             // RestoreOption::Dump(dump_stream_from_url(_url, app_state.connector.clone()).await?)
-            return Err(Error::Internal("Dump from URL temporarily disabled".to_string()));
+            return Err(Error::Internal(
+                "Dump from URL temporarily disabled".to_string(),
+            ));
         }
         None => RestoreOption::Latest,
     };
@@ -557,7 +560,8 @@ where
 {
     match url.scheme() {
         "http" | "https" => {
-            let client: HyperClient<C, http_body_util::Empty<Bytes>> = HyperClient::builder(TokioExecutor::new()).build(connector);
+            let client: HyperClient<C, http_body_util::Empty<Bytes>> =
+                HyperClient::builder(TokioExecutor::new()).build(connector);
             let uri = url
                 .as_str()
                 .parse()
@@ -565,8 +569,7 @@ where
             let resp = client.get(uri).await?;
             // Convert hyper body to a stream of io::Result<Bytes>
             let body_stream = resp.into_body().into_data_stream();
-            let body = body_stream
-                .map(|r| r.map_err(|e| std::io::Error::new(ErrorKind::Other, e)));
+            let body = body_stream.map(|r| r.map_err(|e| std::io::Error::new(ErrorKind::Other, e)));
             Ok(Box::new(body))
         }
         "file" => {
@@ -682,9 +685,7 @@ async fn disable_profile_heap(Path(profile): Path<String>) -> Response<Body> {
     let stream = tokio_stream::wrappers::ReceiverStream::new(rx);
     // Wrap items in Result for TryStream compatibility
     let stream = stream.map(|b| Ok::<_, std::io::Error>(b));
-    Response::builder()
-        .body(Body::from_stream(stream))
-        .unwrap()
+    Response::builder().body(Body::from_stream(stream)).unwrap()
 }
 
 async fn delete_profile_heap(Path(profile): Path<String>) -> crate::Result<()> {

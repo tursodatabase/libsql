@@ -1,16 +1,16 @@
 //! Simple S3-compatible mock server for testing
-//! 
+//!
 //! This is a minimal S3 implementation that supports the operations needed
 //! for bottomless backup/restore tests. Uses hyper 1.0 for compatibility.
 
+use http_body_util::{BodyExt, Full};
+use hyper::body::{Bytes, Incoming};
+use hyper::{Method, Request, Response, StatusCode};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::fs;
 use tokio::sync::Mutex;
-use hyper::{Request, Response, StatusCode, Method};
-use hyper::body::{Bytes, Incoming};
-use http_body_util::{Full, BodyExt};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -34,11 +34,14 @@ impl S3MockServer {
         })
     }
 
-    pub async fn handle(&self, req: Request<Incoming>) -> Result<Response<Full<Bytes>>, hyper::Error> {
+    pub async fn handle(
+        &self,
+        req: Request<Incoming>,
+    ) -> Result<Response<Full<Bytes>>, hyper::Error> {
         let method = req.method().clone();
         let path = req.uri().path().to_string();
         let query = req.uri().query().unwrap_or("").to_string();
-        
+
         // Parse path: /bucket-name/key
         let parts: Vec<&str> = path.trim_start_matches('/').splitn(2, '/').collect();
         let bucket_name = parts.first().copied().unwrap_or("").to_string();
@@ -67,7 +70,9 @@ impl S3MockServer {
                 self.get_object(&bucket, &key).await
             }
             // List objects (GET /bucket-name/ or GET /)
-            (Method::GET, ref bucket, ref key, ref q) if key.is_empty() && (bucket.is_empty() || q.contains("list")) => {
+            (Method::GET, ref bucket, ref key, ref q)
+                if key.is_empty() && (bucket.is_empty() || q.contains("list")) =>
+            {
                 if bucket.is_empty() {
                     self.list_buckets().await
                 } else {
@@ -75,9 +80,7 @@ impl S3MockServer {
                 }
             }
             // List objects without query
-            (Method::GET, bucket, key, _) if key.is_empty() => {
-                self.list_objects(&bucket).await
-            }
+            (Method::GET, bucket, key, _) if key.is_empty() => self.list_objects(&bucket).await,
             // Delete object (DELETE /bucket-name/key)
             (Method::DELETE, bucket, key, _) if !key.is_empty() => {
                 self.delete_object(&bucket, &key).await
@@ -87,9 +90,7 @@ impl S3MockServer {
                 self.delete_objects(&body_bytes).await
             }
             // Head bucket (HEAD /bucket-name/)
-            (Method::HEAD, bucket, key, _) if key.is_empty() => {
-                self.head_bucket(&bucket).await
-            }
+            (Method::HEAD, bucket, key, _) if key.is_empty() => self.head_bucket(&bucket).await,
             _ => {
                 tracing::warn!("Unhandled request: {} {}", method, path);
                 Self::not_found()
@@ -102,7 +103,7 @@ impl S3MockServer {
     async fn create_bucket(&self, name: &str) -> Response<Full<Bytes>> {
         let mut buckets = self.buckets.lock().await;
         buckets.entry(name.to_string()).or_default();
-        
+
         Response::builder()
             .status(StatusCode::OK)
             .body(Full::new(Bytes::new()))
@@ -113,7 +114,7 @@ impl S3MockServer {
         let mut buckets = self.buckets.lock().await;
         let bucket = buckets.entry(bucket.to_string()).or_default();
         bucket.objects.insert(key.to_string(), data);
-        
+
         Response::builder()
             .status(StatusCode::OK)
             .body(Full::new(Bytes::new()))
@@ -143,7 +144,8 @@ impl S3MockServer {
         for (key, data) in &bucket.objects {
             xml.push_str(&format!(
                 "<Contents><Key>{}</Key><Size>{}</Size></Contents>",
-                key, data.len()
+                key,
+                data.len()
             ));
         }
         xml.push_str("</ListBucketResult>");
@@ -157,7 +159,7 @@ impl S3MockServer {
 
     async fn list_buckets(&self) -> Response<Full<Bytes>> {
         let buckets = self.buckets.lock().await;
-        
+
         let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?><ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Buckets>");
         for name in buckets.keys() {
             xml.push_str(&format!("<Bucket><Name>{}</Name></Bucket>", name));
@@ -176,7 +178,7 @@ impl S3MockServer {
         if let Some(bucket) = buckets.get_mut(bucket) {
             bucket.objects.remove(key);
         }
-        
+
         Response::builder()
             .status(StatusCode::NO_CONTENT)
             .body(Full::new(Bytes::new()))
@@ -225,7 +227,7 @@ pub async fn start_mock_server(addr: std::net::SocketAddr) -> std::io::Result<S3
     let listener = tokio::net::TcpListener::bind(addr).await?;
     let server = S3MockServer::new().await?;
     let server_clone = server.clone();
-    
+
     tokio::spawn(async move {
         loop {
             let (stream, _) = match listener.accept().await {
@@ -235,25 +237,25 @@ pub async fn start_mock_server(addr: std::net::SocketAddr) -> std::io::Result<S3
                     continue;
                 }
             };
-            
+
             let server = server_clone.clone();
             tokio::spawn(async move {
                 let service = hyper::service::service_fn(move |req| {
                     let server = server.clone();
                     async move { server.handle(req).await }
                 });
-                
+
                 let io = hyper_util::rt::tokio::TokioIo::new(stream);
                 let builder = hyper_util::server::conn::auto::Builder::new(
-                    hyper_util::rt::TokioExecutor::new()
+                    hyper_util::rt::TokioExecutor::new(),
                 );
-                
+
                 if let Err(e) = builder.serve_connection(io, service).await {
                     tracing::error!("Connection error: {}", e);
                 }
             });
         }
     });
-    
+
     Ok(server)
 }

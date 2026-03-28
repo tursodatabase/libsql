@@ -38,7 +38,7 @@ fn apply_partial_snapshot() {
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                        
+
                         disable_metrics: true,
                         auth_key: None,
                     }),
@@ -70,15 +70,14 @@ fn apply_partial_snapshot() {
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                        
+
                         disable_metrics: true,
                         auth_key: None,
                     }),
                     rpc_client_config: Some(RpcClientConfig {
-                            connector: hyper_util::client::legacy::connect::HttpConnector::new(),
+                        connector: hyper_util::client::legacy::connect::HttpConnector::new(),
                         remote_url: "http://primary:5050".into(),
                         tls_config: None,
-                        
                     }),
                     ..Default::default()
                 };
@@ -168,7 +167,7 @@ fn replica_lazy_creation() {
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                        
+
                         disable_metrics: true,
                         auth_key: None,
                     }),
@@ -199,15 +198,14 @@ fn replica_lazy_creation() {
                 },
                 admin_api_config: Some(AdminApiConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                    
+
                     disable_metrics: true,
                     auth_key: None,
                 }),
                 rpc_client_config: Some(RpcClientConfig {
-                            connector: hyper_util::client::legacy::connect::HttpConnector::new(),
+                    connector: hyper_util::client::legacy::connect::HttpConnector::new(),
                     remote_url: "http://primary:5050".into(),
                     tls_config: None,
-                    
                 }),
                 disable_namespaces: false,
                 disable_default_namespace: true,
@@ -287,10 +285,9 @@ fn replica_interactive_transaction() {
                     ..Default::default()
                 },
                 rpc_client_config: Some(RpcClientConfig {
-                            connector: hyper_util::client::legacy::connect::HttpConnector::new(),
+                    connector: hyper_util::client::legacy::connect::HttpConnector::new(),
                     remote_url: "http://primary:5050".into(),
                     tls_config: None,
-                    
                 }),
                 ..Default::default()
             };

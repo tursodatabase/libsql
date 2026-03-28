@@ -152,14 +152,14 @@ async fn handle_cursor(
         baton: stream_guard.release(),
         base_url: server.self_url.clone(),
     };
-    
+
     // In hyper 1.0, we need to collect the cursor stream into bytes
     // This is a simplified approach - collect all chunks
     let mut all_bytes = Vec::new();
-    
+
     // First chunk is the resp_body
     all_bytes.extend_from_slice(&encode_stream_item(&resp_body, encoding));
-    
+
     // Then poll the cursor for more entries
     let cursor_stream = CursorStream {
         resp_body: None,
@@ -167,13 +167,13 @@ async fn handle_cursor(
         cursor_hnd,
         encoding,
     };
-    
+
     use futures::stream::StreamExt;
     let chunks: Vec<_> = cursor_stream.collect().await;
     for chunk in chunks {
         all_bytes.extend_from_slice(&chunk?);
     }
-    
+
     let body = Full::new(Bytes::from(all_bytes));
     let content_type = match encoding {
         Encoding::Json => "text/plain",
@@ -245,7 +245,10 @@ async fn read_decode_request<T: DeserializeOwned + prost::Message + Default>(
     req: http::Request<axum::body::Body>,
     encoding: Encoding,
 ) -> Result<T> {
-    let collected = req.into_body().collect().await
+    let collected = req
+        .into_body()
+        .collect()
+        .await
         .context("Could not read request body")?;
     let req_body = collected.to_bytes();
     match encoding {

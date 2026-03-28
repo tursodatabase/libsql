@@ -30,8 +30,8 @@ fn get_s3_url() -> String {
 async fn start_s3_server() -> String {
     let s3_url = get_s3_url();
     let s3_addr = s3_url.trim_start_matches("http://").trim_end_matches('/');
-    
-    std::env::set_var("LIBSQL_BOTTOMLESS_ENDPOINT", &s3_url[..s3_url.len()-1]);
+
+    std::env::set_var("LIBSQL_BOTTOMLESS_ENDPOINT", &s3_url[..s3_url.len() - 1]);
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY", "foo");
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID", "bar");
     std::env::set_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION", "us-east-1");
@@ -40,7 +40,7 @@ async fn start_s3_server() -> String {
     tracing::info!("starting mock s3 server on {}", s3_addr);
 
     let addr: SocketAddr = s3_addr.parse().unwrap();
-    
+
     tokio::spawn(async move {
         match s3_mock::start_mock_server(addr).await {
             Ok(_) => {
@@ -54,7 +54,7 @@ async fn start_s3_server() -> String {
 
     // Wait for server to be ready
     tokio::time::sleep(Duration::from_millis(500)).await;
-    
+
     s3_url
 }
 
@@ -430,7 +430,8 @@ where
 }
 
 fn get_s3_endpoint() -> String {
-    std::env::var("LIBSQL_BOTTOMLESS_ENDPOINT").unwrap_or_else(|_| "http://127.0.0.1:9000".to_string())
+    std::env::var("LIBSQL_BOTTOMLESS_ENDPOINT")
+        .unwrap_or_else(|_| "http://127.0.0.1:9000".to_string())
 }
 
 async fn s3_config() -> aws_sdk_s3::config::Config {

@@ -36,8 +36,7 @@ impl RpcClientConfig {
             builder = builder.tls_config(tls_config)?;
         }
 
-        let channel =
-            builder.connect_with_connector_lazy(self.connector.clone());
+        let channel = builder.connect_with_connector_lazy(self.connector.clone());
 
         Ok((channel, uri))
     }

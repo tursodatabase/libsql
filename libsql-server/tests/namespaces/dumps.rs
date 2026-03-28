@@ -1,11 +1,10 @@
 use std::convert::Infallible;
 use std::time::Duration;
 
-
 use http::StatusCode;
 use http_body_util::Full;
 use hyper::service::service_fn;
-use hyper::{Response, Request};
+use hyper::{Request, Response};
 use insta::{assert_json_snapshot, assert_snapshot};
 use libsql::{Database, Value};
 use serde_json::json;
@@ -35,21 +34,21 @@ fn load_namespace_from_dump_from_url() {
 
     sim.host("dump-store", || async {
         let listener = turmoil::net::TcpListener::bind(("0.0.0.0", 8080)).await?;
-        
+
         loop {
             let (stream, _) = listener.accept().await?;
             let stream = TurmoilStream::new(stream);
-            
+
             let service = service_fn(|_req: Request<hyper::body::Incoming>| async {
                 Ok::<_, Infallible>(Response::new(Full::new(bytes::Bytes::from(DUMP))))
             });
-            
+
             tokio::spawn(async move {
                 let io = hyper_util::rt::tokio::TokioIo::new(stream);
                 let builder = hyper_util::server::conn::auto::Builder::new(
-                    hyper_util::rt::TokioExecutor::new()
+                    hyper_util::rt::TokioExecutor::new(),
                 );
-                
+
                 if let Err(e) = builder.serve_connection(io, service).await {
                     tracing::error!("Connection error: {}", e);
                 }

@@ -57,17 +57,21 @@ pub async fn run_rpc_server<A: Accept>(
     if let Some(tls_config) = maybe_tls {
         // TLS case
         let cert_pem = tokio::fs::read_to_string(&tls_config.cert).await?;
-        let certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut cert_pem.as_bytes())
-            .collect::<Result<Vec<_>, _>>()?;
+        let certs: Vec<CertificateDer<'static>> =
+            rustls_pemfile::certs(&mut cert_pem.as_bytes()).collect::<Result<Vec<_>, _>>()?;
 
         let key_pem = tokio::fs::read_to_string(&tls_config.key).await?;
         let keys: Vec<_> = rustls_pemfile::pkcs8_private_keys(&mut key_pem.as_bytes())
             .collect::<Result<Vec<_>, _>>()?;
-        let key = rustls::pki_types::PrivateKeyDer::try_from(keys.into_iter().next().ok_or_else(|| anyhow::anyhow!("no private keys found"))?)?;
+        let key = rustls::pki_types::PrivateKeyDer::try_from(
+            keys.into_iter()
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("no private keys found"))?,
+        )?;
 
         let ca_cert_pem = std::fs::read_to_string(&tls_config.ca_cert)?;
-        let ca_certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut ca_cert_pem.as_bytes())
-            .collect::<Result<Vec<_>, _>>()?;
+        let ca_certs: Vec<CertificateDer<'static>> =
+            rustls_pemfile::certs(&mut ca_cert_pem.as_bytes()).collect::<Result<Vec<_>, _>>()?;
 
         let mut roots = RootCertStore::empty();
         roots.add_parsable_certificates(ca_certs);

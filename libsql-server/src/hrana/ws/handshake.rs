@@ -92,8 +92,7 @@ pub async fn handshake_upgrade(
 
     let namespace = namespace_from_headers(req.headers(), disable_default_ns, disable_namespaces)?;
     let ws_config = Some(get_ws_config());
-    let (stream_fut, subproto) = match hyper_tungstenite::upgrade(&mut req, ws_config)
-    {
+    let (stream_fut, subproto) = match hyper_tungstenite::upgrade(&mut req, ws_config) {
         Ok((mut resp, stream_fut)) => {
             match negotiate_subproto(req.headers(), resp.headers_mut()) {
                 Ok(subproto) => {
