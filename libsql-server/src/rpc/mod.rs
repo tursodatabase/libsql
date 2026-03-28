@@ -2,6 +2,7 @@ use std::future::poll_fn;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use std::time::Duration;
 
 use futures::stream::FuturesUnordered;
 use futures::Stream;
@@ -70,7 +71,7 @@ pub async fn run_rpc_server<A: Accept>(
                 .ok_or_else(|| anyhow::anyhow!("no private keys found"))?,
         )?;
 
-        let ca_cert_pem = std::fs::read_to_string(&tls_config.ca_cert)?;
+        let ca_cert_pem = tokio::fs::read_to_string(&tls_config.ca_cert).await?;
         let ca_certs: Vec<CertificateDer<'static>> =
             rustls_pemfile::certs(&mut ca_cert_pem.as_bytes()).collect::<Result<Vec<_>, _>>()?;
 
@@ -110,6 +111,11 @@ pub async fn run_rpc_server<A: Accept>(
     Ok(())
 }
 
+/// Maximum number of concurrent TLS handshakes to prevent DoS
+const MAX_CONCURRENT_TLS_HANDSHAKES: usize = 1000;
+/// Timeout for TLS handshake operations
+const TLS_HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(30);
+
 /// Custom stream for accepting TLS connections
 /// Properly manages pending TLS handshakes and yields them when complete
 struct TlsIncomingStream<A: Accept> {
@@ -138,17 +144,22 @@ impl<A: Accept> Stream for TlsIncomingStream<A> {
         let this = self.get_mut();
 
         // Try to accept a new connection if acceptor is not closed
-        if !this.acceptor_closed {
+        // Apply backpressure: don't accept new connections if we're at the handshake limit
+        if !this.acceptor_closed && this.pending_handshakes.len() < MAX_CONCURRENT_TLS_HANDSHAKES {
             match Pin::new(&mut this.acceptor).poll_accept(cx) {
                 Poll::Ready(Some(Ok(conn))) => {
                     let tls_acceptor = this.tls_acceptor.clone();
-                    // Spawn TLS handshake and track it
+                    // Spawn TLS handshake with timeout and track it
                     let handle = tokio::spawn(async move {
-                        match tls_acceptor.accept(conn).await {
-                            Ok(tls_stream) => Ok(TlsStream(tls_stream)),
-                            Err(err) => {
+                        match tokio::time::timeout(TLS_HANDSHAKE_TIMEOUT, tls_acceptor.accept(conn)).await {
+                            Ok(Ok(tls_stream)) => Ok(TlsStream(tls_stream)),
+                            Ok(Err(err)) => {
                                 tracing::error!("failed to perform tls handshake: {:#}", err);
                                 Err(anyhow::anyhow!("TLS handshake failed: {}", err))
+                            }
+                            Err(_) => {
+                                tracing::warn!("TLS handshake timed out after {:?}", TLS_HANDSHAKE_TIMEOUT);
+                                Err(anyhow::anyhow!("TLS handshake timeout"))
                             }
                         }
                     });
@@ -162,6 +173,13 @@ impl<A: Accept> Stream for TlsIncomingStream<A> {
                 }
                 Poll::Pending => {}
             }
+        } else if this.pending_handshakes.len() >= MAX_CONCURRENT_TLS_HANDSHAKES {
+            // At capacity, apply backpressure by not accepting new connections
+            tracing::debug!(
+                "TLS handshake limit reached ({}/{}), applying backpressure",
+                this.pending_handshakes.len(),
+                MAX_CONCURRENT_TLS_HANDSHAKES
+            );
         }
 
         // Poll pending handshakes for any completed ones
