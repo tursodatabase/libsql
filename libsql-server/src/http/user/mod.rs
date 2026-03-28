@@ -35,7 +35,6 @@ use serde_json::Number;
 use tokio::sync::{mpsc, oneshot};
 use tonic::transport::Server;
 
-use tower::Service;
 use tower_http::compression::predicate::NotForContentType;
 use tower_http::compression::{DefaultPredicate, Predicate};
 use tower_http::{compression::CompressionLayer, cors};
@@ -430,8 +429,10 @@ where
             let grpc_router = Server::builder()
                 .accept_http1(true)
                 .add_service(tonic_web::enable(replication))
-                .add_service(tonic_web::enable(write_proxy))
-                .into_router();
+                .add_service(tonic_web::enable(write_proxy));
+            // Convert to axum Router - into_router() is deprecated but functional
+            #[allow(deprecated)]
+            let grpc_router = grpc_router.into_router();
 
             let router = app.merge(grpc_router);
 
@@ -458,7 +459,7 @@ where
             let router = router.fallback(handle_fallback);
 
             task_manager.spawn_with_shutdown_notify(|shutdown| async move {
-                let mut builder =
+                let builder =
                     hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
                 
                 let mut acceptor = acceptor;

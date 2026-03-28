@@ -10,7 +10,6 @@ use hyper_util::client::legacy::connect::Connection;
 use hyper_util::rt::TokioIo;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncRead, AsyncWrite};
-use tokio_rustls::server::TlsStream;
 use tonic::transport::server::{Connected, TcpConnectInfo};
 use tower::Service;
 

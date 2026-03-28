@@ -78,7 +78,15 @@ Fixed the FFI linking issue by disabling the `sqlean-extensions` feature in `lib
 
 ## Known Limitations
 
-### Disabled Features (P1 - Future Work)
+### Fixed Issues
+
+1. **SQL Extensions (sqlean)** ✅ **FIXED**
+   - Status: **RE-ENABLED**
+   - Root Cause: `build.rs` incorrectly included `pcre2_internal.h` as source
+   - Fix: Removed header file from source patterns
+   - Result: All extensions (regexp, crypto, fuzzy, math, stats, text, uuid) work
+
+### Remaining Issues (P1 - Future Work)
 
 1. **H2C Support**
    - Status: Disabled
@@ -91,12 +99,6 @@ Fixed the FFI linking issue by disabling the `sqlean-extensions` feature in `lib
    - Location: `libsql-server/src/http/admin/mod.rs:500`
    - Reason: Connector trait complexity
    - Impact: Cannot restore from remote dump URLs
-
-3. **SQL Extensions (sqlean)**
-   - Status: Disabled
-   - Extensions affected: regexp, crypto, fuzzy, math, stats, text, uuid
-   - Reason: pcre2 compilation issue on macOS
-   - Impact: SQL regex and extension functions not available
 
 ### Warnings (P3 - Cleanup)
 - ~20 compiler warnings (15 auto-fixable with `cargo fix`)

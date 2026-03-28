@@ -255,7 +255,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     if cfg!(feature = "sqlean-extension-regexp") {
         enabled_extensions.push("regexp");
         sqlean_patterns.push("regexp/*.c");
-        sqlean_patterns.push("regexp/pcre2/pcre2_internal.h");
+        // Note: pcre2_internal.h is a header file, not a source file
         sqlean_patterns.push("regexp/pcre2/*.c");
     }
 

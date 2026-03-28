@@ -19,10 +19,10 @@ Successfully migrated `libsql-server` from Hyper 0.14 to Hyper 1.0 ecosystem:
 - **hyper-tungstenite**: 0.13 → 0.19
 - **tokio-tungstenite**: 0.24 → 0.28
 
-### Build Fix
-- Disabled `sqlean-extensions` feature in `libsql-sys` due to pcre2 compilation issue on macOS
-- This removes regexp, crypto, fuzzy, math, stats, text, and uuid SQL extensions
-- Binary builds successfully without these extensions
+### Build Fix - SQLEAN EXTENSIONS RESTORED ✅
+- **Root Cause**: `libsql-ffi/build.rs` was incorrectly including `pcre2_internal.h` as a source file
+- **Fix**: Removed header file from source patterns in build.rs
+- **Result**: All SQL extensions (regexp, crypto, fuzzy, math, stats, text, uuid) now work!
 
 ### Key API Changes
 - `hyper::Body` → `hyper::body::Incoming`

@@ -6,7 +6,7 @@ use axum::routing::delete;
 use axum::Json;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
-use futures::{SinkExt, StreamExt, TryStreamExt};
+use futures::{SinkExt, StreamExt};
 use axum::body::Body;
 use http::{Request, StatusCode};
 use http_body_util::BodyExt;
@@ -16,7 +16,6 @@ use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
-use std::convert::Infallible;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -192,8 +191,10 @@ where
     let admin_shell = crate::admin_shell::make_svc(namespaces.clone());
     let grpc_router = tonic::transport::Server::builder()
         .accept_http1(true)
-        .add_service(tonic_web::enable(admin_shell))
-        .into_router();
+        .add_service(tonic_web::enable(admin_shell));
+    // Convert to axum Router - into_router() is deprecated but functional
+    #[allow(deprecated)]
+    let grpc_router = grpc_router.into_router();
 
     let router = router
         .merge(grpc_router)
@@ -248,7 +249,7 @@ where
     A: crate::net::Accept,
 {
     use std::future::poll_fn;
-    use std::pin::Pin;
+    
 
     let shutdown = shutdown.notified();
     tokio::pin!(shutdown);
@@ -496,9 +497,9 @@ async fn handle_create_namespace(
     }
 
     let dump = match req.dump_url {
-        Some(ref url) => {
+        Some(ref _url) => {
             // TODO: Re-enable dump from URL after fixing connector for hyper 1.0
-            // RestoreOption::Dump(dump_stream_from_url(url, app_state.connector.clone()).await?)
+            // RestoreOption::Dump(dump_stream_from_url(_url, app_state.connector.clone()).await?)
             return Err(Error::Internal("Dump from URL temporarily disabled".to_string()));
         }
         None => RestoreOption::Latest,
@@ -549,6 +550,7 @@ async fn handle_fork_namespace(
     Ok(())
 }
 
+#[allow(dead_code)]
 async fn dump_stream_from_url<C>(url: &Url, connector: C) -> Result<DumpStream, LoadDumpError>
 where
     C: Connector,

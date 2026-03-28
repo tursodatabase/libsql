@@ -3,15 +3,13 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use hyper_util::client::legacy::connect::HttpConnector;
-use hyper_rustls::HttpsConnector;
 use libsql_sys::EncryptionConfig;
 use sha256::try_digest;
 use tokio::time::Duration;
 use tonic::transport::Channel;
-use tower::ServiceExt;
 
 use crate::auth::{Auth, Disabled};
-use crate::net::{AddrIncoming, Connector};
+use crate::net::AddrIncoming;
 
 pub struct RpcClientConfig {
     pub remote_url: String,

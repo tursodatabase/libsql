@@ -1,14 +1,13 @@
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use futures::stream::Stream;
-use http_body_util::{BodyExt, Full, StreamBody};
+use http_body_util::{BodyExt, Full};
 use libsql_hrana::proto;
 use parking_lot::Mutex;
 use serde::{de::DeserializeOwned, Serialize};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task;
-use tokio::sync::mpsc;
 
 use super::{batch, cursor, Encoding, ProtocolError, Version};
 use crate::connection::{MakeConnection, RequestContext};
