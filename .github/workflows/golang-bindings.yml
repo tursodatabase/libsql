@@ -72,7 +72,7 @@ jobs:
 
     - name: Start sqld server
       run: |
-        ./target/release/sqld --http-listen-addr 127.0.0.1:8080 --grpc-listen-addr 127.0.0.1:5001 &
+        RUST_LOG=libsql_server=debug,info ./target/release/sqld --http-listen-addr 127.0.0.1:8080 --grpc-listen-addr 127.0.0.1:5001 &
         # Wait for server to be ready
         for i in {1..30}; do
           if curl -s http://127.0.0.1:8080/health > /dev/null 2>&1; then
@@ -82,6 +82,8 @@ jobs:
           echo "Waiting for server... ($i/30)"
           sleep 1
         done
+        # Give server a bit more time to fully initialize gRPC
+        sleep 2
 
     - name: Run go-libsql tests
       working-directory: go-libsql
