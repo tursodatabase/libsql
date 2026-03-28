@@ -40,9 +40,6 @@ pub async fn run_rpc_server<A: Accept>(
     // Build the tonic server with services
     let idle_layer = option_layer(idle_shutdown_layer);
     let mut server = tonic::transport::Server::builder()
-        .max_decoding_message_size(64 * 1024 * 1024) // 64MB max request
-        .max_encoding_message_size(64 * 1024 * 1024) // 64MB max response
-        .timeout(std::time::Duration::from_secs(60)) // Request timeout
         .layer(&idle_layer)
         .layer(
             tower_http::trace::TraceLayer::new_for_grpc()
