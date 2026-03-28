@@ -469,7 +469,8 @@ where
 
             task_manager.spawn_with_shutdown_notify(|shutdown| async move {
                 let builder =
-                    hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
+                    hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new())
+                        .http2_only(false);
 
                 let mut acceptor = acceptor;
 
