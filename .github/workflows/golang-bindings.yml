@@ -16,12 +16,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    services:
-      sqld:
-        image: ghcr.io/tursodatabase/libsql-server:latest
-        ports:
-          - 8080:8080
-
     steps:
     - uses: actions/checkout@v3
 
@@ -57,6 +51,9 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-
 
+    - name: Build sqld server
+      run: cargo build --release -p libsql-server
+
     - name: Build sql-experimental
       run: cargo b -j16 --release -p sql-experimental
 
@@ -72,6 +69,19 @@ jobs:
            && cp target/release/libsql_experimental.a go-libsql/lib/linux_amd64/
            && cp target/release/libsql_experimental.a go-libsql/lib/linux_arm64/
            && cp bindings/c/include/libsql.h go-libsql/lib/include/
+
+    - name: Start sqld server
+      run: |
+        ./target/release/sqld --http-listen-addr 127.0.0.1:8080 &
+        # Wait for server to be ready
+        for i in {1..30}; do
+          if curl -s http://127.0.0.1:8080/health > /dev/null 2>&1; then
+            echo "Server is ready!"
+            break
+          fi
+          echo "Waiting for server... ($i/30)"
+          sleep 1
+        done
 
     - name: Run go-libsql tests
       working-directory: go-libsql
