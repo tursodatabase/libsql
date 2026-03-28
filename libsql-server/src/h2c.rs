@@ -41,11 +41,12 @@
 use std::marker::PhantomData;
 use std::pin::Pin;
 
-use axum::{body::BoxBody, http::HeaderValue};
+use axum::body::Body;
 use bytes::Bytes;
-use hyper::header;
-use hyper::Body;
-use hyper::{Request, Response};
+use http::header;
+use http::{Request, Response};
+use hyper_util::rt::{TokioExecutor, TokioIo};
+use hyper::server::conn::http2::Builder as Http2Builder;
 use tonic::transport::server::TcpConnectInfo;
 use tower::Service;
 
@@ -80,7 +81,7 @@ where
 {
     type Response = H2c<S, B>;
 
-    type Error = hyper::Error;
+    type Error = BoxError;
 
     type Future =
         Pin<Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>>;
@@ -124,7 +125,7 @@ where
     B: http_body::Body<Data = Bytes> + Send + 'static,
     B::Error: Into<BoxError> + Sync + Send + 'static,
 {
-    type Response = hyper::Response<BoxBody>;
+    type Response = Response<Body>;
     type Error = BoxError;
     type Future =
         Pin<Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>>;
@@ -136,7 +137,7 @@ where
         std::task::Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, mut req: hyper::Request<Body>) -> Self::Future {
+    fn call(&mut self, mut req: Request<Body>) -> Self::Future {
         let mut svc = self.s.clone();
         let connect_info = self.connect_info.clone();
 
@@ -146,11 +147,10 @@ where
             // Check if this request is a `h2c` upgrade, if it is not pass
             // the request to the inner service, which in our case is the
             // axum router.
-            if req.headers().get(header::UPGRADE) != Some(&HeaderValue::from_static("h2c")) {
+            if req.headers().get(header::UPGRADE) != Some(&http::HeaderValue::from_static("h2c")) {
                 return svc
                     .call(req)
                     .await
-                    .map(|r| r.map(axum::body::boxed))
                     .map_err(Into::into);
             }
 
@@ -160,7 +160,7 @@ where
             // upgrade to complete and start a http2 connection.
             tokio::spawn(async move {
                 let upgraded_io = match hyper::upgrade::on(&mut req).await {
-                    Ok(io) => io,
+                    Ok(io) => TokioIo::new(io),
                     Err(e) => {
                         tracing::error!("Failed to upgrade h2c connection: {}", e);
                         return;
@@ -169,27 +169,23 @@ where
 
                 tracing::debug!("Successfully upgraded the connection, speaking h2 now");
 
-                if let Err(e) = hyper::server::conn::Http::new()
-                    .http2_only(true)
-                    .serve_connection(
-                        upgraded_io,
-                        tower::service_fn(move |mut r: hyper::Request<hyper::Body>| {
-                            r.extensions_mut().insert(connect_info.clone());
-                            svc.call(r)
-                        }),
-                    )
-                    .await
-                {
+                let executor = TokioExecutor::new();
+                let conn = Http2Builder::new(executor);
+                let svc = tower::service_fn(move |mut r: Request<Body>| {
+                    r.extensions_mut().insert(connect_info.clone());
+                    svc.call(r)
+                });
+
+                if let Err(e) = conn.serve_connection(upgraded_io, svc).await {
                     tracing::error!("http2 connection error: {}", e);
                 }
             });
 
             // Reply that we are switching protocols to h2
-            let body = axum::body::boxed(axum::body::Empty::new());
-            let mut res = hyper::Response::new(body);
-            *res.status_mut() = hyper::StatusCode::SWITCHING_PROTOCOLS;
+            let mut res = Response::new(Body::empty());
+            *res.status_mut() = http::StatusCode::SWITCHING_PROTOCOLS;
             res.headers_mut()
-                .insert(header::UPGRADE, HeaderValue::from_static("h2c"));
+                .insert(header::UPGRADE, http::HeaderValue::from_static("h2c"));
 
             Ok(res)
         })

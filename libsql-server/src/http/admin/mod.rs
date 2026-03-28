@@ -1,12 +1,15 @@
 use anyhow::Context as _;
-use axum::body::StreamBody;
 use axum::extract::{FromRef, Path, State};
 use axum::middleware::Next;
+use axum::response::Response;
 use axum::routing::delete;
 use axum::Json;
 use chrono::NaiveDateTime;
 use futures::{SinkExt, StreamExt, TryStreamExt};
-use hyper::{Body, Request, StatusCode};
+use axum::body::Body;
+use http::{Request, StatusCode};
+use hyper_util::client::legacy::Client as HyperClient;
+use hyper_util::rt::TokioExecutor;
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
@@ -197,11 +200,55 @@ where
         .merge(grpc_router)
         .layer(axum::middleware::from_fn_with_state(auth, auth_middleware));
 
-    hyper::server::Server::builder(acceptor)
-        .serve(router.into_make_service())
-        .with_graceful_shutdown(shutdown.notified())
+    // Serve connections using the custom Accept trait (hyper 1.0 compatible)
+    task_manager_spawn_accept_loop(acceptor, router, shutdown)
         .await
         .context("Could not bind admin HTTP API server")?;
+
+    Ok(())
+}
+
+/// Spawn a task that serves connections from the acceptor
+async fn task_manager_spawn_accept_loop<A>(
+    mut acceptor: A,
+    router: axum::Router,
+    shutdown: Arc<tokio::sync::Notify>,
+) -> anyhow::Result<()>
+where
+    A: crate::net::Accept,
+{
+    use std::future::poll_fn;
+    use std::pin::Pin;
+
+    let shutdown = shutdown.notified();
+    tokio::pin!(shutdown);
+
+    loop {
+        let conn = tokio::select! {
+            biased;
+            _ = &mut shutdown => break,
+            conn = poll_fn(|cx| Pin::new(&mut acceptor).poll_accept(cx)) => conn,
+        };
+
+        let conn = match conn {
+            Some(Ok(conn)) => conn,
+            Some(Err(e)) => {
+                tracing::error!("accept error: {}", e);
+                continue;
+            }
+            None => break,
+        };
+
+        let svc = router.clone();
+        tokio::spawn(async move {
+            let builder = hyper_util::server::conn::auto::Builder::new(
+                hyper_util::rt::TokioExecutor::new(),
+            );
+            let _ = builder
+                .serve_connection(hyper_util::rt::tokio::TokioIo::new(conn), svc)
+                .await;
+        });
+    }
 
     Ok(())
 }
@@ -476,7 +523,7 @@ where
 {
     match url.scheme() {
         "http" | "https" => {
-            let client = hyper::client::Client::builder().build::<_, Body>(connector);
+            let client = HyperClient::builder(TokioExecutor::new()).build(connector);
             let uri = url
                 .as_str()
                 .parse()
@@ -578,7 +625,7 @@ async fn enable_profile_heap(Json(req): Json<EnableHeapProfileRequest>) -> crate
     Ok(path.file_name().unwrap().to_str().unwrap().to_string())
 }
 
-async fn disable_profile_heap(Path(profile): Path<String>) -> impl axum::response::IntoResponse {
+async fn disable_profile_heap(Path(profile): Path<String>) -> Response<Body> {
     let (tx, rx) = tokio::sync::mpsc::channel::<bytes::Bytes>(1);
     tokio::task::spawn_blocking(move || {
         rheaper::disable_tracking();
@@ -597,11 +644,10 @@ async fn disable_profile_heap(Path(profile): Path<String>) -> impl axum::respons
         }
     });
 
-    let stream =
-        tokio_stream::wrappers::ReceiverStream::new(rx).map(|b| Result::<_, Infallible>::Ok(b));
-    let body = StreamBody::new(stream);
-
-    body
+    let stream = tokio_stream::wrappers::ReceiverStream::new(rx);
+    Response::builder()
+        .body(Body::from_stream(stream))
+        .unwrap()
 }
 
 async fn delete_profile_heap(Path(profile): Path<String>) -> crate::Result<()> {

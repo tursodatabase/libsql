@@ -4,12 +4,11 @@ use std::net::SocketAddr;
 use std::pin::Pin;
 use std::task::{ready, Context, Poll};
 
-use hyper::client::connect::Connection;
-use hyper::server::accept::Accept as HyperAccept;
-use hyper::Uri;
-use hyper_rustls::acceptor::TlsStream;
+use http::Uri;
+use hyper_util::client::legacy::connect::Connection;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncRead, AsyncWrite};
+use tokio_rustls::server::TlsStream;
 use tonic::transport::server::{Connected, TcpConnectInfo};
 use tower::Service;
 
@@ -41,10 +40,16 @@ pub trait Conn: AsyncRead + AsyncWrite + Unpin + Send + 'static {
     fn connect_info(&self) -> TcpConnectInfo;
 }
 
-pub trait Accept:
-    HyperAccept<Conn = Self::Connection, Error = IoError> + Unpin + Send + 'static
-{
+/// Trait for accepting incoming connections.
+/// This is the hyper 1.0+ compatible version that replaces `hyper::server::accept::Accept`.
+pub trait Accept: Unpin + Send + 'static {
     type Connection: Conn;
+    type Error: std::error::Error + Send + Sync + 'static;
+
+    fn poll_accept(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Result<Self::Connection, Self::Error>>>;
 }
 
 pub struct AddrIncoming {
@@ -57,14 +62,14 @@ impl AddrIncoming {
     }
 }
 
-impl HyperAccept for AddrIncoming {
-    type Conn = AddrStream;
+impl Accept for AddrIncoming {
+    type Connection = AddrStream;
     type Error = IoError;
 
     fn poll_accept(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-    ) -> Poll<Option<Result<Self::Conn, Self::Error>>> {
+    ) -> Poll<Option<Result<Self::Connection, Self::Error>>> {
         match ready!(self.listener.poll_accept(cx)) {
             Ok((stream, remote_addr)) => {
                 // disable naggle algorithm
@@ -90,10 +95,6 @@ pin_project! {
     }
 }
 
-impl Accept for AddrIncoming {
-    type Connection = AddrStream;
-}
-
 impl<T> Conn for AddrStream<T>
 where
     T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
@@ -108,7 +109,7 @@ where
 
 impl<C: Conn> Conn for TlsStream<C> {
     fn connect_info(&self) -> TcpConnectInfo {
-        self.io().unwrap().connect_info()
+        self.get_ref().0.connect_info()
     }
 }
 

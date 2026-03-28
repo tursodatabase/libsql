@@ -12,16 +12,19 @@ pub mod timing;
 use std::sync::Arc;
 
 use anyhow::Context;
+use axum::body::Body;
+use axum::extract::Request;
 use axum::extract::{FromRef, FromRequest, FromRequestParts, Path as AxumPath, State as AxumState};
 use axum::http::request::Parts;
 use axum::http::HeaderValue;
+use axum::response::Response;
 use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
 use axum::{middleware, Router};
 use axum_extra::middleware::option_layer;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
-use hyper::{header, Body, Request, Response, StatusCode};
+use http::{header, HeaderMap, StatusCode};
 use libsql_replication::rpc::replication::replication_log_server::{
     ReplicationLog, ReplicationLogServer,
 };
@@ -31,6 +34,7 @@ use serde_json::Number;
 use tokio::sync::{mpsc, oneshot};
 use tonic::transport::Server;
 
+use tower::Service;
 use tower_http::compression::predicate::NotForContentType;
 use tower_http::compression::{DefaultPredicate, Predicate};
 use tower_http::{compression::CompressionLayer, cors};
@@ -446,11 +450,43 @@ where
             let h2c = crate::h2c::H2cMaker::new(router);
 
             task_manager.spawn_with_shutdown_notify(|shutdown| async move {
-                hyper::server::Server::builder(acceptor)
-                    .serve(h2c)
-                    .with_graceful_shutdown(shutdown.notified())
-                    .await
-                    .context("http server")?;
+                let mut builder =
+                    hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
+
+                let shutdown = shutdown.notified();
+                tokio::pin!(shutdown);
+
+                loop {
+                    let conn = tokio::select! {
+                        biased;
+                        _ = &mut shutdown => break,
+                        conn = std::future::poll_fn(|cx| std::pin::Pin::new(&mut acceptor).poll_accept(cx)) => conn,
+                    };
+
+                    let conn = match conn {
+                        Some(Ok(conn)) => conn,
+                        Some(Err(e)) => {
+                            tracing::error!("accept error: {}", e);
+                            continue;
+                        }
+                        None => break,
+                    };
+
+                    let svc = match h2c.call(&conn).await {
+                        Ok(svc) => svc,
+                        Err(e) => {
+                            tracing::error!("service creation error: {}", e);
+                            continue;
+                        }
+                    };
+
+                    let builder = builder.clone();
+                    tokio::spawn(async move {
+                        let _ = builder
+                            .serve_connection(hyper_util::rt::tokio::TokioIo::new(conn), svc)
+                            .await;
+                    });
+                }
                 Ok(())
             });
         }
@@ -490,11 +526,11 @@ impl FromRequestParts<AppState> for Authenticated {
 }
 
 fn build_context(
-    headers: &hyper::HeaderMap<HeaderValue>,
+    headers: &HeaderMap<HeaderValue>,
     required_fields: &Vec<&'static str>,
 ) -> UserAuthContext {
     let mut ctx = headers
-        .get(hyper::header::AUTHORIZATION)
+        .get(header::AUTHORIZATION)
         .ok_or(AuthError::AuthHeaderNotFound)
         .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
         .and_then(|t| UserAuthContext::from_auth_str(t))
@@ -521,17 +557,14 @@ impl FromRef<AppState> for Auth {
 pub struct Json<T>(pub T);
 
 #[tonic::async_trait]
-impl<S, T, B> FromRequest<S, B> for Json<T>
+impl<S, T> FromRequest<S> for Json<T>
 where
     T: DeserializeOwned,
-    B: hyper::body::HttpBody + Send + 'static,
-    B::Data: Send,
-    B::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
     S: Send + Sync,
 {
     type Rejection = axum::extract::rejection::JsonRejection;
 
-    async fn from_request(mut req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(mut req: Request<Body>, state: &S) -> Result<Self, Self::Rejection> {
         let headers = req.headers_mut();
 
         headers.insert(

@@ -1,10 +1,14 @@
+use std::future::poll_fn;
+use std::pin::Pin;
 use std::sync::Arc;
 
-use hyper_rustls::TlsAcceptor;
+use hyper_util::rt::{TokioExecutor, TokioIo};
+use hyper_util::server::conn::auto::Builder as ConnBuilder;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLogServer;
 use libsql_replication::rpc::replication::{BoxReplicationService, NAMESPACE_METADATA_KEY};
-use rustls::server::AllowAnyAuthenticatedClient;
+use rustls::pki_types::CertificateDer;
 use rustls::RootCertStore;
+use tokio_rustls::TlsAcceptor;
 use tonic::Status;
 use tower::util::option_layer;
 use tower::ServiceBuilder;
@@ -14,6 +18,7 @@ use tracing::Span;
 use crate::config::TlsConfig;
 use crate::metrics::CLIENT_VERSION;
 use crate::namespace::NamespaceName;
+use crate::net::{Accept, Conn};
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
@@ -23,94 +28,184 @@ pub mod replica_proxy;
 pub mod replication;
 pub mod streaming_exec;
 
-pub async fn run_rpc_server<A: crate::net::Accept>(
+pub async fn run_rpc_server<A: Accept>(
     proxy_service: ProxyService,
-    acceptor: A,
+    mut acceptor: A,
     maybe_tls: Option<TlsConfig>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
     service: BoxReplicationService,
 ) -> anyhow::Result<()> {
+    let router = tonic::transport::Server::builder()
+        .layer(&option_layer(idle_shutdown_layer))
+        .add_service(ProxyServer::new(proxy_service))
+        .add_service(ReplicationLogServer::new(service))
+        .into_router();
+
+    let svc = ServiceBuilder::new()
+        .layer(
+            tower_http::trace::TraceLayer::new_for_grpc()
+                .on_request(trace_request)
+                .on_response(
+                    DefaultOnResponse::new()
+                        .level(tracing::Level::DEBUG)
+                        .latency_unit(tower_http::LatencyUnit::Micros),
+                ),
+        )
+        .service(router);
+
     if let Some(tls_config) = maybe_tls {
-        let cert_pem = tokio::fs::read_to_string(&tls_config.cert).await?;
-        let certs = rustls_pemfile::certs(&mut cert_pem.as_bytes())?;
-        let certs = certs
-            .into_iter()
-            .map(rustls::Certificate)
-            .collect::<Vec<_>>();
-
-        let key_pem = tokio::fs::read_to_string(&tls_config.key).await?;
-        let keys = rustls_pemfile::pkcs8_private_keys(&mut key_pem.as_bytes())?;
-        let key = rustls::PrivateKey(keys[0].clone());
-
-        let ca_cert_pem = std::fs::read_to_string(&tls_config.ca_cert)?;
-        let ca_certs = rustls_pemfile::certs(&mut ca_cert_pem.as_bytes())?;
-        let ca_certs = ca_certs
-            .into_iter()
-            .map(rustls::Certificate)
-            .collect::<Vec<_>>();
-
-        let mut roots = RootCertStore::empty();
-        ca_certs.iter().try_for_each(|c| roots.add(c))?;
-        let verifier = AllowAnyAuthenticatedClient::new(roots);
-        let config = rustls::server::ServerConfig::builder()
-            .with_safe_defaults()
-            .with_client_cert_verifier(Arc::new(verifier))
-            .with_single_cert(certs, key)?;
-
-        let acceptor = TlsAcceptor::builder()
-            .with_tls_config(config)
-            .with_all_versions_alpn()
-            .with_acceptor(acceptor);
-
-        let router = tonic::transport::Server::builder()
-            .layer(&option_layer(idle_shutdown_layer))
-            .add_service(ProxyServer::new(proxy_service))
-            .add_service(ReplicationLogServer::new(service))
-            .into_router();
-
-        let svc = ServiceBuilder::new()
-            .layer(
-                tower_http::trace::TraceLayer::new_for_grpc()
-                    .on_request(trace_request)
-                    .on_response(
-                        DefaultOnResponse::new()
-                            .level(tracing::Level::DEBUG)
-                            .latency_unit(tower_http::LatencyUnit::Micros),
-                    ),
-            )
-            .service(router);
-
-        tracing::info!("serving internal rpc server with tls");
-        let h2c = crate::h2c::H2cMaker::new(svc);
-        hyper::server::Server::builder(acceptor).serve(h2c).await?;
+        run_tls_server(&mut acceptor, svc, tls_config).await
     } else {
-        let proxy = ProxyServer::new(proxy_service);
-        let replication = ReplicationLogServer::new(service);
-
-        let router = tonic::transport::Server::builder()
-            .layer(&option_layer(idle_shutdown_layer))
-            .add_service(proxy)
-            .add_service(replication)
-            .into_router();
-
-        let svc = ServiceBuilder::new()
-            .layer(
-                tower_http::trace::TraceLayer::new_for_grpc()
-                    .on_request(trace_request)
-                    .on_response(
-                        DefaultOnResponse::new()
-                            .level(tracing::Level::DEBUG)
-                            .latency_unit(tower_http::LatencyUnit::Micros),
-                    ),
-            )
-            .service(router);
-
-        let h2c = crate::h2c::H2cMaker::new(svc);
-
-        tracing::info!("serving internal rpc server without tls");
-
-        hyper::server::Server::builder(acceptor).serve(h2c).await?;
+        run_plain_server(&mut acceptor, svc).await
     }
+}
+
+async fn run_tls_server<A, S, B>(
+    acceptor: &mut A,
+    svc: S,
+    tls_config: TlsConfig,
+) -> anyhow::Result<()>
+where
+    A: Accept,
+    S: tower::Service<http::Request<axum::body::Body>, Response = http::Response<B>>
+        + Clone
+        + Send
+        + 'static,
+    S::Future: Send + 'static,
+    S::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+    S::Response: Send + 'static,
+    B: http_body::Body<Data = bytes::Bytes> + Send + 'static,
+    B::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+{
+    let cert_pem = tokio::fs::read_to_string(&tls_config.cert).await?;
+    let certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut cert_pem.as_bytes())
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let key_pem = tokio::fs::read_to_string(&tls_config.key).await?;
+    let keys: Vec<_> = rustls_pemfile::pkcs8_private_keys(&mut key_pem.as_bytes())
+        .collect::<Result<Vec<_>, _>>()?;
+    let key = rustls::pki_types::PrivateKeyDer::try_from(keys.into_iter().next().ok_or_else(|| anyhow::anyhow!("no private keys found"))?)?
+
+    let ca_cert_pem = std::fs::read_to_string(&tls_config.ca_cert)?;
+    let ca_certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut ca_cert_pem.as_bytes())
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let mut roots = RootCertStore::empty();
+    roots.add_parsable_certificates(ca_certs);
+    let verifier = rustls::server::WebPkiClientVerifier::builder(roots.into())
+        .build()
+        .map_err(|e| anyhow::anyhow!("Failed to build client verifier: {}", e))?;
+    let mut config = rustls::server::ServerConfig::builder()
+        .with_client_cert_verifier(verifier)
+        .with_single_cert(certs, key)?;
+
+    // Configure ALPN protocols for HTTP/2 and HTTP/1.1
+    config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
+
+    let tls_acceptor = TlsAcceptor::from(Arc::new(config));
+
+    tracing::info!("serving internal rpc server with tls");
+    let h2c_maker = crate::h2c::H2cMaker::new(svc);
+
+    // Drive the acceptor stream manually for hyper 1.0+ compatibility
+    loop {
+        let conn = match poll_fn(|cx| Pin::new(&mut *acceptor).poll_accept(cx)).await {
+            Some(Ok(conn)) => conn,
+            Some(Err(e)) => {
+                tracing::error!("Accept error: {}", e);
+                continue;
+            }
+            None => break,
+        };
+
+        let tls_acceptor = tls_acceptor.clone();
+        let mut h2c_maker = h2c_maker.clone();
+
+        tokio::spawn(async move {
+            let tls_stream = match tls_acceptor.accept(conn).await {
+                Ok(tls_stream) => tls_stream,
+                Err(err) => {
+                    tracing::error!("failed to perform tls handshake: {:#}", err);
+                    return;
+                }
+            };
+
+            let io = TokioIo::new(tls_stream);
+
+            // Get the service for this connection
+            let svc = match h2c_maker.call(&conn).await {
+                Ok(svc) => svc,
+                Err(e) => {
+                    tracing::error!("failed to create h2c service: {:#}", e);
+                    return;
+                }
+            };
+
+            if let Err(err) = ConnBuilder::new(TokioExecutor::new())
+                .serve_connection(io, svc)
+                .await
+            {
+                tracing::error!("failed to serve connection: {:#}", err);
+            }
+        });
+    }
+
+    Ok(())
+}
+
+async fn run_plain_server<A, S, B>(
+    acceptor: &mut A,
+    svc: S,
+) -> anyhow::Result<()>
+where
+    A: Accept,
+    S: tower::Service<http::Request<axum::body::Body>, Response = http::Response<B>>
+        + Clone
+        + Send
+        + 'static,
+    S::Future: Send + 'static,
+    S::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+    S::Response: Send + 'static,
+    B: http_body::Body<Data = bytes::Bytes> + Send + 'static,
+    B::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+{
+    tracing::info!("serving internal rpc server without tls");
+    let h2c_maker = crate::h2c::H2cMaker::new(svc);
+
+    // Drive the acceptor stream manually for hyper 1.0+ compatibility
+    loop {
+        let conn = match poll_fn(|cx| Pin::new(&mut *acceptor).poll_accept(cx)).await {
+            Some(Ok(conn)) => conn,
+            Some(Err(e)) => {
+                tracing::error!("Accept error: {}", e);
+                continue;
+            }
+            None => break,
+        };
+
+        let mut h2c_maker = h2c_maker.clone();
+
+        tokio::spawn(async move {
+            let io = TokioIo::new(conn);
+
+            // Get the service for this connection
+            let svc = match h2c_maker.call(&conn).await {
+                Ok(svc) => svc,
+                Err(e) => {
+                    tracing::error!("failed to create h2c service: {:#}", e);
+                    return;
+                }
+            };
+
+            if let Err(err) = ConnBuilder::new(TokioExecutor::new())
+                .serve_connection(io, svc)
+                .await
+            {
+                tracing::error!("failed to serve connection: {:#}", err);
+            }
+        });
+    }
+
     Ok(())
 }
 

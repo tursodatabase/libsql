@@ -1,5 +1,5 @@
 use axum::response::IntoResponse;
-use hyper::StatusCode;
+use http::StatusCode;
 use tonic::metadata::errors::InvalidMetadataValueBytes;
 
 use crate::{

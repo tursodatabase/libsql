@@ -1,5 +1,9 @@
 use anyhow::{anyhow, bail, Context as _, Result};
+use bytes::Bytes;
 use futures::{SinkExt as _, StreamExt as _};
+use http_body_util::combinators::BoxBody;
+use http_body_util::{BodyExt, Empty};
+use hyper_util::rt::TokioIo;
 use tokio_tungstenite::tungstenite;
 use tungstenite::http;
 
@@ -12,7 +16,7 @@ use super::Upgrade;
 
 pub enum WebSocket {
     Tcp(tokio_tungstenite::WebSocketStream<Box<dyn Conn>>),
-    Upgraded(tokio_tungstenite::WebSocketStream<hyper::upgrade::Upgraded>),
+    Upgraded(tokio_tungstenite::WebSocketStream<TokioIo<hyper::upgrade::Upgraded>>),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -71,6 +75,14 @@ pub async fn handshake_tcp(
     })
 }
 
+fn box_body<B>(body: B) -> BoxBody<Bytes, std::convert::Infallible>
+where
+    B: http_body::Body<Data = Bytes> + Send + Sync + 'static,
+    B::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+{
+    body.map_err(|_| unreachable!()).boxed()
+}
+
 pub async fn handshake_upgrade(
     upgrade: Upgrade,
     disable_default_ns: bool,
@@ -80,40 +92,47 @@ pub async fn handshake_upgrade(
 
     let namespace = namespace_from_headers(req.headers(), disable_default_ns, disable_namespaces)?;
     let ws_config = Some(get_ws_config());
-    let (mut resp, stream_fut_subproto_res) = match hyper_tungstenite::upgrade(&mut req, ws_config)
+    let (stream_fut, subproto) = match hyper_tungstenite::upgrade(&mut req, ws_config)
     {
-        Ok((mut resp, stream_fut)) => match negotiate_subproto(req.headers(), resp.headers_mut()) {
-            Ok(subproto) => (resp, Ok((stream_fut, subproto))),
-            Err(msg) => {
-                *resp.status_mut() = http::StatusCode::BAD_REQUEST;
-                *resp.body_mut() = hyper::Body::from(msg.clone());
-                (
-                    resp,
-                    Err(anyhow!("Could not negotiate subprotocol: {}", msg)),
-                )
+        Ok((mut resp, stream_fut)) => {
+            match negotiate_subproto(req.headers(), resp.headers_mut()) {
+                Ok(subproto) => {
+                    resp.headers_mut().insert(
+                        "server",
+                        http::HeaderValue::from_static("sqld-hrana-upgrade"),
+                    );
+                    // Convert body to BoxBody for type compatibility
+                    let resp = resp.map(|body| box_body(body));
+                    if upgrade.response_tx.send(resp).is_err() {
+                        bail!("Could not send the HTTP upgrade response")
+                    }
+                    (stream_fut, subproto)
+                }
+                Err(msg) => {
+                    let resp = http::Response::builder()
+                        .status(http::StatusCode::BAD_REQUEST)
+                        .header("server", "sqld-hrana-upgrade")
+                        .body(box_body(Empty::new()))
+                        .unwrap();
+                    let _ = upgrade.response_tx.send(resp);
+                    bail!("Could not negotiate subprotocol: {}", msg)
+                }
             }
-        },
+        }
         Err(err) => {
             let resp = http::Response::builder()
                 .status(http::StatusCode::BAD_REQUEST)
-                .body(hyper::Body::from(format!("{err}")))
+                .header("server", "sqld-hrana-upgrade")
+                .body(box_body(Empty::new()))
                 .unwrap();
-            (
-                resp,
-                Err(anyhow!(err).context("Protocol error in HTTP upgrade")),
-            )
+            let _ = upgrade.response_tx.send(resp);
+            return Err(anyhow!(err).context("Protocol error in HTTP upgrade"));
         }
     };
 
-    resp.headers_mut().insert(
-        "server",
-        http::HeaderValue::from_static("sqld-hrana-upgrade"),
-    );
-    if upgrade.response_tx.send(resp).is_err() {
-        bail!("Could not send the HTTP upgrade response")
-    }
-
-    let (stream_fut, subproto) = stream_fut_subproto_res?;
+    // In Hyper 1.0, HyperWebsocket resolves to WebSocketStream<Upgraded>, but Upgraded needs
+    // TokioIo wrapper to implement AsyncRead/AsyncWrite. However, hyper_tungstenite's
+    // HyperWebsocket already handles this internally and returns WebSocketStream<TokioIo<Upgraded>>
     let stream = stream_fut
         .await
         .context("Could not upgrade HTTP request to a WebSocket")?;

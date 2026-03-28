@@ -2,7 +2,8 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 use std::time::Duration;
 
-use axum::http::Request;
+use axum::body::Body;
+use axum::extract::Request;
 use axum::middleware::Next;
 use axum::response::Response;
 use hashbrown::HashMap;
@@ -54,7 +55,7 @@ pub fn sample_time(name: &'static str, duration: Duration) {
 }
 
 #[tracing::instrument(skip_all, fields(req_id = tracing::field::debug(uuid::Uuid::new_v4())))]
-pub(crate) async fn timings_middleware<B>(request: Request<B>, next: Next<B>) -> Response {
+pub(crate) async fn timings_middleware(request: Request, next: Next) -> Response {
     // tracing::error!("hello");
     TIMINGS
         .scope(Default::default(), async move {

@@ -1,4 +1,6 @@
 use anyhow::{anyhow, Context, Result};
+use bytes::Bytes;
+use http_body_util::{BodyExt, Full};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::future::Future;
@@ -15,19 +17,19 @@ enum ResponseError {
     Stmt(hrana::stmt::StmtError),
 }
 
-pub async fn handle_index() -> hyper::Response<hyper::Body> {
+pub async fn handle_index() -> http::Response<Full<Bytes>> {
     let body = "This is sqld HTTP API v1";
-    hyper::Response::builder()
+    http::Response::builder()
         .header("content-type", "text/plain")
-        .body(hyper::Body::from(body))
+        .body(Full::new(Bytes::from(body)))
         .unwrap()
 }
 
 pub(crate) async fn handle_execute(
     MakeConnectionExtractor(factory): MakeConnectionExtractor,
     ctx: RequestContext,
-    req: hyper::Request<hyper::Body>,
-) -> crate::Result<hyper::Response<hyper::Body>> {
+    req: http::Request<hyper::body::Incoming>,
+) -> crate::Result<http::Response<Full<Bytes>>> {
     #[derive(Debug, Deserialize)]
     struct ReqBody {
         stmt: hrana::proto::Stmt,
@@ -59,8 +61,8 @@ pub(crate) async fn handle_execute(
 pub(crate) async fn handle_batch(
     MakeConnectionExtractor(factory): MakeConnectionExtractor,
     ctx: RequestContext,
-    req: hyper::Request<hyper::Body>,
-) -> crate::Result<hyper::Response<hyper::Body>> {
+    req: http::Request<hyper::body::Incoming>,
+) -> crate::Result<http::Response<Full<Bytes>>> {
     #[derive(Debug, Deserialize)]
     struct ReqBody {
         batch: hrana::proto::Batch,
@@ -90,9 +92,9 @@ pub(crate) async fn handle_batch(
 
 async fn handle_request<ReqBody, RespBody, F, Fut, FT>(
     db_factory: Arc<FT>,
-    req: hyper::Request<hyper::Body>,
+    req: http::Request<hyper::body::Incoming>,
     f: F,
-) -> Result<hyper::Response<hyper::Body>>
+) -> Result<http::Response<Full<Bytes>>>
 where
     ReqBody: DeserializeOwned,
     RespBody: Serialize,
@@ -101,14 +103,15 @@ where
     FT: MakeConnection + ?Sized,
 {
     let res: Result<_> = async move {
-        let req_body = hyper::body::to_bytes(req.into_body()).await?;
+        let collected = req.into_body().collect().await?;
+        let req_body = collected.to_bytes();
         let req_body = serde_json::from_slice(&req_body)
             .map_err(|e| hrana::ProtocolError::JsonDeserialize { source: e })?;
 
         let db = db_factory.create().await?;
         let resp_body = f(db, req_body).await?;
 
-        Ok(json_response(hyper::StatusCode::OK, &resp_body))
+        Ok(json_response(http::StatusCode::OK, &resp_body))
     }
     .await;
 
@@ -123,12 +126,12 @@ where
             )) => Ok(protocol_error_response(
                 hrana::ProtocolError::ResponseTooLarge(e.to_string()),
             )),
-            Ok(e) => Err(anyhow!(e)),
+            Ok(e) => Err(anyhow!("{}", e)),
             Err(e) => Err(e),
         })
 }
 
-fn response_error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
+fn response_error_response(err: ResponseError) -> http::Response<Full<Bytes>> {
     use hrana::stmt::StmtError;
     let status = match &err {
         ResponseError::Stmt(err) => match err {
@@ -139,12 +142,12 @@ fn response_error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
             | StmtError::SqlInputError { .. }
             | StmtError::Proxy(_)
             | StmtError::ResponseTooLarge
-            | StmtError::Blocked { .. } => hyper::StatusCode::BAD_REQUEST,
-            StmtError::ArgsBothPositionalAndNamed => hyper::StatusCode::NOT_IMPLEMENTED,
+            | StmtError::Blocked { .. } => http::StatusCode::BAD_REQUEST,
+            StmtError::ArgsBothPositionalAndNamed => http::StatusCode::NOT_IMPLEMENTED,
             StmtError::TransactionTimeout | StmtError::TransactionBusy => {
-                hyper::StatusCode::SERVICE_UNAVAILABLE
+                http::StatusCode::SERVICE_UNAVAILABLE
             }
-            StmtError::SqliteError { .. } => hyper::StatusCode::INTERNAL_SERVER_ERROR,
+            StmtError::SqliteError { .. } => http::StatusCode::INTERNAL_SERVER_ERROR,
         },
     };
 
@@ -157,23 +160,20 @@ fn response_error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
     )
 }
 
-fn protocol_error_response(err: hrana::ProtocolError) -> hyper::Response<hyper::Body> {
-    hyper::Response::builder()
-        .status(hyper::StatusCode::BAD_REQUEST)
-        .header(hyper::http::header::CONTENT_TYPE, "text/plain")
-        .body(hyper::Body::from(err.to_string()))
+fn protocol_error_response(err: hrana::ProtocolError) -> http::Response<Full<Bytes>> {
+    http::Response::builder()
+        .status(http::StatusCode::BAD_REQUEST)
+        .header(http::header::CONTENT_TYPE, "text/plain")
+        .body(Full::new(Bytes::from(err.to_string())))
         .unwrap()
 }
 
-fn json_response<T: Serialize>(
-    status: hyper::StatusCode,
-    body: &T,
-) -> hyper::Response<hyper::Body> {
+fn json_response<T: Serialize>(status: http::StatusCode, body: &T) -> http::Response<Full<Bytes>> {
     let body = serde_json::to_vec(body).unwrap();
-    hyper::Response::builder()
+    http::Response::builder()
         .status(status)
-        .header(hyper::http::header::CONTENT_TYPE, "application/json")
-        .body(hyper::Body::from(body))
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(Full::new(Bytes::from(body)))
         .unwrap()
 }
 

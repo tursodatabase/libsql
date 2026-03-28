@@ -30,9 +30,10 @@ use config::{
 };
 use futures::future::ready;
 use futures::Future;
-use http::user::UserApi;
-use hyper::client::HttpConnector;
 use hyper::Uri;
+use http::user::UserApi;
+use http_body_util::Full;
+use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_rustls::HttpsConnector;
 use libsql_replication::rpc::replication::BoxReplicationService;
 use libsql_sys::wal::Sqlite3WalManager;
@@ -920,7 +921,7 @@ where
         })
     }
 
-    async fn get_client_config(&self) -> anyhow::Result<Option<(Channel, hyper::Uri)>> {
+    async fn get_client_config(&self) -> anyhow::Result<Option<(Channel, Uri)>> {
         match self.rpc_client_config {
             Some(ref config) => Ok(Some(config.configure().await?)),
             None => Ok(None),

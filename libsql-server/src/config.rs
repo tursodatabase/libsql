@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::Context;
-use hyper::client::HttpConnector;
+use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_rustls::HttpsConnector;
 use libsql_sys::EncryptionConfig;
 use sha256::try_digest;

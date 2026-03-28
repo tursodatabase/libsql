@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use futures::stream::Stream;
+use http_body_util::{BodyExt, Full};
 use libsql_hrana::proto;
 use parking_lot::Mutex;
 use serde::{de::DeserializeOwned, Serialize};
@@ -45,11 +46,11 @@ impl Server {
         &self,
         connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
         ctx: RequestContext,
-        req: hyper::Request<hyper::Body>,
+        req: http::Request<hyper::body::Incoming>,
         endpoint: Endpoint,
         version: Version,
         encoding: Encoding,
-    ) -> Result<hyper::Response<hyper::Body>> {
+    ) -> Result<http::Response<Full<Bytes>>> {
         handle_request(
             self,
             connection_maker,
@@ -76,9 +77,9 @@ impl Server {
     }
 }
 
-pub(crate) async fn handle_index() -> hyper::Response<hyper::Body> {
+pub(crate) async fn handle_index() -> http::Response<Full<Bytes>> {
     text_response(
-        hyper::StatusCode::OK,
+        http::StatusCode::OK,
         "Hello, this is HTTP API v2 (Hrana over HTTP)".into(),
     )
 }
@@ -87,11 +88,11 @@ async fn handle_request(
     server: &Server,
     connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
-    req: hyper::Request<hyper::Body>,
+    req: http::Request<hyper::body::Incoming>,
     endpoint: Endpoint,
     version: Version,
     encoding: Encoding,
-) -> Result<hyper::Response<hyper::Body>> {
+) -> Result<http::Response<Full<Bytes>>> {
     match endpoint {
         Endpoint::Pipeline => {
             handle_pipeline(server, connection_maker, ctx, req, version, encoding).await
@@ -106,10 +107,10 @@ async fn handle_pipeline(
     server: &Server,
     connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
-    req: hyper::Request<hyper::Body>,
+    req: http::Request<hyper::body::Incoming>,
     version: Version,
     encoding: Encoding,
-) -> Result<hyper::Response<hyper::Body>> {
+) -> Result<http::Response<Full<Bytes>>> {
     let req_body: proto::PipelineReqBody = read_decode_request(req, encoding).await?;
     let mut stream_guard =
         stream::acquire(server, connection_maker, req_body.baton.as_deref()).await?;
@@ -126,17 +127,17 @@ async fn handle_pipeline(
         base_url: server.self_url.clone(),
         results,
     };
-    Ok(encode_response(hyper::StatusCode::OK, &resp_body, encoding))
+    Ok(encode_response(http::StatusCode::OK, &resp_body, encoding))
 }
 
 async fn handle_cursor(
     server: &Server,
     connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
-    req: hyper::Request<hyper::Body>,
+    req: http::Request<hyper::body::Incoming>,
     version: Version,
     encoding: Encoding,
-) -> Result<hyper::Response<hyper::Body>> {
+) -> Result<http::Response<Full<Bytes>>> {
     let req_body: proto::CursorReqBody = read_decode_request(req, encoding).await?;
     let stream_guard = stream::acquire(server, connection_maker, req_body.baton.as_deref()).await?;
 
@@ -151,7 +152,10 @@ async fn handle_cursor(
         baton: stream_guard.release(),
         base_url: server.self_url.clone(),
     };
-    let body = hyper::Body::wrap_stream(CursorStream {
+    
+    // For streaming responses in hyper 1.0, we need a different approach
+    // For now, let's collect the stream into a single body
+    let body = hyper::body::Body::wrap_stream(CursorStream {
         resp_body: Some(resp_body),
         join_set,
         cursor_hnd,
@@ -162,9 +166,9 @@ async fn handle_cursor(
         Encoding::Protobuf => "application/octet-stream",
     };
 
-    Ok(hyper::Response::builder()
-        .status(hyper::StatusCode::OK)
-        .header(hyper::http::header::CONTENT_TYPE, content_type)
+    Ok(http::Response::builder()
+        .status(http::StatusCode::OK)
+        .header(http::header::CONTENT_TYPE, content_type)
         .body(body)
         .unwrap())
 }
@@ -224,12 +228,12 @@ fn encode_stream_item<T: Serialize + prost::Message>(item: &T, encoding: Encodin
 }
 
 async fn read_decode_request<T: DeserializeOwned + prost::Message + Default>(
-    req: hyper::Request<hyper::Body>,
+    req: http::Request<hyper::body::Incoming>,
     encoding: Encoding,
 ) -> Result<T> {
-    let req_body = hyper::body::to_bytes(req.into_body())
-        .await
+    let collected = req.into_body().collect().await
         .context("Could not read request body")?;
+    let req_body = collected.to_bytes();
     match encoding {
         Encoding::Json => serde_json::from_slice(&req_body)
             .map_err(|err| ProtocolError::JsonDeserialize { source: err })
@@ -240,13 +244,13 @@ async fn read_decode_request<T: DeserializeOwned + prost::Message + Default>(
     }
 }
 
-fn protocol_error_response(err: ProtocolError) -> hyper::Response<hyper::Body> {
-    text_response(hyper::StatusCode::BAD_REQUEST, err.to_string())
+fn protocol_error_response(err: ProtocolError) -> http::Response<Full<Bytes>> {
+    text_response(http::StatusCode::BAD_REQUEST, err.to_string())
 }
 
-fn stream_error_response(err: StreamError, encoding: Encoding) -> hyper::Response<hyper::Body> {
+fn stream_error_response(err: StreamError, encoding: Encoding) -> http::Response<Full<Bytes>> {
     let status = match err {
-        StreamError::StreamExpired => hyper::StatusCode::BAD_REQUEST,
+        StreamError::StreamExpired => http::StatusCode::BAD_REQUEST,
     };
     encode_response(
         status,
@@ -259,10 +263,10 @@ fn stream_error_response(err: StreamError, encoding: Encoding) -> hyper::Respons
 }
 
 fn encode_response<T: Serialize + prost::Message>(
-    status: hyper::StatusCode,
+    status: http::StatusCode,
     resp_body: &T,
     encoding: Encoding,
-) -> hyper::Response<hyper::Body> {
+) -> http::Response<Full<Bytes>> {
     let (resp_body, content_type) = match encoding {
         Encoding::Json => (serde_json::to_vec(resp_body).unwrap(), "application/json"),
         Encoding::Protobuf => (
@@ -270,17 +274,17 @@ fn encode_response<T: Serialize + prost::Message>(
             "application/x-protobuf",
         ),
     };
-    hyper::Response::builder()
+    http::Response::builder()
         .status(status)
-        .header(hyper::http::header::CONTENT_TYPE, content_type)
-        .body(hyper::Body::from(resp_body))
+        .header(http::header::CONTENT_TYPE, content_type)
+        .body(Full::new(Bytes::from(resp_body)))
         .unwrap()
 }
 
-fn text_response(status: hyper::StatusCode, resp_body: String) -> hyper::Response<hyper::Body> {
-    hyper::Response::builder()
+fn text_response(status: http::StatusCode, resp_body: String) -> http::Response<Full<Bytes>> {
+    http::Response::builder()
         .status(status)
-        .header(hyper::http::header::CONTENT_TYPE, "text/plain")
-        .body(hyper::Body::from(resp_body))
+        .header(http::header::CONTENT_TYPE, "text/plain")
+        .body(Full::new(Bytes::from(resp_body)))
         .unwrap()
 }
