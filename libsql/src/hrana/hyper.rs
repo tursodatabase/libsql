@@ -10,11 +10,11 @@ use crate::util::ConnectorService;
 use crate::{Error, Rows, Statement};
 use bytes::Bytes;
 use futures::future::BoxFuture;
-use futures::{Stream, TryStreamExt};
+use futures::Stream;
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use http_body_util::BodyExt;
-use std::io::ErrorKind;
+
 use std::sync::Arc;
 use std::time::Duration;
 

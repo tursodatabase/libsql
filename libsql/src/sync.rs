@@ -198,6 +198,7 @@ impl SyncContext {
     }
 
     #[tracing::instrument(skip(self, frames))]
+    #[allow(private_interfaces)]
     pub(crate) async fn push_frames(
         &mut self,
         frames: Bytes,

@@ -22,7 +22,7 @@ fn bootstrap() {
         .build_transport(false)
         .out_dir(&out_dir)
         .type_attribute(".proxy", "#[derive(serde::Serialize, serde::Deserialize)]")
-        .compile_with_config(config, iface_files, dirs)
+        .compile_protos_with_config(config, iface_files, dirs)
         .unwrap();
 
     let status = Command::new("git")

@@ -15,6 +15,7 @@ use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct S3MockServer {
+    #[allow(dead_code)]
     root: PathBuf,
     buckets: Arc<Mutex<HashMap<String, Bucket>>>,
 }
