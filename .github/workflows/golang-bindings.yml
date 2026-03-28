@@ -89,4 +89,4 @@ jobs:
       working-directory: go-libsql
       run: go test -v -count=1 ./...
       env:
-        LIBSQL_PRIMARY_URL: "http://127.0.0.1:5001"
+        LIBSQL_PRIMARY_URL: "http://127.0.0.1:8080"
