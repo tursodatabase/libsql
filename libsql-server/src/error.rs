@@ -298,6 +298,12 @@ pub enum LoadDumpError {
     InvalidSqlInput(String),
 }
 
+impl From<hyper_util::client::legacy::Error> for LoadDumpError {
+    fn from(e: hyper_util::client::legacy::Error) -> Self {
+        LoadDumpError::Internal(format!("HTTP client error: {}", e))
+    }
+}
+
 impl ResponseError for LoadDumpError {}
 
 impl IntoResponse for &LoadDumpError {

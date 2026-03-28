@@ -102,7 +102,7 @@ pub trait Conn: AsyncRead + AsyncWrite + Read + Write + Unpin + Send + 'static {
 /// Trait for accepting incoming connections.
 /// This is the hyper 1.0+ compatible version that replaces `hyper::server::accept::Accept`.
 pub trait Accept: Unpin + Send + 'static {
-    type Connection: Conn;
+    type Connection: Conn + Connected<ConnectInfo = TcpConnectInfo>;
     type Error: std::error::Error + Send + Sync + 'static;
 
     fn poll_accept(
