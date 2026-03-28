@@ -1,42 +1,4 @@
 //! Module that provides `h2c` server adapters.
-//!
-//! # What is `h2c`?
-//!
-//! `h2c` is a http1.1 upgrade token that allows us to accept http2 without
-//! going through tls/alpn while also accepting regular http1.1 requests. Since,
-//! our server does not do TLS there is no way to negotiate that an incoming
-//! connection is going to speak http2 or http1.1 so we must default to http1.1.
-//!
-//! # How does it work?
-//!
-//! The `H2c` service gets called on every http request that arrives to the
-//! server and checks if the request has an `upgrade` header set. If this
-//! header is set to `h2c` then it will start the upgrade process. If this
-//! header is not set the request continues normally without any upgrades.
-//!
-//! The upgrade process is quite simple, if the correct header value is set
-//! the server will spawn a background task, return status code `101`
-//! (switching protocols) and will set the same upgrade header with `h2c` as
-//! the value.
-//!
-//! The background task will wait for `hyper::upgrade::on` to complete. At this
-//! point when `on` completes it returns an `IO` object that we can read/write from.
-//! We then pass this into hyper's low level server connection type and force http2.
-//! This means from the point that the client gets back the upgrade headers and correct
-//! status code the connection will be immediealty speaking http2 and thus the upgrade
-//! is complete.
-//!
-//! ┌───────────────┐      upgrade:h2c        ┌──────────────────┐
-//! │ http::request ├────────────────────────►│ upgrade to http2 │
-//! └─────┬─────────┘                         └────────┬─────────┘
-//!       │                                            │
-//!       │                                            │
-//!       │                                            │
-//!       │                                            │
-//!       │                                            │
-//!       │             ┌─────────────────┐            │
-//!       └────────────►│call axum router │◄───────────┘
-//!                     └─────────────────┘
 
 use std::marker::PhantomData;
 use std::pin::Pin;
@@ -45,44 +7,49 @@ use axum::body::Body;
 use bytes::Bytes;
 use http::header;
 use http::{Request, Response};
+use http_body_util::BodyExt;
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use hyper::server::conn::http2::Builder as Http2Builder;
 use tonic::transport::server::TcpConnectInfo;
 use tower::Service;
 
+type BoxBody = http_body_util::combinators::BoxBody<Bytes, Box<dyn std::error::Error + Send + Sync>>;
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 /// A `MakeService` adapter for [`H2c`] that injects connection
 /// info into the request extensions.
-#[derive(Debug, Clone)]
-pub struct H2cMaker<S, B> {
+#[derive(Debug)]
+pub struct H2cMaker<S> {
     s: S,
-    _pd: PhantomData<fn(B)>,
 }
 
-impl<S, B> H2cMaker<S, B> {
-    pub fn new(s: S) -> Self {
+impl<S> Clone for H2cMaker<S>
+where
+    S: Clone,
+{
+    fn clone(&self) -> Self {
         Self {
-            s,
-            _pd: PhantomData,
+            s: self.s.clone(),
         }
     }
 }
 
-impl<S, C, B> Service<&C> for H2cMaker<S, B>
+impl<S> H2cMaker<S> {
+    pub fn new(s: S) -> Self {
+        Self { s }
+    }
+}
+
+impl<S, C> Service<&C> for H2cMaker<S>
 where
-    S: Service<Request<Body>, Response = Response<B>> + Clone + Send + 'static,
+    S: Service<Request<Body>> + Clone + Send + 'static,
     S::Future: Send + 'static,
     S::Error: Into<BoxError> + Sync + Send + 'static,
     S::Response: Send + 'static,
     C: crate::net::Conn,
-    B: http_body::Body<Data = Bytes> + Send + 'static,
-    B::Error: Into<BoxError> + Sync + Send + 'static,
 {
-    type Response = H2c<S, B>;
-
+    type Response = H2c<S>;
     type Error = BoxError;
-
     type Future =
         Pin<Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
@@ -100,32 +67,41 @@ where
             Ok(H2c {
                 s,
                 connect_info,
-                _pd: PhantomData,
             })
         })
     }
 }
 
-/// A service that can perform `h2c` upgrades and will
-/// delegate calls to the inner service once a protocol
-/// has been selected.
-#[derive(Debug, Clone)]
-pub struct H2c<S, B> {
+/// A service that can perform `h2c` upgrades.
+#[derive(Debug)]
+pub struct H2c<S> {
     s: S,
     connect_info: TcpConnectInfo,
-    _pd: PhantomData<fn(B)>,
 }
 
-impl<S, B> Service<Request<Body>> for H2c<S, B>
+impl<S> Clone for H2c<S>
+where
+    S: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            s: self.s.clone(),
+            connect_info: self.connect_info.clone(),
+        }
+    }
+}
+
+// Service implementation for hyper 1.0's Incoming body type
+impl<S, B> Service<Request<hyper::body::Incoming>> for H2c<S>
 where
     S: Service<Request<Body>, Response = Response<B>> + Clone + Send + 'static,
     S::Future: Send + 'static,
     S::Error: Into<BoxError> + Sync + Send + 'static,
     S::Response: Send + 'static,
     B: http_body::Body<Data = Bytes> + Send + 'static,
-    B::Error: Into<BoxError> + Sync + Send + 'static,
+    B::Error: Into<BoxError> + Send + Sync + 'static,
 {
-    type Response = Response<Body>;
+    type Response = Response<BoxBody>;
     type Error = BoxError;
     type Future =
         Pin<Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>>;
@@ -137,27 +113,29 @@ where
         std::task::Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, mut req: Request<Body>) -> Self::Future {
+    fn call(&mut self, mut req: Request<hyper::body::Incoming>) -> Self::Future {
         let mut svc = self.s.clone();
         let connect_info = self.connect_info.clone();
 
         Box::pin(async move {
             req.extensions_mut().insert(connect_info.clone());
 
-            // Check if this request is a `h2c` upgrade, if it is not pass
-            // the request to the inner service, which in our case is the
-            // axum router.
+            // Check if this request is a `h2c` upgrade
             if req.headers().get(header::UPGRADE) != Some(&http::HeaderValue::from_static("h2c")) {
-                return svc
-                    .call(req)
-                    .await
-                    .map_err(Into::into);
+                // Convert Incoming body to axum Body
+                let (parts, incoming) = req.into_parts();
+                let body = Body::from_stream(incoming);
+                let req = Request::from_parts(parts, body);
+                
+                let res = svc.call(req).await.map_err(Into::into)?;
+                // Box the body to erase type
+                let (parts, body) = res.into_parts();
+                return Ok(Response::from_parts(parts, body.boxed()));
             }
 
             tracing::debug!("Got a h2c upgrade request");
 
-            // We got a h2c header so lets spawn a task that will wait for the
-            // upgrade to complete and start a http2 connection.
+            // Spawn the upgrade handling
             tokio::spawn(async move {
                 let upgraded_io = match hyper::upgrade::on(&mut req).await {
                     Ok(io) => TokioIo::new(io),
@@ -172,23 +150,20 @@ where
                 let executor = TokioExecutor::new();
                 let conn = Http2Builder::new(executor);
                 
-                // Create a service that handles incoming HTTP/2 requests
-                let svc = hyper::service::service_fn(move |mut r: Request<hyper::body::Incoming>| {
-                    r.extensions_mut().insert(connect_info.clone());
-                    // Convert the axum service response
+                // Create a service for HTTP/2
+                let svc = hyper::service::service_fn(move |r: Request<hyper::body::Incoming>| {
                     let svc_clone = svc.clone();
+                    let connect_info = connect_info.clone();
                     async move {
-                        // Convert Request<Incoming> to Request<Body> for axum
-                        let (parts, body) = r.into_parts();
-                        let body = Body::from_stream(body);
-                        let req = Request::from_parts(parts, body);
+                        // Convert Request<Incoming> to Request<Body>
+                        let (parts, incoming) = r.into_parts();
+                        let mut req = Request::from_parts(parts, Body::from_stream(incoming));
+                        req.extensions_mut().insert(connect_info);
                         
-                        svc_clone.call(req).await.map(|res| {
-                            // Convert Response<B> to Response<BoxBody>
-                            let (parts, body) = res.into_parts();
-                            let body = body.boxed_unsync();
-                            Response::from_parts(parts, body)
-                        }).map_err(|e| Box::new(e) as BoxError)
+                        let res = svc_clone.call(req).await.map_err(|e| Box::new(e) as BoxError)?;
+                        // Box the body
+                        let (parts, body) = res.into_parts();
+                        Ok::<_, BoxError>(Response::from_parts(parts, body.boxed()))
                     }
                 });
 
@@ -197,8 +172,8 @@ where
                 }
             });
 
-            // Reply that we are switching protocols to h2
-            let mut res = Response::new(Body::empty());
+            // Return 101 Switching Protocols
+            let mut res = Response::new(BoxBody::default());
             *res.status_mut() = http::StatusCode::SWITCHING_PROTOCOLS;
             res.headers_mut()
                 .insert(header::UPGRADE, http::HeaderValue::from_static("h2c"));

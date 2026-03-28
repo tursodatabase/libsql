@@ -11,6 +11,7 @@ use rustls::RootCertStore;
 use tokio_rustls::TlsAcceptor;
 use tonic::Status;
 use tower::util::option_layer;
+use tower::Service;
 use tower::ServiceBuilder;
 use tower_http::trace::DefaultOnResponse;
 use tracing::Span;
@@ -60,6 +61,36 @@ pub async fn run_rpc_server<A: Accept>(
     }
 }
 
+/// Wrapper service that converts hyper 1.0's Incoming body to tonic's BoxBody
+#[derive(Clone)]
+struct TonicServiceWrapper<S> {
+    inner: S,
+}
+
+impl<S, B> Service<hyper::Request<hyper::body::Incoming>> for TonicServiceWrapper<S>
+where
+    S: Service<hyper::Request<tonic::body::BoxBody>, Response = hyper::Response<B>, Error = std::convert::Infallible> + Clone + Send + 'static,
+    S::Future: Send + 'static,
+    B: http_body::Body<Data = bytes::Bytes> + Send + 'static,
+    B::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+{
+    type Response = hyper::Response<B>;
+    type Error = std::convert::Infallible;
+    type Future = S::Future;
+
+    fn poll_ready(&mut self, cx: &mut std::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, req: hyper::Request<hyper::body::Incoming>) -> Self::Future {
+        // Convert Incoming body to tonic's BoxBody
+        let (parts, body) = req.into_parts();
+        let body = tonic::body::BoxBody::new(body);
+        let req = hyper::Request::from_parts(parts, body);
+        self.inner.call(req)
+    }
+}
+
 async fn run_tls_server<A, S, B>(
     acceptor: &mut A,
     svc: S,
@@ -67,12 +98,11 @@ async fn run_tls_server<A, S, B>(
 ) -> anyhow::Result<()>
 where
     A: Accept,
-    S: tower::Service<http::Request<axum::body::Body>, Response = http::Response<B>>
+    S: tower::Service<hyper::Request<tonic::body::BoxBody>, Response = hyper::Response<B>, Error = std::convert::Infallible>
         + Clone
         + Send
         + 'static,
     S::Future: Send + 'static,
-    S::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
     S::Response: Send + 'static,
     B: http_body::Body<Data = bytes::Bytes> + Send + 'static,
     B::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
@@ -105,7 +135,8 @@ where
     let tls_acceptor = TlsAcceptor::from(Arc::new(config));
 
     tracing::info!("serving internal rpc server with tls");
-    let h2c_maker = crate::h2c::H2cMaker::new(svc);
+    
+    let wrapped_svc = TonicServiceWrapper { inner: svc };
 
     // Drive the acceptor stream manually for hyper 1.0+ compatibility
     loop {
@@ -119,7 +150,7 @@ where
         };
 
         let tls_acceptor = tls_acceptor.clone();
-        let mut h2c_maker = h2c_maker.clone();
+        let svc = wrapped_svc.clone();
 
         tokio::spawn(async move {
             let tls_stream = match tls_acceptor.accept(conn).await {
@@ -131,15 +162,6 @@ where
             };
 
             let io = TokioIo::new(tls_stream);
-
-            // Get the service for this connection
-            let svc = match h2c_maker.call(&conn).await {
-                Ok(svc) => svc,
-                Err(e) => {
-                    tracing::error!("failed to create h2c service: {:#}", e);
-                    return;
-                }
-            };
 
             if let Err(err) = ConnBuilder::new(TokioExecutor::new())
                 .serve_connection(io, svc)
@@ -159,18 +181,17 @@ async fn run_plain_server<A, S, B>(
 ) -> anyhow::Result<()>
 where
     A: Accept,
-    S: tower::Service<http::Request<axum::body::Body>, Response = http::Response<B>>
+    S: tower::Service<hyper::Request<tonic::body::BoxBody>, Response = hyper::Response<B>, Error = std::convert::Infallible>
         + Clone
         + Send
         + 'static,
     S::Future: Send + 'static,
-    S::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
     S::Response: Send + 'static,
     B: http_body::Body<Data = bytes::Bytes> + Send + 'static,
     B::Error: Into<Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
 {
     tracing::info!("serving internal rpc server without tls");
-    let h2c_maker = crate::h2c::H2cMaker::new(svc);
+    let wrapped_svc = TonicServiceWrapper { inner: svc };
 
     // Drive the acceptor stream manually for hyper 1.0+ compatibility
     loop {
@@ -183,19 +204,10 @@ where
             None => break,
         };
 
-        let mut h2c_maker = h2c_maker.clone();
+        let svc = wrapped_svc.clone();
 
         tokio::spawn(async move {
             let io = TokioIo::new(conn);
-
-            // Get the service for this connection
-            let svc = match h2c_maker.call(&conn).await {
-                Ok(svc) => svc,
-                Err(e) => {
-                    tracing::error!("failed to create h2c service: {:#}", e);
-                    return;
-                }
-            };
 
             if let Err(err) = ConnBuilder::new(TokioExecutor::new())
                 .serve_connection(io, svc)

@@ -253,10 +253,10 @@ where
     Ok(())
 }
 
-async fn auth_middleware<B>(
+async fn auth_middleware(
     State(auth): State<Option<Arc<str>>>,
-    request: Request<B>,
-    next: Next<B>,
+    request: Request,
+    next: Next,
 ) -> Result<axum::response::Response, StatusCode> {
     if let Some(ref auth) = auth {
         let Some(auth_header) = request.headers().get("authorization") else {
