@@ -171,9 +171,25 @@ where
 
                 let executor = TokioExecutor::new();
                 let conn = Http2Builder::new(executor);
-                let svc = tower::service_fn(move |mut r: Request<Body>| {
+                
+                // Create a service that handles incoming HTTP/2 requests
+                let svc = hyper::service::service_fn(move |mut r: Request<hyper::body::Incoming>| {
                     r.extensions_mut().insert(connect_info.clone());
-                    svc.call(r)
+                    // Convert the axum service response
+                    let svc_clone = svc.clone();
+                    async move {
+                        // Convert Request<Incoming> to Request<Body> for axum
+                        let (parts, body) = r.into_parts();
+                        let body = Body::from_stream(body);
+                        let req = Request::from_parts(parts, body);
+                        
+                        svc_clone.call(req).await.map(|res| {
+                            // Convert Response<B> to Response<BoxBody>
+                            let (parts, body) = res.into_parts();
+                            let body = body.boxed_unsync();
+                            Response::from_parts(parts, body)
+                        }).map_err(|e| Box::new(e) as BoxError)
+                    }
                 });
 
                 if let Err(e) = conn.serve_connection(upgraded_io, svc).await {

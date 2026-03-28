@@ -86,7 +86,9 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
                 .map(NamespaceName::new_unchecked),
             durability_mode: match value.durability_mode {
                 None => DurabilityMode::default(),
-                Some(m) => DurabilityMode::from(metadata::DurabilityMode::try_from(m)),
+                Some(m) => metadata::DurabilityMode::try_from(m)
+                    .map(|mode| DurabilityMode::from(mode))
+                    .unwrap_or_default(),
             },
         }
     }
@@ -171,16 +173,13 @@ impl From<DurabilityMode> for metadata::DurabilityMode {
     }
 }
 
-impl From<Result<metadata::DurabilityMode, prost::DecodeError>> for DurabilityMode {
-    fn from(value: Result<metadata::DurabilityMode, prost::DecodeError>) -> Self {
-        match value {
-            Ok(mode) => match mode {
-                metadata::DurabilityMode::Relaxed => DurabilityMode::Relaxed,
-                metadata::DurabilityMode::Strong => DurabilityMode::Strong,
-                metadata::DurabilityMode::Extra => DurabilityMode::Extra,
-                metadata::DurabilityMode::Off => DurabilityMode::Off,
-            },
-            Err(_) => DurabilityMode::default(),
+impl From<metadata::DurabilityMode> for DurabilityMode {
+    fn from(mode: metadata::DurabilityMode) -> Self {
+        match mode {
+            metadata::DurabilityMode::Relaxed => DurabilityMode::Relaxed,
+            metadata::DurabilityMode::Strong => DurabilityMode::Strong,
+            metadata::DurabilityMode::Extra => DurabilityMode::Extra,
+            metadata::DurabilityMode::Off => DurabilityMode::Off,
         }
     }
 }

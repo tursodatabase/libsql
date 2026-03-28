@@ -180,6 +180,13 @@ async fn handle_upgrade(
         return StatusCode::NOT_FOUND.into_response();
     }
 
+    // Convert axum Request<Body> to hyper Request<Incoming>
+    // In axum 0.7, Body can be converted to Incoming by consuming it
+    let (parts, body) = req.into_parts();
+    let body = body.into_data_stream();
+    let body = hyper::body::Body::from_stream(body);
+    let req = Request::from_parts(parts, body);
+
     let (response_tx, response_rx) = oneshot::channel();
     let _: Result<_, _> = upgrade_tx
         .send(hrana::ws::Upgrade {
