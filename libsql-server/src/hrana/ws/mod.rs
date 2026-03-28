@@ -39,7 +39,7 @@ pub struct Accept {
 
 #[derive(Debug)]
 pub struct Upgrade {
-    pub request: hyper::Request<hyper::body::Incoming>,
+    pub request: hyper::Request<axum::body::Body>,
     pub response_tx: oneshot::Sender<hyper::Response<BoxBody<Bytes, std::convert::Infallible>>>,
 }
 

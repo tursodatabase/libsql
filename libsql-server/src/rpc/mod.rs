@@ -13,7 +13,6 @@ use tokio_rustls::TlsAcceptor;
 use tonic::transport::server::Connected;
 use tonic::Status;
 use tower::util::option_layer;
-use tower::ServiceBuilder;
 use tower_http::trace::DefaultOnResponse;
 use tracing::Span;
 
@@ -38,8 +37,9 @@ pub async fn run_rpc_server<A: Accept>(
     service: BoxReplicationService,
 ) -> anyhow::Result<()> {
     // Build the tonic server with services
+    let idle_layer = option_layer(idle_shutdown_layer);
     let mut server = tonic::transport::Server::builder()
-        .layer(&option_layer(idle_shutdown_layer))
+        .layer(&idle_layer)
         .layer(
             tower_http::trace::TraceLayer::new_for_grpc()
                 .on_request(trace_request)
@@ -55,72 +55,50 @@ pub async fn run_rpc_server<A: Accept>(
         .add_service(ReplicationLogServer::new(service));
 
     if let Some(tls_config) = maybe_tls {
-        run_tls_server(acceptor, router, tls_config).await
+        // TLS case
+        let cert_pem = tokio::fs::read_to_string(&tls_config.cert).await?;
+        let certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut cert_pem.as_bytes())
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let key_pem = tokio::fs::read_to_string(&tls_config.key).await?;
+        let keys: Vec<_> = rustls_pemfile::pkcs8_private_keys(&mut key_pem.as_bytes())
+            .collect::<Result<Vec<_>, _>>()?;
+        let key = rustls::pki_types::PrivateKeyDer::try_from(keys.into_iter().next().ok_or_else(|| anyhow::anyhow!("no private keys found"))?)?;
+
+        let ca_cert_pem = std::fs::read_to_string(&tls_config.ca_cert)?;
+        let ca_certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut ca_cert_pem.as_bytes())
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let mut roots = RootCertStore::empty();
+        roots.add_parsable_certificates(ca_certs);
+        let verifier = rustls::server::WebPkiClientVerifier::builder(roots.into())
+            .build()
+            .map_err(|e| anyhow::anyhow!("Failed to build client verifier: {}", e))?;
+        let mut config = rustls::server::ServerConfig::builder()
+            .with_client_cert_verifier(verifier)
+            .with_single_cert(certs, key)?;
+
+        // Configure ALPN protocols for HTTP/2 and HTTP/1.1
+        config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
+
+        let tls_acceptor = TlsAcceptor::from(Arc::new(config));
+
+        tracing::info!("serving internal rpc server with tls");
+
+        // Create a stream of TLS connections from the acceptor
+        let incoming = tls_incoming_stream(acceptor, tls_acceptor);
+
+        // Serve with tonic's native server
+        router.serve_with_incoming(incoming).await?;
     } else {
-        run_plain_server(acceptor, router).await
+        tracing::info!("serving internal rpc server without tls");
+
+        // Create a stream of connections from the acceptor
+        let incoming = plain_incoming_stream(acceptor);
+
+        // Serve with tonic's native server
+        router.serve_with_incoming(incoming).await?;
     }
-}
-
-async fn run_tls_server<A>(
-    acceptor: A,
-    router: tonic::transport::server::Router,
-    tls_config: TlsConfig,
-) -> anyhow::Result<()>
-where
-    A: Accept,
-{
-    let cert_pem = tokio::fs::read_to_string(&tls_config.cert).await?;
-    let certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut cert_pem.as_bytes())
-        .collect::<Result<Vec<_>, _>>()?;
-
-    let key_pem = tokio::fs::read_to_string(&tls_config.key).await?;
-    let keys: Vec<_> = rustls_pemfile::pkcs8_private_keys(&mut key_pem.as_bytes())
-        .collect::<Result<Vec<_>, _>>()?;
-    let key = rustls::pki_types::PrivateKeyDer::try_from(keys.into_iter().next().ok_or_else(|| anyhow::anyhow!("no private keys found"))?)?;
-
-    let ca_cert_pem = std::fs::read_to_string(&tls_config.ca_cert)?;
-    let ca_certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut ca_cert_pem.as_bytes())
-        .collect::<Result<Vec<_>, _>>()?;
-
-    let mut roots = RootCertStore::empty();
-    roots.add_parsable_certificates(ca_certs);
-    let verifier = rustls::server::WebPkiClientVerifier::builder(roots.into())
-        .build()
-        .map_err(|e| anyhow::anyhow!("Failed to build client verifier: {}", e))?;
-    let mut config = rustls::server::ServerConfig::builder()
-        .with_client_cert_verifier(verifier)
-        .with_single_cert(certs, key)?;
-
-    // Configure ALPN protocols for HTTP/2 and HTTP/1.1
-    config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
-
-    let tls_acceptor = TlsAcceptor::from(Arc::new(config));
-
-    tracing::info!("serving internal rpc server with tls");
-
-    // Create a stream of TLS connections from the acceptor
-    let incoming = tls_incoming_stream(acceptor, tls_acceptor);
-
-    // Serve with tonic's native server
-    router.serve_with_incoming(incoming).await?;
-
-    Ok(())
-}
-
-async fn run_plain_server<A>(
-    acceptor: A,
-    router: tonic::transport::server::Router,
-) -> anyhow::Result<()>
-where
-    A: Accept,
-{
-    tracing::info!("serving internal rpc server without tls");
-
-    // Create a stream of connections from the acceptor
-    let incoming = plain_incoming_stream(acceptor);
-
-    // Serve with tonic's native server
-    router.serve_with_incoming(incoming).await?;
 
     Ok(())
 }

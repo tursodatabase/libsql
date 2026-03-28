@@ -51,9 +51,18 @@ async fn start_s3_server() {
         let s3 = s3.build().into_shared().into_make_service();
 
         tokio::spawn(async move {
-            let addr = ([127, 0, 0, 1], 9000).into();
-
-            hyper::Server::bind(&addr).serve(s3).await.unwrap();
+            let addr: std::net::SocketAddr = ([127, 0, 0, 1], 9000).into();
+            let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+            
+            loop {
+                let (stream, _) = listener.accept().await.unwrap();
+                let s3 = s3.clone();
+                tokio::spawn(async move {
+                    let _ = hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new())
+                        .serve_connection(hyper_util::rt::tokio::TokioIo::new(stream), s3)
+                        .await;
+                });
+            }
         });
     });
 

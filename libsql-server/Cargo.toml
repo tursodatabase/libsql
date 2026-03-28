@@ -37,7 +37,7 @@ http-body-util = "0.1"
 hyper = { workspace = true, features = ["http1", "http2", "server"] }
 hyper-rustls = { version = "0.27", features = ["http1", "http2", "webpki-roots"] }
 hyper-util = { version = "0.1", features = ["client", "client-legacy", "server", "server-auto", "http2", "tokio"] }
-hyper-tungstenite = "0.13"
+hyper-tungstenite = "0.19"
 itertools = "0.10.5"
 jsonwebtoken = "9"
 libsql = { path = "../libsql/", optional = true }
@@ -74,7 +74,7 @@ tempfile = "3.7.0"
 thiserror = "1.0.38"
 tokio = { version = "=1.38", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
 tokio-stream = { version = "0.1.11", features = ["sync"] }
-tokio-tungstenite = "0.24"
+tokio-tungstenite = "0.28"
 tokio-util = { version = "0.7.8", features = ["io", "io-util"] }
 tonic = { version = "0.12", features = ["tls"] }
 tonic-web = "0.12"

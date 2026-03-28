@@ -14,6 +14,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use axum::body::Body;
 use axum::extract::Request;
+use http_body_util::BodyExt;
 use axum::extract::{FromRef, FromRequest, FromRequestParts, Path as AxumPath, State as AxumState};
 use axum::http::request::Parts;
 use axum::http::HeaderValue;
@@ -180,13 +181,6 @@ async fn handle_upgrade(
         return StatusCode::NOT_FOUND.into_response();
     }
 
-    // Convert axum Request<Body> to hyper Request<Incoming>
-    // In axum 0.7, Body can be converted to Incoming by consuming it
-    let (parts, body) = req.into_parts();
-    let body = body.into_data_stream();
-    let body = hyper::body::Body::from_stream(body);
-    let req = Request::from_parts(parts, body);
-
     let (response_tx, response_rx) = oneshot::channel();
     let _: Result<_, _> = upgrade_tx
         .send(hrana::ws::Upgrade {
@@ -226,7 +220,7 @@ async fn handle_hrana_pipeline(
         "3" => hrana::Version::Hrana3,
         _ => return Err(Error::InvalidPath("invalid hrana version".to_string())),
     };
-    Ok(state
+    let response = state
         .hrana_http_srv
         .handle_request(
             connection_maker,
@@ -236,7 +230,11 @@ async fn handle_hrana_pipeline(
             hrana_version,
             hrana::Encoding::Json,
         )
-        .await?)
+        .await?;
+    // Convert Full<Bytes> body to axum Body
+    let (parts, body) = response.into_parts();
+    let bytes = body.collect().await.map_err(|e| Error::Internal(format!("body error: {}", e)))?.to_bytes();
+    Ok(Response::from_parts(parts, Body::from(bytes)))
 }
 
 /// Router wide state that each request has access too via
@@ -341,7 +339,7 @@ where
                         ctx: RequestContext,
                         req: Request<Body>,
                     ) -> Result<Response<Body>, Error> {
-                        Ok(state
+                        let response = state
                             .hrana_http_srv
                             .handle_request(
                                 connection_maker,
@@ -351,7 +349,11 @@ where
                                 $version,
                                 $encoding,
                             )
-                            .await?)
+                            .await?;
+                        // Convert Full<Bytes> body to axum Body
+                        let (parts, body) = response.into_parts();
+                        let bytes = body.collect().await.map_err(|e| Error::Internal(format!("body error: {}", e)))?.to_bytes();
+                        Ok(Response::from_parts(parts, Body::from(bytes)))
                     }
                     handle_hrana
                 }};
@@ -454,11 +456,12 @@ where
                 );
 
             let router = router.fallback(handle_fallback);
-            let h2c = crate::h2c::H2cMaker::new(router);
 
             task_manager.spawn_with_shutdown_notify(|shutdown| async move {
                 let mut builder =
                     hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
+                
+                let mut acceptor = acceptor;
 
                 let shutdown = shutdown.notified();
                 tokio::pin!(shutdown);
@@ -479,13 +482,7 @@ where
                         None => break,
                     };
 
-                    let svc = match h2c.call(&conn).await {
-                        Ok(svc) => svc,
-                        Err(e) => {
-                            tracing::error!("service creation error: {}", e);
-                            continue;
-                        }
-                    };
+                    let svc = crate::http::admin::router_to_service(router.clone());
 
                     let builder = builder.clone();
                     tokio::spawn(async move {

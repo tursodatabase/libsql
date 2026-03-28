@@ -13,13 +13,13 @@ use tower::ServiceExt;
 use crate::auth::{Auth, Disabled};
 use crate::net::{AddrIncoming, Connector};
 
-pub struct RpcClientConfig<C = HttpConnector> {
+pub struct RpcClientConfig {
     pub remote_url: String,
     pub tls_config: Option<TlsConfig>,
-    pub connector: C,
+    pub connector: HttpConnector,
 }
 
-impl<C: Connector> RpcClientConfig<C> {
+impl RpcClientConfig {
     pub(crate) async fn configure(&self) -> anyhow::Result<(Channel, tonic::transport::Uri)> {
         let uri = tonic::transport::Uri::from_maybe_shared(self.remote_url.clone())?;
         let mut builder = Channel::builder(uri.clone());
@@ -39,7 +39,7 @@ impl<C: Connector> RpcClientConfig<C> {
         }
 
         let channel =
-            builder.connect_with_connector_lazy(self.connector.clone().map_err(Into::into));
+            builder.connect_with_connector_lazy(self.connector.clone());
 
         Ok((channel, uri))
     }
@@ -79,9 +79,8 @@ impl<A> Default for UserApiConfig<A> {
     }
 }
 
-pub struct AdminApiConfig<A = AddrIncoming, C = HttpsConnector<HttpConnector>> {
+pub struct AdminApiConfig<A = AddrIncoming> {
     pub acceptor: A,
-    pub connector: C,
     pub disable_metrics: bool,
     pub auth_key: Option<String>,
 }

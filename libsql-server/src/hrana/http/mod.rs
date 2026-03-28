@@ -1,13 +1,14 @@
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use futures::stream::Stream;
-use http_body_util::{BodyExt, Full};
+use http_body_util::{BodyExt, Full, StreamBody};
 use libsql_hrana::proto;
 use parking_lot::Mutex;
 use serde::{de::DeserializeOwned, Serialize};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task;
+use tokio::sync::mpsc;
 
 use super::{batch, cursor, Encoding, ProtocolError, Version};
 use crate::connection::{MakeConnection, RequestContext};
@@ -46,7 +47,7 @@ impl Server {
         &self,
         connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
         ctx: RequestContext,
-        req: http::Request<hyper::body::Incoming>,
+        req: http::Request<axum::body::Body>,
         endpoint: Endpoint,
         version: Version,
         encoding: Encoding,
@@ -88,7 +89,7 @@ async fn handle_request(
     server: &Server,
     connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
-    req: http::Request<hyper::body::Incoming>,
+    req: http::Request<axum::body::Body>,
     endpoint: Endpoint,
     version: Version,
     encoding: Encoding,
@@ -107,7 +108,7 @@ async fn handle_pipeline(
     server: &Server,
     connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
-    req: http::Request<hyper::body::Incoming>,
+    req: http::Request<axum::body::Body>,
     version: Version,
     encoding: Encoding,
 ) -> Result<http::Response<Full<Bytes>>> {
@@ -134,7 +135,7 @@ async fn handle_cursor(
     server: &Server,
     connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
-    req: http::Request<hyper::body::Incoming>,
+    req: http::Request<axum::body::Body>,
     version: Version,
     encoding: Encoding,
 ) -> Result<http::Response<Full<Bytes>>> {
@@ -153,14 +154,28 @@ async fn handle_cursor(
         base_url: server.self_url.clone(),
     };
     
-    // For streaming responses in hyper 1.0, we need a different approach
-    // For now, let's collect the stream into a single body
-    let body = hyper::body::Body::wrap_stream(CursorStream {
-        resp_body: Some(resp_body),
+    // In hyper 1.0, we need to collect the cursor stream into bytes
+    // This is a simplified approach - collect all chunks
+    let mut all_bytes = Vec::new();
+    
+    // First chunk is the resp_body
+    all_bytes.extend_from_slice(&encode_stream_item(&resp_body, encoding));
+    
+    // Then poll the cursor for more entries
+    let cursor_stream = CursorStream {
+        resp_body: None,
         join_set,
         cursor_hnd,
         encoding,
-    });
+    };
+    
+    use futures::stream::StreamExt;
+    let chunks: Vec<_> = cursor_stream.collect().await;
+    for chunk in chunks {
+        all_bytes.extend_from_slice(&chunk?);
+    }
+    
+    let body = Full::new(Bytes::from(all_bytes));
     let content_type = match encoding {
         Encoding::Json => "text/plain",
         Encoding::Protobuf => "application/octet-stream",
@@ -228,7 +243,7 @@ fn encode_stream_item<T: Serialize + prost::Message>(item: &T, encoding: Encodin
 }
 
 async fn read_decode_request<T: DeserializeOwned + prost::Message + Default>(
-    req: http::Request<hyper::body::Incoming>,
+    req: http::Request<axum::body::Body>,
     encoding: Encoding,
 ) -> Result<T> {
     let collected = req.into_body().collect().await

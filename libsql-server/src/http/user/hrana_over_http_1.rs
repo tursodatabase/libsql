@@ -28,7 +28,7 @@ pub async fn handle_index() -> http::Response<Full<Bytes>> {
 pub(crate) async fn handle_execute(
     MakeConnectionExtractor(factory): MakeConnectionExtractor,
     ctx: RequestContext,
-    req: http::Request<hyper::body::Incoming>,
+    req: http::Request<axum::body::Body>,
 ) -> crate::Result<http::Response<Full<Bytes>>> {
     #[derive(Debug, Deserialize)]
     struct ReqBody {
@@ -61,7 +61,7 @@ pub(crate) async fn handle_execute(
 pub(crate) async fn handle_batch(
     MakeConnectionExtractor(factory): MakeConnectionExtractor,
     ctx: RequestContext,
-    req: http::Request<hyper::body::Incoming>,
+    req: http::Request<axum::body::Body>,
 ) -> crate::Result<http::Response<Full<Bytes>>> {
     #[derive(Debug, Deserialize)]
     struct ReqBody {
@@ -92,7 +92,7 @@ pub(crate) async fn handle_batch(
 
 async fn handle_request<ReqBody, RespBody, F, Fut, FT>(
     db_factory: Arc<FT>,
-    req: http::Request<hyper::body::Incoming>,
+    req: http::Request<axum::body::Body>,
     f: F,
 ) -> Result<http::Response<Full<Bytes>>>
 where

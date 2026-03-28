@@ -219,10 +219,7 @@ where
         mut buf: hyper::rt::ReadBufCursor<'_>,
     ) -> Poll<std::io::Result<()>> {
         // SAFETY: We're creating a tokio ReadBuf from the hyper ReadBufCursor
-        let slice = unsafe { 
-            std::slice::from_raw_parts_mut(buf.as_mut().as_mut_ptr(), buf.as_mut().len()) 
-        };
-        let mut read_buf = tokio::io::ReadBuf::new(slice);
+        let mut read_buf = unsafe { tokio::io::ReadBuf::uninit(buf.as_mut()) };
         
         match self.project().stream.poll_read(cx, &mut read_buf) {
             Poll::Ready(Ok(())) => {
