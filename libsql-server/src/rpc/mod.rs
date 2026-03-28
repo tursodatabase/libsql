@@ -99,6 +99,8 @@ pub async fn run_rpc_server<A: Accept>(
 
         // Create a stream of connections from the acceptor
         let incoming = plain_incoming_stream(acceptor);
+        
+        tracing::info!("Starting gRPC server with incoming stream");
 
         // Serve with tonic's native server
         router.serve_with_incoming(incoming).await?;
@@ -145,14 +147,21 @@ where
     A: Accept,
 {
     try_stream! {
+        tracing::info!("Starting plain incoming stream");
         loop {
             let conn = match poll_fn(|cx| Pin::new(&mut acceptor).poll_accept(cx)).await {
-                Some(Ok(conn)) => conn,
+                Some(Ok(conn)) => {
+                    tracing::debug!("Accepted new connection");
+                    conn
+                }
                 Some(Err(e)) => {
                     tracing::error!("Accept error: {}", e);
                     continue;
                 }
-                None => break,
+                None => {
+                    tracing::info!("Acceptor closed, stopping stream");
+                    break;
+                }
             };
 
             yield conn;
