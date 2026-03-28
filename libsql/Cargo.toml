@@ -162,4 +162,4 @@ harness = false
 rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.cargo-udeps.ignore]
-normal = ["hyper-rustls"]
+normal = ["hyper-rustls", "http-body-util", "tower-http"]

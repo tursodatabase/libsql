@@ -1,7 +1,9 @@
+use std::future::poll_fn;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
+use futures::stream::FuturesUnordered;
 use futures::Stream;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLogServer;
 use libsql_replication::rpc::replication::{BoxReplicationService, NAMESPACE_METADATA_KEY};
@@ -38,6 +40,9 @@ pub async fn run_rpc_server<A: Accept>(
     // Build the tonic server with services
     let idle_layer = option_layer(idle_shutdown_layer);
     let mut server = tonic::transport::Server::builder()
+        .max_decoding_message_size(64 * 1024 * 1024) // 64MB max request
+        .max_encoding_message_size(64 * 1024 * 1024) // 64MB max response
+        .timeout(std::time::Duration::from_secs(60)) // Request timeout
         .layer(&idle_layer)
         .layer(
             tower_http::trace::TraceLayer::new_for_grpc()
@@ -109,9 +114,13 @@ pub async fn run_rpc_server<A: Accept>(
 }
 
 /// Custom stream for accepting TLS connections
+/// Properly manages pending TLS handshakes and yields them when complete
 struct TlsIncomingStream<A: Accept> {
     acceptor: A,
     tls_acceptor: TlsAcceptor,
+    pending_handshakes:
+        FuturesUnordered<tokio::task::JoinHandle<Result<TlsStream<A::Connection>, anyhow::Error>>>,
+    acceptor_closed: bool,
 }
 
 impl<A: Accept> TlsIncomingStream<A> {
@@ -119,6 +128,8 @@ impl<A: Accept> TlsIncomingStream<A> {
         Self {
             acceptor,
             tls_acceptor,
+            pending_handshakes: FuturesUnordered::new(),
+            acceptor_closed: false,
         }
     }
 }
@@ -128,32 +139,61 @@ impl<A: Accept> Stream for TlsIncomingStream<A> {
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.get_mut();
-        match Pin::new(&mut this.acceptor).poll_accept(cx) {
-            Poll::Ready(Some(Ok(conn))) => {
-                let tls_acceptor = this.tls_acceptor.clone();
-                // Spawn a task to handle TLS handshake
-                tokio::spawn(async move {
-                    match tls_acceptor.accept(conn).await {
-                        Ok(tls_stream) => Ok(TlsStream(tls_stream)),
-                        Err(err) => {
-                            tracing::error!("failed to perform tls handshake: {:#}", err);
-                            Err(anyhow::anyhow!("TLS handshake failed: {}", err))
+
+        // Try to accept a new connection if acceptor is not closed
+        if !this.acceptor_closed {
+            match Pin::new(&mut this.acceptor).poll_accept(cx) {
+                Poll::Ready(Some(Ok(conn))) => {
+                    let tls_acceptor = this.tls_acceptor.clone();
+                    // Spawn TLS handshake and track it
+                    let handle = tokio::spawn(async move {
+                        match tls_acceptor.accept(conn).await {
+                            Ok(tls_stream) => Ok(TlsStream(tls_stream)),
+                            Err(err) => {
+                                tracing::error!("failed to perform tls handshake: {:#}", err);
+                                Err(anyhow::anyhow!("TLS handshake failed: {}", err))
+                            }
                         }
-                    }
-                });
-                // For now, just pend and let the next poll handle it
-                // This is a simplified version - in production, we'd need proper handling
-                cx.waker().wake_by_ref();
-                Poll::Pending
+                    });
+                    this.pending_handshakes.push(handle);
+                }
+                Poll::Ready(Some(Err(e))) => {
+                    tracing::error!("Accept error: {}", e);
+                }
+                Poll::Ready(None) => {
+                    this.acceptor_closed = true;
+                }
+                Poll::Pending => {}
             }
-            Poll::Ready(Some(Err(e))) => {
-                tracing::error!("Accept error: {}", e);
-                cx.waker().wake_by_ref();
-                Poll::Pending
-            }
-            Poll::Ready(None) => Poll::Ready(None),
-            Poll::Pending => Poll::Pending,
         }
+
+        // Poll pending handshakes for any completed ones
+        if !this.pending_handshakes.is_empty() {
+            match Pin::new(&mut this.pending_handshakes).poll_next(cx) {
+                Poll::Ready(Some(Ok(result))) => return Poll::Ready(Some(result)),
+                Poll::Ready(Some(Err(e))) => {
+                    tracing::error!("TLS handshake task panicked: {}", e);
+                    return Poll::Ready(Some(Err(anyhow::anyhow!(
+                        "TLS handshake panicked: {}",
+                        e
+                    ))));
+                }
+                Poll::Ready(None) => {
+                    // No more pending handshakes
+                    if this.acceptor_closed {
+                        return Poll::Ready(None);
+                    }
+                }
+                Poll::Pending => {}
+            }
+        }
+
+        // If acceptor is closed and no pending handshakes, we're done
+        if this.acceptor_closed && this.pending_handshakes.is_empty() {
+            return Poll::Ready(None);
+        }
+
+        Poll::Pending
     }
 }
 
@@ -164,47 +204,33 @@ fn tls_incoming_stream<A: Accept>(
     TlsIncomingStream::new(acceptor, tls_acceptor)
 }
 
-/// Custom stream for accepting plain (non-TLS) connections
-struct PlainIncomingStream<A: Accept> {
-    acceptor: A,
-}
-
-impl<A: Accept> PlainIncomingStream<A> {
-    fn new(acceptor: A) -> Self {
-        Self { acceptor }
-    }
-}
-
-impl<A: Accept> Stream for PlainIncomingStream<A> {
-    type Item = Result<A::Connection, anyhow::Error>;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let this = self.get_mut();
-        match Pin::new(&mut this.acceptor).poll_accept(cx) {
-            Poll::Ready(Some(Ok(conn))) => {
-                tracing::debug!("Accepted new connection");
-                Poll::Ready(Some(Ok(conn)))
-            }
-            Poll::Ready(Some(Err(e))) => {
-                tracing::error!("Accept error: {}", e);
-                // Continue to next connection on error
-                cx.waker().wake_by_ref();
-                Poll::Pending
-            }
-            Poll::Ready(None) => {
-                tracing::info!("Acceptor closed, stopping stream");
-                Poll::Ready(None)
-            }
-            Poll::Pending => Poll::Pending,
-        }
-    }
-}
-
 fn plain_incoming_stream<A: Accept>(
     acceptor: A,
-) -> impl Stream<Item = Result<A::Connection, anyhow::Error>> {
+) -> impl Stream<Item = Result<A::Connection, anyhow::Error>>
+where
+    A: Accept,
+{
     tracing::info!("Starting plain incoming stream");
-    PlainIncomingStream::new(acceptor)
+
+    futures::stream::unfold(acceptor, |mut acceptor| async move {
+        loop {
+            match poll_fn(|cx| Pin::new(&mut acceptor).poll_accept(cx)).await {
+                Some(Ok(conn)) => {
+                    tracing::debug!("Accepted new connection");
+                    return Some((Ok(conn), acceptor));
+                }
+                Some(Err(e)) => {
+                    tracing::error!("Accept error: {}", e);
+                    // Continue to next iteration
+                    continue;
+                }
+                None => {
+                    tracing::info!("Acceptor closed, stopping stream");
+                    return None;
+                }
+            }
+        }
+    })
 }
 
 // Wrapper for TLS stream to implement Connected

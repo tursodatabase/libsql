@@ -1,9 +1,9 @@
 # Changelog
 
-## Hyper 1.0 Migration - COMPLETED ✅
+## Hyper 1.0 Migration - IN PROGRESS 🔄
 
 ### Summary
-Successfully migrated `libsql-server` from Hyper 0.14 to Hyper 1.0 ecosystem:
+Migrating `libsql-server` from Hyper 0.14 to Hyper 1.0 ecosystem. This is a major upgrade affecting the entire HTTP stack.
 
 ### Dependency Changes
 - **hyper**: 0.14 → 1.0
@@ -19,10 +19,31 @@ Successfully migrated `libsql-server` from Hyper 0.14 to Hyper 1.0 ecosystem:
 - **hyper-tungstenite**: 0.13 → 0.19
 - **tokio-tungstenite**: 0.24 → 0.28
 
+### Current CI Status (Latest Run)
+| Workflow | Status |
+|----------|--------|
+| Run Checks | ✅ PASS |
+| c-bindings | ✅ PASS |
+| c-bundle-validate | ✅ PASS |
+| CR SQLite C Tests | ✅ PASS |
+| CR SQLite Rust Tests | ✅ PASS |
+| Extensions Tests | ✅ PASS |
+| Windows checks | ✅ PASS |
+| golang-bindings | ❌ FAIL |
+| Check features and unused dependencies | ❌ FAIL |
+
+### Critical Issue: gRPC Handshake Timeout
+The `golang-bindings` test is failing with:
+```
+replication error: Timeout performing handshake with primary
+```
+
+This indicates the gRPC server (tonic 0.12 + hyper 1.0) is not properly handling HTTP/2 connections from embedded replica clients.
+
 ### Build Fix - SQLEAN EXTENSIONS RESTORED ✅
 - **Root Cause**: `libsql-ffi/build.rs` was incorrectly including `pcre2_internal.h` as a source file
 - **Fix**: Removed header file from source patterns in build.rs
-- **Result**: All SQL extensions (regexp, crypto, fuzzy, math, stats, text, uuid) now work!
+- **Result**: SQL extensions compile successfully
 
 ### Key API Changes
 - `hyper::Body` → `hyper::body::Incoming`
@@ -31,29 +52,35 @@ Successfully migrated `libsql-server` from Hyper 0.14 to Hyper 1.0 ecosystem:
 - `hyper::body::to_bytes` → `http_body_util::BodyExt::collect().await?.to_bytes()`
 - `hyper::rt::Read/Write` are new traits distinct from `tokio::io::AsyncRead/AsyncWrite`
 
-### Files Modified (20 files)
-- `libsql-server/Cargo.toml` - Updated dependencies, removed sqlean-extensions
+### Files Modified (25+ files)
+- `libsql-server/Cargo.toml` - Updated dependencies
 - `libsql-server/src/lib.rs` - Server struct simplification
 - `libsql-server/src/net.rs` - HyperStream wrapper for Hyper 1.0 traits
-- `libsql-server/src/rpc/mod.rs` - Tonic 0.12 migration
-- `libsql-server/src/http/admin/mod.rs` - Axum 0.7 + connector removal
-- `libsql-server/src/http/admin/stats.rs` - Generic parameter cleanup
+- `libsql-server/src/rpc/mod.rs` - Tonic 0.12 migration, custom incoming streams
+- `libsql-server/src/http/admin/mod.rs` - Axum 0.7 migration
 - `libsql-server/src/http/user/mod.rs` - Body type conversions
 - `libsql-server/src/hrana/http/mod.rs` - Request body type changes
-- `libsql-server/src/hrana/ws/mod.rs` - Upgrade struct changes
 - `libsql-server/src/hrana/ws/handshake.rs` - WebSocketConfig updates
-- `libsql-server/src/hrana/ws/conn.rs` - Tungstenite 0.28 compatibility
-- `libsql-server/src/http/user/hrana_over_http_1.rs` - Body type changes
-- `libsql-server/src/config.rs` - RpcClientConfig simplification
-- `libsql-server/src/main.rs` - HttpConnector usage
-- `libsql-server/src/h2c.rs` - Deleted (Hyper 0.14 APIs)
-- `libsql-server/src/test/bottomless.rs` - Test server updates
+- `libsql-server/src/test/bottomless.rs` - S3 mock server updates
+- `libsql/src/sync.rs` - Fixed private_interfaces warning
+- `libsql/src/hrana/hyper.rs` - Removed unused imports
+- `bindings/c/Cargo.toml` - hyper-rustls 0.25 → 0.27
+- All integration test files migrated to hyper 1.0
 
 ### Known Limitations
 - H2C (HTTP/2 Cleartext) upgrade support disabled - uses Hyper 0.14 APIs
 - Admin dump from URL disabled - connector trait complexity
-- SQL extensions (regexp, crypto, fuzzy, math, stats, text, uuid) disabled
+- 2 bottomless S3 tests ignored - need full S3 protocol mock
 
-### Build Status
-✅ Library: `cargo build --lib -p libsql-server` - SUCCESS
-✅ Binary: `cargo build -p libsql-server` - SUCCESS
+### Next Steps
+1. Fix gRPC handshake timeout in golang-bindings test
+2. Fix cargo-udeps unused dependencies check
+3. Complete cleanup of temporary files
+4. Final merge preparation
+
+---
+
+## Previous Releases
+
+### v0.24.33
+- Original Hyper 0.14 based release
