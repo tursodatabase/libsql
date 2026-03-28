@@ -113,8 +113,6 @@ tempfile = "3.7.0"
 turmoil = "0.6.0"
 url = "2.3"
 metrics-util = "0.15"
-s3s = "0.8.1"
-s3s-fs = "0.8.1"
 ring = { version = "0.17.8", features = ["std"] }
 tonic-build = "0.12"
 prost-build = "0.13"

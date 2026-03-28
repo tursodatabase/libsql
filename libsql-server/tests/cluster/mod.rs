@@ -32,7 +32,7 @@ pub fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool)
                 },
                 admin_api_config: Some(AdminApiConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
-                    connector: TurmoilConnector,
+                    
                     disable_metrics: true,
                     auth_key: None,
                 }),
@@ -63,13 +63,14 @@ pub fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool)
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
-                        connector: TurmoilConnector,
+                        
                         disable_metrics: true,
                         auth_key: None,
                     }),
                     rpc_client_config: Some(RpcClientConfig {
+                            connector: hyper_util::client::legacy::connect::HttpConnector::new(),
                         remote_url: "http://primary:4567".into(),
-                        connector: TurmoilConnector,
+                        
                         tls_config: None,
                     }),
                     disable_namespaces,

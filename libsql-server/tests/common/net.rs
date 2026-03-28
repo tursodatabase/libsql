@@ -7,9 +7,9 @@ use std::sync::Once;
 use std::task::{Context, Poll};
 
 use futures_core::Future;
-use hyper::client::connect::Connected;
-use hyper::server::accept::Accept as HyperAccept;
 use hyper::Uri;
+use hyper::rt::{Read, Write};
+use hyper_util::client::legacy::connect::{Connection, Connected};
 use metrics_util::debugging::DebuggingRecorder;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tower::Service;
@@ -22,44 +22,41 @@ use libsql_server::Server;
 type TurmoilAddrStream = AddrStream<turmoil::net::TcpStream>;
 
 pub struct TurmoilAcceptor {
-    acceptor: Pin<
-        Box<dyn HyperAccept<Conn = TurmoilAddrStream, Error = IoError> + Send + Sync + 'static>,
-    >,
+    listener: turmoil::net::TcpListener,
 }
 
 impl TurmoilAcceptor {
     pub async fn bind(addr: impl Into<SocketAddr>) -> std::io::Result<Self> {
         let addr = addr.into();
-        let stream = async_stream::stream! {
-            let listener = turmoil::net::TcpListener::bind(addr).await?;
-            loop {
-                yield listener.accept().await.and_then(|(stream, remote_addr)| Ok(AddrStream {
-                    remote_addr,
-                    local_addr: stream.local_addr()?,
-                    stream,
-                }));
-            }
-        };
-        let acceptor = hyper::server::accept::from_stream(stream);
-        Ok(Self {
-            acceptor: Box::pin(acceptor),
-        })
+        let listener = turmoil::net::TcpListener::bind(addr).await?;
+        Ok(Self { listener })
     }
 }
 
 impl Accept for TurmoilAcceptor {
     type Connection = TurmoilAddrStream;
-}
-
-impl HyperAccept for TurmoilAcceptor {
-    type Conn = TurmoilAddrStream;
     type Error = IoError;
 
     fn poll_accept(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Option<Result<Self::Conn, Self::Error>>> {
-        self.acceptor.as_mut().poll_accept(cx)
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<Option<Result<Self::Connection, Self::Error>>> {
+        let listener = &self.listener;
+        // We need to use the underlying std listener to poll
+        // Since turmoil::net::TcpListener doesn't expose poll_accept directly,
+        // we'll use a workaround with tokio's async listener pattern
+        match listener.accept().now_or_never() {
+            Some(Ok((stream, remote_addr))) => {
+                let local_addr = stream.local_addr()?;
+                Poll::Ready(Some(Ok(AddrStream {
+                    remote_addr,
+                    local_addr,
+                    stream,
+                })))
+            }
+            Some(Err(e)) => Poll::Ready(Some(Err(e))),
+            None => Poll::Pending,
+        }
     }
 }
 
@@ -70,6 +67,23 @@ pin_project_lite::pin_project! {
     pub struct TurmoilStream {
         #[pin]
         inner: turmoil::net::TcpStream,
+    }
+}
+
+impl TurmoilStream {
+    pub fn new(stream: turmoil::net::TcpStream) -> Self {
+        Self { inner: stream }
+    }
+}
+
+// Implement tokio's AsyncRead/AsyncWrite by delegating directly to the inner stream
+impl AsyncRead for TurmoilStream {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        self.project().inner.poll_read(cx, buf)
     }
 }
 
@@ -86,26 +100,53 @@ impl AsyncWrite for TurmoilStream {
         self.project().inner.poll_flush(cx)
     }
 
-    fn poll_shutdown(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<(), std::io::Error>> {
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
         self.project().inner.poll_shutdown(cx)
     }
 }
 
-impl AsyncRead for TurmoilStream {
+// Implement hyper's Read/Write traits by bridging from tokio traits
+impl Read for TurmoilStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
+        mut buf: hyper::rt::ReadBufCursor<'_>,
     ) -> Poll<std::io::Result<()>> {
-        self.project().inner.poll_read(cx, buf)
+        // SAFETY: We're creating a tokio ReadBuf from the hyper ReadBufCursor
+        let mut read_buf = unsafe { tokio::io::ReadBuf::uninit(buf.as_mut()) };
+        
+        match self.project().inner.poll_read(cx, &mut read_buf) {
+            Poll::Ready(Ok(())) => {
+                let filled = read_buf.filled().len();
+                unsafe { buf.advance(filled) };
+                Poll::Ready(Ok(()))
+            }
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Pending => Poll::Pending,
+        }
     }
 }
 
-impl hyper::client::connect::Connection for TurmoilStream {
-    fn connected(&self) -> hyper::client::connect::Connected {
+impl Write for TurmoilStream {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<std::io::Result<usize>> {
+        self.project().inner.poll_write(cx, buf)
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        self.project().inner.poll_flush(cx)
+    }
+
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        self.project().inner.poll_shutdown(cx)
+    }
+}
+
+impl Connection for TurmoilStream {
+    fn connected(&self) -> Connected {
         Connected::new()
     }
 }
@@ -127,13 +168,13 @@ impl Service<Uri> for TurmoilConnector {
             let domain = if host.len() == 1 { host[0] } else { host[1] };
             let addr = turmoil::lookup(domain);
             let port = uri.port().unwrap().as_u16();
-            let inner = turmoil::net::TcpStream::connect((addr, port)).await?;
-            Ok(TurmoilStream { inner })
+            let stream = turmoil::net::TcpStream::connect((addr, port)).await?;
+            Ok(TurmoilStream::new(stream))
         })
     }
 }
 
-pub type TestServer = Server<TurmoilConnector, TurmoilAcceptor, TurmoilConnector>;
+pub type TestServer = Server<TurmoilAcceptor>;
 
 #[async_trait::async_trait]
 pub trait SimServer {
@@ -182,4 +223,34 @@ pub fn init_tracing() {
             .with(EnvFilter::from_default_env())
             .init();
     });
+}
+
+// Helper trait for polling futures
+use std::future::Future as StdFuture;
+trait NowOrNever<T> {
+    fn now_or_never(self) -> Option<T>;
+}
+
+impl<F, T> NowOrNever<T> for F
+where
+    F: StdFuture<Output = T>,
+{
+    fn now_or_never(self) -> Option<T> {
+        use std::task::Wake;
+        use std::sync::Arc;
+        
+        struct NoopWaker;
+        impl Wake for NoopWaker {
+            fn wake(self: Arc<Self>) {}
+        }
+        
+        let waker = std::task::Waker::from(Arc::new(NoopWaker));
+        let mut cx = std::task::Context::from_waker(&waker);
+        let mut future = Box::pin(self);
+        
+        match future.as_mut().poll(&mut cx) {
+            Poll::Ready(val) => Some(val),
+            Poll::Pending => None,
+        }
+    }
 }
