@@ -17,7 +17,7 @@ tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
 hyper-rustls = { version = "0.27", features = ["webpki-roots", "http1", "http2"]}
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
-http = "1.1.0"
+http = "1.0"
 anyhow = "1.0.86"
 libsql = { path = "../../libsql", features = ["encryption"] }
 
