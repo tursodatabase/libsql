@@ -151,14 +151,19 @@ impl<A: Accept> Stream for TlsIncomingStream<A> {
                     let tls_acceptor = this.tls_acceptor.clone();
                     // Spawn TLS handshake with timeout and track it
                     let handle = tokio::spawn(async move {
-                        match tokio::time::timeout(TLS_HANDSHAKE_TIMEOUT, tls_acceptor.accept(conn)).await {
+                        match tokio::time::timeout(TLS_HANDSHAKE_TIMEOUT, tls_acceptor.accept(conn))
+                            .await
+                        {
                             Ok(Ok(tls_stream)) => Ok(TlsStream(tls_stream)),
                             Ok(Err(err)) => {
                                 tracing::error!("failed to perform tls handshake: {:#}", err);
                                 Err(anyhow::anyhow!("TLS handshake failed: {}", err))
                             }
                             Err(_) => {
-                                tracing::warn!("TLS handshake timed out after {:?}", TLS_HANDSHAKE_TIMEOUT);
+                                tracing::warn!(
+                                    "TLS handshake timed out after {:?}",
+                                    TLS_HANDSHAKE_TIMEOUT
+                                );
                                 Err(anyhow::anyhow!("TLS handshake timeout"))
                             }
                         }

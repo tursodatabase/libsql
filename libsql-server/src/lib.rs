@@ -72,7 +72,6 @@ pub use hrana::proto as hrana_proto;
 
 mod database;
 mod error;
-// mod h2c;  // Disabled for Hyper 1.0 migration - uses hyper 0.14 APIs
 mod heartbeat;
 mod hrana;
 mod http;
@@ -115,9 +114,6 @@ type MakeReplicationSvc = Box<
         + Send
         + 'static,
 >;
-
-// #[global_allocator]
-// static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[global_allocator]
 static GLOBAL: rheaper::Allocator<std::alloc::System> =

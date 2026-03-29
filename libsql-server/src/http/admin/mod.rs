@@ -1,6 +1,6 @@
 use anyhow::Context as _;
 use axum::body::Body;
-use axum::extract::{FromRef, Path, State};
+use axum::extract::{DefaultBodyLimit, FromRef, Path, State};
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::routing::delete;
@@ -186,7 +186,8 @@ where
                         .level(tracing::Level::DEBUG)
                         .latency_unit(tower_http::LatencyUnit::Micros),
                 ),
-        );
+        )
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024)); // 10MB limit
 
     let admin_shell = crate::admin_shell::make_svc(namespaces.clone());
     let grpc_router = tonic::transport::Server::builder()

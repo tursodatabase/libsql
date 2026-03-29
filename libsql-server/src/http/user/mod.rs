@@ -14,7 +14,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use axum::body::Body;
 use axum::extract::Request;
-use axum::extract::{FromRef, FromRequest, FromRequestParts, Path as AxumPath, State as AxumState};
+use axum::extract::{DefaultBodyLimit, FromRef, FromRequest, FromRequestParts, Path as AxumPath, State as AxumState};
 use axum::http::request::Parts;
 use axum::http::HeaderValue;
 use axum::response::Response;
@@ -460,10 +460,21 @@ where
                 ))
                 .layer(
                     cors::CorsLayer::new()
-                        .allow_methods(cors::AllowMethods::any())
-                        .allow_headers(cors::Any)
-                        .allow_origin(cors::Any),
-                );
+                        .allow_methods([
+                            http::Method::GET,
+                            http::Method::POST,
+                            http::Method::PUT,
+                            http::Method::DELETE,
+                            http::Method::OPTIONS,
+                        ])
+                        .allow_headers([
+                            http::header::AUTHORIZATION,
+                            http::header::CONTENT_TYPE,
+                            http::header::ACCEPT,
+                        ])
+                        .allow_origin(cors::Any), // TODO: Configure specific origins in production
+                )
+                .layer(DefaultBodyLimit::max(10 * 1024 * 1024)); // 10MB limit
 
             let router = router.fallback(handle_fallback);
 
