@@ -18,7 +18,7 @@ async-trait = "0.1.58"
 axum = { version = "0.7", features = [] }
 axum-extra = { version = "0.9", features = ["query"] }
 base64 = "0.21.0"
-bincode = "1.3.3"
+bincode = { version = "2", features = ["serde"] }
 bottomless = { version = "0", path = "../bottomless", features = ["libsql_linked_statically"] }
 bytes = { version = "1.2.1", features = ["serde"] }
 bytesize = { version = "1.2.0", features = ["serde"] }
