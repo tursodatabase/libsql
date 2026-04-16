@@ -21,11 +21,11 @@ pub enum Error {
     SchemaDoesntExist(NamespaceName),
     #[error("A migration job is already in progress for `{0}`")]
     MigrationJobAlreadyInProgress(NamespaceName),
-    #[error("An error occured executing the migration at step {0}: {1}")]
+    #[error("An error occurred executing the migration at step {0}: {1}")]
     MigrationError(usize, String),
     #[error("migration is invalid: it contains transaction items (BEGIN, COMMIT, SAVEPOINT...) which are not allowed. The migration is already run within a transaction")]
     MigrationContainsTransactionStatements,
-    #[error("an error occured while backing up the meta store")]
+    #[error("an error occurred while backing up the meta store")]
     MetaStoreBackupFailure,
     #[error("Failed to load namespace: {0}")]
     NamespaceLoad(BoxError),
