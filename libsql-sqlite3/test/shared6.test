@@ -139,7 +139,7 @@ do_test shared6-1.X {
 # that connect to the same file using different VFS implementations do
 # not share a cache.
 #
-if {$::tcl_platform(platform) eq "unix"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
   do_test shared6-2.1 {
     sqlite3 db1 test.db -vfs unix
     sqlite3 db2 test.db -vfs unix

@@ -67,9 +67,9 @@ struct DState {
 */
 typedef struct DText DText;
 struct DText {
-  char *z;           /* The text */
-  int n;             /* Number of bytes of content in z[] */
-  int nAlloc;        /* Number of bytes allocated to z[] */
+  char *z;              /* The text */
+  sqlite3_int64 n;      /* Number of bytes of content in z[] */
+  sqlite3_int64 nAlloc; /* Number of bytes allocated to z[] */
 };
 
 /*
@@ -107,7 +107,7 @@ static void appendText(DText *p, char const *zAppend, char quote){
   if( p->n+len>=p->nAlloc ){
     char *zNew;
     p->nAlloc = p->nAlloc*2 + len + 20;
-    zNew = sqlite3_realloc(p->z, p->nAlloc);
+    zNew = sqlite3_realloc64(p->z, p->nAlloc);
     if( zNew==0 ){
       freeText(p);
       return;
@@ -179,8 +179,8 @@ static char **tableColumnList(DState *p, const char *zTab){
   char **azCol = 0;
   sqlite3_stmt *pStmt = 0;
   char *zSql;
-  int nCol = 0;
-  int nAlloc = 0;
+  sqlite3_int64 nCol = 0;
+  sqlite3_int64 nAlloc = 0;
   int nPK = 0;       /* Number of PRIMARY KEY columns seen */
   int isIPK = 0;     /* True if one PRIMARY KEY column of type INTEGER */
   int preserveRowid = 1;

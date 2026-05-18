@@ -1,0 +1,748 @@
+# 2014 Dec 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focusing on the built-in fts5 tokenizers. 
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5locale
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+proc transform_token {locale token} {
+  switch -- $locale {
+    reverse {
+      set ret ""
+      foreach c [split $token ""] {
+        set ret "$c$ret"
+      }
+      set token $ret
+    }
+
+    default {
+      # no-op
+    }
+  }
+
+  set token
+}
+
+proc tcl_create {args} { return "tcl_tokenize" }
+proc tcl_tokenize {tflags text} {
+  set iToken 1
+  set bSkip 0
+  if {[sqlite3_fts5_locale]=="second"} { set bSkip 1 }
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
+    incr iToken
+    if {(($iToken) % ($bSkip + 1))} continue
+
+    set w [transform_token [sqlite3_fts5_locale] $w]
+    sqlite3_fts5_token $w $iStart $iEnd
+  }
+}
+
+#-------------------------------------------------------------------------
+# Check that queries can have a locale attached to them.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, tokenize=tcl);
+  INSERT INTO t1 VALUES('abc');
+  INSERT INTO t1 VALUES('cba');
+} {}
+
+do_execsql_test 1.1 {
+  SELECT rowid, a FROM t1( fts5_locale('en_US', 'abc') );
+} {1 abc}
+
+do_execsql_test 1.2 {
+  SELECT rowid, a FROM t1( fts5_locale('reverse', 'abc') );
+} {2 cba}
+
+
+#-------------------------------------------------------------------------
+# Test that the locale= option exists and seems to accept values. And
+# that fts5_locale() values may only be inserted into an internal-content
+# table if the locale=1 option was specified.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE b1 USING fts5(x, y, locale=1, tokenize=tcl);
+  CREATE VIRTUAL TABLE b2 USING fts5(x, y, locale=0, tokenize=tcl);
+
+  CREATE VIRTUAL TABLE ttt USING fts5vocab('b1', instance);
+}
+
+do_catchsql_test 2.2.1 {
+  CREATE VIRTUAL TABLE b3 USING fts5(x, y, locale=2);
+} {1 {malformed locale=... directive}}
+do_catchsql_test 2.2.2 {
+  CREATE VIRTUAL TABLE b3 USING fts5(x, y, locale=111);
+} {1 {malformed locale=... directive}}
+
+do_catchsql_test 2.3 {
+  INSERT INTO b1(b1, rank) VALUES('locale', 0);
+} {1 {SQL logic error}}
+
+do_execsql_test 2.4.1 {
+  INSERT INTO b1 VALUES('abc', 'one two three');
+}
+
+do_execsql_test 2.4.2 {
+  INSERT INTO b1 VALUES('def', fts5_locale('reverse', 'four five six'));
+}
+
+do_execsql_test 2.5 {
+  INSERT INTO b2 VALUES('abc', 'one two three');
+}
+
+do_catchsql_test 2.6 {
+  INSERT INTO b2 VALUES('def', fts5_locale('reverse', 'four five six'));
+} {1 {fts5_locale() requires locale=1}}
+
+do_execsql_test 2.7  { SELECT rowid FROM b1('one')  } {1}
+do_execsql_test 2.8  { SELECT rowid FROM b1('four') } {}
+do_execsql_test 2.9  { SELECT rowid FROM b1('ruof') } 2
+do_execsql_test 2.10 { SELECT rowid FROM b1(fts5_locale('reverse', 'five'))} 2
+
+do_execsql_test 2.11 {
+  SELECT x, quote(y) FROM b1
+} {
+  abc {'one two three'}
+  def {'four five six'}
+}
+
+do_execsql_test 2.12  { SELECT quote(y) FROM b1('ruof') } {
+  {'four five six'}
+}
+
+do_execsql_test 2.13 {
+  INSERT INTO b1(b1) VALUES('integrity-check');
+}
+
+do_execsql_test 2.14 {
+  INSERT INTO b1(b1) VALUES('rebuild');
+}
+do_execsql_test 2.15 {
+  INSERT INTO b1(b1) VALUES('integrity-check');
+}
+
+do_execsql_test 2.16 {
+  DELETE FROM b1 WHERE rowid=2
+}
+do_execsql_test 2.17 {
+  INSERT INTO b1(b1) VALUES('integrity-check');
+}
+
+do_execsql_test 2.18 {
+  INSERT INTO b1(rowid, x, y) VALUES(
+      test_setsubtype(45, 76), 'abc def', 'def abc'
+  );
+}
+
+#-------------------------------------------------------------------------
+# Test the 'delete' command with contentless tables.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE c1 USING fts5(x, content=, tokenize=tcl, locale=1);
+  CREATE VIRTUAL TABLE c2 USING fts5vocab('c1', instance);
+
+  INSERT INTO c1 VALUES('hello world');
+  INSERT INTO c1 VALUES( fts5_locale('reverse', 'one two three') );
+}
+
+do_execsql_test 3.2 {
+  SELECT DISTINCT term FROM c2 ORDER BY 1
+} {
+  eerht eno hello owt world
+}
+
+do_execsql_test 3.3 {
+  INSERT INTO c1(c1, rowid, x) 
+    VALUES('delete', 2, fts5_locale('reverse', 'one two three') );
+}
+
+do_execsql_test 3.4 {
+  SELECT DISTINCT term FROM c2 ORDER BY 1
+} {
+  hello world
+}
+
+#-------------------------------------------------------------------------
+# Test that an UPDATE that updates a subset of the columns does not
+# magically discard the locale from those columns not updated.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE d1 USING fts5(x, y, locale=1, tokenize=tcl);
+  CREATE VIRTUAL TABLE d2 USING fts5vocab('d1', instance);
+
+  INSERT INTO d1(rowid, x, y) VALUES(1, 'abc', 'def');
+  INSERT INTO d1(rowid, x, y) VALUES(2, 'ghi', fts5_locale('reverse', 'hello'));
+}
+
+do_execsql_test 4.2 {
+  SELECT DISTINCT term FROM d2 ORDER BY 1
+} {
+  abc def ghi olleh
+}
+
+do_execsql_test 4.3 {
+  UPDATE d1 SET x='jkl' WHERE rowid=2;
+}
+
+do_execsql_test 4.4 {
+  SELECT DISTINCT term FROM d2 ORDER BY 1
+} {
+  abc def jkl olleh
+}
+
+do_execsql_test 4.5 {
+  SELECT rowid, * FROM d1
+} {
+  1 abc def
+  2 jkl hello
+}
+
+do_execsql_test 4.6 {
+  UPDATE d1 SET rowid=4 WHERE rowid=2
+}
+
+do_execsql_test 4.7 {
+  SELECT rowid, * FROM d1
+} {
+  1 abc def
+  4 jkl hello
+}
+
+fts5_aux_test_functions db
+
+do_execsql_test 4.8.1 {
+  SELECT fts5_test_columntext(d1) FROM d1('jkl')
+} {{jkl hello}}
+do_execsql_test 4.8.2 {
+  SELECT fts5_test_columntext(d1) FROM d1(fts5_locale('reverse', 'hello'))
+} {{jkl hello}}
+
+do_execsql_test 4.9 {
+  SELECT fts5_test_columnlocale(d1) FROM d1(fts5_locale('reverse', 'hello'))
+} {{{} reverse}}
+
+do_execsql_test 4.10 {
+  SELECT fts5_test_columnlocale(d1) FROM d1
+} {
+  {{} {}}
+  {{} reverse}
+}
+
+#-------------------------------------------------------------------------
+# Test that if an fts5_locale() value is written to an UNINDEXED 
+# column it is stored as text. This is so that blobs and other values
+# can also be stored as is.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(
+      x, y UNINDEXED, locale=1, tokenize=tcl
+  );
+
+  INSERT INTO t1(rowid, x, y) VALUES(111,
+      fts5_locale('reverse', 'one two three'),
+      fts5_locale('reverse', 'four five six')
+  );
+}
+
+do_execsql_test 5.2 {
+  SELECT rowid, x, y FROM t1
+} {
+  111 {one two three} {four five six}
+}
+
+do_execsql_test 5.3 {
+  SELECT typeof(c0), typeof(c1), typeof(l0) FROM t1_content
+} {
+  text text text
+}
+
+#-------------------------------------------------------------------------
+
+foreach {tn opt} {
+  1 {}
+  2 {, columnsize=0}
+} {
+  reset_db
+  sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+  do_execsql_test 6.$tn.1 "
+    CREATE VIRTUAL TABLE y1 USING fts5(t, locale=1, tokenize=tcl $opt);
+  "
+
+  do_execsql_test 6.$tn.2 {
+    INSERT INTO y1(rowid, t) VALUES
+      (1, fts5_locale('second', 'the city of London')),
+      (2, fts5_locale('second', 'shall have all the old')),
+      (3, fts5_locale('second', 'Liberties and Customs')),
+      (4, fts5_locale('second', 'which it hath been used to have'));
+  }
+
+  fts5_aux_test_functions db
+
+  do_execsql_test 6.$tn.3 {
+    SELECT fts5_test_columnsize(y1) FROM y1
+  } {
+    2 3 2 4
+  }
+
+  do_execsql_test 6.$tn.4 {
+    SELECT rowid, fts5_test_columnsize(y1) FROM y1('shall');
+  } {
+    2 3
+  }
+
+  do_execsql_test 6.$tn.5 {
+    SELECT rowid, fts5_test_columnsize(y1) FROM y1('shall');
+  } {
+    2 3
+  }
+
+  do_execsql_test 6.$tn.6 {
+    SELECT rowid, fts5_test_columnsize(y1) FROM y1('have');
+  } {
+    4 4
+  }
+
+  do_execsql_test 6.$tn.7 {
+    SELECT rowid, highlight(y1, 0, '[', ']') FROM y1('have');
+  } {
+    4 {which it hath been used to [have]}
+  }
+
+  do_execsql_test 6.$tn.8 {
+    SELECT rowid, 
+           highlight(y1, 0, '[', ']'),
+           snippet(y1, 0, '[', ']', '...', 10)
+    FROM y1('Liberties + Customs');
+  } {
+    3 {[Liberties and Customs]}
+      {[Liberties and Customs]}
+  }
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+}
+do_catchsql_test 6.1 {
+  INSERT INTO x1(rowid, x) VALUES(123, fts5_locale('en_AU', 'hello world'));
+} {1 {fts5_locale() requires locale=1}}
+
+do_execsql_test 6.2 {
+  SELECT typeof( fts5_locale(NULL, 'xyz') ), typeof( fts5_locale('', 'abc') );
+} {text text}
+
+#--------------------------------------------------------------------------
+# Test that fts5_locale() works with external-content tables.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 7.1 {
+  CREATE TABLE t1(ii INTEGER PRIMARY KEY, bb BLOB, tt TEXT, locale TEXT);
+  CREATE VIEW v1 AS 
+      SELECT ii AS rowid, bb, fts5_locale(locale, tt) AS tt FROM t1;
+
+  CREATE VIRTUAL TABLE ft USING fts5(
+      bb, tt, locale=1, tokenize=tcl, content=v1
+  );
+
+  INSERT INTO t1 VALUES(1, NULL, 'one two three', NULL);
+  INSERT INTO t1 VALUES(2, '7800616263', 'four five six', 'reverse');
+  INSERT INTO t1 VALUES(3, '000000007800616263', 'seven eight nine', 'second');
+}
+
+do_execsql_test 7.2 {
+  INSERT INTO ft(ft) VALUES('rebuild');
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+do_execsql_test 7.3 {
+  SELECT rowid, quote(bb), quote(tt) FROM ft
+} {
+  1 NULL {'one two three'}
+  2 '7800616263' {'four five six'}
+  3 '000000007800616263' {'seven eight nine'}
+}
+
+do_execsql_test 7.4 { SELECT rowid FROM ft('six'); } 
+do_execsql_test 7.5 { SELECT rowid FROM ft(fts5_locale('reverse','six')); } 2
+
+fts5_aux_test_functions db
+
+do_execsql_test 7.6 {
+  SELECT fts5_test_columnlocale(ft) FROM ft;
+} {
+  {{} {}} {{} reverse} {{} second}
+}
+
+#-------------------------------------------------------------------------
+# Test that the porter tokenizer works with locales.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE ft USING fts5(tt, locale=1, tokenize="porter tcl");
+  CREATE VIRTUAL TABLE vocab USING fts5vocab('ft', instance);
+
+  INSERT INTO ft(rowid, tt) VALUES
+    (111, fts5_locale('second', 'the porter tokenizer is a wrapper tokenizer')),
+    (222, fts5_locale('reverse', 'This value may also be set'));
+}
+
+do_execsql_test 8.1 {
+  SELECT DISTINCT term FROM vocab ORDER BY 1
+} {
+  a eb eulav osla sihT te the token yam
+}
+
+#-------------------------------------------------------------------------
+# Test that position-lists (used by xInst, xPhraseFirst etc.) work with
+# locales and modes other than detail=full.
+#
+foreach {tn detail} {
+  1 detail=full
+  2 detail=none
+  3 detail=column
+} {
+  reset_db
+  sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+  do_execsql_test 9.$tn.0 "
+    CREATE VIRTUAL TABLE ft USING fts5(tt, locale=1, tokenize=tcl, $detail);
+  "
+  do_execsql_test 9.$tn.1 {
+    CREATE VIRTUAL TABLE vocab USING fts5vocab('ft', instance);
+    INSERT INTO ft(rowid, tt) VALUES
+      (-1, fts5_locale('second', 'it is an ancient mariner'));
+  }
+
+  do_execsql_test 9.$tn.2 {
+    SELECT DISTINCT term FROM vocab 
+  } {an it mariner}
+
+  do_execsql_test 9.$tn.3 {
+    SELECT highlight(ft, 0, '[', ']') FROM ft('mariner')
+  } {{it is an ancient [mariner]}}
+}
+
+#-------------------------------------------------------------------------
+# Check some corrupt fts5_locale() blob formats are detected.
+#
+foreach_detail_mode $::testprefix {
+
+  reset_db
+  sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+  fts5_aux_test_functions db
+  do_execsql_test 10.1 {
+    CREATE TABLE x1(ii INTEGER PRIMARY KEY, x);
+    CREATE VIRTUAL TABLE ft USING fts5(x, 
+        content=x1, content_rowid=ii, locale=1, detail=%DETAIL%, columnsize=0
+    );
+
+    CREATE VIRTUAL TABLE ft2 USING fts5(
+        x, locale=1, detail=%DETAIL%, columnsize=0
+    );
+  }
+  
+  foreach {tn v} {
+    1   X'001152'
+    2   X'0011223344'
+    3   X'00E0B2EB68656c6c6f'
+    4   X'00E0B2EB0068656c6c6f'
+  } {
+    do_execsql_test 10.2.$tn.0 { INSERT INTO ft(ft) VALUES('delete-all') }
+    do_execsql_test 10.2.$tn.1 { DELETE FROM x1; }
+    do_execsql_test 10.2.$tn.2 " INSERT INTO x1 VALUES(NULL, $v) "
+  
+    do_catchsql_test 10.2.$tn.3 {
+      INSERT INTO ft(ft) VALUES('rebuild');
+    } {0 {}}
+  
+    do_catchsql_test 10.2.$tn.4 "
+      SELECT * FROM ft( test_setsubtype($v, 76) );
+    " {1 {fts5: syntax error near ""}}
+  
+    do_execsql_test 10.2.$tn.5 {
+      INSERT INTO ft(rowid, x) VALUES(1, 'hello world');
+    }
+  
+    if {"%DETAIL%"=="full"} {
+      do_execsql_test 10.2.$tn.6 {
+        SELECT fts5_test_poslist(ft) FROM ft('world');
+      } {0.0.1}
+  
+      do_execsql_test 10.2.$tn.7.1 {
+        SELECT fts5_test_columnsize(ft) FROM ft('world');
+      } {1}
+
+      do_execsql_test 10.2.$tn.7.2 {
+        SELECT fts5_test_columnlocale(ft) FROM ft('world');
+      } {{{}}}
+    }
+
+    do_catchsql_test 10.2.$tn.8 {
+      SELECT count(*) FROM ft('hello')
+    } {0 1}
+
+    do_catchsql_test 10.2.$tn.9 {
+      PRAGMA integrity_check;
+    } {0 ok}
+
+    do_execsql_test 10.2.$tn.10 {
+      DELETE FROM x1;
+      INSERT INTO x1(ii, x) VALUES(1, 'hello world');
+    }
+
+    do_catchsql_test 10.2.$tn.11 "
+      INSERT INTO ft(ft, rowid, x) VALUES('delete', 1, test_setsubtype($v,76) )
+    " {0 {}}
+
+    do_catchsql_test 10.2.$tn.12 "
+      INSERT INTO ft(rowid, x) VALUES(2, test_setsubtype($v,76) )
+    " {0 {}}
+
+    do_execsql_test 10.2.$tn.13 {
+      INSERT INTO ft2(rowid, x) VALUES(1, 'hello world');
+    }
+    do_execsql_test 10.2.$tn.14 "UPDATE ft2_content SET c0=$v"
+
+    do_catchsql_test 10.2.$tn.15 {
+      PRAGMA integrity_check;
+    } {0 {{malformed inverted index for FTS5 table main.ft2}}}
+
+    do_execsql_test 10.2.$tn.16 {
+      DELETE FROM ft2_content;
+      INSERT INTO ft2(ft2) VALUES('rebuild');
+    }
+  }
+
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+fts5_aux_test_functions db
+do_execsql_test 11.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(abc, locale=1);
+  INSERT INTO x1(rowid, abc) VALUES(123, fts5_locale('en_US', 'one two three'));
+}
+
+do_catchsql_test 11.1 {
+  SELECT fts5_columnlocale(x1, -1) FROM x1('two');
+} {1 SQLITE_RANGE}
+do_catchsql_test 11.2 {
+  SELECT fts5_columnlocale(x1, 1) FROM x1('two');
+} {1 SQLITE_RANGE}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 12.0 {
+  list [catch {
+    sqlite3_fts5_create_tokenizer -v2 -version 3 db tcl tcl_create
+  } msg] $msg
+} {1 {error in fts5_api.xCreateTokenizer_v2()}}
+
+#-------------------------------------------------------------------------
+# Tests for auxiliary function fts5_get_locale().
+#
+reset_db
+
+# Check that if the table does not support locale=1, fts5_get_locale()
+# always returns NULL.
+do_execsql_test 13.1.0 {
+  CREATE VIRTUAL TABLE nolocale USING fts5(a, b);
+  INSERT INTO nolocale VALUES('one two three', 'four five six');
+  INSERT INTO nolocale VALUES('three two one', 'seven eight nine');
+}
+do_execsql_test 13.1.1 {
+  SELECT fts5_get_locale(nolocale, 0) IS NULL FROM nolocale;
+} {1 1}
+do_execsql_test 13.1.2 {
+  SELECT fts5_get_locale(nolocale, 1) IS NULL FROM nolocale('one + two');
+} {1}
+do_execsql_test 13.1.3 {
+  SELECT fts5_get_locale(nolocale, 0) IS NULL FROM nolocale('one AND two');
+} {1 1}
+do_execsql_test 13.1.4 {
+  SELECT 
+      fts5_get_locale(nolocale, 1) IS NULL 
+  FROM nolocale('three AND two') ORDER BY rank
+} {1 1}
+do_catchsql_test 13.1.5 {
+  SELECT fts5_get_locale(nolocale, 2) IS NULL FROM nolocale('three AND two');
+} {1 {column index out of range}}
+do_catchsql_test 13.1.6 {
+  SELECT fts5_get_locale(nolocale, -1) IS NULL FROM nolocale('three AND two');
+} {1 {column index out of range}}
+do_catchsql_test 13.1.7 {
+  SELECT fts5_get_locale(nolocale) IS NULL FROM nolocale('three AND two');
+} {1 {wrong number of arguments to function fts5_get_locale()}}
+do_catchsql_test 13.1.8 {
+  SELECT fts5_get_locale(nolocale, 0, 0) IS NULL FROM nolocale('three AND two');
+} {1 {wrong number of arguments to function fts5_get_locale()}}
+do_catchsql_test 13.1.9 {
+  SELECT fts5_get_locale(nolocale, 'text') FROM nolocale('three AND two');
+} {1 {non-integer argument passed to function fts5_get_locale()}}
+
+
+# Check that if the table does support locale=1, fts5_get_locale()
+# returns the locale of the identified row/column.
+do_execsql_test 13.2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, b, locale=1);
+  INSERT INTO ft VALUES(
+      fts5_locale('th_TH', 'one two three'), 'four five six seven'
+  );
+  INSERT INTO ft VALUES(
+      'three two one', fts5_locale('en_AU', 'seven eight nine')
+  );
+}
+
+do_execsql_test 13.2.1 {
+  SELECT quote(fts5_get_locale(ft, 0)), quote(fts5_get_locale(ft, 1)) FROM ft
+} { 'th_TH' NULL NULL 'en_AU' }
+do_execsql_test 13.2.2 {
+  SELECT 
+    quote(fts5_get_locale(ft, 0)), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three')
+} { 'th_TH' NULL NULL 'en_AU' }
+do_execsql_test 13.2.3 {
+  SELECT 
+    quote(fts5_get_locale(ft, 0)), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rank
+} { NULL 'en_AU' 'th_TH' NULL }
+do_execsql_test 13.2.4 {
+  SELECT 
+    quote(fts5_get_locale(ft, 0)), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rowid
+} { 'th_TH' NULL NULL 'en_AU' }
+
+do_execsql_test 13.2.5 {
+  SELECT 
+    quote(fts5_get_locale(ft, '0')), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rowid
+} { 'th_TH' NULL NULL 'en_AU' }
+
+do_catchsql_test 13.2.6 {
+  SELECT 
+    quote(fts5_get_locale(ft, '0.0')), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rowid
+} {1 {non-integer argument passed to function fts5_get_locale()}}
+do_catchsql_test 13.2.7 {
+  SELECT 
+    quote(fts5_get_locale(ft, 0.0)), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rowid
+} {1 {non-integer argument passed to function fts5_get_locale()}}
+
+#-------------------------------------------------------------------------
+# Check that UPDATE statements that may affect more than one row work.
+#
+reset_db
+do_execsql_test 14.1 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, b, locale=1);
+}
+
+do_execsql_test 14.2 {
+  INSERT INTO ft VALUES('hello', 'world');
+}
+
+do_execsql_test 14.3 {
+  UPDATE ft SET b = fts5_locale('en_AU', 'world');
+}
+
+do_execsql_test 14.4 {
+  INSERT INTO ft VALUES(X'abcd', X'1234');
+} {}
+
+do_execsql_test 14.5 {
+  SELECT quote(a), quote(b) FROM ft
+} {'hello' 'world' X'ABCD' X'1234'}
+
+do_execsql_test 14.6 {
+  DELETE FROM ft;
+  INSERT INTO ft VALUES(NULL, 'null');
+  INSERT INTO ft VALUES(123, 'int');
+  INSERT INTO ft VALUES(345.0, 'real');
+  INSERT INTO ft VALUES('abc', 'text');
+  INSERT INTO ft VALUES(fts5_locale('abc', 'def'), 'text');
+
+  SELECT a, typeof(a), b FROM ft
+} {
+  {} null null
+  123 integer int
+  345.0 real real
+  abc text text
+  def text text
+}
+
+do_execsql_test 14.7 {
+  SELECT quote(c0), typeof(c0) FROM ft_content
+} {
+  NULL null
+  123 integer
+  345.0 real
+  'abc' text
+  'def' text
+}
+
+#-------------------------------------------------------------------------
+# Check that inserting UNINDEXED columns between indexed columns of a
+# locale=1 table does not cause a problem.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+fts5_aux_test_functions db
+
+do_execsql_test 15.1 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, b UNINDEXED, c, locale=1, tokenize=tcl);
+}
+
+do_execsql_test 15.2 {
+  INSERT INTO ft VALUES('one', 'two', 'three');
+  INSERT INTO ft VALUES('one', 'two', fts5_locale('loc', 'three'));
+}
+
+do_execsql_test 15.3 {
+  SELECT c2, l2 FROM ft_content
+} {three {} three loc}
+
+do_execsql_test 15.4 {
+  SELECT c, fts5_columnlocale(ft, 2) FROM ft
+} {three {} three loc}
+
+
+finish_test
+

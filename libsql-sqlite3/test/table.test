@@ -792,7 +792,7 @@ do_catchsql_test table-16.7 {
   INSERT INTO t16 DEFAULT VALUES;
 } {1 {unknown function: string_agg()}}
 
-# Ticket [https://www.sqlite.org/src/info/094d39a4c95ee4abbc417f04214617675ba15c63]
+# Ticket [https://sqlite.org/src/info/094d39a4c95ee4abbc417f04214617675ba15c63]
 # describes a assertion fault that occurs on a CREATE TABLE .. AS SELECT statement.
 # the following test verifies that the problem has been fixed.
 #
@@ -810,7 +810,7 @@ do_execsql_test table-17.1 {
 } {1 1 | 2 2 |}
 
 # 2015-06-16
-# Ticket [https://www.sqlite.org/src/tktview/873cae2b6e25b1991ce5e9b782f9cd0409b96063]
+# Ticket [https://sqlite.org/src/tktview/873cae2b6e25b1991ce5e9b782f9cd0409b96063]
 # Make sure a CREATE TABLE AS statement correctly rolls back partial changes to the
 # sqlite_master table when the SELECT on the right-hand side aborts.
 #
@@ -825,7 +825,7 @@ do_execsql_test table-18.2 {
 } {ok}
 
 # 2015-09-09
-# Ticket [https://www.sqlite.org/src/info/acd12990885d9276]
+# Ticket [https://sqlite.org/src/info/acd12990885d9276]
 # "CREATE TABLE ... AS SELECT ... FROM sqlite_master" fails because the row
 # in the sqlite_master table for the next table is initially populated
 # with a NULL instead of a record created by OP_Record.

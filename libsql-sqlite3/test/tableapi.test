@@ -230,7 +230,7 @@ ifcapable schema_pragmas {
 }
 
 # do_malloc_test closes and deletes the usual db connections and files on
-# each iteration.  $::dbx is a seperate connection, and on Windows, will
+# each iteration.  $::dbx is a separate connection, and on Windows, will
 # cause the file deletion of test.db to fail, so we move the close of $::dbx
 # up to here before the do_malloc_test.
 do_test tableapi-99.0 {

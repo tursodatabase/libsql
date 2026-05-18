@@ -49,20 +49,23 @@
       <ul id='test-list'>
         <li>Core-most tests
           <ul>
-            <li><a href='tester1.html'>tester1</a>: Core unit and
+            <li>tester1 (<a href='tester1.html'>32-bit</a>
+              <a href='tester1-64bit.html'>64-bit</a>): Core unit and
               regression tests for the various APIs and surrounding
               utility code.</li>
-            <li><a href='tester1-worker.html'>tester1-worker</a>: same thing
-              but running in a Worker.</li>
-            <li><a href='tester1-esm.html'>tester1-esm</a>: same as
+            <li>tester1-esm (<a href='tester1-esm.html'>32-bit</a>
+              <a href='tester1-esm-64bit.html'>64-bit</a>): same as
               <code>tester1</code> but loads sqlite3 in the main thread via
               an ES6 module.
             </li>
-            <li><a href='tester1-worker.html?esm'>tester1-worker?esm</a>:
-              same as <code>tester1-esm</code> but loads a Worker Module which
-              then loads the sqlite3 API via an ES6 module. Note that
-              not all browsers permit loading modules in Worker
-              threads.
+            <li>tester1-worker (<a href='tester1-worker.html'>32-bit</a>
+              <a href='tester1-worker-64bit.html'>64-bit</a>): same thing
+              but running in a Worker.</li>
+            <li>tester1-worker ESM (<a href='tester1-worker.html?esm'>32-bit</a>
+              <a href='tester1-worker-64bit.html?esm'>64-bit</a>): same as
+              tester1-worker but loads a Worker Module which then
+              loads the sqlite3 API via an ES6 module. Not all
+              browsers permit loading modules in Worker threads.
             </li>
           </ul>
         </li>
@@ -84,16 +87,32 @@
               wrapper is significantly easier to use, however.</li>
             <li><a href='demo-worker1-promiser.html'>demo-worker1-promiser</a>:
               a demo of the Promise-based wrapper of the Worker1 API.</li>
+            <li><a href='demo-worker1-promiser-esm.html'>demo-worker1-promiser-esm</a>:
+              same as the previous demo except loads the promiser from an ESM module.</li>
           </ul>
         </li>
         <li>speedtest1 ports (sqlite3's primary benchmarking tool)...
           <ul>
-            <li><a href='speedtest1.html'>speedtest1</a>: a main-thread WASM build of speedtest1.</li>
-            <li><a href='speedtest1.html?vfs=kvvfs'>speedtest1?vfs=kvvfs</a>: speedtest1 with the kvvfs.</li>
-            <li><a href='speedtest1-worker.html?size=15'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
-            <li><a href='speedtest1-worker.html?vfs=opfs&size=10'>speedtest1-worker?vfs=opfs</a>: speedtest1-worker with the
+            <li>speedtest1
+              (<a href='speedtest1.html'>32-bit</a>,
+              <a href='speedtest1-64bit.html'>64-bit</a>):
+              a main-thread WASM build of speedtest1.</li>
+            <li>speedtest1?vfs=kvvfs
+              (<a href='speedtest1.html?vfs=kvvfs'>32-bit</a>,
+              <a href='speedtest1-64bit.html?vfs=kvvfs'>64-bit</a>):
+              speedtest1 with the kvvfs.</li>
+            <li>speedtest1-worker
+              (<a href='speedtest1-worker.html?size=15'>32-bit</a>,
+              <a href='speedtest1-worker-64bit.html?size=15'>64-bit</a>):
+              an interactive Worker-thread variant of speedtest1.</li>
+            <li>speedtest1-worker?vfs=opfs
+              (<a href='speedtest1-worker.html?vfs=opfs&size=10'>32-bit</a>,
+              <a href='speedtest1-worker-64bit.html?vfs=opfs&size=10'>64-bit</a>):
+              speedtest1-worker with the
               OPFS VFS preselected and configured for a moderate workload.</li>
-            <li><a href='speedtest1-worker.html?vfs=opfs-sahpool&size=10'>speedtest1-worker?vfs=opfs-sahpool</a>:
+            <li>speedtest1-worker?vfs=opfs-sahpool
+              (<a href='speedtest1-worker.html?vfs=opfs-sahpool&size=10'>32-bit</a>,
+              <a href='speedtest1-worker-64bit.html?vfs=opfs-sahpool&size=10'>64-bit</a>):
               speedtest1-worker with the OPFS-SAHPOOL VFS preselected
               and configured for a moderate workload.
             </li>
@@ -117,6 +136,17 @@
             <li><a href='tests/opfs/concurrency/index.html'>OPFS concurrency</a>
               tests using multiple workers.
             </li>
+            <li><a href='tests/opfs/sahpool/index.html'>OPFS SAHPool cooperative semi-concurrency</a>
+              demonstrates usage of the OPFS SAHPool VFS's "pause" feature to coordinate
+              access to a database.
+            </li>
+            <li><a href='SQLTester/index.html'>SQLTester</a> is
+              another testing tool for the library but making use of
+              it requires tests from an external, proprietary
+              project. Despite not being useful to the general public,
+              a link to it is in this list so that its developer has
+              easy access to it.
+            </li>
           </ul>
         </li>
         <li><strong>WASMFS</strong>-specific tests which require that
@@ -126,10 +156,13 @@
             <li><a href='scratchpad-wasmfs.html'>scratchpad-wasmfs</a>:
               experimenting with WASMFS/OPFS-based persistence.
             </li>
-            <li><a href='speedtest1-wasmfs.html?flags=--size,15'>speedtest1-wasmfs</a>:
+            <!--speedtest1-wasmfs's build was broken in refactoring and it
+                has not been used in years, but it may be interesting
+                to revisit someday
+                li><a href='speedtest1-wasmfs.html?flags=--size,10'>speedtest1-wasmfs</a>:
               a variant of speedtest1 built solely for the wasmfs/opfs
               feature.
-            </li>
+            </li-->
           </ul>
         </li>
         <!--li><a href='x.html'></a></li-->

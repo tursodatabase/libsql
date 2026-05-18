@@ -84,7 +84,6 @@ do_test 152 {
   catchsql {INSERT INTO t1 VALUES(3,4);}
 } {1 {attempt to write a readonly database}}
 
-breakpoint
 do_test 160 {
   db deserialize -maxsize 32768 $db1
   db eval {SELECT * FROM t1}
@@ -246,8 +245,9 @@ if {[wal_is_capable]} {
   db close
   
   set fd [open test.db]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   set data [read $fd [expr 20*1024]]
+  close $fd
   
   sqlite3 db ""
   db deserialize $data
@@ -266,5 +266,18 @@ if {[wal_is_capable]} {
     PRAGMA wal_checkpoint;
   } {1 {database disk image is malformed}}
 }
+
+# 2024-01-20
+# https://sqlite.org/forum/forumpost/498777780e16880a
+#
+# Make sure a database is initialized before serializing it.
+#
+reset_db
+sqlite3 dbempty :memory:
+do_test 900 {
+  set len [string length [dbempty serialize]]
+  expr {$len>0}
+} 1
+dbempty close
 
 finish_test

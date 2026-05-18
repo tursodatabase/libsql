@@ -308,7 +308,7 @@ char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn){
 **   * The 52 upper and lower case ASCII characters, and
 **   * The 10 integer ASCII characters.
 **   * The underscore character "_" (0x5F).
-**   * The unicode "subsitute" character (0x1A).
+**   * The unicode "substitute" character (0x1A).
 */
 int sqlite3Fts5IsBareword(char t){
   u8 aBareword[128] = {

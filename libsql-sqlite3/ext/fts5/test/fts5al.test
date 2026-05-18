@@ -17,7 +17,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5al
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -292,6 +292,16 @@ do_catchsql_test 4.4.3 {
 do_catchsql_test 4.4.4 {
   SELECT *, rank FROM t3 WHERE t3 MATCH 'a' AND rank MATCH NULL
 } {1 {parse error in rank function: }}
+
+# Check that the second and subsequent rank= constraints are ignored.
+#
+do_catchsql_test 4.3.3 {
+  SELECT *, rank FROM t3
+  WHERE t3 MATCH 'a' AND 
+  rank MATCH 'nosuch()' AND
+  rank MATCH 'rowidmod(3)'  
+  ORDER BY rank ASC
+} {1 {unable to use function MATCH in the requested context}}
 
 } ;# foreach_detail_mode
 

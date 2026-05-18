@@ -482,9 +482,9 @@ struct amatch_rule {
   amatch_rule *pNext;      /* Next rule in order of increasing rCost */
   char *zFrom;             /* Transform from (a string from user input) */
   amatch_cost rCost;       /* Cost of this transformation */
-  amatch_langid iLang;     /* The langauge to which this rule belongs */
+  amatch_langid iLang;     /* The language to which this rule belongs */
   amatch_len nFrom, nTo;   /* Length of the zFrom and zTo strings */
-  char zTo[4];             /* Tranform to V.W value (extra space appended) */
+  char zTo[4];             /* Transform to V.W value (extra space appended) */
 };
 
 /* 
@@ -514,7 +514,7 @@ struct amatch_cursor {
   sqlite3_int64 iRowid;      /* The rowid of the current word */
   amatch_langid iLang;       /* Use this language ID */
   amatch_cost rLimit;        /* Maximum cost of any term */
-  int nBuf;                  /* Space allocated for zBuf */
+  sqlite3_int64 nBuf;        /* Space allocated for zBuf */
   int oomErr;                /* True following an OOM error */
   int nWord;                 /* Number of amatch_word objects */
   char *zBuf;                /* Temp-use buffer space */
@@ -1039,7 +1039,7 @@ static void amatchAddWord(
   nTail = (int)strlen(zWordTail);
   if( nBase+nTail+3>pCur->nBuf ){
     pCur->nBuf = nBase+nTail+100;
-    pCur->zBuf = sqlite3_realloc(pCur->zBuf, pCur->nBuf);
+    pCur->zBuf = sqlite3_realloc64(pCur->zBuf, pCur->nBuf);
     if( pCur->zBuf==0 ){
       pCur->nBuf = 0;
       return;
@@ -1105,13 +1105,13 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
   amatch_avl *pNode;
   int isMatch = 0;
   amatch_vtab *p = pCur->pVtab;
-  int nWord;
+  sqlite3_int64 nWord;
   int rc;
   int i;
   const char *zW;
   amatch_rule *pRule;
   char *zBuf = 0;
-  char nBuf = 0;
+  sqlite3_int64 nBuf = 0;
   char zNext[8];
   char zNextIn[8];
   int nNextIn;
@@ -1158,7 +1158,7 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
     nWord = (int)strlen(pWord->zWord+2);
     if( nWord+20>nBuf ){
       nBuf = (char)(nWord+100);
-      zBuf = sqlite3_realloc(zBuf, nBuf);
+      zBuf = sqlite3_realloc64(zBuf, nBuf);
       if( zBuf==0 ) return SQLITE_NOMEM;
     }
     amatchStrcpy(zBuf, pWord->zWord+2);

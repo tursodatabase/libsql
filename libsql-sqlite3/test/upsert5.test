@@ -408,4 +408,46 @@ do_catchsql_test 2.1 {
 
 } {1 {no such table: nosuchtable}}
 
+# 2024-03-08 https://sqlite.org/forum/forumpost/919c6579c8
+# A redundant ON CONFLICT clause in an upsert can lead to
+# index corruption.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(aa INTEGER PRIMARY KEY, bb INT);
+  INSERT INTO t1 VALUES(11,22);
+  CREATE UNIQUE INDEX t1bb ON t1(bb);
+  REPLACE INTO t1 VALUES(11,33)
+    ON CONFLICT(bb) DO UPDATE SET aa = 44
+    ON CONFLICT(bb) DO UPDATE SET aa = 44;
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test 3.1 {
+  SELECT * FROM t1 NOT INDEXED;
+} {11 33}
+do_execsql_test 3.2 {
+  SELECT * FROM t1 INDEXED BY t1bb;
+} {11 33}
+do_execsql_test 3.3 {
+  DROP TABLE t1;
+  CREATE TABLE t1(aa INTEGER PRIMARY KEY, bb INT, cc INT);
+  INSERT INTO t1 VALUES(10,21,32),(11,22,33),(12,23,34);
+  CREATE UNIQUE INDEX t1bb ON t1(bb);
+  CREATE UNIQUE INDEX t1cc ON t1(cc);
+  REPLACE INTO t1 VALUES(11,44,55)
+    ON CONFLICT(bb) DO UPDATE SET aa = 99
+    ON CONFLICT(cc) DO UPDATE SET aa = 99
+    ON CONFLICT(bb) DO UPDATE SET aa = 99;
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test 3.4 {
+  SELECT * FROM t1 NOT INDEXED ORDER BY +aa;
+} {10 21 32 11 44 55 12 23 34}
+do_execsql_test 3.5 {
+  SELECT * FROM t1 INDEXED BY t1bb ORDER BY +aa;
+} {10 21 32 11 44 55 12 23 34}
+do_execsql_test 3.6 {
+  SELECT * FROM t1 INDEXED BY t1cc ORDER BY +aa;
+} {10 21 32 11 44 55 12 23 34}
+
 finish_test

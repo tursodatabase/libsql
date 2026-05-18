@@ -399,7 +399,7 @@ do_test crash-7.1 {
 
   # Change the checksum value for the master journal name.
   set f [open test.db-journal a]
-  fconfigure $f -encoding binary
+  fconfigure $f -translation binary
   seek $f [expr [file size test.db-journal] - 12]
   puts -nonewline $f "\00\00\00\00"
   close $f

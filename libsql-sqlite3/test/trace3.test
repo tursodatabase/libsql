@@ -342,5 +342,21 @@ do_test 12.1.2 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.0 {
+  CREATE TABLE T1(a, b);
+  INSERT INTO t1 VALUES(1, 2), (3, 4);
+}
+
+proc trace_callback {args} {}
+db trace_v2 trace_callback profile
+
+do_test 13.1 {
+  db eval { SELECT * FROM t1 } {
+    db trace_v2 "" ""
+  }
+  set {} {}
+} {}
 
 finish_test

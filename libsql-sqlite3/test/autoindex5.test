@@ -142,7 +142,7 @@ do_catchsql_test 2.2 {
   );
 } {0 9}
 
-# Ticket https://www.sqlite.org/src/info/787fa716be3a7f65
+# Ticket https://sqlite.org/src/info/787fa716be3a7f65
 # Segfault due to multiple uses of the same subquery where the
 # subquery is implemented via coroutine.
 #

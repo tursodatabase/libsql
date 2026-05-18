@@ -55,6 +55,69 @@ do_execsql_test 2.4 {
   PRAGMA index_info(t3);
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+db collate mysort mysort
+db collate mysort2 mysort
+proc mysort {a b} { string compare $a $b }
+do_execsql_test 3.0 {
+  CREATE TABLE t1(
+      a PRIMARY KEY COLLATE mysort, b COLLATE mysort2
+  ) WITHOUT ROWID;
+  INSERT INTO t1 VALUES(1, 2);
+}
 
+db close
+sqlite3 db test.db
+
+do_catchsql_test 3.1.1 {
+  SELECT * FROM t1 WHERE a=1;
+} {1 {no such collation sequence: mysort}}
+do_test 3.1.2 {
+  sqlite3_extended_errcode db
+} {SQLITE_ERROR_MISSING_COLLSEQ}
+
+db collate mysort mysort
+
+do_catchsql_test 3.2.1 {
+  CREATE UNIQUE INDEX i1 ON t1(b);
+} {1 {no such collation sequence: mysort2}}
+do_test 3.2.2 {
+  sqlite3_extended_errcode db
+} {SQLITE_ERROR_MISSING_COLLSEQ}
+
+db close
+sqlite3 db test.db
+
+do_catchsql_test 3.3.1 {
+  CREATE UNIQUE INDEX i1 ON t1(1);
+} {1 {no such collation sequence: mysort}}
+do_test 3.3.2 {
+  sqlite3_extended_errcode db
+} {SQLITE_ERROR_MISSING_COLLSEQ}
+
+do_test 3.4.1 {
+  list [catch {
+    sqlite3_prepare_v3 db "CREATE UNIQUE INDEX i1 ON t1(1)" -1 0
+  } msg] $msg
+} {1 {(1) no such collation sequence: mysort}}
+do_test 3.4.2 {
+  sqlite3_extended_errcode db
+} {SQLITE_ERROR_MISSING_COLLSEQ}
+
+sqlite3_extended_result_codes db 1
+
+do_test 3.5.1 {
+  list [catch {
+    sqlite3_prepare_v3 db "CREATE UNIQUE INDEX i1 ON t1(1)" -1 0
+  } msg] $msg
+} {1 {(257) no such collation sequence: mysort}}
+do_test 3.5.2 {
+  sqlite3_extended_errcode db
+} {SQLITE_ERROR_MISSING_COLLSEQ}
+
+do_catchsql_test 3.6 {
+  SELECT * FROM t1 WHERE a=1;
+} {1 {no such collation sequence: mysort}}
 
 finish_test

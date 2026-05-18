@@ -61,7 +61,7 @@ do_test 1.14 { sqlite3_db_config db NO_CKPT_ON_CLOSE 1 } {1}
 do_execsql_test 1.14 { PRAGMA main.journal_mode = delete } {delete}
 do_test 1.15 { file exists test.db-wal } {0}
 
-if {$::tcl_platform(platform)!="windows"} {
+if {$::tcl_platform(platform) ne "windows"} {
 #-------------------------------------------------------------------------
 # Test an unusual scenario:
 #
@@ -102,7 +102,9 @@ sqlite3_close_v2 $::db1
 
 # Delete the database, wal and shm files.
 #
-forcedelete test.db test.db-wal test.db-shm
+catch {forcedelete test.db}
+catch {forcedelete test.db-wal}
+catch {forcedelete  test.db-shm}
 
 # Open and populate a new database file at the same file-system location
 # as the one just deleted. Contrive a partial checkpoint on it.

@@ -41,10 +41,11 @@
 
    ES6 worker module build:
 
-     ./c-pp -f tester1.c-pp.js -o tester1-esm.js -Dtarget=es6-module
+     ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget:es6-module
 */
-//#if target=es6-module
-import {default as sqlite3InitModule} from './jswasm/sqlite3.mjs';
+//#@policy error
+//#if target:es6-module
+import {default as sqlite3InitModule} from "@sqlite3.js@";
 globalThis.sqlite3InitModule = sqlite3InitModule;
 //#else
 'use strict';
@@ -63,7 +64,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   /* Predicate for tests/groups. */
   const testIsTodo = ()=>false;
   const haveWasmCTests = ()=>{
-    return !!wasm.exports.sqlite3_wasm_test_intptr;
+    return !!wasm.exports.sqlite3__wasm_test_intptr;
   };
   const hasOpfs = ()=>{
     return globalThis.FileSystemHandle
@@ -72,6 +73,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       && globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle
       && navigator?.storage?.getDirectory;
   };
+
+  let SQLite3 /* populated after module load */;
 
   {
     const mapToString = (v)=>{
@@ -106,16 +109,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         logTarget.append(ln);
       };
       const cbReverse = document.querySelector('#cb-log-reverse');
-      //cbReverse.setAttribute('checked','checked');
       const cbReverseKey = 'tester1:cb-log-reverse';
       const cbReverseIt = ()=>{
         logTarget.classList[cbReverse.checked ? 'add' : 'remove']('reverse');
-        //localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
+        localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
       };
       cbReverse.addEventListener('change', cbReverseIt, true);
-      /*if(localStorage.getItem(cbReverseKey)){
+      if(localStorage.getItem(cbReverseKey)){
         cbReverse.checked = !!(+localStorage.getItem(cbReverseKey));
-      }*/
+      }
       cbReverseIt();
     }else{ /* Worker thread */
       console.log("Running in a Worker thread.");
@@ -136,6 +138,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }else{
       postMessage({type:'test-result', payload:{pass}});
     }
+    TestUtil.checkHeapSize(true);
   };
   const log = (...args)=>{
     //console.log(...args);
@@ -159,6 +162,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   };
 
   const roundMs = (ms)=>Math.round(ms*100)/100;
+
+  const looksLikePtr = (v,positive=true)=> positive ? v>0 : v>=0;
 
   /**
      Helpers for writing sqlite3-specific tests.
@@ -221,7 +226,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       else if(filter instanceof Function) pass = filter(err);
       else if('string' === typeof filter) pass = (err.message === filter);
       if(!pass){
-        throw new Error(msg || ("Filter rejected this exception: "+err.message));
+        throw new Error(msg || ("Filter rejected this exception: <<"+err.message+">>"));
       }
       return this;
     },
@@ -294,6 +299,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             logClass(['faded','one-test-summary'],
                      TestUtil.counter - tc, 'assertion(s) in',
                      roundMs(then-now),'ms');
+            TestUtil.checkHeapSize();
           }
           logClass(['green','group-end'],
                    "#"+this.number+":",
@@ -344,6 +350,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           reportFinalTestStatus(false);
         }
       }.bind(this));
+    },
+
+    checkHeapSize: function(force=false){
+      const heapSize = SQLite3.wasm.heap8().byteLength;
+      if( force || heapSize !== TestUtil.lastHeapSize ){
+        TestUtil.lastHeapSize = heapSize;
+        log('WASM heap size:', heapSize,'bytes');
+      }
     }
   }/*TestUtil*/;
   const T = TestUtil;
@@ -405,7 +419,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert(wasm.realloc.impl === wasm.exports.realloc);
         }else{
           T.assert(wasm.alloc.impl === wasm.exports.sqlite3_malloc)
-            .assert(wasm.dealloc === wasm.exports.sqlite3_free)
+            .assert(wasm.dealloc.impl === wasm.exports.sqlite3_free)
             .assert(wasm.realloc.impl === wasm.exports.sqlite3_realloc);
         }
       }
@@ -461,7 +475,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       try{ sqlite3.SQLite3Error.toss("resultCode check") }
       catch(e){
         T.assert(capi.SQLITE_ERROR === e.resultCode)
-          .assert('resultCode check' === e.message);        
+          .assert('resultCode check' === e.message);
       }
     })
   ////////////////////////////////////////////////////////////////////
@@ -502,7 +516,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let m = w.alloc(14);
         let m2 = w.realloc(m, 16);
         T.assert(m === m2/* because of alignment */);
-        T.assert(0 === w.realloc(m, 0));
+        let x = w.realloc(m, 0);
+        T.assert(w.ptr.null === x);
         m = m2 = 0;
 
         // Check allocation limits and allocator's responses...
@@ -511,24 +526,26 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const tooMuch = sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE + 1,
                 isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
           T.mustThrowMatching(()=>w.alloc(tooMuch), isAllocErr)
-            .assert(0 === w.alloc.impl(tooMuch))
+            .assert(w.ptr.null === w.alloc.impl(tooMuch))
             .mustThrowMatching(()=>w.realloc(0, tooMuch), isAllocErr)
-            .assert(0 === w.realloc.impl(0, tooMuch));
+            .assert(w.ptr.null === w.realloc.impl(wasm.ptr.null, tooMuch));
         }
 
         // Check allocFromTypedArray()...
         const byteList = [11,22,33]
         const u = new Uint8Array(byteList);
         m = w.allocFromTypedArray(u);
+        let mAsNumber = Number(m);
         for(let i = 0; i < u.length; ++i){
           T.assert(u[i] === byteList[i])
-            .assert(u[i] === w.peek8(m + i));
+            .assert(u[i] === w.peek8(mAsNumber + i));
         }
         w.dealloc(m);
         m = w.allocFromTypedArray(u.buffer);
+        mAsNumber = Number(m);
         for(let i = 0; i < u.length; ++i){
           T.assert(u[i] === byteList[i])
-            .assert(u[i] === w.peek8(m + i));
+            .assert(u[i] === w.peek8(mAsNumber + i));
         }
 
         w.dealloc(m);
@@ -623,18 +640,19 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         try {
           let cStr = w.scopedAllocCString("hello");
           const n = w.cstrlen(cStr);
+          const nPtr = w.ptr.coerce(n);
           let cpy = w.scopedAlloc(n+10);
           let rc = w.cstrncpy(cpy, cStr, n+10);
           T.assert(n+1 === rc).
             assert("hello" === w.cstrToJs(cpy)).
-            assert(chr('o') === w.peek8(cpy+n-1)).
-            assert(0 === w.peek8(cpy+n));
+            assert(chr('o') === w.peek8( w.ptr.add(cpy,nPtr, -1))).
+            assert(0 === w.peek8( w.ptr.add(cpy,nPtr) ) );
           let cStr2 = w.scopedAllocCString("HI!!!");
           rc = w.cstrncpy(cpy, cStr2, 3);
           T.assert(3===rc).
             assert("HI!lo" === w.cstrToJs(cpy)).
-            assert(chr('!') === w.peek8(cpy+2)).
-            assert(chr('l') === w.peek8(cpy+3));
+            assert(chr('!') === w.peek8( w.ptr.add(cpy, 2) )).
+            assert(chr('l') === w.peek8( w.ptr.add(cpy, 3) ) );
         }finally{
           w.scopedAllocPop(scope);
         }
@@ -657,8 +675,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const jstr = "hällo, world!";
         const [cstr, n] = w.allocCString(jstr, true);
         T.assert(14 === n)
-          .assert(0===w.peek8(cstr+n))
-          .assert(chr('!')===w.peek8(cstr+n-1));
+          .assert(0===w.peek8(w.ptr.add(cstr,n)))
+          .assert(chr('!')===w.peek8(w.ptr.add(cstr,n,-1)));
         w.dealloc(cstr);
       }
 
@@ -681,21 +699,21 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const p1 = w.scopedAlloc(16),
                 p2 = w.scopedAlloc(16);
           T.assert(1===w.scopedAlloc.level)
-            .assert(Number.isFinite(p1))
-            .assert(Number.isFinite(p2))
+            .assert(looksLikePtr(p1))
+            .assert(looksLikePtr(p2))
             .assert(asc[0] === p1)
             .assert(asc[1]===p2);
           asc2 = w.scopedAllocPush();
           const p3 = w.scopedAlloc(16);
           T.assert(2===w.scopedAlloc.level)
-            .assert(Number.isFinite(p3))
+            .assert(looksLikePtr(p3))
             .assert(2===asc.length)
             .assert(p3===asc2[0]);
 
           const [z1, z2, z3] = w.scopedAllocPtr(3);
-          T.assert('number'===typeof z1).assert(z2>z1).assert(z3>z2)
-            .assert(0===w.peek32(z1), 'allocPtr() must zero the targets')
-            .assert(0===w.peek32(z3));
+          T.assert(typeof w.ptr.null===typeof z1).assert(z2>z1).assert(z3>z2)
+            .assert(w.ptr.null===w.peekPtr(z1), 'allocPtr() must zero the targets')
+            .assert(w.ptr.null===w.peekPtr(z3));
         }finally{
           // Pop them in "incorrect" order to make sure they behave:
           w.scopedAllocPop(asc);
@@ -715,15 +733,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(1===w.scopedAlloc.level);
           const [cstr, n] = w.scopedAllocCString("hello, world", true);
           T.assert(12 === n)
-            .assert(0===w.peek8(cstr+n))
-            .assert(chr('d')===w.peek8(cstr+n-1));
+            .assert(0===w.peek8( w.ptr.add(cstr,n) ))
+            .assert(chr('d')===w.peek8( w.ptr.add(cstr, n, -1) ));
         });
       }/*scopedAlloc()*/
 
       //log("xCall()...");
       {
-        const pJson = w.xCall('sqlite3_wasm_enum_json');
-        T.assert(Number.isFinite(pJson)).assert(w.cstrlen(pJson)>300);
+        const pJson = w.xCall('sqlite3__wasm_enum_json');
+        T.assert(looksLikePtr(pJson)).assert(w.cstrlen(pJson)>300);
       }
 
       //log("xWrap()...");
@@ -736,9 +754,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.mustThrowMatching(()=>fw(1), /requires 0 arg/);
         let rc = fw();
         T.assert('string'===typeof rc).assert(rc.length>5);
-        rc = w.xCallWrapped('sqlite3_wasm_enum_json','*');
-        T.assert(rc>0 && Number.isFinite(rc));
-        rc = w.xCallWrapped('sqlite3_wasm_enum_json','utf8');
+        rc = w.xCallWrapped('sqlite3__wasm_enum_json','*');
+        T.assert(rc>0 && looksLikePtr(rc));
+        rc = w.xCallWrapped('sqlite3__wasm_enum_json','utf8');
         T.assert('string'===typeof rc).assert(rc.length>300);
 
 
@@ -753,8 +771,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
         // 'string:flexible' argAdapter() sanity checks...
         w.scopedAllocCall(()=>{
-          const argAd = w.xWrap.argAdapter('string:flexible');
-          const cj = (v)=>w.cstrToJs(argAd(v));
+          const toFlexStr = w.xWrap.argAdapter('string:flexible');
+          const cj = (v)=>w.cstrToJs(toFlexStr(v));
+          //console.debug("toFlexStr(new Uint8Array([72, 73]))",toFlexStr(new Uint8Array([72, 73])));
           T.assert('Hi' === cj('Hi'))
             .assert('hi' === cj(['h','i']))
             .assert('HI' === cj(new Uint8Array([72, 73])));
@@ -821,7 +840,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
         if(haveWasmCTests()){
           if(!sqlite3.config.useStdAlloc){
-            fw = w.xWrap('sqlite3_wasm_test_str_hello', 'utf8:dealloc',['i32']);
+            fw = w.xWrap('sqlite3__wasm_test_str_hello', 'utf8:dealloc',['i32']);
             rc = fw(0);
             T.assert('hello'===rc);
             rc = fw(1);
@@ -831,14 +850,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           if(w.bigIntEnabled){
             w.xWrap.resultAdapter('thrice', (v)=>3n*BigInt(v));
             w.xWrap.argAdapter('twice', (v)=>2n*BigInt(v));
-            fw = w.xWrap('sqlite3_wasm_test_int64_times2','thrice','twice');
+            fw = w.xWrap('sqlite3__wasm_test_int64_times2','thrice','twice');
             rc = fw(1);
             T.assert(12n===rc);
 
             w.scopedAllocCall(function(){
-              const pI1 = w.scopedAlloc(8), pI2 = pI1+4;
-              w.pokePtr([pI1, pI2], 0);
-              const f = w.xWrap('sqlite3_wasm_test_int64_minmax',undefined,['i64*','i64*']);
+              const pI1 = w.scopedAlloc(w.ptr.size), pI2 = w.ptr.add(pI1, w.ptr.size);
+              w.pokePtr([pI1, pI2], w.ptr.null);
+              const f = w.xWrap('sqlite3__wasm_test_int64_minmax',undefined,['i64*','i64*']);
               const [r1, r2] = w.peek64([pI1, pI2]);
               T.assert(!Number.isSafeInteger(r1)).assert(!Number.isSafeInteger(r2));
             });
@@ -848,171 +867,196 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }/*WhWasmUtil*/)
 
   ////////////////////////////////////////////////////////////////////
-    .t('sqlite3.StructBinder (jaccwabyt🐇)', function(sqlite3){
-      const S = sqlite3, W = S.wasm;
-      const MyStructDef = {
-        sizeof: 16,
-        members: {
-          p4: {offset: 0, sizeof: 4, signature: "i"},
-          pP: {offset: 4, sizeof: 4, signature: "P"},
-          ro: {offset: 8, sizeof: 4, signature: "i", readOnly: true},
-          cstr: {offset: 12, sizeof: 4, signature: "s"}
-        }
-      };
-      if(W.bigIntEnabled){
-        const m = MyStructDef;
-        m.members.p8 = {offset: m.sizeof, sizeof: 8, signature: "j"};
-        m.sizeof += m.members.p8.sizeof;
-      }
-      const StructType = S.StructBinder.StructType;
-      const K = S.StructBinder('my_struct',MyStructDef);
-      T.mustThrowMatching(()=>K(), /via 'new'/).
-        mustThrowMatching(()=>new K('hi'), /^Invalid pointer/);
-      const k1 = new K(), k2 = new K();
-      try {
-        T.assert(k1.constructor === K).
-          assert(K.isA(k1)).
-          assert(k1 instanceof K).
-          assert(K.prototype.lookupMember('p4').key === '$p4').
-          assert(K.prototype.lookupMember('$p4').name === 'p4').
-          mustThrowMatching(()=>K.prototype.lookupMember('nope'), /not a mapped/).
-          assert(undefined === K.prototype.lookupMember('nope',false)).
-          assert(k1 instanceof StructType).
-          assert(StructType.isA(k1)).
-          mustThrowMatching(()=>k1.$ro = 1, /read-only/);
-        Object.keys(MyStructDef.members).forEach(function(key){
-          key = K.memberKey(key);
-          T.assert(0 == k1[key],
-                   "Expecting allocation to zero the memory "+
-                   "for "+key+" but got: "+k1[key]+
-                   " from "+k1.memoryDump());
+    .t({
+      name: 'sqlite3.StructBinder (jaccwabyt🐇)',
+      predicate: (sqlite3)=>!!sqlite3.wasm.exports.sqlite3__wasm_test_struct
+        || "Built without SQLITE_WASM_ENABLE_C_TESTS",
+      test: function(sqlite3){
+        const S = sqlite3, W = S.wasm;
+        const MyStructDef = {
+          sizeof: 0, members: {}
+        };
+        const addMember = function(tgt, name, member){
+          member.offset = tgt.sizeof;
+          tgt.sizeof += member.sizeof;
+          tgt.members[name] = member;
+        };
+        const msd = MyStructDef;
+        addMember(msd, 'p4', {sizeof: 4, signature: "i"});
+        addMember(msd, 'pP', {sizeof: wasm.ptr.size, signature: "P"});
+        addMember(msd, 'ro', {
+          sizeof: 4,
+          signature: "i",
+          readOnly: true
         });
-        T.assert('number' === typeof k1.pointer).
-          mustThrowMatching(()=>k1.pointer = 1, /pointer/);
-        k1.$p4 = 1; k1.$pP = 2;
-        T.assert(1 === k1.$p4).assert(2 === k1.$pP);
-        if(MyStructDef.members.$p8){
-          k1.$p8 = 1/*must not throw despite not being a BigInt*/;
-          k1.$p8 = BigInt(Number.MAX_SAFE_INTEGER * 2);
-          T.assert(BigInt(2 * Number.MAX_SAFE_INTEGER) === k1.$p8);
+        addMember(msd, 'cstr', {
+          sizeof: wasm.ptr.size,
+          signature: "s"
+        });
+        if(W.bigIntEnabled){
+          addMember(msd, 'p8', {sizeof: 8, signature: "j"});
         }
-        T.assert(!k1.ondispose);
-        k1.setMemberCString('cstr', "A C-string.");
-        T.assert(Array.isArray(k1.ondispose)).
-          assert(k1.ondispose[0] === k1.$cstr).
-          assert('number' === typeof k1.$cstr).
-          assert('A C-string.' === k1.memberToJsString('cstr'));
-        k1.$pP = k2;
-        T.assert(k1.$pP === k2.pointer);
-        k1.$pP = null/*null is special-cased to 0.*/;
-        T.assert(0===k1.$pP);
-        let ptr = k1.pointer;
-        k1.dispose();
-        T.assert(undefined === k1.pointer).
-          mustThrowMatching(()=>{k1.$pP=1}, /disposed instance/);
-      }finally{
-        k1.dispose();
-        k2.dispose();
-      }
-
-      if(!W.bigIntEnabled){
-        log("Skipping WasmTestStruct tests: BigInt not enabled.");
-        return;
-      }
-
-      const WTStructDesc =
-            W.ctype.structs.filter((e)=>'WasmTestStruct'===e.name)[0];
-      const autoResolvePtr = true /* EXPERIMENTAL */;
-      if(autoResolvePtr){
-        WTStructDesc.members.ppV.signature = 'P';
-      }
-      const WTStruct = S.StructBinder(WTStructDesc);
-      //log(WTStruct.structName, WTStruct.structInfo);
-      const wts = new WTStruct();
-      //log("WTStruct.prototype keys:",Object.keys(WTStruct.prototype));
-      try{
-        T.assert(wts.constructor === WTStruct).
-          assert(WTStruct.memberKeys().indexOf('$ppV')>=0).
-          assert(wts.memberKeys().indexOf('$v8')>=0).
-          assert(!K.isA(wts)).
-          assert(WTStruct.isA(wts)).
-          assert(wts instanceof WTStruct).
-          assert(wts instanceof StructType).
-          assert(StructType.isA(wts)).
-          assert(wts.pointer>0).assert(0===wts.$v4).assert(0n===wts.$v8).
-          assert(0===wts.$ppV).assert(0===wts.$xFunc);
-        const testFunc =
-              W.xGet('sqlite3_wasm_test_struct'/*name gets mangled in -O3 builds!*/);
-        let counter = 0;
-        //log("wts.pointer =",wts.pointer);
-        const wtsFunc = function(arg){
-          /*log("This from a JS function called from C, "+
-              "which itself was called from JS. arg =",arg);*/
-          ++counter;
-          if(3===counter){
-            tossQuietly("Testing exception propagation.");
+        const StructType = S.StructBinder.StructType;
+        const K = S.StructBinder('my_struct',MyStructDef);
+        //K.debugFlags(0x03);
+        T.mustThrowMatching(()=>K(), /via 'new'/).
+          mustThrowMatching(()=>new K('hi'), (err)=>{
+            return /^Invalid pointer/.test(err.message)/*32-bit*/
+              || /.*bigint.*/i.test(err.message)/*64-bit*/;
+          });
+        const k1 = new K(), k2 = new K();
+        try {
+          T.assert(k1.constructor === K).
+            assert(K.isA(k1)).
+            assert(k1 instanceof K).
+            assert(K.prototype.lookupMember('p4').key === '$p4').
+            assert(K.prototype.lookupMember('$p4').name === 'p4').
+            mustThrowMatching(()=>K.prototype.lookupMember('nope'), /not a mapped/).
+            assert(undefined === K.prototype.lookupMember('nope',false)).
+            assert(k1 instanceof StructType).
+            assert(StructType.isA(k1)).
+            mustThrowMatching(()=>k1.$ro = 1, /read-only/);
+          Object.keys(MyStructDef.members).forEach(function(key){
+            key = K.memberKey(key);
+            T.assert(0 == k1[key],
+                     "Expecting allocation to zero the memory "+
+                     "for "+key+" but got: "+k1[key]+
+                     " from "+k1.memoryDump());
+          });
+          T.assert(looksLikePtr(k1.pointer)).
+            mustThrowMatching(()=>k1.pointer = 1, /pointer/);
+          k1.$p4 = 1; k1.$pP = 2;
+          T.assert(1 == k1.$p4).assert(2 == k1.$pP);
+          if(MyStructDef.members.$p8){
+            k1.$p8 = 1/*must not throw despite not being a BigInt*/;
+            k1.$p8 = BigInt(Number.MAX_SAFE_INTEGER * 2);
+            T.assert(BigInt(2 * Number.MAX_SAFE_INTEGER) === k1.$p8);
           }
+          T.assert(!k1.ondispose);
+          k1.setMemberCString('cstr', "A C-string.");
+          T.assert(Array.isArray(k1.ondispose)).
+            assert(k1.ondispose[0] === k1.$cstr).
+            assert(looksLikePtr(k1.$cstr)).
+            assert('A C-string.' === k1.memberToJsString('cstr'));
+          k1.$pP = k2;
+          T.assert(k1.$pP === k2.pointer);
+          k1.$pP = null/*null is special-cased to 0.*/;
+          T.assert(0==k1.$pP);
+          let ptr = k1.pointer;
+          k1.dispose();
+          T.assert(undefined === k1.pointer).
+            mustThrowMatching(()=>{k1.$pP=1}, /disposed instance/);
+        }finally{
+          k1.dispose();
+          k2.dispose();
         }
-        wts.$v4 = 10; wts.$v8 = 20;
-        wts.$xFunc = W.installFunction(wtsFunc, wts.memberSignature('xFunc'))
-        T.assert(0===counter).assert(10 === wts.$v4).assert(20n === wts.$v8)
-          .assert(0 === wts.$ppV).assert('number' === typeof wts.$xFunc)
-          .assert(0 === wts.$cstr)
-          .assert(wts.memberIsString('$cstr'))
-          .assert(!wts.memberIsString('$v4'))
-          .assert(null === wts.memberToJsString('$cstr'))
-          .assert(W.functionEntry(wts.$xFunc) instanceof Function);
-        /* It might seem silly to assert that the values match
-           what we just set, but recall that all of those property
-           reads and writes are, via property interceptors,
-           actually marshaling their data to/from a raw memory
-           buffer, so merely reading them back is actually part of
-           testing the struct-wrapping API. */
 
-        testFunc(wts.pointer);
-        //log("wts.pointer, wts.$ppV",wts.pointer, wts.$ppV);
-        T.assert(1===counter).assert(20 === wts.$v4).assert(40n === wts.$v8)
-          .assert(wts.$ppV === wts.pointer)
-          .assert('string' === typeof wts.memberToJsString('cstr'))
-          .assert(wts.memberToJsString('cstr') === wts.memberToJsString('$cstr'))
-          .mustThrowMatching(()=>wts.memberToJsString('xFunc'),
-                             /Invalid member type signature for C-string/)
-        ;
-        testFunc(wts.pointer);
-        T.assert(2===counter).assert(40 === wts.$v4).assert(80n === wts.$v8)
-          .assert(wts.$ppV === wts.pointer);
-        /** The 3rd call to wtsFunc throw from JS, which is called
-            from C, which is called from JS. Let's ensure that
-            that exception propagates back here... */
-        T.mustThrowMatching(()=>testFunc(wts.pointer),/^Testing/);
-        W.uninstallFunction(wts.$xFunc);
-        wts.$xFunc = 0;
-        wts.$ppV = 0;
-        T.assert(!wts.$ppV);
-        //WTStruct.debugFlags(0x03);
-        wts.$ppV = wts;
-        T.assert(wts.pointer === wts.$ppV)
-        wts.setMemberCString('cstr', "A C-string.");
-        T.assert(Array.isArray(wts.ondispose)).
-          assert(wts.ondispose[0] === wts.$cstr).
-          assert('A C-string.' === wts.memberToJsString('cstr'));
-        const ptr = wts.pointer;
-        wts.dispose();
-        T.assert(ptr).assert(undefined === wts.pointer);
-      }finally{
-        wts.dispose();
-      }
+        if(!W.bigIntEnabled){
+          log("Skipping WasmTestStruct tests: BigInt not enabled.");
+          return;
+        }
 
-      if(1){ // ondispose of other struct instances
-        const s1 = new WTStruct, s2 = new WTStruct, s3 = new WTStruct;
-        T.assert(s1.lookupMember instanceof Function)
-          .assert(s1.addOnDispose instanceof Function);
-        s1.addOnDispose(s2,"testing variadic args");
-        T.assert(2===s1.ondispose.length);
-        s2.addOnDispose(s3);
-        s1.dispose();
-        T.assert(!s2.pointer,"Expecting s2 to be ondispose'd by s1.");
-        T.assert(!s3.pointer,"Expecting s3 to be ondispose'd by s2.");
+        const WTStructDesc =
+              W.ctype.structs.filter((e)=>'WasmTestStruct'===e.name)[0];
+        const autoResolvePtr = true /* EXPERIMENTAL */;
+        if(autoResolvePtr){
+          WTStructDesc.members.ppV.signature = 'P';
+        }
+        const WTStruct = S.StructBinder(WTStructDesc);
+        //log(WTStruct.structName, WTStruct.structInfo);
+        const wts = new WTStruct();
+        //log("WTStruct.prototype keys:",Object.keys(WTStruct.prototype));
+        try{
+          T.assert(wts.constructor === WTStruct).
+            assert(WTStruct.memberKeys().indexOf('$ppV')>=0).
+            assert(wts.memberKeys().indexOf('$v8')>=0).
+            assert(!K.isA(wts)).
+            assert(WTStruct.isA(wts)).
+            assert(wts instanceof WTStruct).
+            assert(wts instanceof StructType).
+            assert(StructType.isA(wts)).
+            assert(looksLikePtr(wts.pointer)).assert(0==wts.$v4).assert(0n===wts.$v8).
+            assert(0==wts.$ppV).assert(0==wts.$xFunc);
+          const testFunc = 1
+                ? W.xGet('sqlite3__wasm_test_struct'/*name gets mangled in -O3 builds!*/)
+                : W.xWrap('sqlite3__wasm_test_struct', undefined, '*');
+          let counter = 0;
+          //log("wts.pointer =",wts.pointer);
+          const wtsFunc = function(arg){
+            /*log("This from a JS function called from C, "+
+              "which itself was called from JS. arg =",arg);*/
+            ++counter;
+            if(3===counter){
+              tossQuietly("Testing exception propagation.");
+            }
+          }
+          wts.$v4 = 10; wts.$v8 = 20;
+          wts.$xFunc = W.installFunction(wtsFunc, wts.memberSignature('xFunc'))
+          //console.debug("wts.memberSignature('xFunc')",wts.memberSignature('xFunc'));
+          //console.debug("wts.$xFunc",wts.$xFunc, W.functionEntry(wts.$xFunc));
+          T.assert(0===counter).assert(10 === wts.$v4).assert(20n === wts.$v8)
+            .assert(0 == wts.$ppV).assert(looksLikePtr(wts.$xFunc))
+            .assert(0 == wts.$cstr)
+            .assert(wts.memberIsString('$cstr'))
+            .assert(!wts.memberIsString('$v4'))
+            .assert(null === wts.memberToJsString('$cstr'))
+            .assert(W.functionEntry(wts.$xFunc) instanceof Function);
+          /* It might seem silly to assert that the values match
+             what we just set, but recall that all of those property
+             reads and writes are, via property interceptors,
+             actually marshaling their data to/from a raw memory
+             buffer, so merely reading them back is actually part of
+             testing the struct-wrapping API. */
+
+          if( 0 ){
+            console.debug("wts",wts,"wts.pointer",wts.pointer,
+                          "testFunc",testFunc/*FF v142 emits the wrong function here!*/);
+          }
+          testFunc(wts.pointer);
+          //log("wts.pointer, wts.$ppV",wts.pointer, wts.$ppV);
+          T.assert(1===counter).assert(20 === wts.$v4).assert(40n === wts.$v8)
+            .assert(wts.$ppV === wts.pointer)
+            .assert('string' === typeof wts.memberToJsString('cstr'))
+            .assert(wts.memberToJsString('cstr') === wts.memberToJsString('$cstr'))
+            .mustThrowMatching(()=>wts.memberToJsString('xFunc'),
+                               /Invalid member type signature for C-string/)
+          ;
+          testFunc(wts.pointer);
+          T.assert(2===counter).assert(40 === wts.$v4).assert(80n === wts.$v8)
+            .assert(wts.$ppV === wts.pointer);
+          /** The 3rd call to wtsFunc throw from JS, which is called
+              from C, which is called from JS. Let's ensure that
+              that exception propagates back here... */
+          T.mustThrowMatching(()=>testFunc(wts.pointer),/^Testing/);
+          W.uninstallFunction(wts.$xFunc);
+          wts.$xFunc = 0;
+          wts.$ppV = 0;
+          T.assert(!wts.$ppV);
+          //WTStruct.debugFlags(0x03);
+          wts.$ppV = wts;
+          T.assert(wts.pointer === wts.$ppV)
+          wts.setMemberCString('cstr', "A C-string.");
+          T.assert(Array.isArray(wts.ondispose)).
+            assert(wts.ondispose[0] === wts.$cstr).
+            assert('A C-string.' === wts.memberToJsString('cstr'));
+          const ptr = wts.pointer;
+          wts.dispose();
+          T.assert(ptr).assert(undefined === wts.pointer);
+        }finally{
+          wts.dispose();
+        }
+
+        if(1){ // ondispose of other struct instances
+          const s1 = new WTStruct, s2 = new WTStruct, s3 = new WTStruct;
+          T.assert(s1.lookupMember instanceof Function)
+            .assert(s1.addOnDispose instanceof Function);
+          s1.addOnDispose(s2,"testing variadic args");
+          T.assert(2===s1.ondispose.length);
+          s2.addOnDispose(s3);
+          s1.dispose();
+          T.assert(!s2.pointer,"Expecting s2 to be ondispose'd by s1.");
+          T.assert(!s3.pointer,"Expecting s3 to be ondispose'd by s2.");
+        }
       }
     }/*StructBinder*/)
 
@@ -1021,7 +1065,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       const P = wasm.pstack;
       const isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
       const stack = P.pointer;
-      T.assert(0===stack % 8 /* must be 8-byte aligned */);
+      T.assert(0===Number(stack) % 8 /* must be 8-byte aligned */);
       try{
         const remaining = P.remaining;
         T.assert(P.quota >= 4096)
@@ -1034,16 +1078,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           );
         ;
         let p1 = P.alloc(12);
-        T.assert(p1 === stack - 16/*8-byte aligned*/)
+        T.assert(p1 == Number(stack) - 16/*8-byte aligned*/)
           .assert(P.pointer === p1);
         let p2 = P.alloc(7);
-        T.assert(p2 === p1-8/*8-byte aligned, stack grows downwards*/)
+        T.assert(p2 == Number(p1)-8/*8-byte aligned, stack grows downwards*/)
           .mustThrowMatching(()=>P.alloc(remaining), isAllocErr)
-          .assert(24 === stack - p2)
+          .assert(24 == Number(stack) - Number(p2))
           .assert(P.pointer === p2);
-        let n = remaining - (stack - p2);
+        let n = remaining - (Number(stack) - Number(p2));
         let p3 = P.alloc(n);
-        T.assert(p3 === stack-remaining)
+        T.assert(p3 == Number(stack)-Number(remaining))
           .mustThrowMatching(()=>P.alloc(1), isAllocErr);
       }finally{
         P.restore(stack);
@@ -1052,9 +1096,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(P.pointer === stack);
       try {
         const [p1, p2, p3] = P.allocChunks(3,'i32');
-        T.assert(P.pointer === stack-16/*always rounded to multiple of 8*/)
-          .assert(p2 === p1 + 4)
-          .assert(p3 === p2 + 4);
+        let sPos = wasm.ptr.add(stack,-16)/*pstack alloc always rounds to multiple of 8*/;
+        T.assert(P.pointer === sPos)
+          .assert(p1 === sPos)
+          .assert(p2 == Number(p1) + 4)
+          .assert(p3 == Number(p2) + 4);
         T.mustThrowMatching(()=>P.allocChunks(1024, 1024 * 16),
                             (e)=>e instanceof sqlite3.WasmAllocError)
       }finally{
@@ -1064,16 +1110,20 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(P.pointer === stack);
       try {
         let [p1, p2, p3] = P.allocPtr(3,false);
-        let sPos = stack-16/*always rounded to multiple of 8*/;
-        T.assert(P.pointer === sPos)
-          .assert(p2 === p1 + 4)
-          .assert(p3 === p2 + 4);
+        let sPos = wasm.ptr.add(stack,
+                               -(4===wasm.ptr.size
+                                 ? 16/*pstack alloc always rounds to multiple of 8*/
+                                 : 24));
+        T.assert(P.pointer === p1)
+          .assert(p1 === sPos)
+          .assert(p2 == Number(p1) + wasm.ptr.size)
+          .assert(p3 == Number(p2) + wasm.ptr.size);
         [p1, p2, p3] = P.allocPtr(3);
-        T.assert(P.pointer === sPos-24/*3 x 8 bytes*/)
-          .assert(p2 === p1 + 8)
-          .assert(p3 === p2 + 8);
+        T.assert(P.pointer === wasm.ptr.add(sPos, -24)/*3 x 8 bytes*/)
+          .assert(p2 == Number(p1) + 8)
+          .assert(p3 == Number(p2) + 8);
         p1 = P.allocPtr();
-        T.assert('number'===typeof p1);
+        T.assert(looksLikePtr(p1));
       }finally{
         P.restore(stack);
       }
@@ -1087,19 +1137,19 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       try{
         const n = 520;
         const p = wasm.pstack.alloc(n);
-        T.assert(0===wasm.peek8(p))
-          .assert(0===wasm.peek8(p+n-1));
+        T.assert(0==wasm.peek8(p))
+          .assert(0==wasm.peek8(wasm.ptr.add(p,n,-1)));
         T.assert(undefined === capi.sqlite3_randomness(n - 10, p));
         let j, check = 0;
         const heap = wasm.heap8u();
         for(j = 0; j < 10 && 0===check; ++j){
-          check += heap[p + j];
+          check += heap[wasm.ptr.add(p, j)];
         }
         T.assert(check > 0);
         check = 0;
         // Ensure that the trailing bytes were not modified...
         for(j = n - 10; j < n && 0===check; ++j){
-          check += heap[p + j];
+          check += heap[wasm.ptr.add(p, j)];
         }
         T.assert(0===check);
       }finally{
@@ -1126,78 +1176,184 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   T.g('sqlite3.oo1')
-    .t('Create db', function(sqlite3){
-      const dbFile = '/tester1.db';
-      wasm.sqlite3_wasm_vfs_unlink(0, dbFile);
-      const db = this.db = new sqlite3.oo1.DB(dbFile, 0 ? 'ct' : 'c');
-      db.onclose = {
-        disposeAfter: [],
-        disposeBefore: [
-          (db)=>{
-            //console.debug("db.onclose.before dropping modules");
-            //sqlite3.capi.sqlite3_drop_modules(db.pointer, 0);
-          }
-        ],
-        before: function(db){
-          while(this.disposeBefore.length){
-            const v = this.disposeBefore.shift();
-            console.debug("db.onclose.before cleaning up:",v);
-            if(wasm.isPtr(v)) wasm.dealloc(v);
-            else if(v instanceof sqlite3.StructBinder.StructType){
-              v.dispose();
-            }else if(v instanceof Function){
-              try{ v(db) } catch(e){
-                console.warn("beforeDispose() callback threw:",e);
+    .t({
+      name:'Create db',
+      //predicate: (sqlite3)=>
+      test: function(sqlite3){
+        const dbFile = '/tester1.db';
+        sqlite3.util.sqlite3__wasm_vfs_unlink(0, dbFile);
+        const db = this.db = new sqlite3.oo1.DB(dbFile, 0 ? 'ct' : 'c');
+        db.onclose = {
+          disposeAfter: [],
+          disposeBefore: [
+            (db)=>{
+              //console.debug("db.onclose.before dropping modules");
+              //sqlite3.capi.sqlite3_drop_modules(db.pointer, 0);
+            }
+          ],
+          before: function(db){
+            while(this.disposeBefore.length){
+              const v = this.disposeBefore.shift();
+              console.debug("db.onclose.before cleaning up:",v);
+              if(wasm.isPtr(v)) wasm.dealloc(v);
+              else if(v instanceof sqlite3.StructBinder.StructType){
+                v.dispose();
+              }else if(v instanceof Function){
+                try{ v(db) } catch(e){
+                  console.warn("beforeDispose() callback threw:",e);
+                }
+              }
+            }
+          },
+          after: function(){
+            while(this.disposeAfter.length){
+              const v = this.disposeAfter.shift();
+              console.debug("db.onclose.after cleaning up:",v);
+              if(wasm.isPtr(v)) wasm.dealloc(v);
+              else if(v instanceof sqlite3.StructBinder.StructType){
+                v.dispose();
+              }else if(v instanceof Function){
+                try{v()} catch(e){/*ignored*/}
               }
             }
           }
-        },
-        after: function(){
-          while(this.disposeAfter.length){
-            const v = this.disposeAfter.shift();
-            console.debug("db.onclose.after cleaning up:",v);
-            if(wasm.isPtr(v)) wasm.dealloc(v);
-            else if(v instanceof sqlite3.StructBinder.StructType){
-              v.dispose();
-            }else if(v instanceof Function){
-              try{v()} catch(e){/*ignored*/}
-            }
-          }
+        };
+
+        T.assert(wasm.isPtr(db.pointer))
+          .mustThrowMatching(()=>db.pointer=1, /read-only/)
+          .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
+          .assert('main'===db.dbName(0))
+          .assert('string' === typeof db.dbVfsName())
+          .assert(db.pointer === wasm.xWrap.testConvertArg('sqlite3*',db));
+        // Custom db error message handling via sqlite3_prepare_v2/v3()
+        let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
+        T.assert(capi.SQLITE_MISUSE === rc)
+          .assert(0 === capi.sqlite3_errmsg(db.pointer).indexOf("Invalid SQL"))
+          .assert(dbFile === db.dbFilename())
+          .assert(!db.dbFilename('nope'));
+        //Sanity check DB.checkRc()...
+        let ex;
+        try{db.checkRc(rc)}
+        catch(e){ex = e}
+        T.assert(ex instanceof sqlite3.SQLite3Error)
+          .assert(capi.SQLITE_MISUSE===ex.resultCode)
+          .assert(0===ex.message.indexOf("SQLITE_MISUSE: sqlite3 result code"))
+          .assert(ex.message.indexOf("Invalid SQL")>0);
+        T.assert(db === db.checkRc(0))
+          .assert(db === sqlite3.oo1.DB.checkRc(db,0))
+          .assert(null === sqlite3.oo1.DB.checkRc(null,0));
+        this.progressHandlerCount = 0;
+        if( wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK') ){
+          T.assert( !capi.sqlite3_progress_handler );
+        }else{
+          T.assert( !!capi.sqlite3_progress_handler );
+          capi.sqlite3_progress_handler(db, 5, (p)=>{
+            ++this.progressHandlerCount;
+            return 0;
+          }, 0);
         }
-      };
-
-      T.assert(wasm.isPtr(db.pointer))
-        .mustThrowMatching(()=>db.pointer=1, /read-only/)
-        .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
-        .assert('main'===db.dbName(0))
-        .assert('string' === typeof db.dbVfsName())
-        .assert(db.pointer === wasm.xWrap.testConvertArg('sqlite3*',db));
-      // Custom db error message handling via sqlite3_prepare_v2/v3()
-      let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
-      T.assert(capi.SQLITE_MISUSE === rc)
-        .assert(0 === capi.sqlite3_errmsg(db.pointer).indexOf("Invalid SQL"))
-        .assert(dbFile === db.dbFilename())
-        .assert(!db.dbFilename('nope'));
-      //Sanity check DB.checkRc()...
-      let ex;
-      try{db.checkRc(rc)}
-      catch(e){ex = e}
-      T.assert(ex instanceof sqlite3.SQLite3Error)
-        .assert(capi.SQLITE_MISUSE===ex.resultCode)
-        .assert(0===ex.message.indexOf("SQLITE_MISUSE: sqlite3 result code"))
-        .assert(ex.message.indexOf("Invalid SQL")>0);
-      T.assert(db === db.checkRc(0))
-        .assert(db === sqlite3.oo1.DB.checkRc(db,0))
-        .assert(null === sqlite3.oo1.DB.checkRc(null,0));
-
-      this.progressHandlerCount = 0;
-      capi.sqlite3_progress_handler(db, 5, (p)=>{
-        ++this.progressHandlerCount;
-        return 0;
-      }, 0);
+      }
     })
+
   ////////////////////////////////////////////////////////////////////
-    .t('sqlite3_db_config() and sqlite3_db_status()', function(sqlite3){
+    .t({
+      name: "oo1.DB/Stmt.wrapDbHandle()",
+      test: function(sqlite3){
+        /* Maintenance reminder: this function is early in the list to
+           demonstrate that the wrappers for this.db created by this
+           function do not interfere with downstream tests, e.g. by
+           closing this.db.pointer. */
+        //sqlite3.config.debug("Proxying",this.db);
+        const misuseMsg = "SQLITE_MISUSE: Argument must be a WASM sqlite3 pointer";
+        T.mustThrowMatching(()=>sqlite3.oo1.DB.wrapHandle(this.db), misuseMsg)
+          .mustThrowMatching(()=>sqlite3.oo1.DB.wrapHandle(0), misuseMsg);
+        let dw = sqlite3.oo1.DB.wrapHandle(this.db.pointer);
+        //sqlite3.config.debug('dw',dw);
+        T.assert( dw, '!!dw' )
+          .assert( dw instanceof sqlite3.oo1.DB, 'dw is-a oo1.DB' )
+          .assert( dw.pointer, 'dw.pointer' )
+          .assert( dw.pointer === this.db.pointer, 'dw.pointer===db.pointer' )
+          .assert( dw.filename === this.db.filename, 'dw.filename===db.filename' );
+
+        T.assert( dw === dw.exec("select 1") );
+        let q;
+        try {
+          q = dw.prepare("select 1");
+          T.assert( q.step() )
+            .assert( !q.step() );
+        }finally{
+          if( q ) q.finalize();
+        }
+        dw.close();
+        T.assert( !dw.pointer )
+          .assert( this.db === this.db.exec("select 1") );
+        dw = undefined;
+
+        let pDb = 0, pStmt = 0;
+        const stack = wasm.pstack.pointer;
+        try {
+          const ppOut = wasm.pstack.allocPtr();
+          T.assert( 0==wasm.peekPtr(ppOut) );
+          let rc = capi.sqlite3_open_v2( ":memory:", ppOut,
+                                         capi.SQLITE_OPEN_CREATE
+                                         | capi.SQLITE_OPEN_READWRITE,
+                                         0);
+          T.assert( 0===rc, 'open_v2()' );
+          pDb = wasm.peekPtr(ppOut);
+          wasm.pokePtr(ppOut, 0);
+          T.assert( pDb>0, 'pDb>0' );
+          const pTmp = pDb;
+          dw = sqlite3.oo1.DB.wrapHandle(pDb, true);
+          pDb = 0;
+          //sqlite3.config.debug("dw",dw);
+          T.assert( pTmp===dw.pointer, 'pTmp===dw.pointer' );
+          T.assert( dw.filename === "", "dw.filename == "+dw.filename );
+          let q = dw.prepare("select 1");
+          try {
+            T.assert( q.step(), "step()" );
+            T.assert( !q.step(), "!step()" );
+          }finally{
+            q.finalize();
+            q = undefined;
+          }
+          T.assert( dw===dw.exec("select 1") );
+          dw.affirmOpen();
+          const select1 = "select 1";
+          rc = capi.sqlite3_prepare_v2( dw, select1, -1, ppOut, 0 );
+          T.assert( 0===rc, 'prepare_v2() rc='+rc );
+          pStmt = wasm.peekPtr(ppOut);
+          T.assert( pStmt && wasm.isPtr(pStmt), 'pStmt is valid?' );
+          try {
+            //log( "capi.sqlite3_sql() =",capi.sqlite3_sql(pStmt));
+            T.assert( select1 === capi.sqlite3_sql(pStmt), 'SQL mismatch' );
+            q = sqlite3.oo1.Stmt.wrapHandle(dw, pStmt, false);
+            //log("q@"+pStmt+" does not own handle");
+            T.assert( q.step(), "step()" )
+              .assert( !q.step(), "!step()" );
+            q.finalize();
+            q = undefined;
+            T.assert( select1 === capi.sqlite3_sql(pStmt), 'SQL mismatch'
+                    /* This will fail if we've mismanaged pStmt's lifetime */);
+            q = sqlite3.oo1.Stmt.wrapHandle(dw, pStmt, true);
+            pStmt = 0;
+            q.reset();
+            T.assert( q.step(), "step()" )
+              .assert( !q.step(), "!step()" );
+          }finally{
+            if( pStmt ) capi.sqlite3_finalize(pStmt)
+            if( q ) q.finalize();
+          }
+
+        }finally{
+          wasm.pstack.restore(stack);
+          if( pDb ){ capi.sqlite3_close_v2(pDb); }
+          else if( dw ){ dw.close(); }
+        }
+      }
+    })/*oo1.DB/Stmt.wrapHandle()*/
+
+  ////////////////////////////////////////////////////////////////////
+    .t('sqlite3_db_config() and sqlite3_status()', function(sqlite3){
       let rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE, 0, 0);
       T.assert(0===rc);
       rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_MAX+1, 0);
@@ -1228,6 +1384,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       }finally{
         wasm.pstack.restore(stack);
       }
+
+      capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_ENABLE_COMMENTS, 0, null);
+      T.mustThrow(()=>this.db.exec("select 1 /* with comments */"), "SQL comments are disallowed");
+      capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_ENABLE_COMMENTS, 1, null);
+      this.db.exec("select 1 /* with comments */");
+      /* SQLITE_DBCONFIG_ENABLE_ATTACH_... are in the ATTACH-specific tests */
     })
 
   ////////////////////////////////////////////////////////////////////
@@ -1235,8 +1397,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       let st = this.db.prepare(
         new TextEncoder('utf-8').encode("select 3 as a")
       );
-      //debug("statement =",st);
-      this.progressHandlerCount = 0;
       let rc;
       try {
         T.assert(wasm.isPtr(st.pointer))
@@ -1246,12 +1406,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             capi.sqlite3_stmt_status(
               st, capi.SQLITE_STMTSTATUS_RUN, 0
             ) === 0)
-          .assert(!st._mayGet)
           .assert('a' === st.getColumnName(0))
           .mustThrowMatching(()=>st.columnCount=2,
                              /columnCount property is read-only/)
           .assert(1===st.columnCount)
           .assert(0===st.parameterCount)
+          .assert(0===capi.sqlite3_bind_parameter_count(st))
           .mustThrow(()=>st.bind(1,null))
           .assert(true===st.step())
           .assert(3 === st.get(0))
@@ -1270,20 +1430,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(1===st.get(0,capi.SQLITE_BLOB).length)
           .assert(st.getBlob(0) instanceof Uint8Array)
           .assert('3'.charCodeAt(0) === st.getBlob(0)[0])
-          .assert(st._mayGet)
           .assert(false===st.step())
-          .assert(!st._mayGet)
+          .mustThrowMatching(()=>st.get(0),
+                             "Stmt.step() has not (recently) returned true.")
           .assert(
             capi.sqlite3_stmt_status(
               st, capi.SQLITE_STMTSTATUS_RUN, 0
             ) > 0);
 
-        T.assert(this.progressHandlerCount > 0,
-                 "Expecting progress callback.").
-          assert(0===capi.sqlite3_strglob("*.txt", "foo.txt")).
-          assert(0!==capi.sqlite3_strglob("*.txt", "foo.xtx")).
-          assert(0===capi.sqlite3_strlike("%.txt", "foo.txt", 0)).
-          assert(0!==capi.sqlite3_strlike("%.txt", "foo.xtx", 0));
+        T.assert(this.progressHandlerCount>0
+                 || wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK'),
+                 "Expecting progress callback.");
       }finally{
         rc = st.finalize();
       }
@@ -1332,7 +1489,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         .assert(pVfsDb > 0)
         .assert(pVfsMem !== pVfsDflt
                 /* memdb lives on top of the default vfs */)
-        .assert(pVfsDb === pVfsDflt || pVfsdb === pVfsMem)
+        .assert(pVfsDb === pVfsDflt || pVfsDb === pVfsMem)
       ;
       /*const vMem = new capi.sqlite3_vfs(pVfsMem),
         vDflt = new capi.sqlite3_vfs(pVfsDflt),
@@ -1349,6 +1506,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       const db = this.db;
       let list = [];
       this.progressHandlerCount = 0;
+      //wasm.xWrap.debug = true;
       let rc = db.exec({
         sql:['CREATE TABLE t(a,b);',
              // ^^^ using TEMP TABLE breaks the db export test
@@ -1363,7 +1521,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         .assert(2 === list.length)
         .assert('string'===typeof list[1])
         .assert(3===db.changes())
-        .assert(this.progressHandlerCount > 0,
+        .assert(this.progressHandlerCount > 0
+                || wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK'),
                 "Expecting progress callback.")
       if(wasm.bigIntEnabled){
         T.assert(3n===db.changes(false,true));
@@ -1459,7 +1618,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       rv = db.exec("SELECT 1 WHERE 0",{rowMode: 0});
       T.assert(Array.isArray(rv)).assert(0===rv.length);
       if(wasm.bigIntEnabled && haveWasmCTests()){
-        const mI = wasm.xCall('sqlite3_wasm_test_int64_max');
+        const mI = wasm.xCall('sqlite3__wasm_test_int64_max');
         const b = BigInt(Number.MAX_SAFE_INTEGER * 2);
         T.assert(b === db.selectValue("SELECT "+b)).
           assert(b === db.selectValue("SELECT ?", b)).
@@ -1475,14 +1634,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
       let st = db.prepare("update t set b=:b where a='blob'");
       try {
-        T.assert(0===st.columnCount);
+        T.assert(0===st.columnCount)
+          .assert(1===st.parameterCount)
+          .assert(1===capi.sqlite3_bind_parameter_count(st))
+          .assert( false===st.isReadOnly() );
         const ndx = st.getParamIndex(':b');
         T.assert(1===ndx);
         st.bindAsBlob(ndx, "ima blob")
           /*step() skipped intentionally*/.reset(true);
       } finally {
         T.assert(0===st.finalize())
-          .assert(undefined===st.finalize());        
+          .assert(undefined===st.finalize());
       }
 
       try {
@@ -1509,6 +1671,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name: "sqlite3_set_authorizer()",
+      predicate: ()=>!!wasm.exports.sqlite3_set_authorizer || "Missing sqlite3_set_authorizer()",
       test:function(sqlite3){
         T.assert(capi.SQLITE_IGNORE>0)
           .assert(capi.SQLITE_DENY>0);
@@ -1685,7 +1848,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(n>0 && db2.selectValue(sql) === n);
         }finally{
           db2.close();
-          wasm.sqlite3_wasm_vfs_unlink(0, filename);
+          sqlite3.util.sqlite3__wasm_vfs_unlink(0, filename);
         }
       }
     }/*sqlite3_js_posix_create_file()*/)
@@ -1695,7 +1858,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name:'Scalar UDFs',
       test: function(sqlite3){
         const db = this.db;
-        db.createFunction("foo",(pCx,a,b)=>a+b);
+        db.createFunction(
+          "foo",
+          1 ? (pCx,a,b)=>a+b
+            : (pCx,a,b)=>{
+              /*return sqlite3.capi.sqlite3_result_error_js(
+                db, sqlite3.capi.SQLITE_ERROR, "foo???"
+              );*/
+              console.debug("foo UDF", pCx, a, b);
+              return Number(a)+Number(b);
+            }
+        );
         T.assert(7===db.selectValue("select foo(3,4)")).
           assert(5===db.selectValue("select foo(3,?)",2)).
           assert(5===db.selectValue("select foo(?,?2)",[1,4])).
@@ -1902,7 +2075,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name: 'Window UDFs',
-      //predicate: ()=>false,
+      predicate: (sqlite3)=>!!sqlite3.wasm.exports.sqlite3_create_window_function
+      /*!sqlite3.wasm.compileOptionUsed('OMIT_WINDOWFUNC')*/
+        || "Missing window functions",
       test: function(){
         /* Example window function, table, and results taken from:
            https://sqlite.org/windowfunctions.html#udfwinfunc */
@@ -1982,7 +2157,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }/*window UDFs*/)
 
   ////////////////////////////////////////////////////////////////////
-    .t("ATTACH", function(){
+    .t("ATTACH", function(sqlite3){
       const db = this.db;
       const resultRows = [];
       db.exec({
@@ -2033,7 +2208,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(wasm.isPtr(pVoid))
           .assert(wasm.isPtr(aVals))
           .assert(wasm.isPtr(aCols))
-          .assert(+wasm.cstrToJs(wasm.peekPtr(aVals + wasm.ptrSizeof))
+          .assert(+wasm.cstrToJs(wasm.peekPtr(wasm.ptr.add(aVals, wasm.ptr.size)))
                   === 2 * +wasm.cstrToJs(wasm.peekPtr(aVals)));
         return 0;
       });
@@ -2061,6 +2236,44 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       db.exec("detach foo");
       T.mustThrow(()=>db.exec("select * from foo.bar"),
                   "Because foo is no longer attached.");
+
+      /* SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE/WRITE... */
+      const db2 = new sqlite3.oo1.DB();
+      try{
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, 0, null);
+        T.mustThrow(()=>db2.exec("attach 'attached.db' as foo"),
+                    "Cannot create a new db via ATTACH");
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, 1, null);
+        db2.exec([
+          "attach 'attached.db' as foo;",
+          "create table foo.t(a);",
+          "insert into foo.t(a) values(1);",
+          "detach foo;"
+          ]);
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, 0, null);
+        db2.exec("attach 'attached.db' as foo");
+        T.mustThrow(()=>db2.exec("insert into foo.t(a) values(2)"),
+                   "ATTACH_WRITE is false");
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, 1, null);
+        db2.exec([
+          "detach foo;",
+          "attach 'attached.db' as foo;",
+          "insert into foo.t(a) values(2);",
+          "drop table foo.t;",
+          "detach foo"
+        ]);
+      }finally{
+        db2.close();
+      }
+    })/*ATTACH tests*/
+
+  ////////////////////////////////////////////////////////////////////
+    .t("Read-only", function(sqlite3){
+      T.assert( 0===capi.sqlite3_db_readonly(this.db, "main") );
+      const db = new sqlite3.oo1.DB('file://'+this.db.filename+'?mode=ro');
+      T.assert( 1===capi.sqlite3_db_readonly(db, "main") );
+      T.assert( -1===capi.sqlite3_db_readonly(db, "nope") );
+      db.close();
     })
 
   ////////////////////////////////////////////////////////////////////
@@ -2075,7 +2288,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         try{
           ptrInt = w.scopedAlloc(4);
           w.poke32(ptrInt,origValue);
-          const cf = w.xGet('sqlite3_wasm_test_intptr');
+          const cf = w.xGet('sqlite3__wasm_test_intptr');
           const oldPtrInt = ptrInt;
           T.assert(origValue === w.peek32(ptrInt));
           const rc = cf(ptrInt);
@@ -2090,29 +2303,29 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             const v64 = ()=>w.peek64(pi64)
             T.assert(v64() == o64);
             //T.assert(o64 === w.peek64(pi64));
-            const cf64w = w.xGet('sqlite3_wasm_test_int64ptr');
+            const cf64w = w.xGet('sqlite3__wasm_test_int64ptr');
             cf64w(pi64);
             T.assert(v64() == BigInt(2 * o64));
             cf64w(pi64);
             T.assert(v64() == BigInt(4 * o64));
 
-            const biTimes2 = w.xGet('sqlite3_wasm_test_int64_times2');
+            const biTimes2 = w.xGet('sqlite3__wasm_test_int64_times2');
             T.assert(BigInt(2 * o64) ===
                      biTimes2(BigInt(o64)/*explicit conv. required to avoid TypeError
                                            in the call :/ */));
 
             const pMin = w.scopedAlloc(16);
-            const pMax = pMin + 8;
+            const pMax = w.ptr.add(pMin, 8);
             const g64 = (p)=>w.peek64(p);
             w.poke64([pMin, pMax], 0);
             const minMaxI64 = [
-              w.xCall('sqlite3_wasm_test_int64_min'),
-              w.xCall('sqlite3_wasm_test_int64_max')
+              w.xCall('sqlite3__wasm_test_int64_min'),
+              w.xCall('sqlite3__wasm_test_int64_max')
             ];
             T.assert(minMaxI64[0] < BigInt(Number.MIN_SAFE_INTEGER)).
               assert(minMaxI64[1] > BigInt(Number.MAX_SAFE_INTEGER));
             //log("int64_min/max() =",minMaxI64, typeof minMaxI64[0]);
-            w.xCall('sqlite3_wasm_test_int64_minmax', pMin, pMax);
+            w.xCall('sqlite3__wasm_test_int64_minmax', pMin, pMax);
             T.assert(g64(pMin) === minMaxI64[0], "int64 mismatch").
               assert(g64(pMax) === minMaxI64[1], "int64 mismatch");
             //log("pMin",g64(pMin), "pMax",g64(pMax));
@@ -2132,7 +2345,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                 "back into JS because of the lack of 64-bit integer support.");
           }
         }finally{
-          const x = w.scopedAlloc(1), y = w.scopedAlloc(1), z = w.scopedAlloc(1);
+          //const x = w.scopedAlloc(1), y = w.scopedAlloc(1), z = w.scopedAlloc(1);
           //log("x=",x,"y=",y,"z=",z); // just looking at the alignment
           w.scopedAllocPop(stack);
         }
@@ -2142,7 +2355,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #1: eponymous w/ manual exception handling',
-      predicate: ()=>!!capi.sqlite3_index_info,
+      predicate: (sqlite3)=>(!!sqlite3.capi.sqlite3_vtab || "Missing vtab support"),
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -2153,18 +2366,20 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
            ext/misc/templatevtab.c.
         */
         const tmplMod = new sqlite3.capi.sqlite3_module();
-        T.assert(0===tmplMod.$xUpdate);
+        T.assert(!tmplMod.$xUpdate);
+        const dbg = 1 ? ()=>{} : sqlite3.config.debug;
+        //tmplMod.debugFlags(0x03);
         tmplMod.setupModule({
           catchExceptions: false,
           methods: {
             xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
+              dbg("xConnect",...arguments);
               try{
                 const args = wasm.cArgvToJs(argc, argv);
                 T.assert(args.length>=3)
                   .assert(args[0] === 'testvtab')
                   .assert(args[1] === 'main')
                   .assert(args[2] === 'testvtab');
-                //console.debug("xConnect() args =",args);
                 const rc = capi.sqlite3_declare_vtab(
                   pDb, "CREATE TABLE ignored(a,b)"
                 );
@@ -2183,6 +2398,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             },
             xCreate: true /* just for testing. Will be removed afterwards. */,
             xDisconnect: function(pVtab){
+              dbg("xDisconnect",...arguments);
               try {
                 VT.xVtab.unget(pVtab).dispose();
                 return 0;
@@ -2191,6 +2407,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             },
             xOpen: function(pVtab, ppCursor){
+              dbg("xOpen",...arguments);
               try{
                 const t = VT.xVtab.get(pVtab),
                       c = VT.xCursor.create(ppCursor);
@@ -2203,6 +2420,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             },
             xClose: function(pCursor){
+              dbg("xClose",...arguments);
               try{
                 const c = VT.xCursor.unget(pCursor);
                 T.assert(c instanceof capi.sqlite3_vtab_cursor)
@@ -2214,6 +2432,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             },
             xNext: function(pCursor){
+              dbg("xNext",...arguments);
               try{
                 const c = VT.xCursor.get(pCursor);
                 ++c._rowId;
@@ -2223,6 +2442,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             },
             xColumn: function(pCursor, pCtx, iCol){
+              dbg("xColumn",...arguments);
               try{
                 const c = VT.xCursor.get(pCursor);
                 switch(iCol){
@@ -2240,6 +2460,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             },
             xRowid: function(pCursor, ppRowid64){
+              dbg("xRowid",...arguments);
               try{
                 const c = VT.xCursor.get(pCursor);
                 VT.xRowid(ppRowid64, c._rowId);
@@ -2249,12 +2470,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             },
             xEof: function(pCursor){
+              dbg("xEof",...arguments);
               const c = VT.xCursor.get(pCursor),
                     rc = c._rowId>=10;
               return rc;
             },
             xFilter: function(pCursor, idxNum, idxCStr,
                               argc, argv/* [sqlite3_value* ...] */){
+              dbg("xFilter",...arguments);
               try{
                 const c = VT.xCursor.get(pCursor);
                 c._rowId = 0;
@@ -2267,6 +2490,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             },
             xBestIndex: function(pVtab, pIdxInfo){
+              dbg("xBestIndex",...arguments);
               try{
                 //const t = VT.xVtab.get(pVtab);
                 const sii = capi.sqlite3_index_info;
@@ -2315,12 +2539,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           }
         });
         this.db.onclose.disposeAfter.push(tmplMod);
-        T.assert(0===tmplMod.$xUpdate)
-          .assert(tmplMod.$xCreate)
+        T.assert(!tmplMod.$xUpdate)
+          .assert(wasm.isPtr(tmplMod.$xRowid))
+          .assert(wasm.isPtr(tmplMod.$xCreate))
           .assert(tmplMod.$xCreate === tmplMod.$xConnect,
                   "setup() must make these equivalent and "+
                   "installMethods() must avoid re-compiling identical functions");
-        tmplMod.$xCreate = 0 /* make tmplMod eponymous-only */;
+        tmplMod.$xCreate = wasm.ptr.null /* make tmplMod eponymous-only */;
         let rc = capi.sqlite3_create_module(
           this.db, "testvtab", tmplMod, 0
         );
@@ -2339,7 +2564,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
-      predicate: ()=>!!capi.sqlite3_index_info,
+      predicate: (sqlite3)=>!!sqlite3.capi.sqlite3_vtab || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -2560,7 +2785,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t('Close db', function(){
       T.assert(this.db).assert(wasm.isPtr(this.db.pointer));
-      //wasm.sqlite3_wasm_db_reset(this.db); // will leak virtual tables!
+      //wasm.sqlite3__wasm_db_reset(this.db); // will leak virtual tables!
       this.db.close();
       T.assert(!this.db.pointer);
     })
@@ -2585,9 +2810,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         const filename = this.kvvfsDbFile = 'session';
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
-        T.assert(pVfs);
+        T.assert(looksLikePtr(pVfs));
         const JDb = this.JDb = sqlite3.oo1.JsStorageDb;
-        const unlink = this.kvvfsUnlink = ()=>{JDb.clearStorage(filename)};
+        const unlink = this.kvvfsUnlink = ()=>JDb.clearStorage(this.kvvfsDbFile);
         unlink();
         let db = new JDb(filename);
         try {
@@ -2605,6 +2830,80 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     }/*kvvfs sanity checks*/)
+//#if enable-see
+    .t({
+      name: 'kvvfs with SEE encryption',
+      predicate: ()=>(isUIThread()
+                      || "Only available in main thread."),
+      test: function(sqlite3){
+        this.kvvfsUnlink();
+        let initDb = true;
+        const tryKey = function(keyKey, key, expectCount){
+          let db;
+          //console.debug('tryKey()',arguments);
+          const ctoropt = {
+            filename: this.kvvfsDbFile
+            //vfs: 'kvvfs'
+            //,flags: 'ct'
+          };
+          try {
+            if (initDb) {
+              initDb = false;
+              db = new this.JDb({
+                ...ctoropt,
+                [keyKey]: key
+              });
+              db.exec([
+                "drop table if exists t;",
+                "create table t(a);"
+              ]);
+              db.close();
+              // Ensure that it's actually encrypted...
+              let err;
+              try {
+                db = new this.JDb(ctoropt);
+                T.assert(db, 'db opened') /* opening is fine, but... */;
+                db.exec("select 1 from sqlite_schema");
+                console.warn("(should not be reached) sessionStorage =", sessionStorage);
+              } catch (e) {
+                err = e;
+              } finally {
+                db.close()
+              }
+              T.assert(err, "Expecting an exception")
+                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
+                        "Expecting NOTADB");
+            }/*initDb*/
+            //console.debug('tryKey()',arguments);
+            db = new sqlite3.oo1.DB({
+              ...ctoropt,
+              vfs: 'kvvfs',
+              [keyKey]: key
+            });
+            db.exec("insert into t(a) values (1),(2)");
+            T.assert(expectCount === db.selectValue('select sum(a) from t'));
+          } finally {
+            if (db) db.close();
+          }
+        }.bind(this);
+        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
+        tryKey('textkey', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('textkey', 'foo', 6);
+        this.kvvfsUnlink();
+        initDb = true;
+        tryKey('key', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('key', hexFoo, 6);
+        this.kvvfsUnlink();
+        initDb = true;
+        tryKey('hexkey', hexFoo, 3);
+        T.assert( !initDb );
+        tryKey('hexkey', hexFoo, 6);
+        this.kvvfsUnlink();
+      }
+    })/*kvvfs with SEE*/
+//#endif enable-see
   ;/* end kvvfs tests */
 
   ////////////////////////////////////////////////////////////////////////
@@ -2616,10 +2915,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let countCommit = 0, countRollback = 0;;
         const db = new sqlite3.oo1.DB(':memory:',1 ? 'c' : 'ct');
         let rc = capi.sqlite3_commit_hook(db, (p)=>{
+          //console.debug("commit hook",arguments);
           ++countCommit;
-          return (1 === p) ? 0 : capi.SQLITE_ERROR;
-        }, 1);
-        T.assert( 0 === rc /*void pointer*/ );
+          return (17 == p) ? 0 : capi.SQLITE_ERROR;
+        }, 17);
+        T.assert( wasm.ptr.null === rc );
 
         // Commit hook...
         T.assert( 0!=capi.sqlite3_get_autocommit(db) );
@@ -2634,13 +2934,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           d.exec("create table t(a)");
         });
         T.assert(2 === countCommit);
+        T.assert(17 == capi.sqlite3_commit_hook(db, 0, 0));
 
         // Rollback hook:
         rc = capi.sqlite3_rollback_hook(db, (p)=>{
           ++countRollback;
-          T.assert( 2 === p );
-        }, 2);
-        T.assert( 0 === rc /*void pointer*/ );
+          T.assert( 21 == p );
+        }, 21);
+        T.assert( wasm.ptr.null===rc );
         T.mustThrowMatching(()=>{
           db.transaction('drop table t',()=>{})
         }, (e)=>{
@@ -2653,16 +2954,18 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             sqlite3.SQLite3Error.toss(capi.SQLITE_FULL,'testing rollback hook');
           });
         }, (e)=>{
+          //console.error("transaction error:",e);
           return capi.SQLITE_FULL === e.resultCode
         });
         T.assert(1 === countRollback);
+        T.assert(21 == capi.sqlite3_rollback_hook(db, 0, 0));
 
         // Update hook...
         const countUpdate = Object.create(null);
         capi.sqlite3_update_hook(db, (p,op,dbName,tbl,rowid)=>{
           T.assert('main' === dbName.toLowerCase())
             .assert('t' === tbl.toLowerCase())
-            .assert(3===p)
+            .assert(33==p)
             .assert('bigint' === typeof rowid);
           switch(op){
               case capi.SQLITE_INSERT:
@@ -2672,38 +2975,36 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                 break;
               default: toss("Unexpected hook operator:",op);
           }
-        }, 3);
+        }, 33);
         db.transaction((d)=>{
-          d.exec([
+          db.exec([
             "insert into t(a) values(1);",
             "update t set a=2;",
             "update t set a=3;",
-            "delete from t where a=3"
+            "delete from t where a=3;"
             // update hook is not called for an unqualified DELETE
           ]);
         });
         T.assert(1 === countRollback)
-          .assert(3 === countCommit)
+          .assert(2 === countCommit)
           .assert(1 === countUpdate[capi.SQLITE_INSERT])
           .assert(2 === countUpdate[capi.SQLITE_UPDATE])
           .assert(1 === countUpdate[capi.SQLITE_DELETE]);
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
-        T.assert(1 === capi.sqlite3_commit_hook(db, 0, 0));
-        T.assert(2 === capi.sqlite3_rollback_hook(db, 0, 0));
-        T.assert(3 === capi.sqlite3_update_hook(db, 0, 0));
+        T.assert(33 == capi.sqlite3_update_hook(db, 0, 0));
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
         db.close();
       }
     })/* commit/rollback/update hooks */
     .t({
       name: "sqlite3_preupdate_hook()",
-      predicate: ()=>wasm.bigIntEnabled || "Pre-update hook requires int64",
+      predicate: ()=>capi.sqlite3_preupdate_hook || "Missing pre-update hook API",
       test: function(sqlite3){
         const db = new sqlite3.oo1.DB(':memory:', 1 ? 'c' : 'ct');
         const countHook = Object.create(null);
         let rc = capi.sqlite3_preupdate_hook(
           db, function(p, pDb, op, zDb, zTbl, iKey1, iKey2){
-            T.assert(9 === p)
+            T.assert(9 == p)
               .assert(db.pointer === pDb)
               .assert(1 === capi.sqlite3_preupdate_count(pDb))
               .assert( 0 > capi.sqlite3_preupdate_blobwrite(pDb) );
@@ -2721,6 +3022,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           },
           9
         );
+        T.assert( 0==rc );
         db.transaction((d)=>{
           d.exec([
             "create table t(a);",
@@ -2734,8 +3036,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(2 === countHook[capi.SQLITE_UPDATE])
           .assert(1 === countHook[capi.SQLITE_DELETE]);
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
-        db.close();
+        T.assert( !!capi.sqlite3_preupdate_hook(db, 0, 0) );
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
+        T.assert( !capi.sqlite3_preupdate_hook(db, 0, 0) );
+        db.close();
       }
     })/*pre-update hooks*/
   ;/*end hook API tests*/
@@ -2768,9 +3072,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   T.g('Session API')
     .t({
       name: 'Session API sanity checks',
-      predicate: ()=>!!capi.sqlite3changegroup_add,
+      predicate: ()=>!!capi.sqlite3changegroup_add || "Missing session API",
       test: function(sqlite3){
-        warn("The session API tests could use some expansion.");
+        //warn("The session API tests could use some expansion.");
         const db1 = new sqlite3.oo1.DB(), db2 = new sqlite3.oo1.DB();
         const sqlInit = [
           "create table t(rowid INTEGER PRIMARY KEY,a,b); ",
@@ -2805,7 +3109,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert('b4' === db1.selectValue('select b from t where rowid=4'))
             .assert(3 === db1.selectValue('select count(*) from t'));
 
-          const testSessionEnable = false;
+          const testSessionEnable =
+                false /* it's not yet clear whether these test failures are
+                         broken tests or broken bindings. */;
           if(testSessionEnable){
             rc = capi.sqlite3session_enable(pSession, 0);
             T.assert( 0 === rc )
@@ -2816,7 +3122,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               .assert( capi.sqlite3session_enable(pSession, -1) > 0 )
               .assert(undefined === db1.selectValue('select a from t where rowid=2'));
           }else{
-            warn("sqlite3session_enable() tests are currently disabled.");
+            //warn("sqlite3session_enable() tests are currently disabled.");
           }
           let db1Count = db1.selectValue("select count(*) from t");
           T.assert( db1Count === (testSessionEnable ? 2 : 3) );
@@ -2888,18 +3194,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'OPFS db sanity checks',
       test: async function(sqlite3){
+        T.assert(capi.sqlite3_vfs_find('opfs'));
+        const opfs = sqlite3.opfs;
         const filename = this.opfsDbFile = '/dir/sqlite3-tester1.db';
-        const pVfs = this.opfsVfs = capi.sqlite3_vfs_find('opfs');
-        T.assert(pVfs);
-        const unlink = this.opfsUnlink =
-              (fn=filename)=>{wasm.sqlite3_wasm_vfs_unlink(pVfs,fn)};
-        unlink();
-        let db = new sqlite3.oo1.OpfsDb(filename);
+        const fileUri = 'file://'+filename+'?delete-before-open=1';
+        const initSql = [
+          'create table p(a);',
+          'insert into p(a) values(1),(2),(3)'
+        ];
+        let db = new sqlite3.oo1.OpfsDb(fileUri);
         try {
-          db.exec([
-            'create table p(a);',
-            'insert into p(a) values(1),(2),(3)'
-          ]);
+          db.exec(initSql);
           T.assert(3 === db.selectValue('select count(*) from p'));
           db.close();
           db = new sqlite3.oo1.OpfsDb(filename);
@@ -2911,7 +3216,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                     && 0===this.opfsDbExport.byteLength % 512);
         }finally{
           db.close();
-          unlink();
+        }
+        T.assert(await opfs.entryExists(filename));
+        try {
+          db = new sqlite3.oo1.OpfsDb(fileUri);
+          db.exec(initSql) /* will throw if delete-before-open did not work */;
+          T.assert(3 === db.selectValue('select count(*) from p'));
+        }finally{
+          if(db) db.close();
         }
       }
     }/*OPFS db sanity checks*/)
@@ -2919,15 +3231,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'OPFS import',
       test: async function(sqlite3){
         let db;
+        const filename = this.opfsDbFile;
         try {
           const exp = this.opfsDbExport;
-          const filename = this.opfsDbFile;
           delete this.opfsDbExport;
           this.opfsImportSize = await sqlite3.oo1.OpfsDb.importDb(filename, exp);
           db = new sqlite3.oo1.OpfsDb(this.opfsDbFile);
           T.assert(6 === db.selectValue('select count(*) from p')).
             assert( this.opfsImportSize == exp.byteLength );
           db.close();
+          this.opfsUnlink =
+                (fn=filename)=>sqlite3.util.sqlite3__wasm_vfs_unlink("opfs",fn);
           this.opfsUnlink(filename);
           T.assert(!(await sqlite3.opfs.entryExists(filename)));
           // Try again with a function as an input source:
@@ -2954,11 +3268,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: '(Internal-use) OPFS utility APIs',
       test: async function(sqlite3){
         const filename = this.opfsDbFile;
-        const pVfs = this.opfsVfs;
         const unlink = this.opfsUnlink;
-        T.assert(filename && pVfs && !!unlink);
+        T.assert(filename && !!unlink);
         delete this.opfsDbFile;
-        delete this.opfsVfs;
         delete this.opfsUnlink;
         /**************************************************************
            ATTENTION CLIENT-SIDE USERS: sqlite3.opfs is NOT intended
@@ -2999,6 +3311,78 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                   "entryExists(",testDir,") should have failed");
       }
     }/*OPFS util sanity checks*/)
+//#if enable-see
+    .t({
+      name: 'OPFS with SEE encryption',
+      test: function(sqlite3){
+        const dbFile = 'file:///sqlite3-see.edb';
+        const dbCtor = sqlite3.oo1.OpfsDb;
+        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
+        let initDb = true;
+        const tryKey = function(keyKey, key, expectCount){
+          let db;
+          //console.debug('tryKey()',arguments);
+          const ctoropt = {
+            filename: dbFile,
+            flags: 'c'
+          };
+          try {
+            if (initDb) {
+              initDb = false;
+              const opt = {
+                ...ctoropt,
+                [keyKey]: key
+              };
+              opt.filename += '?delete-before-open=1';
+              db = new dbCtor(opt);
+              db.exec([
+                "drop table if exists t;",
+                "create table t(a);"
+              ]);
+              db.close();
+              // Ensure that it's actually encrypted...
+              let err;
+              try {
+                db = new dbCtor(ctoropt);
+                T.assert(db, 'db opened') /* opening is fine, but... */;
+                const rv = db.exec({
+                  sql:"select count(*) from sqlite_schema",
+                  returnValue: 'resultRows'
+                });
+                console.warn("(should not be reached) rv =",rv);
+              } catch (e) {
+                err = e;
+              } finally {
+                db.close()
+              }
+              T.assert(err, "Expecting an exception")
+                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
+                        "Expecting NOTADB");
+            }/*initDb*/
+            db = new dbCtor({
+              ...ctoropt,
+              [keyKey]: key
+            });
+            db.exec("insert into t(a) values (1),(2)");
+            T.assert(expectCount === db.selectValue('select sum(a) from t'));
+          } finally {
+            if (db) db.close();
+          }
+        };
+        tryKey('textkey', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('textkey', 'foo', 6);
+        initDb = true;
+        tryKey('key', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('key', hexFoo, 6);
+        initDb = true;
+        tryKey('hexkey', hexFoo, 3);
+        T.assert( !initDb );
+        tryKey('hexkey', hexFoo, 6);
+      }
+    })/*OPFS with SEE*/
+//#endif enable-see
   ;/* end OPFS tests */
 
   ////////////////////////////////////////////////////////////////////////
@@ -3037,20 +3421,55 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
         T.assert(0 === u1.getFileCount());
         const dbName = '/foo.db';
+        //wasm.xWrap.debug = true;
         let db = new u1.OpfsSAHPoolDb(dbName);
         T.assert(db instanceof sqlite3.oo1.DB)
           .assert(1 === u1.getFileCount());
         db.exec([
+          'pragma locking_mode=exclusive;',
+          'pragma journal_mode=wal;'
+          /* WAL mode only works in this VFS if locking_mode=exclusive
+             is invoked prior to the first db access, as this build
+             does not have the shared-memory APIs needed for WAL without
+             exclusive-mode locking. See:
+
+             https://sqlite.org/wal.html#use_of_wal_without_shared_memory
+
+             Note that WAL mode here DOES NOT add any concurrency capabilities
+             to this VFS, but it MAY provide slightly improved performance
+             over the other journaling modes.
+          */,
           'create table t(a);',
           'insert into t(a) values(1),(2),(3)'
         ]);
-        T.assert(1 === u1.getFileCount());
-        T.assert(3 === db.selectValue('select count(*) from t'));
+        T.assert(2 === u1.getFileCount() /* one is the journal file */)
+          .assert(3 === db.selectValue('select count(*) from t'))
+          .assert(
+            'wal'===db.selectValue('pragma journal_mode')
+              || wasm.compileOptionUsed('OMIT_WAL')
+          );
         db.close();
         T.assert(1 === u1.getFileCount());
         db = new u2.OpfsSAHPoolDb(dbName);
-        T.assert(1 === u1.getFileCount());
+        T.assert(1 === u1.getFileCount())
+          .mustThrowMatching(
+            ()=>u1.pauseVfs(),
+            (err)=>{
+              return capi.SQLITE_MISUSE===err.resultCode
+                && /^SQLITE_MISUSE: Cannot pause VFS /.test(err.message);
+            },
+            "Cannot pause VFS with opened db."
+          );
         db.close();
+        T.assert( u2===u2.pauseVfs() )
+          .assert( u2.isPaused() )
+          .assert( !capi.sqlite3_vfs_find(u2.vfsName) )
+          .mustThrowMatching(()=>new u2.OpfsSAHPoolDb(dbName),
+                             /.+no such vfs: .+/,
+                             "VFS is not available")
+          .assert( u2===await u2.unpauseVfs() )
+          .assert( u2===await u1.unpauseVfs(), "unpause is a no-op if the VFS is not paused" )
+          .assert( !!capi.sqlite3_vfs_find(u2.vfsName) );
         const fileNames = u1.getFileNames();
         T.assert(1 === fileNames.length)
           .assert(dbName === fileNames[0])
@@ -3065,6 +3484,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert( dbytes.byteLength == nWrote );
           let db2 = new u1.OpfsSAHPoolDb(dbName2);
           T.assert(db2 instanceof sqlite3.oo1.DB)
+            .assert('wal' !== db2.selectValue("pragma journal_mode")
+                    /* importDb() unsets the WAL-mode header for
+                       historical reasons. Because clients must
+                       explicitly enable pragma locking_mode=exclusive
+                       before using WAL, that behavior is retained. */)
             .assert(3 === db2.selectValue('select count(*) from t'));
           db2.close();
           T.assert(true === u1.unlink(dbName2))
@@ -3117,24 +3541,268 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name));
 
         let cErr, u3;
-        conf2.$testThrowInInit = new Error("Testing throwing during init.");
+        conf2.$testThrowPhase2 = new Error("Testing throwing during init.");
         conf2.name = sahPoolConfig.name+'-err';
         const P3 = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
-        T.assert(P3 === conf2.$testThrowInInit)
+        T.assert(P3 === conf2.$testThrowPhase2)
           .assert(cErr === P3)
           .assert(undefined === u3)
           .assert(!sqlite3.capi.sqlite3_vfs_find(conf2.name));
+        delete conf2.$testThrowPhase2;
+        T.assert(cErr === await inst(conf2).catch(e=>e),
+                "Init result is cached even if it failed");
+
+        /* Ensure that the forceReinitIfPreviouslyFailed fallback bypasses
+           the VFS init cache... */
+        cErr = u3 = undefined;
+        conf2.forceReinitIfPreviouslyFailed = true;
+        conf2.verbosity = 3;
+        const P3b = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
+        T.assert(undefined === cErr)
+          .assert(P3b === u3)
+          .assert(P3b === await inst(conf2))
+          .assert(true === await u3.removeVfs())
+          .assert(false === await P3b.removeVfs());
       }
     }/*OPFS SAH Pool sanity checks*/)
+//#if enable-see
+    .t({
+      name: 'OPFS SAHPool with SEE encryption',
+      test: async function(sqlite3){
+        const inst = sqlite3.installOpfsSAHPoolVfs,
+              catcher = (e)=>{
+                error("Cannot load SAH pool VFS.",
+                      "This might not be a problem,",
+                      "depending on the environment.");
+                return false;
+              };
+        const poolConfig = {
+          name: 'opfs-sahpool-see',
+          clearOnInit: true,
+          initialCapacity: 6
+        }
+        let poolUtil;
+        const P1 = await inst(poolConfig).then(u=>poolUtil = u).catch(catcher);
+        const dbFile = '/sqlite3-see.edb';
+        const dbCtor = poolUtil.OpfsSAHPoolDb;
+        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
+        let initDb = true;
+        const tryKey = function(keyKey, key, expectCount){
+          let db;
+          //console.debug('tryKey()',arguments);
+          const ctoropt = {
+            filename: dbFile,
+            flags: 'c'
+          };
+          try {
+            if (initDb) {
+              initDb = false;
+              poolUtil.unlink(dbFile);
+              db = new dbCtor({
+                ...ctoropt,
+                [keyKey]: key
+              });
+              db.exec([
+                "drop table if exists t;",
+                "create table t(a);"
+              ]);
+              db.close();
+              // Ensure that it's actually encrypted...
+              let err;
+              try {
+                db = new dbCtor(ctoropt);
+                T.assert(db, 'db opened') /* opening is fine, but... */;
+                const rv = db.exec({
+                  sql:"select count(*) from sqlite_schema",
+                  returnValue: 'resultRows'
+                });
+                console.warn("(should not be reached) rv =",rv);
+              } catch (e) {
+                err = e;
+              } finally {
+                db.close()
+              }
+              T.assert(err, "Expecting an exception")
+                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
+                        "Expecting NOTADB");
+            }/*initDb*/
+            db = new dbCtor({
+              ...ctoropt,
+              [keyKey]: key
+            });
+            db.exec("insert into t(a) values (1),(2)");
+            T.assert(expectCount === db.selectValue('select sum(a) from t'));
+          } finally {
+            if (db) db.close();
+          }
+        };
+        tryKey('textkey', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('textkey', 'foo', 6);
+        initDb = true;
+        tryKey('key', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('key', hexFoo, 6);
+        initDb = true;
+        tryKey('hexkey', hexFoo, 3);
+        T.assert( !initDb );
+        tryKey('hexkey', hexFoo, 6);
+        poolUtil.removeVfs();
+      }
+    })/*opfs-sahpool with SEE*/
+//#endif enable-see
+  ;
 
   ////////////////////////////////////////////////////////////////////////
+  T.g('Misc. APIs')
+    .t('bind_parameter_...', function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec("create table t(a)");
+      const stmt = db.prepare("insert into t(a) values($a)");
+      T.assert( 1===capi.sqlite3_bind_parameter_count(stmt) )
+        .assert( 1===stmt.parameterCount )
+        .assert( 1===capi.sqlite3_bind_parameter_index(stmt, "$a") )
+        .assert( 0===capi.sqlite3_bind_parameter_index(stmt, ":a") )
+        .assert( 1===stmt.getParamIndex("$a") )
+        .assert( 0===stmt.getParamIndex(":a") )
+        .assert( "$a"===capi.sqlite3_bind_parameter_name(stmt, 1) )
+        .assert( null===capi.sqlite3_bind_parameter_name(stmt, 0) )
+        .assert( "$a"===stmt.getParamName(1) )
+        .assert( null===stmt.getParamName(0) );
+      stmt.finalize();
+      db.close();
+    })
+
+    /**
+       Ensure that certain Stmt members throw when called
+       via DB.exec().
+    */
+    .t('locked-by-exec() APIs', function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec("create table t(a);insert into t(a) values(1);");
+      let checkCount = 0;
+      const checkOp = function(op){
+        ++checkCount;
+        T.mustThrowMatching(() => {
+          db.exec({
+            sql: "select ?1",
+            bind: op,
+            callback: (row, stmt) => {
+              switch (row[0]) {
+                case 'bind': stmt.bind(1); break;
+                case 'finalize':
+                case 'clearBindings':
+                case 'reset':
+                case 'step': stmt[op](); break;
+              }
+            }
+          });
+        }, /^Operation is illegal when statement is locked.*/)
+      };
+      try{
+        checkOp('bind');
+        checkOp('finalize');
+        checkOp('clearBindings');
+        checkOp('reset');
+        checkOp('step');
+        T.assert(5===checkCount);
+      }finally{
+        db.close();
+      }
+    })
+
+  ////////////////////////////////////////////////////////////////////
+    .t("Misc. stmt_...", function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec("create table t(a doggiebiscuits); insert into t(a) values(123)");
+      const stmt = db.prepare("select a, a+1 from t");
+      T.assert( stmt.isReadOnly() )
+        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 1) )
+        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 2) )
+        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 0) )
+        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) );
+      let n = 0;
+      while( capi.SQLITE_ROW === capi.sqlite3_step(stmt) ){
+        ++n;
+        T.assert( 0!==capi.sqlite3_stmt_explain(stmt, 1),
+                  "Because stmt is busy" )
+          .assert( capi.sqlite3_stmt_busy(stmt) )
+          .assert( stmt.isBusy() )
+          .assert( 0!==capi.sqlite3_stmt_readonly(stmt) )
+          .assert( true===stmt.isReadOnly() );
+        const sv = capi.sqlite3_column_value(stmt, 0);
+        T.assert( 123===capi.sqlite3_value_int(sv) )
+          .assert( "doggiebiscuits"===capi.sqlite3_column_decltype(stmt,0) )
+          .assert( null===capi.sqlite3_column_decltype(stmt,1) );
+      }
+      T.assert( 1===n )
+        .assert( 0===capi.sqlite3_stmt_busy(stmt) )
+        .assert( !stmt.isBusy() );
+
+      if( wasm.exports.sqlite3_column_origin_name ){
+        log("Column metadata APIs enabled");
+        T.assert( "t" === capi.sqlite3_column_table_name(stmt, 0))
+          .assert("a" === capi.sqlite3_column_origin_name(stmt, 0))
+          .assert("main" === capi.sqlite3_column_database_name(stmt, 0))
+      }else{
+        log("Column metadata APIs not enabled");
+      } // column metadata APIs
+
+      stmt.finalize();
+      db.close();
+    })
+
+  ////////////////////////////////////////////////////////////////////
+    .t("interrupt", function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      T.assert( 0===capi.sqlite3_is_interrupted(db) );
+      capi.sqlite3_interrupt(db);
+      T.assert( 0!==capi.sqlite3_is_interrupted(db) );
+      db.close();
+    })
+
+  ////////////////////////////////////////////////////////////////////
+    .t("sqlite3_set_errmsg()", function(sqlite3){
+      /* Added in 3.51.0 */
+      const db = new sqlite3.oo1.DB();//(':memory:','wt');
+      try{
+        const capi = sqlite3.capi;
+        const sse = capi.sqlite3_set_errmsg,
+              sec = capi.sqlite3_errcode,
+              sem = capi.sqlite3_errmsg;
+        T.assert( 0===sec(db) )
+          .assert( "not an error"===sem(db) );
+        let rc = sse(db, capi.SQLITE_RANGE, "nope");
+        T.assert( 0==rc )
+          .assert( capi.SQLITE_RANGE===sec(db) )
+          .assert( "nope"===sem(db) );
+        rc = sse(0, 0, 0);
+        T.assert( capi.SQLITE_MISUSE===rc );
+        rc = sse(db, 0, 0);
+        T.assert( 0===rc )
+          .assert( 0===sec(db) )
+          .assert( "not an error"===sem(db) );
+      }finally{
+        db.close();
+      }
+    });
+  ;
+
+  ////////////////////////////////////////////////////////////////////
   T.g('Bug Reports')
     .t({
       name: 'Delete via bound parameter in subquery',
+      predicate: ()=>wasm.compileOptionUsed('ENABLE_FTS5') || "Missing FTS5",
       test: function(sqlite3){
-        // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
-        // with the exception that that post uses "external content"
-        // for the FTS index.
+        /**
+           Testing https://sqlite.org/forum/forumpost/40ce55bdf5 with
+           the exception that that post uses "external content" for
+           the FTS index. This isn't testing a fix, just confirming
+           that the bug report is not really a bug.
+        */
         const db = new sqlite3.oo1.DB();//(':memory:','wt');
         db.exec([
           "create virtual table f using fts5 (path);",
@@ -3144,17 +3812,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           sql: "SELECT * FROM f order by path",
           rowMode: 'array'
         });
-        const dump = function(lbl){
+        /*const dump = function(lbl){
           let rc = fetchEm();
           log((lbl ? (lbl+' results') : ''),rc);
-        };
+        };*/
         //dump('Full fts table');
         let rc = fetchEm();
         T.assert(3===rc.length);
-        db.exec(`
-          delete from f where rowid in (
-          select rowid from f where path = :path
-           )`,
+        db.exec(
+          ["delete from f where rowid in (",
+           "select rowid from f where path = :path",
+           ")"],
           {bind: {":path": "def"}}
         );
         //dump('After deleting one entry via subquery');
@@ -3163,6 +3831,120 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert('abcghi'===rc.join(''));
         //log('rc =',rc);
         db.close();
+      }
+    })
+    .t({
+      name: 'r/o connection recovery from write op error',
+      predicate: ()=>hasOpfs() || "Requires OPFS to reproduce",
+      //predicate: ()=>false,
+      test: async function(sqlite3){
+        /* https://sqlite.org/forum/forumpost/cf37d5ff1182c31081
+
+           The "opfs" VFS (but not SAHPool) was formerly misbehaving
+           after a write attempt was made on a db opened with
+           mode=ro. This test ensures that that behavior is fixed and
+           compares that behavior with other VFSes. */
+        const tryOne = function(vfsName,descr){
+          const uri = 'file:///foo.db';
+          let db = new sqlite3.oo1.DB(uri + (vfsName ? '?vfs='+vfsName : ''));
+          db.exec([
+            "drop table if exists t;",
+            "create table t(a);",
+            "insert into t(a) values('abc'),('def'),('ghi');"
+          ]);
+          db.close();
+          db = new sqlite3.oo1.DB(uri+'?mode=ro'+
+                                  (vfsName ? '&vfs='+vfsName : ''));
+          let err;
+          try {
+            db.exec('insert into t(a) values(1)');
+          }catch(e){
+            err = e;
+          }
+          T.assert(err && (err.message.indexOf('SQLITE_READONLY')===0));
+          try{
+            db.exec('select a from t');
+          }finally{
+            db.close();
+          }
+        };
+        const poolConfig = JSON.parse(JSON.stringify(sahPoolConfig));
+        poolConfig.name = 'opfs-sahpool-cf37d5ff11';
+        let poolUtil;
+        await sqlite3.installOpfsSAHPoolVfs(poolConfig).then(p=>poolUtil=p);
+        T.assert(!!sqlite3.capi.sqlite3_vfs_find(poolConfig.name), "Expecting to find just-registered VFS");
+        try{
+          tryOne(false, "Emscripten filesystem");
+          tryOne(poolConfig.name);
+          tryOne('opfs');
+        }finally{
+          await poolUtil.removeVfs();
+        }
+      }
+    })
+    .t({
+      /* https://github.com/sqlite/sqlite-wasm/issues/92 */
+      name: 'sqlite3_set_auxdata() binding signature',
+      test: function(sqlite3){
+        const db = new sqlite3.oo1.DB();
+        const stack = wasm.pstack.pointer;
+        const pAux = wasm.pstack.alloc(4);
+        let pAuxDestructed = 0;
+        const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
+          //log("freeing auxdata");
+          ++pAuxDestructed;
+        });
+        let pAuxDtorDestructed = false;
+        db.onclose = {
+          after: ()=>{
+            pAuxDtorDestructed = true;
+            wasm.uninstallFunction(pAuxDtor);
+          }
+        };
+        let nAuxSet = 0 /* how many times we set aux data */;
+        let nAuxReused = 0 /* how many times we reused aux data */;
+        try{
+          db.createFunction("auxtest",{
+            xFunc: function(pCx, x, y){
+              T.assert(wasm.isPtr(pCx));
+              const localAux = capi.sqlite3_get_auxdata(pCx, 0);
+              if( !localAux ){
+                //log("setting auxdata");
+                /**
+                   We do not currently an automated way to clean up
+                   auxdata finalizer functions (the 4th argument to
+                   sqlite3_set_auxdata()) which get automatically
+                   converted from JS to WASM. Because of that, enabling
+                   automated conversions here would lead to leaks more
+                   often than not. Instead, follow the pattern show in
+                   this function: use wasm.installFunction() to create
+                   the function, then pass the resulting function
+                   pointer this function, and cleanup (at some point)
+                   using wasm.uninstallFunction().
+                */
+                ++nAuxSet;
+                capi.sqlite3_set_auxdata(pCx, 0, pAux, pAuxDtor);
+              }else{
+                //log("reusing auxdata",localAux);
+                T.assert(pAux===localAux);
+                ++nAuxReused;
+              }
+              return x;
+            }
+          });
+          db.exec([
+            "create table t(a);",
+            "insert into t(a) values(1),(2),(1);",
+            "select auxtest(1,a), auxtest(1,a) from t order by a"
+          ]);
+        }finally{
+          db.close();
+          wasm.pstack.restore(stack);
+        }
+        T.assert(nAuxSet>0).assert(nAuxReused>0)
+          .assert(6===nAuxReused+nAuxSet);
+        T.assert(pAuxDestructed>0);
+        T.assert(pAuxDtorDestructed);
       }
     })
   ;/*end of Bug Reports group*/;
@@ -3177,7 +3959,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       error: ()=>{}
     }
   }
-//#ifnot target=es6-module
+//#if not target:es6-module
   if(!globalThis.sqlite3InitModule && !isUIThread()){
     /* Vanilla worker, as opposed to an ES6 module worker */
     /*
@@ -3194,7 +3976,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       are simply lost, and such scripts see the globalThis.location of
       _this_ script.
     */
-    let sqlite3Js = 'sqlite3.js';
+    let sqlite3Js = '@sqlite3.js@'
+        .split('/').pop()/*the build-injected name has a dir part and
+                           we specifically want to test the following
+                           support for locating the wasm, so remove
+                           that dir part. */;
     const urlParams = new URL(globalThis.location.href).searchParams;
     if(urlParams.has('sqlite3.dir')){
       sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;
@@ -3209,6 +3995,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     print: log,
     printErr: error
   }).then(async function(sqlite3){
+    TestUtil.assert(!!sqlite3.util);
     log("Done initializing WASM/JS bits. Running tests...");
     sqlite3.config.warn("Installing sqlite3 bits as global S for local dev/test purposes.");
     globalThis.S = sqlite3;
@@ -3227,11 +4014,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       logClass('warning',"BigInt/int64 support is disabled.");
     }
     if(haveWasmCTests()){
-      log("sqlite3_wasm_test_...() APIs are available.");
+      log("sqlite3__wasm_test_...() APIs are available.");
     }else{
-      logClass('warning',"sqlite3_wasm_test_...() APIs unavailable.");
+      logClass('warning',"sqlite3__wasm_test_...() APIs unavailable.");
     }
     log("registered vfs list =",capi.sqlite3_js_vfs_list().join(', '));
+    SQLite3 = sqlite3;
+    log("WASM pointer size:",wasm.ptr.size,"bytes.");
+    TestUtil.checkHeapSize();
     TestUtil.runTests(sqlite3);
   });
 })(self);

@@ -268,7 +268,7 @@ do_test select3-8.2 {
   }
 } {real}
 
-# 2019-05-09 ticket https://www.sqlite.org/src/tktview/6c1d3febc00b22d457c7
+# 2019-05-09 ticket https://sqlite.org/src/tktview/6c1d3febc00b22d457c7
 #
 unset -nocomplain x
 foreach {id x} {

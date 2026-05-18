@@ -517,7 +517,31 @@ fts5_aux_test_functions db
 do_execsql_test 15.3 {
   SELECT fts5_test_all(t1) FROM t1 LIMIT 1;
 } {
-  {columnsize {0 0} columntext {c d} columntotalsize {2 2} poslist {} tokenize {c d} rowcount 2}
+  {columnsize {1 1} columntext {c d} columntotalsize {2 2} poslist {} tokenize {c d} rowcount 2}
 }
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t1(x);
+  BEGIN EXCLUSIVE;
+}
+
+do_test 16.1 { 
+  set rc [catch {
+    sqlite3 db2 test.db
+    db2 eval {SELECT * FROM t1}
+  } errmsg]
+  lappend rc $errmsg
+} {1 {database is locked}}
+
+do_execsql_test 16.2 {
+  ROLLBACK;
+}
+
+do_test 16.3 { 
+  catchsql { SELECT * FROM t1 } db2
+} {0 {}}
 
 finish_test

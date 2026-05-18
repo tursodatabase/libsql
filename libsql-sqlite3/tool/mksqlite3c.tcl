@@ -17,7 +17,7 @@
 # After the "tsrc" directory has been created and populated, run
 # this script:
 #
-#      tclsh mksqlite3c.tcl
+#      tclsh mksqlite3c.tcl [flags] [extra source files]
 #
 # The amalgamated SQLite code will be written into sqlite3.c
 #
@@ -42,6 +42,7 @@ set linemacros 0
 set useapicall 0
 set enable_recover 0
 set srcdir tsrc
+set extrasrc [list]
 
 for {set i 0} {$i<[llength $argv]} {incr i} {
   set x [lindex $argv $i]
@@ -63,11 +64,13 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
   } elseif {[regexp {^-?-((help)|\?)$} $x]} {
     puts $help
     exit 0
-  } else {
+  } elseif {[regexp {^-?-} $x]} {
     error "unknown command-line option: $x"
+  } else {
+    lappend extrasrc $x
   }
 }
-set in [open $srcdir/sqlite3.h]
+set in [open $srcdir/sqlite3.h rb]
 set cnt 0
 set VERSION ?????
 while {![eof $in]} {
@@ -83,9 +86,9 @@ close $in
 #
 set fname sqlite3.c
 if {$enable_recover} { set fname sqlite3r.c }
-set out [open $fname w]
+set out [open $fname wb]
 # Force the output to use unix line endings, even on Windows.
-fconfigure $out -translation lf
+fconfigure $out -translation binary
 set today [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S UTC" -gmt 1]
 puts $out [subst \
 {/******************************************************************************
@@ -108,13 +111,18 @@ puts $out [subst \
 ** separate file. This file contains only code for the core SQLite library.
 **}]
 set srcroot [file dirname [file dirname [info script]]]
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   set vsrcprog src-verify.exe
 } else {
   set vsrcprog ./src-verify
 }
 if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
-  set res [string trim [split [exec $vsrcprog -x $srcroot]] \n]
+  set tmpfile tmp-[clock millisec]-[expr {int(rand()*100000000000)}].txt
+  exec $vsrcprog -x $srcroot > $tmpfile
+  set fd [open $tmpfile rb]
+  set res [string trim [split [read $fd] \n]]
+  close $fd
+  file delete -force $tmpfile
   puts $out "** The content in this amalgamation comes from Fossil check-in"
   puts -nonewline $out "** [string range [lindex $res 0] 0 35]"
   if {[llength $res]==1} {
@@ -122,7 +130,7 @@ if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
   } else {
     puts $out " with changes in files:\n**"
     foreach f [lrange $res 1 end] {
-       puts $out "**    $f"
+       puts $out "**    [string trim $f]"
     }
   }
 } else {
@@ -130,6 +138,7 @@ if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
   puts $out "** is unknown."
 }
 puts $out [subst {*/
+#ifndef SQLITE_AMALGAMATION
 #define SQLITE_CORE 1
 #define SQLITE_AMALGAMATION 1}]
 if {$addstatic} {
@@ -145,7 +154,7 @@ if {$addstatic} {
 # 
 # then set the SQLITE_UDL_CAPABLE_PARSER flag in the amalgamation.
 #
-set in [open $srcdir/parse.c]
+set in [open $srcdir/parse.c rb]
 if {[regexp {ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT} [read $in]]} {
   puts $out "#define SQLITE_UDL_CAPABLE_PARSER 1"
 }
@@ -193,7 +202,6 @@ foreach hdr {
    vxworks.h
    wal.h
    whereInt.h
-
    wasm_bindings.h
    sqlite3recover.h
 } {
@@ -202,7 +210,6 @@ foreach hdr {
 set available_hdr(sqliteInt.h) 0
 set available_hdr(os_common.h) 0
 set available_hdr(sqlite3session.h) 0
-set available_hdr(wasm_bindings.h) 0
 
 # These headers should be copied into the amalgamation without modifying any
 # of their function declarations or definitions.
@@ -246,7 +253,7 @@ proc copy_file {filename} {
   set tail [file tail $filename]
   section_comment "Begin file $tail"
   if {$linemacros} {puts $out "#line 1 \"$filename\""}
-  set in [open $filename r]
+  set in [open $filename rb]
   set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+(sqlite3[_a-zA-Z0-9]+)(\[|;| =)}
   set declpattern {([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3[_a-zA-Z0-9]+)(\(.*)}
   if {[file extension $filename]==".h"} {
@@ -355,6 +362,21 @@ proc copy_file {filename} {
   section_comment "End of $tail"
 }
 
+# Read the source file named $filename and write it into the
+# sqlite3.c output file. The only transformation is the trimming
+# of EOL whitespace.
+#
+proc copy_file_verbatim {filename} {
+  global out
+  set in [open $filename rb]
+  set tail [file tail $filename]
+  section_comment "Begin EXTRA_SRC file $tail"
+  while {![eof $in]} {
+    set line [string trimright [gets $in]]
+    puts $out $line
+  }
+  section_comment "End of EXTRA_SRC $tail"
+}
 
 # Process the source files.  Process files containing commonly
 # used subroutines first in order to help the compiler find
@@ -483,16 +505,20 @@ set flist {
    sqlite3rbu.c
    dbstat.c
    dbpage.c
+   carray.c
    sqlite3session.c
    fts5.c
    stmt.c
    wasmedge_bindings.c
-} 
+}
 if {$enable_recover} {
   lappend flist sqlite3recover.c dbdata.c
 }
 foreach file $flist {
   copy_file $srcdir/$file
+}
+foreach file $extrasrc {
+  copy_file_verbatim $file
 }
 
 puts $out \
@@ -500,6 +526,7 @@ puts $out \
 SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }"
 
 puts $out \
-"/************************** End of sqlite3.c ******************************/"
+"#endif /* SQLITE_AMALGAMATION */
+/************************** End of sqlite3.c ******************************/"
 
 close $out

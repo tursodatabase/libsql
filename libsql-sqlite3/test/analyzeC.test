@@ -133,7 +133,7 @@ do_execsql_test 4.3 {
 } {/.*INDEX t1ca.*/}
 
 # 2019-08-15.
-# Ticket https://www.sqlite.org/src/tktview/e4598ecbdd18bd82945f602901
+# Ticket https://sqlite.org/src/tktview/e4598ecbdd18bd82945f602901
 # The sz=N parameter in the sqlite_stat1 table needs to have a value of
 # 2 or more to avoid a division by zero in the query planner.
 #

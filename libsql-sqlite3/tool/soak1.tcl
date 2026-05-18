@@ -4,7 +4,7 @@
 #
 #    tclsh soak1.tcl local-makefile.mk ?target? ?scenario?
 #
-# This generates many variations on local-makefile.mk (by modifing
+# This generates many variations on local-makefile.mk (by modifying
 # the OPT = lines) and runs them will fulltest, one by one.  The
 # constructed makefiles are named "soak1.mk".
 #

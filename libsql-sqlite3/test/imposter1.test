@@ -85,6 +85,7 @@ do_execsql_test imposter-1.2 {
 # database.
 #
 do_execsql_test imposter-1.3 {
+  PRAGMA writable_schema=on;
   DELETE FROM xt1 WHERE rowid=5;
   INSERT INTO xt1(rowid,a,b,c,d) VALUES(99,'hello',1099,2022,NULL);
   SELECT * FROM chnglog ORDER BY rowid;

@@ -140,4 +140,21 @@ foreach {tn expr res} {
   do_execsql_test between-2.1.$tn $sql $res
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test between-3.0 {
+  CREATE TABLE t1(x, y);
+  CREATE INDEX i1 ON t1(x);
+  INSERT INTO t1 VALUES(4, 4);
+  CREATE TABLE t2(a, b);
+}
+
+do_execsql_test between-3.1 {
+  SELECT * FROM t1 LEFT JOIN t2 ON (x BETWEEN 1 AND 3);
+} {4 4 {} {}}
+
+do_execsql_test between-3.2 {
+  SELECT * FROM t1 LEFT JOIN t2 ON (x BETWEEN 5 AND 7);
+} {4 4 {} {}}
+
 finish_test

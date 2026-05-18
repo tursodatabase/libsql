@@ -204,7 +204,9 @@ proc do_conflict_test {tn args} {
   foreach t $O(-tables) { S attach $t }
   execsql $O(-sql)
   set ::xConflict [list]
-  sqlite3changeset_apply db2 [S changeset] xConflict
+  catch {
+    sqlite3changeset_apply db2 [S changeset] xConflict
+  }
 
   set conflicts [list]
   foreach c $O(-conflicts) {
@@ -682,8 +684,124 @@ do_test $tn.14.4 {
   list [catch {sqlite3session_config invalid 123} msg] $msg
 } {1 SQLITE_MISUSE}
 
-}]
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test $tn.15.0 {
+  CREATE TABLE records(
+      idx INTEGER PRIMARY KEY AUTOINCREMENT,
+      tbl TEXT NOT NULL,
+      pk TEXT NOT NULL,
+      value TEXT,
+      UNIQUE(tbl, pk)
+  );
+
+  CREATE TABLE changes(
+      idx INTEGER PRIMARY KEY AUTOINCREMENT,
+      tbl TEXT NOT NULL,
+      pk TEXT NOT NULL,
+      op TEXT DEFAULT ('='),
+      path TEXT DEFAULT ('$'),
+      value TEXT,
+      UNIQUE(tbl, pk)
+  );
+
+  CREATE TRIGGER changes_after_insert
+    AFTER INSERT ON changes
+    FOR EACH ROW
+    BEGIN
+    INSERT INTO records(tbl, pk, value)
+    VALUES (NEW.tbl, NEW.pk, NEW.value)
+    ON CONFLICT(tbl, pk) DO UPDATE SET value = NEW.value;
+  END;
+
+  CREATE VIEW data_view AS
+    SELECT *, '=' AS op, '$' AS path FROM records
+    WHERE tbl = 'data';
+
+  CREATE TRIGGER data_insert
+    INSTEAD OF INSERT ON data_view
+    BEGIN
+    INSERT INTO changes(tbl, pk, op, path, value)
+    VALUES (NEW.tbl, NEW.pk, NEW.op, NEW.path, NEW.value);
+  END;
+
+  CREATE TRIGGER data_update
+    INSTEAD OF UPDATE ON data_view
+    BEGIN
+    INSERT INTO changes(tbl, pk, op, path, value)
+    VALUES (NEW.tbl, NEW.pk, NEW.op, NEW.path, NEW.value);
+  END;
+
+  CREATE TRIGGER data_delete
+    INSTEAD OF DELETE ON data_view
+    BEGIN
+    INSERT INTO changes(tbl, pk, op, path, value)
+    VALUES (NEW.tbl, NEW.pk, NEW.op, NEW.path, NEW.value);
+  END;
 }
 
+do_test $tn.15.1 {
+  set C [changeset_from_sql {
+      INSERT INTO data_view (tbl, pk, value) VALUES
+        ('data', '1', 'First'),
+        ('data', '2', 'Second');
+  }]
+  changeset_to_list $C
+} [list \
+  {INSERT changes 1 X..... {} {i 1 t data t 1 n {} n {} t First}}   \
+  {INSERT changes 1 X..... {} {i 2 t data t 2 n {} n {} t Second}}   \
+  {INSERT records 1 X... {} {i 1 t data t 1 t First}}   \
+  {INSERT records 1 X... {} {i 2 t data t 2 t Second}}   \
+]
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test $tn.15.2 {
+  db2 eval {
+    CREATE TABLE records(
+        idx INTEGER PRIMARY KEY AUTOINCREMENT,
+        tbl TEXT NOT NULL,
+        pk TEXT NOT NULL,
+        value TEXT,
+        UNIQUE(tbl, pk)
+    );
+    CREATE TABLE changes(
+        idx INTEGER PRIMARY KEY AUTOINCREMENT,
+        tbl TEXT NOT NULL,
+        pk TEXT NOT NULL,
+        op TEXT DEFAULT ('='),
+        path TEXT DEFAULT ('$'),
+        value TEXT,
+        UNIQUE(tbl, pk)
+    );
+
+    CREATE TRIGGER changes_after_insert
+      AFTER INSERT ON changes
+      FOR EACH ROW
+      BEGIN
+      INSERT INTO records(tbl, pk, value)
+      VALUES (NEW.tbl, NEW.pk, NEW.value)
+      ON CONFLICT(tbl, pk) DO UPDATE SET value = NEW.value;
+    END;
+  }
+
+  sqlite3changeset_apply db2 $C ""
+
+  db2 eval {
+    SELECT * FROM records;
+  }
+} [list 1 data 1 First 2 data 2 Second]
+
+do_test $tn.15.3 {
+  db2 eval {
+    SELECT * FROM changes;
+  }
+} {1 data 1 {} {} First 2 data 2 {} {} Second}
+
+db2 close
+}]
+}
 
 finish_test

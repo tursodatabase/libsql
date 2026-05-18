@@ -391,7 +391,7 @@ do_execsql_test index6-11.2 {
 } {/USING INDEX t11x/}
 
 # 2018-12-08
-# Ticket https://www.sqlite.org/src/info/1d958d90596593a7
+# Ticket https://sqlite.org/src/info/1d958d90596593a7
 # NOT IN operator fails when using a partial index.
 #
 do_execsql_test index6-12.1 {
@@ -412,7 +412,7 @@ do_execsql_test index6-12.2 {
 } {1 2}
 
 # 2019-05-04
-# Ticket https://www.sqlite.org/src/tktview/5c6955204c392ae763a95
+# Ticket https://sqlite.org/src/tktview/5c6955204c392ae763a95
 # Theorem prover error
 #
 do_execsql_test index6-13.1 {
@@ -438,8 +438,8 @@ do_execsql_test index6-14.2 {
 } {{} row}
 
 # 2019-08-30
-# Ticket https://www.sqlite.org/src/info/a6408d42b9f44462
-# Ticket https://www.sqlite.org/src/info/fba33c8b1df6a915
+# Ticket https://sqlite.org/src/info/a6408d42b9f44462
+# Ticket https://sqlite.org/src/info/fba33c8b1df6a915
 # https://sqlite.org/src/info/bac716244fddac1fe841
 #
 do_execsql_test index6-15.1 {

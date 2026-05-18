@@ -489,6 +489,68 @@ execsql_test 9.2 {
   FROM t1
 }
 
+==========
+
+execsql_test 10.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER, b INTEGER);
+  INSERT INTO t1 VALUES (10, 1), 
+                        (20, -1), 
+                        (5, 2), 
+                        (15, 0), 
+                        (25, 3);
+}
+
+execsql_test 10.1 {
+  SELECT 
+    a, b, MIN(a) FILTER(WHERE b > 0) OVER win 
+    FROM t1
+    WINDOW win AS (ORDER BY a ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING);
+}
+
+execsql_test 10.2 {
+  SELECT 
+    a, b, MIN(a) FILTER(WHERE b > 0) OVER win 
+    FROM t1
+    WINDOW win AS ();
+}
+
+execsql_test 10.3 {
+  SELECT 
+    a, b, MIN(a) FILTER(WHERE b > 0) OVER win 
+    FROM t1
+    WINDOW win AS (ORDER BY a);
+}
+
+execsql_test 10.4 {
+  SELECT 
+    a, b, MIN(a) OVER win 
+    FROM t1
+    WINDOW win AS (ORDER BY a ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING);
+}
+
+==========
+
+execsql_test 11.0 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(a INTEGER, b INTEGER);
+  INSERT INTO t2 VALUES(1, 12);
+  INSERT INTO t2 VALUES(2, 10);
+  INSERT INTO t2 VALUES(3, 15);
+  INSERT INTO t2 VALUES(4, 22);
+  INSERT INTO t2 VALUES(5,  1);
+  INSERT INTO t2 VALUES(6,  4);
+  INSERT INTO t2 VALUES(7,  7);
+  INSERT INTO t2 VALUES(8,  6);
+  INSERT INTO t2 VALUES(9, 22);
+  INSERT INTO t2 VALUES(10, 2);
+}
+
+execsql_test 11.1 {
+  SELECT a, min(b) FILTER (WHERE a%2 != 0) OVER win
+  FROM t2
+  WINDOW win AS (ORDER BY a ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING);
+}
 
 finish_test
 

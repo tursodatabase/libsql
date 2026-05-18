@@ -155,6 +155,11 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   /* Set a limit on the maximum size of a prepared statement */
   sqlite3_limit(cx.db, SQLITE_LIMIT_VDBE_OP, 25000);
 
+  /* Set a limit on the maximum LIKE or GLOB pattern length due to
+  ** https://issues.oss-fuzz.com/issues/453240497.  The default is 50K
+  ** which is causing timeouts in OSS-Fuzz */
+  sqlite3_limit(cx.db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, 250);
+
   /* Limit total memory available to SQLite to 20MB */
   sqlite3_hard_heap_limit64(20000000);
 

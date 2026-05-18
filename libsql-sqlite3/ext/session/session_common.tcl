@@ -201,12 +201,16 @@ proc compare_db {db1 db2} {
   foreach tbl $lot1 {
     set col1 [list]
     set col2 [list]
+    set quoted [list]
 
     $db1 eval "PRAGMA table_info = $tbl" { lappend col1 $name }
-    $db2 eval "PRAGMA table_info = $tbl" { lappend col2 $name }
+    $db2 eval "PRAGMA table_info = $tbl" { 
+      lappend col2 $name 
+      lappend quoted "\"[string map {\" \"\"} $name]\""
+    }
     if {$col1 != $col2} { error "table $tbl schema mismatch" }
 
-    set sql "SELECT * FROM $tbl ORDER BY [join $col1 ,]"
+    set sql "SELECT * FROM $tbl ORDER BY [join $quoted ,]"
     set data1 [$db1 eval $sql]
     set data2 [$db2 eval $sql]
     if {$data1 != $data2} { 

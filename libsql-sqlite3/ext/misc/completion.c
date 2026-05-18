@@ -41,6 +41,11 @@ SQLITE_EXTENSION_INIT1
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
+#ifndef IsAlnum
+#define IsAlnum(X)  isalnum((unsigned char)X)
+#endif
+
+
 /* completion_vtab is a subclass of sqlite3_vtab which will
 ** serve as the underlying representation of a completion virtual table
 */
@@ -251,7 +256,7 @@ static int completionNext(sqlite3_vtab_cursor *cur){
             zSql = sqlite3_mprintf(
                "%z%s"
                "SELECT pti.name FROM \"%w\".sqlite_schema AS sm"
-                       " JOIN pragma_table_info(sm.name,%Q) AS pti"
+                       " JOIN pragma_table_xinfo(sm.name,%Q) AS pti"
                " WHERE sm.type='table'",
                zSql, zSep, zDb, zDb
             );
@@ -365,6 +370,7 @@ static int completionFilter(
     if( pCur->nPrefix>0 ){
       pCur->zPrefix = sqlite3_mprintf("%s", sqlite3_value_text(argv[iArg]));
       if( pCur->zPrefix==0 ) return SQLITE_NOMEM;
+      pCur->nPrefix = (int)strlen(pCur->zPrefix);
     }
     iArg = 1;
   }
@@ -373,17 +379,19 @@ static int completionFilter(
     if( pCur->nLine>0 ){
       pCur->zLine = sqlite3_mprintf("%s", sqlite3_value_text(argv[iArg]));
       if( pCur->zLine==0 ) return SQLITE_NOMEM;
+      pCur->nLine = (int)strlen(pCur->zLine);
     }
   }
   if( pCur->zLine!=0 && pCur->zPrefix==0 ){
     int i = pCur->nLine;
-    while( i>0 && (isalnum(pCur->zLine[i-1]) || pCur->zLine[i-1]=='_') ){
+    while( i>0 && (IsAlnum(pCur->zLine[i-1]) || pCur->zLine[i-1]=='_') ){
       i--;
     }
     pCur->nPrefix = pCur->nLine - i;
     if( pCur->nPrefix>0 ){
       pCur->zPrefix = sqlite3_mprintf("%.*s", pCur->nPrefix, pCur->zLine + i);
       if( pCur->zPrefix==0 ) return SQLITE_NOMEM;
+      pCur->nPrefix = (int)strlen(pCur->zPrefix);
     }
   }
   pCur->iRowid = 0;

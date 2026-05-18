@@ -116,7 +116,7 @@ do_execsql_test 507 {
   SELECT * FROM t0 WHERE +-+'ce' >= t0.c0;
 } {-1 {}}
  
-# 2019-08-30 ticket https://www.sqlite.org/src/info/40812aea1fde9594
+# 2019-08-30 ticket https://sqlite.org/src/info/40812aea1fde9594
 #
 # Due to some differences in floating point computations, these tests do not
 # work under valgrind.

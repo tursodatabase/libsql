@@ -21,10 +21,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix mmap2
 
-if {$::tcl_platform(platform)!="unix" || [test_syscall defaultvfs] != "unix"} {
+if {[llength [info commands test_syscall]]==0} {
   finish_test
   return
-}
+} 
 ifcapable !mmap {
   finish_test
   return

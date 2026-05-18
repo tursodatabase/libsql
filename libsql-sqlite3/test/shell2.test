@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool.
 #
@@ -216,37 +217,40 @@ do_test shell2-1.4.9 {
 done
 2}}
 
+ifcapable vtab {
 # Verify that generate_series stays sane near 64-bit range boundaries.
 # See overflow report at https://sqlite.org/forum/forumpost/5d34ce5280
 do_test shell2-1.4.10 {
  set res [catchcmd :memory: [string trim {
  SELECT * FROM generate_series(9223372036854775807,9223372036854775807,1);
  SELECT * FROM generate_series(9223372036854775807,9223372036854775807,-1);
- SELECT avg(rowid),min(value),max(value) FROM generate_series(
+ SELECT avg(value),min(value),max(value) FROM generate_series(
   -9223372036854775808,9223372036854775807,1085102592571150095);
  SELECT * FROM generate_series(-9223372036854775808,9223372036854775807,
   9223372036854775807);
- SELECT value,rowid FROM generate_series(-4611686018427387904,
+ SELECT value FROM generate_series(-4611686018427387904,
   4611686018427387904, 4611686018427387904) ORDER BY value DESC;
  SELECT * FROM generate_series(0,-2,-1);
  SELECT * FROM generate_series(0,-2);
  SELECT * FROM generate_series(0,2) LIMIT 3;}]]
 } {0 {9223372036854775807
 9223372036854775807
-9.5|-9223372036854775808|9223372036854775807
+-0.5|-9223372036854775808|9223372036854775807
 -9223372036854775808
 -1
 9223372036854775806
-4611686018427387904|3
-0|2
--4611686018427387904|1
+4611686018427387904
+0
+-4611686018427387904
 0
 -1
 -2
 0
 1
 2}}
+}  ;# ifcapable vtab
 
+ifcapable vtab {
 # Bug discovered while messing around, .import hangs with
 # bit 7 set in column separator.
 do_test shell2-1.4.11 {
@@ -261,6 +265,7 @@ do_test shell2-1.4.11 {
 .import dummy.csv t
  SELECT count(*) FROM t;}]]
 } {0 1}
+} ;# ifcapable vtab
 
 # Bug from forum post 7cbe081746dd3803
 # Keywords as column names were producing an error message.
@@ -270,6 +275,98 @@ do_test shell2-1.4.12 {
  INSERT INTO "group" VALUES ('ABC');
 .sha3sum}]]
 } {0 ca08bc02b7e95c7df431a3a4b1cc0f8d8743914793473f55b5558e03}
+
+#-------------------------------------------------------------------------
+
+foreach {tn hexdump expect} {
+  0 {
+| size 8192 pagesize 4096 filename my.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 03 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03   ................
+|     96: 00 2e 8d f8 0d 00 00 00 01 0f df 00 0f df 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1f   ................
+|   4064: 01 06 17 0f 0f 01 2f 74 61 62 6c 65 74 74 02 43   ....../tablett.C
+|   4080: 52 45 41 54 45 20 54 41 42 4c 45 20 74 28 78 29   REATE TABLE t(x)
+| page 2 offset 4096
+|      0: 0d 00 00 00 02 0f ee 00 0f f7 0f ee 00 00 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02   ................
+|   4080: 02 17 77 6f 72 6c 64 07 01 02 17 68 65 6c 6c 6f   ..world....hello
+| end my.db
+  }
+  {0 {}}
+
+  1 {
+| size 2147483647 pagesize 4096 filename my.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 03 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03   ................
+|     96: 00 2e 8d f8 0d 00 00 00 01 0f df 00 0f df 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1f   ................
+|   4064: 01 06 17 0f 0f 01 2f 74 61 62 6c 65 74 74 02 43   ....../tablett.C
+|   4080: 52 45 41 54 45 20 54 41 42 4c 45 20 74 28 78 29   REATE TABLE t(x)
+| page 2 offset 4096
+|      0: 0d 00 00 00 02 0f ee 00 0f f7 0f ee 00 00 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02   ................
+|   4080: 02 17 77 6f 72 6c 64 07 01 02 17 68 65 6c 6c 6f   ..world....hello
+| end my.db
+  }
+  {1 {Error: out of memory}}
+
+  2 {
+| size 8192 pagesize 4096 filename my.db
+| page 1 offset 2147483647
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 03 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03   ................
+|     96: 00 2e 8d f8 0d 00 00 00 01 0f df 00 0f df 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1f   ................
+|   4064: 01 06 17 0f 0f 01 2f 74 61 62 6c 65 74 74 02 43   ....../tablett.C
+|   4080: 52 45 41 54 45 20 54 41 42 4c 45 20 74 28 78 29   REATE TABLE t(x)
+| page 2 offset 4096
+|      0: 0d 00 00 00 02 0f ee 00 0f f7 0f ee 00 00 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02   ................
+|   4080: 02 17 77 6f 72 6c 64 07 01 02 17 68 65 6c 6c 6f   ..world....hello
+| end my.db
+  }
+  {0 {}}
+
+ 3 {
+| size 8192 pagesize 4096 filename my.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 03 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03   ................
+|     96: 00 2e 8d f8 0d 00 00 00 01 0f df 00 0f df 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1f   ................
+|   4064: 01 06 17 0f 0f 01 2f 74 61 62 6c 65 74 74 02 43   ....../tablett.C
+|   4080: 52 45 41 54 45 20 54 41 42 4c 45 20 74 28 78 29   REATE TABLE t(x)
+| page 2 offset 4096
+|      2147483647: 0d 00 00 00 02 0f ee 00 0f f7 0f ee 00 00 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02   ................
+|   4080: 02 17 77 6f 72 6c 64 07 01 02 17 68 65 6c 6c 6f   ..world....hello
+| end my.db
+}
+  {0 {}}
+
+} {
+  set fd [open dump.txt w]
+  puts $fd [string trim $hexdump]
+  close $fd
+  do_test shell2-2.$tn.1 {
+    set rc [ catchcmd "" ".open --hexdb dump.txt"]
+  } $expect
+}
 
 
 finish_test

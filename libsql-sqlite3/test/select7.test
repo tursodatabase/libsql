@@ -155,6 +155,38 @@ if {[clang_sanitize_address]==0} {
   }
 }
 
+# https://issues.chromium.org/issues/358174302
+# Need to support an unlimited number of terms in a VALUES clause, even
+# if some of those terms contain double-quoted string literals.
+#
+do_execsql_test select7-6.5 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c);
+}
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 10
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 0
+do_catchsql_test select7-6.6 {
+  INSERT INTO t1 VALUES
+    (NULL,0,""),  (X'',0.0,0.0),  (X'',X'',""),  (0.0,0.0,""),  (NULL,NULL,0.0),
+    (0,"",0),  (0.0,X'',0),  ("",X'',0.0),  (0.0,X'',NULL),  (0,NULL,""),
+    (0,"",NULL),  (0.0,NULL,X''),  ("",X'',NULL),  (NULL,0,""),
+    (0,NULL,0),  (X'',X'',0.0);
+} {1 {no such column: "" - should this be a string literal in single-quotes?}}
+do_execsql_test select7-6.7 {
+  SELECT count(*) FROM t1;
+} {0}
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
+do_catchsql_test select7-6.8 {
+  INSERT INTO t1 VALUES
+    (NULL,0,""),  (X'',0.0,0.0),  (X'',X'',""),  (0.0,0.0,""),  (NULL,NULL,0.0),
+    (0,"",0),  (0.0,X'',0),  ("",X'',0.0),  (0.0,X'',NULL),  (0,NULL,""),
+    (0,"",NULL),  (0.0,NULL,X''),  ("",X'',NULL),  (NULL,0,""),
+    (0,NULL,0),  (X'',X'',0.0);
+} {0 {}}
+do_execsql_test select7-6.9 {
+  SELECT count(*) FROM t1;
+} {16}
+
 # This block of tests verifies that bug aa92c76cd4 is fixed.
 #
 do_test select7-7.1 {

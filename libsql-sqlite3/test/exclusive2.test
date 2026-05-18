@@ -41,7 +41,7 @@ sqlite3_soft_heap_limit 0
 proc pagerChangeCounter {filename new {fd ""}} {
   if {$fd==""} {
     set fd [open $filename RDWR]
-    fconfigure $fd -translation binary -encoding binary
+    fconfigure $fd -translation binary
     set needClose 1
   } else {
     set needClose 0
@@ -70,7 +70,7 @@ proc pagerChangeCounter {filename new {fd ""}} {
 
 proc readPagerChangeCounter {filename} {
   set fd [open $filename RDONLY]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
 
   seek $fd 24
   foreach {a b c d} [list 0 0 0 0] {}

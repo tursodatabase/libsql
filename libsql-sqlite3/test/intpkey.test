@@ -604,7 +604,7 @@ do_test intpkey-15.7 {
   }
 } {}
 
-# 2016-04-18 ticket https://www.sqlite.org/src/tktview/7d7525cb01b68712495d3a
+# 2016-04-18 ticket https://sqlite.org/src/tktview/7d7525cb01b68712495d3a
 # Be sure to escape quoted typenames.
 #
 do_execsql_test intpkey-16.0 {
@@ -614,7 +614,7 @@ do_execsql_test intpkey-16.1 {
   PRAGMA table_info=t16a;
 } {0 id INTEGER 0 {} 1 1 b TEXT 0 {} 0 2 c INT 0 {} 0}
 
-# 2016-05-06 ticket https://www.sqlite.org/src/tktview/16c9801ceba4923939085
+# 2016-05-06 ticket https://sqlite.org/src/tktview/16c9801ceba4923939085
 # When the schema contains an index on the IPK and no other index
 # and a WHERE clause on a delete uses an OR where both sides referencing
 # the IPK, then it is possible that the OP_Delete will fail because there

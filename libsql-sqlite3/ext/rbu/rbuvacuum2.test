@@ -171,7 +171,7 @@ foreach {ttt state} {
 #   * Set the state db permissions to the same as those on the db file.
 #
 db close
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(platform) eq "unix"} {
   forcedelete test.db
 
   sqlite3 db test.db

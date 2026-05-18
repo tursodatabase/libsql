@@ -16,11 +16,7 @@
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 #ifndef SQLITE_OMIT_DISKIO  /* This file is a no-op if disk I/O is disabled */
 
@@ -751,7 +747,7 @@ static int processDevSymArgs(
   int setDeviceChar = 0;
 
   for(i=0; i<objc; i+=2){
-    int nOpt;
+    Tcl_Size nOpt;
     char *zOpt = Tcl_GetStringFromObj(objv[i], &nOpt);
 
     if( (nOpt>11 || nOpt<2 || strncmp("-sectorsize", zOpt, nOpt))
@@ -759,12 +755,12 @@ static int processDevSymArgs(
     ){
       Tcl_AppendResult(interp,
         "Bad option: \"", zOpt,
-        "\" - must be \"-characteristics\" or \"-sectorsize\"", 0
+        "\" - must be \"-characteristics\" or \"-sectorsize\"", NULL
       );
       return TCL_ERROR;
     }
     if( i==objc-1 ){
-      Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"",0);
+      Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"", NULL);
       return TCL_ERROR;
     }
 
@@ -776,11 +772,11 @@ static int processDevSymArgs(
     }else{
       int j;
       Tcl_Obj **apObj;
-      int nObj;
+      Tcl_Size nObj;
       if( Tcl_ListObjGetElements(interp, objv[i+1], &nObj, &apObj) ){
         return TCL_ERROR;
       }
-      for(j=0; j<nObj; j++){
+      for(j=0; j<(int)nObj; j++){
         int rc;
         int iChoice;
         Tcl_Obj *pFlag = Tcl_DuplicateObj(apObj[j]);
@@ -925,7 +921,8 @@ static int SQLITE_TCLAPI crashParamsObjCmd(
 ){
   int iDelay;
   const char *zCrashFile;
-  int nCrashFile, iDc, iSectorSize;
+  Tcl_Size nCrashFile;
+  int iDc, iSectorSize;
 
   iDc = -1;
   iSectorSize = -1;
@@ -937,7 +934,7 @@ static int SQLITE_TCLAPI crashParamsObjCmd(
 
   zCrashFile = Tcl_GetStringFromObj(objv[objc-1], &nCrashFile);
   if( nCrashFile>=sizeof(g.zCrashFile) ){
-    Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", 0);
+    Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", NULL);
     goto error;
   }
   if( Tcl_GetIntFromObj(interp, objv[objc-2], &iDelay) ){
@@ -1047,7 +1044,7 @@ static int SQLITE_TCLAPI jtObjCmd(
   if( objc==3 ){
     if( strcmp(zParent, "-default") ){
       Tcl_AppendResult(interp,
-          "bad option \"", zParent, "\": must be -default", 0
+          "bad option \"", zParent, "\": must be -default", NULL
       );
       return TCL_ERROR;
     }
@@ -1058,7 +1055,7 @@ static int SQLITE_TCLAPI jtObjCmd(
     zParent = 0;
   }
   if( jt_register(zParent, objc==3) ){
-    Tcl_AppendResult(interp, "Error in jt_register", 0);
+    Tcl_AppendResult(interp, "Error in jt_register", NULL);
     return TCL_ERROR;
   }
 

@@ -11,14 +11,14 @@
 #
 # Test cases for bugs:
 #
-#    https://www.sqlite.org/src/info/91e2e8ba6ff2e2
-#    https://www.sqlite.org/src/info/7ffd1ca1d2ad4ecf
+#    https://sqlite.org/src/info/91e2e8ba6ff2e2
+#    https://sqlite.org/src/info/7ffd1ca1d2ad4ecf
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# Ticket https://www.sqlite.org/src/info/91e2e8ba6ff2e2 (2011-09-19)
+# Ticket https://sqlite.org/src/info/91e2e8ba6ff2e2 (2011-09-19)
 # Automatic index causes undesired type conversions
 #
 do_execsql_test affinity3-100 {
@@ -87,7 +87,7 @@ do_execsql_test affinity3-142 {
   SELECT id, (apr / 100), typeof(apr) apr_type  FROM v2rjrj;
 } {1 0.12 real 2 0.1201 real}
 
-# Ticket https://www.sqlite.org/src/info/7ffd1ca1d2ad4ecf  (2017-01-16)
+# Ticket https://sqlite.org/src/info/7ffd1ca1d2ad4ecf  (2017-01-16)
 # Incorrect affinity when using automatic indexes 
 #
 do_execsql_test affinity3-200 {

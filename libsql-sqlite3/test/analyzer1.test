@@ -19,7 +19,7 @@ ifcapable !vtab {
   return
 }
 
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   set PROG "sqlite3_analyzer.exe"
 } else {
   set PROG "./sqlite3_analyzer"

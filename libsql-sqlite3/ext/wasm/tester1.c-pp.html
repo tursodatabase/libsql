@@ -1,4 +1,5 @@
 <!doctype html>
+//#@policy error
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
@@ -6,13 +7,7 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
-    <title>sqlite3 tester #1:
-//#if target=es6-module
-ES6 Module in UI thread
-//#else
-UI thread
-//#endif
-    </title>
+    <title>sqlite3 tester #1: @title@ (@bitness@-bit WASM)</title>
     <style></style>
   </head>
   <body><h1 id='color-target'></h1>
@@ -31,11 +26,11 @@ UI thread
       document.querySelector('h1').innerHTML =
         document.querySelector('title').innerHTML;
     })();</script>
-//#if target=es6-module
-    <script src="tester1.mjs" type="module"></script>
+//#if target:es6-module
+    <script src="@tester1.js@" type="module"></script>
 //#else
-    <script src="jswasm/sqlite3.js"></script>
-    <script src="tester1.js"></script>
+    <script src="@sqlite3.js@"></script>
+    <script src="@tester1.js@"></script>
 //#endif
   </body>
 </html>

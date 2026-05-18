@@ -2,7 +2,7 @@
 # restart with tclsh \
 exec tclsh "$0" "$@"
 
-set srcdir [file dirname [file dirname [info script]]]
+set srcdir [file dirname [file dirname [file normalize [info script]]]]
 set G(src) [string map [list %dir% $srcdir] {
   %dir%/fts5.h
   %dir%/fts5Int.h
@@ -23,7 +23,27 @@ set G(src) [string map [list %dir% $srcdir] {
 }]
 
 set G(hdr) {
-
+/*
+** This, the "fts5.c" source file, is a composite file that is itself
+** assembled from the following files:
+**
+**    fts5.h
+**    fts5Int.h
+**    fts5parse.h          <--- Generated from fts5parse.y by Lemon
+**    fts5parse.c          <--- Generated from fts5parse.y by Lemon
+**    fts5_aux.c
+**    fts5_buffer.c
+**    fts5_config.c
+**    fts5_expr.c
+**    fts5_hash.c
+**    fts5_index.c
+**    fts5_main.c
+**    fts5_storage.c
+**    fts5_tokenize.c
+**    fts5_unicode2.c
+**    fts5_varint.c
+**    fts5_vocab.c
+*/
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) 
 
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
@@ -33,10 +53,16 @@ set G(hdr) {
 # undef NDEBUG
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
 }
 
 set G(footer) {
-    
+/* Here ends the fts5.c composite file. */
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) */
 }
 

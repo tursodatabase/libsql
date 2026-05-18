@@ -46,7 +46,7 @@ foreach jmode $all_journal_modes {
 # Under Windows, you'll get an error trying to delete
 # a file this is already opened.  Close the first connection
 # so the other tests work.
-if {$tcl_platform(platform)=="windows"} {
+if {$::tcl_platform(os) eq "Windows NT"} {
   if {$jmode=="persist" || $jmode=="truncate"} {
     db close
   }
@@ -61,7 +61,7 @@ if {$tcl_platform(platform)=="windows"} {
     } db2
   } {wal 1 2 3 4}
 
-if {$tcl_platform(platform)=="windows"} {
+if {$::tcl_platform(os) eq "Windows NT"} {
   if {$jmode=="persist" || $jmode=="truncate"} {
     sqlite3 db test.db
   }

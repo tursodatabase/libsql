@@ -162,4 +162,101 @@ do_execsql_test strict1-8.2 {
   SELECT *, '|' FROM t1;
 } {/5.0 5.0 4.6116\d*e\+18 4.6116\d+e\+18 |/}
 
+# 2025-06-18 https://sqlite.org/forum/forumpost/6caf195248a849e4
+#
+# Enforce STRICT table type constraints on STORED generated columns
+#
+do_execsql_test strict1-9.1 {
+  CREATE TABLE strict (
+    k INTEGER PRIMARY KEY,
+    c1 REAL AS(if(k=11,1.5, k=12,2, k=13,'x', k=14,x'34', 0.0))   STORED,
+    c2 INT  AS(if(k=21,1.5, k=22,2, k=23,'x', k=24,x'34', 0))     STORED,
+    c3 TEXT AS(if(k=31,1.5, k=32,2, k=33,'x', k=34,x'34', 'x'))   STORED,
+    c4 BLOB AS(if(k=41,1.5, k=42,2, k=43,'x', k=44,x'34', x'00')) STORED,
+    c5 ANY  AS(if(k=51,1.5, k=52,2, k=53,'x', k=54,x'34', 0))     STORED
+  ) STRICT;
+  INSERT INTO strict(k) VALUES(11);
+  INSERT INTO strict(k) VALUES(12);
+  INSERT INTO strict(k) VALUES(22);
+  INSERT INTO strict(k) VALUES(31);
+  INSERT INTO strict(k) VALUES(32);
+  INSERT INTO strict(k) VALUES(33);
+  INSERT INTO strict(k) VALUES(44);
+  PRAGMA integrity_check;
+} {ok}
+do_catchsql_test strict1-9.2.13 {
+  INSERT INTO strict(k) VALUES(13);
+} {1 {cannot store TEXT value in REAL column strict.c1}}
+do_catchsql_test strict1-9.2.14 {
+  INSERT INTO strict(k) VALUES(14);
+} {1 {cannot store BLOB value in REAL column strict.c1}}
+do_catchsql_test strict1-9.2.21 {
+  INSERT INTO strict(k) VALUES(21);
+} {1 {cannot store REAL value in INT column strict.c2}}
+do_catchsql_test strict1-9.2.23 {
+  INSERT INTO strict(k) VALUES(23);
+} {1 {cannot store TEXT value in INT column strict.c2}}
+do_catchsql_test strict1-9.2.24 {
+  INSERT INTO strict(k) VALUES(24);
+} {1 {cannot store BLOB value in INT column strict.c2}}
+do_catchsql_test strict1-9.2.34 {
+  INSERT INTO strict(k) VALUES(34);
+} {1 {cannot store BLOB value in TEXT column strict.c3}}
+do_catchsql_test strict1-9.2.41 {
+  INSERT INTO strict(k) VALUES(41);
+} {1 {cannot store REAL value in BLOB column strict.c4}}
+do_catchsql_test strict1-9.2.42 {
+  INSERT INTO strict(k) VALUES(42);
+} {1 {cannot store INT value in BLOB column strict.c4}}
+do_catchsql_test strict1-9.2.43 {
+  INSERT INTO strict(k) VALUES(43);
+} {1 {cannot store TEXT value in BLOB column strict.c4}}
+
+do_execsql_test strict1-9.3 {
+  DROP TABLE strict;
+  CREATE TABLE strict (
+    k INTEGER PRIMARY KEY,
+    c1 REAL AS(if(k=11,1.5, k=12,2, k=13,'x', k=14,x'34', 0.0))   VIRTUAL,
+    c2 INT  AS(if(k=21,1.5, k=22,2, k=23,'x', k=24,x'34', 0))     VIRTUAL,
+    c3 TEXT AS(if(k=31,1.5, k=32,2, k=33,'x', k=34,x'34', 'x'))   VIRTUAL,
+    c4 BLOB AS(if(k=41,1.5, k=42,2, k=43,'x', k=44,x'34', x'00')) VIRTUAL,
+    c5 ANY  AS(if(k=51,1.5, k=52,2, k=53,'x', k=54,x'34', 0))     VIRTUAL
+  ) STRICT;
+  INSERT INTO strict(k) VALUES(11);
+  INSERT INTO strict(k) VALUES(12);
+  INSERT INTO strict(k) VALUES(22);
+  INSERT INTO strict(k) VALUES(31);
+  INSERT INTO strict(k) VALUES(32);
+  INSERT INTO strict(k) VALUES(33);
+  INSERT INTO strict(k) VALUES(44);
+  PRAGMA integrity_check;
+} {ok}
+do_catchsql_test strict1-9.4.13 {
+  INSERT INTO strict(k) VALUES(13);
+} {1 {cannot store TEXT value in REAL column strict.c1}}
+do_catchsql_test strict1-9.4.14 {
+  INSERT INTO strict(k) VALUES(14);
+} {1 {cannot store BLOB value in REAL column strict.c1}}
+do_catchsql_test strict1-9.4.21 {
+  INSERT INTO strict(k) VALUES(21);
+} {1 {cannot store REAL value in INT column strict.c2}}
+do_catchsql_test strict1-9.4.23 {
+  INSERT INTO strict(k) VALUES(23);
+} {1 {cannot store TEXT value in INT column strict.c2}}
+do_catchsql_test strict1-9.4.24 {
+  INSERT INTO strict(k) VALUES(24);
+} {1 {cannot store BLOB value in INT column strict.c2}}
+do_catchsql_test strict1-9.4.34 {
+  INSERT INTO strict(k) VALUES(34);
+} {1 {cannot store BLOB value in TEXT column strict.c3}}
+do_catchsql_test strict1-9.4.41 {
+  INSERT INTO strict(k) VALUES(41);
+} {1 {cannot store REAL value in BLOB column strict.c4}}
+do_catchsql_test strict1-9.4.42 {
+  INSERT INTO strict(k) VALUES(42);
+} {1 {cannot store INT value in BLOB column strict.c4}}
+do_catchsql_test strict1-9.4.43 {
+  INSERT INTO strict(k) VALUES(43);
+} {1 {cannot store TEXT value in BLOB column strict.c4}}
+
 finish_test

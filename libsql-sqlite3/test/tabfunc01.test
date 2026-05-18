@@ -22,7 +22,6 @@ ifcapable !vtab {
   return
 }
 load_static_extension db series
-load_static_extension db carray
 load_static_extension db remember
 
 do_execsql_test tabfunc01-1.1 {
@@ -61,10 +60,10 @@ do_execsql_test tabfunc01-1.8 {
 } {30 25 20 15 10 5 0}
 do_execsql_test tabfunc01-1.9 {
   SELECT rowid, * FROM generate_series(0,32,5) ORDER BY value DESC;
-} {7 30 6 25 5 20 4 15 3 10 2 5 1 0}
+} {30 30 25 25 20 20 15 15 10 10 5 5 0 0}
 do_execsql_test tabfunc01-1.10 {
   SELECT rowid, * FROM generate_series(0,32,5) ORDER BY +value DESC;
-} {7 30 6 25 5 20 4 15 3 10 2 5 1 0}
+} {30 30 25 25 20 20 15 15 10 10 5 5 0 0}
 
 do_execsql_test tabfunc01-1.20 {
   CREATE VIEW v1(a,b) AS VALUES(1,2),(3,4);
@@ -121,26 +120,26 @@ do_eqp_test tabfunc01-3.10 {
   SELECT value FROM generate_series(1,10) ORDER BY value;
 } {
   QUERY PLAN
-  `--SCAN generate_series VIRTUAL TABLE INDEX 19:
+  `--SCAN generate_series VIRTUAL TABLE INDEX 0x13:
 }
 do_eqp_test tabfunc01-3.11 {
   SELECT value FROM generate_series(1,10) ORDER BY +value;
 } {
   QUERY PLAN
-  |--SCAN generate_series VIRTUAL TABLE INDEX 3:
+  |--SCAN generate_series VIRTUAL TABLE INDEX 0x3:
   `--USE TEMP B-TREE FOR ORDER BY
 }
 do_eqp_test tabfunc01-3.12 {
   SELECT value FROM generate_series(1,10) ORDER BY value, stop;
 } {
   QUERY PLAN
-  `--SCAN generate_series VIRTUAL TABLE INDEX 19:
+  `--SCAN generate_series VIRTUAL TABLE INDEX 0x13:
 }
 do_eqp_test tabfunc01-3.13 {
   SELECT value FROM generate_series(1,10) ORDER BY stop, value;
 } {
   QUERY PLAN
-  |--SCAN generate_series VIRTUAL TABLE INDEX 3:
+  |--SCAN generate_series VIRTUAL TABLE INDEX 0x3:
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -156,9 +155,9 @@ do_eqp_test tabfunc01-3.20 {
   QUERY PLAN
   `--MERGE (UNION ALL)
      |--LEFT
-     |  `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |  `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      `--RIGHT
-        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
 }
   
 
@@ -180,6 +179,76 @@ do_execsql_test tabfunc01-4.3 {
 do_execsql_test tabfunc01-4.4 {
   SELECT * FROM (generate_series(1,5,2)) AS x LIMIT 10;
 } {1 3 5}
+
+# 2025-03-13 forum post bf2dc8e909983511
+#
+do_execsql_test tabfunc01-5.1 {
+  SELECT value
+    FROM generate_series(60,73,6)
+   WHERE value=66;
+} 66
+do_execsql_test tabfunc01-5.2 {
+  SELECT value
+    FROM generate_series(73,60,-6)
+   WHERE value=67;
+} 67
+
+# 2025-03-22 forum post 0d5d63257e3ff4f6
+#
+do_execsql_test tabfunc01-6.1 {
+  SELECT value FROM generate_series(1,10) WHERE value<5.5;
+} {1 2 3 4 5}
+do_execsql_test tabfunc01-6.2 {
+  SELECT value FROM generate_series(1,10) WHERE value<5.0;
+} {1 2 3 4}
+do_execsql_test tabfunc01-6.3 {
+  SELECT value FROM generate_series(1,10) WHERE value<=5.5;
+} {1 2 3 4 5}
+do_execsql_test tabfunc01-6.4 {
+  SELECT value FROM generate_series(1,10) WHERE value<=5.0;
+} {1 2 3 4 5}
+do_execsql_test tabfunc01-6.5 {
+  SELECT value FROM generate_series(1,10) WHERE value>5.5;
+} {6 7 8 9 10}
+do_execsql_test tabfunc01-6.6 {
+  SELECT value FROM generate_series(1,10) WHERE value>5.0;
+} {6 7 8 9 10}
+do_execsql_test tabfunc01-6.7 {
+  SELECT value FROM generate_series(1,10) WHERE value>=5.5;
+} {6 7 8 9 10}
+do_execsql_test tabfunc01-6.8 {
+  SELECT value FROM generate_series(1,10) WHERE value>=5.0;
+} {5 6 7 8 9 10}
+do_execsql_test tabfunc01-6.9 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<5.5;
+} {5 4 3 2 1}
+do_execsql_test tabfunc01-6.10 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<5.0;
+} {4 3 2 1}
+do_execsql_test tabfunc01-6.11 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<=5.5;
+} {5 4 3 2 1}
+do_execsql_test tabfunc01-6.12 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<=5.0;
+} {5 4 3 2 1}
+do_execsql_test tabfunc01-6.13 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value>5.5;
+} {10 9 8 7 6}
+do_execsql_test tabfunc01-6.14 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value>5.0;
+} {10 9 8 7 6}
+do_execsql_test tabfunc01-6.15 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value>=5.5;
+} {10 9 8 7 6}
+do_execsql_test tabfunc01-6.16 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value>=5.0;
+} {10 9 8 7 6 5}
+do_execsql_test tabfunc01-6.17 {
+  SELECT value FROM generate_series(1,10) WHERE value==5.5;
+} {}
+do_execsql_test tabfunc01-6.18 {
+  SELECT value FROM generate_series(1,10) WHERE value==5.0;
+} {5}
 
 # The next series of tests is verifying that virtual table are able
 # to optimize the IN operator, even on terms that are not marked "omit".
@@ -208,6 +277,7 @@ do_execsql_test tabfunc01-600 {
 
 do_test tabfunc01-700 {
   set PTR1 [intarray_addr 5 7 13 17 23]
+  sqlite3_create_function db
   db eval {
     SELECT b FROM t600, carray(inttoptr($PTR1),5) WHERE a=value;
   }
@@ -269,7 +339,7 @@ do_test tabfunc01-750 {
   }
 } {5.0 x5 | 7.0 x7 | 13.0 x13 | 17.0 x17 | 23.0 x23 |}
 
-# ticket https://www.sqlite.org/src/info/2ae0c599b735d59e
+# ticket https://sqlite.org/src/info/2ae0c599b735d59e
 # Verification of testtag-20230227a
 do_test tabfunc01-751 {
   db eval {
@@ -321,6 +391,283 @@ ifcapable altertable {
     }
   } {1 {table pragma_compile_options may not be altered}}
 }
+
+#-----------------------------------------------------------------------------
+# 2024-04-26  LIMIT and OFFSET passed into virtual tables
+# https://sqlite.org/forum/forumpost/c243b8f856
+#
+do_execsql_test tabfunc01-900 {
+  SELECT * FROM (
+    SELECT * FROM generate_series(1,10)
+    UNION ALL
+    SELECT * FROM generate_series(101,104)
+  ) LIMIT 10 OFFSET 5;
+} {6 7 8 9 10 101 102 103 104}
+do_execsql_test tabfunc01-910 {
+  SELECT * FROM (
+    SELECT * FROM generate_series(1,10)
+    UNION ALL
+    SELECT * FROM generate_series(101,104)
+  ) LIMIT -1 OFFSET 5;
+} {6 7 8 9 10 101 102 103 104}
+do_execsql_test tabfunc01-920 {
+  SELECT * FROM (
+    SELECT * FROM generate_series(1,10)
+    UNION ALL
+    SELECT * FROM generate_series(101,104)
+  ) LIMIT -1 OFFSET 0;
+} {1 2 3 4 5 6 7 8 9 10 101 102 103 104}
+
+# Also:  https://sqlite.org/forum/forumpost/ce1a06c2c8
+#
+do_execsql_test tabfunc01-930 {
+  SELECT * FROM generate_series(9223372036854775807,
+                                -9223372036854775808,
+                                -9223372036854775808);
+} {9223372036854775807 -1}
+do_execsql_test tabfunc01-931 {
+  SELECT * FROM generate_series(9223372036854775807,
+                                -9223372036854775808,
+                                -9223372036854775808)
+   LIMIT 100 OFFSET 1;
+} {-1}
+do_execsql_test tabfunc01-932 {
+  SELECT * FROM generate_series(9223372036854775807,
+                                -9223372036854775808,
+                                -9223372036854775808)
+   LIMIT 100 OFFSET 2;
+} {}
+do_execsql_test tabfunc01-933 {
+  SELECT * FROM generate_series(9223372036854775807,
+                                -9223372036854775808,
+                                -9223372036854775808)
+   LIMIT 100 OFFSET 9223372036854775807;
+} {}
+do_execsql_test tabfunc01-940 {
+  SELECT * FROM generate_series(1,11,2);
+} {1 3 5 7 9 11}
+do_execsql_test tabfunc01-941 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 4;
+} {9 11}
+do_execsql_test tabfunc01-942 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 5;
+} {11}
+do_execsql_test tabfunc01-943 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 6;
+} {}
+do_execsql_test tabfunc01-944 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 7;
+} {}
+do_execsql_test tabfunc01-945 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 9223372036854775807;
+} {}
+do_execsql_test tabfunc01-950 {
+  SELECT * FROM generate_series(1,11,1) LIMIT 100 OFFSET 10;
+} {11}
+do_execsql_test tabfunc01-951 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 9223372036854775807;
+} {}
+do_execsql_test tabfunc01-952 {
+  SELECT * FROM generate_series(11,1,-1) LIMIT 100 OFFSET 10;
+} {1}
+do_execsql_test tabfunc01-953 {
+  SELECT * FROM generate_series(11,1,-1) LIMIT 100 OFFSET 9223372036854775807;
+} {}
+do_execsql_test tabfunc01-954 {
+  SELECT * FROM generate_series(1,11,1) LIMIT 3 OFFSET 3;
+} {4 5 6}
+
+
+#-------------------------------------------------------------------------
+# Forum post https://sqlite.org/forum/forumpost/e7c3ae1215
+#
+foreach {tn where res} {
+  1000 "where value = 2" 2
+  1010 "where value in (2)" 2
+  1020 "where value in (select 2)" 2
+  1030 "where value = 2 OR value = 4" {2 4}
+  1040 "where value in (2, 4)" {2 4}
+} {
+  do_execsql_test $tn "
+    SELECT value FROM generate_series(1, 5) $where
+  " $res
+}
+
+do_execsql_test 1100 {
+  select 1 as c_0
+    from        
+    generate_series(1, 1) as ref_3
+    where (ref_3.value) in (select 1);
+} {1}
+
+# 2025-03-18 /forumpost/1e17219c88
+# The generate_series() table-valued function is modified so that its
+# rowid is always its value. That way it can be used on the RHS of a
+# RIGHT JOIN.
+#
+do_execsql_test 1200 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(value INT);
+  INSERT INTO t1 VALUES (1),(2),(3);
+  SELECT t1.value, t2.value
+    FROM t1 RIGHT JOIN generate_series(1,3,1) AS t2 USING(value);
+} {1 1 2 2 3 3}
+
+#--------------------------------------------------------------------------
+# New test cases for generate_series associated with the refactor on branch
+# serices-refactor circa 2025-09-27.
+#
+do_execsql_test 1300 {
+  SELECT value
+    FROM generate_series(-9223372036854775808, 9223372036854775807, 2)
+   WHERE value BETWEEN 1 AND 5;
+} {2 4}
+do_execsql_test 1301 {
+  SELECT value
+    FROM generate_series(-9223372036854775808, 9223372036854775807, 2)
+   WHERE value BETWEEN 0 AND 6;
+} {0 2 4 6}
+do_execsql_test 1302 {
+  SELECT value
+    FROM generate_series(-9223372036854775808, 9223372036854775807, 2)
+   WHERE value BETWEEN 0.5 AND 6.25;
+} {2 4 6}
+do_execsql_test 1303 {
+  SELECT value
+    FROM generate_series(-9223372036854775808, 9223372036854775807, 2)
+   WHERE value BETWEEN 9223372036854775803 AND 9223372036854775807
+} {9223372036854775804 9223372036854775806}
+do_execsql_test 1304 {
+  SELECT value
+    FROM generate_series(-9223372036854775808, 9223372036854775807, 2)
+   WHERE value BETWEEN 9223372036854775803 AND 9223372036854775807
+   ORDER BY value DESC;
+} {9223372036854775806 9223372036854775804}
+
+do_execsql_test 1310 {
+  SELECT value FROM generate_series(0) LIMIT 5;
+} {0 1 2 3 4}
+do_execsql_test 1311 {
+  SELECT value FROM generate_series(5) LIMIT 5;
+} {5 6 7 8 9}
+do_execsql_test 1312 {
+  SELECT value FROM generate_series(0) WHERE stop=6;
+} {0 1 2 3 4 5 6}
+do_execsql_test 1313 {
+  SELECT value FROM generate_series(1,10) WHERE step IS NULL;
+} {}
+do_execsql_test 1314 {
+  SELECT value FROM generate_series(0xfffffffd);
+} {4294967293 4294967294 4294967295}
+do_execsql_test 1315 {
+  SELECT value FROM generate_series(4,3,1);
+} {}
+do_execsql_test 1316 {
+  SELECT value FROM generate_series(3,4,-1);
+} {}
+
+do_execsql_test 1320 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value=9.2234e18;
+} {}
+do_execsql_test 1321 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value=-9.2234e18;
+} {}
+do_execsql_test 1322 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value>9223372036854775807;
+} {}
+do_execsql_test 1323 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value>9223372036854775806;
+} {9223372036854775807}
+do_execsql_test 1324 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value>=9223372036854775807;
+} {9223372036854775807}
+
+do_execsql_test 1330 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value<-9223372036854775808;
+} {}
+do_execsql_test 1331 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value<=-9223372036854775808;
+} {-9223372036854775808}
+do_execsql_test 1332 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value<-9223372036854775807;
+} {-9223372036854775808}
+do_execsql_test 1333 {
+  SELECT value FROM generate_series(-9223372036854775808,+9223372036854775807)
+   WHERE value BETWEEN 4 AND 1;
+} {}
+
+do_execsql_test 1340 {
+  SELECT value FROM generate_series(100,0,-10)
+   WHERE value BETWEEN 33 AND 66;
+} {60 50 40}
+do_execsql_test 1341 {
+  SELECT value FROM generate_series(100,0,-10)
+   WHERE value BETWEEN 33 AND 60;
+} {60 50 40}
+do_execsql_test 1342 {
+  SELECT value FROM generate_series(100,0,-10)
+   WHERE value BETWEEN 33 AND 59;
+} {50 40}
+do_execsql_test 1343 {
+  SELECT value
+    FROM generate_series(-9223372036854760000,-9223372036854775808,-10000);
+} {-9223372036854760000 -9223372036854770000}
+do_execsql_test 1344 {
+  SELECT value
+    FROM generate_series(-9223372036854760000,-9223372036854775808,-10000)
+   WHERE value < -9223372036854770001;
+} {}
+do_execsql_test 1345 {
+  SELECT value
+    FROM generate_series(9223372036854760000,9223372036854775807,10000);
+} {9223372036854760000 9223372036854770000}
+do_execsql_test 1346 {
+  SELECT value
+    FROM generate_series(9223372036854760000,9223372036854775807,10000)
+   WHERE value > 9223372036854770001;
+} {}
+
+do_execsql_test 1350 {
+  SELECT value FROM generate_series(100,0,-10)
+   WHERE value BETWEEN 33 AND 38;
+} {}
+do_execsql_test 1351 {
+  SELECT value FROM generate_series(0,100,+10)
+   WHERE value BETWEEN 33 AND 38;
+} {}
+
+do_execsql_test 1360 {
+  SELECT * FROM generate_series(0,-9223372036854775808,-9223372036854775808);
+} {0 -9223372036854775808}
+do_execsql_test 1361 {
+  SELECT * FROM generate_series(0,-9223372036854775808,-9223372036854775808)
+  LIMIT 1 OFFSET 0;
+} {0}
+do_execsql_test 1362 {
+  SELECT * FROM generate_series(0,-9223372036854775808,-9223372036854775808)
+   ORDER BY value ASC;
+} {-9223372036854775808 0}
+do_execsql_test 1363 {
+  SELECT * FROM generate_series(0,-9223372036854775808,-9223372036854775808)
+   ORDER BY value ASC LIMIT 10 OFFSET 1;
+} {0}
+do_execsql_test 1364 {
+  SELECT * FROM generate_series(0,-9223372036854775808,-9223372036854775808)
+   ORDER BY value ASC LIMIT 10 OFFSET 40000000;
+} {}
+
+do_execsql_test 1370 {
+  SELECT * FROM generate_series(0,0,0);
+} {}
+
 
 
 # Free up memory allocations

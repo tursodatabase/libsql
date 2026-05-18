@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool.
 # These tests are specific to the .stats command.
@@ -139,7 +140,7 @@ do_test shell4-3.1 {
   close $fd
   exec $::CLI_ONLY :memory: --interactive ".read t1.txt"
 } {squirrel}
-do_test shell4-3.2 {
+do_test_with_ansi_output shell4-3.2 {
   set fd [open t1.txt wb]
   puts $fd "SELECT 'pound: \302\243';"
   close $fd
@@ -151,6 +152,6 @@ do_test shell4-4.1 {
   puts $fd ".read t1.txt"
   close $fd
   catchcmd ":memory:" ".read t1.txt"
-} {1 {Input nesting limit (25) reached at line 1. Check recursion.}}
+} {1 {t1.txt: Input nesting limit (25) reached at line 1. Check recursion.}}
 
 finish_test

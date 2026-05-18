@@ -39,7 +39,11 @@ public interface fts5_extension_function {
   */
   void xDestroy();
 
-  public static abstract class Abstract implements fts5_extension_function {
+  /**
+     A base implementation of fts5_extension_function() which has a
+     no-op xDestroy() method.
+  */
+  abstract class Abstract implements fts5_extension_function {
     @Override public abstract void call(Fts5ExtensionApi ext, Fts5Context fCx,
                                         sqlite3_context pCx, sqlite3_value argv[]);
     @Override public void xDestroy(){}

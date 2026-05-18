@@ -1419,6 +1419,14 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1errmsg
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_set_errmsg
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3;ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1set_1errmsg
+  (JNIEnv *, jclass, jobject, jint, jstring);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_error_offset
  * Signature: (J)I
  */

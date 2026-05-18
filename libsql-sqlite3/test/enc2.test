@@ -63,7 +63,7 @@ set dbcontents {
   INSERT INTO t1 VALUES('one', 'I', 1);
 }
 # This proc tests that we can open and manipulate the test.db 
-# database, and that it is possible to retreive values in
+# database, and that it is possible to retrieve values in
 # various text encodings.
 #
 proc run_test_script {t enc} {

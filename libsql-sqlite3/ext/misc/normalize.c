@@ -286,7 +286,7 @@ static const unsigned char sqlite3CtypeMap[256] = {
 #define TK_VARIABLE TK_LITERAL
 #define TK_BLOB     TK_LITERAL
 
-/* Disable nuisence warnings about case fall-through */
+/* Disable nuisance warnings about case fall-through */
 #if !defined(deliberate_fall_through) && defined(__GCC__) && __GCC__>=7
 # define deliberate_fall_through __attribute__((fallthrough));
 #else
@@ -297,8 +297,9 @@ static const unsigned char sqlite3CtypeMap[256] = {
 ** Return the length (in bytes) of the token that begins at z[0]. 
 ** Store the token type in *tokenType before returning.
 */
-static int sqlite3GetToken(const unsigned char *z, int *tokenType){
-  int i, c;
+static sqlite3_int64 sqlite3GetToken(const unsigned char *z, int *tokenType){
+  sqlite3_int64 i;
+  int c;
   switch( aiClass[*z] ){  /* Switch on the character-class of the first byte
                           ** of the token. See the comment on the CC_ defines
                           ** above. */
@@ -559,7 +560,7 @@ char *sqlite3_normalize(const char *zSql){
   int i;                /* Next character to read from zSql[] */
   int j;                /* Next slot to fill in on z[] */
   int tokenType;        /* Type of the next token */
-  int n;                /* Size of the next token */
+  sqlite3_int64 n;      /* Size of the next token */
   int k;                /* Loop counter */
 
   nSql = strlen(zSql);

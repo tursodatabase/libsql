@@ -116,7 +116,7 @@ set testprefix rtreedoc2-2
 # 1-dimensional R*Tree, 4 for a 2-dimensional R*Tree, 6 for a
 # 3-dimensional R*Tree, and so forth.
 #
-# The second argument refered to above is the length of the list passed
+# The second argument referred to above is the length of the list passed
 # as the 3rd parameter to the Tcl script.
 #
 do_execsql_test 1.0 {

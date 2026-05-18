@@ -25,7 +25,9 @@
 #define HAVE_UTIME 1
 #else
 /* This is not VxWorks. */
-#define OS_VXWORKS 0
+#ifndef OS_VXWORKS
+#  define OS_VXWORKS 0
+#endif
 #define HAVE_FCHOWN 1
 #define HAVE_READLINK 1
 #define HAVE_LSTAT 1

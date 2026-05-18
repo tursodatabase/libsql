@@ -13,14 +13,7 @@
 **
 */
 
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 #include "sqlite3.h"
 #include <assert.h>
 
@@ -142,7 +135,7 @@ static int SQLITE_TCLAPI backupTestInit(
 
   pBackup = sqlite3_backup_init(pDestDb, zDestName, pSrcDb, zSrcName);
   if( !pBackup ){
-    Tcl_AppendResult(interp, "sqlite3_backup_init() failed", 0);
+    Tcl_AppendResult(interp, "sqlite3_backup_init() failed", NULL);
     return TCL_ERROR;
   }
 

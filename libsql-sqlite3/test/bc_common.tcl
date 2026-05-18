@@ -9,7 +9,7 @@ proc bc_find_binaries {zCaption} {
   set binaries [list]
   set self [info nameofexec]
   set pattern "$self?*"
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     set pattern [string map {\.exe {}} $pattern]
   }
   foreach file [glob -nocomplain $pattern] {

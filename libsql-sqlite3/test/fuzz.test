@@ -130,7 +130,7 @@ do_test fuzz-1.12.1 {
   # The following query was crashing. The later subquery (in the FROM)
   # clause was flattened into the parent, but the code was not repairng
   # the "b" reference in the other sub-query. When the query was executed,
-  # that "b" refered to a non-existant vdbe table-cursor.
+  # that "b" referred to a non-existant vdbe table-cursor.
   #
   execsql {
     SELECT 1 IN ( SELECT b UNION SELECT 1 ) FROM (SELECT b FROM abc);

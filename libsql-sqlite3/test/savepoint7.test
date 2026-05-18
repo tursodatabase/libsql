@@ -95,7 +95,7 @@ do_test savepoint7-2.2 {
   list $rc $msg [db eval {SELECT * FROM t2}]
 } {1 {abort due to ROLLBACK} {}}
 
-# Ticket: https://www.sqlite.org/src/tktview/7f7f8026eda387d544b
+# Ticket: https://sqlite.org/src/tktview/7f7f8026eda387d544b
 # Segfault in the in-memory journal logic triggered by a tricky
 # combination of SAVEPOINT operations.
 #

@@ -4,13 +4,44 @@ This package contains:
  * the sqlite3.h and sqlite3ext.h header files that define the C-language
    interface to the sqlite3.c library file
  * the shell.c file used to build the sqlite3 command-line shell program
- * autoconf/automake installation infrastucture for building on POSIX
+ * autoconf-like installation infrastucture for building on POSIX
    compliant systems
  * a Makefile.msc, sqlite3.rc, and Replace.cs for building with Microsoft
    Visual C++ on Windows
 
-SUMMARY OF HOW TO BUILD
-=======================
+WHY USE THIS PACKAGE?
+=====================
+
+The canonical make system for SQLite requires TCL as part of the build
+process.  Various TCL scripts are used to generate parts of the code and
+TCL is used to run tests.  But some people would prefer to build SQLite
+using only generic tools and without having to install TCL.  The purpose
+of this package is to provide that capability.
+
+This package contains a pre-build SQLite amalgamation file "sqlite3.c"
+(and its associated header file "sqlite3.h").  Because the
+amalgamation has been pre-built, no TCL is required for the code
+generate (the configure script itself is written in TCL but it can use
+the embedded copy of JimTCL).
+
+REASONS TO USE THE CANONICAL BUILD SYSTEM RATHER THAN THIS PACKAGE
+==================================================================
+
+ * the canonical build system allows you to run tests to verify that
+   the build worked
+ * the canonical build system supports more compile-time options
+ * the canonical build system works for any arbitrary check-in to
+   the SQLite source tree
+
+Step-by-step instructions on how to build using the canonical make
+system for SQLite can be found at:
+
+  https://sqlite.org/src/doc/trunk/doc/compile-for-unix.md
+  https://sqlite.org/src/doc/trunk/doc/compile-for-windows.md
+
+
+SUMMARY OF HOW TO BUILD USING THIS PACKAGE
+==========================================
 
   Unix:      ./configure; make
   Windows:   nmake /f Makefile.msc
@@ -18,14 +49,12 @@ SUMMARY OF HOW TO BUILD
 BUILDING ON POSIX
 =================
 
-The generic installation instructions for autoconf/automake are found
-in the INSTALL file.
+The configure script follows common conventions, making it easy
+to use for anyone who has configured a software tree before.
+It supports a number of build-time flags, the full list of which
+can be seen by running:
 
-The following SQLite specific boolean options are supported:
-
-  --enable-readline           use readline in shell tool   [default=yes]
-  --enable-threadsafe         build a thread-safe library  [default=yes]
-  --enable-dynamic-extensions support loadable extensions  [default=yes]
+  ./configure --help
 
 The default value for the CFLAGS variable (options passed to the C
 compiler) includes debugging symbols in the build, resulting in larger
@@ -36,10 +65,11 @@ line like this:
 
 to produce a smaller installation footprint.
 
-Other SQLite compilation parameters can also be set using CFLAGS. For
+Many SQLite compilation parameters can be defined by passing flags
+to the configure script. Others may be passed on in the CFLAGS. For
 example:
 
-  $ CFLAGS="-Os -DSQLITE_THREADSAFE=0" ./configure
+  $ CFLAGS="-Os -DSQLITE_OMIT_DEPRECATED" ./configure
 
 
 BUILDING WITH MICROSOFT VISUAL C++
@@ -53,48 +83,6 @@ Using Microsoft Visual C++ 2005 (or later) is recommended.  Several Windows
 platform variants may be built by adding additional macros to the NMAKE
 command line.
 
-Building for WinRT 8.0
-----------------------
-
-  FOR_WINRT=1
-
-Using Microsoft Visual C++ 2012 (or later) is required.  When using the
-above, something like the following macro will need to be added to the
-NMAKE command line as well:
-
-  "NSDKLIBPATH=%WindowsSdkDir%\..\8.0\lib\win8\um\x86"
-
-Building for WinRT 8.1
-----------------------
-
-  FOR_WINRT=1
-
-Using Microsoft Visual C++ 2013 (or later) is required.  When using the
-above, something like the following macro will need to be added to the
-NMAKE command line as well:
-
-  "NSDKLIBPATH=%WindowsSdkDir%\..\8.1\lib\winv6.3\um\x86"
-
-Building for UWP 10.0
----------------------
-
-  FOR_WINRT=1 FOR_UWP=1
-
-Using Microsoft Visual C++ 2015 (or later) is required.  When using the
-above, something like the following macros will need to be added to the
-NMAKE command line as well:
-
-  "NSDKLIBPATH=%WindowsSdkDir%\..\10\lib\10.0.10586.0\um\x86"
-  "PSDKLIBPATH=%WindowsSdkDir%\..\10\lib\10.0.10586.0\um\x86"
-  "NUCRTLIBPATH=%UniversalCRTSdkDir%\..\10\lib\10.0.10586.0\ucrt\x86"
-
-Building for the Windows 10 SDK
--------------------------------
-
-  FOR_WIN10=1
-
-Using Microsoft Visual C++ 2015 (or later) is required.  When using the
-above, no other macros should be needed on the NMAKE command line.
 
 Other preprocessor defines
 --------------------------
@@ -102,7 +90,7 @@ Other preprocessor defines
 Additionally, preprocessor defines may be specified by using the OPTS macro
 on the NMAKE command line.  However, not all possible preprocessor defines
 may be specified in this manner as some require the amalgamation to be built
-with them enabled (see http://www.sqlite.org/compile.html). For example, the
+with them enabled (see http://sqlite.org/compile.html). For example, the
 following will work:
 
   "OPTS=-DSQLITE_ENABLE_STAT4=1 -DSQLITE_OMIT_JSON=1"

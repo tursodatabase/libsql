@@ -103,7 +103,7 @@
     if(0===db.selectValue('select count(*) from sqlite_master')){
       log("DB is empty. Use the init button to populate it.");
     }else{
-      log("DB contains data from a previous session. Use the Clear Ctorage button to delete it.");
+      log("DB contains data from a previous session. Use the Clear Storage button to delete it.");
       btnSelect.click();
     }
   };

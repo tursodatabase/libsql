@@ -3,18 +3,29 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>libSQL Fiddle</title>
+    <title>SQLite3 Fiddle</title>
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.34.0/js/jquery.terminal.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.34.0/css/jquery.terminal.min.css"/>
-    <link rel="stylesheet" href="emscripten.css"/>
+    <!--
+        To add a terminal-style view using jquery.terminal[^1],
+        uncomment the following two HTML lines and ensure that these
+        files are on the web server.
+
+        jquery-bundle.min.js is a concatenation of jquery.min.js from
+        [^2] and jquery.terminal.min.js from [^1].
+        jquery.terminal.min.css is from [^1].
+
+        [^1]: https://github.com/jcubic/jquery.terminal
+        [^2]: https://jquery.com
+    -->
+    <!--script src="jqterm/jqterm-bundle.min.js"></script>
+    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"-->
     <style>
       /* The following styles are for app-level use. */
       :root {
           --sqlite-blue: #044a64;
-          --textarea-color1: #044a64;
+          --textarea-color1: #000 /*044a64 is nice too*/;
           --textarea-color2: white;
+          --size: 1.25 /* used by jqterm to calculate font size and the default is too tiny.*/;
       }
       textarea {
           font-family: monospace;
@@ -170,13 +181,51 @@
           display: flex;
           flex-direction: column-reverse;
       }
+      #view-about {
+        flex: auto;
+        overflow: auto;
+      }
+      #view-about h1:first-child {
+        display: flex;
+      }
+      #view-about h1:first-child > button {
+        align-self: center;
+        margin-left: 1em;
+      }
+
+      /* emcscript-related styling, used during the module load/intialization processes... */
+      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+      div.emscripten { text-align: center; }
+      div.emscripten_border { border: 1px solid black; }
+      #module-spinner { overflow: visible; }
+      #module-spinner > * {
+          margin-top: 1em;
+      }
+      .spinner {
+          height: 50px;
+          width: 50px;
+          margin: 0px auto;
+          animation: rotation 0.8s linear infinite;
+          border-left: 10px solid rgb(0,150,240);
+          border-right: 10px solid rgb(0,150,240);
+          border-bottom: 10px solid rgb(0,150,240);
+          border-top: 10px solid rgb(100,0,200);
+          border-radius: 100%;
+          background-color: rgb(200,100,250);
+      }
+      @keyframes rotation {
+          from {transform: rotate(0deg);}
+          to {transform: rotate(360deg);}
+      }
     </style>
   </head>
   <body>
     <header id='titlebar'>
-      <span>libSQL Fiddle</span>
-      <span class='powered-by'>Powered by
-        <a href='https://libsql.org'>libSQL</a></span>
+      <span>SQLite3 Fiddle</span>
+      <span id='titlebar-buttons'>
+        <span class='powered-by'>Powered by
+          <a href='https://sqlite.org'>SQLite3</a></span>
+      </span>
     </header>
     <!-- emscripten bits -->
     <figure id="module-spinner">
@@ -190,7 +239,7 @@
     </figure>
     <div class="emscripten" id="module-status">Downloading...</div>
     <div class="emscripten">
-      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>
     </div><!-- /emscripten bits -->
 
     <div id='view-terminal' class='app-view hidden initially-hidden'>
@@ -199,45 +248,6 @@
     </div>
 
     <div id='view-split' class='app-view initially-hidden'>
-      <fieldset class='options collapsible'>
-        <legend><button class='fieldset-toggle'>Options</button></legend>
-        <div class=''>
-          <span class='labeled-input'>
-            <input type='checkbox' id='opt-cb-sbs'
-                   data-csstgt='#main-wrapper'
-                   data-cssclass='side-by-side'
-                   data-config='sideBySide'>
-            <label for='opt-cb-sbs'>Side-by-side</label>
-          </span>
-          <span class='labeled-input'>
-            <input type='checkbox' id='opt-cb-swapio'
-                   data-csstgt='#main-wrapper'
-                   data-cssclass='swapio'
-                   data-config='swapInOut'>
-            <label for='opt-cb-swapio'>Swap in/out</label>
-          </span>
-          <span class='labeled-input'>
-            <input type='checkbox' id='opt-cb-autoscroll'
-                   data-config='autoScrollOutput'>
-            <label for='opt-cb-autoscroll'>Auto-scroll output</label>
-          </span>
-          <span class='labeled-input'>
-            <input type='checkbox' id='opt-cb-autoclear'
-                   data-config='autoClearOutput'>
-            <label for='opt-cb-autoclear'>Auto-clear output</label>
-          </span>
-          <span class='labeled-input'>
-            <input type='file' id='load-db' class='hidden'/>
-            <button id='btn-load-db'>Load DB...</button>
-          </span>
-          <span class='labeled-input'>
-            <button id='btn-export'>Download DB</button>
-          </span>
-          <span class='labeled-input'>
-            <button id='btn-reset'>Reset DB</button>
-          </span>
-        </div>
-      </fieldset><!-- .options -->
       <div id='main-wrapper' class=''>
         <fieldset class='zone-wrapper input'>
           <legend><div class='button-bar'>
@@ -270,8 +280,116 @@
           <div><textarea id="output" readonly
                          placeholder="Shell output."></textarea></div>
         </fieldset>
-      </div>
+      </div><!-- #main-wrapper -->
     </div> <!-- #view-split -->
-    <script src="fiddle.js"></script>
+
+<div class='hidden app-view' id='view-about'>
+  <h1>About SQLite Fiddle <button id='btn-about-close'>close</button></h1>
+
+  <p>Fiddle is a JavaScript application wrapping a <a href='https://webassembly.org'>WebAssembly</a>
+    build of <a href="https://sqlite.org/cli.html">the SQLite CLI shell</a>, slightly
+    modified to account for browser-based user input. Aside from the different layout,
+    it works just like the CLI shell. This copy was built with SQLite version
+    <a id='sqlite-version-link'></a>.
+  </p>
+
+  <p>This app is provided in the hope that it may prove interesting or useful
+    but it is not an officially-supported deliverable of the SQLite project.
+    It is subject to any number of changes or outright removal at any time.
+    That said, for as long as it's online we do respond to support requests
+    in <a href="https://sqlite.org/forum">the SQLite forum</a>.
+  </p>
+
+  <p>This app runs on your device. After loading, it does not interact
+    with the remote server at all. Similarly, this app does not use any
+    HTTP cookies.</p>
+
+  <p>Fiddle databases are transient in-memory databases unless they
+    specifically use a persistent storage option (if available, help
+    text in the SQL result output area will indicate how to use
+    persistent storage when this app starts up).
+  </p>
+
+  <h1>Usage Summary</h1>
+
+  <ul>
+    <li class='hidden unhide-if-terminal-available'>In "terminal
+      mode" it accepts input just like the CLI shell does.</li>
+    <li>In split-view mode:
+      <ul>
+        <li>Input can be executed with either the Run
+          button or tapping one of Ctrl-enter or Shift-enter from within
+          the text input field.  If a portion of the input field is
+          selected, only that portion will be run.
+        </li>
+        <li>The various toggle checkboxes can be used to tweak the layout
+          and behaviors. Those toggles are persistent if the JS environment
+          allows it.
+        </li>
+      </ul>
+    </li>
+    <li class='remove-if-terminal-available'>"Terminal mode" is
+      not available in this deployment.
+    </li>
+    <li>Databases can be imported and exported using the buttons in
+      the Options toolbar. No specific limit for imported database
+      sizes is imposed, but large databases may cause it to fail with
+      an out-of-memory error.</li>
+    <!--li></li-->
+  </ul>
+
+</div><!-- #view-about -->
+
+<fieldset class='options'>
+  <legend>Options</legend>
+  <div class=''>
+    <span class='labeled-input'>
+      <input type='file' id='load-db' class='hidden'/>
+      <button id='btn-load-db'>Load DB...</button>
+    </span>
+    <span class='labeled-input'>
+      <button id='btn-export'>Download DB</button>
+    </span>
+    <span class='labeled-input'>
+      <button id='btn-reset'>Reset DB</button>
+    </span>
+    <span id='terminal-button-placeholder' class='hidden'></span>
+    <span class='labeled-input'>
+      <button id='btn-about'>About...</button>
+    </span>
+    <span class='labeled-input hide-in-terminal'>
+      <input type='checkbox' id='opt-cb-sbs'
+             data-csstgt='#main-wrapper'
+             data-cssclass='side-by-side'
+             data-config='sideBySide'
+             >
+      <label for='opt-cb-sbs'>Side-by-side</label>
+    </span>
+    <span class='labeled-input hide-in-terminal'>
+      <input type='checkbox' id='opt-cb-swapio'
+             data-csstgt='#main-wrapper'
+             data-cssclass='swapio'
+             data-config='swapInOut'
+             >
+      <label for='opt-cb-swapio'>Swap in/out</label>
+    </span>
+    <span class='labeled-input hide-in-terminal'>
+      <input type='checkbox' id='opt-cb-autoscroll'
+             data-config='autoScrollOutput'
+             >
+      <label for='opt-cb-autoscroll'>Auto-scroll output</label>
+    </span>
+    <span class='labeled-input hide-in-terminal'>
+      <input type='checkbox' id='opt-cb-autoclear'
+             data-config='autoClearOutput'>
+      <label for='opt-cb-autoclear'>Auto-clear output</label>
+    </span>
+    <span class='labeled-input'>
+      <span id='opt-wasm-info'>WASM: ???</span>
+    </span>
+  </div>
+</fieldset><!-- .options -->
+
+<script src="fiddle.js"></script>
   </body>
 </html>

@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5content
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -328,4 +328,41 @@ do_execsql_test 8.3.2 { INSERT INTO t1(t1) VALUES('rebuild') }
 do_execsql_test 8.3.3 { SELECT * FROM t1 WHERE rowid=1 } {one}
 do_execsql_test 8.3.4 { SELECT rowid FROM t1('two') } {2}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'one two three');
+  INSERT INTO t1 VALUES(2, 'one two three');
+
+  CREATE VIRTUAL TABLE ft USING fts5(b, content=t1, content_rowid=a);
+  INSERT INTO ft(ft) VALUES('rebuild');
+}
+
+do_execsql_test 9.2 {
+  SELECT rowid, b FROM ft('two');
+} {
+  1 {one two three}
+  2 {one two three}
+}
+
+do_execsql_test 9.3 {
+  DELETE FROM t1 WHERE a=2;
+} 
+
+do_catchsql_test 9.4 {
+  SELECT rowid FROM ft('two');
+} {0 {1 2}}
+
+do_catchsql_test 9.5 {
+  SELECT * FROM ft('two');
+} {1 {fts5: missing row 2 from content table 'main'.'t1'}}
+
+fts5_aux_test_functions db
+
+do_catchsql_test 9.6 {
+  SELECT rowid, fts5_columntext(ft, 0) FROM ft('two');
+} {1 SQLITE_CORRUPT_VTAB}
+
 finish_test
+

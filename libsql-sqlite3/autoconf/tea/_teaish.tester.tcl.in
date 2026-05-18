@@ -1,0 +1,50 @@
+# -*- tcl -*-
+#
+# Unless this file is named _teaish.tester.tcl.in, you are probably
+# looking at an automatically generated/filtered copy and should
+# probably not edit it.
+#
+# This is the wrapper script invoked by teaish's "make test" recipe.
+# It gets passed 3 args:
+#
+# $1 = the DLL name, or "" if the extension has no DLL
+#
+# $2 = the "load prefix" for Tcl's [load] or empty if $1 is empty
+#
+# $3 = the /path/to/teaish/tester.tcl (test utility code)
+#
+@if TEAISH_VSATISFIES_CODE
+@TEAISH_VSATISFIES_CODE@
+@endif
+if {[llength [lindex $::argv 0]] > 0} {
+  load [file normalize [lindex $::argv 0]] [lindex $::argv 1];
+  # ----^^^^^^^ needed on Haiku when argv 0 is just a filename, else
+  # load cannot find the file.
+}
+set ::argv [lassign $argv - -]
+source -encoding utf-8 [lindex $::argv 0]; # teaish/tester.tcl
+@if TEAISH_PKGINIT_TCL
+apply {{file} {
+  set dir [file dirname $::argv0]
+  source -encoding utf-8 $file
+}} [join {@TEAISH_PKGINIT_TCL@}]
+@endif
+@if TEAISH_TM_TCL
+apply {{file} {
+  set dir [file dirname $::argv0]
+  source -encoding utf-8 $file
+}} [join {@TEAISH_TM_TCL@}]
+@endif
+@if TEAISH_TEST_TCL
+apply {{file} {
+  # Populate state for [tester.tcl::teaish-build-flag*]
+  array set ::teaish__BuildFlags @TEAISH__DEFINES_MAP@
+  set dir [file normalize [file dirname $file]]
+  #test-fail "Just testing"
+  source -encoding utf-8 $file
+}} [join {@TEAISH_TEST_TCL@}]
+@else # TEAISH_TEST_TCL
+# No $TEAISH_TEST_TCL provided, so here's a default test which simply
+# loads the extension.
+puts {Extension @TEAISH_NAME@ @TEAISH_VERSION@ successfully loaded from @TEAISH_TESTER_TCL@}
+@endif

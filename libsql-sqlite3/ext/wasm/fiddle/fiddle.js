@@ -112,7 +112,7 @@
 
     /**
        A proxy for localStorage or sessionStorage or a
-       page-instance-local proxy, if neither one is availble.
+       page-instance-local proxy, if neither one is available.
 
        Which exact storage implementation is uses is unspecified, and
        apps must not rely on it.
@@ -329,6 +329,30 @@
   SF.worker = new Worker('fiddle-worker.js'+self.location.search);
   SF.worker.onmessage = (ev)=>SF.runMsgHandlers(ev.data);
   SF.addMsgHandler(['stdout', 'stderr'], (ev)=>SF.echo(ev.data));
+  SF.addMsgHandler('sqlite-version', (ev)=>{
+    const v = ev.data;
+    const a = E('#sqlite-version-link');
+    const li = v.srcId.split(' ')/*DATE TIME HASH*/;
+    a.setAttribute('href',
+                   //'https://sqlite.org/src/timeline/?c='+li[2].substr(0,20)
+                   'https://sqlite.org/src/info/'+li[2].substr(0,20)
+                  );
+    a.setAttribute('target', '_blank');
+    a.innerText = [
+      v.lib,
+      v.srcId.substr(0,34)
+    ].join(' ');
+    SF.echo("SQLite version",a.innerText);
+  });
+  SF.addMsgHandler('wasm-info', (ev)=>{
+    const v = ev.data;
+    SF.e.wasmInfo.innerText = 'WASM: '+(
+      4===v.pointerSize ? 32 : 64
+    )+'-bit'
+    //+' heap size: '+Number(v.heapSize)
+    // Heap size is not changing even when loading a huge db?
+    ;
+  });
 
   /* querySelectorAll() proxy */
   const EAll = function(/*[element=document,] cssSelector*/){
@@ -391,6 +415,144 @@
     self.onSFLoaded();
   });
 
+  SF.e ={
+    about: E('#view-about'),
+    split: E('#view-split'),
+    wasmInfo: E('#opt-wasm-info'),
+    terminal: E('#view-terminal'),
+    hideInTerminal: EAll('.hide-in-terminal'
+                         /* Elements to hide when in terminal mode */)
+  };
+  SF.eViews = EAll('.app-view');
+  SF.setMainView = function(eMain){
+    if( SF.e.main === eMain ) return;
+    SF.eViews.forEach((e)=>{
+      if( e===eMain ) e.classList.remove('hidden');
+      else e.classList.add('hidden');
+    });
+    SF.e.hideInTerminal.forEach(e=>{
+      if( eMain === SF.e.terminal ) e.classList.add('hidden');
+      else e.classList.remove('hidden');
+    });
+    SF.e.main = eMain;
+    SF.ForceResizeKludge();
+  };
+
+  /** Toggle the "About" view on and off. */
+  SF.toggleAbout = function(){
+    if( SF.e.about.classList.contains('hidden') ){
+      SF.e.about.$returnTo = SF.e.main;
+      SF.setMainView( SF.e.about );
+    }else{
+      const e = SF.e.about.$returnTo;
+      delete SF.e.about.$returnTo;
+      SF.setMainView( e );
+    }
+  };
+
+  /**
+     Given a DOM element, this routine measures its "effective
+     height", which is the bounding top/bottom range of this element
+     and all of its children, recursively. For some DOM structure
+     cases, a parent may have a reported height of 0 even though
+     children have non-0 sizes.
+
+     Returns 0 if !e or if the element really has no height.
+  */
+  const effectiveHeight = function f(e){
+    if(!e) return 0;
+    if(!f.measure){
+      f.measure = function callee(e, depth){
+        if(!e) return;
+        const m = e.getBoundingClientRect();
+        if(0===depth){
+          callee.top = m.top;
+          callee.bottom = m.bottom;
+        }else{
+          callee.top = m.top ? Math.min(callee.top, m.top) : callee.top;
+          callee.bottom = Math.max(callee.bottom, m.bottom);
+        }
+        Array.prototype.forEach.call(e.children,(e)=>callee(e,depth+1));
+        if(0===depth){
+          //console.debug("measure() height:",e.className, callee.top, callee.bottom, (callee.bottom - callee.top));
+          f.extra += callee.bottom - callee.top;
+        }
+        return f.extra;
+      };
+    }
+    f.extra = 0;
+    f.measure(e,0);
+    return f.extra;
+  };
+
+  /**
+     Returns a function, that, as long as it continues to be invoked,
+     will not be triggered. The function will be called after it stops
+     being called for N milliseconds. If `immediate` is passed, call
+     the callback immediately and hinder future invocations until at
+     least the given time has passed.
+
+     If passed only 1 argument, or passed a falsy 2nd argument,
+     the default wait time set in this function's $defaultDelay
+     property is used.
+
+     Source: underscore.js, by way of https://davidwalsh.name/javascript-debounce-function
+  */
+  const debounce = function f(func, wait, immediate) {
+    var timeout;
+    if(!wait) wait = f.$defaultDelay;
+    return function() {
+      const context = this, args = Array.prototype.slice.call(arguments);
+      const later = function() {
+        timeout = undefined;
+        if(!immediate) func.apply(context, args);
+      };
+      const callNow = immediate && !timeout;
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+      if(callNow) func.apply(context, args);
+    };
+  };
+  debounce.$defaultDelay = 500 /*arbitrary*/;
+
+  SF.ForceResizeKludge = (function(){
+    /* Workaround for Safari mayhem regarding use of vh CSS
+       units....  We cannot use vh units to set the main view
+       size because Safari chokes on that, so we calculate
+       that height here. Larger than ~95% is too big for
+       Firefox on Android, causing the input area to move
+       off-screen. */
+    const eVisibles = EAll('.app-view');
+    const elemsToCount = [
+      /* Elements which we need to always count in the
+         visible body size. */
+      E('body > header'),
+      E('body > footer'),
+      E('body > fieldset.options')
+    ];
+    const resized = function f(){
+      if(f.$disabled) return;
+      const wh = window.innerHeight;
+      var ht;
+      var extra = 0;
+      elemsToCount.forEach((e)=>e ? extra += effectiveHeight(e) : false);
+      ht = wh - extra;
+      eVisibles.forEach(function(e){
+        e.style.height =
+          e.style.maxHeight = [
+            "calc(", (ht>=100 ? ht : 100), "px",
+            " - 2em"/*fudge value*/,")"
+            /* ^^^^ hypothetically not needed, but both
+               Chrome/FF on Linux will force scrollbars on the
+               body if this value is too small. */
+          ].join('');
+      });
+    };
+    resized.$disabled = true/*gets deleted when setup is finished*/;
+    window.addEventListener('resize', debounce(resized, 250), false);
+    return resized;
+  })();
+
   /**
      Performs all app initialization which must wait until after the
      worker module is loaded. This function removes itself when it's
@@ -398,13 +560,25 @@
   */
   self.onSFLoaded = function(){
     delete this.onSFLoaded;
+
     // Unhide all elements which start out hidden
     EAll('.initially-hidden').forEach((e)=>e.classList.remove('initially-hidden'));
+    SF.e.main = EAll('.app-view:not(.hidden)')[0]
+        /** The main view widget. Initially the first non-hidden
+            .app-view element. */;
+    if( (new URL(self.location.href).searchParams).has('about') ){
+      SF.toggleAbout() /* for use while editing the About page */;
+    }
     E('#btn-reset').addEventListener('click',()=>SF.resetDb());
+    EAll('#btn-about, #btn-about-close').forEach((e)=>{
+      e.addEventListener('click',()=>SF.toggleAbout())
+    });
     const taInput = E('#input');
     const btnClearIn = E('#btn-clear');
+    const selectExamples = E('#select-examples');
     btnClearIn.addEventListener('click',function(){
       taInput.value = '';
+      selectExamples.selectedIndex = 0;
     },false);
     // Ctrl-enter and shift-enter both run the current SQL.
     taInput.addEventListener('keydown',function(ev){
@@ -469,13 +643,13 @@
 
     SF.addMsgHandler('working',function f(ev){
       switch(ev.data){
-          case 'start': /* See notes in preStartWork(). */; return;
-          case 'end':
-            preStartWork._.pageTitle.innerText = preStartWork._.pageTitleOrig;
-            btnShellExec.innerText = preStartWork._.btnLabel;
-            btnShellExec.removeAttribute('disabled');
-            btnInterrupt.setAttribute('disabled','disabled');
-            return;
+        case 'start': /* See notes in preStartWork(). */; return;
+        case 'end':
+          preStartWork._.pageTitle.innerText = preStartWork._.pageTitleOrig;
+          btnShellExec.innerText = preStartWork._.btnLabel;
+          btnShellExec.removeAttribute('disabled');
+          btnInterrupt.setAttribute('disabled','disabled');
+          return;
       }
       console.warn("Unhandled 'working' event:",ev.data);
     });
@@ -616,108 +790,6 @@
       }, false);
     });
 
-    /**
-       Given a DOM element, this routine measures its "effective
-       height", which is the bounding top/bottom range of this element
-       and all of its children, recursively. For some DOM structure
-       cases, a parent may have a reported height of 0 even though
-       children have non-0 sizes.
-
-       Returns 0 if !e or if the element really has no height.
-    */
-    const effectiveHeight = function f(e){
-      if(!e) return 0;
-      if(!f.measure){
-        f.measure = function callee(e, depth){
-          if(!e) return;
-          const m = e.getBoundingClientRect();
-          if(0===depth){
-            callee.top = m.top;
-            callee.bottom = m.bottom;
-          }else{
-            callee.top = m.top ? Math.min(callee.top, m.top) : callee.top;
-            callee.bottom = Math.max(callee.bottom, m.bottom);
-          }
-          Array.prototype.forEach.call(e.children,(e)=>callee(e,depth+1));
-          if(0===depth){
-            //console.debug("measure() height:",e.className, callee.top, callee.bottom, (callee.bottom - callee.top));
-            f.extra += callee.bottom - callee.top;
-          }
-          return f.extra;
-        };
-      }
-      f.extra = 0;
-      f.measure(e,0);
-      return f.extra;
-    };
-
-    /**
-       Returns a function, that, as long as it continues to be invoked,
-       will not be triggered. The function will be called after it stops
-       being called for N milliseconds. If `immediate` is passed, call
-       the callback immediately and hinder future invocations until at
-       least the given time has passed.
-
-       If passed only 1 argument, or passed a falsy 2nd argument,
-       the default wait time set in this function's $defaultDelay
-       property is used.
-
-       Source: underscore.js, by way of https://davidwalsh.name/javascript-debounce-function
-    */
-    const debounce = function f(func, wait, immediate) {
-      var timeout;
-      if(!wait) wait = f.$defaultDelay;
-      return function() {
-        const context = this, args = Array.prototype.slice.call(arguments);
-        const later = function() {
-          timeout = undefined;
-          if(!immediate) func.apply(context, args);
-        };
-        const callNow = immediate && !timeout;
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-        if(callNow) func.apply(context, args);
-      };
-    };
-    debounce.$defaultDelay = 500 /*arbitrary*/;
-
-    const ForceResizeKludge = (function(){
-      /* Workaround for Safari mayhem regarding use of vh CSS
-         units....  We cannot use vh units to set the main view
-         size because Safari chokes on that, so we calculate
-         that height here. Larger than ~95% is too big for
-         Firefox on Android, causing the input area to move
-         off-screen. */
-      const appViews = EAll('.app-view');
-      const elemsToCount = [
-        /* Elements which we need to always count in the
-           visible body size. */
-        E('body > header'),
-        E('body > footer')
-      ];
-      const resized = function f(){
-        if(f.$disabled) return;
-        const wh = window.innerHeight;
-        var ht;
-        var extra = 0;
-        elemsToCount.forEach((e)=>e ? extra += effectiveHeight(e) : false);
-        ht = wh - extra;
-        appViews.forEach(function(e){
-          e.style.height =
-            e.style.maxHeight = [
-              "calc(", (ht>=100 ? ht : 100), "px",
-              " - 2em"/*fudge value*/,")"
-              /* ^^^^ hypothetically not needed, but both
-                 Chrome/FF on Linux will force scrollbars on the
-                 body if this value is too small. */
-            ].join('');
-        });
-      };
-      resized.$disabled = true/*gets deleted when setup is finished*/;
-      window.addEventListener('resize', debounce(resized, 250), false);
-      return resized;
-    })();
-
     /** Set up a selection list of examples */
     (function(){
       const xElem = E('#select-examples');
@@ -733,16 +805,15 @@
         ]},
               //{name: "Timer on", sql: ".timer on"},
               // ^^^ re-enable if emscripten re-enables getrusage()
+        {name: "Box Mode", sql: ".mode box"},
         {name: "Setup table T", sql:[
           ".nullvalue NULL\n",
           "CREATE TABLE t(a,b);\n",
           "INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);\n",
           "SELECT * FROM t;\n"
         ]},
-        {name: "Table list", sql: ".tables"},
-        {name: "Box Mode", sql: ".mode box"},
-        {name: "JSON Mode", sql: ".mode json"},
-        {name: "Mandlebrot", sql:[
+        {name: "sqlite_schema", sql: "select * from sqlite_schema"},
+        {name: "Mandelbrot", sql:[
           "WITH RECURSIVE",
           "  xaxis(x) AS (VALUES(-2.0) UNION ALL SELECT x+0.05 FROM xaxis WHERE x<1.2),\n",
           "  yaxis(y) AS (VALUES(-1.0) UNION ALL SELECT y+0.1 FROM yaxis WHERE y<1.0),\n",
@@ -760,7 +831,13 @@
           "    FROM m2 GROUP BY cy\n",
           "  )\n",
           "SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;\n",
-        ]}
+        ]},
+        {name: "JSON pretty-print",
+         sql: "select json_pretty(json_object('ex',json('[52,3.14159]')))"
+        },
+        {name: "JSON pretty-print (with tabs)",
+         sql: "select json_pretty(json_object('ex',json('[52,3.14159]')),char(0x09))"
+        }
       ];
       const newOpt = function(lbl,val){
         const o = document.createElement('option');
@@ -783,29 +860,35 @@
     })()/* example queries */;
 
     //SF.echo(null/*clear any output generated by the init process*/);
-    if(window.jQuery && window.jQuery.terminal){
+    if(window.jQuery && window.jQuery.terminal && SF.e.terminal){
       /* Set up the terminal-style view... */
-      const eTerm = window.jQuery('#view-terminal').empty();
-      SF.jqTerm = eTerm.terminal(SF.dbExec.bind(SF),{
-        prompt: 'libsql> ',
+      const jqeTerm = window.jQuery(SF.e.terminal).empty();
+      SF.jqTerm = jqeTerm.terminal(SF.dbExec.bind(SF),{
+        prompt: 'sqlite> ',
         greetings: false /* note that the docs incorrectly call this 'greeting' */
       });
+      EAll('.unhide-if-terminal-available').forEach(e=>{
+        e.classList.remove('hidden');
+      });
+      EAll('.remove-if-terminal-available').forEach(e=>{
+        e.parentElement.removeChild(e);
+      });
       /* Set up a button to toggle the views... */
-      const head = E('header#titlebar');
+      const ePlaceholder = E('#terminal-button-placeholder');
+      ePlaceholder.classList.add('labeled-input');
+      ePlaceholder.classList.remove('hidden');
       const btnToggleView = document.createElement('button');
-      btnToggleView.appendChild(document.createTextNode("Toggle View"));
-      head.appendChild(btnToggleView);
+      btnToggleView.innerText = "Toggle view";
+      ePlaceholder.appendChild( btnToggleView );
       btnToggleView.addEventListener('click',function f(){
-        EAll('.app-view').forEach(e=>e.classList.toggle('hidden'));
-        if(document.body.classList.toggle('terminal-mode')){
-          ForceResizeKludge();
-        }
+        const terminalOn = document.body.classList.toggle('terminal-mode');
+        SF.setMainView( terminalOn ? SF.e.terminal : SF.e.split );
       }, false);
       btnToggleView.click()/*default to terminal view*/;
     }
     const urlParams = new URL(self.location.href).searchParams;
     SF.dbExec(urlParams.get('sql') || null);
-    delete ForceResizeKludge.$disabled;
-    ForceResizeKludge();
+    delete SF.ForceResizeKludge.$disabled;
+    SF.ForceResizeKludge();
   }/*onSFLoaded()*/;
 })();

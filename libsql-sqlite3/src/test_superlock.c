@@ -256,14 +256,7 @@ int sqlite3demo_superlock(
 
 #ifdef SQLITE_TEST
 
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 
 struct InterpAndScript {
   Tcl_Interp *interp;
@@ -345,7 +338,7 @@ static int SQLITE_TCLAPI superlock_cmd(
   if( rc!=SQLITE_OK ){
     extern const char *sqlite3ErrStr(int);
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrStr(rc), NULL);
     return TCL_ERROR;
   }
 

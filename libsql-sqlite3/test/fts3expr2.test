@@ -46,7 +46,7 @@ ifcapable !fts3 {
 #     * Whether or not superflous parenthesis are included. i.e. if
 #       "a OR b AND (c OR d)" or "a OR (b AND (c OR d))" is generated.
 #
-#     * Whether or not explict AND operators are used. i.e. if
+#     * Whether or not explicit AND operators are used. i.e. if
 #     "a OR b AND c" or "a OR b c" is generated.
 #
 

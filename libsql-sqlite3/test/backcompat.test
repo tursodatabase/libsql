@@ -112,7 +112,7 @@ proc read_file {zFile} {
   set zData {}
   if {[file exists $zFile]} {
     set fd [open $zFile]
-    fconfigure $fd -translation binary -encoding binary
+    fconfigure $fd -translation binary
 
     if {[file size $zFile]<=$::sqlite_pending_byte || $zFile != "test.db"} {
       set zData [read $fd]
@@ -129,7 +129,7 @@ proc read_file {zFile} {
 }
 proc write_file {zFile zData} {
   set fd [open $zFile w]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   puts -nonewline $fd $zData
   close $fd
 }

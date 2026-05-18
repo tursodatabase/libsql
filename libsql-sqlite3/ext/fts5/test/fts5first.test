@@ -22,6 +22,7 @@ do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE x1 USING fts5(a, b);
 }
 
+unset -nocomplain res
 foreach {tn expr ok} {
   1 {^abc}           1
   2 {^abc + def}     1

@@ -799,7 +799,7 @@ do_execsql_test join-14.9 {
 } {111 {}}
 
 # Verify the fix to ticket 
-# https://www.sqlite.org/src/tktview/7fde638e94287d2c948cd9389
+# https://sqlite.org/src/tktview/7fde638e94287d2c948cd9389
 #
 db close
 sqlite3 db :memory:
@@ -819,7 +819,7 @@ do_execsql_test join-14.12 {
 } {4 {} {} | 2 2 1 |}
 
 # Verify the fix for ticket
-# https://www.sqlite.org/src/info/892fc34f173e99d8
+# https://sqlite.org/src/info/892fc34f173e99d8
 #
 db close
 sqlite3 db :memory:
@@ -904,7 +904,7 @@ do_execsql_test join-15.110 {
    ORDER BY a1, a2, a3, a4, a5;
 } {1 {} {} {} {} 1 11 {} {} {} 1 12 {} {} {} 1 12 121 {} {} 1 13 {} {} {}}
 
-# 2019-02-05 Ticket https://www.sqlite.org/src/tktview/5948e09b8c415bc45da5c
+# 2019-02-05 Ticket https://sqlite.org/src/tktview/5948e09b8c415bc45da5c
 # Error in join due to the LEFT JOIN strength reduction optimization.
 #
 do_execsql_test join-16.100 {
@@ -1001,6 +1001,21 @@ do_execsql_test join-20.2 {
   CREATE INDEX t1x ON t1(0) WHERE NULL IN (c1);
   SELECT * FROM t0 LEFT JOIN t1 WHERE NULL IN (c1);
 } {}
+
+# 2025-05-29 forum post 7dee41d32506c4ae
+# The complaint in the forum post appears to be the same as for the
+# ticket on 2019-11-02, only for RIGHT JOIN instead of LEFT JOIN.  Note
+# that RIGHT JOIN did not yet exist in SQLite when the ticket was
+# written and fixed.
+#
+do_execsql_test join-20.3 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x INT);      INSERT INTO t1(x) VALUES(1);
+  CREATE TABLE t2(y BOOLEAN);  INSERT INTO t2(y) VALUES(false);
+  CREATE TABLE t3(z INT);      INSERT INTO t3(z) VALUES(3);
+  CREATE INDEX t2y ON t2(y) WHERE y;
+  SELECT quote(z) FROM t1 RIGHT JOIN t2 ON y LEFT JOIN t3 ON y;
+} {NULL}
 
 # 2019-11-30 ticket 7f39060a24b47353
 # Do not allow a WHERE clause term to qualify a partial index on the
@@ -1288,5 +1303,70 @@ do_execsql_test join-30.3 {
     FROM t0 JOIN t1 ON z=a RIGHT JOIN t2 ON a=b LEFT JOIN v5 ON false
    WHERE x <= y;
 } {}
+
+# 2025-05-30 https://sqlite.org/forum/forumpost/4fc70203b61c7e12
+#
+# When converting a USING(x) or NATURAL into the constraint expression
+# t1.x==t2.x, mark the t1.x term as EP_CanBeNull if it is the left table
+# of a RIGHT JOIN.
+#
+reset_db
+db null NULL
+do_execsql_test join-31.1 {
+  CREATE TABLE t1(c0 INT , c1 INT); INSERT INTO t1(c0, c1) VALUES(NULL,11);
+  CREATE TABLE t2(c0 INT NOT NULL);
+  CREATE TABLE t2n(c0 INT);
+  CREATE TABLE t3(x INT);           INSERT INTO t3(x) VALUES(3);
+  CREATE TABLE t4(y INT);           INSERT INTO t4(y) VALUES(4);
+  CREATE TABLE t5(c0 INT, x INT);   INSERT INTO t5 VALUES(NULL, 5);
+}
+do_execsql_test join-31.2 {
+  SELECT * FROM t2 RIGHT JOIN t3 ON true LEFT JOIN t1 USING(c0);
+} {NULL 3 NULL}
+do_execsql_test join-31.3 {
+  SELECT * FROM t2 RIGHT JOIN t3 ON true NATURAL LEFT JOIN t1;
+} {NULL 3 NULL}
+do_execsql_test join-31.4 {
+  SELECT * FROM t2n RIGHT JOIN t3 ON true LEFT JOIN t1 USING(c0);
+} {NULL 3 NULL}
+do_execsql_test join-31.5 {
+  SELECT * FROM t5 LEFT JOIN t1 USING(c0);
+} {NULL 5 NULL}
+do_execsql_test join-31.6 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true LEFT JOIN t1 USING(c0);
+} {3 NULL NULL}
+do_execsql_test join-31.7 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true NATURAL LEFT JOIN t1;
+} {3 NULL NULL}
+do_execsql_test join-31.8 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true JOIN t4 ON true NATURAL LEFT JOIN t1;
+} {3 NULL 4 NULL}
+
+# 2025-06-16 https://sqlite.org/forum/forumpost/68f29a2005
+#
+# The transitive-constraint optimization was not working for RIGHT JOIN.
+#
+reset_db
+db null NULL
+do_execsql_test join-32.1 {
+  CREATE TABLE t0(w INT);
+  CREATE TABLE t1(x INT);
+  CREATE TABLE t2(y INT UNIQUE);
+  CREATE VIEW v0(z) AS SELECT CAST(x AS INT) FROM t1 LEFT JOIN t2 ON true;
+  INSERT INTO t1(x) VALUES(123);
+  INSERT INTO t2(y) VALUES(NULL);
+}
+do_execsql_test join-32.2 {
+  SELECT *
+  FROM t0 JOIN v0 ON w=z
+          RIGHT JOIN t1 ON true
+          INNER JOIN t2 ON y IS z;
+} {NULL NULL 123 NULL}
+do_execsql_test join-32.3 {
+  SELECT *
+  FROM t0 JOIN v0 ON w=z
+          RIGHT JOIN t1 ON true
+          INNER JOIN t2 ON +y IS z;
+} {NULL NULL 123 NULL}
 
 finish_test

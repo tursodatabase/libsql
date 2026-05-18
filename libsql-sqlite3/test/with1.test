@@ -1092,7 +1092,7 @@ do_catchsql_test 22.1 {
 } {1 {too many FROM clause terms, max: 200}}
 
 # 2019-05-22
-# ticket https://www.sqlite.org/src/tktview/ce823231949d3abf42453c8f20
+# ticket https://sqlite.org/src/tktview/ce823231949d3abf42453c8f20
 #
 sqlite3 db :memory:
 do_execsql_test 23.1 {

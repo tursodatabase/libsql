@@ -488,11 +488,21 @@ proc preupdate_hook {args} {
   set type [lindex $args 0]
   eval lappend ::preupdate $args
   if {$type != "INSERT"} {
+    set x [catch {db preupdate old [db preupdate count]}]
+    if {!$x} {
+      lappend "ERROR: sqlite3_preupdate_old() accepted an out-of-bounds\
+               column index"
+    }
     for {set i 0} {$i < [db preupdate count]} {incr i} {
       lappend ::preupdate [db preupdate old $i]
     }
   }
   if {$type != "DELETE"} {
+    set x [catch {db preupdate new [db preupdate count]}]
+    if {!$x} {
+      lappend "ERROR: sqlite3_preupdate_old() accepted an out-of-bounds\
+               column index"
+    }
     for {set i 0} {$i < [db preupdate count]} {incr i} {
       set rc [catch { db preupdate new $i } v]
       lappend ::preupdate $v
@@ -706,10 +716,12 @@ ifcapable altertable {
   }
 }
 
-if 0 {
+if 1 {
   # At time of writing, these two are broken. They demonstrate that the
   # sqlite3_preupdate_old() method does not handle the case where ALTER TABLE
   # has been used to add a column with a default value other than NULL.
+  #
+  # 2024-09-18: These are now fixed.
   #
   do_preupdate_test 7.5.2.1 {
     DELETE FROM t8 WHERE a = 'one'
@@ -1021,5 +1033,38 @@ do_test 12.6 {
 do_catchsql_test 12.6 {
   INSERT INTO t4 VALUES('def', 3);
 } {1 {UNIQUE constraint failed: t4.a}}
+
+#-------------------------------------------------------------------------
+# Test adding non-NULL default values using ALTER TABLE.
+#
+reset_db
+db preupdate hook preupdate_hook
+do_execsql_test 13.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  INSERT INTO t1 VALUES(100), (200), (300), (400);
+}
+
+do_execsql_test 13.1 {
+  ALTER TABLE t1 ADD COLUMN b DEFAULT 1234;
+  ALTER TABLE t1 ADD COLUMN c DEFAULT 'abcdef';
+  ALTER TABLE t1 ADD COLUMN d DEFAULT NULL;
+}
+
+do_preupdate_test 13.2 {
+  DELETE FROM t1 WHERE a=300
+} {DELETE main t1 300 300 0 300 1234 abcdef {}}
+
+do_preupdate_test 13.3 {
+  UPDATE t1 SET d='hello world' WHERE a=200
+} {
+  UPDATE main t1 200 200 0 200 1234 abcdef {} 
+                           200 1234 abcdef {hello world}
+}
+
+do_preupdate_test 13.4 {
+  INSERT INTO t1 DEFAULT VALUES;
+} {
+  INSERT main t1 401 401 0 401 1234 abcdef {}
+}
 
 finish_test

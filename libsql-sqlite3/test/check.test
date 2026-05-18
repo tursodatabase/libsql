@@ -612,4 +612,36 @@ do_catchsql_test 12.81 {
   INSERT INTO t1(a) VALUES(456);
 } {1 {CHECK constraint failed: a NOT BETWEEN +a AND 999999}}
 
+#-------------------------------------------------------------------------
+
+reset_db
+
+do_execsql_test 13.1.0 {
+  CREATE TABLE Table0 (Col0 , CHECK(Table0.Col0 NOT NULL ) ) ;
+  REPLACE INTO Table0 VALUES (hex(randomblob(100000)));
+}
+integrity_check 13.1.1
+do_execsql_test 13.1.2 {
+  UPDATE OR REPLACE Table0 SET Col0 = Table0.Col0 ;
+}
+integrity_check 13.1.3
+do_execsql_test 13.1.4 {
+  SELECT length(col0) FROM table0;
+} {200000}
+
+do_execsql_test 13.2.0 {
+  CREATE TABLE t2 (x , CHECK((NOT (x ISNULL) )));
+  REPLACE INTO t2 VALUES (hex(randomblob(100000)));
+}
+do_execsql_test 13.2.1 {
+  SELECT length(x) FROM t2
+} {200000}
+do_execsql_test 13.2.2 {
+  UPDATE OR REPLACE t2 SET x = x;
+}
+do_execsql_test 13.2.3 {
+  SELECT length(x) FROM t2
+} {200000}
+integrity_check 13.2.4
+
 finish_test

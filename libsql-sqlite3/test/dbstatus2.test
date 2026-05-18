@@ -41,6 +41,10 @@ proc db_spill {db {reset 0}} {
   sqlite3_db_status $db CACHE_SPILL $reset
 }
 
+proc db_temp_spill {db {reset 0}} {
+  sqlite3_db_status $db TEMPBUF_SPILL $reset
+}
+
 do_test 1.1 {
   db close
   sqlite3 db test.db
@@ -111,5 +115,50 @@ do_execsql_test 3.2 {
   UPDATE t1 SET b=randomblob(1000);
 } {delete}
 do_test 3.3 { db_spill db 0 } {0 8 0}
+
+
+if {$::TEMP_STORE<3} {
+  do_execsql_test 4.0 {
+    PRAGMA temp_store = file;
+    PRAGMA cache_size = -1024;
+  } {}
+
+  do_test 4.1 { db_temp_spill db 0 } {0 0 0}
+
+  do_execsql_test 4.2 {
+    CREATE TABLE data(a INTEGER, b BLOB);
+
+    -- Insert 5-6 MB of data.
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<75000 )
+    INSERT INTO data SELECT i, hex(randomblob(50)) FROM s;
+  }
+
+  do_test 4.3 { db_temp_spill db 0 } {0 0 0}
+
+  do_test 4.4 {
+    execsql { SELECT a, b FROM data ORDER BY a }
+    set nTmpSpill [lindex [db_temp_spill db 1] 1]
+    expr {($nTmpSpill>7*1000*1000) && ($nTmpSpill<10*1000*1000)?"ok":$nTmpSpill}
+  } ok
+
+  # The previous test case reset the status value.
+  do_test 4.5 { db_temp_spill db 0 } {0 0 0}
+
+  do_test 4.6 {
+    execsql { CREATE INDEX i1 ON data(a) }
+    set nTmpSpill [lindex [db_temp_spill db 1] 1]
+    expr {($nTmpSpill>384*1000) && ($nTmpSpill<768*1000)?"ok":$nTmpSpill}
+  } ok
+
+  # The previous test case reset the status value.
+  do_test 4.7 { db_temp_spill db 0 } {0 0 0}
+
+  # Same query as in (4.4). Now does not require temp space.
+  do_test 4.8 {
+    execsql { SELECT a, b FROM data ORDER BY a }
+    db_temp_spill db 0
+  } {0 0 0}
+}
+
  
 finish_test

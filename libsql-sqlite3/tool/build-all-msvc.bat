@@ -198,7 +198,7 @@ IF NOT DEFINED ComSpec (
 
 REM
 REM NOTE: This batch file requires the VcInstallDir environment variable to be
-REM       set.  Tyipcally, this means this batch file needs to be run from an
+REM       set.  Typically, this means this batch file needs to be run from an
 REM       MSVC command prompt.
 REM
 IF NOT DEFINED VCINSTALLDIR (

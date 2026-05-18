@@ -4,13 +4,13 @@
 #
 #   const char **azCompileOpt[]
 #
-# definition used in src/ctime.c, run this script from
-# the checkout root. It generates src/ctime.c .
+# definition used in ctime.c, run this script from
+# the checkout root. It generates ctime.c .
 #
-# Results are normally written into src/ctime.c.  But if an argument is
+# Results are normally written into ctime.c.  But if an argument is
 # provided, results are written there instead.  Examples:
 #
-#    tclsh tool/mkctimec.tcl                ;# <-- results to src/ctime.c
+#    tclsh tool/mkctimec.tcl                ;# <-- ctime.c
 #
 #    tclsh tool/mkctimec.tcl /dev/tty       ;# <-- results to the terminal
 #
@@ -105,8 +105,10 @@ set boolean_defnnz_options {
 set boolean_defnil_options {
   SQLITE_32BIT_ROWID
   SQLITE_4_BYTE_ALIGNED_MALLOC
+  SQLITE_ALLOW_ROWID_IN_VIEW
   SQLITE_ALLOW_URI_AUTHORITY
   SQLITE_BUG_COMPATIBLE_20160819
+  SQLITE_BUG_COMPATIBLE_20250510
   SQLITE_CASE_SENSITIVE_LIKE
   SQLITE_CHECK_PAGES
   SQLITE_COVERAGE_TEST
@@ -132,6 +134,7 @@ set boolean_defnil_options {
   SQLITE_ENABLE_ATOMIC_WRITE
   SQLITE_ENABLE_BATCH_ATOMIC_WRITE
   SQLITE_ENABLE_BYTECODE_VTAB
+  SQLITE_ENABLE_CARRAY
   SQLITE_ENABLE_COLUMN_METADATA
   SQLITE_ENABLE_COLUMN_USED_MASK
   SQLITE_ENABLE_COSTMULT
@@ -158,13 +161,16 @@ set boolean_defnil_options {
   SQLITE_ENABLE_MULTIPLEX
   SQLITE_ENABLE_NORMALIZE
   SQLITE_ENABLE_NULL_TRIM
+  SQLITE_ENABLE_ORDERED_SET_AGGREGATES
   SQLITE_ENABLE_OFFSET_SQL_FUNC
   SQLITE_ENABLE_OVERSIZE_CELL_CHECK
+  SQLITE_ENABLE_PERCENTILE
   SQLITE_ENABLE_PREUPDATE_HOOK
   SQLITE_ENABLE_QPSG
   SQLITE_ENABLE_RBU
   SQLITE_ENABLE_RTREE
   SQLITE_ENABLE_SESSION
+  SQLITE_ENABLE_SETLK_TIMEOUT
   SQLITE_ENABLE_SNAPSHOT
   SQLITE_ENABLE_SORTER_REFERENCES
   SQLITE_ENABLE_SQLLOG
@@ -277,7 +283,6 @@ set boolean_defnil_options {
   SQLITE_UNTESTABLE
   SQLITE_USE_ALLOCA
   SQLITE_USE_FCNTL_TRACE
-  SQLITE_USER_AUTHENTICATION
   SQLITE_USE_URI
   SQLITE_VDBE_COVERAGE
   SQLITE_WIN32_MALLOC
@@ -318,6 +323,7 @@ set value_options {
   SQLITE_ENABLE_LOCKING_STYLE
   SQLITE_EXTRA_AUTOEXT
   SQLITE_EXTRA_INIT
+  SQLITE_EXTRA_INIT_MUTEXED
   SQLITE_EXTRA_SHUTDOWN
   SQLITE_FTS3_MAX_EXPR_DEPTH
   SQLITE_INTEGRITY_CHECK_ERROR_MAX
@@ -439,7 +445,7 @@ foreach v $value2_options {
 if {$argc>0} {
   set destfile [lindex $argv 0]
 } else {
-  set destfile "[file dir [file dir [file normal $argv0]]]/src/ctime.c"
+  set destfile ctime.c
   puts "Overwriting $destfile..."
 }
 
@@ -447,6 +453,7 @@ if {[catch {set cfd [open $destfile w]}]!=0} {
   puts stderr "File '$destfile' unwritable."
   exit 1;
 }
+fconfigure $cfd -translation binary
 
 puts $cfd $::headWarning;
 puts $cfd $::headCode;

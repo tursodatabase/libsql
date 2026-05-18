@@ -17,7 +17,7 @@ source $testdir/wal_common.tcl
 
 finish_test; return;    #  Feature currently not implemented.
 ifcapable !wal {finish_test ; return }
-if {$::tcl_platform(platform)!="unix"} { finish_test ; return }
+if {$::tcl_platform(platform) ne "unix"} { finish_test ; return }
 set testprefix walblock
 
 catch { db close }

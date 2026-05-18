@@ -482,6 +482,7 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
         .define("SQLITE_SHELL_IS_UTF8", "OFF")
         .define("SQLITE_USER_AUTHENTICATION", "OFF")
         .define("SQLITE_SECURE_DELETE", "OFF")
+        .define("SQLITE_ENABLE_CARRAY", "OFF")
         .define("SQLITE_ENABLE_COLUMN_METADATA", "ON")
         .define("SQLITE_USE_URI", "ON")
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")

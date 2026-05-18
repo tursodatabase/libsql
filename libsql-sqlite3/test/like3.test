@@ -112,7 +112,7 @@ do_execsql_test like3-4.2ck {
   SELECT quote(x) FROM t4 WHERE x LIKE 'ab%' ORDER BY +x ASC;
 } {'abc' 'abd' 'abe' X'616263' X'616264' X'616265'}
 
-# 2018-09-10 ticket https://www.sqlite.org/src/tktview/c94369cae9b561b1f996
+# 2018-09-10 ticket https://sqlite.org/src/tktview/c94369cae9b561b1f996
 # The like optimization fails for a column with numeric affinity if
 # the pattern '/%' or begins with the escape character.
 #
@@ -199,7 +199,7 @@ do_execsql_test like3-5.400 {
 } {./}
 
 # 2019-06-14
-# Ticket https://www.sqlite.org/src/info/ce8717f0885af975
+# Ticket https://sqlite.org/src/info/ce8717f0885af975
 do_execsql_test like3-5.410 {
   DROP TABLE IF EXISTS t0;
   CREATE TABLE t0(c0 INT UNIQUE COLLATE NOCASE);
@@ -208,7 +208,7 @@ do_execsql_test like3-5.410 {
 } {.1%}
 
 # 2019-09-03
-# Ticket https://www.sqlite.org/src/info/0f0428096f
+# Ticket https://sqlite.org/src/info/0f0428096f
 do_execsql_test like3-5.420 {
   DROP TABLE IF EXISTS t0;
   CREATE TABLE t0(c0 UNIQUE);
@@ -273,6 +273,94 @@ do_eqp_test like3-6.240 {
   QUERY PLAN
   `--SEARCH t2 USING INDEX t2path2 (path>? AND path<?)
 }
+}
+
+#-------------------------------------------------------------------------
+
+ifcapable utf16 {
+  reset_db
+  do_execsql_test like3-7.0 {
+    PRAGMA encoding = 'UTF-16be';
+  
+    CREATE TABLE Example(word TEXT NOT NULL);
+    CREATE INDEX Example_word on Example(word);
+  
+    INSERT INTO Example VALUES(char(0x307F));
+  }
+  
+  do_execsql_test like3-7.1 {
+    SELECT char(0x307F)=='み';
+  } {1}
+  
+  do_execsql_test like3-7.1 {
+    SELECT * FROM Example WHERE word GLOB 'み*'
+  } {み}
+  
+  do_execsql_test like3-7.2 {
+    SELECT * FROM Example WHERE word >= char(0x307F) AND word < char(0x3080);
+  } {み}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+# See forum thread https://sqlite.org/forum/info/d7b90d92ffbfc61f
+foreach enc {
+  UTF-8
+  UTF-16le 
+  UTF-16be
+} {
+  ifcapable icu {
+    if {$enc=="UTF-8"} {
+      # The invalid UTF8 used in these tests is incompatible with ICU
+      # https://sqlite.org/forum/forumpost/2ca8a09a7e
+      continue
+    }
+  }
+  foreach {tn expr} {
+    1 "CAST (X'FF' AS TEXT)"
+    2 "CAST (X'FFBF' AS TEXT)"
+    3 "CAST (X'FFBFBF' AS TEXT)"
+    4 "CAST (X'FFBFBFBF' AS TEXT)"
+
+    5 "'abc' || CAST (X'FF' AS TEXT)"
+    6 "'def' || CAST (X'FFBF' AS TEXT)"
+    7 "'ghi' || CAST (X'FFBFBF' AS TEXT)"
+    8 "'jkl' || CAST (X'FFBFBFBF' AS TEXT)"
+  } {
+    reset_db
+    execsql "PRAGMA encoding = '$enc'"
+    set tn utf[string range $enc 4 end].$tn
+    do_execsql_test like3-8.$tn.1 {
+      CREATE TABLE t1(x);
+    }
+  
+    do_execsql_test like3-8.$tn.2 {
+      PRAGMA encoding
+    } $enc
+  
+    do_execsql_test like3-8.$tn.3 "
+      INSERT INTO t1 VALUES( $expr )
+    "
+  
+    do_execsql_test like3-8.$tn.4 {
+      SELECT typeof(x) FROM t1
+    } {text}
+  
+    set x [db one {SELECT x || '%' FROM t1}]
+  
+    do_execsql_test like3-8.$tn.5 {
+      SELECT rowid FROM t1 WHERE x LIKE $x
+    } 1
+  
+    do_execsql_test like3-8.$tn.6 {
+      CREATE INDEX i1 ON t1(x);
+    }
+  
+    do_execsql_test like3-8.$tn.7 {
+      SELECT rowid FROM t1 WHERE x LIKE $x
+    } 1
+  }
 }
 
 finish_test

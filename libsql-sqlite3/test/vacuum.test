@@ -401,4 +401,25 @@ do_test vacuum-10.1 {
 } {}
 do_test vacuum-10.2 { execsql VACUUM } {}
 
+# Verify that VACUUM still works if ATTACH is disabled.
+#
+do_execsql_test vacuum-11.1 {
+  PRAGMA page_size=1024;
+  VACUUM;
+  PRAGMA page_size;
+} {1024}
+sqlite3_db_config db ATTACH_CREATE 0
+do_execsql_test vacuum-11.2 {
+  PRAGMA page_size=2048;
+  VACUUM;
+  PRAGMA page_size;
+} {2048}
+sqlite3_db_config db ATTACH_CREATE 1
+sqlite3_db_config db ATTACH_WRITE 0
+do_execsql_test vacuum-11.3 {
+  PRAGMA page_size=4096;
+  VACUUM;
+  PRAGMA page_size;
+} {4096}
+
 finish_test

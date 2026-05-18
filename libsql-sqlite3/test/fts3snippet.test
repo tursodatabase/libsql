@@ -561,7 +561,6 @@ do_test 4.3 {
   }]
 } {64}
 
-
 #-------------------------------------------------------------------------
 # Request a snippet from a query with more than 64 phrases.
 #
@@ -587,6 +586,10 @@ do_execsql_test 5.1 {
   {[a4] [a5] [a6]}
   {[a70] [a71] [a72]}
 }
+
+do_execsql_test 5.2 {
+  SELECT snippet(t5, '[', ']', -1, 0) FROM t5 WHERE t5 MATCH 'a5'
+} {{a4 [a5] a6}}
 
 set sqlite_fts3_enable_parentheses 0
 finish_test

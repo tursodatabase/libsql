@@ -90,7 +90,7 @@ set ::res [db eval {SELECT rowid, x1 FROM x1 WHERE x1 MATCH '*reads'}]
 do_faultsim_test 4 -faults oom-* -body {
   db eval {SELECT rowid, x, x1 FROM x1 WHERE x1 MATCH '*reads'}
 } -test {
-  faultsim_test_result {0 {0 {} 3}}
+  faultsim_test_result {0 {0 {} 2}}
 }
 
 #-------------------------------------------------------------------------

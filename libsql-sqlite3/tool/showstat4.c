@@ -67,6 +67,7 @@ int main(int argc, char **argv){
                         "**************\n\n");
       sqlite3_free(zIdx);
       zIdx = sqlite3_mprintf("%s", sqlite3_column_text(pStmt,0));
+      if( zIdx==0 ){ fprintf(stderr, "out of memory\n"); abort(); }
       iRow = 0;
     }
     printf("%s sample %d ------------------------------------\n", zIdx, ++iRow);

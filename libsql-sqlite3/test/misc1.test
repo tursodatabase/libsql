@@ -654,7 +654,7 @@ do_catchsql_test misc1-21.1 {
 } {1 {near "#0": syntax error}}
 do_catchsql_test misc1-21.2 {
   VALUES(0,0x0MATCH#0;
-} {1 {near ";": syntax error}}
+} {1 {unrecognized token: "0x0MATCH"}}
 
 # 2015-04-15
 do_execsql_test misc1-22.1 {

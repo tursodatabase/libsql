@@ -16,11 +16,7 @@
 */
 
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 #if SQLITE_THREADSAFE
 
@@ -94,7 +90,7 @@ static int SQLITE_TCLAPI tclScriptEvent(Tcl_Event *evPtr, int flags){
 static void postToParent(SqlThread *p, Tcl_Obj *pScript){
   EvalEvent *pEvent;
   char *zMsg;
-  int nMsg;
+  Tcl_Size nMsg;
 
   zMsg = Tcl_GetStringFromObj(pScript, &nMsg); 
   pEvent = (EvalEvent *)ckalloc(sizeof(EvalEvent)+nMsg+1);
@@ -181,8 +177,8 @@ static int SQLITE_TCLAPI sqlthread_spawn(
   SqlThread *pNew;
   int rc;
 
-  int nVarname; char *zVarname;
-  int nScript; char *zScript;
+  Tcl_Size nVarname; char *zVarname;
+  Tcl_Size nScript; char *zScript;
 
   /* Parameters for thread creation */
   const int nStack = TCL_THREAD_STACK_DEFAULT;
@@ -205,7 +201,7 @@ static int SQLITE_TCLAPI sqlthread_spawn(
 
   rc = Tcl_CreateThread(&x, tclScriptThread, (void *)pNew, nStack, flags);
   if( rc!=TCL_OK ){
-    Tcl_AppendResult(interp, "Error in Tcl_CreateThread()", 0);
+    Tcl_AppendResult(interp, "Error in Tcl_CreateThread()", NULL);
     ckfree((char *)pNew);
     return TCL_ERROR;
   }
@@ -232,14 +228,14 @@ static int SQLITE_TCLAPI sqlthread_parent(
 ){
   EvalEvent *pEvent;
   char *zMsg;
-  int nMsg;
+  Tcl_Size nMsg;
   SqlThread *p = (SqlThread *)clientData;
 
   assert(objc==3);
   UNUSED_PARAMETER(objc);
 
   if( p==0 ){
-    Tcl_AppendResult(interp, "no parent thread", 0);
+    Tcl_AppendResult(interp, "no parent thread", NULL);
     return TCL_ERROR;
   }
 
@@ -291,7 +287,7 @@ static int SQLITE_TCLAPI sqlthread_open(
   sqlite3_busy_handler(db, xBusy, 0);
   
   if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return TCL_ERROR;
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
 
   return TCL_OK;
 }
@@ -618,13 +614,13 @@ static int SQLITE_TCLAPI blocking_prepare_v2_proc(
   if( rc!=SQLITE_OK ){
     assert( pStmt==0 );
     sqlite3_snprintf(sizeof(zBuf), zBuf, "%s ", (char *)sqlite3ErrName(rc));
-    Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
+    Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), NULL);
     return TCL_ERROR;
   }
 
   if( pStmt ){
     if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
-    Tcl_AppendResult(interp, zBuf, 0);
+    Tcl_AppendResult(interp, zBuf, NULL);
   }
   return TCL_OK;
 }

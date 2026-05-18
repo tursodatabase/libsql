@@ -95,7 +95,7 @@ foreach {tn use_eph sql res} {
   7  0  "SELECT count(DISTINCT a) FROM t2, t1"            5
   8  1  "SELECT count(DISTINCT a+b) FROM t1, t2, t2, t2"  6
   9  0  "SELECT count(DISTINCT c) FROM t1 WHERE c=2"      1
- 10  1  "SELECT count(DISTINCT t1.rowid) FROM t1, t2"    10
+ 10  0  "SELECT count(DISTINCT t1.rowid) FROM t1, t2"    10
 } {
   do_test 3.$tn.1 {
     set prg [db eval "EXPLAIN $sql"]
@@ -148,6 +148,10 @@ do_execsql_test 3.0 {
   CREATE TABLE t3(x, y, z);
   INSERT INTO t3 VALUES(1,1,1);
   INSERT INTO t3 VALUES(2,2,2);
+
+  CREATE TABLE t4(a);
+  CREATE INDEX t4a ON t4(a);
+  INSERT INTO t4 VALUES(1), (2), (2), (3), (1);
 }
 
 foreach {tn use_eph sql res} {
@@ -158,6 +162,9 @@ foreach {tn use_eph sql res} {
   4 0  "SELECT count(DISTINCT f) FROM t2 GROUP BY d, e" {1 2 2 3}
   5 1  "SELECT count(DISTINCT f) FROM t2 GROUP BY d" {2 3}
   6 0  "SELECT count(DISTINCT f) FROM t2 WHERE d IS 1 GROUP BY e" {1 2 2}
+
+  7 0  "SELECT count(DISTINCT a) FROM t1" {4}
+  8 0  "SELECT count(DISTINCT a) FROM t4" {3}
 } {
   do_test 4.$tn.1 {
     set prg [db eval "EXPLAIN $sql"]

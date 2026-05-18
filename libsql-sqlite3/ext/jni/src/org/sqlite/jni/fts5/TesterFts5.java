@@ -12,12 +12,11 @@
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
 package org.sqlite.jni.fts5;
+import java.util.*;
 import static org.sqlite.jni.capi.CApi.*;
 import static org.sqlite.jni.capi.Tester1.*;
 import org.sqlite.jni.capi.*;
-import org.sqlite.jni.fts5.*;
-
-import java.util.*;
+import java.nio.charset.StandardCharsets;
 
 public class TesterFts5 {
 
@@ -88,7 +87,7 @@ public class TesterFts5 {
   ** thrown.
   */
   private static String[] sqlite3_exec(sqlite3 db, String sql) {
-    List<String> aOut = new ArrayList<String>();
+    List<String> aOut = new ArrayList<>();
 
     /* Iterate through the list of SQL statements. For each, step through
     ** it and add any results to the aOut[] array.  */
@@ -137,14 +136,14 @@ public class TesterFts5 {
   **     fts5_columncount()
   */
   private static void create_test_functions(sqlite3 db){
-    /* 
+    /*
     ** A user-defined-function fts5_rowid() that uses xRowid()
     */
     fts5_extension_function fts5_rowid = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         long rowid = ext.xRowid(fCx);
@@ -153,14 +152,14 @@ public class TesterFts5 {
       public void xDestroy(){ }
     };
 
-    /* 
-    ** fts5_columncount() - xColumnCount() 
+    /*
+    ** fts5_columncount() - xColumnCount()
     */
     fts5_extension_function fts5_columncount = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         int nCol = ext.xColumnCount(fCx);
@@ -169,14 +168,14 @@ public class TesterFts5 {
       public void xDestroy(){ }
     };
 
-    /* 
-    ** fts5_columnsize() - xColumnSize() 
+    /*
+    ** fts5_columnsize() - xColumnSize()
     */
     fts5_extension_function fts5_columnsize = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=1 ){
@@ -194,14 +193,14 @@ public class TesterFts5 {
       public void xDestroy(){ }
     };
 
-    /* 
-    ** fts5_columntext() - xColumnText() 
+    /*
+    ** fts5_columntext() - xColumnText()
     */
     fts5_extension_function fts5_columntext = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=1 ){
@@ -219,14 +218,14 @@ public class TesterFts5 {
       public void xDestroy(){ }
     };
 
-    /* 
-    ** fts5_columntotalsize() - xColumnTotalSize() 
+    /*
+    ** fts5_columntotalsize() - xColumnTotalSize()
     */
     fts5_extension_function fts5_columntsize = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=1 ){
@@ -251,9 +250,9 @@ public class TesterFts5 {
     */
     class fts5_aux implements fts5_extension_function {
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length>1 ){
@@ -268,13 +267,13 @@ public class TesterFts5 {
 
         if( argv.length==1 ){
           String val = sqlite3_value_text16(argv[0]);
-          if( !val.equals("") ){
+          if( !val.isEmpty() ){
             ext.xSetAuxdata(fCx, val);
           }
         }
       }
       public void xDestroy(){ }
-    };
+    }
 
     /*
     ** fts5_inst(<fts>);
@@ -286,9 +285,9 @@ public class TesterFts5 {
     */
     fts5_extension_function fts5_inst = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=0 ){
@@ -299,7 +298,7 @@ public class TesterFts5 {
         OutputPointer.Int32 piPhrase = new OutputPointer.Int32();
         OutputPointer.Int32 piCol = new OutputPointer.Int32();
         OutputPointer.Int32 piOff = new OutputPointer.Int32();
-        String ret = new String();
+        String ret = "";
 
         int rc = ext.xInstCount(fCx, pnInst);
         int nInst = pnInst.get();
@@ -327,9 +326,9 @@ public class TesterFts5 {
     */
     fts5_extension_function fts5_pinst = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=0 ){
@@ -338,7 +337,7 @@ public class TesterFts5 {
 
         OutputPointer.Int32 piCol = new OutputPointer.Int32();
         OutputPointer.Int32 piOff = new OutputPointer.Int32();
-        String ret = new String();
+        String ret = "";
         int rc = SQLITE_OK;
 
         int nPhrase = ext.xPhraseCount(fCx);
@@ -350,7 +349,7 @@ public class TesterFts5 {
               rc==SQLITE_OK && piCol.get()>=0;
               ext.xPhraseNext(fCx, pIter, piCol, piOff)
           ){
-            if( !ret.equals("") ) ret += " ";
+            if( !ret.isEmpty() ) ret += " ";
             ret += "{"+ii+" "+piCol.get()+" "+piOff.get()+"}";
           }
         }
@@ -374,9 +373,9 @@ public class TesterFts5 {
     */
     fts5_extension_function fts5_pcolinst = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=0 ){
@@ -384,7 +383,7 @@ public class TesterFts5 {
         }
 
         OutputPointer.Int32 piCol = new OutputPointer.Int32();
-        String ret = new String();
+        String ret = "";
         int rc = SQLITE_OK;
 
         int nPhrase = ext.xPhraseCount(fCx);
@@ -396,7 +395,7 @@ public class TesterFts5 {
               rc==SQLITE_OK && piCol.get()>=0;
               ext.xPhraseNextColumn(fCx, pIter, piCol)
           ){
-            if( !ret.equals("") ) ret += " ";
+            if( !ret.isEmpty() ) ret += " ";
             ret += "{"+ii+" "+piCol.get()+"}";
           }
         }
@@ -415,9 +414,9 @@ public class TesterFts5 {
     */
     fts5_extension_function fts5_rowcount = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=0 ){
@@ -440,9 +439,9 @@ public class TesterFts5 {
     */
     fts5_extension_function fts5_phrasesize = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=1 ){
@@ -464,9 +463,9 @@ public class TesterFts5 {
     */
     fts5_extension_function fts5_phrasehits = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=1 ){
@@ -503,9 +502,9 @@ public class TesterFts5 {
     */
     fts5_extension_function fts5_tokenize = new fts5_extension_function(){
       @Override public void call(
-          Fts5ExtensionApi ext, 
+          Fts5ExtensionApi ext,
           Fts5Context fCx,
-          sqlite3_context pCx, 
+          sqlite3_context pCx,
           sqlite3_value argv[]
       ){
         if( argv.length!=1 ){
@@ -515,7 +514,7 @@ public class TesterFts5 {
         int rc = SQLITE_OK;
 
         class MyCallback implements XTokenizeCallback {
-          private List<String> myList = new ArrayList<String>();
+          private List<String> myList = new ArrayList<>();
 
           public String getval() {
             return String.join("+", myList);
@@ -524,7 +523,7 @@ public class TesterFts5 {
           @Override
           public int call(int tFlags, byte[] txt, int iStart, int iEnd){
             try {
-              String str = new String(txt, "UTF-8");
+              String str = new String(txt, StandardCharsets.UTF_8);
               myList.add(str);
             } catch (Exception e) {
             }

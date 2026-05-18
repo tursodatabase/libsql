@@ -120,7 +120,7 @@ public abstract class AggregateFunction<T> implements SQLFunction {
      argument, the context is set to the given initial value. On all other
      calls, the 2nd argument is ignored.
 
-     @see SQLFunction.PerContextState#getAggregateState
+     @see AggregateFunction.PerContextState#getAggregateState
   */
   protected final ValueHolder<T> getAggregateState(sqlite3_context cx, T initialValue){
     return map.getAggregateState(cx, initialValue);
@@ -130,7 +130,7 @@ public abstract class AggregateFunction<T> implements SQLFunction {
      To be called from the implementation's xFinal() method to fetch
      the final state of the UDF and remove its mapping.
 
-     see SQLFunction.PerContextState#takeAggregateState
+     see AggregateFunction.PerContextState#takeAggregateState
   */
   protected final T takeAggregateState(sqlite3_context cx){
     return map.takeAggregateState(cx);

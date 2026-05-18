@@ -20,7 +20,7 @@ ifcapable !vtab {
   finish_test
   return
 }
-load_static_extension db carray
+#load_static_extension db carray
 
 # Parameter $stmt must be a prepared statement created using
 # the sqlite3_prepare_v2 command and with parameters fully bound.

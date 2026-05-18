@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
    An annotation for Tester1 tests which we do not want to run in
@@ -62,13 +61,13 @@ public class Tester1 implements Runnable {
   //! List of test*() methods to run.
   private static List<java.lang.reflect.Method> testMethods = null;
   //! List of exceptions collected by run()
-  private static List<Exception> listErrors = new ArrayList<>();
+  private static final List<Exception> listErrors = new ArrayList<>();
   private static final class Metrics {
     //! Number of times createNewDb() (or equivalent) is invoked.
     volatile int dbOpen = 0;
   }
 
-  private Integer tId;
+  private final Integer tId;
 
   Tester1(Integer id){
     tId = id;
@@ -78,7 +77,7 @@ public class Tester1 implements Runnable {
 
   public static synchronized void outln(){
     if( !quietMode ){
-      System.out.println("");
+      System.out.println();
     }
   }
 
@@ -523,7 +522,7 @@ public class Tester1 implements Runnable {
     }
     sqlite3_finalize(stmt);
     affirm(3 == n);
-    affirm("w😃rldhell🤩!🤩".equals(sbuf.toString()));
+    affirm("w😃rldhell🤩!🤩".contentEquals(sbuf));
 
     try( sqlite3_stmt stmt2 = prepare(db, "SELECT ?, ?") ){
       rc = sqlite3_bind_text(stmt2, 1, "");
@@ -668,7 +667,7 @@ public class Tester1 implements Runnable {
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
     final ValueHolder<Integer> xDestroyCalled = new ValueHolder<>(0);
     final CollationCallback myCollation = new CollationCallback() {
-        private String myState =
+        private final String myState =
           "this is local state. There is much like it, but this is mine.";
         @Override
         // Reverse-sorts its inputs...
@@ -847,7 +846,7 @@ public class Tester1 implements Runnable {
     SQLFunction funcAgg = new AggregateFunction<Integer>(){
         @Override public void xStep(sqlite3_context cx, sqlite3_value[] args){
           /** Throwing from here should emit loud noise on stdout or stderr
-              but the exception is supressed because we have no way to inform
+              but the exception is suppressed because we have no way to inform
               sqlite about it from these callbacks. */
           //throw new RuntimeException("Throwing from an xStep");
         }
@@ -1850,7 +1849,7 @@ public class Tester1 implements Runnable {
       "; insert into t(a) values(1),(2),(3);",
       "select a from t;"
     };
-    final List<sqlite3_stmt> liStmt = new ArrayList<sqlite3_stmt>();
+    final List<sqlite3_stmt> liStmt = new ArrayList<>();
     final PrepareMultiCallback proxy = new PrepareMultiCallback.StepAll();
     final ValueHolder<String> toss = new ValueHolder<>(null);
     PrepareMultiCallback m = new PrepareMultiCallback() {
@@ -1872,6 +1871,20 @@ public class Tester1 implements Runnable {
     rc = sqlite3_prepare_multi(db, "SELECT 1", m);
     affirm( SQLITE_ERROR==rc );
     affirm( sqlite3_errmsg(db).indexOf(toss.value)>0 );
+    sqlite3_close_v2(db);
+  }
+
+  private void testSetErrmsg(){
+    final sqlite3 db = createNewDb();
+
+    int rc = sqlite3_set_errmsg(db, SQLITE_RANGE, "nope");
+    affirm( 0==rc );
+    affirm( SQLITE_MISUSE == sqlite3_set_errmsg(null, 0, null) );
+    affirm( "nope".equals(sqlite3_errmsg(db)) );
+    affirm( SQLITE_RANGE == sqlite3_errcode(db) );
+    rc = sqlite3_set_errmsg(db, 0, null);
+    affirm( "not an error".equals(sqlite3_errmsg(db)) );
+    affirm( 0 == sqlite3_errcode(db) );
     sqlite3_close_v2(db);
   }
 
@@ -1984,9 +1997,9 @@ public class Tester1 implements Runnable {
      -v: emit some developer-mode info at the end.
   */
   public static void main(String[] args) throws Exception {
-    Integer nThread = 1;
+    int nThread = 1;
     boolean doSomethingForDev = false;
-    Integer nRepeat = 1;
+    int nRepeat = 1;
     boolean forceFail = false;
     boolean sqlLog = false;
     boolean configLog = false;
@@ -2048,7 +2061,7 @@ public class Tester1 implements Runnable {
       final ConfigLogCallback log = new ConfigLogCallback() {
           @Override public void call(int code, String msg){
             outln("ConfigLogCallback: ",ResultCode.getEntryForInt(code),": ", msg);
-          };
+          }
         };
       int rc = sqlite3_config( log );
       affirm( 0==rc );

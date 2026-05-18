@@ -77,11 +77,14 @@ void vectorF8SerializeToBlob(
   size_t nBlobSize
 ){
   float alpha, shift;
+  size_t nPayload;
 
   assert( pVector->type == VECTOR_TYPE_FLOAT8 );
   assert( pVector->dims <= MAX_VECTOR_SZ );
   assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
 
+  nPayload = ALIGN(pVector->dims, sizeof(float));
+  memset(pBlob, 0, nPayload);
   memcpy(pBlob, pVector->data, pVector->dims);
 
   vectorF8GetParameters(pVector->data, pVector->dims, &alpha, &shift);

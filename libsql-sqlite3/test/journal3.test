@@ -20,7 +20,7 @@ source $testdir/malloc_common.tcl
 # If a connection is required to create a journal file, it creates it with 
 # the same file-system permissions as the database file itself. Test this.
 #
-if {$::tcl_platform(platform) == "unix"
+if {$::tcl_platform(os) ne "Windows NT"
  && [atomic_batch_write test.db]==0
 } {
 

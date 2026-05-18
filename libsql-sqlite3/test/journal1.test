@@ -25,7 +25,7 @@ source $testdir/tester.tcl
 # Or with atomic_batch_write systems, as journal files are
 # not created.
 #
-if {$tcl_platform(platform)=="windows"
+if {$tcl_platform(platform) eq "windows"
  || [atomic_batch_write test.db]
 } {
   finish_test

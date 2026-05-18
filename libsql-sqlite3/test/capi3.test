@@ -181,7 +181,7 @@ do_test capi3-3.4 {
 do_test capi3-3.5 {
   list [sqlite3_system_errno $db2] [sqlite3_close $db2]
 } [list $::capi3_errno SQLITE_OK]
-if {[clang_sanitize_address]==0} {
+if {[clang_sanitize_address]==0 && 0} {
   do_test capi3-3.6.1-misuse {
     sqlite3_close $db2
   } {SQLITE_MISUSE}
@@ -689,7 +689,9 @@ do_test capi3-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-if {[clang_sanitize_address]==0} {
+if {0 && [clang_sanitize_address]==0} {
+  # This use-after-free occasionally causes segfaults during ordinary
+  # builds.  Let's just disable it completely.
   do_test capi3-6.4-misuse {
     db cache flush
     sqlite3_close $DB

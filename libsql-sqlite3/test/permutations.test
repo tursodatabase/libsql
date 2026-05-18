@@ -94,6 +94,8 @@ foreach f [glob -nocomplain            \
     $testdir/../ext/expert/*.test      \
     $testdir/../ext/lsm1/test/*.test   \
     $testdir/../ext/recover/*.test     \
+    $testdir/../ext/rbu/*.test         \
+    $testdir/../ext/intck/*.test       \
 ] {
   lappend alltests $f 
 }
@@ -102,18 +104,18 @@ foreach f [glob -nocomplain $testdir/../ext/session/*.test] {
 }
 unset f
 
-if {$::tcl_platform(platform)!="unix"} {
+if {$::tcl_platform(platform) ne "unix"} {
   set alltests [test_set $alltests -exclude crash.test crash2.test]
 }
 set alltests [test_set $alltests -exclude {
-  all.test        async.test         quick.test  veryquick.test
+  all.test        quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
   mallocAll.test  rtree.test         full.test   extraquick.test
   session.test    rbu.test
 }]
 
 set allquicktests [test_set $alltests -exclude {
-  async2.test async3.test backup_ioerr.test corrupt.test
+  backup_ioerr.test corrupt.test
   corruptC.test crash.test crash2.test crash3.test crash4.test crash5.test
   crash6.test crash7.test delete3.test e_fts3.test fts3rnd.test
   fkey_malloc.test fuzz.test fuzz3.test fuzz_malloc.test in2.test loadext.test
@@ -193,7 +195,7 @@ test_suite "veryquick" -prefix "" -description {
   that test malloc and IO errors are omitted.
 } -files [
   test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
-      *fts5corrupt* *fts5big* *fts5aj*
+      *fts5corrupt* *fts5big* *fts5aj* *rbucrash*
 ]
 
 test_suite "shell" -prefix "" -description {
@@ -788,7 +790,7 @@ test_suite "inmemory_journal" -description {
   journal3.test 8_3_names.test shmlock.test
   pendingrace.test
 
-  pager1.test async4.test corrupt.test filefmt.test pager2.test
+  pager1.test corrupt.test filefmt.test pager2.test
   corrupt5.test corruptA.test pageropt.test
 
   # Exclude stmt.test, which expects sub-journals to use temporary files.
@@ -949,12 +951,11 @@ test_suite "safe_append" -description {
   set ::G(perm:sqlite3_args) [list -vfs devsym]
   sqlite3_simulate_device -char safe_append
 } -files [
-  test_set $::allquicktests shared_err.test -exclude async3.test
+  test_set $::allquicktests shared_err.test
 ]
 
 # The set of tests to run on the alternative-pcache
 set perm-alt-pcache-testset {
-  async.test
   attach.test
   delete.test delete2.test
   index.test
@@ -995,7 +996,7 @@ test_suite "journaltest" -description {
   unregister_jt_vfs
 } -files [test_set $::allquicktests -exclude {
   wal* incrvacuum.test ioerr.test corrupt4.test io.test crash8.test 
-  async4.test bigfile.test backcompat.test e_wal* fstat.test mmap2.test
+  bigfile.test backcompat.test e_wal* fstat.test mmap2.test
   pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
   pager2.test *fault* rowal* snapshot* superlock* symlink.test
   delete_db.test shmlock.test chunksize.test
@@ -1059,7 +1060,7 @@ test_suite "session_strm" -description {
 test_suite "rbu" -description {
   RBU tests.
 } -files [
-  test_set [glob -nocomplain $::testdir/../ext/rbu/*.test] -exclude rbu.test
+  test_set [glob -nocomplain $::testdir/../ext/rbu/*.test] 
 ]
 
 test_suite "no_optimization" -description {
@@ -1116,6 +1117,18 @@ test_suite "maindbname" -prefix "" -description {
       *fts5corrupt* *fts5big* *fts5aj*
 ] -dbconfig {
   dbconfig_maindbname_icecube $::dbhandle
+}
+
+test_suite "win_unc_locking" -prefix "" -description {
+  Run the "wal*" tests with UNC style single fd locking.
+} -files [
+  test_set                                      \
+      {*}[glob [file join $testdir wal*]]       \
+      -exclude *fault* *malloc* *crash* *slow* walsetlk.test
+] -initialize {
+  set sqlite3_win_test_unc_locking 1
+} -shutdown {
+  set sqlite3_win_test_unc_locking 0
 }
 
 # End of tests

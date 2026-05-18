@@ -100,4 +100,26 @@ do_execsql_test parser1-3.1 {
   PRAGMA foreign_key_list(t301);
 } {0 0 t300 c2 id RESTRICT CASCADE NONE 1 0 t300 c1 id RESTRICT CASCADE NONE}
 
+# 2025-07-01 https://sqlite.org/forum/forumpost/f4878de3e7dd4764
+# Do not allow parse-time optimizations to omit aggregate functions,
+# because doing so can change the meaning of the query.
+#
+unset -nocomplain zero
+set zero [expr {0+0}]
+do_execsql_test parser1-4.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  SELECT max(x) AND $zero FROM t1;
+} 0
+do_execsql_test parser1-4.2 {
+  SELECT max(x) AND 0 FROM t1;
+} 0
+do_execsql_test parser1-4.3 {
+  SELECT max(x) IN () FROM t1;
+} 0
+do_execsql_test parser1-4.4 {
+  SELECT max(x) NOT IN () FROM t1;
+} 1
+
+
 finish_test

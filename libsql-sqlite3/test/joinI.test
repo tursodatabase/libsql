@@ -1,0 +1,215 @@
+# 2022 May 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix joinI
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT);
+  CREATE TABLE t3(c INT);
+}
+
+foreach {tn sql} {
+  1 "SELECT * FROM t1 RIGHT JOIN t2 ON t2.b=t3.c CROSS JOIN t3"
+  2 "SELECT * FROM t1 RIGHT JOIN t2 ON t2.b=(SELECT t3.c) CROSS JOIN t3"
+  3 "SELECT * FROM t1 RIGHT JOIN t2 ON CASE WHEN t2.b THEN t3.c ELSE 1 END CROSS JOIN t3"
+} {
+  do_catchsql_test 1.1.$tn $sql {1 {ON clause references tables to its right}}
+}
+
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE t0(c0 INT, c1 INT);
+  CREATE TABLE t1 (c0 INT);
+
+  CREATE VIEW v1(c0) AS SELECT t0.c0 FROM t0 NATURAL RIGHT JOIN t1;
+  CREATE VIEW v2(c0) AS SELECT 0 FROM v1;
+
+  INSERT INTO t0(c0, c1) VALUES (-1, 0);
+  INSERT INTO t1(c0) VALUES (NULL);
+
+  SELECT * FROM v1 INNER JOIN (v2 CROSS JOIN t0) ON (t0.c0 < t0.c1);
+} {{} 0 -1 0}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t0(c0, c1);
+  CREATE TABLE t1(v);
+  CREATE TABLE t2(w);
+  CREATE TABLE t3(x);
+  CREATE TABLE t4(y);
+  CREATE TABLE t5(z);
+}
+
+do_execsql_test 3.1 {
+  SELECT 1234 FROM t4 
+  RIGHT JOIN t5 
+  CROSS JOIN (t2 CROSS JOIN t0) AS a1 ON (a1.c0 < a1.c1);
+}
+
+do_execsql_test 3.2 {
+  SELECT 1234 FROM t4 
+  RIGHT JOIN t5 
+  CROSS JOIN (t2 CROSS JOIN t1 CROSS JOIN t0) AS a1 ON (a1.c0 < a1.c1);
+}
+
+do_execsql_test 3.3 {
+  SELECT 5678 FROM t0 RIGHT JOIN t1 ON (
+    SELECT 1 FROM t2 RIGHT JOIN t3 ON t2.w
+  ) CROSS JOIN t4;
+}
+
+do_catchsql_test 3.4 {
+  SELECT 5678 FROM t0 RIGHT JOIN t1 ON (
+    SELECT 1 FROM t2 RIGHT JOIN t3 ON t4.y
+  ) CROSS JOIN t4;
+} {1 {ON clause references tables to its right}}
+
+do_execsql_test 3.5 {
+  SELECT 5678 FROM t0 RIGHT JOIN t1 ON (
+    SELECT 1 FROM t2 RIGHT JOIN t3 ON 0=t1.v
+  ) CROSS JOIN t4;
+}
+
+do_catchsql_test 3.6 {
+  SELECT 5678 FROM t0 RIGHT JOIN t1 ON (
+    SELECT 1 FROM t2 RIGHT JOIN t3 ON max(0,t5.z) CROSS JOIN t5
+  ) CROSS JOIN t4;
+} {1 {ON clause references tables to its right}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  CREATE TABLE t3(c, d);
+}
+
+do_catchsql_test 4.1 {
+  SELECT c+d AS cd FROM t1 LEFT JOIN t2 ON (cd=5) CROSS JOIN t3;
+} {1 {ON clause references tables to its right}}
+
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE parent1(parent1key, child1key, Child2key, child3key);
+  CREATE TABLE child1 ( child1key NVARCHAR, value NVARCHAR );
+  CREATE TABLE child2 ( child2key NVARCHAR, value NVARCHAR );
+}
+
+do_execsql_test 5.1 {
+  SELECT parent1.parent1key, child1.value, child2.value
+    FROM parent1
+    LEFT OUTER JOIN child1 ON child1.child1key = parent1.child1key
+    INNER JOIN child2 ON child2.child2key = parent1.child2key;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t5(a, d);
+  CREATE TABLE t6(a, e);
+  INSERT INTO t5 VALUES(1, 'red');
+  INSERT INTO t6 VALUES(0, 1000);
+
+  CREATE TABLE t7(x);
+  CREATE TABLE t8(y);
+}
+
+do_catchsql_test 6.1 {
+  SELECT * FROM t6 CROSS JOIN (t7 RIGHT JOIN t8 ON (t6.a));
+} {1 {no such column: t6.a}}
+
+do_catchsql_test 6.4 {
+  SELECT * FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6;
+} {1 {ON clause references tables to its right}}
+
+do_catchsql_test 6.5 {
+  SELECT * FROM 
+  (SELECT * FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6);
+} {1 {ON clause references tables to its right}}
+
+do_catchsql_test 6.6 {
+  SELECT *, NOT EXISTS (
+      SELECT * FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6
+  ) FROM t5;
+} {1 {ON clause references tables to its right}}
+
+do_catchsql_test 6.7 {
+  SELECT *, NOT EXISTS (
+      SELECT 1 
+        EXCEPT 
+      SELECT 11 FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6
+  ) FROM t5;
+} {1 {ON clause references tables to its right}}
+
+do_catchsql_test 6.8 {
+  SELECT *, NOT EXISTS (
+      SELECT 11 FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6
+        EXCEPT 
+      SELECT 1 
+  ) FROM t5;
+} {1 {ON clause references tables to its right}}
+
+#-------------------------------------------------------------------------
+# Forum post: https://sqlite.org/forum/forumpost/e3dba5426a
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(d, e);
+  CREATE INDEX t2def ON t2(d, (e+1));
+  INSERT INTO t2 VALUES(1, 3);
+  INSERT INTO t2 VALUES(2, 555);
+  INSERT INTO t2 VALUES(3, 3);
+}
+do_execsql_test 7.1 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON ( a=d ) WHERE (t2.e+1)!=4;
+} {{} 2 555}
+
+reset_db
+do_execsql_test 7.2 {
+  CREATE TABLE rt0(c0 INTEGER PRIMARY KEY, c1, c2);
+  CREATE TABLE t1 (c1 INTEGER, c2 BLOB, c4 INTEGER);
+  CREATE UNIQUE INDEX i81 ON t1(c1, c4, +c2);
+
+  INSERT INTO t1(c4) VALUES ('a');
+  INSERT INTO rt0(c1, c2) VALUES (0.0, 0.0);
+  INSERT INTO t1(c2, c1) VALUES (1, 'b');
+}
+do_execsql_test 7.2 {
+  SELECT count(*) FROM (
+      SELECT DISTINCT * FROM rt0 FULL JOIN t1 ON rt0.c0=t1.c1
+      WHERE ((rt0.c1 OR t1.c4)) IS NOT (+ t1.c2)
+  );
+} {1}
+do_execsql_test 7.3 {
+  SELECT count(*) FROM (
+      SELECT DISTINCT * FROM rt0 LEFT JOIN t1 ON rt0.c0=t1.c1
+      WHERE ((rt0.c1 OR t1.c4)) IS NOT (+ t1.c2)
+      UNION
+      SELECT DISTINCT * FROM rt0 RIGHT JOIN t1 ON rt0.c0=t1.c1
+      WHERE ((rt0.c1 OR t1.c4)) IS NOT (+ t1.c2)
+  );
+} {1}
+
+finish_test
+

@@ -202,7 +202,7 @@ static void updateFromSelect(
   Expr *pLimit2 = 0;
   ExprList *pOrderBy2 = 0;
   sqlite3 *db = pParse->db;
-  Table *pTab = pTabList->a[0].pTab;
+  Table *pTab = pTabList->a[0].pSTab;
   SrcList *pSrc;
   Expr *pWhere2;
   int eDest;
@@ -226,8 +226,8 @@ static void updateFromSelect(
   if( pSrc ){
     assert( pSrc->a[0].fg.notCte );
     pSrc->a[0].iCursor = -1;
-    pSrc->a[0].pTab->nTabRef--;
-    pSrc->a[0].pTab = 0;
+    pSrc->a[0].pSTab->nTabRef--;
+    pSrc->a[0].pSTab = 0;
   }
   if( pPk ){
     for(i=0; i<pPk->nKeyCol; i++){
@@ -465,38 +465,32 @@ void sqlite3Update(
   */
   chngRowid = chngPk = 0;
   for(i=0; i<pChanges->nExpr; i++){
-    u8 hCol = sqlite3StrIHash(pChanges->a[i].zEName);
     /* If this is an UPDATE with a FROM clause, do not resolve expressions
     ** here. The call to sqlite3Select() below will do that. */
     if( nChangeFrom==0 && sqlite3ResolveExprNames(&sNC, pChanges->a[i].pExpr) ){
       goto update_cleanup;
     }
-    for(j=0; j<pTab->nCol; j++){
-      if( pTab->aCol[j].hName==hCol
-       && sqlite3StrICmp(pTab->aCol[j].zCnName, pChanges->a[i].zEName)==0
-      ){
-        if( j==pTab->iPKey ){
-          chngRowid = 1;
-          pRowidExpr = pChanges->a[i].pExpr;
-          iRowidExpr = i;
-        }else if( pPk && (pTab->aCol[j].colFlags & COLFLAG_PRIMKEY)!=0 ){
-          chngPk = 1;
-        }
-#ifndef SQLITE_OMIT_GENERATED_COLUMNS
-        else if( pTab->aCol[j].colFlags & COLFLAG_GENERATED ){
-          testcase( pTab->aCol[j].colFlags & COLFLAG_VIRTUAL );
-          testcase( pTab->aCol[j].colFlags & COLFLAG_STORED );
-          sqlite3ErrorMsg(pParse,
-             "cannot UPDATE generated column \"%s\"",
-             pTab->aCol[j].zCnName);
-          goto update_cleanup;
-        }
-#endif
-        aXRef[j] = i;
-        break;
+    j = sqlite3ColumnIndex(pTab, pChanges->a[i].zEName);
+    if( j>=0 ){
+      if( j==pTab->iPKey ){
+        chngRowid = 1;
+        pRowidExpr = pChanges->a[i].pExpr;
+        iRowidExpr = i;
+      }else if( pPk && (pTab->aCol[j].colFlags & COLFLAG_PRIMKEY)!=0 ){
+        chngPk = 1;
       }
-    }
-    if( j>=pTab->nCol ){
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+      else if( pTab->aCol[j].colFlags & COLFLAG_GENERATED ){
+        testcase( pTab->aCol[j].colFlags & COLFLAG_VIRTUAL );
+        testcase( pTab->aCol[j].colFlags & COLFLAG_STORED );
+        sqlite3ErrorMsg(pParse,
+           "cannot UPDATE generated column \"%s\"",
+           pTab->aCol[j].zCnName);
+        goto update_cleanup;
+      }
+#endif
+      aXRef[j] = i;
+    }else{
       if( pPk==0 && sqlite3IsRowid(pChanges->a[i].zEName) ){
         j = -1;
         chngRowid = 1;
@@ -921,6 +915,9 @@ void sqlite3Update(
       }
     }
     if( chngRowid==0 && pPk==0 ){
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+      if( isView ) sqlite3VdbeAddOp2(v, OP_Null, 0, regOldRowid);
+#endif
       sqlite3VdbeAddOp2(v, OP_Copy, regOldRowid, regNewRowid);
     }
   }

@@ -221,6 +221,24 @@ static void sqlite3MallocAlarm(int nByte){
   sqlite3_mutex_enter(mem0.mutex);
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** This routine is called whenever an out-of-memory condition is seen,
+** It's only purpose to to serve as a breakpoint for gdb or similar
+** code debuggers when working on out-of-memory conditions, for example
+** caused by PRAGMA hard_heap_limit=N.
+*/
+static SQLITE_NOINLINE void test_oom_breakpoint(u64 n){
+  static u64 nOomFault = 0;
+  nOomFault += n;
+  /* The assert() is never reached in a human lifetime.  It  is here mostly
+  ** to prevent code optimizers from optimizing out this function. */
+  assert( (nOomFault>>32) < 0xffffffff );
+}
+#else
+# define test_oom_breakpoint(X)   /* No-op for production builds */
+#endif
+
 /*
 ** Do a memory allocation with statistics and alarms.  Assume the
 ** lock is already held.
@@ -247,6 +265,7 @@ static void mallocWithAlarm(int n, void **pp){
       if( mem0.hardLimit ){
         nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
         if( nUsed >= mem0.hardLimit - nFull ){
+          test_oom_breakpoint(1);
           *pp = 0;
           return;
         }
@@ -269,27 +288,6 @@ static void mallocWithAlarm(int n, void **pp){
   }
   *pp = p;
 }
-
-/*
-** Maximum size of any single memory allocation.
-**
-** This is not a limit on the total amount of memory used.  This is
-** a limit on the size parameter to sqlite3_malloc() and sqlite3_realloc().
-**
-** The upper bound is slightly less than 2GiB:  0x7ffffeff == 2,147,483,391
-** This provides a 256-byte safety margin for defense against 32-bit 
-** signed integer overflow bugs when computing memory allocation sizes.
-** Paranoid applications might want to reduce the maximum allocation size
-** further for an even larger safety margin.  0x3fffffff or 0x0fffffff
-** or even smaller would be reasonable upper bounds on the size of a memory
-** allocations for most applications.
-*/
-#ifndef SQLITE_MAX_ALLOCATION_SIZE
-# define SQLITE_MAX_ALLOCATION_SIZE  2147483391
-#endif
-#if SQLITE_MAX_ALLOCATION_SIZE>2147483391
-# error Maximum size for SQLITE_MAX_ALLOCATION_SIZE is 2147483391
-#endif
 
 /*
 ** Allocate memory.  This routine is like sqlite3_malloc() except that it
@@ -514,8 +512,7 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
     sqlite3_free(pOld); /* IMP: R-26507-47431 */
     return 0;
   }
-  if( nBytes>=0x7fffff00 ){
-    /* The 0x7ffff00 limit term is explained in comments on sqlite3Malloc() */
+  if( nBytes>SQLITE_MAX_ALLOCATION_SIZE ){
     return 0;
   }
   nOld = sqlite3MallocSize(pOld);
@@ -535,6 +532,7 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
       sqlite3MallocAlarm(nDiff);
       if( mem0.hardLimit>0 && nUsed >= mem0.hardLimit - nDiff ){
         sqlite3_mutex_leave(mem0.mutex);
+        test_oom_breakpoint(1);
         return 0;
       }
     }

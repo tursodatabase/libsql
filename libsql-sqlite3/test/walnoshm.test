@@ -104,6 +104,7 @@ do_test 2.1.5 {
 } {exclusive delete a b c d e f g h}
 
 do_test 2.2.1 {
+  db2 close
   forcecopy test.db     test2.db
   forcecopy test.db-wal test2.db-wal
   sqlite3 db3 test2.db -vfs tvfsshm

@@ -185,7 +185,7 @@ int sqlite3BtreeHoldsMutex(Btree *p){
 */
 static void SQLITE_NOINLINE btreeEnterAll(sqlite3 *db){
   int i;
-  int skipOk = 1;
+  u8 skipOk = 1;
   Btree *p;
   assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nDb; i++){

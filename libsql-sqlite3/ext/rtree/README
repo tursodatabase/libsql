@@ -24,7 +24,7 @@ and query r-tree structures using ordinary SQL statements.
     3 and 11. Unlike regular SQLite tables, r-tree tables are strongly 
     typed. 
 
-    The leftmost column is always the pimary key and contains 64-bit 
+    The leftmost column is always the primary key and contains 64-bit 
     integer values. Each subsequent column contains a 32-bit real
     value. For each pair of real values, the first (leftmost) must be 
     less than or equal to the second. R-tree tables may be 

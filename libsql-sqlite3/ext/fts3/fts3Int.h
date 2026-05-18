@@ -14,9 +14,19 @@
 #ifndef _FTSINT_H
 #define _FTSINT_H
 
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
+/*
+** Activate assert() only if SQLITE_TEST is enabled.
+*/
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
 # define NDEBUG 1
 #endif
+
+#include <assert.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
 
 /* FTS3/FTS4 require virtual tables */
 #ifdef SQLITE_OMIT_VIRTUALTABLE
@@ -37,7 +47,7 @@
 
 /* If not building as part of the core, include sqlite3ext.h. */
 #ifndef SQLITE_CORE
-# include "sqlite3ext.h" 
+# include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
 #endif
 
@@ -180,13 +190,6 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 #define UNUSED_PARAMETER(x) (void)(x)
 
 /*
-** Activate assert() only if SQLITE_TEST is enabled.
-*/
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
-# define NDEBUG 1
-#endif
-
-/*
 ** The TESTONLY macro is used to enclose variable declarations or
 ** other bits of code that are needed to support the arguments
 ** within testcase() and assert() macros.
@@ -201,6 +204,19 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 #define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
 #define deliberate_fall_through
+
+/*
+** Macros needed to provide flexible arrays in a portable way
+*/
+#ifndef offsetof
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
+#endif
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define FLEXARRAY
+#else
+# define FLEXARRAY 1
+#endif
+
 
 #endif /* SQLITE_AMALGAMATION */
 
@@ -306,7 +322,7 @@ struct Fts3Table {
 #endif
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
-  /* True to disable the incremental doclist optimization. This is controled
+  /* True to disable the incremental doclist optimization. This is controlled
   ** by special insert command 'test-no-incr-doclist'.  */
   int bNoIncrDoclist;
 
@@ -358,7 +374,7 @@ struct Fts3Cursor {
 
 /*
 ** The Fts3Cursor.eSearch member is always set to one of the following.
-** Actualy, Fts3Cursor.eSearch can be greater than or equal to
+** Actually, Fts3Cursor.eSearch can be greater than or equal to
 ** FTS3_FULLTEXT_SEARCH.  If so, then Fts3Cursor.eSearch - 2 is the index
 ** of the column to be searched.  For example, in
 **
@@ -431,8 +447,12 @@ struct Fts3Phrase {
   */
   int nToken;                /* Number of tokens in the phrase */
   int iColumn;               /* Index of column this phrase must match */
-  Fts3PhraseToken aToken[1]; /* One entry for each token in the phrase */
+  Fts3PhraseToken aToken[FLEXARRAY]; /* One for each token in the phrase */
 };
+
+/* Size (in bytes) of an Fts3Phrase object large enough to hold N tokens */
+#define SZ_FTS3PHRASE(N) \
+  (offsetof(Fts3Phrase,aToken)+(N)*sizeof(Fts3PhraseToken))
 
 /*
 ** A tree of these objects forms the RHS of a MATCH operator.
@@ -640,6 +660,7 @@ int sqlite3Fts3MsrIncrNext(
 int sqlite3Fts3EvalPhrasePoslist(Fts3Cursor *, Fts3Expr *, int iCol, char **); 
 int sqlite3Fts3MsrOvfl(Fts3Cursor *, Fts3MultiSegReader *, int *);
 int sqlite3Fts3MsrIncrRestart(Fts3MultiSegReader *pCsr);
+int sqlite3Fts3MsrCancel(Fts3Cursor*, Fts3Expr*);
 
 /* fts3_tokenize_vtab.c */
 int sqlite3Fts3InitTok(sqlite3*, Fts3Hash *, void(*xDestroy)(void*));

@@ -84,7 +84,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 static int getProcessId(void){
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   return (int)_getpid();
 #else
   return (int)getpid();

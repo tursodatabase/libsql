@@ -114,7 +114,7 @@ sqlite3 db0 test.db
 sqlite3 db1 test.db
 do_test 3.1 { execsql { SELECT * FROM t1 } db0 } {1 2}
 do_test 3.2 { execsql { SELECT * FROM t1 } db1 } {1 2}
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(os) eq "Windows NT"} {
   set isWindows 1
 } else {
   set isWindows 0

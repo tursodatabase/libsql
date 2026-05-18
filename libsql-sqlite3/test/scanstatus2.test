@@ -265,7 +265,7 @@ ifcapable trace {
   }
   
   proc trace {stmt sql} {
-    array set A [sqlite3_stmt_scanstatus -flags complex [format %x $stmt] 0]
+    array set A [sqlite3_stmt_scanstatus -flags complex [format %llx $stmt] 0]
     lappend ::trace_explain $A(zExplain)
   }
   db trace_v2 trace 
@@ -327,6 +327,17 @@ QUERY (nCycle=nnn)
 --SCAN xy (nCycle=nnn)
 --SCAN xy2 (nCycle=nnn)
 }
+
+#-------------------------------------------------------------------------
+reset_db
+
+# Check that an OOB parameter (45) does not cause asan or valgrind errors.
+#
+do_test 7.0 {
+  db eval {SELECT * FROM sqlite_schema}
+  set stmt [db version -last-stmt-ptr]
+  sqlite3_stmt_scanstatus -flags complex $stmt 1000000
+} {}
 
 #explain_i { SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1 }
 #puts_debug_info { SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1 }

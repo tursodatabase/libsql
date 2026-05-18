@@ -26,7 +26,7 @@ ifcapable !pager_pragmas||!attach||!dirsync {
   finish_test
   return
 }
-if {$::tcl_platform(platform)!="unix" 
+if {$::tcl_platform(os) eq "Windows NT"
   || [permutation] == "journaltest"
   || [permutation] == "inmemory_journal"
   || [atomic_batch_write test.db] 

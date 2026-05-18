@@ -796,7 +796,7 @@ do_execsql_test 19.1 {
   {CREATE VIEW v2(e) AS SELECT coalesce(t2.c,t1.f) FROM t1, t2 WHERE t1.b=t2.d}
 }
 
-# 2019-01-08: https://www.sqlite.org/src/tktview/bc8d94f0fbd633fd9a051e3
+# 2019-01-08: https://sqlite.org/src/tktview/bc8d94f0fbd633fd9a051e3
 #
 # ALTER TABLE RENAME COLUMN does not work for tables that have redundant
 # UNIQUE constraints.

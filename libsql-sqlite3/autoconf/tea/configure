@@ -1,0 +1,20 @@
+#!/bin/sh
+# Look for and run autosetup...
+dir0="`dirname "$0"`"
+dirA="$dir0"
+if [ -d $dirA/autosetup ]; then
+    # A local copy of autosetup
+    dirA=$dirA/autosetup
+elif [ -d $dirA/../autosetup ]; then
+    # SQLite "autoconf" bundle
+    dirA=$dirA/../autosetup
+elif [ -d $dirA/../../autosetup ]; then
+    # SQLite canonical source tree
+    dirA=$dirA/../../autosetup
+else
+    echo "$0: Cannot find autosetup" 1>&2
+    exit 1
+fi
+WRAPPER="$0"; export WRAPPER; exec "`"$dirA/autosetup-find-tclsh"`" \
+                                   "$dirA/autosetup" --teaish-extension-dir="$dir0" \
+                                   "$@"

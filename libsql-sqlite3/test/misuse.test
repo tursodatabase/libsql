@@ -172,7 +172,11 @@ do_test misuse-4.3 {
   lappend v $msg $r
 } {0 {} SQLITE_BUSY}
 
-if {[clang_sanitize_address]==0} {
+# All of the following tests can potentially (though rarely)
+# lead to segfaults, which is unsettling.  So they are disabled
+# for now__________________________
+#                                  v
+if {[clang_sanitize_address]==0 && 0} {
   do_test misuse-4.4 {
   # Flush the TCL statement cache here, otherwise the sqlite3_close() will
   # fail because there are still un-finalized() VDBEs.
@@ -206,5 +210,17 @@ if {[clang_sanitize_address]==0} {
     lappend r $msg
   } {1 {(21) bad parameter or other API misuse}}
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_test misuse-6.0 {
+  sqlite3_set_errmsg db 1 "an error has occurred"
+} {SQLITE_OK}
+do_test misuse-6.1 {
+  sqlite3_errmsg db
+} {an error has occurred}
+do_test misuse-6.2 {
+  sqlite3_set_errmsg "" 1 "an error has occurred"
+} {SQLITE_MISUSE}
 
 finish_test

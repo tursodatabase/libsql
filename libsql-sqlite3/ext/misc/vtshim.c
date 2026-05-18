@@ -425,7 +425,7 @@ static int vtshimRollbackTo(sqlite3_vtab *pBase, int n){
   return rc;
 }
 
-/* The destructor function for a disposible module */
+/* The destructor function for a disposable module */
 static void vtshimAuxDestructor(void *pXAux){
   vtshim_aux *pAux = (vtshim_aux*)pXAux;
   assert( pAux->pAllVtab==0 );

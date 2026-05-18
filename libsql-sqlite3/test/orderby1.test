@@ -520,7 +520,7 @@ do_eqp_test 8.1 {
 } {
   QUERY PLAN
   |--SCAN t1 USING INDEX i1
-  `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+  `--USE TEMP B-TREE FOR LAST TERM OF ORDER BY
 }
 
 do_execsql_test 8.2 {
@@ -536,7 +536,7 @@ do_test 8.3 {
 } 5000
 
 #---------------------------------------------------------------------------
-# https://www.sqlite.org/src/tktview/cb3aa0641d9a413841c004293a4fc06cdc122029
+# https://sqlite.org/src/tktview/cb3aa0641d9a413841c004293a4fc06cdc122029
 #
 # Adverse interaction between scalar subqueries and the partial-sorting
 # logic.

@@ -257,7 +257,7 @@ do_execsql_test instr-1.64 {
   SELECT instr(a, b) FROM x1;
 } 0
 
-# 2019-09-16 ticket https://www.sqlite.org/src/info/587791f92620090e
+# 2019-09-16 ticket https://sqlite.org/src/info/587791f92620090e
 #
 do_execsql_test instr-2.0 {
   DROP TABLE IF EXISTS t0;

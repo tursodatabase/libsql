@@ -19,7 +19,7 @@ set ::testprefix walro
 
 # These tests are only going to work on unix.
 #
-if {$::tcl_platform(platform) != "unix"} {
+if {$::tcl_platform(os) eq "Windows NT"} {
   finish_test
   return
 }

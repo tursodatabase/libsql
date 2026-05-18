@@ -1,0 +1,517 @@
+# 2024 May 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set testprefix existsexpr
+
+do_execsql_test 1.0 {
+  CREATE TABLE x1(a, b, PRIMARY KEY(a)) WITHOUT ROWID;
+  INSERT INTO x1 VALUES(1, 2), (3, 4), (5, 6);
+  CREATE INDEX x1b ON x1(b);
+
+  CREATE TABLE x2(x, y);
+  INSERT INTO x2 VALUES(1, 2), (3, 4), (5, 6);
+}
+
+do_execsql_test 1.1 {
+  SELECT 1 WHERE EXISTS (SELECT 1 FROM x1 WHERE a=5)
+} {1}
+
+do_execsql_test 1.2 {
+  SELECT * FROM x2 WHERE EXISTS (SELECT 1 FROM x1 WHERE a=x)
+} {1 2 3 4 5 6}
+
+# With "a=x", the UNIQUE index means the EXIST can be transformed to a join.
+# So no "SUBQUERY". With "b=x", the index is not UNIQUE and so there is a
+# "SUBQUERY".
+do_execsql_test 1.3.1 {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM x2 WHERE EXISTS (SELECT 1 FROM x1 WHERE a=x)
+} {~/SUBQUERY/}
+do_execsql_test 1.3.2 {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM x2 WHERE EXISTS (SELECT 1 FROM x1 WHERE b=x)
+} {~/SUBQUERY/}
+
+do_execsql_test 1.4.1 {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM x2 WHERE x=1 AND EXISTS (SELECT 1 FROM x1 WHERE a=x)
+} {~/SUBQUERY/}
+do_execsql_test 1.4.2 {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM x2 WHERE EXISTS (SELECT 1 FROM x1 WHERE a=x) AND y=2
+} {~/SUBQUERY/}
+
+do_execsql_test 1.5 {
+  SELECT count(*) FROM x2 WHERE EXISTS (SELECT 1 FROM x1 WHERE a=x)
+} {3}
+
+#-------------------------------------------------------------------------
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  ) INSERT INTO t1 SELECT i, i FROM s;
+
+  CREATE TABLE t2(c, d);
+  WITH s(i) AS (
+    SELECT 10 UNION ALL SELECT i+10 FROM s WHERE i<1000
+  ) INSERT INTO t2 SELECT i, i FROM s;
+}
+
+do_execsql_test 2.1 {
+  SELECT count(*) FROM t1;
+  SELECT count(*) FROM t2;
+} {1000 100}
+
+do_execsql_test 2.2 {
+  SELECT count(*) FROM t1, t2 WHERE a=c;
+} {100}
+
+do_execsql_test 2.3 {
+  SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a)
+} {100}
+do_eqp_test 2.4 {
+  SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a)
+} {SCAN t1}
+
+do_execsql_test 2.4.0 {
+  CREATE UNIQUE INDEX t2c ON t2(c);
+  CREATE UNIQUE INDEX t1a ON t1(a);
+}
+
+do_eqp_test 2.4.1 {
+  SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a);
+} {SCAN t1*t2 EXISTS}
+do_execsql_test 2.4.2 {
+  ANALYZE;
+}
+do_eqp_test 2.4.3 {
+  SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a);
+} {SCAN t1*t2 EXISTS}
+do_execsql_test 2.4.4 {
+  SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a);
+} {100}
+
+do_execsql_test 2.5.1 {
+  EXPLAIN QUERY PLAN
+  SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE t2.rowid=a);
+} {~/SUBQUERY/}
+
+#-------------------------------------------------------------------------
+proc do_subquery_test {tn bSub sql res} {
+  set r1(0) ~/SUBQUERY/
+  set r1(1) /SUBQUERY/
+  do_execsql_test $tn.1 "explain query plan $sql" $r1($bSub)
+  do_execsql_test $tn.2 $sql $res
+}
+
+do_execsql_test 3.0 {
+  CREATE TABLE y1(a, b, c);
+  CREATE TABLE y2(x, y, z);
+  CREATE UNIQUE INDEX y2zy ON y2(z, y);
+
+  INSERT INTO y1 VALUES(1, 1, 1);
+  INSERT INTO y1 VALUES(2, 2, 2);
+  INSERT INTO y1 VALUES(3, 3, 3);
+  INSERT INTO y1 VALUES(4, 4, 4);
+
+  INSERT INTO y2 VALUES(1, 1, 1);
+  INSERT INTO y2 VALUES(3, 3, 3);
+}
+
+do_subquery_test 3.1 0 {
+  SELECT * FROM y1 WHERE EXISTS ( 
+      SELECT 1 FROM y2 WHERE z=a AND y=b AND x=z
+  )
+} {
+  1 1 1          3 3 3
+}    
+
+do_subquery_test 3.2 0 {
+  SELECT * FROM y1 WHERE EXISTS ( 
+      SELECT 1 FROM y2 WHERE z=max(a,b) AND y=min(b,a) AND x=z
+  )
+} {
+  1 1 1          3 3 3
+}    
+
+do_subquery_test 3.3 0 {
+  SELECT * FROM y1 WHERE EXISTS ( 
+      SELECT 1 FROM y2 WHERE z=max(a,b) AND y=min(b,a) AND c!=3
+  )
+} {
+  1 1 1
+}    
+
+do_subquery_test 3.4 0 {
+  SELECT * FROM y1 WHERE EXISTS ( 
+      SELECT 1 FROM y2 WHERE z=max(a,b) AND b=3
+  )
+} {
+  3 3 3
+}    
+
+do_subquery_test 3.5 0 {
+  SELECT * FROM y1 WHERE EXISTS ( 
+      SELECT 1 FROM y2 WHERE z=a-1 AND y=a-1
+  )
+} {
+  2 2 2
+  4 4 4
+}    
+
+do_subquery_test 3.6 0 {
+  SELECT * FROM y1 WHERE EXISTS ( 
+      SELECT 1 FROM y2 WHERE z=a-1 AND y+1=a
+  )
+} {
+  2 2 2
+  4 4 4
+}    
+
+do_subquery_test 3.7 1 {
+  SELECT * FROM y1 WHERE EXISTS ( 
+      SELECT count(*) FROM y2 WHERE z=a-1 AND y=a-1
+  )
+} {
+  1 1 1
+  2 2 2
+  3 3 3
+  4 4 4
+}    
+
+do_subquery_test 3.8 0 {
+  SELECT * FROM y1 WHERE EXISTS ( SELECT a+1 FROM y2 )
+} {
+  1 1 1
+  2 2 2
+  3 3 3
+  4 4 4
+}    
+
+do_subquery_test 3.9 1 {
+  SELECT * FROM y1 WHERE EXISTS ( 
+      SELECT 1 FROM y2 one, y2 two WHERE one.z=a-1 AND one.y=a-1
+  )
+} {
+  2 2 2
+  4 4 4
+}    
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE tx1(a TEXT COLLATE nocase, b TEXT);
+  CREATE UNIQUE INDEX tx1ab ON tx1(a, b);
+
+  INSERT INTO tx1 VALUES('a', 'a');
+  INSERT INTO tx1 VALUES('B', 'b');
+  INSERT INTO tx1 VALUES('c', 'c');
+  INSERT INTO tx1 VALUES('D', 'd');
+  INSERT INTO tx1 VALUES('e', 'e');
+
+  CREATE TABLE tx2(x, y);
+  INSERT INTO tx2 VALUES('A', 'a');
+  INSERT INTO tx2 VALUES('b', 'b');
+  INSERT INTO tx2 VALUES('C', 'c');
+  INSERT INTO tx2 VALUES('D', 'd');
+}
+
+do_subquery_test 4.1 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE a=x AND b=y
+  )
+} {
+  A a
+  b b
+  C c
+  D d
+}
+
+do_subquery_test 4.1.1 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE (a COLLATE nocase)=x AND b=y
+  )
+} {
+  A a   b b   C c   D d
+}
+do_subquery_test 4.1.2 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE a=x AND (b COLLATE binary)=y
+  )
+} {
+  A a   b b   C c   D d
+}
+do_subquery_test 4.1.1 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE x=(a COLLATE nocase) AND b=y
+  )
+} {
+  A a   b b   C c   D d
+}
+do_subquery_test 4.1.2 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE a=x AND y=(b COLLATE binary)
+  )
+} {
+  A a   b b   C c   D d
+}
+
+do_subquery_test 4.2 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE a=x AND b=y COLLATE nocase
+  )
+} {
+  A a
+  b b
+  C c
+  D d
+}
+
+do_execsql_test 4.3 {
+  DROP INDEX tx1ab;
+  CREATE UNIQUE INDEX tx1ab ON tx1(a COLLATE binary, b);
+}
+
+do_subquery_test 4.4 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE a=x AND b=y
+  )
+} {
+  A a
+  b b
+  C c
+  D d
+}
+
+do_subquery_test 4.4 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE a=x COLLATE binary AND b=y
+  )
+} {
+  D d
+}
+
+do_subquery_test 4.4 1 {
+  SELECT EXISTS ( SELECT x FROM tx1 ) FROM tx2
+} {
+  1 1 1 1
+}
+
+do_subquery_test 4.4 1 {
+  SELECT (SELECT EXISTS ( SELECT x FROM tx1 ) WHERE 1) FROM tx2
+} {
+  1 1 1 1
+}
+
+#-------------------------------------------------------------------------
+proc cols {s f} {
+  set lCols [list]
+  for {set i $s} {$i<=$f} {incr i} {
+    lappend lCols [format "c%02d" $i]
+  }
+  join $lCols ", "
+}
+proc vals {n val} {
+  set lVal [list]
+  for {set i 0} {$i<$n} {incr i} {
+    lappend lVal $val
+  }
+  join $lVal ", "
+}
+proc exprs {s f} {
+  set lExpr [list]
+  for {set i $s} {$i<=$f} {incr i} {
+    lappend lExpr [format "c%02d = o" $i]
+  }
+  join $lExpr " AND "
+}
+
+
+do_execsql_test 5.0 "
+  CREATE TABLE a1( [cols 0 99] );
+"
+do_execsql_test 5.1 "
+  -- 63 column index
+  CREATE UNIQUE INDEX a1idx1 ON a1( [cols 0 62] );
+"
+do_execsql_test 5.2 "
+  -- 64 column index
+  CREATE UNIQUE INDEX a1idx2 ON a1( [cols 10 73] );
+"
+do_execsql_test 5.2 "
+  -- 65 column index
+  CREATE UNIQUE INDEX a1idx3 ON a1( [cols 20 84] );
+"
+
+do_test 5.3 {
+  foreach v {1 2 3 4 5 6} {
+    execsql "INSERT INTO a1 VALUES( [vals 100 $v] )"
+  }
+} {}
+
+do_execsql_test 5.4 {
+  CREATE TABLE a2(o);
+  INSERT INTO a2 VALUES(2), (5); 
+}
+
+do_subquery_test 5.5 0 "
+  SELECT o FROM a2 WHERE EXISTS (
+    SELECT 1 FROM a1 WHERE [exprs 0 62]
+  )
+" {
+  2 5
+}
+
+do_subquery_test 5.6 0 "
+  SELECT o FROM a2 WHERE EXISTS (
+    SELECT 1 FROM a1 WHERE [exprs 10 73]
+  )
+" {
+  2 5
+}
+
+do_subquery_test 5.7 0 "
+  SELECT o FROM a2 WHERE EXISTS (
+    SELECT 1 FROM a1 WHERE [exprs 20 84]
+  )
+" {
+  2 5
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a, b UNIQUE, c UNIQUE);
+  CREATE TABLE t2(a INfEGER PRIMARY KEY, b);
+  CREATE UNIQUE INDEX t2b ON t2(b);
+}
+
+do_catchsql_test 6.1 {
+  SELECT a FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c COLLATE f = a)
+} {1 {no such collation sequence: f}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y UNIQUE);
+
+  INSERT INTO t1 VALUES(1), (2);
+  INSERT INTO t2 VALUES(1), (3);
+
+  SELECT * FROM t1 one LEFT JOIN t1 two ON (one.x=two.x AND EXISTS (
+    SELECT 1 FROM t2 WHERE y=one.x
+  ));
+} {
+  1 1
+  2 {}
+}
+
+# https://sqlite.org/forum/forumpost/2025-07-23T10:59:14z
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t0 (c0 INT);  INSERT INTO t0(c0) VALUES (1);
+  CREATE TABLE t1(c0 INT);   INSERT INTO t1(c0) VALUES (2);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t0 LIMIT 0);
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 9.0 {
+  CREATE TABLE t1(xx);
+  INSERT INTO t1 VALUES('big string value');
+} {}
+
+do_execsql_test 9.1 {
+  PRAGMA automatic_index = off;
+  CREATE TABLE t2(ii);
+  INSERT INTO t2 VALUES(100);
+  INSERT INTO t2 VALUES(200);
+}
+
+do_execsql_test 9.2 {
+  CREATE TABLE t3(yy);
+  INSERT INTO t3 VALUES(200);
+}
+
+do_execsql_test 9.3 {
+  SELECT 1 FROM t2 WHERE EXISTS ( SELECT 1 FROM t3 WHERE yy==t2.ii )
+} {1}
+
+do_execsql_test 9.4 {
+  SELECT EXISTS (
+    SELECT 1 FROM t2 WHERE EXISTS ( SELECT 1 FROM t3 WHERE yy==t2.ii )
+  )
+} {1}
+
+do_execsql_test 9.5 {
+  SELECT 1234 WHERE EXISTS (
+    SELECT 1 FROM t2 WHERE EXISTS ( SELECT 1 FROM t3 WHERE yy==t2.ii )
+  )
+} {1234}
+
+set Q {
+  SELECT * FROM t1 WHERE 
+    EXISTS (
+      SELECT 1 FROM t2 WHERE EXISTS ( SELECT 1 FROM t3 WHERE yy==t2.ii ) 
+    )
+}
+
+do_execsql_test 9.5 $Q {{big string value}}
+catch { optimization_control db exists-to-join 0 }
+db cache flush
+do_execsql_test 9.6 $Q {{big string value}}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 10.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE x1(x);
+}
+
+do_execsql_test 10.1 {
+  SELECT EXISTS( SELECT 1 FROM t1 ) aaa FROM x1 WHERE aaa AND aaa
+}
+
+do_execsql_test 10.2 {
+  SELECT 
+    EXISTS( SELECT 1 FROM t1 ) aaa
+  WHERE (
+    SELECT 1 FROM x1 WHERE aaa AND aaa
+  );
+}
+
+# https://sqlite.org/forum/forumpost/2026-01-03T14:05:48z
+do_execsql_test 11.0 {
+  CREATE TABLE parent (id TEXT PRIMARY KEY);
+  CREATE TABLE child_a (id TEXT);
+  CREATE TABLE child_b (id TEXT);
+  INSERT INTO parent VALUES ('p1');
+  INSERT INTO child_a VALUES ('p1');
+}
+do_execsql_test 11.1 {
+  SELECT count(*), parent.id FROM parent
+   WHERE EXISTS (
+      SELECT 1 FROM child_a WHERE child_a.id = parent.id
+      UNION
+      SELECT 1 FROM child_b WHERE child_b.id = parent.id
+   )
+   GROUP BY id;
+} {1 p1}
+
+finish_test

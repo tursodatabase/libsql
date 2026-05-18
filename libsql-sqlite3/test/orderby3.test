@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing that the optimizations that disable
 # ORDER BY clauses work correctly on a 3-way join.  See ticket
-# http://www.sqlite.org/src/956e4d7f89
+# http://sqlite.org/src/956e4d7f89
 #
 
 

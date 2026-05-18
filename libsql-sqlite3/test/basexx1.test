@@ -39,6 +39,12 @@ do_execsql_test 102 {
 } {AAECAw==
 }}
 
+# Buffer size testing
+do_execsql_test 102-b {
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c wHERE n<5000)
+  SELECT sum(length(base64(randomblob(n)))) FROM c;
+} {16910656}
+
 # Basic base64 decoding with pad chars
 do_execsql_test 103 {
   SELECT hex(base64('AAECAwQF'));
@@ -151,5 +157,12 @@ do_execsql_test 117 {
   SELECT num FROM bs WHERE base64(base64(b))!=b;
   SELECT num FROM bs WHERE base85(base85(b))!=b;
 } {}
+
+do_catchsql_test 118 {
+  SELECT base64(zeroblob(2000_000_000))
+} {/1.*too big.*/}
+do_catchsql_test 119 {
+  SELECT base85(zeroblob(2000_000_000))
+} {/1.*too big.*/}
 
 finish_test

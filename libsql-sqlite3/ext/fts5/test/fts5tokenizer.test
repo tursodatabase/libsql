@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5tokenizer
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -300,5 +300,75 @@ set ::flags [list]
 do_execsql_test 9.5.1 { SELECT * FROM t1('"abc xyz*"'); } {}
 do_test 9.5.2 { set ::flags } {query}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 10.1 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x, tokenize=unicode61);
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE VIRTUAL TABLE x1 USING fts5(x, tokenize="unicode61 error");'
+  WHERE name = 'x1';
+}
+
+db close
+sqlite3 db test.db
+
+do_catchsql_test 10.2 {
+  SELECT * FROM x1('abc');
+} {1 {error in tokenizer constructor}}
+
+do_catchsql_test 10.3 {
+  INSERT INTO x1 VALUES('abc');
+} {1 {error in tokenizer constructor}}
+
+do_execsql_test 10.4 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE VIRTUAL TABLE x1 USING fts5(x, tokenize="nosuch error");'
+  WHERE name = 'x1';
+}
+
+db close
+sqlite3 db test.db
+
+do_catchsql_test 10.5 {
+  SELECT * FROM x1('abc');
+} {1 {no such tokenizer: nosuch}}
+do_catchsql_test 10.6 {
+  INSERT INTO x1 VALUES('abc');
+} {1 {no such tokenizer: nosuch}}
+
+do_execsql_test 10.7 {
+  DROP TABLE x1;
+  SELECT * FROM sqlite_schema;
+}
+
+reset_db
+do_execsql_test 10.8 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x, tokenize=unicode61);
+  INSERT INTO x1 VALUES('a b c'), ('d e f'), ('a b c');
+  CREATE VIRTUAL TABLE x1v USING fts5vocab(x1, row);
+
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE VIRTUAL TABLE x1 USING fts5(x, tokenize=simplify);'
+  WHERE name = 'x1';
+}
+
+do_execsql_test 10.9 {
+  SELECT * FROM x1v
+} {
+  a 2 2 b 2 2 c 2 2 d 1 1 e 1 1 f 1 1
+}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 10.10 {
+  SELECT * FROM x1v
+} {
+  a 2 2 b 2 2 c 2 2 d 1 1 e 1 1 f 1 1
+}
 
 finish_test

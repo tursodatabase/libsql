@@ -1,0 +1,166 @@
+# 2024 July 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file verifies that:
+#
+#   * blob values may be written to locale=0 tables.
+#
+#   * blob values - other than fts5_locale() values - may not be written 
+#     to locale=0 tables. This is an SQLITE_MISMATCH error
+#
+#   * blob values may be returned by queries on the external-content table
+#     of a locale=0 table.
+#
+#   * blob values not may be returned by queries on the external-content 
+#     table of a locale=1 table, apart from fts5_locale() blobs. This is an
+#     SQLITE_MISMATCH error.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5blob
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+# Test that blobs may be stored in normal locale=0 tables.
+#
+foreach {tn enc} {
+  1 utf8  
+  2 utf16 
+} {
+  reset_db
+  fts5_aux_test_functions db
+
+  execsql "PRAGMA encoding = $enc"
+
+  execsql "
+    CREATE VIRTUAL TABLE t1 USING fts5(x, y);
+  "
+  do_execsql_test 1.$tn.0 {
+    CREATE VIRTUAL TABLE tt USING fts5vocab('t1', 'instance');
+    INSERT INTO t1(rowid, x, y) VALUES(1, 555, X'0000000041424320444546');
+    INSERT INTO t1(rowid, x, y) VALUES(2, 666, X'41424300444546');
+    INSERT INTO t1(rowid, x, y) VALUES(3, 777, 'xyz');
+  }
+
+  do_execsql_test 1.$tn.1 {
+    SELECT rowid, quote(x), quote(y) FROM t1
+  } {
+    1 555 X'0000000041424320444546'
+    2 666 X'41424300444546'
+    3 777 'xyz'
+  }
+
+  do_execsql_test 1.$tn.2 {
+    DELETE FROM t1 WHERE rowid=2;
+    DELETE FROM t1 WHERE rowid=1;
+  }
+
+  do_execsql_test 1.$tn.3 {
+    PRAGMA integrity_check;
+  } {ok}
+}
+
+#--------------------------------------------------------------------------
+# Test that a blob may be stored and retrieved in an unindexed column of
+# a regular table with locale=1.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y UNINDEXED, locale=1);
+  INSERT INTO t1(rowid, x, y) VALUES(12, 'twelve', X'0000000041424320444546');
+}
+
+do_execsql_test 2.1 {
+  select rowid, x, quote(y) FROM t1
+} {
+  12 twelve X'0000000041424320444546'
+}
+
+#--------------------------------------------------------------------------
+# Test that blobs may not be written to any type of table with locale=1
+# set. Except, they may be written to UNINDEXED columns.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b);
+
+  CREATE VIRTUAL TABLE x1 USING fts5(a, b, locale=1);
+  CREATE VIRTUAL TABLE x2 USING fts5(a, b, locale=1, content=t2);
+  CREATE VIRTUAL TABLE x3 USING fts5(a, b, locale=1, content=);
+}
+
+do_catchsql_test 3.1 {
+  INSERT INTO x1(rowid, a, b) VALUES(113, 'hello world', X'123456');
+} {0 {}}
+do_catchsql_test 3.2 {
+  INSERT INTO x2(rowid, a, b) VALUES(113, 'hello world', X'123456');
+} {0 {}}
+do_catchsql_test 3.3 {
+  INSERT INTO x3(rowid, a, b) VALUES(113, 'hello world', X'123456');
+} {0 {}}
+
+
+#--------------------------------------------------------------------------
+# Test that fts5_locale() values may not be written to any type of table
+# without locale=1 set. Even to an UNINDEXED column.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b);
+
+  CREATE VIRTUAL TABLE x1 USING fts5(a, b);
+  CREATE VIRTUAL TABLE x2 USING fts5(a, b, content=t2);
+  CREATE VIRTUAL TABLE x3 USING fts5(a, b, content=);
+
+  CREATE VIRTUAL TABLE x4 USING fts5(a, b, c UNINDEXED);
+}
+
+do_catchsql_test 3.1 {
+  INSERT INTO x1(rowid, a, b) 
+    VALUES(113, 'hello world', fts5_locale('en_AU', 'abc'));
+} {1 {fts5_locale() requires locale=1}}
+do_catchsql_test 3.2 {
+  INSERT INTO x2(rowid, a, b) 
+    VALUES(113, 'hello world', fts5_locale('en_AU', 'abc'));
+} {1 {fts5_locale() requires locale=1}}
+do_catchsql_test 3.3 {
+  INSERT INTO x3(rowid, a, b) 
+    VALUES(113, 'hello world', fts5_locale('en_AU', 'abc'));
+} {1 {fts5_locale() requires locale=1}}
+do_catchsql_test 3.4 {
+  INSERT INTO x4(rowid, a, b, c) 
+    VALUES(113, 'hello world', 'yesno', fts5_locale('en_AU', 'abc'));
+} {1 {fts5_locale() requires locale=1}}
+
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+}
+
+foreach {tn sql} {
+  1 { INSERT INTO x1(rowid, x) VALUES(4.5, 'abcd') }
+  2 { INSERT INTO x1(rowid, x) VALUES('xyz', 'abcd') }
+  3 { INSERT INTO x1(rowid, x) VALUES(X'001122', 'abcd') }
+} {
+  do_catchsql_test 4.1.$tn $sql {1 {datatype mismatch}}
+}
+
+
+finish_test
+
+

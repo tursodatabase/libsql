@@ -110,7 +110,7 @@ do_test alter4-1.7 {
 } {{CREATE TABLE t3(a, b, c VARCHAR(10, 20), UNIQUE(a, b))}}
 do_test alter4-1.99 {
   catchsql {
-    # May not exist if foriegn-keys are omitted at compile time.
+    # May not exist if foreign-keys are omitted at compile time.
     DROP TABLE t2; 
   }
   execsql {
@@ -379,7 +379,7 @@ do_execsql_test alter4-9.3 {
 # Confirm that doing an ALTER TABLE on a legacy format database
 # does not corrupt DESC indexes.
 #
-# Ticket https://www.sqlite.org/src/tktview/f68bf68513a1c
+# Ticket https://sqlite.org/src/tktview/f68bf68513a1c
 #
 do_test alter4-10.1 {
   db close

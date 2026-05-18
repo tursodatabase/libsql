@@ -167,10 +167,10 @@ do_execsql_test 3.0 {
   INSERT INTO t2 SELECT * FROM t3;
 
   ANALYZE;
-  SELECT * FROM sqlite_stat1;
+  SELECT * FROM sqlite_stat1 ORDER BY +idx;
 } {
-  t2 t2_ba   {100 20 1 1}
   t2 t2_a    {100 1} 
+  t2 t2_ba   {100 20 1 1}
   t3 t3_a    {100 1} 
   t3 t3_ba   {100 20 1 1}
 }

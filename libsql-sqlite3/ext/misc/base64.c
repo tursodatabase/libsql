@@ -175,15 +175,15 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
       case ND:
         /*  Treat dark non-digits as pad, but they terminate decode too. */
         ncIn = 0;
-        deliberate_fall_through;
+        deliberate_fall_through; /* FALLTHRU */
       case WS:
         /* Treat whitespace as pad and terminate this group.*/
         nti = nac;
-        deliberate_fall_through;
+        deliberate_fall_through; /* FALLTHRU */
       case PC:
         bdp = 0;
         --nbo;
-        deliberate_fall_through;
+        deliberate_fall_through; /* FALLTHRU */
       default: /* bdp is the digit value. */
         qv = qv<<6 | bdp;
         break;
@@ -192,10 +192,13 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
     switch( nbo ){
     case 3:
       pOut[2] = (qv) & 0xff;
+      deliberate_fall_through; /* FALLTHRU */
     case 2:
       pOut[1] = (qv>>8) & 0xff;
+      deliberate_fall_through; /* FALLTHRU */
     case 1:
       pOut[0] = (qv>>16) & 0xff;
+      break;
     }
     pOut += nbo;
   }
@@ -204,7 +207,9 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
 
 /* This function does the work for the SQLite base64(x) UDF. */
 static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
-  int nb, nc, nv = sqlite3_value_bytes(av[0]);
+  sqlite3_int64 nb;
+  sqlite3_int64 nv = sqlite3_value_bytes(av[0]);
+  sqlite3_int64 nc;
   int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
@@ -213,7 +218,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
   switch( sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
     nb = nv;
-    nc = 4*(nv+2/3); /* quads needed */
+    nc = 4*((nv+2)/3); /* quads needed */
     nc += (nc+(B64_DARK_MAX-1))/B64_DARK_MAX + 1; /* LFs and a 0-terminator */
     if( nvMax < nc ){
       sqlite3_result_error(context, "blob expanded to base64 too big", -1);

@@ -517,7 +517,12 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_stmt_explain,
   /* Version 3.44.0 and later */
   sqlite3_get_clientdata,
-  sqlite3_set_clientdata
+  sqlite3_set_clientdata,
+  /* Version 3.50.0 and later */
+  sqlite3_setlk_timeout,
+  /* Version 3.51.0 and later */
+  sqlite3_set_errmsg,
+  sqlite3_db_status64
 };
 
 static const libsql_api_routines libsqlApis = {

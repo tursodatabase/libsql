@@ -23,11 +23,10 @@
     </figure>
     <div class="emscripten" id="module-status">Downloading...</div>
     <div class="emscripten">
-      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>
     </div><!-- /emscripten bits -->
     <div class='warning'>This page starts running the main exe when it loads, which will
-      block the UI until it finishes! Adding UI controls to manually configure and start it
-      are TODO.</div>
+      block the UI until it finishes!</div>
     </div>
     <div class='warning'>Achtung: running it with the dev tools open may
       <em>drastically</em> slow it down. For faster results, keep the dev
@@ -80,7 +79,7 @@
         logList.forEach((v)=>log2('',v));
         logList.length = 0;
     };
-    /* can't update DOM while speedtest is running unless we run
+    /* we cannot update DOM while speedtest is running unless we run
        speedtest in a worker thread. */;
     const log = (...args)=>{
         console.log(...args);
@@ -118,7 +117,7 @@
             argv.push("--vfs", vfs);
             log2('',"Using VFS:",vfs);
             if('kvvfs' === vfs){
-                forceSize = 4 /* 5 uses approx. 4.96mb */;
+                forceSize = 2 /* >2 is too big as of mid-2025 */;
                 dbFile = 'session';
                 log2('warning',"kvvfs VFS: forcing --size",forceSize,
                      "and filename '"+dbFile+"'.");
@@ -148,6 +147,8 @@
         // These log messages are not emitted to the UI until after main() returns. Fixing that
         // requires moving the main() call and related cleanup into a timeout handler.
         if(pDir) wasm.sqlite3_wasm_vfs_unlink(pVfs,dbFile);
+        log2('',"WASM heap size:",sqlite3.wasm.heap8().byteLength,"bytes");
+        log2('',"WASM pointer size:",sqlite3.wasm.ptr.size);
         log2('',"Starting native app:\n ",argv.join(' '));
         log2('',"This will take a while and the browser might warn about the runaway JS.",
              "Give it time...");
@@ -163,6 +164,7 @@
             if(pDir) wasm.sqlite3_wasm_vfs_unlink(pVfs,dbFile);
             logList.unshift("Done running native main(). Output:");
             dumpLogList();
+            log2('',"WASM heap size:",sqlite3.wasm.heap8().byteLength,"bytes");
         }, 50);
     }/*runTests()*/;
 

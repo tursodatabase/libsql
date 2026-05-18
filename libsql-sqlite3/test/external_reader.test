@@ -19,7 +19,7 @@ ifcapable !wal {
   finish_test 
   return 
 }
-if {$::tcl_platform(platform)!="unix"} {
+if {$::tcl_platform(os) eq "Windows NT"} {
   finish_test 
   return
 }

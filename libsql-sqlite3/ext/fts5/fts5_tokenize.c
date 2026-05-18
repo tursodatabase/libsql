@@ -198,7 +198,7 @@ static const unsigned char sqlite3Utf8Trans1[] = {
   c = *(zIn++);                                            \
   if( c>=0xc0 ){                                           \
     c = sqlite3Utf8Trans1[c-0xc0];                         \
-    while( zIn!=zTerm && (*zIn & 0xc0)==0x80 ){            \
+    while( zIn<zTerm && (*zIn & 0xc0)==0x80 ){             \
       c = (c<<6) + (0x3f & *(zIn++));                      \
     }                                                      \
     if( c<0x80                                             \
@@ -386,7 +386,6 @@ static int fts5UnicodeCreate(
           zCat = azArg[i+1];
         }
       }
-
       if( rc==SQLITE_OK ){
         rc = unicodeSetCategories(p, zCat);
       }
@@ -416,7 +415,6 @@ static int fts5UnicodeCreate(
           rc = SQLITE_ERROR;
         }
       }
-
     }else{
       rc = SQLITE_NOMEM;
     }
@@ -555,7 +553,7 @@ static int fts5UnicodeTokenize(
 
 typedef struct PorterTokenizer PorterTokenizer;
 struct PorterTokenizer {
-  fts5_tokenizer tokenizer;       /* Parent tokenizer module */
+  fts5_tokenizer_v2 tokenizer_v2; /* Parent tokenizer module */
   Fts5Tokenizer *pTokenizer;      /* Parent tokenizer instance */
   char aBuf[FTS5_PORTER_MAX_TOKEN + 64];
 };
@@ -567,7 +565,7 @@ static void fts5PorterDelete(Fts5Tokenizer *pTok){
   if( pTok ){
     PorterTokenizer *p = (PorterTokenizer*)pTok;
     if( p->pTokenizer ){
-      p->tokenizer.xDelete(p->pTokenizer);
+      p->tokenizer_v2.xDelete(p->pTokenizer);
     }
     sqlite3_free(p);
   }
@@ -586,6 +584,7 @@ static int fts5PorterCreate(
   PorterTokenizer *pRet;
   void *pUserdata = 0;
   const char *zBase = "unicode61";
+  fts5_tokenizer_v2 *pV2 = 0;
 
   if( nArg>0 ){
     zBase = azArg[0];
@@ -594,14 +593,15 @@ static int fts5PorterCreate(
   pRet = (PorterTokenizer*)sqlite3_malloc(sizeof(PorterTokenizer));
   if( pRet ){
     memset(pRet, 0, sizeof(PorterTokenizer));
-    rc = pApi->xFindTokenizer(pApi, zBase, &pUserdata, &pRet->tokenizer);
+    rc = pApi->xFindTokenizer_v2(pApi, zBase, &pUserdata, &pV2);
   }else{
     rc = SQLITE_NOMEM;
   }
   if( rc==SQLITE_OK ){
     int nArg2 = (nArg>0 ? nArg-1 : 0);
-    const char **azArg2 = (nArg2 ? &azArg[1] : 0);
-    rc = pRet->tokenizer.xCreate(pUserdata, azArg2, nArg2, &pRet->pTokenizer);
+    const char **az2 = (nArg2 ? &azArg[1] : 0);
+    memcpy(&pRet->tokenizer_v2, pV2, sizeof(fts5_tokenizer_v2));
+    rc = pRet->tokenizer_v2.xCreate(pUserdata, az2, nArg2, &pRet->pTokenizer);
   }
 
   if( rc!=SQLITE_OK ){
@@ -1252,6 +1252,7 @@ static int fts5PorterTokenize(
   void *pCtx,
   int flags,
   const char *pText, int nText,
+  const char *pLoc, int nLoc,
   int (*xToken)(void*, int, const char*, int nToken, int iStart, int iEnd)
 ){
   PorterTokenizer *p = (PorterTokenizer*)pTokenizer;
@@ -1259,8 +1260,8 @@ static int fts5PorterTokenize(
   sCtx.xToken = xToken;
   sCtx.pCtx = pCtx;
   sCtx.aBuf = p->aBuf;
-  return p->tokenizer.xTokenize(
-      p->pTokenizer, (void*)&sCtx, flags, pText, nText, fts5PorterCb
+  return p->tokenizer_v2.xTokenize(
+      p->pTokenizer, (void*)&sCtx, flags, pText, nText, pLoc, nLoc, fts5PorterCb
   );
 }
 
@@ -1291,18 +1292,18 @@ static int fts5TriCreate(
 ){
   int rc = SQLITE_OK;
   TrigramTokenizer *pNew = 0;
-
+  UNUSED_PARAM(pUnused);
   if( nArg%2 ){
     rc = SQLITE_ERROR;
   }else{
+    int i;
     pNew = (TrigramTokenizer*)sqlite3_malloc(sizeof(*pNew));
-    UNUSED_PARAM(pUnused);
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      int i;
       pNew->bFold = 1;
       pNew->iFoldParam = 0;
+  
       for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
         const char *zArg = azArg[i+1];
         if( 0==sqlite3_stricmp(azArg[i], "case_sensitive") ){
@@ -1321,11 +1322,11 @@ static int fts5TriCreate(
           rc = SQLITE_ERROR;
         }
       }
-
+  
       if( pNew->iFoldParam!=0 && pNew->bFold==0 ){
         rc = SQLITE_ERROR;
       }
-
+  
       if( rc!=SQLITE_OK ){
         fts5TriDelete((Fts5Tokenizer*)pNew);
         pNew = 0;
@@ -1352,8 +1353,8 @@ static int fts5TriTokenize(
   char *zOut = aBuf;
   int ii;
   const unsigned char *zIn = (const unsigned char*)pText;
-  const unsigned char *zEof = &zIn[nText];
-  u32 iCode;
+  const unsigned char *zEof = (zIn ? &zIn[nText] : 0);
+  u32 iCode = 0;
   int aStart[3];                  /* Input offset of each character in aBuf[] */
 
   UNUSED_PARAM(unusedFlags);
@@ -1362,8 +1363,8 @@ static int fts5TriTokenize(
   for(ii=0; ii<3; ii++){
     do {
       aStart[ii] = zIn - (const unsigned char*)pText;
+      if( zIn>=zEof ) return SQLITE_OK;
       READ_UTF8(zIn, zEof, iCode);
-      if( iCode==0 ) return SQLITE_OK;
       if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, p->iFoldParam);
     }while( iCode==0 );
     WRITE_UTF8(zOut, iCode);
@@ -1384,8 +1385,11 @@ static int fts5TriTokenize(
     /* Read characters from the input up until the first non-diacritic */
     do {
       iNext = zIn - (const unsigned char*)pText;
+      if( zIn>=zEof ){
+        iCode = 0;
+        break;
+      }
       READ_UTF8(zIn, zEof, iCode);
-      if( iCode==0 ) break;
       if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, p->iFoldParam);
     }while( iCode==0 );
 
@@ -1435,6 +1439,16 @@ int sqlite3Fts5TokenizerPattern(
 }
 
 /*
+** Return true if the tokenizer described by p->azArg[] is the trigram
+** tokenizer. This tokenizer needs to be loaded before xBestIndex is
+** called for the first time in order to correctly handle LIKE/GLOB.
+*/
+int sqlite3Fts5TokenizerPreload(Fts5TokenizerConfig *p){
+  return (p->nArg>=1 && 0==sqlite3_stricmp(p->azArg[0], "trigram"));
+}
+
+
+/*
 ** Register all built-in tokenizers with FTS5.
 */
 int sqlite3Fts5TokenizerInit(fts5_api *pApi){
@@ -1444,7 +1458,6 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
   } aBuiltin[] = {
     { "unicode61", {fts5UnicodeCreate, fts5UnicodeDelete, fts5UnicodeTokenize}},
     { "ascii",     {fts5AsciiCreate, fts5AsciiDelete, fts5AsciiTokenize }},
-    { "porter",    {fts5PorterCreate, fts5PorterDelete, fts5PorterTokenize }},
     { "trigram",   {fts5TriCreate, fts5TriDelete, fts5TriTokenize}},
   };
   
@@ -1459,6 +1472,19 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
         0
     );
   }
-
+  if( rc==SQLITE_OK ){
+    fts5_tokenizer_v2 sPorter = {
+      2,
+      fts5PorterCreate,
+      fts5PorterDelete,
+      fts5PorterTokenize
+    };
+    rc = pApi->xCreateTokenizer_v2(pApi,
+        "porter",
+        (void*)pApi,
+        &sPorter,
+        0
+    );
+  }
   return rc;
 }

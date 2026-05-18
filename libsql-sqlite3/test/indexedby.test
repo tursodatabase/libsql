@@ -187,7 +187,7 @@ do_test indexedby-4.4 {
 } {0 {}}
 
 # Test embedding an INDEXED BY in a CREATE VIEW statement. This block
-# also tests that nothing bad happens if an index refered to by
+# also tests that nothing bad happens if an index referred to by
 # a CREATE VIEW statement is dropped and recreated.
 #
 do_execsql_test indexedby-5.1 {

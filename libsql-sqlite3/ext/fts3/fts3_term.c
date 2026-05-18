@@ -78,6 +78,8 @@ static int fts3termConnectMethod(
     iIndex = atoi(argv[4]);
     argc--;
   }
+  
+  *ppVtab = 0;
 
   /* The user should specify a single argument - the name of an fts3 table. */
   if( argc!=4 ){
@@ -95,12 +97,17 @@ static int fts3termConnectMethod(
   rc = sqlite3_declare_vtab(db, FTS3_TERMS_SCHEMA);
   if( rc!=SQLITE_OK ) return rc;
 
-  nByte = sizeof(Fts3termTable) + sizeof(Fts3Table) + nDb + nFts3 + 2;
-  p = (Fts3termTable *)sqlite3_malloc64(nByte);
+  nByte = sizeof(Fts3termTable);
+  p = (Fts3termTable *)sqlite3Fts3MallocZero(nByte);
   if( !p ) return SQLITE_NOMEM;
-  memset(p, 0, (size_t)nByte);
 
-  p->pFts3Tab = (Fts3Table *)&p[1];
+  p->pFts3Tab = (Fts3Table*)sqlite3Fts3MallocZero(
+      sizeof(Fts3Table) + nDb + nFts3 + 2
+  );
+  if( p->pFts3Tab==0 ){
+    sqlite3_free(p);
+    return SQLITE_NOMEM;
+  }
   p->pFts3Tab->zDb = (char *)&p->pFts3Tab[1];
   p->pFts3Tab->zName = &p->pFts3Tab->zDb[nDb+1];
   p->pFts3Tab->db = db;
@@ -130,6 +137,7 @@ static int fts3termDisconnectMethod(sqlite3_vtab *pVtab){
     sqlite3_finalize(pFts3->aStmt[i]);
   }
   sqlite3_free(pFts3->zSegmentsTbl);
+  sqlite3_free(pFts3);
   sqlite3_free(p);
   return SQLITE_OK;
 }

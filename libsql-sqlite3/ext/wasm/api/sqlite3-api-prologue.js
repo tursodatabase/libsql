@@ -12,12 +12,12 @@
 
   This file is intended to be combined at build-time with other
   related code, most notably a header and footer which wraps this
-  whole file into an Emscripten Module.postRun() handler. The sqlite3
-  JS API has no hard requirements on Emscripten and does not expose
-  any Emscripten APIs to clients. It is structured such that its build
-  can be tweaked to include it in arbitrary WASM environments which
-  can supply the necessary underlying features (e.g. a POSIX file I/O
-  layer).
+  whole file into a single callback which can be run after Emscripten
+  loads the corresponding WASM module. The sqlite3 JS API has no hard
+  requirements on Emscripten and does not expose any Emscripten APIs
+  to clients. It is structured such that its build can be tweaked to
+  include it in arbitrary WASM environments which can supply the
+  necessary underlying features (e.g. a POSIX file I/O layer).
 
   Main project home page: https://sqlite.org
 
@@ -37,7 +37,7 @@
 
    This function expects a configuration object, intended to abstract
    away details specific to any given WASM environment, primarily so
-   that it can be used without any _direct_ dependency on
+   that it can be used without any direct dependency on
    Emscripten. (Note the default values for the config object!) The
    config object is only honored the first time this is
    called. Subsequent calls ignore the argument and return the same
@@ -49,13 +49,18 @@
 
    - `exports`[^1]: the "exports" object for the current WASM
      environment. In an Emscripten-based build, this should be set to
-     `Module['asm']`.
+     `Module['asm']` (versions <=3.1.43) or `Module['wasmExports']`
+     (versions >=3.1.44).
 
    - `memory`[^1]: optional WebAssembly.Memory object, defaulting to
      `exports.memory`. In Emscripten environments this should be set
      to `Module.wasmMemory` if the build uses `-sIMPORTED_MEMORY`, or be
      left undefined/falsy to default to `exports.memory` when using
      WASM-exported memory.
+
+   - `functionTable`[^1]: optional WebAssembly.Table object holding
+     the indirect function table. If not set then the table is assumed
+     to be in `exports.__indirect_function_table`.
 
    - `bigIntEnabled`: true if BigInt support is enabled. Defaults to
      true if `globalThis.BigInt64Array` is available, else false. Some APIs
@@ -98,27 +103,49 @@
 
    The returned object is the top-level sqlite3 namespace object.
 
+
+   Client code may optionally assign sqlite3ApiBootstrap.defaultConfig
+   an object-type value before calling sqlite3ApiBootstrap() (without
+   arguments) in order to tell that call to use this object as its
+   default config value. The intention of this is to provide
+   downstream clients with a reasonably flexible approach for plugging
+   in an environment-suitable configuration without having to define a
+   new global-scope symbol.
+
+   However, because clients who access this library via an
+   Emscripten-hosted module will not have an opportunity to call
+   sqlite3ApiBootstrap() themselves, nor to access it before it is
+   called, an alternative option for setting the configuration is to
+   define globalThis.sqlite3ApiConfig to an object. If it is set, it
+   is used instead of sqlite3ApiBootstrap.defaultConfig if
+   sqlite3ApiBootstrap() is called without arguments. Setting the
+   `exports` and `memory` parts require already having loaded the WASM
+   module, though.
+
+   Both sqlite3ApiBootstrap.defaultConfig and
+   globalThis.sqlite3ApiConfig get deleted by sqlite3ApiBootstrap()
+   because any changes to them made after that point would have no
+   useful effect.
+
+   This function returns a Promise to the sqlite3 namespace object,
+   which resolves after the async pieces of the library init are
+   complete.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
+globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   apiConfig = (globalThis.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
-  if(sqlite3ApiBootstrap.sqlite3){ /* already initalized */
-    console.warn("sqlite3ApiBootstrap() called multiple times.",
-                 "Config and external initializers are ignored on calls after the first.");
+  if(sqlite3ApiBootstrap.sqlite3){ /* already initialized */
+    (sqlite3ApiBootstrap.sqlite3.config || console).warn(
+      "sqlite3ApiBootstrap() called multiple times.",
+      "Config and external initializers are ignored on calls after the first."
+    );
     return sqlite3ApiBootstrap.sqlite3;
   }
   const config = Object.assign(Object.create(null),{
     exports: undefined,
     memory: undefined,
-    bigIntEnabled: (()=>{
-      if('undefined'!==typeof Module){
-        /* Emscripten module will contain HEAPU64 when built with
-           -sWASM_BIGINT=1, else it will not. */
-        return !!Module.HEAPU64;
-      }
-      return !!globalThis.BigInt64Array;
-    })(),
+    bigIntEnabled: !!globalThis.BigInt64Array,
     debug: console.debug.bind(console),
     warn: console.warn.bind(console),
     error: console.error.bind(console),
@@ -138,24 +165,33 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     allocExportName: config.useStdAlloc ? 'malloc' : 'sqlite3_malloc',
     deallocExportName: config.useStdAlloc ? 'free' : 'sqlite3_free',
     reallocExportName: config.useStdAlloc ? 'realloc' : 'sqlite3_realloc'
-  }, config);
+  });
 
   [
     // If any of these config options are functions, replace them with
-    // the result of calling that function...
-    'exports', 'memory', 'wasmfsOpfsDir'
+    // the result of calling that function. They must not be async.
+    'exports', 'memory', 'functionTable', 'wasmfsOpfsDir'
   ].forEach((k)=>{
     if('function' === typeof config[k]){
       config[k] = config[k]();
     }
   });
+
+  /**
+     Eliminate any confusion about whether these config objects may
+     be used after library initialization by eliminating the outward-facing
+     objects...
+  */
+  delete globalThis.sqlite3ApiConfig;
+  delete sqlite3ApiBootstrap.defaultConfig;
+
   /**
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members
       names with prefixes 'sqlite3_' and 'SQLITE_' behave, insofar as
       possible, identically to the C-native counterparts, as documented at:
 
-      https://www.sqlite.org/c3ref/intro.html
+      https://sqlite.org/c3ref/intro.html
 
       A very few exceptions require an additional level of proxy
       function or may otherwise require special attention in the WASM
@@ -182,7 +218,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /** Internal helper for SQLite3Error ctor. */
-  const __isInt = (n)=>'number'===typeof n && n===(n | 0);
+  const isInt32 = (n)=>
+        'number'===typeof n
+        && n===(n | 0)
+        && n<=2147483647 && n>=-2147483648;
 
   /**
      An Error subclass specifically for reporting DB-level errors and
@@ -205,7 +244,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        The exception's message is created by concatenating its
        arguments with a space between each, except for the
-       two-args-with-an-objec form and that the first argument will
+       two-args-with-an-object form and that the first argument will
        get coerced to a string, as described above, if it's an
        integer.
 
@@ -216,7 +255,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     constructor(...args){
       let rc;
       if(args.length){
-        if(__isInt(args[0])){
+        if(isInt32(args[0])){
           rc = args[0];
           if(1===args.length){
             super(__rcStr(args[0]));
@@ -260,16 +299,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }
 
   /**
-     Returns true if n is a 32-bit (signed) integer, else
-     false. This is used for determining when we need to switch to
-     double-type DB operations for integer values in order to keep
-     more precision.
-  */
-  const isInt32 = (n)=>{
-    return ('bigint'!==typeof n /*TypeError: can't convert BigInt to number*/)
-      && !!(n===(n|0) && n<=2147483647 && n>=-2147483648);
-  };
-  /**
      Returns true if the given BigInt value is small enough to fit
      into an int64 value, else false.
   */
@@ -304,32 +333,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return (v && v.constructor && isInt32(v.constructor.BYTES_PER_ELEMENT)) ? v : false;
   };
 
-
-  /** Internal helper to use in operations which need to distinguish
-      between TypedArrays which are backed by a SharedArrayBuffer
-      from those which are not. */
-  const __SAB = ('undefined'===typeof SharedArrayBuffer)
-        ? function(){} : SharedArrayBuffer;
-  /** Returns true if the given TypedArray object is backed by a
-      SharedArrayBuffer, else false. */
-  const isSharedTypedArray = (aTypedArray)=>(aTypedArray.buffer instanceof __SAB);
-
-  /**
-     Returns either aTypedArray.slice(begin,end) (if
-     aTypedArray.buffer is a SharedArrayBuffer) or
-     aTypedArray.subarray(begin,end) (if it's not).
-
-     This distinction is important for APIs which don't like to
-     work on SABs, e.g. TextDecoder, and possibly for our
-     own APIs which work on memory ranges which "might" be
-     modified by other threads while they're working.
-  */
-  const typedArrayPart = (aTypedArray, begin, end)=>{
-    return isSharedTypedArray(aTypedArray)
-      ? aTypedArray.slice(begin, end)
-      : aTypedArray.subarray(begin, end);
-  };
-
   /**
      Returns true if v appears to be one of our bind()-able TypedArray
      types: Uint8Array or Int8Array or ArrayBuffer. Support for
@@ -338,11 +341,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      property can be used to pass them as an ArrayBuffer. If it's not
      a bindable array type, a falsy value is returned.
   */
-  const isBindableTypedArray = (v)=>{
-    return v && (v instanceof Uint8Array
-                 || v instanceof Int8Array
-                 || v instanceof ArrayBuffer);
-  };
+  const isBindableTypedArray = (v)=>
+        v && (v instanceof Uint8Array
+              || v instanceof Int8Array
+              || v instanceof ArrayBuffer);
 
   /**
      Returns true if v appears to be one of the TypedArray types
@@ -353,43 +355,31 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      and friends to the isBindableTypedArray() list but not to the
      isSQLableTypedArray() list.
   */
-  const isSQLableTypedArray = (v)=>{
-    return v && (v instanceof Uint8Array
-                 || v instanceof Int8Array
-                 || v instanceof ArrayBuffer);
-  };
+  const isSQLableTypedArray = (v)=>
+        v && (v instanceof Uint8Array
+              || v instanceof Int8Array
+              || v instanceof ArrayBuffer);
 
   /** Returns true if isBindableTypedArray(v) does, else throws with a message
       that v is not a supported TypedArray value. */
-  const affirmBindableTypedArray = (v)=>{
-    return isBindableTypedArray(v)
-      || toss3("Value is not of a supported TypedArray type.");
-  };
-
-  const utf8Decoder = new TextDecoder('utf-8');
-
-  /**
-     Uses TextDecoder to decode the given half-open range of the
-     given TypedArray to a string. This differs from a simple
-     call to TextDecoder in that it accounts for whether the
-     first argument is backed by a SharedArrayBuffer or not,
-     and can work more efficiently if it's not (TextDecoder
-     refuses to act upon an SAB).
-  */
-  const typedArrayToString = function(typedArray, begin, end){
-    return utf8Decoder.decode(typedArrayPart(typedArray, begin,end));
-  };
+  const affirmBindableTypedArray = (v)=>
+        isBindableTypedArray(v)
+        || toss3("Value is not of a supported TypedArray type.");
 
   /**
      If v is-a Array, its join("") result is returned.  If
-     isSQLableTypedArray(v) is true then typedArrayToString(v) is
+     isSQLableTypedArray(v) is true then wasm.typedArrayToString(v) is
      returned. If it looks like a WASM pointer, wasm.cstrToJs(v) is
      returned. Else v is returned as-is.
+
+     Reminder to self: the "return as-is" instead of returning ''+v is
+     arguably a design mistake but changing it is risky at this point.
   */
   const flexibleString = function(v){
     if(isSQLableTypedArray(v)){
-      return typedArrayToString(
-        (v instanceof ArrayBuffer) ? new Uint8Array(v) : v
+      return wasm.typedArrayToString(
+        (v instanceof ArrayBuffer) ? new Uint8Array(v) : v,
+        0, v.length
       );
     }
     else if(Array.isArray(v)) return v.join("");
@@ -517,8 +507,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        4th-argument value, taking care not to pass a value which
        truncates a multi-byte UTF-8 character. When passing
        WASM-format strings, it is important that the final argument be
-       valid or unexpected content can result can result, or even a
-       crash if the application reads past the WASM heap bounds.
+       valid or unexpected content can result, or WASM may crash if
+       the application reads past the WASM heap bounds.
     */
     sqlite3_bind_text: undefined/*installed later*/,
 
@@ -589,10 +579,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          functions passed in to this routine, and thus wrapped by this
          routine, get automatic conversions of arguments and result
          values. The routines which perform those conversions are
-         exposed for client-side use as
-         sqlite3_create_function_v2.convertUdfArgs() and
-         sqlite3_create_function_v2.setUdfResult(). sqlite3_create_function()
-         and sqlite3_create_window_function() have those same methods.
+         exposed for client-side use as sqlite3_values_to_js(),
+         sqlite3_result_js(), and sqlite3_result_error_js().
 
        For xFunc(), xStep(), and xFinal():
 
@@ -610,20 +598,16 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        possibly generating a console.error() message.  Destructors
        must not throw.
 
-       Once installed, there is currently no way to uninstall the
-       automatically-converted WASM-bound JS functions from WASM. They
-       can be uninstalled from the database as documented in the C
-       API, but this wrapper currently has no infrastructure in place
-       to also free the WASM-bound JS wrappers, effectively resulting
-       in a memory leak if the client uninstalls the UDF. Improving that
-       is a potential TODO, but removing client-installed UDFs is rare
-       in practice. If this factor is relevant for a given client,
-       they can create WASM-bound JS functions themselves, hold on to their
-       pointers, and pass the pointers in to here. Later on, they can
-       free those pointers (using `wasm.uninstallFunction()` or
-       equivalent).
+       Automatically-converted JS-to-WASM functions will be cleaned up
+       either when (A) this function is called again with the same
+       name, arity, and encoding, but null/0 values for the functions,
+       or (B) when pDb is passed to sqlite3_close_v2(). If this factor
+       is relevant for a given client, they can create WASM-bound JS
+       functions themselves, hold on to their pointers, and pass the
+       pointers in to here. Later on, they can free those pointers
+       (using `wasm.uninstallFunction()` or equivalent).
 
-       C reference: https://www.sqlite.org/c3ref/create_function.html
+       C reference: https://sqlite.org/c3ref/create_function.html
 
        Maintenance reminder: the ability to add new
        WASM-accessible functions to the runtime requires that the
@@ -661,10 +645,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        2) sqlite3_prepare_v3(pDb, sqlPointer, sqlByteLen, prepFlags, ppStmt, sqlPointerToPointer)
 
-       Note that the SQL length argument (the 3rd argument) must, for
-       usage (1), always be negative because it must be a byte length
-       and that value is expensive to calculate from JS (where only
-       the character length of strings is readily available). It is
+       The SQL length argument (the 3rd argument) must, for usage (1),
+       always be negative because it must be a byte length and that
+       value is expensive to calculate from JS (where only the
+       character length of strings is readily available). It is
        retained in this API's interface for code/documentation
        compatibility reasons but is currently _always_ ignored. With
        usage (2), the 3rd argument is used as-is but is is still
@@ -690,8 +674,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        (e.g. using capi.wasm.alloc() or equivalent). In that case,
        the final argument may be 0/null/undefined or must be a pointer
        to which the "tail" of the compiled SQL is written, as
-       documented for the C-side sqlite3_prepare_v3(). In case (2),
-       the underlying C function is called with the equivalent of:
+       documented for the C-side sqlite3_prepare_v3().
+
+       In case (2), the underlying C function is called with the
+       equivalent of:
 
        (pDb, sqlAsPointer, sqlByteLen, prepFlags, ppStmt, pzTail)
 
@@ -766,13 +752,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     bigIntFits32, bigIntFits64, bigIntFitsDouble,
     isBindableTypedArray,
     isInt32, isSQLableTypedArray, isTypedArray,
-    typedArrayToString,
     isUIThread: ()=>(globalThis.window===globalThis && !!globalThis.document),
     // is this true for ESM?: 'undefined'===typeof WorkerGlobalScope
-    isSharedTypedArray,
     toss: function(...args){throw new Error(args.join(' '))},
     toss3,
-    typedArrayPart,
+    typedArrayPart: wasm.typedArrayPart,
     /**
        Given a byte array or ArrayBuffer, this function throws if the
        lead bytes of that buffer do not hold a SQLite3 database header,
@@ -810,28 +794,28 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
   }/*util*/;
 
+  /**
+     wasm.X properties which are used for configuring the wasm
+     environment via whwashutil.js.
+  */
   Object.assign(wasm, {
     /**
-       Emscripten APIs have a deep-seated assumption that all pointers
-       are 32 bits. We'll remain optimistic that that won't always be
-       the case and will use this constant in places where we might
-       otherwise use a hard-coded 4.
-    */
-    ptrSizeof: config.wasmPtrSizeof || 4,
-    /**
        The WASM IR (Intermediate Representation) value for
-       pointer-type values. It MUST refer to a value type of the
-       size described by this.ptrSizeof.
+       pointer-type values. If set then it MUST be one of 'i32' or
+       'i64' (else an exception will be thrown). If it's not set, it
+       will default to 'i32'.
     */
-    ptrIR: config.wasmPtrIR || "i32",
+    pointerIR: config.wasmPtrIR,
+
     /**
        True if BigInt support was enabled via (e.g.) the
        Emscripten -sWASM_BIGINT flag, else false. When
        enabled, certain 64-bit sqlite3 APIs are enabled which
        are not otherwise enabled due to JS/WASM int64
-       impedence mismatches.
+       impedance mismatches.
     */
     bigIntEnabled: !!config.bigIntEnabled,
+
     /**
        The symbols exported by the WASM environment.
     */
@@ -840,14 +824,21 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
     /**
        When Emscripten compiles with `-sIMPORTED_MEMORY`, it
-       initalizes the heap and imports it into wasm, as opposed to
+       initializes the heap and imports it into wasm, as opposed to
        the other way around. In this case, the memory is not
        available via this.exports.memory.
     */
-    memory: config.memory || config.exports['memory']
+    memory: config.memory
+      || config.exports['memory']
       || toss3("API config object requires a WebAssembly.Memory object",
               "in either config.exports.memory (exported)",
               "or config.memory (imported)."),
+
+    /**
+       WebAssembly.Table object holding the indirect function call
+       table. Defaults to exports.__indirect_function_table.
+    */
+    functionTable: config.functionTable,
 
     /**
        The API's primary point of access to the WASM-side memory
@@ -867,8 +858,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        catch exceptions and convert them to appropriate error codes.
 
        For cases where non-throwing allocation is required, use
-       this.alloc.impl(), which is direct binding of the
-       underlying C-level allocator.
+       this.alloc.impl(), which is the unadulterated WASM-exported
+       counterpart of this wrapper.
 
        Design note: this function is not named "malloc" primarily
        because Emscripten uses that name and we wanted to avoid any
@@ -931,9 +922,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
     affirmBindableTypedArray(srcTypedArray);
     const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
-    wasm.heapForSize(srcTypedArray.constructor).set(
-      srcTypedArray.byteLength ? srcTypedArray : [0], pRet
-    );
+    wasm.heapForSize(srcTypedArray.constructor)
+      .set(srcTypedArray.byteLength ? srcTypedArray : [0], Number(pRet))
+    /* Maintenance note: the order of alloc() and heapForSize() calls
+       is significant: https://sqlite.org/forum/forumpost/05b77273be104532 */;
     return pRet;
   };
 
@@ -952,11 +944,14 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     };
     wasm.alloc.impl = wasm.exports[keyAlloc];
     wasm.realloc = function f(m,n){
-      const m2 = f.impl(m,n);
-      return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : 0;
+      const m2 = f.impl(wasm.ptr.coerce(m)/*tag:64bit*/,n);
+      return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : wasm.ptr.null;
     };
     wasm.realloc.impl = wasm.exports[keyRealloc];
-    wasm.dealloc = wasm.exports[keyDealloc];
+    wasm.dealloc = function f(m){
+      f.impl(wasm.ptr.coerce(m)/*tag:64bit*/);
+    };
+    wasm.dealloc.impl = wasm.exports[keyDealloc];
   }
 
   /**
@@ -1000,7 +995,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           rv[1] = m ? (f._rxInt.test(m[2]) ? +m[2] : m[2]) : true;
         };
       }
-      const rc = {}, ov = [0,0];
+      const rc = Object.create(null), ov = [0,0];
       let i = 0, k;
       while((k = capi.sqlite3_compileoption_get(i++))){
         f._opt(k,ov);
@@ -1008,7 +1003,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }
       return f._result = rc;
     }else if(Array.isArray(optName)){
-      const rc = {};
+      const rc = Object.create(null);
       optName.forEach((v)=>{
         rc[v] = capi.sqlite3_compileoption_used(v);
       });
@@ -1025,10 +1020,16 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }/*compileOptionUsed()*/;
 
   /**
-     sqlite3.wasm.pstack (pseudo-stack) holds a special-case
-     stack-style allocator intended only for use with _small_ data of
-     not more than (in total) a few kb in size, managed as if it were
-     stack-based.
+     sqlite3.wasm.pstack (pseudo-stack) holds a special-case intended
+     solely for short-lived, small data. In practice, it's primarily
+     used to allocate output pointers. It mus not be used for any
+     memory which needs to outlive the scope in which it's obtained
+     from pstack.
+
+     The library guarantees only that a minimum of 2kb are available
+     in this allocator, and it may provide more (it's a build-time
+     value). pstack.quota and pstack.remaining can be used to get the
+     total resp. remaining amount of memory.
 
      It has only a single intended usage:
 
@@ -1060,8 +1061,12 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        Sets the current pstack position to the given pointer. Results
        are undefined if the passed-in value did not come from
        this.pointer.
+
+       In debug builds this may trigger an assert() in the WASM
+       environment if passed an illegal value.
     */
-    restore: wasm.exports.sqlite3_wasm_pstack_restore,
+    restore: wasm.exports.sqlite3__wasm_pstack_restore,
+
     /**
        Attempts to allocate the given number of bytes from the
        pstack. On success, it zeroes out a block of memory of the
@@ -1083,10 +1088,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       if('string'===typeof n && !(n = wasm.sizeofIR(n))){
         WasmAllocError.toss("Invalid value for pstack.alloc(",arguments[0],")");
       }
-      return wasm.exports.sqlite3_wasm_pstack_alloc(n)
+      return wasm.exports.sqlite3__wasm_pstack_alloc(n)
         || WasmAllocError.toss("Could not allocate",n,
                                "bytes from the pstack.");
     },
+
     /**
        alloc()'s n chunks, each sz bytes, as a single memory block and
        returns the addresses as an array of n element, each holding
@@ -1099,7 +1105,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        Example:
 
        ```
-       const [p1, p2, p3] = wasm.pstack.allocChunks(3,4);
+       const [p1, p2, p3] = wasm.pstack.allocChunks(3, wasm.ptr.size);
        ```
     */
     allocChunks: function(n,sz){
@@ -1107,14 +1113,15 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         WasmAllocError.toss("Invalid size value for allocChunks(",arguments[1],")");
       }
       const mem = wasm.pstack.alloc(n * sz);
-      const rc = [];
-      let i = 0, offset = 0;
-      for(; i < n; ++i, offset += sz) rc.push(mem + offset);
+      const rc = [mem];
+      let i = 1, offset = sz;
+      for(; i < n; ++i, offset += sz) rc.push(wasm.ptr.add(mem, offset));
       return rc;
     },
+
     /**
        A convenience wrapper for allocChunks() which sizes each chunk
-       as either 8 bytes (safePtrSize is truthy) or wasm.ptrSizeof (if
+       as either 8 bytes (safePtrSize is truthy) or wasm.ptr.size (if
        safePtrSize is falsy).
 
        How it returns its result differs depending on its first
@@ -1133,8 +1140,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     allocPtr: (n=1,safePtrSize=true)=>{
       return 1===n
-        ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.ptrSizeof)
-        : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.ptrSizeof);
+        ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.ptr.size)
+        : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.ptr.size);
     },
 
     /**
@@ -1147,52 +1154,55 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     call: function(f){
       const stackPos = wasm.pstack.pointer;
-      try{ return f(sqlite3) } finally{
-        wasm.pstack.restore(stackPos);
-      }
+      try{ return f(sqlite3) }
+      finally{ wasm.pstack.restore(stackPos); }
     }
 
   })/*wasm.pstack*/;
+
   Object.defineProperties(wasm.pstack, {
     /**
-       sqlite3.wasm.pstack.pointer resolves to the current pstack
-       position pointer. This value is intended _only_ to be saved
-       for passing to restore(). Writing to this memory, without
-       first reserving it via wasm.pstack.alloc() and friends, leads
-       to undefined results.
+       Resolves to the current pstack position pointer either as a
+       Number (32-bit WASM) or BigInt (64-bit WASM). This value is
+       intended _only_ to be saved for passing to restore(). Writing
+       to this memory, without first reserving it via
+       wasm.pstack.alloc() and friends, leads to undefined results.
     */
     pointer: {
       configurable: false, iterable: true, writeable: false,
-      get: wasm.exports.sqlite3_wasm_pstack_ptr
+      get: wasm.exports.sqlite3__wasm_pstack_ptr
       //Whether or not a setter as an alternative to restore() is
-      //clearer or would just lead to confusion is unclear.
-      //set: wasm.exports.sqlite3_wasm_pstack_restore
+      //clearer or would just lead to confusion or misuse is unclear.
+      //set: wasm.exports.sqlite3__wasm_pstack_restore
     },
+
     /**
-       sqlite3.wasm.pstack.quota to the total number of bytes
-       available in the pstack, including any space which is currently
+       Resolves to the total number of bytes available in the pstack
+       allocator, including any space which is currently
        allocated. This value is a compile-time constant.
     */
     quota: {
       configurable: false, iterable: true, writeable: false,
-      get: wasm.exports.sqlite3_wasm_pstack_quota
+      get: wasm.exports.sqlite3__wasm_pstack_quota
     },
+
     /**
-       sqlite3.wasm.pstack.remaining resolves to the amount of space
-       remaining in the pstack.
+       Resolves to the number of bytes remaining in the pstack
+       allocator.
     */
     remaining: {
       configurable: false, iterable: true, writeable: false,
-      get: wasm.exports.sqlite3_wasm_pstack_remaining
+      get: wasm.exports.sqlite3__wasm_pstack_remaining
     }
   })/*wasm.pstack properties*/;
 
   capi.sqlite3_randomness = (...args)=>{
-    if(1===args.length && util.isTypedArray(args[0])
-      && 1===args[0].BYTES_PER_ELEMENT){
+    if(1===args.length
+       && util.isTypedArray(args[0])
+       && 1===args[0].BYTES_PER_ELEMENT){
       const ta = args[0];
       if(0===ta.byteLength){
-        wasm.exports.sqlite3_randomness(0,0);
+        wasm.exports.sqlite3_randomness(0,wasm.ptr.null);
         return ta;
       }
       const stack = wasm.pstack.pointer;
@@ -1205,13 +1215,13 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         do{
           const j = (n>nAlloc ? nAlloc : n);
           r(j, ptr);
-          ta.set(typedArrayPart(heap, ptr, ptr+j), offset);
+          ta.set(wasm.typedArrayPart(heap, ptr, wasm.ptr.add(ptr,j)), offset);
           n -= j;
           offset += j;
         } while(n > 0);
       }catch(e){
-        console.error("Highly unexpected (and ignored!) "+
-                      "exception in sqlite3_randomness():",e);
+        config.error("Highly unexpected (and ignored!) "+
+                     "exception in sqlite3_randomness():",e);
       }finally{
         wasm.pstack.restore(stack);
       }
@@ -1228,21 +1238,21 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      does not then it returns "" (noting that "" is a falsy value).
 
      The first time this is called, this function inspects the current
-     environment to determine whether persistence support is available
-     and, if it is, enables it (if needed). After the first call it
-     always returns the cached result.
+     environment to determine whether WASMFS persistence support is
+     available and, if it is, enables it (if needed). After the first
+     call it always returns the cached result.
 
      If the returned string is not empty, any files stored under the
-     given path (recursively) are housed in OPFS storage. If the
+     returned path (recursively) are housed in OPFS storage. If the
      returned string is empty, this particular persistent storage
      option is not available on the client.
 
      Though the mount point name returned by this function is intended
-     to remain stable, clients should not hard-coded it anywhere. Always call this function to get the path.
+     to remain stable, clients should not hard-coded it anywhere.
+     Always call this function to get the path.
 
-     Note that this function is a no-op in must builds of this
-     library, as the WASMFS capability requires a custom
-     build.
+     This function is a no-op in most builds of this library, as the
+     WASMFS capability requires a custom build.
   */
   capi.sqlite3_wasmfs_opfs_dir = function(){
     if(undefined !== __wasmfsOpfsDir) return __wasmfsOpfsDir;
@@ -1251,19 +1261,20 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     if(!pdir
        || !globalThis.FileSystemHandle
        || !globalThis.FileSystemDirectoryHandle
-       || !globalThis.FileSystemFileHandle){
+       || !globalThis.FileSystemFileHandle
+       || !wasm.exports.sqlite3__wasm_init_wasmfs){
       return __wasmfsOpfsDir = "";
     }
     try{
       if(pdir && 0===wasm.xCallWrapped(
-        'sqlite3_wasm_init_wasmfs', 'i32', ['string'], pdir
+        'sqlite3__wasm_init_wasmfs', 'i32', ['string'], pdir
       )){
         return __wasmfsOpfsDir = pdir;
       }else{
         return __wasmfsOpfsDir = "";
       }
     }catch(e){
-      // sqlite3_wasm_init_wasmfs() is not available
+      // sqlite3__wasm_init_wasmfs() is not available
       return __wasmfsOpfsDir = "";
     }
   };
@@ -1283,11 +1294,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      (defaulting to "main"), returns a truthy value (see below) if
      that db uses that VFS, else returns false. If pDb is falsy then
      the 3rd argument is ignored and this function returns a truthy
-     value if the default VFS name matches that of the 2nd
-     argument. Results are undefined if pDb is truthy but refers to an
-     invalid pointer. The 3rd argument specifies the database name of
-     the given database connection to check, defaulting to the main
-     db.
+     value if the default VFS name matches that of the 2nd argument.
+     Results are undefined if pDb is truthy but refers to an invalid
+     pointer. The 3rd argument specifies the database name of the
+     given database connection to check, defaulting to the main db.
 
      The 2nd and 3rd arguments may either be a JS string or a WASM
      C-string. If the 2nd argument is a NULL WASM pointer, the default
@@ -1298,9 +1308,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      object.
 
      To permit safe use of this function from APIs which may be called
-     via the C stack (like SQL UDFs), this function does not throw: if
-     bad arguments cause a conversion error when passing into
-     wasm-space, false is returned.
+     via C (like SQL UDFs), this function does not throw: if bad
+     arguments cause a conversion error when passing into wasm-space,
+     false is returned.
   */
   capi.sqlite3_js_db_uses_vfs = function(pDb,vfsName,dbName=0){
     try{
@@ -1323,7 +1333,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.sqlite3_js_vfs_list = function(){
     const rc = [];
-    let pVfs = capi.sqlite3_vfs_find(0);
+    let pVfs = capi.sqlite3_vfs_find(wasm.ptr.coerce(0));
     while(pVfs){
       const oVfs = new capi.sqlite3_vfs(pVfs);
       rc.push(wasm.cstrToJs(oVfs.$zName));
@@ -1349,12 +1359,12 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   capi.sqlite3_js_db_export = function(pDb, schema=0){
     pDb = wasm.xWrap.testConvertArg('sqlite3*', pDb);
     if(!pDb) toss3('Invalid sqlite3* argument.');
-    if(!wasm.bigIntEnabled) toss3('BigInt64 support is not enabled.');
+    if(!wasm.bigIntEnabled) toss3('BigInt support is not enabled.');
     const scope = wasm.scopedAllocPush();
     let pOut;
     try{
-      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.ptrSizeof);
-      const ppOut = pSize + 8;
+      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.ptr.size);
+      const ppOut = wasm.ptr.add(pSize, 8);
       /**
          Maintenance reminder, since this cost a full hour of grief
          and confusion: if the order of pSize/ppOut are reversed in
@@ -1364,8 +1374,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       */
       const zSchema = schema
             ? (wasm.isPtr(schema) ? schema : wasm.scopedAllocCString(''+schema))
-            : 0;
-      let rc = wasm.exports.sqlite3_wasm_db_serialize(
+            : wasm.ptr.null;
+      let rc = wasm.exports.sqlite3__wasm_db_serialize(
         pDb, zSchema, ppOut, pSize, 0
       );
       if(rc){
@@ -1375,7 +1385,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       pOut = wasm.peekPtr(ppOut);
       const nOut = wasm.peek(pSize, 'i64');
       rc = nOut
-        ? wasm.heap8u().slice(pOut, pOut + Number(nOut))
+        ? wasm.heap8u().slice(Number(pOut), Number(pOut) + Number(nOut))
         : new Uint8Array();
       return rc;
     }finally{
@@ -1391,7 +1401,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      or not provided, then "main" is assumed.
   */
   capi.sqlite3_js_db_vfs =
-    (dbPointer, dbName=0)=>wasm.sqlite3_wasm_db_vfs(dbPointer, dbName);
+    (dbPointer, dbName=0)=>util.sqlite3__wasm_db_vfs(dbPointer, dbName);
 
   /**
      A thin wrapper around capi.sqlite3_aggregate_context() which
@@ -1412,11 +1422,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      creates (or overwrites) the given file using those APIs. This is
      primarily intended for use in Emscripten-based builds where the POSIX
      APIs are transparently proxied by an in-memory virtual filesystem.
-     It may behave diffrently in other environments.
+     It may behave differently in other environments.
 
      The first argument must be either a JS string or WASM C-string
-     holding the filename. Note that this routine does _not_ create
-     intermediary directories if the filename has a directory part.
+     holding the filename. This routine does _not_ create intermediary
+     directories if the filename has a directory part.
 
      The 2nd argument may either a valid WASM memory pointer, an
      ArrayBuffer, or a Uint8Array. The 3rd must be the length, in
@@ -1449,11 +1459,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       if(!util.isInt32(dataLen) || dataLen<0){
         SQLite3Error.toss("Invalid 3rd argument for sqlite3_js_posix_create_file().");
       }
-      const rc = wasm.sqlite3_wasm_posix_create_file(filename, pData, dataLen);
+      const rc = util.sqlite3__wasm_posix_create_file(filename, pData, dataLen);
       if(rc) SQLite3Error.toss("Creation of file failed with sqlite3 result code",
                                capi.sqlite3_js_rc_str(rc));
     }finally{
-       wasm.dealloc(pData);
+      if( pData && pData!==data ) wasm.dealloc(pData);
     }
   };
 
@@ -1462,12 +1472,13 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      debug builds of sqlite3 because its out-of-scope use of the
      sqlite3_vfs API triggers assertions in the core library.  That
      was unfortunately not discovered until 2023-08-11. This function
-     is now deprecated and should not be used in new code.
+     is now deprecated. It should not be used in new code and should
+     be removed from existing code.
 
      Alternative options:
 
-     - "unix" VFS and its variants can get equivalent functionality
-       with sqlite3_js_posix_create_file().
+     - The "unix" VFS and its variants can get equivalent
+       functionality with sqlite3_js_posix_create_file().
 
      - OPFS: use either sqlite3.oo1.OpfsDb.importDb(), for the "opfs"
        VFS, or the importDb() method of the PoolUtil object provided
@@ -1475,6 +1486,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        depending on client-side configuration). We cannot proxy those
        from here because the former is necessarily asynchronous and
        the latter requires information not available to this function.
+
+     Historical (deprecated) behaviour:
 
      Creates a file using the storage appropriate for the given
      sqlite3_vfs.  The first argument may be a VFS name (JS string
@@ -1514,11 +1527,14 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      - "memdb": results are undefined.
 
      - "kvvfs": will fail with an I/O error due to strict internal
-       requirments of that VFS's xTruncate().
+       requirements of that VFS's xTruncate().
 
      - "unix" and related: will use the WASM build's equivalent of the
        POSIX I/O APIs. This will work so long as neither a specific
-       VFS nor the WASM environment imposes requirements which break it.
+       VFS nor the WASM environment imposes requirements which break
+       it.  (Much later: it turns out that debug builds of the library
+       impose such requirements, in that they assert() that dataLen is
+       an even multiple of a valid db page size.)
 
      - "opfs": uses OPFS storage and creates directory parts of the
        filename. It can only be used to import an SQLite3 database
@@ -1527,35 +1543,37 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   capi.sqlite3_js_vfs_create_file = function(vfs, filename, data, dataLen){
     config.warn("sqlite3_js_vfs_create_file() is deprecated and",
                 "should be avoided because it can lead to C-level crashes.",
-                "See its documentation for alternative options.");
+                "See its documentation for alternatives.");
     let pData;
     if(data){
-      if(wasm.isPtr(data)){
+      if( wasm.isPtr(data) ){
         pData = data;
-      }else if(data instanceof ArrayBuffer){
-        data = new Uint8Array(data);
-      }
-      if(data instanceof Uint8Array){
-        pData = wasm.allocFromTypedArray(data);
-        if(arguments.length<4 || !util.isInt32(dataLen) || dataLen<0){
-          dataLen = data.byteLength;
-        }
       }else{
-        SQLite3Error.toss("Invalid 3rd argument type for sqlite3_js_vfs_create_file().");
+        if( data instanceof ArrayBuffer ){
+          data = new Uint8Array(data);
+        }
+        if( data instanceof Uint8Array ){
+          pData = wasm.allocFromTypedArray(data);
+          if(arguments.length<4 || !util.isInt32(dataLen) || dataLen<0){
+            dataLen = data.byteLength;
+          }
+        }else{
+          SQLite3Error.toss("Invalid 3rd argument type for sqlite3_js_vfs_create_file().");
+        }
       }
     }else{
        pData = 0;
     }
     if(!util.isInt32(dataLen) || dataLen<0){
-      wasm.dealloc(pData);
+      if( pData && pData!==data ) wasm.dealloc(pData);
       SQLite3Error.toss("Invalid 4th argument for sqlite3_js_vfs_create_file().");
     }
     try{
-      const rc = wasm.sqlite3_wasm_vfs_create_file(vfs, filename, pData, dataLen);
+      const rc = util.sqlite3__wasm_vfs_create_file(vfs, filename, pData, dataLen);
       if(rc) SQLite3Error.toss("Creation of file failed with sqlite3 result code",
                                capi.sqlite3_js_rc_str(rc));
     }finally{
-       wasm.dealloc(pData);
+       if( pData && pData!==data ) wasm.dealloc(pData);
     }
   };
 
@@ -1671,41 +1689,48 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      missing or falsy pointer argument as 0.
   */
   capi.sqlite3_db_config = function(pDb, op, ...args){
-    if(!this.s){
-      this.s = wasm.xWrap('sqlite3_wasm_db_config_s','int',
-                          ['sqlite3*', 'int', 'string:static']
-                          /* MAINDBNAME requires a static string */);
-      this.pii = wasm.xWrap('sqlite3_wasm_db_config_pii', 'int',
-                            ['sqlite3*', 'int', '*','int', 'int']);
-      this.ip = wasm.xWrap('sqlite3_wasm_db_config_ip','int',
-                           ['sqlite3*', 'int', 'int','*']);
-    }
     switch(op){
-        case capi.SQLITE_DBCONFIG_ENABLE_FKEY:
-        case capi.SQLITE_DBCONFIG_ENABLE_TRIGGER:
-        case capi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
-        case capi.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
-        case capi.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
-        case capi.SQLITE_DBCONFIG_ENABLE_QPSG:
-        case capi.SQLITE_DBCONFIG_TRIGGER_EQP:
-        case capi.SQLITE_DBCONFIG_RESET_DATABASE:
-        case capi.SQLITE_DBCONFIG_DEFENSIVE:
-        case capi.SQLITE_DBCONFIG_WRITABLE_SCHEMA:
-        case capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
-        case capi.SQLITE_DBCONFIG_DQS_DML:
-        case capi.SQLITE_DBCONFIG_DQS_DDL:
-        case capi.SQLITE_DBCONFIG_ENABLE_VIEW:
-        case capi.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
-        case capi.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
-        case capi.SQLITE_DBCONFIG_STMT_SCANSTATUS:
-        case capi.SQLITE_DBCONFIG_REVERSE_SCANORDER:
-          return this.ip(pDb, op, args[0], args[1] || 0);
-        case capi.SQLITE_DBCONFIG_LOOKASIDE:
-          return this.pii(pDb, op, args[0], args[1], args[2]);
-        case capi.SQLITE_DBCONFIG_MAINDBNAME:
-          return this.s(pDb, op, args[0]);
-        default:
-          return capi.SQLITE_MISUSE;
+      case capi.SQLITE_DBCONFIG_ENABLE_FKEY:
+      case capi.SQLITE_DBCONFIG_ENABLE_TRIGGER:
+      case capi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
+      case capi.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
+      case capi.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
+      case capi.SQLITE_DBCONFIG_ENABLE_QPSG:
+      case capi.SQLITE_DBCONFIG_TRIGGER_EQP:
+      case capi.SQLITE_DBCONFIG_RESET_DATABASE:
+      case capi.SQLITE_DBCONFIG_DEFENSIVE:
+      case capi.SQLITE_DBCONFIG_WRITABLE_SCHEMA:
+      case capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
+      case capi.SQLITE_DBCONFIG_DQS_DML:
+      case capi.SQLITE_DBCONFIG_DQS_DDL:
+      case capi.SQLITE_DBCONFIG_ENABLE_VIEW:
+      case capi.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
+      case capi.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+      case capi.SQLITE_DBCONFIG_STMT_SCANSTATUS:
+      case capi.SQLITE_DBCONFIG_REVERSE_SCANORDER:
+      case capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE:
+      case capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE:
+      case capi.SQLITE_DBCONFIG_ENABLE_COMMENTS:
+        if( !this.ip ){
+          this.ip = wasm.xWrap('sqlite3__wasm_db_config_ip','int',
+                               ['sqlite3*', 'int', 'int', '*']);
+        }
+        return this.ip(pDb, op, args[0], args[1] || 0);
+      case capi.SQLITE_DBCONFIG_LOOKASIDE:
+        if( !this.pii ){
+          this.pii = wasm.xWrap('sqlite3__wasm_db_config_pii', 'int',
+                                ['sqlite3*', 'int', '*', 'int', 'int']);
+        }
+        return this.pii(pDb, op, args[0], args[1], args[2]);
+      case capi.SQLITE_DBCONFIG_MAINDBNAME:
+        if(!this.s){
+          this.s = wasm.xWrap('sqlite3__wasm_db_config_s','int',
+                              ['sqlite3*', 'int', 'string:static']
+                              /* MAINDBNAME requires a static string */);
+        }
+        return this.s(pDb, op, args[0]);
+      default:
+        return capi.SQLITE_MISUSE;
     }
   }.bind(Object.create(null));
 
@@ -1754,7 +1779,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           if(n && !pBlob) sqlite3.WasmAllocError.toss(
             "Cannot allocate memory for blob argument of",n,"byte(s)"
           );
-          arg = n ? wasm.heap8u().slice(pBlob, pBlob + Number(n)) : null;
+          arg = n
+            ? wasm.heap8u().slice(Number(pBlob), Number(pBlob) + Number(n))
+            : null;
           break;
         }
         case capi.SQLITE_NULL:
@@ -1788,7 +1815,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          do not.
       */
       tgt.push(capi.sqlite3_value_to_js(
-        wasm.peekPtr(pArgv + (wasm.ptrSizeof * i)),
+        wasm.peekPtr(wasm.ptr.add(pArgv, wasm.ptr.size * i)),
         throwIfCannotConvert
       ));
     }
@@ -1798,7 +1825,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      Calls either sqlite3_result_error_nomem(), if e is-a
      WasmAllocError, or sqlite3_result_error(). In the latter case,
-     the second arugment is coerced to a string to create the error
+     the second argument is coerced to a string to create the error
      message.
 
      The first argument is a (sqlite3_context*). Returns void.
@@ -1981,7 +2008,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     WasmAllocError: WasmAllocError,
     SQLite3Error: SQLite3Error,
     capi,
-    util,
+    util /* internal: will get removed after library init */,
     wasm,
     config,
     /**
@@ -2021,9 +2048,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        Ideally this function is called as part of the Promise chain
        which handles the loading and bootstrapping of the API.  If not
        then it must be called by client-level code, which must not use
-       the library until the returned promise resolves.
+       the library until the returned Promise resolves.
 
-       If called multiple times it will return the same promise on
+       If called multiple times it will return the same Promise on
        subsequent calls. The current build setup precludes that
        possibility, so it's only a hypothetical problem if/when this
        function ever needs to be invoked by clients.
@@ -2090,28 +2117,54 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }
   delete sqlite3ApiBootstrap.initializers;
   sqlite3ApiBootstrap.sqlite3 = sqlite3;
-  return sqlite3;
+  delete globalThis.sqlite3ApiBootstrap;
+  delete globalThis.sqlite3ApiConfig;
+  sqlite3InitScriptInfo.debugModule(
+    "sqlite3ApiBootstrap() complete", sqlite3
+  );
+  sqlite3.scriptInfo /* used by some async init code */ =
+    sqlite3InitScriptInfo /* from post-js-header.js */;
+  if( (sqlite3.__isUnderTest = sqlite3IsUnderTest /* from post-js-header.js */) ){
+    sqlite3.config.emscripten = EmscriptenModule;
+    const iw = sqlite3InitScriptInfo.instantiateWasm;
+    if( iw ){
+      /* Metadata injected by the custom Module.instantiateWasm()
+         in pre-js.c-pp.js. */
+      sqlite3.wasm.module = iw.module;
+      sqlite3.wasm.instance = iw.instance;
+      sqlite3.wasm.imports = iw.imports;
+    }
+  }
+  return sqlite3.asyncPostInit().then((s)=>{
+    sqlite3InitScriptInfo.debugModule(
+      "sqlite3.asyncPostInit() complete", sqlite3
+    );
+    delete s.asyncPostInit;
+    delete s.scriptInfo;
+    delete s.emscripten;
+    return s;
+  });
 }/*sqlite3ApiBootstrap()*/;
+
 /**
-  globalThis.sqlite3ApiBootstrap.initializers is an internal detail used by
-  the various pieces of the sqlite3 API's amalgamation process. It
-  must not be modified by client code except when plugging such code
-  into the amalgamation process.
+  globalThis.sqlite3ApiBootstrap.initializers is an internal detail
+  used by the various pieces of the sqlite3 API's amalgamation
+  process. It must not be modified by client code except when plugging
+  such code into the amalgamation process.
 
   Each component of the amalgamation is expected to append a function
   to this array. When sqlite3ApiBootstrap() is called for the first
   time, each such function will be called (in their appended order)
   and passed the sqlite3 namespace object, into which they can install
-  their features (noting that most will also require that certain
-  features alread have been installed).  At the end of that process,
-  this array is deleted.
+  their features. At the end of that process, this array is deleted.
 
-  Note that the order of insertion into this array is significant for
+  The order of insertion into this array is significant for
   some pieces. e.g. sqlite3.capi and sqlite3.wasm cannot be fully
   utilized until the whwasmutil.js part is plugged in via
   sqlite3-api-glue.js.
 */
 globalThis.sqlite3ApiBootstrap.initializers = [];
+
 /**
   globalThis.sqlite3ApiBootstrap.initializersAsync is an internal detail
   used by the sqlite3 API's amalgamation process. It must not be
@@ -2134,6 +2187,7 @@ globalThis.sqlite3ApiBootstrap.initializers = [];
   this list.
 */
 globalThis.sqlite3ApiBootstrap.initializersAsync = [];
+
 /**
    Client code may assign sqlite3ApiBootstrap.defaultConfig an
    object-type value before calling sqlite3ApiBootstrap() (without
@@ -2144,6 +2198,7 @@ globalThis.sqlite3ApiBootstrap.initializersAsync = [];
    global-scope symbol.
 */
 globalThis.sqlite3ApiBootstrap.defaultConfig = Object.create(null);
+
 /**
    Placeholder: gets installed by the first call to
    globalThis.sqlite3ApiBootstrap(). However, it is recommended that the

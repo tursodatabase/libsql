@@ -1,6 +1,28 @@
 /*
 ** A program for performance testing.
 **
+** To build this program against an historical version of SQLite for comparison
+** testing:
+**
+**    Unix:
+**
+**        ./configure --all
+**        make clean speedtest1
+**        mv speedtest1 speedtest1-current
+**        cp $HISTORICAL_SQLITE3_C_H .
+**        touch sqlite3.c sqlite3.h .target_source
+**        make speedtest1
+**        mv speedtest1 speedtest1-baseline
+**
+**    Windows:
+**
+**        nmake /f Makefile.msc clean speedtest1.exe
+**        mv speedtest1.exe speedtest1-current.exe
+**        cp $HISTORICAL_SQLITE_C_H .
+**        touch sqlite3.c sqlite3.h .target_source
+**        nmake /f Makefile.msc speedtest1.exe
+**        mv speedtest1.exe speedtest1-baseline.exe
+**
 ** The available command-line options are described below:
 */
 static const char zHelp[] =
@@ -13,6 +35,7 @@ static const char zHelp[] =
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
   "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --fullfsync         Enable fullfsync=TRUE\n"
+  "  --hard-heap-limit N The hard limit on the maximum heap size\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
   "  --incrvacuum        Enable incremenatal vacuum mode\n"
   "  --journal M         Set the journal_mode to M\n"
@@ -21,7 +44,6 @@ static const char zHelp[] =
   "  --memdb             Use an in-memory database\n"
   "  --mmap SZ           MMAP the first SZ bytes of the database file\n"
   "  --multithread       Set multithreaded mode\n"
-  "  --nolongdouble      Disable the use of long double\n"
   "  --nomemstat         Disable memory statistics\n"
   "  --nomutex           Open db with SQLITE_OPEN_NOMUTEX\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"
@@ -39,11 +61,14 @@ static const char zHelp[] =
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
   "  --shrink-memory     Invoke sqlite3_db_release_memory() frequently.\n"
   "  --size N            Relative test size.  Default=100\n"
+  "  --soft-heap-limit N The soft limit on the maximum heap size\n"
   "  --strict            Use STRICT table where appropriate\n"
   "  --stats             Show statistics at the end\n"
   "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
-  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
+  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, json,\n"
+  "                      star, app, debug).  Can be a comma-separated list\n"
+  "                      of values, with /SCALE suffixes or macro \"mix1\"\n"
   "  --trace             Turn on SQL tracing\n"
   "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
@@ -89,6 +114,8 @@ struct HashContext {
 /* All global state is held in this structure */
 static struct Global {
   sqlite3 *db;               /* The open database connection */
+  const char *zDbName;       /* Name of the database file */
+  const char *zVfs;          /* --vfs NAME */
   sqlite3_stmt *pStmt;       /* Current SQL statement */
   sqlite3_int64 iStart;      /* Start-time for the current test */
   sqlite3_int64 iTotal;      /* Total time */
@@ -100,6 +127,7 @@ static struct Global {
   int bMemShrink;            /* Call sqlite3_db_release_memory() often */
   int eTemp;                 /* 0: no TEMP.  9: always TEMP. */
   int szTest;                /* Scale factor for test iterations */
+  int szBase;                /* Base size prior to testset scaling */
   int nRepeat;               /* Repeat selects this many times */
   int doCheckpoint;          /* Run PRAGMA wal_checkpoint after each trans */
   int nReserve;              /* Reserve bytes */
@@ -131,6 +159,12 @@ static void fatal_error(const char *zMsg, ...){
   va_start(ap, zMsg);
   vfprintf(stderr, zMsg, ap);
   va_end(ap);
+#ifdef SQLITE_SPEEDTEST1_WASM
+  /* Emscripten complains when exit() is called and anything is left
+     in the I/O buffers. */
+  fflush(stdout);
+  fflush(stderr);
+#endif
   exit(1);
 }
 
@@ -516,6 +550,7 @@ char *speedtest1_once(const char *zFormat, ...){
   char *zSql;
   sqlite3_stmt *pStmt;
   char *zResult = 0;
+  int rc;
   va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
@@ -534,6 +569,11 @@ char *speedtest1_once(const char *zFormat, ...){
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *z = (const char*)sqlite3_column_text(pStmt, 0);
       if( z ) zResult = sqlite3_mprintf("%s", z);
+    }
+    rc = sqlite3_reset(pStmt);
+    if( rc!=SQLITE_OK ){
+      fatal_error("%s\nError code %d: %s\n",
+                  sqlite3_sql(pStmt), rc, sqlite3_errmsg(g.db));
     }
     sqlite3_finalize(pStmt);
   }
@@ -564,7 +604,7 @@ void speedtest1_prepare(const char *zFormat, ...){
 
 /* Run an SQL statement previously prepared */
 void speedtest1_run(void){
-  int i, n, len;
+  int i, n, len, rc;
   if( g.bSqlOnly ) return;
   assert( g.pStmt );
   g.nResult = 0;
@@ -623,12 +663,20 @@ void speedtest1_run(void){
   if( g.bReprepare ){
     sqlite3_stmt *pNew;
     sqlite3_prepare_v2(g.db, sqlite3_sql(g.pStmt), -1, &pNew, 0);
-    sqlite3_finalize(g.pStmt);
+    rc = sqlite3_finalize(g.pStmt);
+    if( rc!=SQLITE_OK ){
+      fatal_error("%s\nError code %d: %s\n",
+                  sqlite3_sql(pNew), rc, sqlite3_errmsg(g.db));
+    }
     g.pStmt = pNew;
   }else
 #endif
   {
-    sqlite3_reset(g.pStmt);
+    rc = sqlite3_reset(g.pStmt);
+    if( rc!=SQLITE_OK ){
+      fatal_error("%s\nError code %d: %s\n",
+                  sqlite3_sql(g.pStmt), rc, sqlite3_errmsg(g.db));
+    }
   }
   speedtest1_shrink_memory();
 }
@@ -1433,6 +1481,561 @@ void testset_fp(void){
   speedtest1_end_test();
 }
 
+/*
+** A testset for star-schema queries.
+*/
+void testset_star(void){
+  int n;
+  int i;
+  n = g.szTest*50;
+  speedtest1_begin_test(100, "Create a fact table with %d entries", n);
+  speedtest1_exec(
+    "CREATE TABLE facttab("
+     " attr01 INT,"
+     " attr02 INT,"
+     " attr03 INT,"
+     " data01 TEXT,"
+     " attr04 INT,"
+     " attr05 INT,"
+     " attr06 INT,"
+     " attr07 INT,"
+     " attr08 INT,"
+     " factid INTEGER PRIMARY KEY,"
+     " data02 TEXT"
+    ");"
+  );
+  speedtest1_exec(
+    "WITH RECURSIVE counter(nnn) AS"
+       "(VALUES(1) UNION ALL SELECT nnn+1 FROM counter WHERE nnn<%d)"
+    "INSERT INTO facttab(attr01,attr02,attr03,attr04,attr05,"
+                        "attr06,attr07,attr08,data01,data02)"
+    "SELECT random()%%12, random()%%13, random()%%14, random()%%15,"
+           "random()%%16, random()%%17, random()%%18, random()%%19,"
+           "concat('data-',nnn), format('%%x',random()) FROM counter;",
+    n
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "Create indexes on all attributes columns");
+  for(i=1; i<=8; i++){
+    speedtest1_exec(
+      "CREATE INDEX fact_attr%02d ON facttab(attr%02d)", i, i
+    );
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "Create dimension tables");
+  for(i=1; i<=8; i++){
+    speedtest1_exec(
+      "CREATE TABLE dimension%02d("
+        "beta%02d INT, "
+        "content%02d TEXT, "
+        "rate%02d REAL)",
+      i, i, i, i
+    );
+    speedtest1_exec(
+      "WITH RECURSIVE ctr(nn) AS"
+      " (VALUES(1) UNION ALL SELECT nn+1 FROM ctr WHERE nn<%d)"
+      " INSERT INTO dimension%02d"
+      "   SELECT nn%%(%d), concat('content-%02d-',nn),"
+               " (random()%%10000)*0.125 FROM ctr;",
+      4*(i+1), i, 2*(i+1), i
+    );
+    if( i&2 ){
+      speedtest1_exec(
+         "CREATE INDEX dim%02d ON dimension%02d(beta%02d);",
+         i, i, i
+      );
+    }else{
+      speedtest1_exec(
+         "CREATE INDEX dim%02d ON dimension%02d(beta%02d,content%02d);",
+         i, i, i, i
+      );
+    }
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "Star query over the entire fact table");
+  speedtest1_exec(
+    "SELECT count(*), max(content04), min(content03), sum(rate04), avg(rate05)"
+    " FROM facttab, dimension01, dimension02, dimension03, dimension04,"
+                  " dimension05, dimension06, dimension07, dimension08"
+    " WHERE attr01=beta01"
+      " AND attr02=beta02"
+      " AND attr03=beta03"
+      " AND attr04=beta04"
+      " AND attr05=beta05"
+      " AND attr06=beta06"
+      " AND attr07=beta07"
+      " AND attr08=beta08"
+    ";"
+   );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "Star query with LEFT JOINs");
+  speedtest1_exec(
+    "SELECT count(*), max(content04), min(content03), sum(rate04), avg(rate05)"
+    " FROM facttab LEFT JOIN dimension01 ON attr01=beta01"
+                 " LEFT JOIN dimension02 ON attr02=beta02"
+                 " JOIN dimension03 ON attr03=beta03"
+                 " JOIN dimension04 ON attr04=beta04"
+                 " JOIN dimension05 ON attr05=beta05"
+                 " LEFT JOIN dimension06 ON attr06=beta06"
+                 " JOIN dimension07 ON attr07=beta07"
+                 " JOIN dimension08 ON attr08=beta08"
+    " WHERE facttab.data01 LIKE 'data-9%%'"
+    ";"
+   );
+  speedtest1_end_test();
+}
+
+/*
+** Tests that simulate an application opening and closing an SQLite database
+** frequently.  Fossil is used as the model.  The focus here is on rapidly
+** parsing the database schema and rapidly generating prepared statements,
+** in other words, rapid start-up of Fossil-like applications.
+**
+** The same database has no data, so the performance of sqlite3_step() is
+** not significant to this testset.
+*/
+static void testset_app(void){
+  int i, n;
+  speedtest1_begin_test(100, "Generate a Fossil-like database schema");
+  speedtest1_exec(
+    "BEGIN;"
+    "CREATE TABLE blob(\n"
+    "  rid INTEGER PRIMARY KEY,\n"
+    "  rcvid INTEGER,\n"
+    "  size INTEGER,\n"
+    "  uuid TEXT UNIQUE NOT NULL,\n"
+    "  content BLOB,\n"
+    "  CHECK( length(uuid)>=40 AND rid>0 )\n"
+    ");\n"
+    "CREATE TABLE delta(\n"
+    "  rid INTEGER PRIMARY KEY,\n"
+    "  srcid INTEGER NOT NULL REFERENCES blob\n"
+    ");\n"
+    "CREATE TABLE rcvfrom(\n"
+    "  rcvid INTEGER PRIMARY KEY,\n"
+    "  uid INTEGER REFERENCES user,\n"
+    "  mtime DATETIME,\n"
+    "  nonce TEXT UNIQUE,\n"
+    "  ipaddr TEXT\n"
+    ");\n"
+    "CREATE TABLE private(rid INTEGER PRIMARY KEY);\n"
+    "CREATE TABLE accesslog(\n"
+    "  uname TEXT,\n"
+    "  ipaddr TEXT,\n"
+    "  success BOOLEAN,\n"
+    "  mtime TIMESTAMP\n"
+    ");\n"
+    "CREATE TABLE user(\n"
+    "  uid INTEGER PRIMARY KEY,\n"
+    "  login TEXT UNIQUE,\n"
+    "  pw TEXT,\n"
+    "  cap TEXT,\n"
+    "  cookie TEXT,\n"
+    "  ipaddr TEXT,\n"
+    "  cexpire DATETIME,\n"
+    "  info TEXT,\n"
+    "  mtime DATE,\n"
+    "  photo BLOB\n"
+    ", jx TEXT DEFAULT '{}');\n"
+    "CREATE TABLE reportfmt(\n"
+    "   rn INTEGER PRIMARY KEY,\n"
+    "   owner TEXT,\n"
+    "   title TEXT UNIQUE,\n"
+    "   mtime INTEGER,\n"
+    "   cols TEXT,\n"
+    "   sqlcode TEXT\n"
+    ", jx TEXT DEFAULT '{}');\n"
+    "CREATE TABLE config(\n"
+    "  name TEXT PRIMARY KEY NOT NULL,\n"
+    "  value CLOB, mtime INTEGER,\n"
+    "  CHECK( typeof(name)='text' AND length(name)>=1 )\n"
+    ") WITHOUT ROWID;\n"
+    "CREATE TABLE shun(uuid PRIMARY KEY, mtime INTEGER, scom TEXT)\n"
+    "  WITHOUT ROWID;\n"
+    "CREATE TABLE concealed(\n"
+    "  hash TEXT PRIMARY KEY,\n"
+    "  content TEXT\n"
+    ", mtime INTEGER) WITHOUT ROWID;\n"
+    "CREATE TABLE admin_log(\n"
+    " id INTEGER PRIMARY KEY,\n"
+    " time INTEGER, -- Seconds since 1970\n"
+    " page TEXT,    -- path of page\n"
+    " who TEXT,     -- User who made the change\n"
+    "  what TEXT     -- What changed\n"
+    ");\n"
+    "CREATE TABLE unversioned(\n"
+    "  name TEXT PRIMARY KEY,\n"
+    "  rcvid INTEGER,\n"
+    "  mtime DATETIME,\n"
+    "  hash TEXT,\n"
+    "  sz INTEGER,\n"
+    "  encoding INT,\n"
+    "  content BLOB\n"
+    ") WITHOUT ROWID;\n"
+    "CREATE TABLE subscriber(\n"
+    "  subscriberId INTEGER PRIMARY KEY,\n"
+    "  subscriberCode BLOB DEFAULT (randomblob(32)) UNIQUE,\n"
+    "  semail TEXT UNIQUE COLLATE nocase,\n"
+    "  suname TEXT,\n"
+    "  sverified BOOLEAN DEFAULT true,\n"
+    "  sdonotcall BOOLEAN,\n"
+    "  sdigest BOOLEAN,\n"
+    "  ssub TEXT,\n"
+    "  sctime INTDATE,\n"
+    "  mtime INTDATE,\n"
+    "  smip TEXT\n"
+    ", lastContact INT);\n"
+    "CREATE TABLE pending_alert(\n"
+    "  eventid TEXT PRIMARY KEY,\n"
+    "  sentSep BOOLEAN DEFAULT false,\n"
+    "  sentDigest BOOLEAN DEFAULT false\n"
+    ", sentMod BOOLEAN DEFAULT false) WITHOUT ROWID;\n"
+    "CREATE TABLE filename(\n"
+    "  fnid INTEGER PRIMARY KEY,\n"
+    "  name TEXT UNIQUE\n"
+    ") STRICT;\n"
+    "CREATE TABLE mlink(\n"
+    "  mid INTEGER,\n"
+    "  fid INTEGER,\n"
+    "  pmid INTEGER,\n"
+    "  pid INTEGER,\n"
+    "  fnid INTEGER REFERENCES filename,\n"
+    "  pfnid INTEGER,\n"
+    "  mperm INTEGER,\n"
+    "  isaux INT DEFAULT 0\n"
+    ") STRICT;\n"
+    "CREATE TABLE plink(\n"
+    "  pid INTEGER REFERENCES blob,\n"
+    "  cid INTEGER REFERENCES blob,\n"
+    "  isprim INT,\n"
+    "  mtime REAL,\n"
+    "  baseid INTEGER REFERENCES blob,\n"
+    "  UNIQUE(pid, cid)\n"
+    ") STRICT;\n"
+    "CREATE TABLE leaf(rid INTEGER PRIMARY KEY);\n"
+    "CREATE TABLE event(\n"
+    "  type TEXT,\n"
+    "  mtime REAL,\n"
+    "  objid INTEGER PRIMARY KEY,\n"
+    "  tagid INTEGER,\n"
+    "  uid INTEGER REFERENCES user,\n"
+    "  bgcolor TEXT,\n"
+    "  euser TEXT,\n"
+    "  user TEXT,\n"
+    "  ecomment TEXT,\n"
+    "  comment TEXT,\n"
+    "  brief TEXT,\n"
+    "  omtime REAL\n"
+    ") STRICT;\n"
+    "CREATE TABLE phantom(\n"
+    "  rid INTEGER PRIMARY KEY\n"
+    ");\n"
+    "CREATE TABLE orphan(\n"
+    "  rid INTEGER PRIMARY KEY,\n"
+    "  baseline INTEGER\n"
+    ") STRICT;\n"
+    "CREATE TABLE unclustered(\n"
+    "  rid INTEGER PRIMARY KEY\n"
+    ");\n"
+    "CREATE TABLE unsent(\n"
+    "  rid INTEGER PRIMARY KEY\n"
+    ");\n"
+    "CREATE TABLE tag(\n"
+    "  tagid INTEGER PRIMARY KEY,\n"
+    "  tagname TEXT UNIQUE\n"
+    ") STRICT;\n"
+    "CREATE TABLE tagxref(\n"
+    "  tagid INTEGER REFERENCES tag,\n"
+    "  tagtype INTEGER,\n"
+    "  srcid INTEGER REFERENCES blob,\n"
+    "  origid INTEGER REFERENCES blob,\n"
+    "  value TEXT,\n"
+    "  mtime REAL,\n"
+    "  rid INTEGER REFERENCES blob,\n"
+    "  UNIQUE(rid, tagid)\n"
+    ") STRICT;\n"
+    "CREATE TABLE backlink(\n"
+    "  target TEXT,\n"
+    "  srctype INT,\n"
+    "  srcid INT,\n"
+    "  mtime REAL,\n"
+    "  UNIQUE(target, srctype, srcid)\n"
+    ") STRICT;\n"
+    "CREATE TABLE attachment(\n"
+    "  attachid INTEGER PRIMARY KEY,\n"
+    "  isLatest INT DEFAULT 0,\n"
+    "  mtime REAL,\n"
+    "  src TEXT,\n"
+    "  target TEXT,\n"
+    "  filename TEXT,\n"
+    "  comment TEXT,\n"
+    "  user TEXT\n"
+    ") STRICT;\n"
+    "CREATE TABLE cherrypick(\n"
+    "  parentid INT,\n"
+    "  childid INT,\n"
+    "  isExclude INT DEFAULT false,\n"
+    "  PRIMARY KEY(parentid, childid)\n"
+    ") WITHOUT ROWID, STRICT;\n"
+    "CREATE TABLE vcache(\n"
+    "  vid INTEGER,         -- check-in ID\n"
+    "  fname TEXT,          -- filename\n"
+    "  rid INTEGER,         -- artifact ID\n"
+    "  PRIMARY KEY(vid,fname)\n"
+    ") WITHOUT ROWID;\n"
+    "CREATE TABLE synclog(\n"
+    "  sfrom TEXT,\n"
+    "  sto TEXT,\n"
+    "  stime INT NOT NULL,\n"
+    "  stype TEXT,\n"
+    "  PRIMARY KEY(sfrom,sto)\n"
+    ") WITHOUT ROWID;\n"
+    "CREATE TABLE chat(\n"
+    "  msgid INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+    "  mtime JULIANDAY,\n"
+    "  lmtime TEXT,\n"
+    "  xfrom TEXT,\n"
+    "  xmsg  TEXT,\n"
+    "  fname TEXT,\n"
+    "  fmime TEXT,\n"
+    "  mdel INT,\n"
+    "  file  BLOB\n"
+    ");\n"
+    "CREATE TABLE ftsdocs(\n"
+    "  rowid INTEGER PRIMARY KEY,\n"
+    "  type CHAR(1),\n"
+    "  rid INTEGER,\n"
+    "  name TEXT,\n"
+    "  idxed BOOLEAN,\n"
+    "  label TEXT,\n"
+    "  url TEXT,\n"
+    "  mtime DATE,\n"
+    "  bx TEXT,\n"
+    "  UNIQUE(type,rid)\n"
+    ");\n"
+    "CREATE TABLE ticket(\n"
+    "  -- Do not change any column that begins with tkt_\n"
+    "  tkt_id INTEGER PRIMARY KEY,\n"
+    "  tkt_uuid TEXT UNIQUE,\n"
+    "  tkt_mtime DATE,\n"
+    "  tkt_ctime DATE,\n"
+    "  -- Add as many fields as required below this line\n"
+    "  type TEXT,\n"
+    "  status TEXT,\n"
+    "  subsystem TEXT,\n"
+    "  priority TEXT,\n"
+    "  severity TEXT,\n"
+    "  foundin TEXT,\n"
+    "  private_contact TEXT,\n"
+    "  resolution TEXT,\n"
+    "  title TEXT,\n"
+    "  comment TEXT\n"
+    ");\n"
+    "CREATE TABLE ticketchng(\n"
+    "  -- Do not change any column that begins with tkt_\n"
+    "  tkt_id INTEGER REFERENCES ticket,\n"
+    "  tkt_rid INTEGER REFERENCES blob,\n"
+    "  tkt_mtime DATE,\n"
+    "  tkt_user TEXT,\n"
+    "  -- Add as many fields as required below this line\n"
+    "  login TEXT,\n"
+    "  username TEXT,\n"
+    "  mimetype TEXT,\n"
+    "  icomment TEXT\n"
+    ");\n"
+    "CREATE TABLE forumpost(\n"
+    "  fpid INTEGER PRIMARY KEY,\n"
+    "  froot INT,\n"
+    "  fprev INT,\n"
+    "  firt INT,\n"
+    "  fmtime REAL\n"
+    ");\n"
+    "CREATE INDEX delta_i1 ON delta(srcid);\n"
+    "CREATE INDEX blob_rcvid ON blob(rcvid);\n"
+    "CREATE INDEX subscriberUname\n"
+    "  ON subscriber(suname) WHERE suname IS NOT NULL;\n"
+    "CREATE INDEX mlink_i1 ON mlink(mid);\n"
+    "CREATE INDEX mlink_i2 ON mlink(fnid);\n"
+    "CREATE INDEX mlink_i3 ON mlink(fid);\n"
+    "CREATE INDEX mlink_i4 ON mlink(pid);\n"
+    "CREATE INDEX plink_i2 ON plink(cid,pid);\n"
+    "CREATE INDEX event_i1 ON event(mtime);\n"
+    "CREATE INDEX orphan_baseline ON orphan(baseline);\n"
+    "CREATE INDEX tagxref_i1 ON tagxref(tagid, mtime);\n"
+    "CREATE INDEX backlink_src ON backlink(srcid, srctype);\n"
+    "CREATE INDEX attachment_idx1 ON attachment(target, filename, mtime);\n"
+    "CREATE INDEX attachment_idx2 ON attachment(src);\n"
+    "CREATE INDEX cherrypick_cid ON cherrypick(childid);\n"
+    "CREATE INDEX ftsdocIdxed ON ftsdocs(type,rid,name) WHERE idxed==0;\n"
+    "CREATE INDEX ftsdocName ON ftsdocs(name) WHERE type='w';\n"
+    "CREATE INDEX ticketchng_idx1 ON ticketchng(tkt_id, tkt_mtime);\n"
+    "CREATE INDEX forumthread ON forumpost(froot,fmtime);\n"
+    "CREATE VIEW artifact(rid,rcvid,size,atype,srcid,hash,content) AS\n"
+    "  SELECT blob.rid,rcvid,size,1,srcid,uuid,content\n"
+    "    FROM blob LEFT JOIN delta ON (blob.rid=delta.rid);\n"
+    "CREATE VIEW ftscontent AS\n"
+    "  SELECT rowid, type, rid, name, idxed, label, url, mtime,\n"
+    "         title(type,rid,name) AS 'title', body(type,rid,name) AS 'body'\n"
+    "    FROM ftsdocs;\n"
+  );
+  if( sqlite3_compileoption_used("ENABLE_FTS5") ){
+    speedtest1_exec(
+      "CREATE VIRTUAL TABLE ftsidx\n"
+      "  USING fts5(content=\"ftscontent\", title, body);\n"
+      "CREATE VIRTUAL TABLE chatfts1 USING fts5(\n"
+      "  xmsg, content=chat, content_rowid=msgid,tokenize=porter);\n"
+    );
+  }else{
+    speedtest1_exec(
+      "CREATE TABLE ftsidx_data(id INTEGER PRIMARY KEY, block BLOB);\n"
+      "CREATE TABLE ftsidx_idx(segid, term, pgno, PRIMARY KEY(segid, term))\n"
+      "  WITHOUT ROWID;\n"
+      "CREATE TABLE ftsidx_docsize(id INTEGER PRIMARY KEY, sz BLOB);\n"
+      "CREATE TABLE ftsidx_config(k PRIMARY KEY, v) WITHOUT ROWID;\n"
+      "CREATE TABLE chatfts1_data(id INTEGER PRIMARY KEY, block BLOB);\n"
+      "CREATE TABLE chatfts1_idx(segid, term, pgno, PRIMARY KEY(segid, term))\n"
+      "  WITHOUT ROWID;\n"
+      "CREATE TABLE chatfts1_docsize(id INTEGER PRIMARY KEY, sz BLOB);\n"
+      "CREATE TABLE chatfts1_config(k PRIMARY KEY, v) WITHOUT ROWID;\n"
+    );
+  }
+  speedtest1_exec(
+    "ANALYZE sqlite_schema;\n"
+    "INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES\n"
+    "  ('ftsidx_config','ftsidx_config','1 1'),\n"
+    "  ('ftsidx_idx','ftsidx_idx','4215 401 1'),\n"
+    "  ('user','sqlite_autoindex_user_1','25 1'),\n"
+    "  ('phantom',NULL,'26'),\n"
+    "  ('reportfmt','sqlite_autoindex_reportfmt_1','9 1'),\n"
+    "  ('rcvfrom','sqlite_autoindex_rcvfrom_1','18445 401'),\n"
+    "  ('private',NULL,'99'),\n"
+    "  ('mlink','mlink_i4','116678 401'),\n"
+    "  ('mlink','mlink_i3','121212 2'),\n"
+    "  ('mlink','mlink_i2','106372 401'),\n"
+    "  ('mlink','mlink_i1','99298 5'),\n"
+    "  ('ftsidx_data',NULL,'3795'),\n"
+    "  ('leaf',NULL,'1559'),\n"
+    "  ('delta','delta_i1','66340 1'),\n"
+    "  ('unversioned','unversioned','3 1'),\n"
+    "  ('pending_alert','pending_alert','3 1'),\n"
+    "  ('cherrypick','cherrypick_cid','680 2'),\n"
+    "  ('cherrypick','cherrypick','628 1 1'),\n"
+    "  ('config','config','128 1'),\n"
+    "  ('ftsidx_docsize',NULL,'33848'),\n"
+    "  ('event','event_i1','36096 1'),\n"
+    "  ('plink','plink_i2','38236 1 1'),\n"
+    "  ('plink','sqlite_autoindex_plink_1','38357 1 1'),\n"
+    "  ('shun','shun','10 1'),\n"
+    "  ('concealed','concealed','110 1'),\n"
+    "  ('vcache','vcache','1888 401 1'),\n"
+    "  ('ftsdocs','ftsdocName','19 1'),\n"
+    "  ('ftsdocs','ftsdocIdxed','168 84 1 1'),\n"
+    "  ('ftsdocs','sqlite_autoindex_ftsdocs_1','37312 401 1'),\n"
+    "  ('subscriber','subscriberUname','5 1'),\n"
+    "  ('subscriber','sqlite_autoindex_subscriber_2','37 1'),\n"
+    "  ('subscriber','sqlite_autoindex_subscriber_1','37 1'),\n"
+    "  ('tag','sqlite_autoindex_tag_1','2990 1'),\n"
+    "  ('filename','sqlite_autoindex_filename_1','3168 1'),\n"
+    "  ('chat',NULL,'56124'),\n"
+    "  ('tagxref','tagxref_i1','40992 401 2'),\n"
+    "  ('tagxref','sqlite_autoindex_tagxref_1','79233 3 1'),\n"
+    "  ('attachment','attachment_idx2','11 1'),\n"
+    "  ('attachment','attachment_idx1','11 2 2 1'),\n"
+    "  ('blob','blob_rcvid','128240 201'),\n"
+    "  ('blob','sqlite_autoindex_blob_1','126480 1'),\n"
+    "  ('synclog','synclog','12 3 1'),\n"
+    "  ('backlink','backlink_src','2160 2 2'),\n"
+    "  ('backlink','sqlite_autoindex_backlink_1','2340 2 2 1'),\n"
+    "  ('accesslog',NULL,'38'),\n"
+    "  ('chatfts1_config','chatfts1_config','1 1'),\n"
+    "  ('chatfts1_idx','chatfts1_idx','688 230 1'),\n"
+    "  ('ticket','sqlite_autoindex_ticket_1','794 1'),\n"
+    "  ('ticketchng','ticketchng_idx1','2089 3 1'),\n"
+    "  ('forumpost','forumthread','4 4 1'),\n"
+    "  ('unclustered',NULL,'12');\n"
+    "COMMIT;"
+  );
+  speedtest1_end_test();
+
+  n = g.szTest*3;
+  speedtest1_begin_test(110, "Open and use the database %d times", n);
+  for(i=0; i<n; i++){
+    sqlite3 *dbMain = g.db;
+    sqlite3 *dbAux = 0;
+    if( g.zDbName && g.zDbName[0] ){
+      if( sqlite3_open_v2(g.zDbName, &dbAux, SQLITE_OPEN_READWRITE, g.zVfs) ){
+        fatal_error("Cannot open database file: %s\n", g.zDbName);
+      }
+      g.db = dbAux;
+    }
+    speedtest1_exec(
+      "SELECT name FROM pragma_table_list /*scan*/"
+      " WHERE schema='repository' AND type IN ('table','virtual')"
+      " AND name NOT IN ('admin_log', 'blob','delta','rcvfrom','user','alias',"
+                        "'config','shun','private','reportfmt',"
+                        "'concealed','accesslog','modreq',"
+                        "'purgeevent','purgeitem','unversioned',"
+                        "'subscriber','pending_alert','chat')"
+      " AND name NOT GLOB 'sqlite_*'"
+      " AND name NOT GLOB 'fx_*';"
+      "SELECT 1 FROM pragma_table_xinfo('ticket') WHERE name = 'mimetype';"
+    );
+    speedtest1_exec(
+      "SELECT"
+      " name,"
+      " value,"
+      " unixepoch()/86400-value,"
+      " date(value*86400,'unixepoch')"
+      " FROM config"
+      " WHERE name in ('email-renew-warning','email-renew-cutoff');"
+      "SELECT count(*) FROM pending_alert WHERE NOT sentDigest;"
+    );
+    speedtest1_exec(
+      "WITH priors(rid,who) AS ("
+      "  SELECT firt, coalesce(euser,user)"
+      "    FROM forumpost LEFT JOIN event ON fpid=objid"
+      "   WHERE fpid=12345"
+      "  UNION ALL"
+      "  SELECT firt, coalesce(euser,user)"
+      "    FROM priors, forumpost LEFT JOIN event ON fpid=objid"
+      "   WHERE fpid=rid"
+      ")"
+      "SELECT ','||group_concat(DISTINCT 'u'||who)||"
+             "','||group_concat(rid) FROM priors;"
+    );
+    speedtest1_exec(
+      "CREATE TEMP TABLE IF NOT EXISTS ok(rid INTEGER PRIMARY KEY);\n"
+    );
+    speedtest1_exec(
+      "WITH RECURSIVE\n"
+      "  parent(pid,cid,isCP) AS (\n"
+      "    SELECT plink.pid, plink.cid, 0 AS xisCP FROM plink\n"
+      "    UNION ALL\n"
+      "    SELECT parentid, childid, 1 FROM cherrypick WHERE NOT isExclude\n"
+      "  ),\n"
+      "  ancestor(rid, mtime, isCP) AS (\n"
+      "    SELECT 123, mtime, 0 FROM event WHERE objid=$object\n"
+      "    UNION\n"
+      "    SELECT parent.pid, event.mtime, parent.isCP\n"
+      "      FROM ancestor, parent, event\n"
+      "     WHERE parent.cid=ancestor.rid\n"
+      "       AND event.objid=parent.pid\n"
+      "       AND NOT ancestor.isCP\n"
+      "       AND (event.mtime>=$date OR parent.pid=$pid)\n"
+      "     ORDER BY mtime DESC LIMIT 10\n"
+      "  )\n"
+      "  INSERT OR IGNORE INTO ok SELECT rid FROM ancestor;"
+    );
+    sqlite3_close(dbAux);
+    g.db = dbMain;
+  }
+  speedtest1_end_test();
+}
+
 #ifdef SQLITE_ENABLE_RTREE
 /* Generate two numbers between 1 and mx.  The first number is less than
 ** the second.  Usually the numbers are near each other but can sometimes
@@ -1546,7 +2149,7 @@ void testset_rtree(int p1, int p2){
     }
     speedtest1_end_test();
   }
-  
+
   n = g.szTest*200;
   speedtest1_begin_test(120, "%d one-dimensional overlap slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE y1>=?1 AND y0<=?2");
@@ -1575,7 +2178,6 @@ void testset_rtree(int p1, int p2){
     }
     speedtest1_end_test();
   }
-  
 
   n = g.szTest*200;
   speedtest1_begin_test(125, "%d custom geometry callback queries", n);
@@ -2150,6 +2752,164 @@ void testset_debug1(void){
   }
 }
 
+/*
+** Performance tests for JSON.
+*/
+void testset_json(void){
+  unsigned int r = 0x12345678;
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, r, g.db);
+  speedtest1_begin_test(100, "table J1 is %d rows of JSONB",
+                        g.szTest*5);
+  speedtest1_exec(
+     "CREATE TABLE j1(x JSONB);\n"
+     "WITH RECURSIVE\n"
+     "  jval(n,j) AS (\n"
+     "    VALUES(0,'{}'),(1,'[]'),(2,'true'),(3,'false'),(4,'null'),\n"
+     "          (5,'{x:1,y:2}'),(6,'0.0'),(7,'3.14159'),(8,'-99.9'),\n"
+     "          (9,'[1,2,\"\\n\\u2192\\\"\\u2190\",4]')\n"
+     "  ),\n"
+     "  c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<26*26-1),\n"
+     "  array1(y) AS MATERIALIZED (\n"
+     "    SELECT jsonb_group_array(\n"
+     "      jsonb_object('x',x,\n"
+     "                  'y',jsonb(coalesce(j,random()%%10000)),\n"
+     "                  'z',hex(randomblob(50)))\n"
+     "    )\n"
+     "    FROM c LEFT JOIN jval ON (x%%20)=n\n"
+     "  ),\n"
+     "  object1(z) AS MATERIALIZED (\n"
+     "    SELECT jsonb_group_object(char(0x61+x%%26,0x61+(x/26)%%26),\n"
+     "                      jsonb( coalesce(j,random()%%10000)))\n"
+     "      FROM c LEFT JOIN jval ON (x%%20)=n\n"
+     "  ),\n"
+     "  c2(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c2 WHERE n<%d)\n"
+     "INSERT INTO j1(x)\n"
+     "  SELECT jsonb_object('a',n,'b',n+10000,'c',jsonb(y),'d',jsonb(z),\n"
+     "                     'e',n+20000,'f',n+30000)\n"
+     "    FROM array1, object1, c2;",
+     g.szTest*5
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "table J2 is %d rows from J1 converted to text", g.szTest);
+  speedtest1_exec(
+     "CREATE TABLE j2(x JSON TEXT);\n"
+     "INSERT INTO j2(x) SELECT json(x) FROM j1 LIMIT %d", g.szTest
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "create indexes on JSON expressions on J1");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "CREATE INDEX j1x1 ON j1(x->>'a');\n"
+    "CREATE INDEX j1x2 ON j1(x->>'b');\n"
+    "CREATE INDEX j1x3 ON j1(x->>'f');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "create indexes on JSON expressions on J2");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "CREATE INDEX j2x1 ON j2(x->>'a');\n"
+    "CREATE INDEX j2x2 ON j2(x->>'b');\n"
+    "CREATE INDEX j2x3 ON j2(x->>'f');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(140, "queries against J1");
+  speedtest1_exec(
+    "WITH c(n) AS (VALUES(0) UNION ALL SELECT n+1 FROM c WHERE n<7)\n"
+    "  SELECT sum(x->>format('$.c[%%d].x',n)) FROM c, j1;\n"
+
+    "WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<5)\n"
+    "  SELECT sum(x->>format('$.\"c\"[#-%%d].y',n)) FROM c, j1;\n"
+
+    "SELECT sum(x->>'$.d.ez' + x->>'$.d.\"xz\"' + x->>'a' + x->>'$.c[10].y') FROM j1;\n"
+
+    "SELECT x->>'$.d.tz[2]', x->'$.d.tz' FROM j1;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(141, "queries involving json_type()");
+  speedtest1_exec(
+    "WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<20)\n"
+    "  SELECT json_type(x,format('$.c[#-%%d].y',n)), count(*)\n"
+    "    FROM c, j1\n"
+    "   WHERE j1.rowid=1\n"
+    "   GROUP BY 1 ORDER BY 2;"
+  );
+  speedtest1_end_test();
+
+
+  speedtest1_begin_test(150, "json_insert()/set()/remove() on every row of J1");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "UPDATE j1 SET x=jsonb_insert(x,'$.g',(x->>'f')+1,'$.h',3.14159,'$.i','hello',\n"
+    "                               '$.j',json('{x:99}'),'$.k','{y:98}');\n"
+    "UPDATE j1 SET x=jsonb_set(x,'$.e',(x->>'f')-1);\n"
+    "UPDATE j1 SET x=jsonb_remove(x,'$.d');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(160, "json_insert()/set()/remove() on every row of J2");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "UPDATE j2 SET x=json_insert(x,'$.g',(x->>'f')+1);\n"
+    "UPDATE j2 SET x=json_set(x,'$.e',(x->>'f')-1);\n"
+    "UPDATE j2 SET x=json_remove(x,'$.d');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+}
+
+/*
+** This testset focuses on the speed of parsing numeric literals (integers
+** and real numbers). This was added to test the impact of allowing "_"
+** characters to appear in numeric SQL literals to make them easier to read. 
+** For example, "SELECT 1_000_000;" instead of "SELECT 1000000;".
+*/
+void testset_parsenumber(void){
+  const char *zSql1 = "SELECT 1, 12, 123, 1234, 12345, 123456";
+  const char *zSql2 = "SELECT 8227256643844975616, 7932208612563860480, "
+                      "2010730661871032832, 9138463067404021760, "
+                      "2557616153664746496, 2557616153664746496";
+  const char *zSql3 = "SELECT 1.0, 1.2, 1.23, 123.4, 1.2345, 1.23456";
+  const char *zSql4 = "SELECT 8.227256643844975616, 7.932208612563860480, "
+                      "2.010730661871032832, 9.138463067404021760, "
+                      "2.557616153664746496, 2.557616153664746496";
+
+  const int NROW = 100*g.szTest;
+  int ii;
+
+  speedtest1_begin_test(100, "parsing %d small integers", NROW);
+  for(ii=0; ii<NROW; ii++){
+    sqlite3_exec(g.db, zSql1, 0, 0, 0);
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "parsing %d large integers", NROW);
+  for(ii=0; ii<NROW; ii++){
+    sqlite3_exec(g.db, zSql2, 0, 0, 0);
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(200, "parsing %d small reals", NROW);
+  for(ii=0; ii<NROW; ii++){
+    sqlite3_exec(g.db, zSql3, 0, 0, 0);
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(210, "parsing %d large reals", NROW);
+  for(ii=0; ii<NROW; ii++){
+    sqlite3_exec(g.db, zSql4, 0, 0, 0);
+  }
+  speedtest1_end_test();
+}
+
 #ifdef __linux__
 #include <sys/types.h>
 #include <unistd.h>
@@ -2210,6 +2970,8 @@ int main(int argc, char **argv){
   int doIncrvac = 0;            /* True for --incrvacuum */
   const char *zJMode = 0;       /* Journal mode */
   const char *zKey = 0;         /* Encryption key */
+  int nHardHeapLmt = 0;         /* The hard heap limit */
+  int nSoftHeapLmt = 0;         /* The soft heap limit */
   int nLook = -1, szLook = 0;   /* --lookaside configuration */
   int noSync = 0;               /* True for --nosync */
   int pageSize = 0;             /* Desired page size.  0 means default */
@@ -2221,11 +2983,9 @@ int main(int argc, char **argv){
   int memDb = 0;                /* --memdb.  Use an in-memory database */
   int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
     ;                           /* SQLITE_OPEN_xxx flags. */
-  char *zTSet = "main";         /* Which --testset torun */
-  const char * zVfs = 0;        /* --vfs NAME */
+  char *zTSet = "mix1";         /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
-  const char *zDbName = 0;      /* Name of the test database */
 
   void *pHeap = 0;              /* Allocated heap space */
   void *pLook = 0;              /* Allocated lookaside space */
@@ -2233,6 +2993,16 @@ int main(int argc, char **argv){
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
+
+  /* "mix1" is a macro testset: */
+  static char zMix1Tests[] =
+    "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10,star"
+#if !defined(SQLITE_SPEEDTEST1_WASM)
+    ",app"
+    /* This test misbehaves in WASM builds: sqlite3_open_v2() is
+       failing to find the db file for reasons not yet understood. */
+#endif
+    ;
 
 #ifdef SQLITE_SPEEDTEST1_WASM
   /* Resetting all state is important for the WASM build, which may
@@ -2252,10 +3022,13 @@ int main(int argc, char **argv){
          sqlite3_libversion(), sqlite3_sourceid());
 
   /* Process command-line arguments */
+  g.zDbName = 0;
+  g.zVfs = 0;
   g.zWR = "";
   g.zNN = "";
   g.zPK = "UNIQUE";
   g.szTest = 100;
+  g.szBase = 100;
   g.nRepeat = 1;
   for(i=1; i<argc; i++){
     const char *z = argv[i];
@@ -2277,6 +3050,10 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"explain")==0 ){
         g.bSqlOnly = 1;
         g.bExplain = 1;
+      }else if( strcmp(z,"hard-heap-limit")==0 ){
+        ARGC_VALUE_CHECK(1);
+        nHardHeapLmt = integerValue(argv[i+1]);
+        i += 1;
       }else if( strcmp(z,"heap")==0 ){
         ARGC_VALUE_CHECK(2);
         nHeap = integerValue(argv[i+1]);
@@ -2308,10 +3085,6 @@ int main(int argc, char **argv){
         ARGC_VALUE_CHECK(1);
         mmapSize = integerValue(argv[++i]);
  #endif
-      }else if( strcmp(z,"nolongdouble")==0 ){
-#ifdef SQLITE_TESTCTRL_USELONGDOUBLE
-        sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, 0);
-#endif       
       }else if( strcmp(z,"nomutex")==0 ){
         openFlags |= SQLITE_OPEN_NOMUTEX;
       }else if( strcmp(z,"nosync")==0 ){
@@ -2369,7 +3142,11 @@ int main(int argc, char **argv){
         g.bMemShrink = 1;
       }else if( strcmp(z,"size")==0 ){
         ARGC_VALUE_CHECK(1);
-        g.szTest = integerValue(argv[++i]);
+        g.szTest = g.szBase = integerValue(argv[++i]);
+      }else if( strcmp(z,"soft-heap-limit")==0 ){
+        ARGC_VALUE_CHECK(1);
+        nSoftHeapLmt = integerValue(argv[i+1]);
+        i += 1;
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"temp")==0 ){
@@ -2398,7 +3175,7 @@ int main(int argc, char **argv){
 #endif
       }else if( strcmp(z,"vfs")==0 ){
         ARGC_VALUE_CHECK(1);
-        zVfs = argv[++i];
+        g.zVfs = argv[++i];
       }else if( strcmp(z,"reserve")==0 ){
         ARGC_VALUE_CHECK(1);
         g.nReserve = atoi(argv[++i]);
@@ -2428,8 +3205,8 @@ int main(int argc, char **argv){
         fatal_error("unknown option: %s\nUse \"%s -?\" for help\n",
                     argv[i], argv[0]);
       }
-    }else if( zDbName==0 ){
-      zDbName = argv[i];
+    }else if( g.zDbName==0 ){
+      g.zDbName = argv[i];
     }else{
       fatal_error("surplus argument: %s\nUse \"%s -?\" for help\n",
                   argv[i], argv[0]);
@@ -2458,8 +3235,8 @@ int main(int argc, char **argv){
 #endif
   sqlite3_initialize();
 
-  if( zDbName!=0 ){
-    sqlite3_vfs *pVfs = sqlite3_vfs_find(zVfs);
+  if( g.zDbName!=0 ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(g.zVfs);
     /* For some VFSes, e.g. opfs, unlink() is not sufficient. Use the
     ** selected (or default) VFS's xDelete method to delete the
     ** database. This is specifically important for the "opfs" VFS
@@ -2467,15 +3244,15 @@ int main(int argc, char **argv){
     ** can be cleaned up properly. For historical compatibility, we'll
     ** also simply unlink(). */
     if( pVfs!=0 ){
-      pVfs->xDelete(pVfs, zDbName, 1);
+      pVfs->xDelete(pVfs, g.zDbName, 1);
     }
-    unlink(zDbName);
+    unlink(g.zDbName);
   }
 
   /* Open the database and the input file */
-  if( sqlite3_open_v2(memDb ? ":memory:" : zDbName, &g.db,
-                      openFlags, zVfs) ){
-    fatal_error("Cannot open database file: %s\n", zDbName);
+  if( sqlite3_open_v2(memDb ? ":memory:" : g.zDbName, &g.db,
+                      openFlags, g.zVfs) ){
+    fatal_error("Cannot open database file: %s\n", g.zDbName);
   }
 #if SQLITE_VERSION_NUMBER>=3006001
   if( nLook>0 && szLook>0 ){
@@ -2531,10 +3308,21 @@ int main(int argc, char **argv){
   if( zJMode ){
     speedtest1_exec("PRAGMA journal_mode=%s", zJMode);
   }
+  if( nHardHeapLmt>0 ){
+    speedtest1_exec("PRAGMA hard_heap_limit=%d", nHardHeapLmt);
+  }
+  if( nSoftHeapLmt>0 ){
+    speedtest1_exec("PRAGMA soft_heap_limit=%d", nSoftHeapLmt);
+  }
+  if( zJMode ){
+    speedtest1_exec("PRAGMA journal_mode=%s", zJMode);
+  }
 
   if( g.bExplain ) printf(".explain\n.echo on\n");
+  if( strcmp(zTSet,"mix1")==0 ) zTSet = zMix1Tests;
   do{
     char *zThisTest = zTSet;
+    char *zSep;
     char *zComma = strchr(zThisTest,',');
     if( zComma ){
       *zComma = 0;
@@ -2542,7 +3330,20 @@ int main(int argc, char **argv){
     }else{
       zTSet = "";
     }
-    if( g.iTotal>0 || zComma!=0 ){
+    zSep = strchr(zThisTest, '/');
+    if( zSep ){
+      int kk;
+      for(kk=1; zSep[kk] && ISDIGIT(zSep[kk]); kk++){}
+      if( kk==1 || zSep[kk]!=0 ){
+        fatal_error("bad modifier on testset name: \"%s\"", zThisTest);
+      }
+      g.szTest = g.szBase*integerValue(zSep+1)/100;
+      if( g.szTest<=0 ) g.szTest = 1;
+      zSep[0] = 0;
+    }else{
+      g.szTest = g.szBase;
+    }
+    if( g.iTotal>0 || zComma==0 ){
       printf("       Begin testset \"%s\"\n", zThisTest);
     }
     if( strcmp(zThisTest,"main")==0 ){
@@ -2553,10 +3354,18 @@ int main(int argc, char **argv){
       testset_orm();
     }else if( strcmp(zThisTest,"cte")==0 ){
       testset_cte();
+    }else if( strcmp(zThisTest,"star")==0 ){
+      testset_star();
+    }else if( strcmp(zThisTest,"app")==0 ){
+      testset_app();
     }else if( strcmp(zThisTest,"fp")==0 ){
       testset_fp();
+    }else if( strcmp(zThisTest,"json")==0 ){
+      testset_json();
     }else if( strcmp(zThisTest,"trigger")==0 ){
       testset_trigger();
+    }else if( strcmp(zThisTest,"parsenumber")==0 ){
+      testset_parsenumber();
     }else if( strcmp(zThisTest,"rtree")==0 ){
 #ifdef SQLITE_ENABLE_RTREE
       testset_rtree(6, 147);

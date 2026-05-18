@@ -19,10 +19,10 @@ set testprefix wal64k
 
 ifcapable !wal {finish_test ; return }
 
-if {$tcl_platform(platform) != "unix"} {
+if {[llength [info commands test_syscall]]==0} {
   finish_test
   return
-}
+} 
 
 db close
 test_syscall pagesize 65536

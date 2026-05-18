@@ -306,14 +306,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 #else
       encoding = SQLITE_UTF8;
 #endif
-      if( db->nVdbeActive>0 && encoding!=ENC(db)
-       && (db->mDbFlags & DBFLAG_Vacuum)==0
-      ){
-        rc = SQLITE_LOCKED;
-        goto initone_error_out;
-      }else{
-        sqlite3SetTextEncoding(db, encoding);
-      }
+      sqlite3SetTextEncoding(db, encoding);
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( (meta[BTREE_TEXT_ENCODING-1] & 3)!=ENC(db) ){
@@ -633,7 +626,13 @@ void *sqlite3ParserAddCleanup(
   void (*xCleanup)(sqlite3*,void*),   /* The cleanup routine */
   void *pPtr                          /* Pointer to object to be cleaned up */
 ){
-  ParseCleanup *pCleanup = sqlite3DbMallocRaw(pParse->db, sizeof(*pCleanup));
+  ParseCleanup *pCleanup;
+  if( sqlite3FaultSim(300) ){
+    pCleanup = 0;
+    sqlite3OomFault(pParse->db);
+  }else{
+    pCleanup = sqlite3DbMallocRaw(pParse->db, sizeof(*pCleanup));
+  }
   if( pCleanup ){
     pCleanup->pNext = pParse->pCleanup;
     pParse->pCleanup = pCleanup;
@@ -861,9 +860,11 @@ static int sqlite3LockAndPrepare(
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
     assert( rc==SQLITE_OK || *ppStmt==0 );
     if( rc==SQLITE_OK || db->mallocFailed ) break;
-  }while( (rc==SQLITE_ERROR_RETRY && (cnt++)<SQLITE_MAX_PREPARE_RETRY)
-       || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
+    cnt++;
+  }while( (rc==SQLITE_ERROR_RETRY && ALWAYS(cnt<=SQLITE_MAX_PREPARE_RETRY))
+       || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt)==1) );
   sqlite3BtreeLeaveAll(db);
+  assert( rc!=SQLITE_ERROR_RETRY );
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
   db->busyHandler.nBusy = 0;
@@ -1001,12 +1002,24 @@ static int sqlite3Prepare16(
   if( !sqlite3SafetyCheckOk(db)||zSql==0 ){
     return SQLITE_MISUSE_BKPT;
   }
+
+  /* Make sure nBytes is non-negative and correct.  It should be the
+  ** number of bytes until the end of the input buffer or until the first
+  ** U+0000 character.  If the input nBytes is odd, convert it into
+  ** an even number.  If the input nBytes is negative, then the input
+  ** must be terminated by at least one U+0000 character */
   if( nBytes>=0 ){
     int sz;
     const char *z = (const char*)zSql;
     for(sz=0; sz<nBytes && (z[sz]!=0 || z[sz+1]!=0); sz += 2){}
     nBytes = sz;
+  }else{
+    int sz;
+    const char *z = (const char*)zSql;
+    for(sz=0; z[sz]!=0 || z[sz+1]!=0; sz += 2){}
+    nBytes = sz;
   }
+
   sqlite3_mutex_enter(db->mutex);
   zSql8 = sqlite3Utf16to8(db, zSql, nBytes, SQLITE_UTF16NATIVE);
   if( zSql8 ){
@@ -1020,7 +1033,7 @@ static int sqlite3Prepare16(
     ** the same number of characters into the UTF-16 string.
     */
     int chars_parsed = sqlite3Utf8CharLen(zSql8, (int)(zTail8-zSql8));
-    *pzTail = (u8 *)zSql + sqlite3Utf16ByteLen(zSql, chars_parsed);
+    *pzTail = (u8 *)zSql + sqlite3Utf16ByteLen(zSql, nBytes, chars_parsed);
   }
   sqlite3DbFree(db, zSql8); 
   rc = sqlite3ApiExit(db, rc);

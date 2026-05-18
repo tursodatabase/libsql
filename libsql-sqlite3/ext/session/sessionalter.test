@@ -202,6 +202,7 @@ foreach {tn sql1 at sql2} {
   
     sqlite3changegroup grp
     grp schema db main
+    breakpoint
     grp add $C1
     grp add $C2
     set T1 [grp output]

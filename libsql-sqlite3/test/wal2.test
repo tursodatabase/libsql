@@ -26,7 +26,7 @@ ifcapable !wal {finish_test ; return }
 set sqlite_sync_count 0
 proc cond_incr_sync_count {adj} {
   global sqlite_sync_count
-  if {$::tcl_platform(platform) == "windows"} {
+  if {$::tcl_platform(os) eq "Windows NT"} {
     incr sqlite_sync_count $adj
   } {
     ifcapable !dirsync {
@@ -34,43 +34,6 @@ proc cond_incr_sync_count {adj} {
     }
   }
 }
-
-proc set_tvfs_hdr {file args} {
-
-  # Set $nHdr to the number of bytes in the wal-index header:
-  set nHdr 48
-  set nInt [expr {$nHdr/4}]
-
-  if {[llength $args]>2} {
-    error {wrong # args: should be "set_tvfs_hdr fileName ?val1? ?val2?"}
-  }
-
-  set blob [tvfs shm $file]
-  if {$::tcl_platform(byteOrder)=="bigEndian"} {set fmt I} {set fmt i}
-
-  if {[llength $args]} {
-    set ia [lindex $args 0]
-    set ib $ia
-    if {[llength $args]==2} {
-      set ib [lindex $args 1]
-    }
-    binary scan $blob a[expr $nHdr*2]a* dummy tail
-    set blob [binary format ${fmt}${nInt}${fmt}${nInt}a* $ia $ib $tail]
-    tvfs shm $file $blob
-  }
-
-  binary scan $blob ${fmt}${nInt} ints
-  return $ints
-}
-
-proc incr_tvfs_hdr {file idx incrval} {
-  set ints [set_tvfs_hdr $file]
-  set v [lindex $ints $idx]
-  incr v $incrval
-  lset ints $idx $v
-  set_tvfs_hdr $file $ints
-}
-
 
 #-------------------------------------------------------------------------
 # Test case wal2-1.*:
@@ -1075,7 +1038,7 @@ tvfs delete
 # the new files with the same file-system permissions as the database 
 # file itself. Test this.
 #
-if {$::tcl_platform(platform) == "unix"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
   faultsim_delete_and_reopen
   # Changed on 2012-02-13: umask is deliberately ignored for -wal files.
   #set umask [exec /bin/sh -c umask]
@@ -1098,7 +1061,11 @@ if {$::tcl_platform(platform) == "unix"} {
    3 00600
    4 00755
   } {
-    set effective [format %.5o [expr $permissions & ~$umask]]
+    if {$tcl_version>=9.0} {
+      set effective [format %.5d [expr $permissions & ~$umask]]
+    } else {
+      set effective [format %.5o [expr $permissions & ~$umask]]
+    }
     do_test wal2-12.2.$tn.1 {
       file attributes test.db -permissions $permissions
       string map {o 0} [file attributes test.db -permissions]
@@ -1127,7 +1094,7 @@ if {$::tcl_platform(platform) == "unix"} {
 # database, wal or shm files cannot be opened, or can only be opened
 # read-only.
 #
-if {$::tcl_platform(platform) == "unix"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
   proc perm {} {
     set L [list]
     foreach f {test.db test.db-wal test.db-shm} {

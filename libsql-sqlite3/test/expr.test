@@ -71,6 +71,9 @@ test_expr expr-1.28 {i1=1, i2=2} {i1=2 AND i2=1} {0}
 test_expr expr-1.29 {i1=1, i2=2} {i1=1 AND i2=1} {0}
 test_expr expr-1.30 {i1=1, i2=2} {i1=2 AND i2=2} {0}
 test_expr expr-1.31 {i1=1, i2=2} {i1==1 OR i2=2} {1}
+test_expr expr-1.31b {i1=1} {0 OR 2} {1}
+test_expr expr-1.31c {i1=1} {false OR true} {1}
+test_expr expr-1.31d {i1=1} {99 OR false} {1}
 test_expr expr-1.32 {i1=1, i2=2} {i1=2 OR i2=1} {0}
 test_expr expr-1.33 {i1=1, i2=2} {i1=1 OR i2=1} {1}
 test_expr expr-1.34 {i1=1, i2=2} {i1=2 OR i2=2} {1}
@@ -1002,7 +1005,7 @@ do_execsql_test expr-13.9 {
   SELECT '' <= "";
 } {1}
 
-# 2018-02-26. Ticket https://www.sqlite.org/src/tktview/36fae083b450e3af85
+# 2018-02-26. Ticket https://sqlite.org/src/tktview/36fae083b450e3af85
 # 
 do_execsql_test expr-14.1 {
   DROP TABLE IF EXISTS t1;

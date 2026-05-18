@@ -57,7 +57,6 @@ foreach_detail_mode $testprefix {
 
 } ;# foreach_detail_mode...
 
-
 do_execsql_test 4.0 {
   CREATE VIRTUAL TABLE x2 USING fts5(a);
   INSERT INTO x2(x2, rank) VALUES('crisismerge', 2);
@@ -78,6 +77,19 @@ do_faultsim_test 4 -faults oom-* -prep {
   execsql { INSERT INTO x2(x2) VALUES('optimize') }
 } -test {
   faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+}
+
+set TMPDBERROR {1 {unable to open a temporary database file for storing temporary tables}}
+
+do_faultsim_test 5 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  execsql { PRAGMA temp_store = memory }
+} -body {
+  execsql { PRAGMA integrity_check }
+} -test {
+  if {[string match {*error code=7*} $testresult]==0} {
+    faultsim_test_result {0 ok} {1 SQLITE_NOMEM} $::TMPDBERROR
+  }
 }
 
 

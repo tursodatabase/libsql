@@ -49,7 +49,7 @@
 ** USAGE EXAMPLES:
 **
 ** Show the table btrees in a schema order with the tables with the most
-** rows occuring first:
+** rows occurring first:
 **
 **      SELECT name, nEntry
 **        FROM sqlite_btreeinfo

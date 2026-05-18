@@ -36,11 +36,7 @@
 */
 #ifdef SQLITE_TEST
 #  include "sqliteInt.h"
-#  if defined(INCLUDE_SQLITE_TCL_H)
-#    include "sqlite_tcl.h"
-#  else
-#    include "tcl.h"
-#  endif
+#  include "tclsqlite.h"
 #else
 #  include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1

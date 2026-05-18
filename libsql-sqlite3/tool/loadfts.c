@@ -145,6 +145,7 @@ static void traverse(
   for(e=readdir(d); e; e=readdir(d)){
     if( strcmp(e->d_name, ".")==0 || strcmp(e->d_name, "..")==0 ) continue;
     char *zPath = sqlite3_mprintf("%s/%s", zDir, e->d_name);
+    if( zPath==0 ){ fprintf(stderr, "out of memory\n"); abort(); }
     if (e->d_type & DT_DIR) {
       traverse(zPath, pCtx, xCallback);
     }else{

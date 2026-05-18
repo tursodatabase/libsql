@@ -302,12 +302,18 @@ static int matchQuality(
   u8 enc          /* Desired text encoding */
 ){
   int match;
-  assert( p->nArg>=-1 );
+  assert( p->nArg>=(-4) && p->nArg!=(-2) );
+  assert( nArg>=(-2) );
 
   /* Wrong number of arguments means "no match" */
   if( p->nArg!=nArg ){
-    if( nArg==(-2) ) return (p->xSFunc==0) ? 0 : FUNC_PERFECT_MATCH;
+    if( nArg==(-2) ) return p->xSFunc==0 ? 0 : FUNC_PERFECT_MATCH;
     if( p->nArg>=0 ) return 0;
+    /* Special p->nArg values available to built-in functions only:
+    **    -3     1 or more arguments required
+    **    -4     2 or more arguments required
+    */
+    if( p->nArg<(-2) && nArg<(-2-p->nArg) ) return 0;
   }
 
   /* Give a better score to a function with a specific number of arguments
@@ -501,6 +507,7 @@ void sqlite3SchemaClear(void *p){
   for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
     sqlite3DeleteTrigger(&xdb, (Trigger*)sqliteHashData(pElem));
   }
+
   sqlite3HashClear(&temp2);
   sqlite3HashInit(&pSchema->tblHash);
   for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){

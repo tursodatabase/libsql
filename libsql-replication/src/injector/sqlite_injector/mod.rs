@@ -348,4 +348,18 @@ mod test {
         conn.query_row("SELECT COUNT(*) FROM test", (), |_| Ok(()))
             .unwrap();
     }
+
+    #[cfg(feature = "encryption")]
+    #[test]
+    fn test_encrypted_injector_reopens_connection() {
+        let temp = tempfile::tempdir().unwrap();
+        let cfg = libsql_sys::EncryptionConfig::new(
+            libsql_sys::Cipher::Aes256Cbc,
+            "SuperSecretKey".into(),
+        );
+        let mut injector =
+            SqliteInjectorInner::new(temp.path().join("data"), 10, 10000, Some(cfg)).unwrap();
+
+        injector.begin_txn().unwrap();
+    }
 }

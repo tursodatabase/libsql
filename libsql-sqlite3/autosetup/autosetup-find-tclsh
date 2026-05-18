@@ -1,0 +1,16 @@
+#!/bin/sh
+# Looks for a suitable tclsh or jimsh in the PATH
+# If not found, builds a bootstrap jimsh in current dir from source
+# Prefer $autosetup_tclsh if is set in the environment (unless ./jimsh0 works)
+# If an argument is given, use that as the test instead of autosetup-test-tclsh
+d="`dirname "$0"`"
+for tclsh in ./jimsh0 $autosetup_tclsh jimsh tclsh tclsh8.5 tclsh8.6 tclsh8.7; do
+	{ $tclsh "$d/${1-autosetup-test-tclsh}"; } 2>/dev/null && exit 0
+done
+echo 1>&2 "No installed jimsh or tclsh, building local bootstrap jimsh0"
+for cc in ${CC_FOR_BUILD:-cc} gcc; do
+	{ $cc -o jimsh0 "$d/jimsh0.c"; } 2>/dev/null >/dev/null || continue
+	./jimsh0 "$d/${1-autosetup-test-tclsh}" && exit 0
+done
+echo 1>&2 "No working C compiler found. Tried ${CC_FOR_BUILD:-cc} and gcc."
+echo false

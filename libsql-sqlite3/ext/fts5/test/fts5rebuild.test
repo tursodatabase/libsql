@@ -14,7 +14,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5rebuild
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -46,7 +46,7 @@ do_execsql_test 1.5 {
 
 do_catchsql_test 1.6 {
   INSERT INTO f1(f1) VALUES('integrity-check');
-} {1 {database disk image is malformed}}
+} {/.*fts5: corrupt.*/}
 
 do_execsql_test 1.7 {
   INSERT INTO f1(f1) VALUES('rebuild');

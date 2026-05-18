@@ -12,7 +12,7 @@
 # focus of this file is testing that the optimizations that disable
 # ORDER BY clauses work correctly on multi-value primary keys and
 # unique indices when only some prefix of the terms in the key are
-# used.  See ticket http://www.sqlite.org/src/info/a179fe74659
+# used.  See ticket http://sqlite.org/src/info/a179fe74659
 #
 
 

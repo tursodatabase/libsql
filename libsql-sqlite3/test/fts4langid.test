@@ -435,7 +435,7 @@ do_test 5.3.2 {
   for {set i 0} {$i < 20} {incr i} {
     execsql {
       INSERT INTO t6(content, lid) VALUES(
-        'I (row '||$i||') belong to langauge N!', $lid
+        'I (row '||$i||') belong to language N!', $lid
       );
     }
   }

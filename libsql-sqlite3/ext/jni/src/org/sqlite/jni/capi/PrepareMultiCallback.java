@@ -20,7 +20,7 @@ public interface PrepareMultiCallback extends CallbackProxy {
 
   /**
      Gets passed a sqlite3_stmt which it may handle in arbitrary ways,
-     transfering ownership of it to this function.
+     transferring ownership of it to this function.
 
      sqlite3_prepare_multi() will _not_ finalize st - it is up
      to the call() implementation how st is handled.
@@ -65,7 +65,7 @@ public interface PrepareMultiCallback extends CallbackProxy {
      A PrepareMultiCallback impl which steps entirely through a result set,
      ignoring all non-error results.
   */
-  public static final class StepAll implements PrepareMultiCallback {
+  final class StepAll implements PrepareMultiCallback {
     public StepAll(){}
     /**
        Calls sqlite3_step() on st until it returns something other than

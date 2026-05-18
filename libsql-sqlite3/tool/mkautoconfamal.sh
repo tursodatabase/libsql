@@ -13,7 +13,7 @@
 #
 
 
-# Bail out of the script if any command returns a non-zero exit 
+# Bail out of the script if any command returns a non-zero exit
 # status. Or if the script tries to use an unset variable. These
 # may fail for old /bin/sh interpreters.
 #
@@ -22,24 +22,16 @@ set -u
 
 TMPSPACE=./mkpkg_tmp_dir
 VERSION=`cat $TOP/VERSION`
-HASH=`sed 's/^\(..........\).*/\1/' $TOP/manifest.uuid`
-DATETIME=`grep '^D' $TOP/manifest | sed -e 's/[^0-9]//g' -e 's/\(............\).*/\1/'`
-
-# Verify that the version number in the TEA autoconf file is correct.
-# Fail with an error if not.
-#
-if grep $VERSION $TOP/autoconf/tea/configure.ac
-then echo "TEA version number ok"
-else echo "TEA version number mismatch.  Should be $VERSION"; exit 1
-fi
+HASH=`cut -c1-10 $TOP/manifest.uuid`
+DATETIME=`grep '^D' $TOP/manifest | tr -c -d '[0-9]' | cut -c1-12`
 
 # If this script is given an argument of --snapshot, then generate a
-# snapshot tarball named for the current checkout SHA1 hash, rather than
+# snapshot tarball named for the current checkout SHA hash, rather than
 # the version number.
 #
 if test "$#" -ge 1 -a x$1 != x--snapshot
 then
-  # Set global variable $ARTIFACT to the "3xxyyzz" string incorporated 
+  # Set global variable $ARTIFACT to the "3xxyyzz" string incorporated
   # into artifact filenames. And $VERSION2 to the "3.x.y[.z]" form.
   xx=`echo $VERSION|sed 's/3\.\([0-9]*\)\..*/\1/'`
   yy=`echo $VERSION|sed 's/3\.[^.]*\.\([0-9]*\).*/\1/'`
@@ -54,6 +46,8 @@ fi
 
 rm -rf $TMPSPACE
 cp -R $TOP/autoconf       $TMPSPACE
+cp -R $TOP/autosetup      $TMPSPACE
+cp -p $TOP/configure      $TMPSPACE
 cp sqlite3.c              $TMPSPACE
 cp sqlite3.h              $TMPSPACE
 cp sqlite3ext.h           $TMPSPACE
@@ -63,39 +57,39 @@ cp $TOP/sqlite3.pc.in     $TMPSPACE
 cp shell.c                $TMPSPACE
 cp $TOP/src/sqlite3.rc    $TMPSPACE
 cp $TOP/tool/Replace.cs   $TMPSPACE
-
-cat $TMPSPACE/configure.ac |
-sed "s/--SQLITE-VERSION--/$VERSION/" > $TMPSPACE/tmp
-mv $TMPSPACE/tmp $TMPSPACE/configure.ac
+cp $TOP/VERSION           $TMPSPACE
+cp $TOP/main.mk           $TMPSPACE
 
 cd $TMPSPACE
-autoreconf -i
-#libtoolize
-#aclocal
-#autoconf
-#automake --add-missing
+
+#if true; then
+  # Clean up *~ files (emacs-generated backups).
+  # This bit is only for use during development of
+  # the autoconf bundle.
+#  find . -name '*~' -exec rm \{} \;
+#fi
 
 mkdir -p tea/generic
-echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c 
-echo "# include <sqlite3.h>"        >> tea/generic/tclsqlite3.c
-echo "#else"                        >> tea/generic/tclsqlite3.c
-echo "#include \"sqlite3.c\""       >> tea/generic/tclsqlite3.c
-echo "#endif"                       >> tea/generic/tclsqlite3.c
+cat <<EOF > tea/generic/tclsqlite3.c
+#ifdef USE_SYSTEM_SQLITE
+# include <sqlite3.h>
+#else
+# include "sqlite3.c"
+#endif
+EOF
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
-cat tea/configure.ac | 
-  sed "s/AC_INIT(\[sqlite\], .*)/AC_INIT([sqlite], [$VERSION])/" > tmp
-mv tmp tea/configure.ac
+# Clean up some local remnants from the tarball.
+rm -f tea/.env-* # autosetup environment overrides
+find . -type f -name '*~' -exec rm -f \{} \;  # backup files
+find . -type f -name '#*#' -exec rm -f \{} \; # emacs lock files
+find . -type f -name '*.o' -exec rm -f \{} \;
+find . -type f -name '*.so' -exec rm -f \{} \;
 
-cd tea
-autoconf
-rm -rf autom4te.cache
-
-cd ../
-./configure && make dist
-tar -xzf sqlite-$VERSION.tar.gz
+./configure && ${MAKE-make} dist
+tar xzf sqlite-$VERSION.tar.gz
 mv sqlite-$VERSION $TARBALLNAME
-tar -czf $TARBALLNAME.tar.gz $TARBALLNAME
+tar czf $TARBALLNAME.tar.gz $TARBALLNAME
 mv $TARBALLNAME.tar.gz ..
 cd ..
 ls -l $TARBALLNAME.tar.gz

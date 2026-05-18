@@ -60,7 +60,7 @@ do_test 1.2 {
   sqlite3 db test.db
 
   set fd [db incrblob t1 x 3]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   seek $fd 30
   puts -nonewline $fd "\x18"
   close $fd
@@ -102,7 +102,7 @@ do_test 2.2 {
 
   sqlite3 db test.db
   set fd [db incrblob t1 x 5]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
 
   seek $fd 22
   puts -nonewline $fd "\x5d"

@@ -170,7 +170,7 @@ do_execsql_test 5.0 {
 } {}
 
 # 2016-05-02
-# Ticket https://www.sqlite.org/src/tktview/dc6ebeda93960877
+# Ticket https://sqlite.org/src/tktview/dc6ebeda93960877
 # A subquery in the WHERE clause of a one-pass DELETE can cause an
 # incorrect answer.
 #

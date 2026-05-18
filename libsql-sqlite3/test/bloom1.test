@@ -183,6 +183,59 @@ do_execsql_test 4.3 {
 do_execsql_test 4.4 {
   SELECT * FROM t0 LEFT JOIN t1 LEFT JOIN t2 ON (b NOTNULL)==(c IN ()) WHERE c;
 } {xyz {} 7.0}
- 
+
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1 (c1);
+  INSERT INTO t1 VALUES (101);
+  CREATE TABLE t2 ( x );
+  INSERT INTO t2 VALUES(404);
+}
+
+do_execsql_test 5.1 {
+  SELECT 'val' in (
+      select 'val' from ( select 'valueB' from t1 order by 1 ) 
+      union all 
+      select 'val'
+  );
+} {1}
+
+do_execsql_test 5.2 {
+  select * from t2
+    where 'val' in (
+        select 'val' from ( select 'valueB' from t1 order by 1 ) 
+        union all 
+        select 'val'
+    );
+} {404}
+
+do_execsql_test 5.3 {
+  SELECT subq_1.c_0 as c_0 
+  FROM ( SELECT 0 as c_0) as subq_1
+  WHERE (subq_1.c_0) IN (
+    SELECT subq_2.c_0 as c_0
+    FROM (
+      SELECT 0 as c_0
+      FROM t1 as ref_1
+      WHERE (ref_1.c1) = (2)
+      ORDER BY c_0 desc
+    ) as subq_2
+    UNION ALL
+    SELECT 0 as c_0
+  );
+} {0}
+
+# 2025-04-30 https://sqlite.org/forum/forumpost/792a09cb3df9e69f
+# A continuation of the above.
+#
+do_execsql_test 6.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a);
+  SELECT 111 IN (
+    SELECT 222 FROM (SELECT 333 ORDER BY 1)
+    UNION ALL
+    SELECT 444 FROM (SELECT 555 FROM t1 ORDER BY 1)
+  );
+} 0
 
 finish_test

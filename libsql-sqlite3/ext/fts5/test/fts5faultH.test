@@ -14,7 +14,7 @@ source [file join [file dirname [info script]] fts5_common.tcl]
 source $testdir/malloc_common.tcl
 set testprefix fts5faultG
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -127,7 +127,7 @@ do_execsql_test 3.0 {
   COMMIT;
 }
 
-do_faultsim_test 3 -faults oom* -prep { 
+do_faultsim_test 3.1 -faults oom* -prep { 
 } -body {
   execsql {
     SELECT rowid FROM t1('BBB AND AAA');
@@ -135,6 +135,15 @@ do_faultsim_test 3 -faults oom* -prep {
 } -test {
   faultsim_integrity_check
   faultsim_test_result {0 {10 35}}
+}
+do_faultsim_test 3.2 -faults oom* -prep { 
+} -body {
+  execsql {
+    SELECT count(*) FROM t1('BBB');
+  }
+} -test {
+  faultsim_integrity_check
+  faultsim_test_result {0 27}
 }
 
 

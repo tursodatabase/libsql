@@ -1,0 +1,273 @@
+# 2024-02-03
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# ROLLBACK in the middle of an RTREE query
+#
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source $testdir/tester.tcl
+set testprefix rtreeJ
+ifcapable !rtree { finish_test ; return }
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x1, x2);
+  INSERT INTO t1 VALUES(1, 1, 1), (2, 2, 2);
+} {}
+
+do_execsql_test 1.1 {
+  SELECT * FROM t1
+} {1 1.0 1.0 2 2.0 2.0}
+
+# If a ROLLBACK occurs that backs out changes to the RTREE, then
+# all pending queries to the RTREE are aborted.
+#
+do_test 1.2 {
+  db eval {
+    BEGIN;
+      INSERT INTO t1 VALUES(3, 3, 3);
+      INSERT INTO t1 VALUES(4, 4, 4);
+  }
+  set rc [catch {
+    db eval { SELECT * FROM t1 } {
+      if {$id==1} {
+        db eval { ROLLBACK }
+      }
+      lappend res $id $x1 $x2
+    }
+  } msg]
+  list $rc $msg
+} {1 {query aborted}}
+
+do_execsql_test 1.3 {
+  SELECT * FROM t1;
+} {1 1.0 1.0 2 2.0 2.0}
+
+# A COMMIT of changes to the RTREE does not affect pending queries
+#
+do_test 1.4 {
+  set res {}
+  db eval {
+    BEGIN;
+      INSERT INTO t1 VALUES(5, 5, 5);
+      INSERT INTO t1 VALUES(6, 6, 6);
+  }
+  db eval { SELECT * FROM t1 } {
+    if {$id==1} {
+      db eval { COMMIT }
+    }
+    lappend res $id $x1 $x2
+  }
+  set res
+} {1 1.0 1.0 2 2.0 2.0 5 5.0 5.0 6 6.0 6.0}
+
+do_execsql_test 1.5 {
+  SELECT * FROM t1;
+} {1 1.0 1.0 2 2.0 2.0 5 5.0 5.0 6 6.0 6.0}
+
+do_execsql_test 1.6 {
+  DELETE  FROM t1;
+  INSERT INTO t1 VALUES(1,1,1),(2,2,2),(3,3,3),(4,4,4);
+  CREATE TABLE t2(x);
+  SELECT * FROM t1;
+} {1 1.0 1.0 2 2.0 2.0 3 3.0 3.0 4 4.0 4.0}
+
+# A rollback that does not affect the rtree table because
+# the rtree table has not been written to does not cause
+# a query abort.
+#
+do_test 1.7 {
+  set res {}
+  db eval {
+    BEGIN;
+    INSERT INTO t2(x) VALUES(12345);
+  }
+  db eval { SELECT * FROM t1 } {
+    if {$id==1} {
+      db eval { ROLLBACK }
+    }
+    lappend res $id $x1 $x2
+  }
+  set res
+} {1 1.0 1.0 2 2.0 2.0 3 3.0 3.0 4 4.0 4.0}
+
+# ROLLBACK TO that affects the RTREE does cause a query abort.
+#
+do_test 1.8 {
+  db eval {
+    DELETE FROM t1 WHERE rowid>1;
+    BEGIN;
+    DELETE FROM t2;
+    INSERT INTO t2(x) VALUES(23456);
+    SAVEPOINT 'one';
+    INSERT INTO t1 VALUES(2,2,2),(3,3,3);
+  }
+  set rc [catch {
+    db eval { SELECT * FROM t1 } {
+      if {$id==1} {
+        db eval { ROLLBACK TO 'one'; }
+      }
+      lappend res $id $x1 $x2
+    }
+  } msg]
+  list $rc $msg
+} {1 {query aborted}}
+
+do_execsql_test 1.9 {
+  COMMIT;
+  SELECT * FROM t1;
+} {1 1.0 1.0}
+
+# ROLLBACK TO that does not affect the RTREE does not cause a query abort.
+#
+do_execsql_test 1.10 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(1,1,1),(2,2,2),(3,3,3);
+  BEGIN;
+  DELETE FROM t2;
+  INSERT INTO t2(x) VALUES(34567);
+  SAVEPOINT 'one';
+  INSERT INTO t2(x) VALUES('a string');
+  SELECT * FROM t1;
+} {1 1.0 1.0 2 2.0 2.0 3 3.0 3.0}
+do_test 1.11 {
+  set rc [catch {
+    set res {}
+    db eval { SELECT * FROM t1 } {
+      if {$id==2} {
+        # db eval { ROLLBACK TO 'one'; }
+      }
+      lappend res $id $x1 $x2
+    }
+    set res
+  } msg]
+  list $rc $msg
+} {0 {1 1.0 1.0 2 2.0 2.0 3 3.0 3.0}}
+
+do_execsql_test 1.12 {
+  COMMIT;
+  SELECT * FROM t1;
+} {1 1.0 1.0 2 2.0 2.0 3 3.0 3.0}
+
+#----------------------------------------------------------------------
+
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x1, x2);
+  INSERT INTO t1 VALUES(1, 1, 1), (2, 2, 2);
+  CREATE TABLE t2(x);
+} {}
+
+do_test 2.1 {
+  db eval {
+    BEGIN;
+    INSERT INTO t1 VALUES(3, 3, 3);
+    PRAGMA writable_schema = RESET;
+  }
+
+  set rc [catch {
+    db eval { SELECT x1, x2 FROM t1 } {
+      if {$x1==1} {
+        db eval { ROLLBACK }
+      }
+      lappend res $x1 $x2
+    }
+  } msg]
+  list $rc $msg
+}  {1 {query aborted}}
+
+do_execsql_test 2.1 {
+  CREATE TABLE bak_node(nodeno, data);
+  CREATE TABLE bak_parent(nodeno, parentnode);
+  CREATE TABLE bak_rowid(rowid, nodeno);
+}
+proc save_t1 {} {
+  db eval {
+    DELETE FROM bak_node;
+    DELETE FROM bak_parent;
+    DELETE FROM bak_rowid;
+    INSERT INTO bak_node SELECT * FROM t1_node;
+    INSERT INTO bak_parent SELECT * FROM t1_parent;
+    INSERT INTO bak_rowid SELECT * FROM t1_rowid;
+  }
+}
+proc restore_t1 {} {
+  db eval {
+    DELETE FROM t1_node;
+    DELETE FROM t1_parent;
+    DELETE FROM t1_rowid;
+    INSERT INTO t1_node SELECT * FROM bak_node;
+    INSERT INTO t1_parent SELECT * FROM bak_parent;
+    INSERT INTO t1_rowid SELECT * FROM bak_rowid;
+  }
+}
+
+do_test 2.3 {
+  save_t1
+  db eval {
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  set rc [catch {
+    db eval { SELECT rowid, x1, x2 FROM t1 } {
+      if {$x1==1} {
+        restore_t1
+      }
+      lappend res $x1 $x2
+    }
+  } msg]
+  list $rc $msg
+}  {1 {query aborted}}
+do_execsql_test 2.4 {
+  SELECT * FROM t1
+} {1 1.0 1.0 2 2.0 2.0}
+
+do_test 2.5 {
+  save_t1
+  db eval {
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  set rc [catch {
+    db eval { SELECT x1 FROM t1 } {
+      if {$x1==1} {
+        restore_t1
+      }
+      lappend res $x1 $x2
+    }
+  } msg]
+  list $rc $msg
+}  {1 {query aborted}}
+do_execsql_test 2.6 {
+  SELECT * FROM t1
+} {1 1.0 1.0 2 2.0 2.0}
+
+do_test 2.7 {
+  save_t1
+  db eval {
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  set ::res [list]
+  set rc [catch {
+    db eval { SELECT 'abc' FROM t1 } {
+      if {$::res==[list]} {
+        restore_t1
+        set ::bDone 1
+      }
+      lappend res abc
+    }
+  } msg]
+  set res
+} {abc abc abc}
+do_execsql_test 2.6 {
+  SELECT * FROM t1
+} {1 1.0 1.0 2 2.0 2.0}
+
+
+finish_test

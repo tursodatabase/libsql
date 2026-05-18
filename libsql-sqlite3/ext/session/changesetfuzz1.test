@@ -27,7 +27,7 @@ if {$CF==""} {
 
 proc writefile {zFile data} {
   set fd [open $zFile w]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   puts -nonewline $fd $data
   close $fd
 }
@@ -81,4 +81,3 @@ do_test 1.2 {
 
 
 finish_test
-

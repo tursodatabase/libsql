@@ -12,7 +12,7 @@
 # focus of this script is the Win32 heap implementation.
 #
 
-if {$tcl_platform(platform)!="windows"} return
+if {$tcl_platform(platform) ne "windows"} return
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

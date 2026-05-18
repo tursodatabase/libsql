@@ -13,7 +13,7 @@
 ** The aim of this utility is to prevent recurrences of errors such
 ** as the one fixed at:
 **
-**   https://www.sqlite.org/src/info/a2952231ac7abe16
+**   https://sqlite.org/src/info/a2952231ac7abe16
 **
 ** Note that another similar error was found by this utility when it was
 ** first written.  That other error was fixed by the same check-in that

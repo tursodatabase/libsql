@@ -47,7 +47,7 @@ proc database_cksum {db1} {
 
 proc readfile {filename} {
   set fd [open $filename]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   set data [read $fd]
   close $fd
   set data

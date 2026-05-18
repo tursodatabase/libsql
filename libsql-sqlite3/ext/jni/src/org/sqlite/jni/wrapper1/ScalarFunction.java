@@ -12,10 +12,6 @@
 ** This file is part of the wrapper1 interface for sqlite3.
 */
 package org.sqlite.jni.wrapper1;
-import org.sqlite.jni.capi.CApi;
-import org.sqlite.jni.annotation.*;
-import org.sqlite.jni.capi.sqlite3_context;
-import org.sqlite.jni.capi.sqlite3_value;
 
 /**
    The SqlFunction type for scalar SQL functions.

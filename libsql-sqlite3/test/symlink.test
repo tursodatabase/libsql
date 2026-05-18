@@ -17,7 +17,7 @@ source $testdir/tester.tcl
 set testprefix symlink
 
 # This only runs on unix.
-if {$::tcl_platform(platform)!="unix"} {
+if {$::tcl_platform(os) eq "Windows NT"} {
   finish_test
   return
 }

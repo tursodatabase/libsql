@@ -16,11 +16,7 @@
 #include "sqliteInt.h"
 #include "btreeInt.h"
 #include "wal.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,9 +48,10 @@ static int SQLITE_TCLAPI btree_open(
   char *zFilename;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME NCACHE FLAGS\"", 0);
+       " FILENAME NCACHE FLAGS\"", NULL);
     return TCL_ERROR;
   }
+
   if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
   nRefSqlite3++;
   if( nRefSqlite3==1 ){
@@ -77,12 +74,12 @@ static int SQLITE_TCLAPI btree_open(
   destroy_wal_manager(sDb.wal_manager);
   sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   sqlite3BtreeSetCacheSize(pBt, nCache);
   sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pBt);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return TCL_OK;
 }
 
@@ -101,13 +98,13 @@ static int SQLITE_TCLAPI btree_close(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3BtreeClose(pBt);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   nRefSqlite3--;
@@ -136,7 +133,7 @@ static int SQLITE_TCLAPI btree_begin_transaction(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -144,7 +141,7 @@ static int SQLITE_TCLAPI btree_begin_transaction(
   rc = sqlite3BtreeBeginTrans(pBt, 1, 0);
   sqlite3BtreeLeave(pBt);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -167,7 +164,7 @@ static int SQLITE_TCLAPI btree_pager_stats(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -220,7 +217,7 @@ static int SQLITE_TCLAPI btree_cursor(
 
   if( argc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID TABLENUM WRITEABLE\"", 0);
+       " ID TABLENUM WRITEABLE\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -241,11 +238,11 @@ static int SQLITE_TCLAPI btree_cursor(
   sqlite3_mutex_leave(pBt->db->mutex);
   if( rc ){
     ckfree((char *)pCur);
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pCur);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -265,7 +262,7 @@ static int SQLITE_TCLAPI btree_close_cursor(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -283,7 +280,7 @@ static int SQLITE_TCLAPI btree_close_cursor(
 #endif
   ckfree((char *)pCur);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   return SQLITE_OK;
@@ -309,7 +306,7 @@ static int SQLITE_TCLAPI btree_next(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -321,11 +318,11 @@ static int SQLITE_TCLAPI btree_next(
   }
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -348,7 +345,7 @@ static int SQLITE_TCLAPI btree_first(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -356,11 +353,11 @@ static int SQLITE_TCLAPI btree_first(
   rc = sqlite3BtreeFirst(pCur, &res);
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -382,7 +379,7 @@ static int SQLITE_TCLAPI btree_eof(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -390,7 +387,7 @@ static int SQLITE_TCLAPI btree_eof(
   rc = sqlite3BtreeEof(pCur);
   sqlite3BtreeLeave(pCur->pBtree);
   sqlite3_snprintf(sizeof(zBuf),zBuf, "%d", rc);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -411,7 +408,7 @@ static int SQLITE_TCLAPI btree_payload_size(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -419,7 +416,7 @@ static int SQLITE_TCLAPI btree_payload_size(
   n = sqlite3BtreePayloadSize(pCur);
   sqlite3BtreeLeave(pCur->pBtree);
   sqlite3_snprintf(sizeof(zBuf),zBuf, "%u", n);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -449,7 +446,7 @@ static int SQLITE_TCLAPI btree_varint_test(
   unsigned char zBuf[100];
   if( argc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " START MULTIPLIER COUNT INCREMENT\"", 0);
+       " START MULTIPLIER COUNT INCREMENT\"", NULL);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&start) ) return TCL_ERROR;
@@ -464,20 +461,20 @@ static int SQLITE_TCLAPI btree_varint_test(
     if( n1>9 || n1<1 ){
       sqlite3_snprintf(sizeof(zErr), zErr,
          "putVarint returned %d - should be between 1 and 9", n1);
-      Tcl_AppendResult(interp, zErr, 0);
+      Tcl_AppendResult(interp, zErr, NULL);
       return TCL_ERROR;
     }
     n2 = getVarint(zBuf, &out);
     if( n1!=n2 ){
       sqlite3_snprintf(sizeof(zErr), zErr,
           "putVarint returned %d and getVarint returned %d", n1, n2);
-      Tcl_AppendResult(interp, zErr, 0);
+      Tcl_AppendResult(interp, zErr, NULL);
       return TCL_ERROR;
     }
     if( in!=out ){
       sqlite3_snprintf(sizeof(zErr), zErr,
           "Wrote 0x%016llx and got back 0x%016llx", in, out);
-      Tcl_AppendResult(interp, zErr, 0);
+      Tcl_AppendResult(interp, zErr, NULL);
       return TCL_ERROR;
     }
     if( (in & 0xffffffff)==in ){
@@ -488,14 +485,14 @@ static int SQLITE_TCLAPI btree_varint_test(
         sqlite3_snprintf(sizeof(zErr), zErr,
           "putVarint returned %d and GetVarint32 returned %d", 
                   n1, n2);
-        Tcl_AppendResult(interp, zErr, 0);
+        Tcl_AppendResult(interp, zErr, NULL);
         return TCL_ERROR;
       }
       if( in!=out ){
         sqlite3_snprintf(sizeof(zErr), zErr,
           "Wrote 0x%016llx and got back 0x%016llx from GetVarint32",
             in, out);
-        Tcl_AppendResult(interp, zErr, 0);
+        Tcl_AppendResult(interp, zErr, NULL);
         return TCL_ERROR;
       }
     }
@@ -535,12 +532,12 @@ static int SQLITE_TCLAPI btree_from_db(
 
   if( argc!=2 && argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " DB-HANDLE ?N?\"", 0);
+       " DB-HANDLE ?N?\"", NULL);
     return TCL_ERROR;
   }
 
   if( 1!=Tcl_GetCommandInfo(interp, argv[1], &info) ){
-    Tcl_AppendResult(interp, "No such db-handle: \"", argv[1], "\"", 0);
+    Tcl_AppendResult(interp, "No such db-handle: \"", argv[1], "\"", NULL);
     return TCL_ERROR;
   }
   if( argc==3 ){
@@ -573,7 +570,7 @@ static int SQLITE_TCLAPI btree_ismemdb(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -603,7 +600,7 @@ static int SQLITE_TCLAPI btree_set_cache_size(
   
   if( argc!=3 ){
     Tcl_AppendResult(
-        interp, "wrong # args: should be \"", argv[0], " BT NCACHE\"", 0);
+        interp, "wrong # args: should be \"", argv[0], " BT NCACHE\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -631,6 +628,7 @@ static int SQLITE_TCLAPI btree_insert(
   BtCursor *pCur;
   int rc;
   BtreePayload x;
+  Tcl_Size n;
 
   if( objc!=4 && objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?-intkey? CSR KEY VALUE");
@@ -641,10 +639,11 @@ static int SQLITE_TCLAPI btree_insert(
   if( objc==4 ){
     if( Tcl_GetIntFromObj(interp, objv[2], &rc) ) return TCL_ERROR;
     x.nKey = rc;
-    x.pData = (void*)Tcl_GetByteArrayFromObj(objv[3], &x.nData);
+    x.pData = (void*)Tcl_GetByteArrayFromObj(objv[3], &n);
+    x.nData = (int)n;
   }else{
-    x.pKey = (void*)Tcl_GetByteArrayFromObj(objv[2], &rc);
-    x.nKey = rc;
+    x.pKey = (void*)Tcl_GetByteArrayFromObj(objv[2], &n);
+    x.nKey = (int)n;
   }
   pCur = (BtCursor*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
 
@@ -656,7 +655,7 @@ static int SQLITE_TCLAPI btree_insert(
 
   Tcl_ResetResult(interp);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   return TCL_OK;

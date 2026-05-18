@@ -27,7 +27,7 @@ typedef sqlite3_uint64 u64;       /* unsigned 64-bit */
 
 
 static struct GlobalData {
-  u32 pagesize;                   /* Size of a database page */
+  i64 pagesize;                   /* Size of a database page */
   int dbfd;                       /* File descriptor for reading the DB */
   u32 mxPage;                     /* Last page number */
   int perLine;                    /* HEX elements to print per line */
@@ -1084,17 +1084,28 @@ static void ptrmap_coverage_report(const char *zDbName){
     printf("%5llu: PTRMAP page covering %llu..%llu\n", pgno,
            pgno+1, pgno+perPage);
     a = fileRead((pgno-1)*g.pagesize, usable);
-    for(i=0; i+5<=usable && pgno+1+i/5<=g.mxPage; i+=5){
-      const char *zType = "???";
+    for(i=0; i+5<=usable; i+=5){
+      const char *zType;
       u32 iFrom = decodeInt32(&a[i+1]);
+      const char *zExtra = pgno+1+i/5>g.mxPage ? " (off end of DB)" : "";
       switch( a[i] ){
         case 1:  zType = "b-tree root page";        break;
         case 2:  zType = "freelist page";           break;
         case 3:  zType = "first page of overflow";  break;
         case 4:  zType = "later page of overflow";  break;
         case 5:  zType = "b-tree non-root page";    break;
+        default: {
+          if( zExtra[0]==0 ){
+            printf("%5llu: invalid (0x%02x), parent=%u\n", 
+                   pgno+1+i/5, a[i], iFrom);
+          }
+          zType = 0;
+          break;
+        }
       }
-      printf("%5llu: %s, parent=%u\n", pgno+1+i/5, zType, iFrom);
+      if( zType ){
+        printf("%5llu: %s, parent=%u%s\n", pgno+1+i/5, zType, iFrom, zExtra);
+      }
     }
     sqlite3_free(a);
   }
@@ -1167,7 +1178,7 @@ int main(int argc, char **argv){
   if( g.pagesize==0 ) g.pagesize = 1024;
   sqlite3_free(zPgSz);
 
-  printf("Pagesize: %d\n", g.pagesize);
+  printf("Pagesize: %d\n", (int)g.pagesize);
   g.mxPage = (u32)((szFile+g.pagesize-1)/g.pagesize);
 
   printf("Available pages: 1..%u\n", g.mxPage);
@@ -1207,7 +1218,8 @@ int main(int argc, char **argv){
         iEnd = strtol(&zLeft[2], 0, 0);
         checkPageValidity(iEnd);
       }else if( zLeft && zLeft[0]=='b' ){
-        int ofst, nByte, hdrSize;
+        i64 ofst;
+        int nByte, hdrSize;
         unsigned char *a;
         if( iStart==1 ){
           ofst = hdrSize = 100;

@@ -185,7 +185,8 @@ do_eqp_test autoindex1-500.1 {
   QUERY PLAN
   |--SEARCH t501 USING INTEGER PRIMARY KEY (rowid=?)
   `--LIST SUBQUERY xxxxxx
-     `--SCAN t502
+     |--SCAN t502
+     `--CREATE BLOOM FILTER
 }
 do_eqp_test autoindex1-501 {
   SELECT b FROM t501
@@ -561,5 +562,33 @@ do_execsql_test autoindex-1110 {
 do_execsql_test autoindex-1120 {
   SELECT * FROM t1 LEFT JOIN t2 ON (t2.c=+t1.a) LEFT JOIN t3 ON (t2.d IS NULL);
 } {1 1 1 2 {} {}}
+
+# 2025-01-18
+# Added support for automatic indexes on WITHOUT ROWID tables.
+#
+reset_db
+do_execsql_test autoindex-1200 {
+  CREATE TABLE t1(a INT, b INT, x INT, PRIMARY KEY(a,b)) WITHOUT ROWID;
+  INSERT INTO t1 VALUES(1,2,90),(1,3,91),(1,4,92);
+  CREATE TABLE t2a(c INTEGER PRIMARY KEY, i1 INT);
+  CREATE TABLE t2b(i1 INTEGER PRIMARY KEY, d INT);
+  CREATE VIEW t2(c,d) AS SELECT c, d FROM t2a NATURAL JOIN t2b;
+  INSERT INTO t2a VALUES(3,93),(4,94),(5,95),(6,96),(7,97);
+  INSERT INTO t2b VALUES(91,11),(92,22),(93,33),(94,44),(95,55);
+  CREATE TABLE dual(dummy TEXT);
+  INSERT INTO dual(dummy) VALUES('x');
+}
+db null NULL
+do_execsql_test autoindex-1210 {
+  SELECT t1.*, t2.* FROM t2 LEFT OUTER JOIN t1 ON b=c ORDER BY +b;
+} {
+  NULL NULL NULL 5    55
+  1    3    91   3    33
+  1    4    92   4    44
+}
+do_execsql_test autoindex-1211 {
+  EXPLAIN QUERY PLAN
+  SELECT t1.*, t2.* FROM t2 LEFT OUTER JOIN t1 ON b=c ORDER BY +b;
+} {/SEARCH t1 USING AUTOMATIC COVERING INDEX/}
 
 finish_test

@@ -616,7 +616,7 @@ do_test update-14.4 {
 
 } ;# ifcapable {trigger}
 
-# Ticket [https://www.sqlite.org/src/tktview/43107840f1c02] on 2014-10-29
+# Ticket [https://sqlite.org/src/tktview/43107840f1c02] on 2014-10-29
 # An assertion fault on UPDATE
 #
 ifcapable altertable {
@@ -703,7 +703,7 @@ do_execsql_test update-19.10 {
   SELECT * FROM t1;
 } {2 2}
 
-# 2019-12-29 ticket https://www.sqlite.org/src/info/314cc133e5ada126
+# 2019-12-29 ticket https://sqlite.org/src/info/314cc133e5ada126
 # REPLACE conflict resolution during an UPDATE causes a DELETE trigger 
 # to fire.  If that DELETE trigger subsequently modifies the row
 # being updated, bad things can happen.  Prevent this by prohibiting
@@ -711,8 +711,8 @@ do_execsql_test update-19.10 {
 # REPLACE conflict resolution on the UPDATE.
 #
 # See also tickets:
-#   https://www.sqlite.org/src/info/c1e19e12046d23fe 2019-10-25
-#   https://www.sqlite.org/src/info/a8a4847a2d96f5de 2019-10-16 
+#   https://sqlite.org/src/info/c1e19e12046d23fe 2019-10-25
+#   https://sqlite.org/src/info/a8a4847a2d96f5de 2019-10-16 
 #
 reset_db
 do_execsql_test update-20.10 {

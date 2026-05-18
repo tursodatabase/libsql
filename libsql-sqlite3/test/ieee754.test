@@ -57,4 +57,16 @@ do_execsql_test ieee754-112 {
   SELECT ieee754(4503599627370495,973) is null;
 } {1}
 
+do_execsql_test ieee754-200 {
+  SELECT ieee754(0.0), hex(ieee754_to_blob(ieee754(0,-1075)));
+} {ieee754(0,-1075) 0000000000000000}
+
+# Special case.  -0.0 is rendered as ieee754(-1,-3071).
+#
+do_execsql_test ieee754-201 {
+  SELECT ieee754(-0.0), hex(ieee754_to_blob(ieee754(-1,-3071)));
+} {ieee754(-1,-3071) 8000000000000000}
+
+
+
 finish_test

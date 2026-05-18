@@ -31,11 +31,11 @@ import java.lang.annotation.*;
    never pass a null value to the callback for that parameter.</p>
 
    <p>Passing a null, for this annotation's definition of null, for
-   any parameter marked with this annoation specifically invokes
+   any parameter marked with this annotation specifically invokes
    undefined behavior (see below).</p>
 
    <p>Passing 0 (i.e. C NULL) or a negative value for any long-type
-   parameter marked with this annoation specifically invokes undefined
+   parameter marked with this annotation specifically invokes undefined
    behavior (see below). Such values are treated as C pointers in the
    JNI layer.</p>
 

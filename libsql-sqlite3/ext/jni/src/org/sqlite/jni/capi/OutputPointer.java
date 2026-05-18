@@ -20,7 +20,7 @@ package org.sqlite.jni.capi;
    from the native JNI code is unduly quirky due to a lack of
    autoboxing at that level.
 
-   <p>The usage is similar for all of thes types:
+   <p>The usage is similar for all of these types:
 
    <pre>{@code
    OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
@@ -55,9 +55,9 @@ public final class OutputPointer {
     /** Sets the current value to null. */
     public void clear(){value = null;}
     /** Returns the current value. */
-    public final org.sqlite.jni.capi.sqlite3 get(){return value;}
+    public org.sqlite.jni.capi.sqlite3 get(){return value;}
     /** Equivalent to calling get() then clear(). */
-    public final org.sqlite.jni.capi.sqlite3 take(){
+    public org.sqlite.jni.capi.sqlite3 take(){
       final org.sqlite.jni.capi.sqlite3 v = value;
       value = null;
       return v;
@@ -76,9 +76,9 @@ public final class OutputPointer {
     /** Sets the current value to null. */
     public void clear(){value = null;}
     /** Returns the current value. */
-    public final org.sqlite.jni.capi.sqlite3_blob get(){return value;}
+    public org.sqlite.jni.capi.sqlite3_blob get(){return value;}
     /** Equivalent to calling get() then clear(). */
-    public final org.sqlite.jni.capi.sqlite3_blob take(){
+    public org.sqlite.jni.capi.sqlite3_blob take(){
       final org.sqlite.jni.capi.sqlite3_blob v = value;
       value = null;
       return v;
@@ -98,9 +98,9 @@ public final class OutputPointer {
     /** Sets the current value to null. */
     public void clear(){value = null;}
     /** Returns the current value. */
-    public final org.sqlite.jni.capi.sqlite3_stmt get(){return value;}
+    public org.sqlite.jni.capi.sqlite3_stmt get(){return value;}
     /** Equivalent to calling get() then clear(). */
-    public final org.sqlite.jni.capi.sqlite3_stmt take(){
+    public org.sqlite.jni.capi.sqlite3_stmt take(){
       final org.sqlite.jni.capi.sqlite3_stmt v = value;
       value = null;
       return v;
@@ -120,9 +120,9 @@ public final class OutputPointer {
     /** Sets the current value to null. */
     public void clear(){value = null;}
     /** Returns the current value. */
-    public final org.sqlite.jni.capi.sqlite3_value get(){return value;}
+    public org.sqlite.jni.capi.sqlite3_value get(){return value;}
     /** Equivalent to calling get() then clear(). */
-    public final org.sqlite.jni.capi.sqlite3_value take(){
+    public org.sqlite.jni.capi.sqlite3_value take(){
       final org.sqlite.jni.capi.sqlite3_value v = value;
       value = null;
       return v;
@@ -144,9 +144,9 @@ public final class OutputPointer {
     /** Initializes with the value v. */
     public Bool(boolean v){value = v;}
     /** Returns the current value. */
-    public final boolean get(){return value;}
+    public boolean get(){return value;}
     /** Sets the current value to v. */
-    public final void set(boolean v){value = v;}
+    public void set(boolean v){value = v;}
   }
 
   /**
@@ -164,9 +164,9 @@ public final class OutputPointer {
     /** Initializes with the value v. */
     public Int32(int v){value = v;}
     /** Returns the current value. */
-    public final int get(){return value;}
+    public int get(){return value;}
     /** Sets the current value to v. */
-    public final void set(int v){value = v;}
+    public void set(int v){value = v;}
   }
 
   /**
@@ -184,9 +184,9 @@ public final class OutputPointer {
     /** Initializes with the value v. */
     public Int64(long v){value = v;}
     /** Returns the current value. */
-    public final long get(){return value;}
+    public long get(){return value;}
     /** Sets the current value. */
-    public final void set(long v){value = v;}
+    public void set(long v){value = v;}
   }
 
   /**
@@ -204,9 +204,9 @@ public final class OutputPointer {
     /** Initializes with the value v. */
     public String(java.lang.String v){value = v;}
     /** Returns the current value. */
-    public final java.lang.String get(){return value;}
+    public java.lang.String get(){return value;}
     /** Sets the current value. */
-    public final void set(java.lang.String v){value = v;}
+    public void set(java.lang.String v){value = v;}
   }
 
   /**
@@ -224,9 +224,9 @@ public final class OutputPointer {
     /** Initializes with the value v. */
     public ByteArray(byte[] v){value = v;}
     /** Returns the current value. */
-    public final byte[] get(){return value;}
+    public byte[] get(){return value;}
     /** Sets the current value. */
-    public final void set(byte[] v){value = v;}
+    public void set(byte[] v){value = v;}
   }
 
   /**
@@ -246,8 +246,8 @@ public final class OutputPointer {
     /** Initializes with the value v. */
     public ByteBuffer(java.nio.ByteBuffer v){value = v;}
     /** Returns the current value. */
-    public final java.nio.ByteBuffer get(){return value;}
+    public java.nio.ByteBuffer get(){return value;}
     /** Sets the current value. */
-    public final void set(java.nio.ByteBuffer v){value = v;}
+    public void set(java.nio.ByteBuffer v){value = v;}
   }
 }

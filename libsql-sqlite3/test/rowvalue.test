@@ -255,7 +255,7 @@ do_catchsql_test 11.8 {
   SELECT * FROM t11 WHERE (a,a) IS NOT 1;
 } {1 {row value misused}}
 
-# 2016-10-27: https://www.sqlite.org/src/tktview/fef4bb4bd9185ec8f
+# 2016-10-27: https://sqlite.org/src/tktview/fef4bb4bd9185ec8f
 # Incorrect result from a LEFT JOIN with a row-value constraint
 #
 do_execsql_test 12.1 {
@@ -349,7 +349,7 @@ do_catchsql_test 15.5 {
 #-------------------------------------------------------------------------
 # Row-values used in UPDATE statements within TRIGGERs
 #
-# Ticket https://www.sqlite.org/src/info/8c9458e703666e1a
+# Ticket https://sqlite.org/src/info/8c9458e703666e1a
 #
 do_execsql_test 16.1 {
   CREATE TABLE t16a(a,b,c);
@@ -449,7 +449,7 @@ do_execsql_test 18.6 {
 } {1 1 1 1 2 1}
 
  
-# 2018-02-13 Ticket https://www.sqlite.org/src/tktview/f484b65f3d6230593c3
+# 2018-02-13 Ticket https://sqlite.org/src/tktview/f484b65f3d6230593c3
 # Incorrect result from a row-value comparison in the WHERE clause.
 #
 do_execsql_test 19.1 {
@@ -558,7 +558,7 @@ do_catchsql_test 20.1 {
   SELECT 1 WHERE (2,(2,0)) IS (2,(2,0));
 } {0 1}
 
-# 2018-11-03: Ticket https://www.sqlite.org/src/info/1a84668dcfdebaf1
+# 2018-11-03: Ticket https://sqlite.org/src/info/1a84668dcfdebaf1
 # Assertion fault when doing row-value operations on a primary key
 # containing duplicate columns.
 #
@@ -781,5 +781,78 @@ do_execsql_test 33.3 {
 do_execsql_test 33.3 {
   SELECT * FROM t1 WHERE (a,b) BETWEEN (2,99) AND (4,0);
 } {3 100}
+
+# 2025-04-15 https://sqlite.org/forum/forumpost/b9647a113b465950
+# Incorrect result when the schema includes a table with a UNIQUE
+# constraint and one of the columns in the UNIQUE constraint is the
+# INTEGER PRIMARY KEY, and the columns that UNIQUE constraint are
+# used in a rowvalue-IN operator constraint.
+#
+# 2025-07-07 Discovered that the original fix was incomplete and
+# new tests added.  See tag-20250707-01 in the code.
+#
+reset_db
+do_execsql_test 34.1 {
+  CREATE TABLE items (
+    Id INTEGER  /* rowid alias */,
+    Item INTEGER  /* any type */,
+    Test TEXT  /* TEXT or BLOB */,
+    Filler,  /* any type */
+    PRIMARY KEY(Id),
+    UNIQUE(Item, Id)
+  );
+  INSERT INTO items (Id, Item)
+    VALUES (1, 2), (2, 2), (3, 3), (4, 5);
+  UPDATE items SET test='ok'
+    WHERE (Id, Item) IN (SELECT Id, Item FROM items);
+  SELECT Id, Item, test FROM items ORDER BY id;
+} {1 2 ok 2 2 ok 3 3 ok 4 5 ok}
+db null NULL
+do_execsql_test 34.2 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+  CREATE INDEX idx ON t1(b,a);
+  INSERT INTO t1(a,b) VALUES (1, 22);
+  SELECT * FROM t1 INDEXED BY idx WHERE (b,a) IN (SELECT b,a FROM t1);
+} {1 22 NULL NULL}
+do_execsql_test 34.3 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a, b, c, d);
+  CREATE INDEX idx ON t1(b,a,a);
+  INSERT INTO t1(a,b) VALUES (1, 22);
+  SELECT * FROM t1 INDEXED BY idx WHERE (b,a) IN (SELECT b,a FROM t1);
+} {1 22 NULL NULL}
+do_execsql_test 34.4 {
+  DROP TABLE t1;
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, a INT);
+  CREATE INDEX t1a ON t1(a,id);  -- index includes PRIMARY KEY
+  CREATE TABLE t2(id INTEGER PRIMARY KEY);
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<100)
+    INSERT INTO t1(id,a) SELECT n, 777 FROM c;
+  INSERT INTO t2 SELECT id FROM t1;
+  SELECT *
+    FROM t1 JOIN t2 USING(id)
+   WHERE t1.a=777 AND t2.id>999
+   ORDER BY t1.id;
+} {}
+do_execsql_test 34.5 {
+  EXPLAIN QUERY PLAN
+  SELECT *
+    FROM t1 JOIN t2 USING(id)
+   WHERE t1.a=777 AND t2.id>999
+   ORDER BY t1.id;
+} {/SEARCH t1 USING COVERING INDEX t1a .a=. AND id>../}
+
+# 2025-08-04 forum post eab63506cf
+#
+do_execsql_test 35.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(c1 TEXT, c2 INTEGER, PRIMARY KEY(c1, c2));
+  INSERT INTO t1(c1, c2) VALUES ('a', 1);
+  SELECT ('a', 1) IN (SELECT c1, c2 from t1);
+} 1
+do_execsql_test 35.1 {
+  SELECT (1, 'a') IN (SELECT c2, c1 from t1);
+} 1
+
 
 finish_test

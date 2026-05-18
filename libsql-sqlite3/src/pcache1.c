@@ -232,10 +232,6 @@ static SQLITE_WSD struct PCacheGlobal {
   sqlite3_mutex *mutex;          /* Mutex for accessing the following: */
   PgFreeslot *pFree;             /* Free page blocks */
   int nFreeSlot;                 /* Number of unused pcache slots */
-  /* The following value requires a mutex to change.  We skip the mutex on
-  ** reading because (1) most platforms read a 32-bit integer atomically and
-  ** (2) even if an incorrect value is read, no great harm is done since this
-  ** is really just an optimization. */
   int bUnderPressure;            /* True if low on PAGECACHE memory */
 } pcache1_g;
 
@@ -283,7 +279,7 @@ void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
     pcache1.nReserve = n>90 ? 10 : (n/10 + 1);
     pcache1.pStart = pBuf;
     pcache1.pFree = 0;
-    pcache1.bUnderPressure = 0;
+    AtomicStore(&pcache1.bUnderPressure,0);
     while( n-- ){
       p = (PgFreeslot*)pBuf;
       p->pNext = pcache1.pFree;
@@ -320,7 +316,8 @@ static int pcache1InitBulk(PCache1 *pCache){
     do{
       PgHdr1 *pX = (PgHdr1*)&zBulk[pCache->szPage];
       pX->page.pBuf = zBulk;
-      pX->page.pExtra = &pX[1];
+      pX->page.pExtra = (u8*)pX + ROUND8(sizeof(*pX));
+      assert( EIGHT_BYTE_ALIGNMENT( pX->page.pExtra ) );
       pX->isBulkLocal = 1;
       pX->isAnchor = 0;
       pX->pNext = pCache->pFree;
@@ -350,7 +347,7 @@ static void *pcache1Alloc(int nByte){
     if( p ){
       pcache1.pFree = pcache1.pFree->pNext;
       pcache1.nFreeSlot--;
-      pcache1.bUnderPressure = pcache1.nFreeSlot<pcache1.nReserve;
+      AtomicStore(&pcache1.bUnderPressure,pcache1.nFreeSlot<pcache1.nReserve);
       assert( pcache1.nFreeSlot>=0 );
       sqlite3StatusHighwater(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
       sqlite3StatusUp(SQLITE_STATUS_PAGECACHE_USED, 1);
@@ -389,7 +386,7 @@ static void pcache1Free(void *p){
     pSlot->pNext = pcache1.pFree;
     pcache1.pFree = pSlot;
     pcache1.nFreeSlot++;
-    pcache1.bUnderPressure = pcache1.nFreeSlot<pcache1.nReserve;
+    AtomicStore(&pcache1.bUnderPressure,pcache1.nFreeSlot<pcache1.nReserve);
     assert( pcache1.nFreeSlot<=pcache1.nSlot );
     sqlite3_mutex_leave(pcache1.mutex);
   }else{
@@ -457,7 +454,8 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
     if( pPg==0 ) return 0;
     p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
     p->page.pBuf = pPg;
-    p->page.pExtra = &p[1];
+    p->page.pExtra = (u8*)p + ROUND8(sizeof(*p));
+    assert( EIGHT_BYTE_ALIGNMENT( p->page.pExtra ) );
     p->isBulkLocal = 0;
     p->isAnchor = 0;
     p->pLruPrev = 0;           /* Initializing this saves a valgrind error */
@@ -519,7 +517,7 @@ void sqlite3PageFree(void *p){
 */
 static int pcache1UnderMemoryPressure(PCache1 *pCache){
   if( pcache1.nSlot && (pCache->szPage+pCache->szExtra)<=pcache1.szSlot ){
-    return pcache1.bUnderPressure;
+    return AtomicLoad(&pcache1.bUnderPressure);
   }else{
     return sqlite3HeapNearlyFull();
   }
@@ -536,12 +534,12 @@ static int pcache1UnderMemoryPressure(PCache1 *pCache){
 */
 static void pcache1ResizeHash(PCache1 *p){
   PgHdr1 **apNew;
-  unsigned int nNew;
-  unsigned int i;
+  u64 nNew;
+  u32 i;
 
   assert( sqlite3_mutex_held(p->pGroup->mutex) );
 
-  nNew = p->nHash*2;
+  nNew = 2*(u64)p->nHash;
   if( nNew<256 ){
     nNew = 256;
   }
@@ -764,7 +762,7 @@ static void pcache1Destroy(sqlite3_pcache *p);
 static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
   PCache1 *pCache;      /* The newly created page cache */
   PGroup *pGroup;       /* The group the new page cache will belong to */
-  int sz;               /* Bytes of memory required to allocate the new cache */
+  i64 sz;               /* Bytes of memory required to allocate the new cache */
 
   assert( (szPage & (szPage-1))==0 && szPage>=512 && szPage<=65536 );
   assert( szExtra < 300 );

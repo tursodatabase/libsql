@@ -2,6 +2,11 @@
 //
 //     lemon lemon-test01.y && gcc -g lemon-test01.c && ./a.out
 //
+// This testcase was made obsolete by check-in 7cca80808cef192f on
+// 2021-08-17 (associated with Forum Thread 
+// https://sqlite.org/forum/forumpost/bd91fd965c9803c4) and no longer
+// works.  It is retained for historical reference only.
+//
 %token_prefix TK_
 %token_type   int
 %default_type int
@@ -28,7 +33,7 @@ all ::=  error B.
   #include "lemon-test01.h"
   static int nTest = 0;
   static int nErr = 0;
-  static int testCase(int testId, int shouldBe, int actual){
+  static void testCase(int testId, int shouldBe, int actual){
     nTest++;
     if( shouldBe==actual ){
       printf("test %d: ok\n", testId);

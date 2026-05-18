@@ -17,7 +17,7 @@ source $testdir/tester.tcl
 set testprefix btree01
 
 # The refactoring on the b-tree balance() routine in check-in
-# http://www.sqlite.org/src/info/face33bea1ba3a (2014-10-27)
+# http://sqlite.org/src/info/face33bea1ba3a (2014-10-27)
 # caused the integrity_check on the following SQL to fail.
 #
 do_execsql_test btree01-1.1 {

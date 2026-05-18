@@ -665,7 +665,7 @@ impl Connection {
     }
 
     fn reserved_bytes(&self, reserve: Option<i32>) -> Result<i32> {
-        let mut reserve_value = reserve.unwrap_or(0) as std::ffi::c_int;
+        let mut reserve_value = reserve.unwrap_or(-1) as std::ffi::c_int;
         let rc = unsafe {
             ffi::sqlite3_file_control(
                 self.raw,
@@ -871,10 +871,10 @@ mod tests {
         {
             let db = Database::new(db_path.to_str().unwrap().to_string(), OpenFlags::default());
             let conn = Connection::connect(&db).unwrap();
-            conn.query("PRAGMA journal_mode = WAL", Params::None)
-                .unwrap();
             conn.set_reserved_bytes(reserved_bytes).unwrap();
             conn.query("VACUUM", Params::None).unwrap();
+            conn.query("PRAGMA journal_mode = WAL", Params::None)
+                .unwrap();
             let reserved = conn.get_reserved_bytes().unwrap();
             assert_eq!(reserved, reserved_bytes);
         }

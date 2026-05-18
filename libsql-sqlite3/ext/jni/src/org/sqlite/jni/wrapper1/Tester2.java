@@ -13,7 +13,6 @@
 */
 package org.sqlite.jni.wrapper1;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -53,14 +52,14 @@ public class Tester2 implements Runnable {
   //! List of test*() methods to run.
   private static List<java.lang.reflect.Method> testMethods = null;
   //! List of exceptions collected by run()
-  private static List<Exception> listErrors = new ArrayList<>();
+  private static final List<Exception> listErrors = new ArrayList<>();
   private static final class Metrics {
     //! Number of times createNewDb() (or equivalent) is invoked.
     volatile int dbOpen = 0;
   }
 
   //! Instance ID.
-  private Integer tId;
+  private final Integer tId;
 
   Tester2(Integer id){
     tId = id;
@@ -70,7 +69,7 @@ public class Tester2 implements Runnable {
 
   public static synchronized void outln(){
     if( !quietMode ){
-      System.out.println("");
+      System.out.println();
     }
   }
 
@@ -547,7 +546,7 @@ public class Tester2 implements Runnable {
       err = e;
     }
     affirm( err!=null );
-    affirm( err.getMessage().indexOf(toss.value)>=0 );
+    affirm( err.getMessage().contains(toss.value) );
     toss.value = null;
 
     val.value = 0;
@@ -616,7 +615,7 @@ public class Tester2 implements Runnable {
     final Sqlite db = openDb();
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
     final Sqlite.Collation myCollation = new Sqlite.Collation() {
-        private String myState =
+        private final String myState =
           "this is local state. There is much like it, but this is mine.";
         @Override
         // Reverse-sorts its inputs...
@@ -1038,9 +1037,9 @@ public class Tester2 implements Runnable {
      -v: emit some developer-mode info at the end.
   */
   public static void main(String[] args) throws Exception {
-    Integer nThread = 1;
+    int nThread = 1;
+    int nRepeat = 1;
     boolean doSomethingForDev = false;
-    Integer nRepeat = 1;
     boolean forceFail = false;
     boolean sqlLog = false;
     boolean configLog = false;
@@ -1097,7 +1096,7 @@ public class Tester2 implements Runnable {
       Sqlite.libConfigLog( new Sqlite.ConfigLog() {
           @Override public void call(int code, String msg){
             outln("ConfigLog: ",Sqlite.errstr(code),": ", msg);
-          };
+          }
         }
       );
     }

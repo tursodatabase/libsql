@@ -156,6 +156,16 @@ do_execsql_test 1.15 {
   SELECT * FROM t4;
 } {4 5}
 
+do_execsql_test 1.15.2 {
+  WITH 
+  t4(x) AS ( 
+    VALUES(4)
+    UNION ALL 
+    SELECT x+1 FROM (SELECT * FROM main.t4) WHERE x<10
+  )
+  SELECT * FROM t4;
+} {4 5}
+
 do_catchsql_test 1.16 {
   WITH 
   t4(x) AS ( 

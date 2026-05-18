@@ -12,14 +12,9 @@
 ** This file declares the main JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni.capi;
-import java.nio.charset.StandardCharsets;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import org.sqlite.jni.annotation.*;
 import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
+import org.sqlite.jni.annotation.*;
 
 /**
   This class contains the entire C-style sqlite3 JNI API binding,
@@ -169,7 +164,7 @@ public final class CApi {
      <p>Like the C API, it returns 0 if allocation fails or if
      initialize is false and no prior aggregate context was allocated
      for cx.  If initialize is true then it returns 0 only on
-     allocation error. In all casses, 0 is considered the sentinel
+     allocation error. In all cases, 0 is considered the sentinel
      "not a key" value.
   */
   public static native long sqlite3_aggregate_context(sqlite3_context cx, boolean initialize);
@@ -199,16 +194,16 @@ public final class CApi {
   }
 
   private static native sqlite3_backup sqlite3_backup_init(
-    @NotNull long ptrToDbDest, @NotNull String destTableName,
-    @NotNull long ptrToDbSrc, @NotNull String srcTableName
+    @NotNull long ptrToDbDest, @NotNull String destSchemaName,
+    @NotNull long ptrToDbSrc, @NotNull String srcSchemaName
   );
 
   public static sqlite3_backup sqlite3_backup_init(
-    @NotNull sqlite3 dbDest, @NotNull String destTableName,
-    @NotNull sqlite3 dbSrc, @NotNull String srcTableName
+    @NotNull sqlite3 dbDest, @NotNull String destSchemaName,
+    @NotNull sqlite3 dbSrc, @NotNull String srcSchemaName
   ){
-    return sqlite3_backup_init( dbDest.getNativePointer(), destTableName,
-                                dbSrc.getNativePointer(), srcTableName );
+    return sqlite3_backup_init( dbDest.getNativePointer(), destSchemaName,
+                                dbSrc.getNativePointer(), srcSchemaName );
   }
 
   private static native int sqlite3_backup_pagecount(@NotNull long ptrToBackup);
@@ -264,7 +259,7 @@ public final class CApi {
   }
 
   /**
-     Convenience overload which is equivalant to passing its arguments
+     Convenience overload which is equivalent to passing its arguments
      to sqlite3_bind_nio_buffer() with the values 0 and -1 for the
      final two arguments.
   */
@@ -312,7 +307,7 @@ public final class CApi {
 
      The byte range of the buffer may be restricted by providing a
      start index and a number of bytes. beginPos may not be negative.
-     Negative howMany is interpretated as the remainder of the buffer
+     Negative howMany is interpreted as the remainder of the buffer
      past the given start position, up to the buffer's limit() (as
      opposed its capacity()).
 
@@ -563,7 +558,7 @@ public final class CApi {
     sqlite3_blob_open(db.getNativePointer(), dbName, tableName, columnName,
                       iRow, flags, out);
     return out.take();
-  };
+  }
 
   private static native int sqlite3_blob_read(
     @NotNull long ptrToBlob, @NotNull byte[] target, int srcOffset
@@ -1076,7 +1071,7 @@ public final class CApi {
 
   /**
      <p>Works like in the C API with the exception that it only supports
-     the following subset of configution flags:
+     the following subset of configuration flags:
 
      <p>SQLITE_CONFIG_SINGLETHREAD
      SQLITE_CONFIG_MULTITHREAD
@@ -1202,10 +1197,15 @@ public final class CApi {
 
   public static native String sqlite3_errmsg(@NotNull sqlite3 db);
 
+  /** Added in 3.51.0. */
+  public static native int sqlite3_set_errmsg(@NotNull sqlite3 db,
+                                              int resultCode,
+                                              String msg);
+
   private static native int sqlite3_error_offset(@NotNull long ptrToDb);
 
   /**
-     Note that the returned byte offset values assume UTF-8-encoded
+     Caveat: the returned byte offset values assume UTF-8-encoded
      inputs, so won't always match character offsets in Java Strings.
   */
   public static int sqlite3_error_offset(@NotNull sqlite3 db){
@@ -1298,7 +1298,7 @@ public final class CApi {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     sqlite3_open(filename, out);
     return out.take();
-  };
+  }
 
   public static native int sqlite3_open_v2(
     @Nullable String filename, @NotNull OutputPointer.sqlite3 ppDb,
@@ -1314,7 +1314,7 @@ public final class CApi {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     sqlite3_open_v2(filename, out, flags, zVfs);
     return out.take();
-  };
+  }
 
   /**
      The sqlite3_prepare() family of functions require slightly
@@ -1410,7 +1410,7 @@ public final class CApi {
 
   /**
      Works like the canonical sqlite3_prepare_v2() but its "tail"
-     output paramter is returned as the index offset into the given
+     output parameter is returned as the index offset into the given
      byte array at which SQL parsing stopped.
   */
   public static int sqlite3_prepare_v2(
@@ -1462,7 +1462,7 @@ public final class CApi {
 
   /**
      Works like the canonical sqlite3_prepare_v2() but its "tail"
-     output paramter is returned as the index offset into the given
+     output parameter is returned as the index offset into the given
      byte array at which SQL parsing stopped.
   */
   public static int sqlite3_prepare_v3(
@@ -1542,7 +1542,7 @@ public final class CApi {
     int rc = 0;
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     while( 0==rc && pos<sqlChunk.length ){
-      sqlite3_stmt stmt = null;
+      sqlite3_stmt stmt;
       if( pos>0 ){
         sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
                                       sqlChunk.length);

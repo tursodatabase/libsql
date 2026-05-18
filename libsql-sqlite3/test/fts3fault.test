@@ -216,6 +216,14 @@ do_faultsim_test 8.4 -prep {
 } -test {
   faultsim_test_result {0 3}
 }
+do_faultsim_test 8.5 -prep { 
+  faultsim_restore_and_reopen
+  db func mit mit
+} -body {
+  execsql { SELECT mit(matchinfo(t8, 'l')) FROM t8 WHERE t8 MATCH '"a b c"' }
+} -test {
+  faultsim_test_result {0 3}
+}
 
 do_test 9.0 {
   faultsim_delete_and_reopen

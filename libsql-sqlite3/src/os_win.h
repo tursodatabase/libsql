@@ -22,6 +22,8 @@
 
 #ifdef __CYGWIN__
 # include <sys/cygwin.h>
+# include <sys/stat.h> /* amalgamator: dontcache */
+# include <unistd.h> /* amalgamator: dontcache */
 # include <errno.h> /* amalgamator: dontcache */
 #endif
 

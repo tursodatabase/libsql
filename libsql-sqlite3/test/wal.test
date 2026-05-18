@@ -1219,7 +1219,7 @@ foreach {tn pgsz works} {
       set framehdr [binary format IIIIII $pg 5 22 23 $c1 $c2]
 
       set fd [open test.db-wal w]
-      fconfigure $fd -encoding binary -translation binary
+      fconfigure $fd -translation binary
       puts -nonewline $fd $walhdr
       puts -nonewline $fd $framehdr
       puts -nonewline $fd $framebody

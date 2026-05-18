@@ -34,7 +34,7 @@ if {[atomic_batch_write test.db]} {
 set sqlite_sync_count 0
 proc cond_incr_sync_count {adj} {
   global sqlite_sync_count
-  if {$::tcl_platform(platform) == "windows"} {
+  if {$::tcl_platform(os) eq "Windows NT"} {
     incr sqlite_sync_count $adj
   } else {
     ifcapable !dirsync {

@@ -100,7 +100,7 @@ proc do_fileopen_test {prefix sql} {
 execsql { CREATE TABLE abc(a PRIMARY KEY, b, c); }
 db close
 
-if {$tcl_platform(platform)!="windows"} {
+if {$tcl_platform(platform) ne "windows"} {
   do_fileopen_test misc7-6.1 {
     BEGIN;
     INSERT INTO abc VALUES(1, 2, 3);
@@ -390,7 +390,7 @@ do_test misc7-16.X {
 # These tests do not work on windows due to restrictions in the
 # windows file system.
 #
-if {$tcl_platform(platform)!="windows"} {
+if {$tcl_platform(platform) ne "windows"} {
 
   # Some network filesystems (ex: AFP) do not support setting read-only
   # permissions.  Only run these tests if full unix permission setting
@@ -534,7 +534,7 @@ do_test misc7-22.4 {
 catch { db close }
 forcedelete test.db
 
-if {$::tcl_platform(platform)=="unix"
+if {$::tcl_platform(platform) eq "unix"
  && [atomic_batch_write test.db]==0
 } {
   reset_db

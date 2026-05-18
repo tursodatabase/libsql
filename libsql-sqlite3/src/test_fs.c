@@ -62,30 +62,18 @@
 **   SELECT * FROM fstree WHERE path LIKE '/home/dan/sqlite/%'
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
-
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#if SQLITE_OS_UNIX || defined(__MINGW_H)
+#if !defined(_WIN32) || defined(__MSVCRT__)
 # include <unistd.h>
 # include <dirent.h>
-# ifndef DIRENT
-#  define DIRENT dirent
-# endif
-#endif
-#if SQLITE_OS_WIN
-# include <io.h>
-# if !defined(__MINGW_H)
-#  include "test_windirent.h"
-# endif
+#else
+# include "windirent.h"
 # ifndef S_ISREG
 #  define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
 # endif
@@ -129,7 +117,7 @@ struct FsdirCsr {
   char *zDir;                     /* Buffer containing directory scanned */
   DIR *pDir;                      /* Open directory */
   sqlite3_int64 iRowid;
-  struct DIRENT *pEntry;
+  struct dirent *pEntry;
 };
 
 /*
@@ -490,10 +478,10 @@ static int fstreeFilter(
   int nDir;
   char aWild[2] = { '\0', '\0' };
 
-#if SQLITE_OS_WIN
-  const char *zDrive = windirent_getenv("fstreeDrive");
+#ifdef _WIN32
+  const char *zDrive = getenv("fstreeDrive");
   if( zDrive==0 ){
-    zDrive = windirent_getenv("SystemDrive");
+    zDrive = getenv("SystemDrive");
   }
   zRoot = sqlite3_mprintf("%s%c", zDrive, '/');
   nRoot = sqlite3Strlen30(zRoot);
@@ -543,7 +531,7 @@ static int fstreeFilter(
   sqlite3_bind_text(pCsr->pStmt, 2, zRoot, nRoot, SQLITE_TRANSIENT);
   sqlite3_bind_text(pCsr->pStmt, 3, zPrefix, nPrefix, SQLITE_TRANSIENT);
 
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   sqlite3_free(zPrefix);
   sqlite3_free(zRoot);
 #endif

@@ -122,7 +122,7 @@ proc put4byte {fd offset val} {
 # the second rightmost child page number of page 1 to 1.
 #
 set fd [open test.db r+]
-fconfigure $fd -encoding binary -translation binary
+fconfigure $fd -translation binary
 set nChild [get2byte $fd 103]
 set offChild [get2byte $fd [expr 100+12+($nChild-2)*2]]
 set pgnoChild [get4byte $fd $offChild]

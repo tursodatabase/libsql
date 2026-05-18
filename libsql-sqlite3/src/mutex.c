@@ -347,15 +347,28 @@ void sqlite3_mutex_leave(sqlite3_mutex *p){
 /*
 ** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routine are
 ** intended for use inside assert() statements.
+**
+** Because these routines raise false-positive alerts in TSAN, disable
+** them (make them always return 1) when compiling with TSAN.
 */
 int sqlite3_mutex_held(sqlite3_mutex *p){
+# if defined(__has_feature)
+#   if __has_feature(thread_sanitizer)
+      p = 0;
+#   endif
+# endif
   assert( p==0 || sqlite3GlobalConfig.mutex.xMutexHeld );
   return p==0 || sqlite3GlobalConfig.mutex.xMutexHeld(p);
 }
 int sqlite3_mutex_notheld(sqlite3_mutex *p){
+# if defined(__has_feature)
+#   if __has_feature(thread_sanitizer)
+      p = 0;
+#   endif
+# endif
   assert( p==0 || sqlite3GlobalConfig.mutex.xMutexNotheld );
   return p==0 || sqlite3GlobalConfig.mutex.xMutexNotheld(p);
 }
-#endif
+#endif /* NDEBUG */
 
 #endif /* !defined(SQLITE_MUTEX_OMIT) */

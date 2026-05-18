@@ -16,7 +16,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5ah
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -162,6 +162,17 @@ do_execsql_test 1.8.1 {
 do_execsql_test 1.8.2 {
   SELECT count(*) FROM t1 WHERE t1 MATCH 'x' AND rowid < 'text';
 } {10000}
+
+do_execsql_test 1.8.3 {
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'x' AND rowid<5000 AND rowid < 'text';
+} {4999}
+do_execsql_test 1.8.4 {
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'x' AND rowid>5000 AND rowid > 'text';
+} {0}
+
+do_catchsql_test 1.9 {
+  SELECT * FROM t1('*xy');
+} {1 {unknown special query: xy}}
 
 } ;# foreach_detail_mode
 

@@ -45,7 +45,7 @@ run_test suite libsql_alter
 run_test suite libsql_vector
 run_test suite libsql_vector_index
 
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(platform) eq "unix"} {
   ifcapable !default_autovacuum {
     run_test_suite autovacuum_crash
   }

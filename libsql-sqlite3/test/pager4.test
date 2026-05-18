@@ -13,7 +13,7 @@
 # is unlinked or renamed out from under SQLite.
 #
 
-if {$tcl_platform(platform)!="unix"} return
+if {$tcl_platform(os) eq "Windows NT"} return
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

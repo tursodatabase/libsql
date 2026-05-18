@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool. Specifically,
 # the ".recommend" command.
@@ -401,6 +402,19 @@ do_setup_rec_test $tn.19.0 {
   SCAN t1 USING COVERING INDEX t1_idx_01a7214e
 }
 
+ifcapable fts5 {
+  do_setup_rec_test $tn.20.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a);
+    CREATE TABLE t1(x, y);
+  } {
+    SELECT * FROM ft, t1 WHERE a=x
+  } {
+    CREATE INDEX t1_idx_00000078 ON t1(x);
+    SCAN ft VIRTUAL TABLE INDEX 0:
+    SEARCH t1 USING INDEX t1_idx_00000078 (x=?)
+  }
+}
+
 }
 
 proc do_candidates_test {tn sql res} {
@@ -427,6 +441,8 @@ do_execsql_test 5.0 {
 
   WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100)
   INSERT INTO t2 SELECT (i-1)/20, (i-1)/5 FROM s;
+
+  CREATE INDEX i1 ON t1( lower(a) );
 }
 do_candidates_test 5.1 {
   SELECT * FROM t1,t2 WHERE (b=? OR a=?) AND (c=? OR d=?)
@@ -456,6 +472,7 @@ do_execsql_test 5.3 {
   ANALYZE;
   SELECT * FROM sqlite_stat1 ORDER BY 1, 2;
 } {
+  t1 i1 {100 50} 
   t1 t1_idx_00000061 {100 50} 
   t1 t1_idx_00000062 {100 20}
   t1 t1_idx_000123a7 {100 50 17}
@@ -463,6 +480,13 @@ do_execsql_test 5.3 {
   t2 t2_idx_00000064 {100 5} 
   t2 t2_idx_0001295b {100 20 5}
 }
+
+do_catchsql_test 5.4 {
+  SELECT sqlite_expert_rem(123, 123);
+} {1 {no such function: sqlite_expert_rem}}
+do_catchsql_test 5.5 {
+  SELECT sqlite_expert_sample();
+} {1 {no such function: sqlite_expert_sample}}
 
 if 0 {
 do_test expert1-6.0 {
@@ -481,6 +505,105 @@ SCAN CONSTANT ROW
 SCAN pragma_collation_list VIRTUAL TABLE INDEX 0:
 USE TEMP B-TREE FOR ORDER BY
 }}
+}
+
+do_execsql_test 6.0 {
+  CREATE TABLE x1(a, b, c, d);
+  CREATE INDEX x1ab ON x1(a, lower(b));
+  CREATE INDEX x1dcba ON x1(d, b+c, a);
+}
+
+do_candidates_test 6.1 {
+  SELECT * FROM x1 WHERE b=? ORDER BY a;
+} {
+  CREATE INDEX x1_idx_0001267f ON x1(b, a); 
+  CREATE INDEX x1_idx_00000062 ON x1(b);
+}
+
+#-------------------------------------------------------------------------
+ifcapable fts5 {
+  reset_db
+  do_execsql_test 7.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a);
+    CREATE TABLE t1(x, y);
+  }
+  
+  do_candidates_test 7.1 {
+    SELECT * FROM ft, t1 WHERE a=x
+  } {
+    CREATE INDEX t1_idx_00000078 ON t1(x);
+  }
+  
+  register_tcl_module db
+  proc vtab_command {method args} {
+    global G
+  
+    switch -- $method {
+      xConnect {
+        return "CREATE TABLE t1(a, b, c);"
+      }
+  
+      xBestIndex {
+        return [list]
+      }
+  
+      xFilter {
+        return [list sql "SELECT rowid, * FROM t0"]
+      }
+    }
+  
+    return {}
+  }
+  
+  do_execsql_test 7.2 {
+    CREATE TABLE t0(a, b, c);
+    INSERT INTO t0 VALUES(1, 2, 3), (11, 22, 33);
+    CREATE VIRTUAL TABLE t2 USING tcl(vtab_command);
+  }
+  
+  do_execsql_test 7.3 {
+    SELECT * FROM t2
+  } {
+    1 2 3
+    11 22 33
+  }
+  
+  do_candidates_test 7.4 {
+    SELECT * FROM ft, t1 WHERE a=x
+  } {
+    CREATE INDEX t1_idx_00000078 ON t1(x);
+  }
+  
+  do_test 7.5 {
+    set expert [sqlite3_expert_new db]
+    list [catch { $expert sql "SELECT * FROM ft, t2 WHERE b=1" } msg] $msg
+  } {1 {no such table: t2}}
+  $expert destroy
+
+  reset_db
+  do_execsql_test 7.6 {
+    BEGIN TRANSACTION;
+      CREATE TABLE IF NOT EXISTS 'bfts_idx_data'(id INTEGER PRIMARY KEY, block BLOB);
+      CREATE TABLE IF NOT EXISTS 'fts_idx_data'(id INTEGER PRIMARY KEY, block BLOB);
+      INSERT INTO fts_idx_data VALUES(1,X'');
+      INSERT INTO fts_idx_data VALUES(10,X'00000000ff000001000000');
+      CREATE TABLE IF NOT EXISTS 'fts_idx_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
+      CREATE TABLE IF NOT EXISTS 'fts_idx_docsize'(id INTEGER PRIMARY KEY, sz BLOB, origin INTEGER);
+      CREATE TABLE IF NOT EXISTS 'fts_idx_config'(k PRIMARY KEY, v) WITHOUT ROWID;
+      INSERT INTO fts_idx_config VALUES('version',4);
+      PRAGMA writable_schema=ON;
+      INSERT INTO sqlite_schema(type,name,tbl_name,rootpage,sql)VALUES('table','fts_idx','fts_idx',0,'CREATE VIRTUAL TABLE fts_idx USING fts5(Title, Description, Channel, Tags, content='''', contentless_delete=1)');
+      
+      CREATE TABLE f(x BLOB, y);
+    COMMIT;
+    PRAGMA writable_schema = RESET;
+  }
+
+  do_candidates_test 7.4 {
+    SELECT * FROM fts_idx, f WHERE x = fts_idx.Channel
+  } {
+    CREATE INDEX f_idx_00000078 ON f(x);
+  }
 }
 
 finish_test

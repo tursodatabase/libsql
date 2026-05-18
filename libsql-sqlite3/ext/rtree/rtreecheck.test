@@ -198,7 +198,7 @@ if {[permutation]=="inmemory_journal"} {
 } else {
   do_catchsql_test 6.1 {
     SELECT ( 'elvis' IN(SELECT rtreecheck('t1')) ) FROM (SELECT 1) GROUP BY 1;
-  } {1 {database table is locked}}
+  } {0 0}
 }
 
 finish_test

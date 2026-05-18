@@ -59,7 +59,7 @@ foreach {tn uri file} {
     if {[string first %00 $uri]>=0} continue
   }
 
-  if {$tcl_platform(platform)=="windows"} {
+  if {$tcl_platform(platform) eq "windows"} {
     #
     # NOTE: Due to limits on legal characters for file names imposed by
     #       Windows, we must skip the final two tests here (i.e. the
@@ -306,7 +306,7 @@ foreach {tn uri res} {
   6     "file://x/PWD/test.db"           {invalid uri authority: x}
 } {
 
-  if {$tcl_platform(platform)=="windows"} {
+  if {$tcl_platform(platform) eq "windows"} {
     set uri  [string map [list PWD [string range [get_pwd] 3 end]] $uri]
   } else {
     set uri  [string map [list PWD [string range [get_pwd] 1 end]] $uri]

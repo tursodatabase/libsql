@@ -1043,9 +1043,9 @@ void sqlite3FkCheck(
     pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( pSrc ){
       SrcItem *pItem = pSrc->a;
-      pItem->pTab = pFKey->pFrom;
+      pItem->pSTab = pFKey->pFrom;
       pItem->zName = pFKey->pFrom->zName;
-      pItem->pTab->nTabRef++;
+      pItem->pSTab->nTabRef++;
       pItem->iCursor = pParse->nTab++;
   
       if( regNew!=0 ){
@@ -1328,7 +1328,8 @@ static Trigger *fkActionTrigger(
       SrcList *pSrc;
       Expr *pRaise; 
 
-      pRaise = sqlite3Expr(db, TK_RAISE, "FOREIGN KEY constraint failed");
+      pRaise = sqlite3Expr(db, TK_STRING, "FOREIGN KEY constraint failed"),
+      pRaise = sqlite3PExpr(pParse, TK_RAISE, pRaise, 0);
       if( pRaise ){
         pRaise->affExpr = OE_Abort;
       }
@@ -1336,7 +1337,8 @@ static Trigger *fkActionTrigger(
       if( pSrc ){
         assert( pSrc->nSrc==1 );
         pSrc->a[0].zName = sqlite3DbStrDup(db, zFrom);
-        pSrc->a[0].zDatabase = sqlite3DbStrDup(db, db->aDb[iDb].zDbSName);
+        assert( pSrc->a[0].fg.fixedSchema==0 && pSrc->a[0].fg.isSubquery==0 );
+        pSrc->a[0].u4.zDatabase = sqlite3DbStrDup(db, db->aDb[iDb].zDbSName);
       }
       pSelect = sqlite3SelectNew(pParse, 
           sqlite3ExprListAppend(pParse, 0, pRaise),

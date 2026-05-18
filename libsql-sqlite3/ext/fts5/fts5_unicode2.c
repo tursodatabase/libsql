@@ -364,6 +364,9 @@ int sqlite3Fts5UnicodeCatParse(const char *zCat, u8 *aArray){
             default: return 1;          }
           break;
 
+
+    default:
+      return 1;
   }
   return 0;
 }
@@ -775,4 +778,3 @@ void sqlite3Fts5UnicodeAscii(u8 *aArray, u8 *aAscii){
   }
   aAscii[0] = 0;                  /* 0x00 is never a token character */
 }
-

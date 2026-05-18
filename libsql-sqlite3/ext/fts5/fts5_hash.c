@@ -20,7 +20,7 @@ typedef struct Fts5HashEntry Fts5HashEntry;
 
 /*
 ** This file contains the implementation of an in-memory hash table used
-** to accumuluate "term -> doclist" content before it is flused to a level-0
+** to accumulate "term -> doclist" content before it is flushed to a level-0
 ** segment.
 */
 
@@ -77,7 +77,7 @@ struct Fts5HashEntry {
 };
 
 /*
-** Eqivalent to:
+** Equivalent to:
 **
 **   char *fts5EntryKey(Fts5HashEntry *pEntry){ return zKey; }
 */

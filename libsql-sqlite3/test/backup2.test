@@ -141,7 +141,7 @@ do_test backup2-9 {
 
 # Try to restore from an unreadable file.
 #
-if {$tcl_platform(platform)=="windows"} {
+if {$::tcl_platform(os) eq "Windows NT"} {
   set msg {cannot open source database: unable to open database file}
 } elseif {[string match *BSD $tcl_platform(os)]} {
   set msg {}

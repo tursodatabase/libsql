@@ -10,7 +10,10 @@
 #***********************************************************************
 #
 
-package require Tcl 8.6
+if {$tcl_version<8.6} {
+  puts "Requires TCL 8.6 or later"
+  return
+}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -239,5 +242,64 @@ do_execsql_test 6.3 {
   UPDATE OR REPLACE zip SET name='test2' WHERE name='test1';
   SELECT name FROM zip;
 } {test2}
+
+#-------------------------------------------------------------------------
+# Test a crafted corrupt file.
+#
+proc make_corrupt_file {fname} {
+  set central_dir_offset 1000
+  set lfh_offset 200
+  set nFile 60000
+  set nExtra 60000
+  set nComment 0
+  
+  # Build local file header at lfh_offset
+  set lfh ""
+  append lfh [binary format isssssiiiss 0x04034b50 20 0 0 0 0 0 0 0 1 0]
+  append lfh "A"
+  
+  # Build central directory structure (CDS) at central_dir_offset
+  set cds ""
+  append cds [binary format issssssiiisssssii 0x02014b50 0 20 0 0 0 0 0 0 0 $nFile $nExtra $nComment 0 0 0 $lfh_offset]
+  
+  # Payload following CDS: filename + extra + comment
+  set payload ""
+  append payload [string repeat "B" $nFile]
+  append payload [string repeat "C" $nExtra]
+  
+  # EOCD at end
+  set cdsize [expr {[string length $cds] + [string length $payload]}]
+  set eocd ""
+  append eocd [binary format issssiis 0x06054b50 0 0 1 1 $cdsize $central_dir_offset 0]
+  
+  # Assemble file
+  set buf [string repeat "X" $lfh_offset]
+  append buf $lfh
+  
+  set buflen [string length $buf]
+  if {$central_dir_offset > $buflen} {
+      append buf [string repeat "\x00" [expr {$central_dir_offset - $buflen}]]
+  }
+  
+  append buf $cds
+  append buf $payload
+  append buf $eocd
+  
+  # Write to file
+  set f [open $fname wb]
+  fconfigure $f -translation binary
+  puts -nonewline $f $buf
+  close $f
+}
+
+forcedelete test.zip
+make_corrupt_file test.zip
+do_execsql_test 7.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE VIRTUAL TABLE t1 USING zipfile('test.zip');
+}
+do_execsql_test 7.1 {
+  SELECT length(name) FROM t1;
+} {60000}
 
 finish_test

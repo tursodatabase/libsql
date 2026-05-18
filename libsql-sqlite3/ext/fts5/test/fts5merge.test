@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5merge
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -238,6 +238,22 @@ do_execsql_test 6.3 {
   INSERT INTO g1(g1) VALUES('integrity-check');
 }
 
+#--------------------------------------------------------------------------
+# Check that passing -2147483648 as the parameter to a merge command
+# does not cause a signed integer overflow error.
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE f1 USING fts5(a);
+}
+do_execsql_test 7.1 {
+  INSERT INTO f1 VALUES('one two three');
+  INSERT INTO f1 VALUES('four five six');
+  INSERT INTO f1 VALUES('seven eight nine');
+}
+do_execsql_test 7.2 {
+  INSERT INTO f1(f1, rank) VALUES('merge', -2147483648);
+}
 
 
 finish_test

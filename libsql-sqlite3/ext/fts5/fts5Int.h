@@ -20,6 +20,7 @@ SQLITE_EXTENSION_INIT1
 
 #include <string.h>
 #include <assert.h>
+#include <stddef.h>
 
 #ifndef SQLITE_AMALGAMATION
 
@@ -59,7 +60,34 @@ typedef sqlite3_uint64 u64;
 # define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 # define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
+/*
+** This macro is used in a single assert() within fts5 to check that an
+** allocation is aligned to an 8-byte boundary. But it is a complicated
+** macro to get right for multiple platforms without generating warnings.
+** So instead of reproducing the entire definition from sqliteInt.h, we
+** just do without this assert() for the rare non-amalgamation builds.
+*/
+#define EIGHT_BYTE_ALIGNMENT(x) 1
+
+/*
+** Macros needed to provide flexible arrays in a portable way
+*/
+#ifndef offsetof
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
 #endif
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define FLEXARRAY
+#else
+# define FLEXARRAY 1
+#endif
+
+#endif /* SQLITE_AMALGAMATION */
+
+/*
+** Constants for the largest and smallest possible 32-bit signed integers.
+*/
+# define LARGEST_INT32  ((int)(0x7fffffff))
+# define SMALLEST_INT32 ((int)((-1) - LARGEST_INT32))
 
 /* Truncate very long tokens to this many bytes. Hard limit is 
 ** (65536-1-1-4-9)==65521 bytes. The limiting factor is the 16-bit offset
@@ -131,10 +159,11 @@ typedef struct Fts5Colset Fts5Colset;
 */
 struct Fts5Colset {
   int nCol;
-  int aiCol[1];
+  int aiCol[FLEXARRAY];
 };
 
-
+/* Size (int bytes) of a complete Fts5Colset object with N columns. */
+#define SZ_FTS5COLSET(N) (sizeof(i64)*((N+2)/2))
 
 /**************************************************************************
 ** Interface to code in fts5_config.c. fts5_config.c contains contains code
@@ -142,6 +171,18 @@ struct Fts5Colset {
 */
 
 typedef struct Fts5Config Fts5Config;
+typedef struct Fts5TokenizerConfig Fts5TokenizerConfig;
+
+struct Fts5TokenizerConfig {
+  Fts5Tokenizer *pTok;
+  fts5_tokenizer_v2 *pApi2;
+  fts5_tokenizer *pApi1;
+  const char **azArg;
+  int nArg;
+  int ePattern;                   /* FTS_PATTERN_XXX constant */
+  const char *pLocale;            /* Current locale to use */
+  int nLocale;                    /* Size of pLocale in bytes */
+};
 
 /*
 ** An instance of the following structure encodes all information that can
@@ -181,9 +222,12 @@ typedef struct Fts5Config Fts5Config;
 **
 **       INSERT INTO tbl(tbl, rank) VALUES('prefix-index', $bPrefixIndex);
 **
+** bLocale:
+**   Set to true if locale=1 was specified when the table was created.
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
+  Fts5Global *pGlobal;            /* Global fts5 object for handle db */
   char *zDb;                      /* Database holding FTS index (e.g. "main") */
   char *zName;                    /* Name of FTS index */
   int nCol;                       /* Number of columns */
@@ -193,16 +237,17 @@ struct Fts5Config {
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
   int eContent;                   /* An FTS5_CONTENT value */
   int bContentlessDelete;         /* "contentless_delete=" option (dflt==0) */
+  int bContentlessUnindexed;      /* "contentless_unindexed=" option (dflt=0) */
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
   int bTokendata;                 /* "tokendata=" option value (dflt==0) */
+  int bLocale;                    /* "locale=" option value (dflt==0) */
   int eDetail;                    /* FTS5_DETAIL_XXX value */
   char *zContentExprlist;
-  Fts5Tokenizer *pTok;
-  fts5_tokenizer *pTokApi;
+  Fts5TokenizerConfig t;
   int bLock;                      /* True when table is preparing statement */
-  int ePattern;                   /* FTS_PATTERN_XXX constant */
+  
 
   /* Values loaded from the %_config table */
   int iVersion;                   /* fts5 file format 'version' */
@@ -215,7 +260,8 @@ struct Fts5Config {
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
   int bSecureDelete;              /* 'secure-delete' */
-  int nDeleteMerge;           /* 'deletemerge' */
+  int nDeleteMerge;               /* 'deletemerge' */
+  int bPrefixInsttoken;           /* 'prefix-insttoken' */
 
   /* If non-NULL, points to sqlite3_vtab.base.zErrmsg. Often NULL. */
   char **pzErrmsg;
@@ -231,9 +277,10 @@ struct Fts5Config {
 #define FTS5_CURRENT_VERSION               4
 #define FTS5_CURRENT_VERSION_SECUREDELETE  5
 
-#define FTS5_CONTENT_NORMAL   0
-#define FTS5_CONTENT_NONE     1
-#define FTS5_CONTENT_EXTERNAL 2
+#define FTS5_CONTENT_NORMAL    0
+#define FTS5_CONTENT_NONE      1
+#define FTS5_CONTENT_EXTERNAL  2
+#define FTS5_CONTENT_UNINDEXED 3
 
 #define FTS5_DETAIL_FULL      0
 #define FTS5_DETAIL_NONE      1
@@ -267,6 +314,8 @@ int sqlite3Fts5ConfigLoad(Fts5Config*, int);
 int sqlite3Fts5ConfigSetValue(Fts5Config*, const char*, sqlite3_value*, int*);
 
 int sqlite3Fts5ConfigParseRank(const char*, char**, char**);
+
+void sqlite3Fts5ConfigErrmsg(Fts5Config *pConfig, const char *zFmt, ...);
 
 /*
 ** End of interface to code in fts5_config.c.
@@ -312,7 +361,7 @@ char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...);
 void sqlite3Fts5Put32(u8*, int);
 int sqlite3Fts5Get32(const u8*);
 
-#define FTS5_POS2COLUMN(iPos) (int)(iPos >> 32)
+#define FTS5_POS2COLUMN(iPos) (int)((iPos >> 32) & 0x7FFFFFFF)
 #define FTS5_POS2OFFSET(iPos) (int)(iPos & 0x7FFFFFFF)
 
 typedef struct Fts5PoslistReader Fts5PoslistReader;
@@ -469,7 +518,14 @@ int sqlite3Fts5StructureTest(Fts5Index*, void*);
 /*
 ** Used by xInstToken():
 */
-int sqlite3Fts5IterToken(Fts5IndexIter*, i64, int, int, const char**, int*);
+int sqlite3Fts5IterToken(
+  Fts5IndexIter *pIndexIter, 
+  const char *pToken, int nToken,
+  i64 iRowid,
+  int iCol, 
+  int iOff, 
+  const char **ppOut, int *pnOut
+);
 
 /*
 ** Insert or remove data to or from the index. Each time a document is 
@@ -597,17 +653,19 @@ struct Fts5Table {
   Fts5Index *pIndex;              /* Full-text index */
 };
 
-int sqlite3Fts5GetTokenizer(
-  Fts5Global*, 
-  const char **azArg,
-  int nArg,
-  Fts5Config*,
-  char **pzErr
-);
+int sqlite3Fts5LoadTokenizer(Fts5Config *pConfig);
 
 Fts5Table *sqlite3Fts5TableFromCsrid(Fts5Global*, i64);
 
 int sqlite3Fts5FlushToDisk(Fts5Table*);
+
+void sqlite3Fts5ClearLocale(Fts5Config *pConfig);
+void sqlite3Fts5SetLocale(Fts5Config *pConfig, const char *pLoc, int nLoc);
+
+int sqlite3Fts5IsLocaleValue(Fts5Config *pConfig, sqlite3_value *pVal);
+int sqlite3Fts5DecodeLocaleValue(sqlite3_value *pVal, 
+    const char **ppText, int *pnText, const char **ppLoc, int *pnLoc
+);
 
 /*
 ** End of interface to code in fts5.c.
@@ -688,8 +746,8 @@ int sqlite3Fts5StorageRename(Fts5Storage*, const char *zName);
 int sqlite3Fts5DropAll(Fts5Config*);
 int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, int, char **);
 
-int sqlite3Fts5StorageDelete(Fts5Storage *p, i64, sqlite3_value**);
-int sqlite3Fts5StorageContentInsert(Fts5Storage *p, sqlite3_value**, i64*);
+int sqlite3Fts5StorageDelete(Fts5Storage *p, i64, sqlite3_value**, int);
+int sqlite3Fts5StorageContentInsert(Fts5Storage *p, int, sqlite3_value**, i64*);
 int sqlite3Fts5StorageIndexInsert(Fts5Storage *p, sqlite3_value**, i64);
 
 int sqlite3Fts5StorageIntegrity(Fts5Storage *p, int iArg);
@@ -713,6 +771,9 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p);
 int sqlite3Fts5StorageOptimize(Fts5Storage *p);
 int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge);
 int sqlite3Fts5StorageReset(Fts5Storage *p);
+
+void sqlite3Fts5StorageReleaseDeleteRow(Fts5Storage*);
+int sqlite3Fts5StorageFindDeleteRow(Fts5Storage *p, i64 iDel);
 
 /*
 ** End of interface to code in fts5_storage.c.
@@ -760,7 +821,7 @@ int sqlite3Fts5ExprPattern(
 **   i64 iRowid = sqlite3Fts5ExprRowid(pExpr);
 ** }
 */
-int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, i64 iMin, int bDesc);
+int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, i64 iMin, i64, int bDesc);
 int sqlite3Fts5ExprNext(Fts5Expr*, i64 iMax);
 int sqlite3Fts5ExprEof(Fts5Expr*);
 i64 sqlite3Fts5ExprRowid(Fts5Expr*);
@@ -866,6 +927,7 @@ int sqlite3Fts5TokenizerPattern(
     int (*xCreate)(void*, const char**, int, Fts5Tokenizer**),
     Fts5Tokenizer *pTok
 );
+int sqlite3Fts5TokenizerPreload(Fts5TokenizerConfig*);
 /*
 ** End of interface to code in fts5_tokenizer.c.
 **************************************************************************/

@@ -5,7 +5,7 @@
 #
 #     sh speed-check.sh trunk  #  Baseline measurement of trunk
 #     sh speed-check.sh x1     # Measure some experimental change
-#     fossil xdiff --tk jout-trunk.txt jout-x1.txt   # View chanages
+#     fossil xdiff --tk jout-trunk.txt jout-x1.txt   # View changes
 #
 # There are multiple output files, all with a base name given by
 # the first argument:

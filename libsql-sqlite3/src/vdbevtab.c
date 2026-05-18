@@ -286,10 +286,10 @@ static int bytecodevtabColumn(
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     case 9:     /* nexec */
-      sqlite3_result_int(ctx, pOp->nExec);
+      sqlite3_result_int64(ctx, pOp->nExec);
       break;
     case 10:    /* ncycle */
-      sqlite3_result_int(ctx, pOp->nCycle);
+      sqlite3_result_int64(ctx, pOp->nCycle);
       break;
 #else
     case 9:     /* nexec */

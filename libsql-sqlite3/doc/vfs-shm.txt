@@ -1,6 +1,6 @@
 The 5 states of an historical rollback lock as implemented by the
 xLock, xUnlock, and xCheckReservedLock methods of the sqlite3_io_methods
-objec are:
+object are:
 
    UNLOCKED
    SHARED
@@ -58,7 +58,7 @@ The meanings of the various wal-index locking states is as follows:
 
 A particular lock manager implementation may coalesce one or more of 
 the wal-index locking states, though with a reduction in concurrency.
-For example, an implemention might implement only exclusive locking,
+For example, an implementation might implement only exclusive locking,
 in which case all states would be equivalent to CHECKPOINT, meaning that 
 only one reader or one writer or one checkpointer could be active at a 
 time.  Or, an implementation might combine READ and READ_FULL into 

@@ -1219,14 +1219,7 @@ int sqlite3_multiplex_shutdown(int eForce){
 
 /***************************** Test Code ***********************************/
 #ifdef SQLITE_TEST
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 extern const char *sqlite3ErrName(int);
 
 
@@ -1322,8 +1315,8 @@ static int SQLITE_TCLAPI test_multiplex_control(
   }
 
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
-    Tcl_AppendResult(interp, "expected database handle, got \"", 0);
-    Tcl_AppendResult(interp, Tcl_GetString(objv[1]), "\"", 0);
+    Tcl_AppendResult(interp, "expected database handle, got \"", NULL);
+    Tcl_AppendResult(interp, Tcl_GetString(objv[1]), "\"", NULL);
     return TCL_ERROR;
   }else{
     db = *(sqlite3 **)cmdInfo.objClientData;

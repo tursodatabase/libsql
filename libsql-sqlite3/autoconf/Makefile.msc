@@ -18,6 +18,15 @@
 TOP = .
 
 
+# Optionally set EXTRA_SRC to a list of C files to append to
+# the generated sqlite3.c. Any sqlite3 extensions added this
+# way may require manual editing, as described in
+# https://sqlite.org/forum/forumpost/903f721f3e7c0d25
+#
+!IFNDEF EXTRA_SRC
+EXTRA_SRC =
+!ENDIF
+
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN
@@ -57,6 +66,14 @@ USE_STDCALL = 0
 #
 !IFNDEF USE_SEH
 USE_SEH = 1
+!ENDIF
+
+# Use STATICALLY_LINK_TCL=1 to statically link against TCL
+#
+!IFNDEF STATICALLY_LINK_TCL
+STATICALLY_LINK_TCL = 0
+!ELSEIF $(STATICALLY_LINK_TCL)!=0
+CCOPTS = $(CCOPTS) -DSTATIC_BUILD
 !ENDIF
 
 # Set this non-0 to have the shell executable link against the core dynamic
@@ -230,6 +247,12 @@ SESSION = 0
 RBU = 0
 !ENDIF
 
+# Set this to non-0 to enable support for blocking locks.
+#
+!IFNDEF SETLK_TIMEOUT
+SETLK_TIMEOUT = 0
+!ENDIF
+
 # Set the source code file to be used by executables and libraries when
 # they need the amalgamation.
 #
@@ -294,6 +317,7 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 # the Windows platform.
 #
 !IFNDEF OPT_FEATURE_FLAGS
+OPT_FEATURE_FLAGS = $(OPT_XTRA)
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5=1
@@ -303,8 +327,17 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBSTAT_VTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_CARRAY=1
 !ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+!ENDIF
+
+# Additional feature-options above and beyond what are normally used can be
+# be added using OPTIONS=.... on the command-line.  These values are
+# appended to the OPT_FEATURE_FLAGS variable.
+#
+!IFDEF OPTIONS
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) $(OPTIONS)
 !ENDIF
 
 # Should the session extension be enabled?  If so, add compilation options
@@ -317,6 +350,7 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
 
 # Always enable math functions on Windows
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MATH_FUNCTIONS
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PERCENTILE
 
 # Should the rbu extension be enabled?  If so, add compilation options
 # to enable it.
@@ -344,6 +378,10 @@ EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS) -DSQLITE_OMIT_LOCALTIME=1
 !ELSE
 EXT_FEATURE_FLAGS =
 !ENDIF
+!ENDIF
+
+!IF $(SETLK_TIMEOUT)!=0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SETLK_TIMEOUT
 !ENDIF
 
 ###############################################################################
@@ -657,17 +695,21 @@ BCC = $(BCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
+ZLIBCFLAGS = -nologo -MDd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MD
 BCC = $(BCC) -MD
+ZLIBCFLAGS = -nologo -MD -W3 -O2 -Oy- -Zi
 !ENDIF
 !ELSE
 !IF $(DEBUG)>1
 TCC = $(TCC) -MTd
 BCC = $(BCC) -MTd
+ZLIBCFLAGS = -nologo -MTd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MT
 BCC = $(BCC) -MT
+ZLIBCFLAGS = -nologo -MT -W3 -O2 -Oy- -Zi
 !ENDIF
 !ENDIF
 
@@ -688,7 +730,7 @@ RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 !ENDIF
 
 !IF $(DEBUG)>2
-TCC = $(TCC) -DSQLITE_DEBUG=1
+TCC = $(TCC) -DSQLITE_DEBUG=1 -DSQLITE_USE_W32_FOR_CONSOLE_IO
 RCC = $(RCC) -DSQLITE_DEBUG=1
 !IF $(DYNAMIC_SHELL)==0
 TCC = $(TCC) -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_SELECTTRACE
@@ -774,15 +816,6 @@ RCC = $(RCC) -DSQLITE_THREAD_OVERRIDE_LOCK=-1
 !IFNDEF TLIBS
 TLIBS =
 !ENDIF
-
-# Flags controlling use of the in memory btree implementation
-#
-# SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
-# default to file, 2 to default to memory, and 3 to force temporary
-# tables to always be in memory.
-#
-TCC = $(TCC) -DSQLITE_TEMP_STORE=1
-RCC = $(RCC) -DSQLITE_TEMP_STORE=1
 
 # Enable/disable loadable extensions, and other optional features
 # based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
@@ -988,6 +1021,7 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_DQS=0
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_PERCENTILE=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_STMT_SCANSTATUS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_STRICT_SUBTYPE=1
@@ -1014,6 +1048,11 @@ dll:	$(SQLITE3DLL)
 # Shell executable.
 #
 shell:	$(SQLITE3EXE)
+
+# jimsh0 - replacement for tclsh
+#
+jimsh0.exe:	$(TOP)\autosetup\jimsh0.c
+	cl -DHAVE__FULLPATH=1 $(TOP)\autosetup\jimsh0.c
 
 
 $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
@@ -1065,5 +1104,6 @@ $(LIBRESOBJS):	$(TOP)\sqlite3.rc rcver.vc $(SQLITE3H)
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q sqlite3.def tclsqlite3.def ctime.c pragma.h 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL

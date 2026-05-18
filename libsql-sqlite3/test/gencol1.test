@@ -211,9 +211,9 @@ do_catchsql_test gencol1-6.10 {
   REPLACE INTO t0(c1) VALUES(NULL);
 } {1 {NOT NULL constraint failed: t0.c0}}
 
-# 2019-11-06 ticket https://www.sqlite.org/src/info/2399f5986134f79c
-# 2019-12-27 ticket https://www.sqlite.org/src/info/5fbc159eeb092130
-# 2019-12-27 ticket https://www.sqlite.org/src/info/37823501c68a09f9
+# 2019-11-06 ticket https://sqlite.org/src/info/2399f5986134f79c
+# 2019-12-27 ticket https://sqlite.org/src/info/5fbc159eeb092130
+# 2019-12-27 ticket https://sqlite.org/src/info/37823501c68a09f9
 #
 # All of the above tickets deal with NOT NULL ON CONFLICT REPLACE
 # constraints on tables that have generated columns.

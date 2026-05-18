@@ -924,6 +924,7 @@ static void vectorConvertToF8(const Vector *pFrom, Vector *pTo){
   assert( pTo->type == VECTOR_TYPE_FLOAT8 );
 
   dst = pTo->data;
+  memset(dst, 0, ALIGN(pTo->dims, sizeof(float)));
   if( pFrom->type == VECTOR_TYPE_FLOAT32 ){
     srcF32 = pFrom->data;
     for(i = 0; i < pFrom->dims; i++){

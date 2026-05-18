@@ -567,7 +567,7 @@ proc sqlitecon::Cut w {
   }
 }
 
-# Do a paste opeation.
+# Do a paste operation.
 #
 proc sqlitecon::Paste w {
   if {[sqlitecon::canCut $w]==1} {

@@ -30,7 +30,59 @@
 /* Forward references */
 static char *fuzz_invariant_sql(sqlite3_stmt*, int);
 static int sameValue(sqlite3_stmt*,int,sqlite3_stmt*,int,sqlite3_stmt*);
-static void reportInvariantFailed(sqlite3_stmt*,sqlite3_stmt*,int);
+static void reportInvariantFailed(
+  sqlite3_stmt *pOrig,   /* The original query */
+  sqlite3_stmt *pTest,   /* The alternative test query with a missing row */
+  int iRow,              /* Row number in pOrig */
+  unsigned int dbOpt,    /* Optimization flags on pOrig */
+  int noOpt              /* True if opt flags inverted for pTest */
+);
+
+/*
+** Special parameter binding, for testing and debugging purposes.
+**
+**     $int_NNN        ->   integer value NNN
+**     $text_TTTT      ->   floating point value TTT with destructor
+**     $carray_clr     ->   First argument to carray() for color names
+**     $carray_primes  ->   First argument to carray() for prime numbers
+*/
+static void bindDebugParameters(sqlite3_stmt *pStmt){
+  int nVar = sqlite3_bind_parameter_count(pStmt);
+  int i;
+  for(i=1; i<=nVar; i++){
+    const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
+    if( zVar==0 ) continue;
+#ifdef SQLITE_ENABLE_CARRAY
+    if( strcmp(zVar,"$carray_clr")==0 ){
+      static char *azColorNames[] = {
+        "azure", "black", "blue",   "brown", "cyan",   "fuchsia", "gold",
+        "gray",  "green", "indigo", "khaki", "lime",   "magenta", "maroon",
+        "navy",  "olive", "orange", "pink",  "purple", "red",     "silver",
+        "tan",   "teal",  "violet", "white", "yellow"
+      };
+      sqlite3_carray_bind(pStmt,i,azColorNames,26,SQLITE_CARRAY_TEXT,0);
+    }else
+    if( strcmp(zVar,"$carray_primes")==0 ){
+      static int aPrimes[] = {
+        1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
+       53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+      };
+      sqlite3_carray_bind(pStmt,i,aPrimes,26,SQLITE_CARRAY_INT32,0);
+    }else
+#endif
+    if( strncmp(zVar, "$int_", 5)==0 ){
+      sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
+    }else
+    if( strncmp(zVar, "$text_", 6)==0 ){
+      size_t szVar = strlen(zVar);
+      char *zBuf = sqlite3_malloc64( szVar-5 );
+      if( zBuf ){
+        memcpy(zBuf, &zVar[6], szVar-5);
+        sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, sqlite3_free, SQLITE_UTF8);
+      }
+    }
+  }
+}
 
 /*
 ** Do an invariant check on pStmt.  iCnt determines which invariant check to
@@ -68,7 +120,8 @@ int fuzz_invariant(
   int iRow,               /* Current row number */
   int nRow,               /* Number of output rows from pStmt */
   int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
-  int eVerbosity          /* How much debugging output */
+  int eVerbosity,         /* How much debugging output */
+  unsigned int dbOpt      /* Default optimization flags */
 ){
   char *zTest;
   sqlite3_stmt *pTestStmt = 0;
@@ -76,13 +129,20 @@ int fuzz_invariant(
   int i;
   int nCol;
   int nParam;
+  int noOpt = (iCnt%3)==0;
 
   if( *pbCorrupt ) return SQLITE_DONE;
   nParam = sqlite3_bind_parameter_count(pStmt);
   if( nParam>100 ) return SQLITE_DONE;
   zTest = fuzz_invariant_sql(pStmt, iCnt);
   if( zTest==0 ) return SQLITE_DONE;
+  if( noOpt ){
+    sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, db, ~dbOpt);
+  }
   rc = sqlite3_prepare_v2(db, zTest, -1, &pTestStmt, 0);
+  if( noOpt ){
+    sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, db, dbOpt);
+  }
   if( rc ){
     if( eVerbosity ){
       printf("invariant compile failed: %s\n%s\n",
@@ -93,6 +153,7 @@ int fuzz_invariant(
     return rc;
   }
   sqlite3_free(zTest);
+  bindDebugParameters(pTestStmt);
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
     rc = sqlite3_bind_value(pTestStmt,i+1+nParam,sqlite3_column_value(pStmt,i));
@@ -157,6 +218,7 @@ int fuzz_invariant(
       printf("invariant-validity-check #2:\n%s\n", zSql);
       sqlite3_free(zSql);
     }
+    bindDebugParameters(pCk);
     while( (rc = sqlite3_step(pCk))==SQLITE_ROW ){
       for(i=0; i<nCol; i++){
         if( !sameValue(pStmt, i, pTestStmt, i, 0) ) break;
@@ -185,6 +247,7 @@ int fuzz_invariant(
       }
 
       sqlite3_reset(pTestStmt);
+      bindDebugParameters(pCk);
       while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){
         for(i=0; i<nCol; i++){
           if( !sameValue(pStmt, i, pTestStmt, i, pCk) ) break;
@@ -212,7 +275,7 @@ int fuzz_invariant(
     }
     sqlite3_finalize(pCk);
     if( rc==SQLITE_DONE ){
-      reportInvariantFailed(pStmt, pTestStmt, iRow);
+      reportInvariantFailed(pStmt, pTestStmt, iRow, dbOpt, noOpt);
       return SQLITE_INTERNAL;
     }else if( eVerbosity>0 ){
       printf("invariant-error ignored due to the use of virtual tables\n");
@@ -222,7 +285,6 @@ not_a_fault:
   sqlite3_finalize(pTestStmt);
   return SQLITE_OK;
 }
-
 
 /*
 ** Generate SQL used to test a statement invariant.
@@ -261,6 +323,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   int bDistinct = 0;
   int bOrderBy = 0;
   int nParam = sqlite3_bind_parameter_count(pStmt);
+  int hasGroupBy = 0;
 
   switch( iCnt % 4 ){
     case 1:  bDistinct = 1;              break;
@@ -285,6 +348,8 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     sqlite3_finalize(pBase);
     pBase = pStmt;
   }
+  hasGroupBy = sqlite3_strlike("%GROUP BY%",zIn,0)==0;
+  bindDebugParameters(pBase);
   for(i=0; i<sqlite3_column_count(pStmt); i++){
     const char *zColName = sqlite3_column_name(pBase,i);
     const char *zSuffix = zColName ? strrchr(zColName, ':') : 0;
@@ -308,7 +373,8 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     if( iCnt>1 && i+2!=iCnt ) continue;
     if( zColName==0 ) continue;
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
-      sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
+      const char *zPlus = hasGroupBy ? "+" : "";
+      sqlite3_str_appendf(pTest, " %s %s\"%w\" ISNULL", zAnd, zPlus, zColName);
     }else{
       sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName, 
                           i+1+nParam);
@@ -489,13 +555,17 @@ static void printRow(sqlite3_stmt *pStmt, int iRow){
 static void reportInvariantFailed(
   sqlite3_stmt *pOrig,   /* The original query */
   sqlite3_stmt *pTest,   /* The alternative test query with a missing row */
-  int iRow               /* Row number in pOrig */
+  int iRow,              /* Row number in pOrig */
+  unsigned int dbOpt,    /* Optimization flags on pOrig */
+  int noOpt              /* True if opt flags inverted for pTest */
 ){
   int iTestRow = 0;
   printf("Invariant check failed on row %d.\n", iRow);
-  printf("Original query --------------------------------------------------\n");
+  printf("Original query (opt-flags: 0x%08x) --------------------------\n",
+         dbOpt);
   printf("%s\n", sqlite3_expanded_sql(pOrig));
-  printf("Alternative query -----------------------------------------------\n");
+  printf("Alternative query (opt-flags: 0x%08x) -----------------------\n",
+         noOpt ? ~dbOpt : dbOpt);
   printf("%s\n", sqlite3_expanded_sql(pTest));
   printf("Result row that is missing from the alternative -----------------\n");
   printRow(pOrig, iRow);

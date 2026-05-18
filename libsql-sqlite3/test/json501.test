@@ -306,4 +306,31 @@ do_execsql_test 13.1 {
   SELECT json('{x:''a "b" c''}');
 } {{{"x":"a \"b\" c"}}}
 
+# 2024-01-31
+# Allow control characters within JSON5 string literals.
+#
+for {set c 1} {$c<=0x1f} {incr c} {
+  do_execsql_test 14.$c.1 {
+    SELECT json_valid('"abc' || char($c) || 'xyz"');
+  } {0}
+  do_execsql_test 14.$c.2 {
+    SELECT json_valid('"abc' || char($c) || 'xyz"', 2);
+  } {1}
+  switch $c {
+    8   {set e "\\b"}
+    9   {set e "\\t"}
+    10  {set e "\\n"}
+    12  {set e "\\f"}
+    13  {set e "\\r"}
+    default {set e [format "\\u00%02x" $c]}
+  }
+  do_execsql_test 14.$c.3 {
+    SELECT json('{label:"abc' || char($c) || 'xyz"}');
+  } "{{\"label\":\"abc${e}xyz\"}}"
+  do_execsql_test 14.$c.4 {
+    SELECT jsonb('{label:"abc' || char($c) || 'xyz"}') -> '$';
+  } "{{\"label\":\"abc${e}xyz\"}}"
+}
+
+
 finish_test

@@ -64,4 +64,17 @@ ifcapable vtab {
   } {{\x17} 1 integer 1 1 null {$."\x17"} {$}}
 }
 
+# JSON PATH parsing bug involving backslash escapes, reported via
+# private email from Florent De'Neve on 2024-09-04.
+#
+do_execsql_test 5.1 {
+  SELECT json_extract('{"A\"Key":1}', '$.A"Key');
+} 1
+do_execsql_test 5.2 {
+  SELECT json_extract('{"A\"Key":1}', '$."A\"Key"');
+} 1
+do_execsql_test 5.3 {
+  SELECT JSON_SET('{}', '$."\"Key"', 1);
+} {{{"\"Key":1}}}
+
 finish_test

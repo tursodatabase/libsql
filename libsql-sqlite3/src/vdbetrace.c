@@ -26,10 +26,10 @@
 ** a host parameter.  If the text contains no host parameters, return
 ** the total number of bytes in the text.
 */
-static int findNextHostParameter(const char *zSql, int *pnToken){
+static i64 findNextHostParameter(const char *zSql, i64 *pnToken){
   int tokenType;
-  int nTotal = 0;
-  int n;
+  i64 nTotal = 0;
+  i64 n;
 
   *pnToken = 0;
   while( zSql[0] ){
@@ -76,8 +76,8 @@ char *sqlite3VdbeExpandSql(
   sqlite3 *db;             /* The database connection */
   int idx = 0;             /* Index of a host parameter */
   int nextIndex = 1;       /* Index of next ? host parameter */
-  int n;                   /* Length of a token prefix */
-  int nToken;              /* Length of the parameter token */
+  i64 n;                   /* Length of a token prefix */
+  i64 nToken;              /* Length of the parameter token */
   int i;                   /* Loop counter */
   Mem *pVar;               /* Value of a host parameter */
   StrAccum out;            /* Accumulate the output here */

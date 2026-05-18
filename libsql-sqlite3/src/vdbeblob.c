@@ -133,6 +133,7 @@ int sqlite3_blob_open(
   char *zErr = 0;
   Table *pTab;
   Incrblob *pBlob = 0;
+  int iDb;
   Parse sParse;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
@@ -167,13 +168,21 @@ int sqlite3_blob_open(
       pTab = 0;
       sqlite3ErrorMsg(&sParse, "cannot open table without rowid: %s", zTable);
     }
+    if( pTab && (pTab->tabFlags&TF_HasGenerated)!=0 ){
+      pTab = 0;
+      sqlite3ErrorMsg(&sParse, "cannot open table with generated columns: %s",
+                      zTable);
+    }
 #ifndef SQLITE_OMIT_VIEW
     if( pTab && IsView(pTab) ){
       pTab = 0;
       sqlite3ErrorMsg(&sParse, "cannot open view: %s", zTable);
     }
 #endif
-    if( !pTab ){
+    if( pTab==0
+     || ((iDb = sqlite3SchemaToIndex(db, pTab->pSchema))==1 &&
+         sqlite3OpenTempDatabase(&sParse))
+    ){
       if( sParse.zErrMsg ){
         sqlite3DbFree(db, zErr);
         zErr = sParse.zErrMsg;
@@ -184,15 +193,11 @@ int sqlite3_blob_open(
       goto blob_open_out;
     }
     pBlob->pTab = pTab;
-    pBlob->zDb = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
+    pBlob->zDb = db->aDb[iDb].zDbSName;
 
     /* Now search pTab for the exact column. */
-    for(iCol=0; iCol<pTab->nCol; iCol++) {
-      if( sqlite3StrICmp(pTab->aCol[iCol].zCnName, zColumn)==0 ){
-        break;
-      }
-    }
-    if( iCol==pTab->nCol ){
+    iCol = sqlite3ColumnIndex(pTab, zColumn);
+    if( iCol<0 ){
       sqlite3DbFree(db, zErr);
       zErr = sqlite3MPrintf(db, "no such column: \"%s\"", zColumn);
       rc = SQLITE_ERROR;
@@ -272,7 +277,6 @@ int sqlite3_blob_open(
         {OP_Halt,           0, 0, 0},  /* 5  */
       };
       Vdbe *v = (Vdbe *)pBlob->pStmt;
-      int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       VdbeOp *aOp;
 
       sqlite3VdbeAddOp4Int(v, OP_Transaction, iDb, wrFlag, 
@@ -381,7 +385,7 @@ static int blobReadWrite(
   int iOffset, 
   int (*xCall)(BtCursor*, u32, u32, void*)
 ){
-  int rc;
+  int rc = SQLITE_OK;
   Incrblob *p = (Incrblob *)pBlob;
   Vdbe *v;
   sqlite3 *db;
@@ -421,17 +425,32 @@ static int blobReadWrite(
       ** using the incremental-blob API, this works. For the sessions module
       ** anyhow.
       */
-      sqlite3_int64 iKey;
-      iKey = sqlite3BtreeIntegerKey(p->pCsr);
-      assert( v->apCsr[0]!=0 );
-      assert( v->apCsr[0]->eCurType==CURTYPE_BTREE );
-      sqlite3VdbePreUpdateHook(
-          v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1, p->iCol
-      );
+      if( sqlite3BtreeCursorIsValidNN(p->pCsr)==0 ){
+        /* If the cursor is not currently valid, try to reseek it. This 
+        ** always either fails or finds the correct row - the cursor will
+        ** have been marked permanently CURSOR_INVALID if the open row has
+        ** been deleted.  */
+        int bDiff = 0;
+        rc = sqlite3BtreeCursorRestore(p->pCsr, &bDiff);
+        assert( bDiff==0 || sqlite3BtreeCursorIsValidNN(p->pCsr)==0 );
+      }
+      if( sqlite3BtreeCursorIsValidNN(p->pCsr) ){
+        sqlite3_int64 iKey;
+        iKey = sqlite3BtreeIntegerKey(p->pCsr);
+        assert( v->apCsr[0]!=0 );
+        assert( v->apCsr[0]->eCurType==CURTYPE_BTREE );
+        sqlite3VdbePreUpdateHook(
+            v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1, p->iCol
+        );
+      }
     }
+    if( rc==SQLITE_OK ){
+      rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
+    }
+#else
+    rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
 #endif
 
-    rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
     sqlite3BtreeLeaveCursor(p->pCsr);
     if( rc==SQLITE_ABORT ){
       sqlite3VdbeFinalize(v);

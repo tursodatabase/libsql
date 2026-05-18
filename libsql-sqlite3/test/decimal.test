@@ -22,6 +22,9 @@ if {[catch {load_static_extension db decimal} error]} {
 do_execsql_test 1000 {
   SELECT decimal(1);
 } {1}
+do_execsql_test 1001 {
+  SELECT decimal('+0'), decimal('-0');
+} {0 0}
 do_execsql_test 1010 {
   SELECT decimal('1.0');
 } {1.0}
@@ -34,6 +37,12 @@ do_execsql_test 1030 {
 do_execsql_test 1040 {
   SELECT decimal('-0001.0');
 } {-1.0}
+do_execsql_test 1041 {
+  SELECT decimal('-0000.0');
+} {0.0}
+do_execsql_test 1042 {
+  SELECT decimal(0.0)==decimal(-0.0);
+} {1}
 do_execsql_test 1050 {
   SELECT decimal('1.0e72');
 } {1000000000000000000000000000000000000000000000000000000000000000000000000}
@@ -72,6 +81,16 @@ do_execsql_test 2000 {
     FROM t1 AS a, t1 AS b
    WHERE a.seq<b.seq
      AND decimal_cmp(a.val,b.val)>=0;
+} {}
+do_execsql_test 2001 {
+  WITH vx(a,b) AS (VALUES
+    ('-0','+0'),
+    ('-000.000','0'),
+    ('1.2','1.2000')
+  )
+  SELECT *, '|' FROM vx 
+   WHERE decimal_cmp(a,b)!=0
+      OR decimal_cmp(b,a)!=0;
 } {}
 do_execsql_test 2010 {
   SELECT *, '|'

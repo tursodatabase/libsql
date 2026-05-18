@@ -33,5 +33,5 @@ public interface XDestroyCallback {
      each individual reference, leading to memory corruption or a
      crash via duplicate free().
   */
-  public void xDestroy();
+  void xDestroy();
 }

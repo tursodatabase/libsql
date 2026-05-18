@@ -113,6 +113,31 @@
     }
   };
 
+  /* Set up links to launch this tool with various combinations of
+     flags... */
+  const eTestLinks = document.querySelector('#testlinks');
+  const optArgs = function(obj){
+    const li = [];
+    for(const k of ['interval','iterations','workers','verbose','unlock-asap']){
+      if( obj.hasOwnProperty(k) ) li.push(k+'='+obj[k]);
+    }
+    return li.join('&');
+  };
+  for(const opt of [
+    {interval: 1000, workers: 5, iterations: 30},
+    {interval: 500, workers: 5, iterations: 30},
+    {interval: 250, workers: 3, iterations: 30},
+    {interval: 600, workers: 5, iterations: 100}
+  ]){
+    const li = document.createElement('li');
+    eTestLinks.appendChild(li);
+    const a = document.createElement('a');
+    li.appendChild(a);
+    const args = optArgs(opt);
+    a.setAttribute('href', '?'+args);
+    a.innerText = args;
+  }
+
   stdout("Launching",options.workerCount,"workers. Options:",options);
   workers.uri = (
     'worker.js?'

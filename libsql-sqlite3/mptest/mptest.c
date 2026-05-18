@@ -1037,6 +1037,10 @@ static void runScript(
         for(k=(int)strlen(zFilename)-1; k>=0 && !isDirSep(zFilename[k]); k--){}
         if( k>0 ){
           zNewFile = zToDel = sqlite3_mprintf("%.*s/%s", k,zFilename,zNewFile);
+          if( zNewFile==0 ){
+            fprintf(stderr, "out of memory\n");
+            abort();
+          }
         }
       }
       zNewScript = readFile(zNewFile);

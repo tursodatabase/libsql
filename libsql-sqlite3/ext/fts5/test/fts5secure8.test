@@ -42,6 +42,26 @@ do_execsql_test 1.2 {
   PRAGMA integrity_check;
 } {ok}
 
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE xyz USING fts5 (
+  	name,
+        content=''
+  );
+
+  INSERT INTO xyz(xyz, rank) VALUES('secure-delete', 1);
+  INSERT INTO xyz (rowid, name) VALUES(1, 'A');
+  INSERT INTO xyz (rowid, name) VALUES(2, 'A');
+  INSERT INTO xyz(xyz, rowid, name) VALUES('delete', 2, 'A');
+}
+
+do_execsql_test 2.1 {
+  pragma quick_check;
+} {ok}
+
+do_catchsql_test 2.2 {
+  INSERT INTO xyz(xyz, rank) VALUES('secure-delete', 'hello world');
+} {1 {SQL logic error}}
+
 
 
 

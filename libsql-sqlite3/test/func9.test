@@ -9,7 +9,7 @@
 #
 #*************************************************************************
 #
-# Test cases for SQL newer functions
+# Test cases for some newer SQL functions
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,6 +26,18 @@ do_catchsql_test func9-120 {
 do_execsql_test func9-130 {
   SELECT concat_ws(',',1,2,3,4,5,6,7,8,NULL,9,10,11,12);
 } {1,2,3,4,5,6,7,8,9,10,11,12}
+do_execsql_test func9-131 {
+  SELECT concat_ws(',',1,2,3,4,'',6,7,8,NULL,9,10,11,12);
+} {1,2,3,4,,6,7,8,9,10,11,12}
+do_execsql_test func9-132 {
+  SELECT concat_ws(',','',2,3,4,'',6,7,8,NULL,9,10,11,12);
+} {,2,3,4,,6,7,8,9,10,11,12}
+do_execsql_test func9-133 {
+  SELECT concat_ws(',',NULL,'',3,4,'',6,7,8,NULL,9,10,11,12);
+} {,3,4,,6,7,8,9,10,11,12}
+do_execsql_test func9-134 {
+  SELECT concat_ws(',',NULL,NULL,NULL,'',3,4,'',6,7,8,NULL,9,10,11,12);
+} {,3,4,,6,7,8,9,10,11,12}
 do_execsql_test func9-140 {
   SELECT concat_ws(NULL,1,2,3,4,5,6,7,8,NULL,9,10,11,12);
 } {{}}
@@ -36,5 +48,19 @@ do_catchsql_test func9-160 {
   SELECT concat_ws(',');
 } {1 {wrong number of arguments to function concat_ws()}}
 
+# https://sqlite.org/forum/forumpost/4c344ca61f (2025-03-02)
+do_execsql_test func9-200 {
+  SELECT unistr('G\u00e4ste');
+} {Gäste}
+do_execsql_test func9-210 {
+  SELECT unistr_quote(unistr('G\u00e4ste'));
+} {'Gäste'}
+do_execsql_test func9-220 {
+  SELECT format('%#Q',unistr('G\u00e4ste'));
+} {'Gäste'}
+
+do_execsql_test func9-300 {
+  SELECT hex( unistr('\UFFFFFFFF') )
+} {F7BFBFBF}
 
 finish_test

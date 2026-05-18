@@ -18,11 +18,11 @@ package org.sqlite.jni.capi;
    They are populated only via that interface.
 */
 public final class TableColumnMetadata {
-  OutputPointer.Bool pNotNull = new OutputPointer.Bool();
-  OutputPointer.Bool pPrimaryKey = new OutputPointer.Bool();
-  OutputPointer.Bool pAutoinc = new OutputPointer.Bool();
-  OutputPointer.String pzCollSeq = new OutputPointer.String();
-  OutputPointer.String pzDataType = new OutputPointer.String();
+  final OutputPointer.Bool pNotNull = new OutputPointer.Bool();
+  final OutputPointer.Bool pPrimaryKey = new OutputPointer.Bool();
+  final OutputPointer.Bool pAutoinc = new OutputPointer.Bool();
+  final OutputPointer.String pzCollSeq = new OutputPointer.String();
+  final OutputPointer.String pzDataType = new OutputPointer.String();
 
   public TableColumnMetadata(){
   }

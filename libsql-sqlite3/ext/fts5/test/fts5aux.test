@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5aux
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -376,5 +376,29 @@ do_catchsql_test 12.3.2 {
 do_catchsql_test 12.3.3 {
   SELECT fts5_collist(t1, 1) FROM t1('one AND two');
 } {0 1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, tokenize=ascii);
+  INSERT INTO t1 VALUES('a b c'), ('d e f');
+  PRAGMA integrity_check;
+} {ok}
+
+do_catchsql_test 13.2 {
+  SELECT highlight(t1, 0, '[', ']') FROM t1
+} {0 {{a b c} {d e f}}}
+
+do_execsql_test 13.3 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET sql = 'CREATE VIRTUAL TABLE t1 USING fts5(a, tokenize=blah)'
+  WHERE name = 't1';
+}
+
+db close
+sqlite3 db test.db
+do_catchsql_test 13.4 {
+  SELECT highlight(t1, 0, '[', ']') FROM t1
+} {1 {SQL logic error}}
 
 finish_test

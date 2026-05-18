@@ -141,7 +141,7 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
 ** corresponding string value, then it is important that the string be
 ** derived from the numeric value, not the other way around, to ensure
 ** that the index and table are consistent.  See ticket
-** https://www.sqlite.org/src/info/343634942dd54ab (2018-01-31) for
+** https://sqlite.org/src/info/343634942dd54ab (2018-01-31) for
 ** an example.
 **
 ** This routine looks at pMem to verify that if it has both a numeric
@@ -327,7 +327,7 @@ void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
     return;
   }
   if( pMem->enc!=SQLITE_UTF8 ) return;
-  if( NEVER(pMem->z==0) ) return;
+  assert( pMem->z!=0 );
   if( pMem->flags & MEM_Dyn ){
     if( pMem->xDel==sqlite3_free
      && sqlite3_msize(pMem->z) >= (u64)(pMem->n+1)
@@ -943,6 +943,13 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
   }
 }
 
+/*
+** Set the iIdx'th entry of array aMem[] to contain integer value val.
+*/
+void sqlite3MemSetArrayInt64(sqlite3_value *aMem, int iIdx, i64 val){
+  sqlite3VdbeMemSetInt64(&aMem[iIdx], val);
+}
+
 /* A no-op destructor */
 void sqlite3NoopDestructor(void *p){ UNUSED_PARAMETER(p); }
 
@@ -1039,27 +1046,30 @@ int sqlite3VdbeMemTooBig(Mem *p){
 void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   int i;
   Mem *pX;
-  for(i=1, pX=pVdbe->aMem+1; i<pVdbe->nMem; i++, pX++){
-    if( pX->pScopyFrom==pMem ){
-      u16 mFlags;
-      if( pVdbe->db->flags & SQLITE_VdbeTrace ){
-        sqlite3DebugPrintf("Invalidate R[%d] due to change in R[%d]\n",
-          (int)(pX - pVdbe->aMem), (int)(pMem - pVdbe->aMem));
+  if( pMem->bScopy ){
+    for(i=1, pX=pVdbe->aMem+1; i<pVdbe->nMem; i++, pX++){
+      if( pX->pScopyFrom==pMem ){
+        u16 mFlags;
+        if( pVdbe->db->flags & SQLITE_VdbeTrace ){
+          sqlite3DebugPrintf("Invalidate R[%d] due to change in R[%d]\n",
+            (int)(pX - pVdbe->aMem), (int)(pMem - pVdbe->aMem));
+        }
+        /* If pX is marked as a shallow copy of pMem, then try to verify that
+        ** no significant changes have been made to pX since the OP_SCopy.
+        ** A significant change would indicated a missed call to this
+        ** function for pX.  Minor changes, such as adding or removing a
+        ** dual type, are allowed, as long as the underlying value is the
+        ** same. */
+        mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
+        assert( (mFlags&(MEM_Int|MEM_IntReal))==0 || pMem->u.i==pX->u.i );
+        
+        /* pMem is the register that is changing.  But also mark pX as
+        ** undefined so that we can quickly detect the shallow-copy error */
+        pX->flags = MEM_Undefined;
+        pX->pScopyFrom = 0;
       }
-      /* If pX is marked as a shallow copy of pMem, then try to verify that
-      ** no significant changes have been made to pX since the OP_SCopy.
-      ** A significant change would indicated a missed call to this
-      ** function for pX.  Minor changes, such as adding or removing a
-      ** dual type, are allowed, as long as the underlying value is the
-      ** same. */
-      mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
-      assert( (mFlags&(MEM_Int|MEM_IntReal))==0 || pMem->u.i==pX->u.i );
-      
-      /* pMem is the register that is changing.  But also mark pX as
-      ** undefined so that we can quickly detect the shallow-copy error */
-      pX->flags = MEM_Undefined;
-      pX->pScopyFrom = 0;
     }
+    pMem->bScopy = 0;
   }
   pMem->pScopyFrom = 0;
 }
@@ -1216,6 +1226,7 @@ int sqlite3VdbeMemSetStr(
     if( sqlite3VdbeMemClearAndResize(pMem, (int)MAX(nAlloc,32)) ){
       return SQLITE_NOMEM_BKPT;
     }
+    assert( pMem->z!=0 );
     memcpy(pMem->z, z, nAlloc);
   }else{
     sqlite3VdbeMemRelease(pMem);
@@ -1266,7 +1277,12 @@ int sqlite3VdbeMemFromBtree(
 ){
   int rc;
   pMem->flags = MEM_Null;
-  if( sqlite3BtreeMaxRecordSize(pCur)<offset+amt ){
+  testcase( amt==SQLITE_MAX_ALLOCATION_SIZE-1 );
+  testcase( amt==SQLITE_MAX_ALLOCATION_SIZE );
+  if( amt>=SQLITE_MAX_ALLOCATION_SIZE ){
+    return SQLITE_NOMEM_BKPT;
+  }
+  if( (u64)amt + (u64)offset > (u64)sqlite3BtreeMaxRecordSize(pCur) ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+1)) ){
@@ -1430,7 +1446,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 
     if( pRec==0 ){
       Index *pIdx = p->pIdx;      /* Index being probed */
-      int nByte;                  /* Bytes of space to allocate */
+      i64 nByte;                  /* Bytes of space to allocate */
       int i;                      /* Counter variable */
       int nCol = pIdx->nColumn;   /* Number of index columns including rowid */
   
@@ -1496,7 +1512,7 @@ static int valueFromFunction(
 ){
   sqlite3_context ctx;            /* Context object for function invocation */
   sqlite3_value **apVal = 0;      /* Function arguments */
-  int nVal = 0;                   /* Size of apVal[] array */
+  int nVal = 0;                   /* Number of function arguments */
   FuncDef *pFunc = 0;             /* Function definition */
   sqlite3_value *pVal = 0;        /* New value */
   int rc = SQLITE_OK;             /* Return code */
@@ -1527,7 +1543,8 @@ static int valueFromFunction(
       goto value_from_function_out;
     }
     for(i=0; i<nVal; i++){
-      rc = sqlite3ValueFromExpr(db, pList->a[i].pExpr, enc, aff, &apVal[i]);
+      rc = sqlite3Stat4ValueFromExpr(pCtx->pParse, pList->a[i].pExpr, aff,
+                                     &apVal[i]);
       if( apVal[i]==0 || rc!=SQLITE_OK ) goto value_from_function_out;
     }
   }
@@ -1631,14 +1648,20 @@ static int valueFromExpr(
   }
 
   /* Handle negative integers in a single step.  This is needed in the
-  ** case when the value is -9223372036854775808.
-  */
-  if( op==TK_UMINUS
-   && (pExpr->pLeft->op==TK_INTEGER || pExpr->pLeft->op==TK_FLOAT) ){
-    pExpr = pExpr->pLeft;
-    op = pExpr->op;
-    negInt = -1;
-    zNeg = "-";
+  ** case when the value is -9223372036854775808. Except - do not do this
+  ** for hexadecimal literals.  */
+  if( op==TK_UMINUS ){
+    Expr *pLeft = pExpr->pLeft;
+    if( (pLeft->op==TK_INTEGER || pLeft->op==TK_FLOAT) ){
+      if( ExprHasProperty(pLeft, EP_IntValue)
+       || pLeft->u.zToken[0]!='0' || (pLeft->u.zToken[1] & ~0x20)!='X'
+      ){
+        pExpr = pLeft;
+        op = pExpr->op;
+        negInt = -1;
+        zNeg = "-";
+      }
+    }
   }
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
@@ -1647,12 +1670,26 @@ static int valueFromExpr(
     if( ExprHasProperty(pExpr, EP_IntValue) ){
       sqlite3VdbeMemSetInt64(pVal, (i64)pExpr->u.iValue*negInt);
     }else{
-      zVal = sqlite3MPrintf(db, "%s%s", zNeg, pExpr->u.zToken);
-      if( zVal==0 ) goto no_mem;
-      sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
+      i64 iVal;
+      if( op==TK_INTEGER && 0==sqlite3DecOrHexToI64(pExpr->u.zToken, &iVal) ){
+        sqlite3VdbeMemSetInt64(pVal, iVal*negInt);
+      }else{
+        zVal = sqlite3MPrintf(db, "%s%s", zNeg, pExpr->u.zToken);
+        if( zVal==0 ) goto no_mem;
+        sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
+      }
     }
-    if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_BLOB ){
-      sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
+    if( affinity==SQLITE_AFF_BLOB ){
+      if( op==TK_FLOAT ){
+        assert( pVal && pVal->z && pVal->flags==(MEM_Str|MEM_Term) );
+        sqlite3AtoF(pVal->z, &pVal->u.r, pVal->n, SQLITE_UTF8);
+        pVal->flags = MEM_Real;
+      }else if( op==TK_INTEGER ){
+        /* This case is required by -9223372036854775808 and other strings
+        ** that look like integers but cannot be handled by the
+        ** sqlite3DecOrHexToI64() call above.  */
+        sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
+      }
     }else{
       sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);
     }
@@ -1922,17 +1959,17 @@ int sqlite3Stat4Column(
   sqlite3_value **ppVal           /* OUT: Extracted value */
 ){
   u32 t = 0;                      /* a column type code */
-  int nHdr;                       /* Size of the header in the record */
-  int iHdr;                       /* Next unread header byte */
-  int iField;                     /* Next unread data byte */
-  int szField = 0;                /* Size of the current data field */
+  u32 nHdr;                       /* Size of the header in the record */
+  u32 iHdr;                       /* Next unread header byte */
+  i64 iField;                     /* Next unread data byte */
+  u32 szField = 0;                /* Size of the current data field */
   int i;                          /* Column index */
   u8 *a = (u8*)pRec;              /* Typecast byte array */
   Mem *pMem = *ppVal;             /* Write result into this Mem object */
 
   assert( iCol>0 );
   iHdr = getVarint32(a, nHdr);
-  if( nHdr>nRec || iHdr>=nHdr ) return SQLITE_CORRUPT_BKPT;
+  if( nHdr>(u32)nRec || iHdr>=nHdr ) return SQLITE_CORRUPT_BKPT;
   iField = nHdr;
   for(i=0; i<=iCol; i++){
     iHdr += getVarint32(&a[iHdr], t);

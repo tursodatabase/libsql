@@ -135,6 +135,10 @@ reset_db
 do_catchsql_test default-5.1 {
   CREATE TABLE t1 (a,b DEFAULT(random() NOTNULL IN (RAISE(IGNORE),2,3)));
   INSERT INTO t1(a) VALUES(1);
-} {1 {RAISE() may only be used within a trigger-program}}
+} {1 {default value of column [b] is not constant}}
+do_catchsql_test default-5.2 {
+  CREATE TABLE Table0 (Col0 DEFAULT (RAISE(IGNORE) )  ) ; 
+  INSERT INTO Table0 DEFAULT VALUES ;
+} {1 {default value of column [Col0] is not constant}}
 
 finish_test

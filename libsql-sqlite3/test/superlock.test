@@ -166,7 +166,7 @@ do_multiclient_test tn {
 proc read_content {file} {
   if {[file exists $file]==0} {return ""}
   set fd [open $file]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   set content [read $fd]
   close $fd
   return $content
@@ -174,7 +174,7 @@ proc read_content {file} {
 
 proc write_content {file content} {
   set fd [open $file w+]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   puts -nonewline $fd $content
   close $fd
 }

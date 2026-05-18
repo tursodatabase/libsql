@@ -56,7 +56,7 @@ do_catchsql_test 2.2 {
 } {1 {3 columns assigned 2 values}}
 
 # 2019-08-26
-# ticket https://www.sqlite.org/src/info/78acc9d40f0786e8
+# ticket https://sqlite.org/src/info/78acc9d40f0786e8
 #
 do_catchsql_test 3.0 {
   DROP TABLE IF EXISTS t1;

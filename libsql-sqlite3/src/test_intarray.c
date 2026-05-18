@@ -61,7 +61,8 @@ struct intarray_cursor {
 /*
 ** Free an sqlite3_intarray object.
 */
-static void intarrayFree(sqlite3_intarray *p){
+static void intarrayFree(void *pX){
+  sqlite3_intarray *p = (sqlite3_intarray*)pX;
   if( p->xFree ){
     p->xFree(p->a);
   }
@@ -279,14 +280,7 @@ SQLITE_API int sqlite3_intarray_bind(
 ** Everything below is interface for testing this module.
 */
 #ifdef SQLITE_TEST
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 
 /*
 ** Routines to encode and decode pointers

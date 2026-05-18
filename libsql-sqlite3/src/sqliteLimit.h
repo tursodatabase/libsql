@@ -23,6 +23,28 @@
 #ifndef SQLITE_MAX_LENGTH
 # define SQLITE_MAX_LENGTH 1000000000
 #endif
+#define SQLITE_MIN_LENGTH 30   /* Minimum value for the length limit */
+
+/*
+** Maximum size of any single memory allocation.
+**
+** This is not a limit on the total amount of memory used.  This is
+** a limit on the size parameter to sqlite3_malloc() and sqlite3_realloc().
+**
+** The upper bound is slightly less than 2GiB:  0x7ffffeff == 2,147,483,391
+** This provides a 256-byte safety margin for defense against 32-bit 
+** signed integer overflow bugs when computing memory allocation sizes.
+** Paranoid applications might want to reduce the maximum allocation size
+** further for an even larger safety margin.  0x3fffffff or 0x0fffffff
+** or even smaller would be reasonable upper bounds on the size of a memory
+** allocations for most applications.
+*/
+#ifndef SQLITE_MAX_ALLOCATION_SIZE
+# define SQLITE_MAX_ALLOCATION_SIZE  2147483391
+#endif
+#if SQLITE_MAX_ALLOCATION_SIZE>2147483391
+# error Maximum size for SQLITE_MAX_ALLOCATION_SIZE is 2147483391
+#endif
 
 /*
 ** This is the maximum number of
@@ -35,14 +57,22 @@
 **    * Terms in the GROUP BY or ORDER BY clauses of a SELECT statement.
 **    * Terms in the VALUES clause of an INSERT statement
 **
-** The hard upper limit here is 32676.  Most database people will
+** The hard upper limit here is 32767.  Most database people will
 ** tell you that in a well-normalized database, you usually should
 ** not have more than a dozen or so columns in any table.  And if
 ** that is the case, there is no point in having more than a few
 ** dozen values in any of the other situations described above.
+**
+** An index can only have SQLITE_MAX_COLUMN columns from the user
+** point of view, but the underlying b-tree that implements the index
+** might have up to twice as many columns in a WITHOUT ROWID table,
+** since must also store the primary key at the end.  Hence the
+** column count for Index is u16 instead of i16.
 */
-#ifndef SQLITE_MAX_COLUMN
+#if !defined(SQLITE_MAX_COLUMN)
 # define SQLITE_MAX_COLUMN 2000
+#elif SQLITE_MAX_COLUMN>32767
+# error SQLITE_MAX_COLUMN may not exceed 32767
 #endif
 
 /*
@@ -88,9 +118,13 @@
 
 /*
 ** The maximum number of arguments to an SQL function.
+**
+** This value has a hard upper limit of 32767 due to storage
+** constraints (it needs to fit inside a i16).  We keep it
+** lower than that to prevent abuse.
 */
 #ifndef SQLITE_MAX_FUNCTION_ARG
-# define SQLITE_MAX_FUNCTION_ARG 127
+# define SQLITE_MAX_FUNCTION_ARG 1000
 #endif
 
 /*
@@ -183,7 +217,7 @@
 ** Maximum number of pages in one database file.
 **
 ** This is really just the default value for the max_page_count pragma.
-** This value can be lowered (or raised) at run-time using that the
+** This value can be lowered (or raised) at run-time using the
 ** max_page_count macro.
 */
 #ifndef SQLITE_MAX_PAGE_COUNT

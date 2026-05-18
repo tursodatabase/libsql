@@ -192,8 +192,9 @@ int sqlite3LookasideUsed(sqlite3 *db, int *pHighwater){
   nInit += countLookasideSlots(db->lookaside.pSmallInit);
   nFree += countLookasideSlots(db->lookaside.pSmallFree);
 #endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
-  if( pHighwater ) *pHighwater = db->lookaside.nSlot - nInit;
-  return db->lookaside.nSlot - (nInit+nFree);
+  assert( db->lookaside.nSlot >= nInit+nFree );
+  if( pHighwater ) *pHighwater = (int)(db->lookaside.nSlot - nInit);
+  return (int)(db->lookaside.nSlot - (nInit+nFree));
 }
 
 /*
@@ -217,23 +218,25 @@ void *libsql_leak_pager(sqlite3 *db) {
 /*
 ** Query status information for a single database connection
 */
-int sqlite3_db_status(
-  sqlite3 *db,          /* The database connection whose status is desired */
-  int op,               /* Status verb */
-  int *pCurrent,        /* Write current value here */
-  int *pHighwater,      /* Write high-water mark here */
-  int resetFlag         /* Reset high-water mark if true */
+int sqlite3_db_status64(
+  sqlite3 *db,             /* The database connection whose status is desired */
+  int op,                  /* Status verb */
+  sqlite3_int64 *pCurrent, /* Write current value here */
+  sqlite3_int64 *pHighwtr, /* Write high-water mark here */
+  int resetFlag            /* Reset high-water mark if true */
 ){
   int rc = SQLITE_OK;   /* Return code */
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) || pCurrent==0|| pHighwater==0 ){
+  if( !sqlite3SafetyCheckOk(db) || pCurrent==0|| pHighwtr==0 ){
     return SQLITE_MISUSE_BKPT;
   }
 #endif
   sqlite3_mutex_enter(db->mutex);
   switch( op ){
     case SQLITE_DBSTATUS_LOOKASIDE_USED: {
-      *pCurrent = sqlite3LookasideUsed(db, pHighwater);
+      int H = 0;
+      *pCurrent = sqlite3LookasideUsed(db, &H);
+      *pHighwtr = H;
       if( resetFlag ){
         LookasideSlot *p = db->lookaside.pFree;
         if( p ){
@@ -264,7 +267,7 @@ int sqlite3_db_status(
       assert( (op-SQLITE_DBSTATUS_LOOKASIDE_HIT)>=0 );
       assert( (op-SQLITE_DBSTATUS_LOOKASIDE_HIT)<3 );
       *pCurrent = 0;
-      *pHighwater = db->lookaside.anStat[op - SQLITE_DBSTATUS_LOOKASIDE_HIT];
+      *pHighwtr = db->lookaside.anStat[op-SQLITE_DBSTATUS_LOOKASIDE_HIT];
       if( resetFlag ){
         db->lookaside.anStat[op - SQLITE_DBSTATUS_LOOKASIDE_HIT] = 0;
       }
@@ -278,7 +281,7 @@ int sqlite3_db_status(
     */
     case SQLITE_DBSTATUS_CACHE_USED_SHARED:
     case SQLITE_DBSTATUS_CACHE_USED: {
-      int totalUsed = 0;
+      sqlite3_int64 totalUsed = 0;
       int i;
       sqlite3BtreeEnterAll(db);
       for(i=0; i<db->nDb; i++){
@@ -294,18 +297,18 @@ int sqlite3_db_status(
       }
       sqlite3BtreeLeaveAll(db);
       *pCurrent = totalUsed;
-      *pHighwater = 0;
+      *pHighwtr = 0;
       break;
     }
 
     /*
     ** *pCurrent gets an accurate estimate of the amount of memory used
     ** to store the schema for all databases (main, temp, and any ATTACHed
-    ** databases.  *pHighwater is set to zero.
+    ** databases.  *pHighwtr is set to zero.
     */
     case SQLITE_DBSTATUS_SCHEMA_USED: {
-      int i;                      /* Used to iterate through schemas */
-      int nByte = 0;              /* Used to accumulate return value */
+      int i;          /* Used to iterate through schemas */
+      int nByte = 0;  /* Used to accumulate return value */
 
       sqlite3BtreeEnterAll(db);
       db->pnBytesFreed = &nByte;
@@ -339,7 +342,7 @@ int sqlite3_db_status(
       db->lookaside.pEnd = db->lookaside.pTrueEnd;
       sqlite3BtreeLeaveAll(db);
 
-      *pHighwater = 0;
+      *pHighwtr = 0;
       *pCurrent = nByte;
       break;
     }
@@ -347,7 +350,7 @@ int sqlite3_db_status(
     /*
     ** *pCurrent gets an accurate estimate of the amount of memory used
     ** to store all prepared statements.
-    ** *pHighwater is set to zero.
+    ** *pHighwtr is set to zero.
     */
     case SQLITE_DBSTATUS_STMT_USED: {
       struct Vdbe *pVdbe;         /* Used to iterate through VMs */
@@ -362,7 +365,7 @@ int sqlite3_db_status(
       db->lookaside.pEnd = db->lookaside.pTrueEnd;
       db->pnBytesFreed = 0;
 
-      *pHighwater = 0;  /* IMP: R-64479-57858 */
+      *pHighwtr = 0;  /* IMP: R-64479-57858 */
       *pCurrent = nByte;
 
       break;
@@ -370,7 +373,7 @@ int sqlite3_db_status(
 
     /*
     ** Set *pCurrent to the total cache hits or misses encountered by all
-    ** pagers the database handle is connected to. *pHighwater is always set 
+    ** pagers the database handle is connected to. *pHighwtr is always set 
     ** to zero.
     */
     case SQLITE_DBSTATUS_CACHE_SPILL:
@@ -390,19 +393,39 @@ int sqlite3_db_status(
           sqlite3PagerCacheStat(pPager, op, resetFlag, &nRet);
         }
       }
-      *pHighwater = 0; /* IMP: R-42420-56072 */
+      *pHighwtr = 0; /* IMP: R-42420-56072 */
                        /* IMP: R-54100-20147 */
                        /* IMP: R-29431-39229 */
-      *pCurrent = (int)nRet & 0x7fffffff;
+      *pCurrent = nRet;
+      break;
+    }
+
+    /* Set *pCurrent to the number of bytes that the db database connection
+    ** has spilled to the filesystem in temporary files that could have been
+    ** stored in memory, had sufficient memory been available.
+    ** The *pHighwater is always set to zero.
+    */
+    case SQLITE_DBSTATUS_TEMPBUF_SPILL: {
+      u64 nRet = 0;
+      if( db->aDb[1].pBt ){
+        Pager *pPager = sqlite3BtreePager(db->aDb[1].pBt);
+        sqlite3PagerCacheStat(pPager, SQLITE_DBSTATUS_CACHE_WRITE,
+                              resetFlag, &nRet);
+        nRet *= sqlite3BtreeGetPageSize(db->aDb[1].pBt);
+      }
+      nRet += db->nSpill;
+      if( resetFlag ) db->nSpill = 0;
+      *pHighwtr = 0;
+      *pCurrent = nRet;
       break;
     }
 
     /* Set *pCurrent to non-zero if there are unresolved deferred foreign
     ** key constraints.  Set *pCurrent to zero if all foreign key constraints
-    ** have been satisfied.  The *pHighwater is always set to zero.
+    ** have been satisfied.  The *pHighwtr is always set to zero.
     */
     case SQLITE_DBSTATUS_DEFERRED_FKS: {
-      *pHighwater = 0;  /* IMP: R-11967-56545 */
+      *pHighwtr = 0;  /* IMP: R-11967-56545 */
       *pCurrent = db->nDeferredImmCons>0 || db->nDeferredCons>0;
       break;
     }
@@ -412,5 +435,30 @@ int sqlite3_db_status(
     }
   }
   sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
+/*
+** 32-bit variant of sqlite3_db_status64()
+*/
+int sqlite3_db_status(
+  sqlite3 *db,             /* The database connection whose status is desired */
+  int op,                  /* Status verb */
+  int *pCurrent,           /* Write current value here */
+  int *pHighwtr,           /* Write high-water mark here */
+  int resetFlag            /* Reset high-water mark if true */
+){
+  sqlite3_int64 C = 0, H = 0;
+  int rc;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) || pCurrent==0|| pHighwtr==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  rc = sqlite3_db_status64(db, op, &C, &H, resetFlag);
+  if( rc==0 ){
+    *pCurrent = C & 0x7fffffff;
+    *pHighwtr = H & 0x7fffffff;
+  }
   return rc;
 }

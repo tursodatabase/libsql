@@ -164,6 +164,11 @@ struct Keyword {
 #else
 #  define RETURNING  0x00400000
 #endif
+#ifndef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
+#  define ORDERSET   0
+#else
+#  define ORDERSET   0x00800000
+#endif
 
 
 /*
@@ -320,6 +325,7 @@ static Keyword aKeywordTable[] = {
   { "WHERE",            "TK_WHERE",        ALWAYS,           10     },
   { "WINDOW",           "TK_WINDOW",       WINDOWFUNC,       3      },
   { "WITH",             "TK_WITH",         CTE,              4      },
+  { "WITHIN",           "TK_WITHIN",       ORDERSET,         1      },
   { "WITHOUT",          "TK_WITHOUT",      ALWAYS,           1      },
 };
 

@@ -158,5 +158,17 @@ do_execsql_test aggorderby-9.3 {
   SELECT json_group_array(DISTINCT json(x) ORDER BY json(x)) FROM c;
 } {{[[1,1],[4,4],{"a":3},{"x":2}]}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test aggorderby-10.0 {
+  CREATE TABLE t1(w, x);
+  INSERT INTO t1 VALUES(1, 2);
+}
+
+for {set i 0} {$i < 70000} {incr i} { lappend lExpr x }
+do_catchsql_test aggorderby-10.1 "
+  SELECT group_concat(w ORDER BY [join $lExpr ,]) FROM t1
+" {1 {too many terms in ORDER BY clause}}
+
 
 finish_test

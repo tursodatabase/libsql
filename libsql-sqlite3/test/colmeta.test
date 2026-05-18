@@ -97,7 +97,7 @@ foreach {tn params results} $tests {
 }
 
 # Calling sqlite3_table_column_metadata with a NULL column name merely
-# checks for the existance of the table.
+# checks for the existence of the table.
 #
 do_test colmeta-300 {
   catch {sqlite3_table_column_metadata $::DB main xyzzy} res

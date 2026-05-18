@@ -378,7 +378,7 @@ do_test colname-9.210 {
   execsql2 {SELECT t1.a, v3.a AS n FROM t1 JOIN v3}
 } {a 1 n 3}
 
-# 2017-12-23:  Ticket https://www.sqlite.org/src/info/3b4450072511e621
+# 2017-12-23:  Ticket https://sqlite.org/src/info/3b4450072511e621
 # Inconsistent column names in CREATE TABLE AS
 #
 # Verify that the names of columns in the created table of a CREATE TABLE AS
@@ -424,7 +424,7 @@ do_catchsql_test colname-9.400 {
 #
 do_catchsql_test colname-9.410 {
   CREATE TABLE t5 AS SELECT RAISE(abort,a);
-} {1 {RAISE() may only be used within a trigger-program}}
+} {1 {no such column: a}}
 
 # Make sure the quotation marks get removed from the column names
 # when constructing a new table from an aggregate SELECT.

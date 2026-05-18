@@ -55,5 +55,22 @@ do_execsql_test 1.5 {
   SELECT * FROM t4t
 } {สนามกีฬา 1 1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 "
+  CREATE VIRTUAL TABLE x1 USING fts5(c, 
+      tokenize=\"unicode61 categories ' \t'\");
+"
+
+do_catchsql_test 2.1 "
+  CREATE VIRTUAL TABLE x2 USING fts5(c, 
+      tokenize=\"unicode61 categories 'N*\t\tMYZ'\");
+" {1 {error in tokenizer constructor}}
+
+do_catchsql_test 2.2 "
+  CREATE VIRTUAL TABLE x2 USING fts5(c, 
+      tokenize=\"unicode61 categories 'N*\t\tXYZ'\");
+" {1 {error in tokenizer constructor}}
+
 
 finish_test

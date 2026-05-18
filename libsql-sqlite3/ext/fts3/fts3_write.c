@@ -3714,8 +3714,8 @@ struct NodeWriter {
 ** to an appendable b-tree segment.
 */
 struct IncrmergeWriter {
-  int nLeafEst;                   /* Space allocated for leaf blocks */
-  int nWork;                      /* Number of leaf pages flushed */
+  i64 nLeafEst;                   /* Space allocated for leaf blocks */
+  i64 nWork;                      /* Number of leaf pages flushed */
   sqlite3_int64 iAbsLevel;        /* Absolute level of input segments */
   int iIdx;                       /* Index of *output* segment in iAbsLevel+1 */
   sqlite3_int64 iStart;           /* Block number of first allocated block */
@@ -3956,7 +3956,7 @@ static int fts3IncrmergePush(
 **
 ** It is assumed that the buffer associated with pNode is already large
 ** enough to accommodate the new entry. The buffer associated with pPrev
-** is extended by this function if requrired.
+** is extended by this function if required.
 **
 ** If an error (i.e. OOM condition) occurs, an SQLite error code is
 ** returned. Otherwise, SQLITE_OK.
@@ -4461,7 +4461,7 @@ static int fts3IncrmergeWriter(
 ){
   int rc;                         /* Return Code */
   int i;                          /* Iterator variable */
-  int nLeafEst = 0;               /* Blocks allocated for leaf nodes */
+  i64 nLeafEst = 0;               /* Blocks allocated for leaf nodes */
   sqlite3_stmt *pLeafEst = 0;     /* SQL used to determine nLeafEst */
   sqlite3_stmt *pFirstBlock = 0;  /* SQL used to determine first block */
 
@@ -4471,7 +4471,7 @@ static int fts3IncrmergeWriter(
     sqlite3_bind_int64(pLeafEst, 1, iAbsLevel);
     sqlite3_bind_int64(pLeafEst, 2, pCsr->nSegment);
     if( SQLITE_ROW==sqlite3_step(pLeafEst) ){
-      nLeafEst = sqlite3_column_int(pLeafEst, 0);
+      nLeafEst = sqlite3_column_int64(pLeafEst, 0);
     }
     rc = sqlite3_reset(pLeafEst);
   }
@@ -5372,7 +5372,12 @@ int sqlite3Fts3IntegrityCheck(Fts3Table *p, int *pbOk){
     sqlite3_finalize(pStmt);
   }
 
-  *pbOk = (rc==SQLITE_OK && cksum1==cksum2);
+  if( rc==SQLITE_CORRUPT_VTAB ){
+    rc = SQLITE_OK;
+    *pbOk = 0;
+  }else{
+    *pbOk = (rc==SQLITE_OK && cksum1==cksum2);
+  }
   return rc;
 }
 
@@ -5614,7 +5619,7 @@ int sqlite3Fts3DeferToken(
 /*
 ** SQLite value pRowid contains the rowid of a row that may or may not be
 ** present in the FTS3 table. If it is, delete it and adjust the contents
-** of subsiduary data structures accordingly.
+** of subsidiary data structures accordingly.
 */
 static int fts3DeleteByRowid(
   Fts3Table *p, 

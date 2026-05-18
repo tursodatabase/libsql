@@ -28,11 +28,17 @@ static void usage(const char *argv0){
   fprintf(stderr, "Usage: %s FILENAME COMMAND ...\n", argv0);
   fprintf(stderr,
     "COMMANDs:\n"
-    "   apply DB           Apply the changeset to database file DB\n"
-    "   concat FILE2 OUT   Concatenate FILENAME and FILE2 into OUT\n"
-    "   dump               Show the complete content of the changeset\n"
-    "   invert OUT         Write an inverted changeset into file OUT\n"
-    "   sql                Give a pseudo-SQL rendering of the changeset\n"
+    "  apply DB [OPTIONS]   Apply the changeset to database file DB. OPTIONS:\n"
+    "                          -n|--dryrun     Test run. Don't apply changes\n"
+    "                          --enablefk      Enable FOREIGN KEY support\n"
+    "                          --nosavepoint   \\\n"
+    "                          --invert         \\___  Flags passed into\n"
+    "                          --ignorenoop     /     changeset_apply_v2()\n"
+    "                          --fknoaction    /\n"
+    "  concat FILE2 OUT     Concatenate FILENAME and FILE2 into OUT\n"
+    "  dump                 Show the complete content of the changeset\n"
+    "  invert OUT           Write an inverted changeset into file OUT\n"
+    "  sql                  Give a pseudo-SQL rendering of the changeset\n"
   );
   exit(1);
 }
@@ -161,7 +167,7 @@ static int conflictCallback(
     case SQLITE_DELETE:     zOp = "DELETE from";   break;
   }
   printf("%s conflict on %s table %s with primary key", zType, zOp, zTab);
-  for(i=0; i<nCol; i++){
+  for(i=0; i<nCol && abPK; i++){
     sqlite3_value *pVal;
     if( abPK[i]==0 ) continue;
     printf("%s", zSep);
@@ -188,21 +194,70 @@ int main(int argc, char **argv){
   */
   if( strcmp(argv[2],"apply")==0 ){
     sqlite3 *db;
-    if( argc!=4 ) usage(argv[0]);
-    rc = sqlite3_open(argv[3], &db);
+    int bDryRun = 0;
+    int bEnableFK = 0;
+    const char *zDb = 0;
+    int i;
+    int applyFlags = 0;
+    for(i=3; i<argc; i++){
+      const char *zArg = argv[i];
+      if( zArg[0]=='-' ){
+        if( zArg[1]=='-' && zArg[2]!=0 ) zArg++;
+        if( strcmp(zArg, "-n")==0 || strcmp(zArg,"-dryrun")==0 ){
+          bDryRun = 1;
+          continue;
+        }
+        if( strcmp(zArg, "-nosavepoint")==0 ){
+          applyFlags |= SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+          continue;
+        }
+        if( strcmp(zArg, "-invert")==0 ){
+          applyFlags |= SQLITE_CHANGESETAPPLY_INVERT;
+          continue;
+        }
+        if( strcmp(zArg, "-ignorenoop")==0 ){
+          applyFlags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
+          continue;
+        }
+        if( strcmp(zArg, "-fknoaction")==0 ){
+          applyFlags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
+          continue;
+        }
+        if( strcmp(zArg, "-enablefk")==0 ){
+          bEnableFK = 1;
+          continue;
+        }
+        fprintf(stderr, "unknown option: \"%s\"\n", argv[i]);
+        exit(1);
+      }else if( zDb ){
+        fprintf(stderr, "unknown argument: \"%s\"\n", argv[i]);
+        exit(1);
+      }else{
+        zDb = zArg;
+      }
+    }
+    rc = sqlite3_open(zDb, &db);
     if( rc!=SQLITE_OK ){
       fprintf(stderr, "unable to open database file \"%s\": %s\n",
-              argv[3], sqlite3_errmsg(db));
+              zDb, sqlite3_errmsg(db));
       sqlite3_close(db);
       exit(1);
     }
+    if( bEnableFK ){
+      sqlite3_exec(db, "PRAGMA foreign_keys=1;", 0, 0, 0);
+    }
     sqlite3_exec(db, "BEGIN", 0, 0, 0);
     nConflict = 0;
-    rc = sqlite3changeset_apply(db, sz, pBuf, 0, conflictCallback, 0);
+    if( applyFlags ){
+      rc = sqlite3changeset_apply_v2(db, sz, pBuf, 0, conflictCallback, 0,
+                                     0, 0, applyFlags);
+    }else{
+      rc = sqlite3changeset_apply(db, sz, pBuf, 0, conflictCallback, 0);
+    }
     if( rc ){
       fprintf(stderr, "sqlite3changeset_apply() returned %d\n", rc);
     }
-    if( nConflict ){
+    if( nConflict || bDryRun ){
       fprintf(stderr, "%d conflicts - no changes applied\n", nConflict);
       sqlite3_exec(db, "ROLLBACK", 0, 0, 0);
     }else if( rc ){

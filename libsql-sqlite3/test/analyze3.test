@@ -48,7 +48,7 @@ if {[permutation]=="prepare"} {
 #               query plan when there is no way in which replanning the
 #               query may produce a superior outcome.
 #
-# analyze3-4.*: Test that SQL or authorization callback errors occuring
+# analyze3-4.*: Test that SQL or authorization callback errors occurring
 #               within sqlite3Reprepare() are handled correctly.
 #
 # analyze3-5.*: Check that the query plans of applicable statements are

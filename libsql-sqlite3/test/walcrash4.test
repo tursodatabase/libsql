@@ -38,7 +38,7 @@ faultsim_save_and_close
 
 # The error message is different on unix and windows
 #
-if {$::tcl_platform(platform)=="windows"} {
+if {$::tcl_platform(platform) eq "windows"} {
  set msg "child killed: unknown signal"
 } else {
  set msg "child process exited abnormally"

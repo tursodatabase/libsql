@@ -60,6 +60,7 @@ struct HashElem {
   HashElem *next, *prev;       /* Next and previous elements in the table */
   void *data;                  /* Data associated with this element */
   const char *pKey;            /* Key associated with this element */
+  unsigned int h;              /* hash for pKey */
 };
 
 /*

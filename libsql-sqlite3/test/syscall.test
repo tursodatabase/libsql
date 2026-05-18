@@ -211,7 +211,7 @@ forcedelete test.db test.db2
 
 proc create_db_file {nByte} {
   set fd [open test.db w]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   puts -nonewline $fd [string range "xSQLite" 1 $nByte]
   close $fd
 }

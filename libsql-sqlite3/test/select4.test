@@ -915,7 +915,7 @@ do_execsql_test select4-14.17 {
   VALUES(1),(2),(3),(4) UNION ALL SELECT 5 LIMIT 3;
 } {1 2 3}
 
-# Ticket https://www.sqlite.org/src/info/d06a25c84454a372
+# Ticket https://sqlite.org/src/info/d06a25c84454a372
 # Incorrect answer due to two co-routines using the same registers and expecting
 # those register values to be preserved across a Yield.
 #
@@ -968,7 +968,7 @@ do_execsql_test select4-16.3 {
   ORDER BY t3.a;
 } {95 96 97 98 99}
 
-# Ticket https://www.sqlite.org/src/tktview/f7f8c97e975978d45  on 2016-04-25
+# Ticket https://sqlite.org/src/tktview/f7f8c97e975978d45  on 2016-04-25
 #
 # The where push-down optimization from 2015-06-02 is suppose to disable
 # on aggregate subqueries.  But if the subquery is a compound where the

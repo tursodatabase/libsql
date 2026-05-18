@@ -903,7 +903,7 @@ for {set i 2} {$i<=$limit} {incr i} {
          INSERT INTO t3 SELECT randstr(10,400) FROM t3 WHERE random()%10==0;
        }
     } {}
-    if {$tcl_platform(platform)=="unix"} {
+    if {$tcl_platform(platform) eq "unix"} {
       do_test avtrans-9.$i.4-$cnt {
          expr {$sqlite_sync_count>0}
       } 1

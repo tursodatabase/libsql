@@ -14,7 +14,7 @@
 ** versions of FTS5. It contains the implementation of an FTS5 auxiliary
 ** function very similar to the FTS4 function matchinfo():
 **
-**     https://www.sqlite.org/fts3.html#matchinfo
+**     https://sqlite.org/fts3.html#matchinfo
 **
 ** Known differences are that:
 **
@@ -393,17 +393,13 @@ static void fts5MatchinfoFunc(
   }
 }
 
-int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
-  int rc;                         /* Return code */
-  fts5_api *pApi;                 /* FTS5 API functions */
+/*
+** Register "matchinfo" with global API object pApi.
+*/
+int sqlite3Fts5TestRegisterMatchinfoAPI(fts5_api *pApi){
+  int rc;
 
-  /* Extract the FTS5 API pointer from the database handle. The 
-  ** fts5_api_from_db() function above is copied verbatim from the 
-  ** FTS5 documentation. Refer there for details. */
-  rc = fts5_api_from_db(db, &pApi);
-  if( rc!=SQLITE_OK ) return rc;
-
-  /* If fts5_api_from_db() returns NULL, then either FTS5 is not registered
+  /* If fts5_api_from_db() returned NULL, then either FTS5 is not registered
   ** with this database handle, or an error (OOM perhaps?) has occurred.
   **
   ** Also check that the fts5_api object is version 2 or newer.  
@@ -416,6 +412,22 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
   rc = pApi->xCreateFunction(pApi, "matchinfo", 0, fts5MatchinfoFunc, 0);
 
   return rc;
+}
+
+/*
+** Register "matchinfo" with database handle db.
+*/
+int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
+  int rc;                         /* Return code */
+  fts5_api *pApi;                 /* FTS5 API functions */
+
+  /* Extract the FTS5 API pointer from the database handle. The 
+  ** fts5_api_from_db() function above is copied verbatim from the 
+  ** FTS5 documentation. Refer there for details. */
+  rc = fts5_api_from_db(db, &pApi);
+  if( rc!=SQLITE_OK ) return rc;
+
+  return sqlite3Fts5TestRegisterMatchinfoAPI(pApi);
 }
 
 #endif /* SQLITE_ENABLE_FTS5 */

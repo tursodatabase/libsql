@@ -201,13 +201,13 @@ do_execsql_test 9.0 {
 
 do_catchsql_test 9.1 {
   SELECT rowid FROM wo1, x1, x2;
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.2 {
   SELECT rowid FROM wo1, (x1, x2);
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.3 {
   SELECT rowid FROM wo1 JOIN (x1 JOIN x2);
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.4 {
   SELECT a FROM wo1, x1, x2;
 } {1 {ambiguous column name: a}}
@@ -308,5 +308,170 @@ do_execsql_test 12.2 {
 do_execsql_test 12.3 {
   SELECT * FROM t1 LEFT JOIN t2 ON true RIGHT JOIN t3 ON d2=e3 WHERE c2 BETWEEN NULL AND a1;
 }
+
+#-------------------------------------------------------------------------
+# 2024-04-05 dbsqlfuzz b9e65e2f110df998f1306571fae7af6c01e4d92b
+reset_db
+do_execsql_test 13.1 {
+  CREATE TABLE t1(a INT AS (b), b INT);
+  INSERT INTO t1(b) VALUES(123);
+  CREATE TABLE t2(a INT, c INT);
+  SELECT a FROM t2 NATURAL RIGHT JOIN t1;
+} {123}
+do_execsql_test 13.2 {
+  CREATE INDEX t1a ON t1(a);
+  SELECT a FROM t2 NATURAL RIGHT JOIN t1;
+} {123}
+# Further tests of the same logic (indexes on expressions
+# used by RIGHT JOIN) from check-in ffe23af73fcb324d and
+# forum post https://sqlite.org/forum/forumpost/9b491e1debf0b67a.
+db null NULL
+do_execsql_test 13.3 {
+  CREATE TABLE t3(a INT, b INT);
+  CREATE UNIQUE INDEX t3x ON t3(a, a+b);
+  INSERT INTO t3(a,b) VALUES(1,2),(4,8),(16,32),(4,80),(1,-300);
+  CREATE TABLE t4(x INT, y INT);
+  INSERT INTO t4(x,y) SELECT a, b FROM t3;
+  INSERT INTO t4(x,y) VALUES(99,99);
+  SELECT a1.a, sum( a1.a+a1.b ) FROM t3 AS a1 RIGHT JOIN t4 ON a=x
+   GROUP BY a1.a ORDER BY 1;
+} {NULL NULL 1 -592 4 192 16 48}
+do_execsql_test 13.4 {
+  SELECT sum( a1.a+a1.b ) FROM t3 AS a1 RIGHT JOIN t3 ON true
+   GROUP BY a1.a ORDER BY 1;
+} {-1480 240 480}
+
+#-------------------------------------------------------------------------
+# 2025-05-30
+# https://sqlite.org/forum/forumpost/5028c785b6
+#
+reset_db
+
+do_execsql_test 14.0 {
+  CREATE TABLE t1(c0 INT);
+  CREATE TABLE t2(c0 BLOB);
+  CREATE TABLE t3(c0 BLOB);
+  CREATE TABLE t4(c4 BLOB);
+  INSERT INTO t1(c0) VALUES(0);
+  INSERT INTO t3(c0) VALUES('0');
+}
+
+do_execsql_test 14.1.1 {
+  SELECT * FROM t1 NATURAL LEFT JOIN t2 NATURAL JOIN t3;
+} {0}
+
+do_execsql_test 14.1.2 {
+  SELECT * FROM t1 NATURAL LEFT JOIN t2 NATURAL JOIN t3 FULL JOIN t4 ON true;
+} {0 {}}
+
+do_execsql_test 14.1.3 {
+  SELECT * FROM (t1 NATURAL LEFT JOIN t2 NATURAL JOIN t3) FULL JOIN t4 ON true;
+} {0 {}}
+
+do_execsql_test 14.1.4 {
+  SELECT * 
+  FROM (t1 NATURAL LEFT JOIN t2 NATURAL JOIN t3) AS qq FULL JOIN t4 ON true;
+} {0 {}}
+
+do_execsql_test 14.2.1 {
+  SELECT * FROM t3 NATURAL LEFT JOIN t2 NATURAL JOIN t1;
+} {0}
+
+do_execsql_test 14.2.2 {
+  SELECT * FROM t3 NATURAL LEFT JOIN t2 NATURAL JOIN t1 FULL JOIN t4 ON true;
+} {0 {}}
+
+do_execsql_test 14.2.3 {
+  SELECT * FROM (t3 NATURAL LEFT JOIN t2 NATURAL JOIN t1) FULL JOIN t4 ON true;
+} {0 {}}
+
+do_execsql_test 14.2.4 {
+  SELECT * 
+  FROM (t3 NATURAL LEFT JOIN t2 NATURAL JOIN t1) AS qq FULL JOIN t4 ON true;
+} {0 {}}
+
+# 2025-06-01 
+#
+reset_db
+do_execsql_test 15.1 {
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c0);
+  CREATE TABLE t2(c0);
+  INSERT INTO t0 VALUES ('1.0');
+  INSERT INTO t2(c0) VALUES (9);
+  SELECT t0.c0,t2.c0 FROM (SELECT CAST(t0.c0 as REAL) AS c0 FROM t0) as subquery NATURAL LEFT JOIN t1  NATURAL JOIN t0  RIGHT JOIN t2 ON 1;
+} {1.0 9}
+do_execsql_test 15.2 {
+  CREATE TABLE x1(x COLLATE nocase);
+  CREATE TABLE x2(x);
+  CREATE TABLE x3(x);
+  CREATE TABLE t4(y);
+  INSERT INTO x1 VALUES('ABC');
+  INSERT INTO x3 VALUES('abc');
+  SELECT lower(x), quote(y) FROM x1 LEFT JOIN x2 USING (x) JOIN x3 USING (x) FULL JOIN t4;
+} {abc NULL}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t0_a (c0 INT);
+  CREATE TABLE t0_b (c0 INT);
+
+  CREATE TABLE t2 (c0 INT);
+  INSERT INTO t2 VALUES (1);
+}
+
+do_execsql_test 16.1 {
+  SELECT * FROM t2 LEFT JOIN t0_b
+} {1 {}}
+
+do_execsql_test 16.2.1 {
+  SELECT * FROM (t0_a RIGHT JOIN (              t2 LEFT JOIN t0_b))
+} {{} 1 {}}
+do_execsql_test 16.2.2 {
+  SELECT * FROM (t0_a RIGHT JOIN (SELECT * FROM t2 LEFT JOIN t0_b))
+} {{} 1 {}}
+
+  
+do_catchsql_test 16.3.1 {
+  SELECT * FROM (t0_a RIGHT JOIN (              t2 LEFT JOIN t0_b) USING (c0));
+} {1 {ambiguous column name: c0}}
+
+do_execsql_test 16.3.2 {
+  SELECT * FROM (t0_a RIGHT JOIN (SELECT * FROM t2 LEFT JOIN t0_b) USING (c0));
+} {1 {}}
+
+do_execsql_test 16.4.0 {
+  CREATE TABLE x0(a TEXT);
+  CREATE TABLE x1(a TEXT);
+  CREATE TABLE x2(a TEXT);
+
+  INSERT INTO x1 VALUES('blue');
+  INSERT INTO x2 VALUES('red');
+}
+
+do_catchsql_test 16.4.1 {
+  SELECT * FROM x0 RIGHT JOIN (              x1, x2) USING (a)
+} {1 {ambiguous column name: a}}
+
+do_execsql_test 16.4.2 {
+  SELECT * FROM x0 RIGHT JOIN (SELECT * FROM x1, x2) USING (a)
+} {blue red}
+
+reset_db
+do_execsql_test 16.5.0 {
+  CREATE TABLE t0 (c0 INT);
+  CREATE TABLE t1 (c0 INT);
+  CREATE TABLE t2 (c0 INT);
+
+  INSERT INTO t1(c0) VALUES (NULL);
+  INSERT INTO t2 VALUES (1);
+
+  CREATE VIEW v0(c0) AS SELECT 1 AS col_0 FROM t0;
+}
+
+do_catchsql_test 16.5.2 {
+  SELECT * FROM (t0 NATURAL RIGHT JOIN (t0 FULL JOIN (v0 NATURAL FULL JOIN t2) ON TRUE)) NATURAL FULL JOIN t1;
+} {1 {ambiguous column name: c0}}
 
 finish_test

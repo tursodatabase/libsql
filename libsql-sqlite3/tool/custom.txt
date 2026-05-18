@@ -38,6 +38,7 @@ amalgamator
 amongst
 analyse
 antipenultimate
+antirez
 ap
 api
 appdef
@@ -93,6 +94,7 @@ beginthreadex
 behavior
 behavioral
 behaviors
+behaviour
 benigncnt
 bg
 bigblob
@@ -243,6 +245,7 @@ dependences
 dequote
 dequoted
 dequoting
+dereference
 dereferenced
 dereferences
 desc
@@ -476,6 +479,7 @@ iff
 ifndef
 imm
 impl
+imposter
 incr
 incrblob
 incrementing
@@ -563,6 +567,7 @@ lifecycle
 lindex
 lineno
 Linenoise
+linenoise
 linux
 lised
 lld
@@ -650,6 +655,7 @@ msec
 msg
 msgs
 msize
+msteveb
 msvc
 mtime
 mult
@@ -893,6 +899,7 @@ rowids
 Rowkey
 rownumber
 rowset
+rsync
 runtime
 rw
 rwc
@@ -1192,6 +1199,7 @@ wheretrace
 whitespace
 Willmann
 withoutrowid
+workalike
 wr
 wrapup
 writeable

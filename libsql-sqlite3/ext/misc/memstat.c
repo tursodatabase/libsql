@@ -401,8 +401,14 @@ static sqlite3_module memstatModule = {
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-int sqlite3MemstatVtabInit(sqlite3 *db){
+int sqlite3MemstatVtabInit(
+  sqlite3 *db,
+  char **NotUsed1,
+  const sqlite3_api_routines *NotUsed2
+){
   int rc = SQLITE_OK;
+  (void)NotUsed1;
+  (void)NotUsed2;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "sqlite_memstat", &memstatModule, 0);
 #endif
@@ -421,7 +427,7 @@ int sqlite3_memstat_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3MemstatVtabInit(db);
+  rc = sqlite3MemstatVtabInit(db, 0, 0);
 #endif
   return rc;
 }

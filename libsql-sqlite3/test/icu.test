@@ -149,7 +149,7 @@ ifcapable icu {
 # 2020-03-19
 # The ESCAPE clause on LIKE takes precedence over wildcards
 #
-do_execsql_test idu-6.0 {
+do_execsql_test icu-6.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(id INTEGER PRIMARY KEY, x TEXT);
   INSERT INTO t1 VALUES
@@ -163,5 +163,21 @@ do_execsql_test idu-6.0 {
 do_execsql_test icu-6.1 {
   SELECT id FROM t1 WHERE x LIKE 'abc__' ESCAPE '_';
 } {2}
+
+# 2024-04-02
+# Optional 3rd argument to icu_load_collation() that specifies
+# the "strength" of comparison.
+#
+reset_db
+do_catchsql_test icu-7.1 {
+  SELECT icu_load_collation('en_US','error','xyzzy');
+} {1 {unknown collation strength "xyzzy" - should be one of: PRIMARY SECONDARY TERTIARY DEFAULT QUARTERNARY IDENTICAL}}
+do_execsql_test icu-7.2 {
+  SELECT icu_load_collation('en_US','prim','PRIMARY'),
+         icu_load_collation('en_US','dflt','DEFAULT');
+} {{} {}}
+do_execsql_test icu-7.3 {
+  SELECT char(0x100)=='a', char(0x100)=='a' COLLATE dflt, char(0x100)=='a' COLLATE prim;
+} {0 0 1}
 
 finish_test

@@ -79,7 +79,7 @@ foreach_detail_mode $::testprefix {
 
   do_catchsql_test 4.1 {
     SELECT * FROM t1 WHERE rowid MATCH 'a'
-  } {1 {unable to use function MATCH in the requested context}}
+  } {1 {no query solution}}
 }
 
 #-------------------------------------------------------------------------

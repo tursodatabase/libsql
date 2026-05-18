@@ -12,7 +12,6 @@
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni.fts5;
-import java.nio.charset.StandardCharsets;
 import org.sqlite.jni.capi.*;
 import org.sqlite.jni.annotation.*;
 
@@ -24,7 +23,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   private final int iVersion = 2;
 
   /* Callback type for used by xQueryPhrase(). */
-  public static interface XQueryPhraseCallback {
+  public interface XQueryPhraseCallback {
     int call(Fts5ExtensionApi fapi, Fts5Context cx);
   }
 

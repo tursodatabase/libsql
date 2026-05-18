@@ -154,7 +154,21 @@ pub fn pghdr_creator(
 /// # Safety
 /// db must point to a vaid sqlite database
 pub unsafe fn set_encryption_cipher(db: *mut libsql_ffi::sqlite3, cipher_id: i32) -> i32 {
-    unsafe { sqlite3mc_config(db, "default:cipher\0".as_ptr() as _, cipher_id) as i32 }
+    let rc = unsafe { sqlite3mc_config(db, "default:cipher\0".as_ptr() as _, cipher_id) as i32 };
+    if rc != -1 {
+        return rc;
+    }
+
+    // Existing encrypted databases may reject connection-local config lookup before keying.
+    // The bundled multiple-ciphers build defaults to AES-256-CBC, so matching that default is
+    // already a successful cipher selection.
+    let default_cipher =
+        unsafe { sqlite3mc_config(std::ptr::null_mut(), "default:cipher\0".as_ptr() as _, -1) };
+    if default_cipher == cipher_id {
+        cipher_id
+    } else {
+        rc
+    }
 }
 
 #[cfg(feature = "encryption")]
@@ -388,7 +402,7 @@ impl<W: Wal> Connection<W> {
     }
 
     fn reserved_bytes(&self, reserve: Option<i32>) -> Result<i32, std::ffi::c_int> {
-        let mut reserve_value = reserve.unwrap_or(0) as std::ffi::c_int;
+        let mut reserve_value = reserve.unwrap_or(-1) as std::ffi::c_int;
         let rc = unsafe {
             libsql_ffi::sqlite3_file_control(
                 self.handle(),

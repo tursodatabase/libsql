@@ -163,14 +163,16 @@
         fiddleModule.isDead = true;
         return false;
       }
-      stdout("libSQL version", capi.sqlite3_libversion(),
-             capi.sqlite3_sourceid().substr(0,19));
-      stdout('Welcome to the "fiddle" shell.');
-      if(sqlite3.opfs){
+      wMsg('sqlite-version', {
+        lib: capi.sqlite3_libversion(),
+        srcId: capi.sqlite3_sourceid()
+      });
+      stdout("WASM pointer size: "+wasm.ptr.size);
+      stdout('Welcome to the "fiddle" shell. Tap the About button for more info.');
+      if(capi.sqlite3_vfs_find("opfs")){
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
                "  .open file:name?vfs=opfs\n\nbut note that some",
                "features (e.g. upload) do not yet work with OPFS.");
-        sqlite3.opfs.registerVfs();
       }
       stdout('\nEnter ".help" for usage hints.');
       this.exec([ // initialization commands...
@@ -187,7 +189,7 @@
     exec: function f(sql){
       if(!f._){
         if(!this.runMain()) return;
-        f._ = sqlite3.wasm.xWrap('fiddle_exec', null, ['string']);
+        f._ = sqlite3.wasm.xWrap('fiddle_exec', undefined, ['string']);
       }
       if(fiddleModule.isDead){
         stderr("shell module has exit()ed. Cannot run SQL.");
@@ -200,15 +202,21 @@
         }else if(sql){
           if(Array.isArray(sql)) sql = sql.join('');
           f._running = true;
+          //stdout("calling native exec:",sql);
           f._(sql);
+          //stdout("returned from native exec",sql);
         }
       }finally{
         delete f._running;
         wMsg('working','end');
+        wMsg('wasm-info', {
+          pointerSize: sqlite3.wasm.ptr.size,
+          heapSize: sqlite3.wasm.heap8().byteLength
+        });
       }
     },
     resetDb: function f(){
-      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_reset_db', null);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_reset_db', undefined);
       stdout("Resetting database.");
       f._();
       stdout("Reset",this.dbFilename());
@@ -216,7 +224,7 @@
     /* Interrupt can't work: this Worker is tied up working, so won't get the
        interrupt event which would be needed to perform the interrupt. */
     interrupt: function f(){
-      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_interrupt', null);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_interrupt', undefined);
       stdout("Requesting interrupt.");
       f._();
     }
@@ -231,93 +239,93 @@
     }
     //console.debug("worker: onmessage.data",ev);
     switch(ev.type){
-        case 'shellExec': Sqlite3Shell.exec(ev.data); return;
-        case 'db-reset': Sqlite3Shell.resetDb(); return;
-        case 'interrupt': Sqlite3Shell.interrupt(); return;
-          /** Triggers the export of the current db. Fires an
-              event in the form:
+      case 'shellExec': Sqlite3Shell.exec(ev.data); return;
+      case 'db-reset': Sqlite3Shell.resetDb(); return;
+      case 'interrupt': Sqlite3Shell.interrupt(); return;
+        /** Triggers the export of the current db. Fires an
+            event in the form:
 
-              {type:'db-export',
-                data:{
-                  filename: name of db,
-                  buffer: contents of the db file (Uint8Array),
-                  error: on error, a message string and no buffer property.
-                }
-              }
-          */
-        case 'db-export': {
-          const fn = Sqlite3Shell.dbFilename();
-          stdout("Exporting",fn+".");
-          const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
-          try{
-            if(!fn2) toss("DB appears to be closed.");
-            const buffer = sqlite3.capi.sqlite3_js_db_export(
-              Sqlite3Shell.dbHandle()
-            );
-            wMsg('db-export',{filename: fn2, buffer: buffer.buffer}, [buffer.buffer]);
-          }catch(e){
-            console.error("Export failed:",e);
-            /* Post a failure message so that UI elements disabled
-               during the export can be re-enabled. */
-            wMsg('db-export',{
-              filename: fn,
-              error: e.message
-            });
-          }
-          return;
-        }
-        case 'open': {
-          /* Expects: {
-               buffer: ArrayBuffer | Uint8Array,
-               filename: the filename for the db. Any dir part is
-                         stripped.
-              }
-          */
-          const opt = ev.data;
-          let buffer = opt.buffer;
-          stderr('open():',fixmeOPFS);
-          if(buffer instanceof ArrayBuffer){
-            buffer = new Uint8Array(buffer);
-          }else if(!(buffer instanceof Uint8Array)){
-            stderr("'open' expects {buffer:Uint8Array} containing an uploaded db.");
-            return;
-          }
-          const fn = (
-            opt.filename
-              ? opt.filename.split(/[/\\]/).pop().replace('"','_')
-              : ("db-"+((Math.random() * 10000000) | 0)+
-                 "-"+((Math.random() * 10000000) | 0)+".sqlite3")
+            {type:'db-export',
+            data:{
+            filename: name of db,
+            buffer: contents of the db file (Uint8Array),
+            error: on error, a message string and no buffer property.
+            }
+            }
+        */
+      case 'db-export': {
+        const fn = Sqlite3Shell.dbFilename();
+        stdout("Exporting",fn+".");
+        const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
+        try{
+          if(!fn2) toss("DB appears to be closed.");
+          const buffer = sqlite3.capi.sqlite3_js_db_export(
+            Sqlite3Shell.dbHandle()
           );
-          try {
-            /* We cannot delete the existing db file until the new one
-               is installed, which means that we risk overflowing our
-               quota (if any) by having both the previous and current
-               db briefly installed in the virtual filesystem. */
-            const fnAbs = '/'+fn;
-            const oldName = Sqlite3Shell.dbFilename();
-            if(oldName && oldName===fnAbs){
-              /* We cannot create the replacement file while the current file
-                 is opened, nor does the shell have a .close command, so we
-                 must temporarily switch to another db... */
-              Sqlite3Shell.exec('.open :memory:');
-              fiddleModule.FS.unlink(fnAbs);
-            }
-            fiddleModule.FS.createDataFile("/", fn, buffer, true, true);
-            Sqlite3Shell.exec('.open "'+fnAbs+'"');
-            if(oldName && oldName!==fnAbs){
-              try{fiddleModule.fsUnlink(oldName)}
-              catch(e){/*ignored*/}
-            }
-            stdout("Replaced DB with",fn+".");
-          }catch(e){
-            stderr("Error installing db",fn+":",e.message);
-          }
+          wMsg('db-export',{filename: fn2, buffer: buffer.buffer}, [buffer.buffer]);
+        }catch(e){
+          console.error("Export failed:",e);
+          /* Post a failure message so that UI elements disabled
+             during the export can be re-enabled. */
+          wMsg('db-export',{
+            filename: fn,
+            error: e.message
+          });
+        }
+        return;
+      }
+      case 'open': {
+        /* Expects: {
+           buffer: ArrayBuffer | Uint8Array,
+           filename: the filename for the db. Any dir part is stripped.
+           }
+        */
+        const opt = ev.data;
+        let buffer = opt.buffer;
+        stderr('open():',fixmeOPFS);
+        if(buffer instanceof ArrayBuffer){
+          buffer = new Uint8Array(buffer);
+        }else if(!(buffer instanceof Uint8Array)){
+          stderr("'open' expects {buffer:Uint8Array} containing an uploaded db.");
           return;
         }
+        buffer.set([1,1], 18)/*force db out of WAL mode*/;
+        const fn = (
+          opt.filename
+            ? opt.filename.split(/[/\\]/).pop().replace(/["'\s]/g,'_')
+            : ("db-"+((Math.random() * 10000000) | 0)+
+               "-"+((Math.random() * 10000000) | 0)+".sqlite3")
+        );
+        try {
+          /* We cannot delete the existing db file until the new one
+             is installed, which means that we risk overflowing our
+             quota (if any) by having both the previous and current
+             db briefly installed in the virtual filesystem. */
+          const fnAbs = '/'+fn;
+          const oldName = Sqlite3Shell.dbFilename();
+          if(oldName && oldName===fnAbs){
+            /* We cannot create the replacement file while the current file
+               is opened, nor does the shell have a .close command, so we
+               must temporarily switch to another db... */
+            Sqlite3Shell.exec('.open :memory:');
+            fiddleModule.FS.unlink(fnAbs);
+          }
+          fiddleModule.FS.createDataFile("/", fn, buffer, true, true);
+          Sqlite3Shell.exec('.open '+fnAbs);
+          if(oldName && oldName!==fnAbs){
+            try{fiddleModule.fsUnlink(oldName)}
+            catch(e){/*ignored*/}
+          }
+          stdout("Replaced DB with",fn+".");
+        }catch(e){
+          stderr("Error installing db",fn+":",e.message);
+        }
+        return;
+      }
     };
-    console.warn("Unknown fiddle-worker message type:",ev);
+    sqlite3.config.warn("Unknown fiddle-worker message type:",ev);
   };
-  
+
   /**
      emscripten module for use with build mode -sMODULARIZE.
   */
@@ -370,13 +378,11 @@
   */
   sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
     sqlite3 = _sqlite3;
-    console.warn("Installing sqlite3 module globally (in Worker)",
-                 "for use in the dev console.", sqlite3);
+    sqlite3.config.warn("Installing sqlite3 module globally (in Worker)",
+                        "for use in the dev console.", sqlite3);
     globalThis.sqlite3 = sqlite3;
     const dbVfs = sqlite3.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
-    fiddleModule.fsUnlink = (fn)=>{
-      return sqlite3.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
-    };
+    fiddleModule.fsUnlink = (fn)=>fiddleModule.FS.unlink(fn);
     wMsg('fiddle-ready');
   }).catch(e=>{
     console.error("Fiddle worker init failed:",e);

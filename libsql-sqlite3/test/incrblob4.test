@@ -106,4 +106,102 @@ do_test 4.4 {
 } {SQLITE_LOCKED}
 close $blob
 
+#-------------------------------------------------------------------------
+
+ifcapable preupdate {
+
+reset_db
+do_execsql_test 5.1 {
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t2 VALUES(1000, 'abcdefghijklmnopqrstuvwxyz');
+  INSERT INTO t2 VALUES(2000, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+  INSERT INTO t2 VALUES(3000, 'abcdefghijklmnopqrstuvwxyz');
+}
+
+do_test 5.2.1 {
+  execsql BEGIN
+  set blob [db incrblob t2 b 2000]
+  seek $blob 0
+  puts -nonewline $blob "hello "
+  flush $blob
+  execsql ROLLBACK
+} {}
+
+do_test 5.2.2 {
+  puts -nonewline $blob "world"
+  set rc [catch { flush $blob } msg]
+  list $rc [regsub {input/output} $msg {I/O}]
+} "1 {error flushing \"$blob\": I/O error}"
+catch { close $blob }
+
+set preupdate_count 0
+proc preupdate {args} { incr ::preupdate_count ; return {} }
+db preupdate hook preupdate
+
+set preupdate_count 0
+do_test 5.3.1 {
+  execsql BEGIN
+  set blob [db incrblob t2 b 1000]
+  seek $blob 0
+  puts -nonewline $blob "hello "
+  flush $blob
+  execsql ROLLBACK
+} {}
+
+do_test 5.3.2 {
+  puts -nonewline $blob "world"
+  set rc [catch { flush $blob } msg]
+  list $rc [regsub {input/output} $msg {I/O}]
+} "1 {error flushing \"$blob\": I/O error}"
+catch { close $blob }
+
+do_test 5.3.3 {
+  set ::preupdate_count
+} {1}
+
+set preupdate_count 0
+do_test 5.4.1 {
+  execsql BEGIN
+  set blob [db incrblob t2 b 1000]
+  seek $blob 0
+  puts -nonewline $blob "hello "
+  flush $blob
+  execsql { DELETE FROM t2 WHERE a=3000; }
+} {}
+
+do_test 5.4.2 {
+  puts -nonewline $blob "world"
+  list [catch { flush $blob } msg] $msg
+} "0 {}"
+catch { close $blob }
+catchsql { ROLLBACK }
+
+do_test 5.3.3 {
+  set ::preupdate_count
+} {3}
+
+set preupdate_count 0
+do_test 5.4.3 {
+  execsql BEGIN
+  set blob [db incrblob t2 b 2000]
+  seek $blob 0
+  puts -nonewline $blob "hello "
+  flush $blob
+  execsql { UPDATE t2 SET b='abcdefghijklmnopqrstuvwxyz' WHERE a=2000 }
+} {}
+
+do_test 5.4.4 {
+  puts -nonewline $blob "world"
+  set rc [catch { flush $blob } msg]
+  list $rc [regsub {input/output} $msg {I/O}]
+} "1 {error flushing \"$blob\": I/O error}"
+catch { close $blob }
+catchsql { ROLLBACK }
+
+do_test 5.4.5 {
+  set ::preupdate_count
+} {2}
+
+}
+
 finish_test

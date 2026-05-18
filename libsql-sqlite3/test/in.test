@@ -652,7 +652,7 @@ do_execsql_test in-14.1 {
   SELECT * FROM c1 WHERE a IN (SELECT a FROM c1) ORDER BY 1
 } {1 2 3 4}
 
-# 2019-02-20 Ticket https://www.sqlite.org/src/tktview/df46dfb631f75694fbb97033b69
+# 2019-02-20 Ticket https://sqlite.org/src/tktview/df46dfb631f75694fbb97033b69
 #
 do_execsql_test in-15.0 {
   DROP TABLE IF EXISTS t1;
@@ -736,7 +736,7 @@ do_execsql_test in-16.2 {
 } {}
 
 # 2019-06-11
-# https://www.sqlite.org/src/info/57353f8243c637c0
+# https://sqlite.org/src/info/57353f8243c637c0
 #
 do_execsql_test in-17.1 {
   SELECT 1 IN ('1');
@@ -760,7 +760,7 @@ do_execsql_test in-18.1 {
   SELECT * FROM t0 WHERE '1' IN (t0.c0);
 } {}
 
-# 2019-09-02 ticket https://www.sqlite.org/src/info/2841e99d104c6436
+# 2019-09-02 ticket https://sqlite.org/src/info/2841e99d104c6436
 # For the IN_INDEX_NOOP optimization, apply REAL affinity to the LHS
 # values prior to comparison if the RHS has REAL affinity.
 #

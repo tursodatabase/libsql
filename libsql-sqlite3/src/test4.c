@@ -12,11 +12,7 @@
 ** Code for testing the SQLite library in a multithreaded environment.
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #if SQLITE_OS_UNIX && SQLITE_THREADSAFE
 #include <stdlib.h>
 #include <string.h>
@@ -123,7 +119,7 @@ static void *test_thread_main(void *pArg){
 */
 static int parse_thread_id(Tcl_Interp *interp, const char *zArg){
   if( zArg==0 || zArg[0]==0 || zArg[1]!=0 || !isupper((unsigned char)zArg[0]) ){
-    Tcl_AppendResult(interp, "thread ID must be an upper case letter", 0);
+    Tcl_AppendResult(interp, "thread ID must be an upper case letter", NULL);
     return -1;
   }
   return zArg[0] - 'A';
@@ -147,13 +143,13 @@ static int SQLITE_TCLAPI tcl_thread_create(
 
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID FILENAME", 0);
+       " ID FILENAME", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( threadset[i].busy ){
-    Tcl_AppendResult(interp, "thread ", argv[1], " is already running", 0);
+    Tcl_AppendResult(interp, "thread ", argv[1], " is already running", NULL);
     return TCL_ERROR;
   }
   threadset[i].busy = 1;
@@ -163,7 +159,7 @@ static int SQLITE_TCLAPI tcl_thread_create(
   threadset[i].completed = 0;
   rc = pthread_create(&x, 0, test_thread_main, &threadset[i]);
   if( rc ){
-    Tcl_AppendResult(interp, "failed to create the thread", 0);
+    Tcl_AppendResult(interp, "failed to create the thread", NULL);
     sqlite3_free(threadset[i].zFilename);
     threadset[i].busy = 0;
     return TCL_ERROR;
@@ -196,13 +192,13 @@ static int SQLITE_TCLAPI tcl_thread_wait(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
@@ -240,7 +236,7 @@ static int SQLITE_TCLAPI tcl_thread_halt(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   if( argv[1][0]=='*' && argv[1][1]==0 ){
@@ -251,7 +247,7 @@ static int SQLITE_TCLAPI tcl_thread_halt(
     i = parse_thread_id(interp, argv[1]);
     if( i<0 ) return TCL_ERROR;
     if( !threadset[i].busy ){
-      Tcl_AppendResult(interp, "no such thread", 0);
+      Tcl_AppendResult(interp, "no such thread", NULL);
       return TCL_ERROR;
     }
     test_stop_thread(&threadset[i]);
@@ -276,18 +272,18 @@ static int SQLITE_TCLAPI tcl_thread_argc(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
   sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", threadset[i].argc);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return TCL_OK;
 }
 
@@ -308,22 +304,22 @@ static int SQLITE_TCLAPI tcl_thread_argv(
 
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID N", 0);
+       " ID N", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
   test_thread_wait(&threadset[i]);
   if( n<0 || n>=threadset[i].argc ){
-    Tcl_AppendResult(interp, "column number out of range", 0);
+    Tcl_AppendResult(interp, "column number out of range", NULL);
     return TCL_ERROR;
   }
-  Tcl_AppendResult(interp, threadset[i].argv[n], 0);
+  Tcl_AppendResult(interp, threadset[i].argv[n], NULL);
   return TCL_OK;
 }
 
@@ -344,22 +340,22 @@ static int SQLITE_TCLAPI tcl_thread_colname(
 
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID N", 0);
+       " ID N", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
   test_thread_wait(&threadset[i]);
   if( n<0 || n>=threadset[i].argc ){
-    Tcl_AppendResult(interp, "column number out of range", 0);
+    Tcl_AppendResult(interp, "column number out of range", NULL);
     return TCL_ERROR;
   }
-  Tcl_AppendResult(interp, threadset[i].colv[n], 0);
+  Tcl_AppendResult(interp, threadset[i].colv[n], NULL);
   return TCL_OK;
 }
 
@@ -380,18 +376,18 @@ static int SQLITE_TCLAPI tcl_thread_result(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
   zName = sqlite3ErrName(threadset[i].rc);
-  Tcl_AppendResult(interp, zName, 0);
+  Tcl_AppendResult(interp, zName, NULL);
   return TCL_OK;
 }
 
@@ -411,17 +407,17 @@ static int SQLITE_TCLAPI tcl_thread_error(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
-  Tcl_AppendResult(interp, threadset[i].zErr, 0);
+  Tcl_AppendResult(interp, threadset[i].zErr, NULL);
   return TCL_OK;
 }
 
@@ -455,13 +451,13 @@ static int SQLITE_TCLAPI tcl_thread_compile(
   int i;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID SQL", 0);
+       " ID SQL", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
@@ -509,13 +505,13 @@ static int SQLITE_TCLAPI tcl_thread_step(
   int i;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " IDL", 0);
+       " IDL", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
@@ -552,13 +548,13 @@ static int SQLITE_TCLAPI tcl_thread_finalize(
   int i;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " IDL", 0);
+       " IDL", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
@@ -585,20 +581,20 @@ static int SQLITE_TCLAPI tcl_thread_swap(
   sqlite3 *temp;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID1 ID2", 0);
+       " ID1 ID2", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
   j = parse_thread_id(interp, argv[2]);
   if( j<0 ) return TCL_ERROR;
   if( !threadset[j].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[j]);
@@ -626,13 +622,13 @@ static int SQLITE_TCLAPI tcl_thread_db_get(
   extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
@@ -657,13 +653,13 @@ static int SQLITE_TCLAPI tcl_thread_db_put(
   extern void *sqlite3TestTextToPtr(const char *);
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID DB", 0);
+       " ID DB", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);
@@ -689,13 +685,13 @@ static int SQLITE_TCLAPI tcl_thread_stmt_get(
   extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
   if( i<0 ) return TCL_ERROR;
   if( !threadset[i].busy ){
-    Tcl_AppendResult(interp, "no such thread", 0);
+    Tcl_AppendResult(interp, "no such thread", NULL);
     return TCL_ERROR;
   }
   test_thread_wait(&threadset[i]);

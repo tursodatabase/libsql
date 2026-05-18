@@ -27,11 +27,7 @@
 
 #include "sqliteInt.h"
 #include <string.h>
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 static struct Wrapped {
   sqlite3_pcache_methods2 pcache;
@@ -205,7 +201,7 @@ static int SQLITE_TCLAPI init_wrapper_install(
     }else if( strcmp(z, "pcache")==0 ){
       wrapped.pcache_fail = 1;
     }else{
-      Tcl_AppendResult(interp, "Unknown argument: \"", z, "\"");
+      Tcl_AppendResult(interp, "Unknown argument: \"", z, "\"", NULL);
       return TCL_ERROR;
     }
   }

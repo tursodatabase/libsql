@@ -111,7 +111,24 @@ void do_it_all(void){
         }
         else if(slash == ch){
           /* MARKER(("state 0 ==> 1 @ %d:%d\n", line, col)); */
-          state = S_SLASH1;
+          if( '\\'==prev ){
+            /**
+               JS regexes may contain slash-asterisks, as happened at:
+
+               https://github.com/emscripten-core/emscripten/issues/23412
+
+               Such regexes will always necessarily be preceded by a
+               backslash, though.
+
+               It is hypothetically possible for a legitimate comment
+               slash-asterisk to appear immediately before a
+               backslash, but that seems like an even rarer corner
+               case than the JS regex case.
+            */
+            fputc(ch, out);
+          }else{
+            state = S_SLASH1;
+          }
           break;
         }
         fputc(ch, out);

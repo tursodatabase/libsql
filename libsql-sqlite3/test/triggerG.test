@@ -19,7 +19,7 @@ ifcapable {!trigger} {
 }
 
 # Test cases for ticket 
-# https://www.sqlite.org/src/tktview/06796225f59c057cd120f
+# https://sqlite.org/src/tktview/06796225f59c057cd120f
 #
 # The OP_Once opcode was not working correctly for recursive triggers.
 #

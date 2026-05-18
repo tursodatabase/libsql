@@ -1,0 +1,85 @@
+#!/do/not/tclsh
+# ^^^ help out editors which guess this file's content type.
+#
+# This is the main autosetup-compatible configure script for the
+# SQLite project.
+#
+# This script and all of its dependencies must be kept compatible with
+# JimTCL, a copy of which is included in this source tree as
+# ./autosetup/jimsh0.c. The number of incompatibilities between
+# canonical TCL and JimTCL is very low and alternative formulations of
+# incompatible constructs have, so far, been easy to find.
+#
+# JimTCL: https://jim.tcl.tk
+#
+# Code-diver notes: APIs names starting with "sqlite-" are specific to
+# this project and can be found in autosetup/sqlite-config.tcl. Names
+# starting with "proj-" are project-agnostic and found in
+# autosetup/proj.tcl.
+#
+use sqlite-config
+sqlite-configure canonical {
+  proj-if-opt-truthy dev {
+    # --enable-dev needs to come early so that the downstream tests
+    # which check for the following flags use their updated state.
+    proj-opt-set all 1
+    proj-opt-set debug 1
+    proj-opt-set amalgamation 0
+    define CFLAGS [get-env CFLAGS {-O0 -g}]
+    # -------------^^^^^^^ intentionally using [get-env] instead of
+    # [proj-get-env] here because [sqlite-setup-default-cflags] uses
+    # [proj-get-env] and we want this to supercede that.
+    sqlite-munge-cflags; # straighten out -DSQLITE_ENABLE/OMIT flags
+  }
+  sqlite-handle-debug      ;# must come after --dev flag check
+  sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
+  sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
+  sqlite-check-common-system-deps
+
+  proj-define-for-opt amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
+
+  proj-define-for-opt gcov USE_GCOV "Use gcov?"
+
+  proj-define-for-opt test-status TSTRNNR_OPTS \
+    "test-runner flags:" {--status} {}
+
+  proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
+    "Use #line macros in the amalgamation:"
+
+  define AMALGAMATION_EXTRA_SRC \
+    [join [opt-val amalgamation-extra-src ""] " "]
+
+  define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
+
+  if {[set fsan [join [opt-val asan-fsanitize] ","]] in {auto ""}} {
+    set fsan address,bounds-strict
+  }
+  define CFLAGS_ASAN_FSANITIZE [proj-check-fsanitize [split $fsan ", "]]
+
+  sqlite-handle-tcl
+  sqlite-handle-emsdk
+  define OPT_WASM_RUNTIME n
+  if {
+    [proj-opt-truthy wasm-runtime]
+    || [proj-opt-truthy wasm-runtime-dynamic]
+    || [proj-opt-truthy wasm-runtime-wasmedge]
+  } {
+    sqlite-add-feature-flag -DLIBSQL_ENABLE_WASM_RUNTIME
+    if {[proj-opt-truthy wasm-runtime-dynamic]} {
+      define OPT_WASM_RUNTIME d
+    } elseif {[proj-opt-truthy wasm-runtime-wasmedge]} {
+      sqlite-add-feature-flag -DLIBSQL_ENABLE_WASM_RUNTIME_WASMEDGE
+      define OPT_WASM_RUNTIME wasmedge
+    } else {
+      define OPT_WASM_RUNTIME y
+    }
+  }
+
+  proj-if-opt-truthy static-shells {
+    proj-opt-set static-tclsqlite3 1
+    proj-opt-set static-cli-shell 1
+  }
+  proj-define-for-opt static-tclsqlite3 STATIC_TCLSQLITE3 "Statically link tclsqlite3?"
+  proj-define-for-opt static-cli-shell STATIC_CLI_SHELL "Statically link CLI shell?"
+
+}; # sqlite-configure

@@ -162,6 +162,23 @@ int sqlite3Fts3OpenTokenizer(
 static int fts3ExprParse(ParseContext *, const char *, int, Fts3Expr **, int *);
 
 /*
+** Search buffer z[], size n, for a '"' character. Or, if enable_parenthesis
+** is defined, search for '(' and ')' as well. Return the index of the first
+** such character in the buffer. If there is no such character, return -1.
+*/
+static int findBarredChar(const char *z, int n){
+  int ii;
+  for(ii=0; ii<n; ii++){
+    if( (z[ii]=='"')
+     || (sqlite3_fts3_enable_parentheses && (z[ii]=='(' || z[ii]==')'))
+    ){
+      return ii;
+    }
+  }
+  return -1;
+}
+
+/*
 ** Extract the next token from buffer z (length n) using the tokenizer
 ** and other information (column names etc.) in pParse. Create an Fts3Expr
 ** structure of type FTSQUERY_PHRASE containing a phrase consisting of this
@@ -185,16 +202,9 @@ static int getNextToken(
   int rc;
   sqlite3_tokenizer_cursor *pCursor;
   Fts3Expr *pRet = 0;
-  int i = 0;
 
-  /* Set variable i to the maximum number of bytes of input to tokenize. */
-  for(i=0; i<n; i++){
-    if( sqlite3_fts3_enable_parentheses && (z[i]=='(' || z[i]==')') ) break;
-    if( z[i]=='"' ) break;
-  }
-
-  *pnConsumed = i;
-  rc = sqlite3Fts3OpenTokenizer(pTokenizer, pParse->iLangid, z, i, &pCursor);
+  *pnConsumed = n;
+  rc = sqlite3Fts3OpenTokenizer(pTokenizer, pParse->iLangid, z, n, &pCursor);
   if( rc==SQLITE_OK ){
     const char *zToken;
     int nToken = 0, iStart = 0, iEnd = 0, iPosition = 0;
@@ -202,7 +212,18 @@ static int getNextToken(
 
     rc = pModule->xNext(pCursor, &zToken, &nToken, &iStart, &iEnd, &iPosition);
     if( rc==SQLITE_OK ){
-      nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase) + nToken;
+      /* Check that this tokenization did not gobble up any " characters. Or,
+      ** if enable_parenthesis is true, that it did not gobble up any 
+      ** open or close parenthesis characters either. If it did, call
+      ** getNextToken() again, but pass only that part of the input buffer
+      ** up to the first such character.  */
+      int iBarred = findBarredChar(z, iEnd);
+      if( iBarred>=0 ){
+        pModule->xClose(pCursor);
+        return getNextToken(pParse, iCol, z, iBarred, ppExpr, pnConsumed);
+      }
+
+      nByte = sizeof(Fts3Expr) + SZ_FTS3PHRASE(1) + nToken;
       pRet = (Fts3Expr *)sqlite3Fts3MallocZero(nByte);
       if( !pRet ){
         rc = SQLITE_NOMEM;
@@ -212,7 +233,7 @@ static int getNextToken(
         pRet->pPhrase->nToken = 1;
         pRet->pPhrase->iColumn = iCol;
         pRet->pPhrase->aToken[0].n = nToken;
-        pRet->pPhrase->aToken[0].z = (char *)&pRet->pPhrase[1];
+        pRet->pPhrase->aToken[0].z = (char*)&pRet->pPhrase->aToken[1];
         memcpy(pRet->pPhrase->aToken[0].z, zToken, nToken);
 
         if( iEnd<n && z[iEnd]=='*' ){
@@ -236,7 +257,11 @@ static int getNextToken(
 
       }
       *pnConsumed = iEnd;
-    }else if( i && rc==SQLITE_DONE ){
+    }else if( n && rc==SQLITE_DONE ){
+      int iBarred = findBarredChar(z, n);
+      if( iBarred>=0 ){
+        *pnConsumed = iBarred;
+      }
       rc = SQLITE_OK;
     }
 
@@ -283,9 +308,9 @@ static int getNextString(
   Fts3Expr *p = 0;
   sqlite3_tokenizer_cursor *pCursor = 0;
   char *zTemp = 0;
-  int nTemp = 0;
+  i64 nTemp = 0;
 
-  const int nSpace = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
+  const int nSpace = sizeof(Fts3Expr) + SZ_FTS3PHRASE(1);
   int nToken = 0;
 
   /* The final Fts3Expr data structure, including the Fts3Phrase,
@@ -319,10 +344,11 @@ static int getNextString(
         Fts3PhraseToken *pToken;
 
         p = fts3ReallocOrFree(p, nSpace + ii*sizeof(Fts3PhraseToken));
-        if( !p ) goto no_mem;
-
         zTemp = fts3ReallocOrFree(zTemp, nTemp + nByte);
-        if( !zTemp ) goto no_mem;
+        if( !zTemp || !p ){
+          rc = SQLITE_NOMEM;
+          goto getnextstring_out;
+        }
 
         assert( nToken==ii );
         pToken = &((Fts3Phrase *)(&p[1]))->aToken[ii];
@@ -337,9 +363,6 @@ static int getNextString(
         nToken = ii+1;
       }
     }
-
-    pModule->xClose(pCursor);
-    pCursor = 0;
   }
 
   if( rc==SQLITE_DONE ){
@@ -347,7 +370,10 @@ static int getNextString(
     char *zBuf = 0;
 
     p = fts3ReallocOrFree(p, nSpace + nToken*sizeof(Fts3PhraseToken) + nTemp);
-    if( !p ) goto no_mem;
+    if( !p ){
+      rc = SQLITE_NOMEM;
+      goto getnextstring_out;
+    }
     memset(p, 0, (char *)&(((Fts3Phrase *)&p[1])->aToken[0])-(char *)p);
     p->eType = FTSQUERY_PHRASE;
     p->pPhrase = (Fts3Phrase *)&p[1];
@@ -355,11 +381,9 @@ static int getNextString(
     p->pPhrase->nToken = nToken;
 
     zBuf = (char *)&p->pPhrase->aToken[nToken];
+    assert( nTemp==0 || zTemp );
     if( zTemp ){
       memcpy(zBuf, zTemp, nTemp);
-      sqlite3_free(zTemp);
-    }else{
-      assert( nTemp==0 );
     }
 
     for(jj=0; jj<p->pPhrase->nToken; jj++){
@@ -369,17 +393,17 @@ static int getNextString(
     rc = SQLITE_OK;
   }
 
-  *ppExpr = p;
-  return rc;
-no_mem:
-
+ getnextstring_out:
   if( pCursor ){
     pModule->xClose(pCursor);
   }
   sqlite3_free(zTemp);
-  sqlite3_free(p);
-  *ppExpr = 0;
-  return SQLITE_NOMEM;
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(p);
+    p = 0;
+  }
+  *ppExpr = p;
+  return rc;
 }
 
 /*
@@ -658,7 +682,7 @@ static int fts3ExprParse(
 
           /* The isRequirePhrase variable is set to true if a phrase or
           ** an expression contained in parenthesis is required. If a
-          ** binary operator (AND, OR, NOT or NEAR) is encounted when
+          ** binary operator (AND, OR, NOT or NEAR) is encountered when
           ** isRequirePhrase is set, this is a syntax error.
           */
           if( !isPhrase && isRequirePhrase ){
@@ -1240,7 +1264,6 @@ static void fts3ExprTestCommon(
   }
 
   if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM ){
-    sqlite3Fts3ExprFree(pExpr);
     sqlite3_result_error(context, "Error parsing expression", -1);
   }else if( rc==SQLITE_NOMEM || !(zBuf = exprToString(pExpr, 0)) ){
     sqlite3_result_error_nomem(context);

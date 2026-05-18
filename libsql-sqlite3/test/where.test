@@ -1388,7 +1388,7 @@ do_execsql_test where-19.0 {
   SELECT t191.rowid FROM t192, t191 WHERE (a=y OR b=y) AND x=?1;
 } {/.* sqlite_autoindex_t191_1 .* sqlite_autoindex_t191_2 .*/}
 
-# 2018-04-24 ticket [https://www.sqlite.org/src/info/4ba5abf65c5b0f9a]
+# 2018-04-24 ticket [https://sqlite.org/src/info/4ba5abf65c5b0f9a]
 # Index on expressions leads to an incorrect answer for a LEFT JOIN
 #
 do_execsql_test where-20.0 {
@@ -1422,7 +1422,7 @@ do_execsql_test where-21.1 {
   4 0 1
 }
 
-# 2018-11-05: ticket [https://www.sqlite.org/src/tktview/65eb38f6e46de8c75e188a]
+# 2018-11-05: ticket [https://sqlite.org/src/tktview/65eb38f6e46de8c75e188a]
 # Incorrect result in LEFT JOIN when STAT4 is enabled.
 #
 sqlite3 db :memory:
@@ -1435,7 +1435,7 @@ do_execsql_test where-22.1 {
 } {5}
 
 # 20190-02-22:  A bug introduced by checkin
-# https://www.sqlite.org/src/info/fa792714ae62fa98.
+# https://sqlite.org/src/info/fa792714ae62fa98.
 #
 do_execsql_test where-23.0 {
   DROP TABLE IF EXISTS t1;
@@ -1547,7 +1547,7 @@ do_catchsql_test where-25.5 {
     ON CONFLICT(c) DO UPDATE SET b=NULL
 } {1 {corrupt database}}
 
-# 2019-08-21 Ticket https://www.sqlite.org/src/info/d9f584e936c7a8d0
+# 2019-08-21 Ticket https://sqlite.org/src/info/d9f584e936c7a8d0
 #
 db close
 sqlite3 db :memory:

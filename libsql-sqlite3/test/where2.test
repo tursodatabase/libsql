@@ -767,7 +767,7 @@ do_execsql_test where2-13.1 {
   SELECT * FROM t13 WHERE (1=2 AND a=3) OR a=4;
 } {4 5}
 
-# https://www.sqlite.org/src/info/5e3c886796e5512e  (2016-03-09)
+# https://sqlite.org/src/info/5e3c886796e5512e  (2016-03-09)
 # Correlated subquery on the RHS of an IN operator 
 #
 do_execsql_test where2-14.1 {
@@ -777,5 +777,21 @@ do_execsql_test where2-14.1 {
   INSERT INTO t14b(y) VALUES(1);
   SELECT x FROM t14a WHERE x NOT IN (SELECT x FROM t14b);
 } {}
+
+# Demonstrate that the code removed by
+# https://sqlite.org/src/info/2025-09-17T17:09:07Z is in fact
+# necessary.  Answer confirmed by PostgreSQL
+#
+do_execsql_test where2-15.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b INT);
+  INSERT INTO t1 VALUES(12,34),(56,78),(90,12);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x INT UNIQUE);
+  INSERT INTO t2 VALUES(78),(12);
+  SELECT a,b,quote(x),'|'
+    FROM t1 LEFT JOIN (SELECT x FROM t2) AS s1 ON t1.b=s1.x
+   ORDER BY a,EXISTS(SELECT 1 FROM t1 LEFT JOIN (SELECT x AS y FROM t2) AS s2 ON t1.b=s2.y),x;
+} {12 34 NULL | 56 78 78 | 90 12 12 |}
 
 finish_test

@@ -202,7 +202,7 @@ do_test 4.3.1 {
   S attach t4
   execsql { CREATE TABLE t4(i PRIMARY KEY, b) }
   list [catch { S diff ixua t4 } msg] $msg
-} {1 {SQLITE_SCHEMA - table schemas do not match}}
+} {1 {SQLITE_SCHEMA - no such table: ixua.t4}}
 S delete
 do_catchsql_test 4.3.2 {
   SELECT * FROM ixua.t4;
@@ -214,7 +214,7 @@ do_test 4.4.1 {
   execsql { ANALYZE }
   execsql { DROP TABLE ixua.sqlite_stat1 }
   list [catch { S diff ixua sqlite_stat1 } msg] $msg
-} {1 {SQLITE_SCHEMA - table schemas do not match}}
+} {1 {SQLITE_SCHEMA - no such table: ixua.sqlite_stat1}}
 S delete
 do_catchsql_test 4.4.2 {
   SELECT * FROM ixua.sqlite_stat1;
@@ -229,5 +229,80 @@ S delete
 do_catchsql_test 4.5.2 {
   SELECT * FROM ixua.i8;
 } {1 {no such table: ixua.i8}}
+
+#-------------------------------------------------------------------------
+# Test that sqlite3session_diff() really does automatically attach tables,
+# as documented.
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 4.0 {
+  ATTACH 'test.db2' AS two;
+  CREATE TABLE two.t1(a PRIMARY KEY, b, c);
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+
+  INSERT INTO two.t1 VALUES(1, 2, 3), (4, 5, 6), (7, 8, 9);
+}
+
+do_test 4.1 {
+  sqlite3session S db main
+  S attach t8
+  S diff two t1
+} {}
+
+do_changeset_test 4.2 S {
+  {DELETE t1 0 X.. {i 1 i 2 i 3} {}} 
+  {DELETE t1 0 X.. {i 4 i 5 i 6} {}}
+  {DELETE t1 0 X.. {i 7 i 8 i 9} {}}
+}
+
+S delete
+
+#-------------------------------------------------------------------------
+# Test that sqlite3session_diff() really does return errors if the named
+# table or database do not exist.
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 5.0 {
+  ATTACH 'test.db2' AS two;
+  CREATE TABLE main.t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE main.t2(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE two.t1(a, b INTEGER PRIMARY KEY);
+}
+
+proc do_sessions_diff_error {tn db tbl err} {
+  sqlite3session S db main
+  set rc [catch {S diff $db $tbl} msg]
+
+  set ::sdgot [list $rc $msg]
+  do_test $tn [list set sdgot] [list {*}$err]
+
+  S delete
+}
+
+# Test that it is an error if the named db is missing.
+do_sessions_diff_error 5.1 nosuchdb t1 {
+  1 {SQLITE_SCHEMA - no such table: nosuchdb.t1}
+}
+
+# Test that it is an error if the named db is present, but named table is not.
+do_sessions_diff_error 5.2 two t2 {
+  1 {SQLITE_SCHEMA - no such table: two.t2}
+}
+
+# Test that it is an error if the tables are present, but schemas do not match.
+do_sessions_diff_error 5.3 two t1 {
+  1 {SQLITE_SCHEMA - table schemas do not match}
+}
+
+do_test 5.4 {
+  sqlite3session S db main
+
+  catch {S diff two blue}
+  catch {S diff two blue}
+
+  S delete
+} {}
 
 finish_test

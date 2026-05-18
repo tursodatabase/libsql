@@ -367,6 +367,7 @@ do_execsql_test 7.prep1 {
 }
 faultsim_save_and_close
 
+unset -nocomplain res
 set res [list]
 for {set ::i 0} {$::i < 480} {incr ::i 4} {
   lappend res "INSERT t1 0 X. {} {i $::i i $::i}"

@@ -60,7 +60,7 @@ do_test 1.5 {
 } {0}
 
 do_test 1.6 {
-  if {$::tcl_platform(platform)=="unix"} {
+  if {$::tcl_platform(os) ne "Windows NT"} {
     file attributes ./file2.txt -permissions r--r--r--
   } else {
     file attributes ./file2.txt -readonly 1
@@ -70,7 +70,7 @@ do_test 1.6 {
   }
 } {nil}
 do_test 1.7 {
-  if {$::tcl_platform(platform)=="unix"} {
+  if {$::tcl_platform(os) ne "Windows NT"} {
     file attributes ./file2.txt -permissions rw-r--r--
   } else {
     file attributes ./file2.txt -readonly 0

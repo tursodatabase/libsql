@@ -95,7 +95,7 @@ proc run_thread_tests {{print_warning 0}} {
   if {[info commands sqlthread] eq ""} {
     set zProblem "SQLite build is not threadsafe"
   }
-  if {![info exists ::tcl_platform(threaded)]} {
+  if {![tcl::pkgconfig get threaded]} {
     set zProblem "Linked against a non-threadsafe Tcl build"
   }
   if {[info exists zProblem]} {
@@ -107,4 +107,3 @@ proc run_thread_tests {{print_warning 0}} {
 }
 
 return 0
-

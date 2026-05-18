@@ -21,7 +21,7 @@ set testprefix writecrash
 do_not_use_codec
 
 
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   finish_test
   return
 }

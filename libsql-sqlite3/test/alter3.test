@@ -101,7 +101,7 @@ do_test alter3-1.7 {
 } {{CREATE TABLE t3(a, b, c VARCHAR(10, 20), UNIQUE(a, b))}}
 do_test alter3-1.99 {
   catchsql {
-    # May not exist if foriegn-keys are omitted at compile time.
+    # May not exist if foreign-keys are omitted at compile time.
     DROP TABLE t2; 
   }
   execsql {

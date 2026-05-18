@@ -65,7 +65,6 @@ proc wal_set_walhdr {filename {intlist {}}} {
 
     set fd [open $filename r+]
     fconfigure $fd -translation binary
-    fconfigure $fd -encoding binary
     seek $fd 0
     puts -nonewline $fd $blob
     close $fd
@@ -73,7 +72,6 @@ proc wal_set_walhdr {filename {intlist {}}} {
 
   set fd [open $filename]
   fconfigure $fd -translation binary
-  fconfigure $fd -encoding binary
   set blob [read $fd 24]
   close $fd
 
@@ -90,4 +88,42 @@ proc wal_fix_walindex_cksum {hdrvar} {
   lset hdr 11 $c2
 }
 
+# This command assumes that $file is the name of a database file opened
+# in wal mode using a [testvfs] VFS. It returns a list of the 12 32-bit
+# integers that make up the wal-index-header for the named file.
+#
+proc set_tvfs_hdr {file args} {
 
+  # Set $nHdr to the number of bytes in the wal-index header:
+  set nHdr 48
+  set nInt [expr {$nHdr/4}]
+
+  if {[llength $args]>2} {
+    error {wrong # args: should be "set_tvfs_hdr fileName ?val1? ?val2?"}
+  }
+
+  set blob [tvfs shm $file]
+  if {$::tcl_platform(byteOrder)=="bigEndian"} {set fmt I} {set fmt i}
+
+  if {[llength $args]} {
+    set ia [lindex $args 0]
+    set ib $ia
+    if {[llength $args]==2} {
+      set ib [lindex $args 1]
+    }
+    binary scan $blob a[expr $nHdr*2]a* dummy tail
+    set blob [binary format ${fmt}${nInt}${fmt}${nInt}a* $ia $ib $tail]
+    tvfs shm $file $blob
+  }
+
+  binary scan $blob ${fmt}${nInt} ints
+  return $ints
+}
+
+proc incr_tvfs_hdr {file idx incrval} {
+  set ints [set_tvfs_hdr $file]
+  set v [lindex $ints $idx]
+  incr v $incrval
+  lset ints $idx $v
+  set_tvfs_hdr $file $ints
+}

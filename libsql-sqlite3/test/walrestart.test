@@ -1,0 +1,88 @@
+# 2026-03-03
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing a race condition in WAL restart.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+if {$::tcl_platform(platform) ne "unix"} {
+  # This test only works on unix
+  finish_test
+  return
+} 
+set testprefix walrestart
+
+if {[permutation]=="memsubsys1"} {
+  # memsubsys1 configures a very small page-cache, which causes different
+  # numbers of frames to be written to the wal file for some transactions,
+  # which causes some of the tests in this file to fail.
+  finish_test
+  return
+}
+
+db close
+sqlite3_shutdown
+
+proc faultsim {n} { return 0 }
+sqlite3_test_control_fault_install faultsim
+
+# Populate database. Create a large wal file and checkpoint it.
+#
+reset_db
+do_execsql_test 1.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<20
+  ) 
+  INSERT INTO t1 SELECT NULL, randomblob(600) FROM s;
+  CREATE INDEX i1 ON t1(b);
+  PRAGMA wal_checkpoint;
+} {wal 0 49 49}
+do_execsql_test 1.1 {
+  UPDATE t1 SET b=randomblob(600);
+  PRAGMA wal_checkpoint;
+} {0 45 45}
+
+# We have a completely checkpointed wal file on disk. mxFrame=$large, 
+# nBackfill=$large. Do another checkpoint with [db]. This time, after [db]
+# reads mxFrame but before it reads nBackfill, write to the db such
+# that 0 < mxFrame < large.
+#
+proc faultsim {n} {
+  if {$n==660} {
+    db2 eval { UPDATE t1 SET b=randomblob(600) WHERE a<5 }
+  }
+  return 0
+}
+sqlite3 db2 test.db
+do_execsql_test 1.2 {
+  PRAGMA wal_checkpoint;
+} {0 45 0}
+
+# Now write another big update to the wal file and checkpoint it.
+#
+do_execsql_test -db db2 1.3 {
+  UPDATE t1 SET b=randomblob(600);
+}
+proc faultsim {n} { return 0 }
+do_execsql_test 1.4 {
+  PRAGMA wal_checkpoint;
+} {0 58 58}
+
+do_catchsql_test 1.5 {
+  PRAGMA integrity_check
+} {0 ok}
+
+sqlite3_test_control_fault_install
+finish_test

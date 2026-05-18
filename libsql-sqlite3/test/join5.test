@@ -106,7 +106,7 @@ do_test join5-2.12 {
   execsql {SELECT * FROM xy LEFT JOIN ab ON NULL WHERE NULL}
 } {}
 
-# Ticket https://www.sqlite.org/src/tktview/6f2222d550f5b0ee7ed37601
+# Ticket https://sqlite.org/src/tktview/6f2222d550f5b0ee7ed37601
 # Incorrect output on a LEFT JOIN.
 #
 do_execsql_test join5-3.1 {
@@ -161,7 +161,7 @@ do_execsql_test join5-3.3 {
   SELECT * FROM x1 LEFT JOIN x2 JOIN x3 WHERE x3.d = x2.b;
 } {}
 
-# Ticket https://www.sqlite.org/src/tktview/c2a19d81652f40568c770c43 on
+# Ticket https://sqlite.org/src/tktview/c2a19d81652f40568c770c43 on
 # 2015-08-20.  LEFT JOIN and the push-down optimization.
 #
 do_execsql_test join5-4.1 {
@@ -370,8 +370,12 @@ do_execsql_test 9.1 {
   ANALYZE sqlite_schema;
   INSERT INTO sqlite_stat1 VALUES('t1','t1x1','648 324 81 81 81 81 81 81 81081 81 81 81');
   ANALYZE sqlite_schema;
-  SELECT a FROM (SELECT a FROM t1 NATURAL LEFT JOIN t1) NATURAL LEFT JOIN t1 WHERE (rowid,1)<=(5,0);
-} {1}
+}
+do_catchsql_test 9.2 {
+  SELECT a FROM 
+      (SELECT a FROM t1 NATURAL LEFT JOIN t1) NATURAL LEFT JOIN t1 
+  WHERE (rowid,1)<=(5,0);
+} {0 1}
 
 # 2022-03-02 https://sqlite.org/forum/info/50a1bbe08ce4c29c
 # Bloom-filter pulldown is incompatible with skip-scan.

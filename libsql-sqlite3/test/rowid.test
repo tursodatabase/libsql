@@ -803,18 +803,31 @@ do_execsql_test 16.0 {
   INSERT INTO t3(rowid, z) VALUES(3, 3);
 }
 
-do_execsql_test 16.1 { SELECT rowid FROM t1, t2; } {1}
-do_execsql_test 16.2 { SELECT rowid FROM t1, v1; } {1}
-do_execsql_test 16.3 { SELECT rowid FROM t3, v1; } {3}
-do_execsql_test 16.4 { SELECT rowid FROM t3, (SELECT 123); } {3}
+ifcapable allow_rowid_in_view {
+  set nosuch "1 {ambiguous column name: rowid}"
+  do_execsql_test 16.1 { SELECT rowid FROM t1, t2; } {1}
+  do_catchsql_test 16.2 { SELECT rowid FROM t1, v1; } $nosuch
+  do_catchsql_test 16.3 { SELECT rowid FROM t3, v1; } $nosuch
+  do_catchsql_test 16.4 { SELECT rowid FROM t3, (SELECT 123); } $nosuch
 
-do_execsql_test 16.5 { SELECT rowid FROM t2, t1; } {1}
-do_execsql_test 16.6 { SELECT rowid FROM v1, t1; } {1}
-do_execsql_test 16.7 { SELECT rowid FROM v1, t3; } {3}
-do_execsql_test 16.8 { SELECT rowid FROM (SELECT 123), t3; } {3}
+  do_execsql_test 16.5 { SELECT rowid FROM t2, t1; } {1}
+  do_catchsql_test 16.6 { SELECT rowid FROM v1, t1; } $nosuch
+  do_catchsql_test 16.7 { SELECT rowid FROM v1, t3; } $nosuch
+  do_execsql_test 16.8 { SELECT rowid FROM (SELECT 123), t3; } {3}
+} else {
+  do_execsql_test 16.1 { SELECT rowid FROM t1, t2; } {1}
+  do_execsql_test 16.2 { SELECT rowid FROM t1, v1; } {1}
+  do_execsql_test 16.3 { SELECT rowid FROM t3, v1; } {3}
+  do_execsql_test 16.4 { SELECT rowid FROM t3, (SELECT 123); } {3}
 
-do_catchsql_test 16.5 { SELECT rowid FROM t1, t3; } {1 {no such column: rowid}}
+  do_execsql_test 16.5 { SELECT rowid FROM t2, t1; } {1}
+  do_execsql_test 16.6 { SELECT rowid FROM v1, t1; } {1}
+  do_execsql_test 16.7 { SELECT rowid FROM v1, t3; } {3}
+  do_execsql_test 16.8 { SELECT rowid FROM (SELECT 123), t3; } {3}
+}
 
-
+do_catchsql_test 16.9 { 
+  SELECT rowid FROM t1, t3; 
+} {1 {ambiguous column name: rowid}}
 
 finish_test

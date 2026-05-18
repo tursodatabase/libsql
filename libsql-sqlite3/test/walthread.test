@@ -19,6 +19,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 if {[run_thread_tests]==0} { finish_test ; return }
 ifcapable !wal             { finish_test ; return }
+set DBNAME wt-[expr {int(abs(rand()*100000000))}]-test.db
 
 set sqlite_walsummary_mmap_incr 64
 
@@ -74,7 +75,6 @@ proc lshift {lvar} {
 #   -check     SCRIPT                 Script to run after test.
 #
 proc do_thread_test {args} {
-
   set A $args
 
   set P(testname) [lshift A]
@@ -126,12 +126,12 @@ proc do_thread_test {args} {
     return
   }
 
-  puts "Running $P(testname) for $P(seconds) seconds..."
+  puts "Running $P(testname) for $P(seconds) seconds on $::DBNAME"
 
   catch { db close }
-  forcedelete test.db test.db-journal test.db-wal
+  forcedelete $::DBNAME $::DBNAME-journal $::DBNAME-wal
 
-  sqlite3 db test.db
+  sqlite3 db $::DBNAME
   eval $P(init)
   catch { db close }
 
@@ -146,7 +146,7 @@ proc do_thread_test {args} {
         set E(nthread) $count
         set E(seconds) $P(seconds)
       "
-      set program [string map [list %TEST% $prg %VARS% $vars] {
+      set program [string map [list %TEST% $prg %VARS% $vars %DB% $::DBNAME] {
 
         %VARS%
 
@@ -163,7 +163,7 @@ proc do_thread_test {args} {
 
         proc busyhandler {n} { usleep 10 ; return 0 }
 
-        sqlite3 db test.db
+        sqlite3 db %DB%
         db busy busyhandler
         db eval { SELECT randomblob($E(pid)*5) }
 
@@ -202,7 +202,7 @@ proc do_thread_test {args} {
   }
   puts $report
 
-  sqlite3 db test.db
+  sqlite3 db $::DBNAME
   set res ""
   if {[catch $P(check) msg]} { set res $msg }
   do_test $P(testname).check [list set {} $res] ""
@@ -327,16 +327,16 @@ do_thread_test2 walthread-1 -seconds $seconds(walthread-1) -init {
 # the number of write-transactions performed using a rollback journal.
 # For example, "192 w, 185 r".
 #
-if {[atomic_batch_write test.db]==0} {
+if {[atomic_batch_write $::DBNAME]==0} {
   do_thread_test2 walthread-2 -seconds $seconds(walthread-2) -init {
     execsql { CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE) }
-  } -thread RB 2 {
+  } -thread RB 2 [string map [list %DB% $::DBNAME] {
 
     db close
     set nRun 0
     set nDel 0
     while {[tt_continue]} {
-      sqlite3 db test.db
+      sqlite3 db %DB%
       db busy busyhandler
       db eval { SELECT * FROM sqlite_master }
       catch { db eval { PRAGMA journal_mode = DELETE } }
@@ -345,8 +345,8 @@ if {[atomic_batch_write test.db]==0} {
         INSERT INTO t1 VALUES(NULL, randomblob(100+$E(pid)));
       }
       incr nRun 1
-      incr nDel [file exists test.db-journal]
-      if {[file exists test.db-journal] + [file exists test.db-wal] != 1} {
+      incr nDel [file exists %DB%-journal]
+      if {[file exists %DB%-journal] + [file exists %DB%-wal] != 1} {
         error "File-system looks bad..."
       }
       db eval COMMIT
@@ -357,12 +357,12 @@ if {[atomic_batch_write test.db]==0} {
     list $nRun $nDel
     set {} "[expr $nRun-$nDel] w, $nDel r"
   
-  } -thread WAL 2 {
+  }] -thread WAL 2 [string map [list %DB% $::DBNAME] {
     db close
     set nRun 0
     set nDel 0
     while {[tt_continue]} {
-      sqlite3 db test.db
+      sqlite3 db %DB%
       db busy busyhandler
       db eval { SELECT * FROM sqlite_master }
       catch { db eval { PRAGMA journal_mode = WAL } }
@@ -371,8 +371,8 @@ if {[atomic_batch_write test.db]==0} {
         INSERT INTO t1 VALUES(NULL, randomblob(110+$E(pid)));
       }
       incr nRun 1
-      incr nDel [file exists test.db-journal]
-      if {[file exists test.db-journal] + [file exists test.db-wal] != 1} {
+      incr nDel [file exists %DB%-journal]
+      if {[file exists %DB%-journal] + [file exists %DB%-wal] != 1} {
         error "File-system looks bad..."
       }
       db eval COMMIT
@@ -381,7 +381,7 @@ if {[atomic_batch_write test.db]==0} {
       db close
     }
     set {} "[expr $nRun-$nDel] w, $nDel r"
-  }
+  }]
 }
 
 do_thread_test walthread-3 -seconds $seconds(walthread-3) -init {
@@ -510,14 +510,14 @@ do_thread_test walthread-5 -seconds $seconds(walthread-5) -init {
     COMMIT;
   }
 
-  forcecopy test.db-wal bak.db-wal
-  forcecopy test.db bak.db
+  forcecopy $::DBNAME-wal $::DBNAME-bak.db-wal
+  forcecopy $::DBNAME $::DBNAME-bak.db
   db close
 
-  forcecopy bak.db-wal test.db-wal
-  forcecopy bak.db test.db
+  forcecopy $::DBNAME-bak.db-wal $::DBNAME-wal
+  forcecopy $::DBNAME-bak.db $::DBNAME
 
-  if {[file size test.db-wal] < [log_file_size [expr 64*1024] 1024]} {
+  if {[file size $::DBNAME-wal] < [log_file_size [expr 64*1024] 1024]} {
     error "Somehow failed to create a large log file"
   }
   puts "Database with large log file recovered. Now running clients..."
@@ -525,5 +525,8 @@ do_thread_test walthread-5 -seconds $seconds(walthread-5) -init {
   db eval { SELECT count(*) FROM t1 }
 }
 unset -nocomplain seconds
+catch {db close}
+forcedelete $::DBNAME $::DBNAME-journal $::DBNAME-wal $::DBNAME-shm
+forcedelete $::DBNAME-bak.db-wal $::DBNAME-bak.db
 
 finish_test

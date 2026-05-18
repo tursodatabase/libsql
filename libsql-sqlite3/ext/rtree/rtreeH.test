@@ -99,5 +99,24 @@ do_execsql_test rtreeH-300 {
      ORDER BY id;
 } {box-48,48 box-49,48 box-48,49 xbox-49,49}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test rtreeH-300 {
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (NULL);
+  INSERT INTO t0(c0) VALUES (1);
+  CREATE VIRTUAL TABLE t1 USING rtree(c0, c1, c2, +c3 BLOB );
+  INSERT INTO t1(c2, c3, c0) VALUES (1, 2, 1);
+}
+
+do_execsql_test rtreeH-310 {
+  SELECT 1 FROM t1 WHERE t1.c3;
+} {1}
+
+do_execsql_test rtreeH-320 {
+  SELECT * FROM t0 WHERE NOT EXISTS (
+      SELECT 1 FROM t1 WHERE t1.c3 OR t0.c0 ISNULL
+  );
+} {}
 
 finish_test

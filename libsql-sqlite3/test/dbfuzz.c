@@ -368,7 +368,7 @@ static int inmemDelete(
   return SQLITE_IOERR_DELETE;
 }
 
-/* Check for the existance of a file
+/* Check for the existence of a file
 */
 static int inmemAccess(
   sqlite3_vfs *pVfs,

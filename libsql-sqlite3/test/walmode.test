@@ -47,7 +47,7 @@ do_test walmode-1.2 {
 
 if {[atomic_batch_write test.db]==0} {
   set expected_sync_count 3
-  if {$::tcl_platform(platform)!="windows"} {
+  if {$::tcl_platform(os) ne "Windows NT"} {
     ifcapable dirsync {
       incr expected_sync_count
     }

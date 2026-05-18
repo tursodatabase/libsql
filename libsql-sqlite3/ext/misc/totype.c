@@ -346,7 +346,7 @@ totype_atof_calc:
   /* store the result */
   *pResult = result;
 
-  /* return true if number and no extra non-whitespace chracters after */
+  /* return true if number and no extra non-whitespace characters after */
   return z>=zEnd && nDigits>0 && eValid && nonNum==0;
 }
 

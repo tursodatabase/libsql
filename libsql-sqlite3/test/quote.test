@@ -103,7 +103,7 @@ foreach {tn sql errname} {
   3 { CREATE INDEX i3 ON t1("w") }                   w
   4 { CREATE INDEX i4 ON t1(x) WHERE z="w" }         w
 } {
-  do_catchsql_test 2.1.$tn $sql [list 1 "no such column: $errname"]
+  do_catchsql_test 2.1.$tn $sql [list 1 "no such column: \"$errname\" - should this be a string literal in single-quotes?"]
 }
 
 do_execsql_test 2.2 {
@@ -147,19 +147,19 @@ ifcapable altertable {
       CREATE TABLE t1(a,b);
       CREATE INDEX x1 on t1("b");
       ALTER TABLE t1 DROP COLUMN b;
-    } {1 {error in index x1 after drop column: no such column: b}}
+    } {1 {error in index x1 after drop column: no such column: "b" - should this be a string literal in single-quotes?}}
   do_catchsql_test 3.1 {
     DROP TABLE t1;
     CREATE TABLE t1(a,"b");
     CREATE INDEX x1 on t1("b");
     ALTER TABLE t1 DROP COLUMN b;
-  } {1 {error in index x1 after drop column: no such column: b}}
+  } {1 {error in index x1 after drop column: no such column: "b" - should this be a string literal in single-quotes?}}
   do_catchsql_test 3.2 {
     DROP TABLE t1;
     CREATE TABLE t1(a,'b');
     CREATE INDEX x1 on t1("b");
     ALTER TABLE t1 DROP COLUMN b;
-  } {1 {error in index x1 after drop column: no such column: b}}
+  } {1 {error in index x1 after drop column: no such column: "b" - should this be a string literal in single-quotes?}}
   do_catchsql_test 3.3 {
     DROP TABLE t1;
     CREATE TABLE t1(a,"b");
@@ -172,7 +172,7 @@ ifcapable altertable {
     CREATE INDEX x1 ON t1("a"||"b");
     INSERT INTO t1 VALUES(1,2,3),(1,4,5);
     ALTER TABLE t1 DROP COLUMN b;
-  } {1 {error in index x1 after drop column: no such column: b}}
+  } {1 {error in index x1 after drop column: no such column: "b" - should this be a string literal in single-quotes?}}
   sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
   do_catchsql_test 3.5 {
     DROP TABLE t1;

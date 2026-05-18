@@ -141,4 +141,19 @@ do_execsql_test 4.16 {SELECT '   ' REGEXP '[^a-z]{2}'} {1}
 do_execsql_test 4.17 {SELECT 'abc' REGEXP '\W{1,1}'} {0}
 do_execsql_test 4.18 {SELECT 'abc' REGEXP '\W{1}'} {0}
 
+do_execsql_test 5.0 {
+  SELECT 'abc' REGEXP 'a{1,999}bc';
+} 1
+do_catchsql_test 5.1 {
+  SELECT 'abc' REGEXP 'a{1,25000}bc';
+} {1 {REGEXP pattern too big}}
+do_execsql_test 5.2 {
+  SELECT 'abc' REGEXP 'a{999}bc';
+} 0
+do_catchsql_test 5.3 {
+  SELECT 'abc' REGEXP 'a{25000}bc';
+} {1 {REGEXP pattern too big}}
+
+
+
 finish_test

@@ -1,0 +1,69 @@
+# 2014 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS5 module.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5join
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE vt USING fts5(x);
+  INSERT INTO vt VALUES('abc');
+  INSERT INTO vt VALUES('xyz');
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TIMESTAMP);
+  INSERT INTO t1 VALUES(1, 1), (2, 2);
+  CREATE INDEX i1 ON t1(b);
+}
+
+# set sqlite_where_trace [expr 0xFFF]
+
+do_eqp_test 1.1 {
+  SELECT * FROM vt, t1 WHERE vt.rowid = t1.rowid ORDER BY t1.rowid; 
+} {
+  QUERY PLAN
+  |--SCAN t1                                                                    
+  `--SCAN vt VIRTUAL TABLE INDEX 0:=
+}
+
+do_eqp_test 1.2 {
+  SELECT * FROM vt, t1 WHERE vt.rowid = t1.rowid AND b>? ORDER BY b LIMIT 10
+} {
+  QUERY PLAN
+  |--SEARCH t1 USING COVERING INDEX i1 (b>?)
+  `--SCAN vt VIRTUAL TABLE INDEX 0:=
+}
+
+do_eqp_test 1.3 {
+  SELECT * FROM vt, t1 WHERE vt.rowid = t1.rowid AND b>?
+} {
+  QUERY PLAN
+  |--SEARCH t1 USING COVERING INDEX i1 (b>?)
+  `--SCAN vt VIRTUAL TABLE INDEX 0:=
+}
+
+do_eqp_test 1.4 {
+  SELECT * FROM vt, t1 WHERE vt.rowid = t1.rowid ORDER BY b
+} {
+  QUERY PLAN
+  |--SCAN t1 USING COVERING INDEX i1
+  `--SCAN vt VIRTUAL TABLE INDEX 0:=
+}
+
+
+finish_test

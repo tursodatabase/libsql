@@ -14,11 +14,7 @@
 ** memory allocation subsystem.
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -45,8 +41,9 @@ static struct MemFault {
 ** fire on any simulated malloc() failure.
 */
 static void sqlite3Fault(void){
-  static int cnt = 0;
+  static u64 cnt = 0;
   cnt++;
+  if( cnt>((u64)1<<63) ) abort();
 }
 
 /*
@@ -56,8 +53,9 @@ static void sqlite3Fault(void){
 ** This routine only runs on the first such failure.
 */
 static void sqlite3FirstFault(void){
-  static int cnt2 = 0;
+  static u64 cnt2 = 0;
   cnt2++;
+  if( cnt2>((u64)1<<63) ) abort();
 }
 
 /*
@@ -387,7 +385,8 @@ static int SQLITE_TCLAPI test_memset(
   Tcl_Obj *CONST objv[]
 ){
   void *p;
-  int size, n, i;
+  int size, i;
+  Tcl_Size n;
   char *zHex;
   char *zOut;
   char zBin[100];
@@ -409,7 +408,7 @@ static int SQLITE_TCLAPI test_memset(
   }
   zHex = Tcl_GetStringFromObj(objv[3], &n);
   if( n>sizeof(zBin)*2 ) n = sizeof(zBin)*2;
-  n = sqlite3TestHexToBin(zHex, n, zBin);
+  n = sqlite3TestHexToBin(zHex, (int)n, zBin);
   if( n==0 ){
     Tcl_AppendResult(interp, "no data", (char*)0);
     return TCL_ERROR;
@@ -624,7 +623,7 @@ static int SQLITE_TCLAPI test_memdebug_fail(
   if( Tcl_GetIntFromObj(interp, objv[1], &iFail) ) return TCL_ERROR;
 
   for(ii=2; ii<objc; ii+=2){
-    int nOption;
+    Tcl_Size nOption;
     char *zOption = Tcl_GetStringFromObj(objv[ii], &nOption);
     char *zErr = 0;
 
@@ -647,7 +646,7 @@ static int SQLITE_TCLAPI test_memdebug_fail(
     }
 
     if( zErr ){
-      Tcl_AppendResult(interp, zErr, zOption, 0);
+      Tcl_AppendResult(interp, zErr, zOption, NULL);
       return TCL_ERROR;
     }
   }
@@ -1369,6 +1368,7 @@ static int SQLITE_TCLAPI test_db_status(
     { "DEFERRED_FKS",        SQLITE_DBSTATUS_DEFERRED_FKS        },
     { "CACHE_USED_SHARED",   SQLITE_DBSTATUS_CACHE_USED_SHARED   },
     { "CACHE_SPILL",         SQLITE_DBSTATUS_CACHE_SPILL         },
+    { "TEMPBUF_SPILL",       SQLITE_DBSTATUS_TEMPBUF_SPILL       },
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){

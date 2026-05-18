@@ -16,7 +16,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5ab
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -293,6 +293,39 @@ do_execsql_test 7.0 {
   INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
   INSERT INTO x1 VALUES($doc);
 }
+
+#-------------------------------------------------------------------------
+# Forum post: https://sqlite.org/forum/forumpost/ea4d8c9acb
+#
+reset_db
+do_execsql_test 8.0 {
+  PRAGMA encoding = 'UTF-16le';
+  CREATE VIRTUAL TABLE vt0 USING fts5(c0);
+}
+set v [db one {SELECT x'2a12'}]
+do_execsql_test 8.1 {
+  INSERT INTO vt0 VALUES ($v);
+}
+do_execsql_test 8.2 {
+  SELECT quote(c0) FROM vt0
+} {X'2A12'}
+do_execsql_test 8.3 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+} {}
+reset_db
+do_execsql_test 8.4 {
+  PRAGMA encoding = 'UTF-16le';
+  CREATE VIRTUAL TABLE vt0 USING fts5(c0);
+}
+do_execsql_test 8.5 {
+  INSERT INTO vt0 VALUES (x'2a12');
+}
+do_execsql_test 8.6 {
+  SELECT quote(c0) FROM vt0
+} {X'2A12'}
+do_execsql_test 8.7 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+} {}
 
 } ;# foreach_detail_mode...
 

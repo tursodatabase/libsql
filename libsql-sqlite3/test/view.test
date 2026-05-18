@@ -801,4 +801,27 @@ ifcapable schema_pragmas {
   } { 0 a INT 0 {} 0 1 b BLOB 0 {} 0 }
 }
 
+#-----------------------------------------------------------------------
+# 2024-04-25   Trying to make type information on compound subqueries
+# more predictable and rational.
+#
+reset_db
+do_execsql_test view-31.1 {
+  CREATE TABLE x2(b TEXT);
+  CREATE TABLE x1(a TEXT);
+  INSERT INTO x1 VALUES('123');
+  -- Two queries get the same result even though the order of terms
+  -- in the CTE is reversed
+  WITH c(x) AS ( SELECT b FROM x2 UNION SELECT 123 )
+    SELECT count(*) FROM x1 WHERE a IN c; 
+  WITH c(x) AS ( SELECT 123 UNION SELECT b FROM x2 )
+    SELECT count(*) FROM x1 WHERE a IN c;
+} {0 0}
+do_execsql_test view-31.2 {
+  CREATE TABLE t3(a INTEGER, b TEXT);
+  INSERT INTO t3 VALUES(123, 123);
+  WITH s AS ( VALUES(123), (456) ) SELECT * FROM t3 WHERE b IN s;
+} {123 123}
+
+
 finish_test

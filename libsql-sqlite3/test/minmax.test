@@ -633,7 +633,7 @@ do_test_13_noopt 13.7 {
   SELECT min(c), count(c) FROM t1 WHERE a='a';
 } {1 5}
 
-# 2016-07-26.  https://www.sqlite.org/src/info/a0bac8b3c3d1bb75
+# 2016-07-26.  https://sqlite.org/src/info/a0bac8b3c3d1bb75
 # Incorrect result on a min() query after a CREATE INDEX.
 #
 do_execsql_test 14.1 {

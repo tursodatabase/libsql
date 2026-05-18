@@ -83,11 +83,19 @@ int main(int argc, char const * const * argv){
     printf("{\"libVersion\": \"%s\", "
            "\"libVersionNumber\": %d, "
            "\"sourceId\": \"%s\","
-           "\"downloadVersion\": %d}"/*missing newline is intentional*/,
+           "\"downloadVersion\": %d,"
+           "\"scm\":{ "
+           "\"sha3-256\": \"%s\","
+           "\"branch\": \"" SQLITE_SCM_BRANCH "\","
+           "\"tags\": \"" SQLITE_SCM_TAGS "\","
+           "\"datetime\": \"" SQLITE_SCM_DATETIME "\""
+           "}"
+           "}"/*missing newline is intentional*/,
            SQLITE_VERSION,
            SQLITE_VERSION_NUMBER,
            SQLITE_SOURCE_ID,
-           dlVersion);
+           dlVersion,
+           SQLITE_SOURCE_ID+20);
   }else{
     if(fQuote) printf("%c", '"');
     if( fVersion ){

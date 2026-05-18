@@ -170,9 +170,10 @@
 
     const urlParams = new URL(self.location.href).searchParams;
     const W = new Worker(
-        "speedtest1-worker.js?sqlite3.dir=jswasm"+
-            (urlParams.has('opfs-verbose') ? '&opfs-verbose' : '')+
-            (urlParams.has('opfs-disable') ? '&opfs-disable' : '')
+      "speedtest1-worker.js?sqlite3.dir=jswasm"+
+        '&sqlite3.debugModule'+
+        (urlParams.has('opfs-verbose') ? '&opfs-verbose' : '')+
+        (urlParams.has('opfs-disable') ? '&opfs-disable' : '')
     );
     const mPost = function(msgType,payload){
         W.postMessage({type: msgType, data: payload});
@@ -279,7 +280,7 @@
             opt.innerHTML = lbl;
             opt.value = f;
             if(preselectedFlags.indexOf(f) >= 0) opt.selected = true;
-        });    
+        });
         const cbReverseLog = E('#cb-reverse-log-order');
         const lblReverseLog = E('#lbl-reverse-log-order');
         if(cbReverseLog.checked){

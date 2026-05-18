@@ -17,14 +17,7 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU)
 
 #include "sqlite3rbu.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 #include <assert.h>
 #include <string.h>
 
@@ -146,7 +139,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
       }else{
         Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
         if( zErrmsg ){
-          Tcl_AppendResult(interp, " - ", zErrmsg, 0);
+          Tcl_AppendResult(interp, " - ", zErrmsg, NULL);
           sqlite3_free(zErrmsg);
         }
         ret = TCL_ERROR;
@@ -406,7 +399,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_internal_test(
 
   db = sqlite3rbu_db(0, 0);
   if( db!=0 ){
-    Tcl_AppendResult(interp, "sqlite3rbu_db(0, 0)!=0", 0);
+    Tcl_AppendResult(interp, "sqlite3rbu_db(0, 0)!=0", NULL);
     return TCL_ERROR;
   }
 
@@ -432,11 +425,7 @@ int SqliteRbu_Init(Tcl_Interp *interp){
 }
 
 #else
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 int SqliteRbu_Init(Tcl_Interp *interp){ return TCL_OK; }
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU) */
 #endif /* defined(SQLITE_TEST) */

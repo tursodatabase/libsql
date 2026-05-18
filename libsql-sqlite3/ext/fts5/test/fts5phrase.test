@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5phrase
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -93,15 +93,21 @@ foreach {tn cols tokens} {
   10 {b}      "i e"
   11 {a}      "i e"
 } {
-  set fts   "{$cols}:[join $tokens +]"
   set where [list]
   foreach c $cols { lappend where "pmatch($c, '$tokens')" }
   set where [join $where " OR "]
 
-  set res [db eval "SELECT rowid FROM t3 WHERE $where"]
-  do_execsql_test "1.$tn.$fts->([llength $res] rows)" { 
-    SELECT rowid FROM t3($fts) 
-  } $res
+  foreach fts [list \
+      "{$cols}:[join $tokens +]"       \
+      "{$cols}:NEAR([join $tokens +])" \
+      "{$cols}:NEAR([join $tokens +],1)" \
+      "{$cols}:NEAR([join $tokens +],111)" \
+  ] {
+    set res [db eval "SELECT rowid FROM t3 WHERE $where"]
+    do_execsql_test "1.$tn.$fts->([llength $res] rows)" { 
+      SELECT rowid FROM t3($fts) 
+    } $res
+  }
 }
 
 do_execsql_test 2.0 {

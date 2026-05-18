@@ -15,11 +15,7 @@
 ** as there is not much point in binding to Tcl.
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -60,7 +56,7 @@ static int SQLITE_TCLAPI c_collation_test(
 
 error_out:
   Tcl_ResetResult(interp);
-  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, 0);
+  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, NULL);
   return TCL_ERROR;
 }
 
@@ -100,7 +96,7 @@ static int SQLITE_TCLAPI c_realloc_test(
 
 error_out:
   Tcl_ResetResult(interp);
-  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, 0);
+  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, NULL);
   return TCL_ERROR;
 }
 
@@ -178,7 +174,7 @@ static int SQLITE_TCLAPI c_misuse_test(
 
 error_out:
   Tcl_ResetResult(interp);
-  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, 0);
+  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, NULL);
   return TCL_ERROR;
 }
 

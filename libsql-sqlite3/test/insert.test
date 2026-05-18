@@ -413,7 +413,7 @@ do_execsql_test insert-11.1 {
 
 
 # More columns of input than there are columns in the table.
-# Ticket http://www.sqlite.org/src/info/e9654505cfda9361
+# Ticket http://sqlite.org/src/info/e9654505cfda9361
 #
 do_execsql_test insert-12.1 {
   CREATE TABLE t12a(a,b,c,d,e,f,g);
@@ -437,7 +437,7 @@ do_execsql_test insert-12.3 {
 # 2018-06-11.  From OSSFuzz.  A column cache malfunction in
 # the constraint checking on an index of expressions causes
 # an assertion fault in a REPLACE.  Ticket
-# https://www.sqlite.org/src/info/c2432ef9089ee73b
+# https://sqlite.org/src/info/c2432ef9089ee73b
 #
 do_execsql_test insert-13.1 {
   DROP TABLE IF EXISTS t13;
@@ -475,7 +475,7 @@ do_execsql_test insert-15.1 {
 } {4 33000}
 
 # 2019-10-16
-# ticket https://www.sqlite.org/src/info/a8a4847a2d96f5de
+# ticket https://sqlite.org/src/info/a8a4847a2d96f5de
 # On a REPLACE INTO, if an AFTER trigger adds back the conflicting
 # row, you can end up with the wrong number of rows in an index.
 #

@@ -146,11 +146,18 @@ struct VdbeCursor {
 #endif
   VdbeTxtBlbCache *pCache; /* Cache of large TEXT or BLOB values */
 
-  /* 2*nField extra array elements allocated for aType[], beyond the one
-  ** static element declared in the structure.  nField total array slots for
-  ** aType[] and nField+1 array slots for aOffset[] */
-  u32 aType[1];           /* Type values record decode.  MUST BE LAST */
+  /* Space is allocated for aType to hold at least 2*nField+1 entries:
+  ** nField slots for aType[] and nField+1 array slots for aOffset[] */
+  u32 aType[FLEXARRAY];    /* Type values record decode.  MUST BE LAST */
 };
+
+/*
+** The size (in bytes) of a VdbeCursor object that has an nField value of N
+** or less.  The value of SZ_VDBECURSOR(n) is guaranteed to be a multiple
+** of 8.
+*/
+#define SZ_VDBECURSOR(N) \
+    (ROUND8(offsetof(VdbeCursor,aType)) + ((N)+1)*sizeof(u64))
 
 /* Return true if P is a null-only cursor
 */
@@ -257,6 +264,7 @@ struct sqlite3_value {
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
   u16 mScopyFlags;    /* flags value immediately after the shallow copy */
+  u8  bScopy;         /* The pScopyFrom of some other Mem *might* point here */
 #endif
 };
 
@@ -293,7 +301,7 @@ struct sqlite3_value {
 **                             MEM_Int, MEM_Real, and MEM_IntReal.
 **
 **  *  MEM_Blob|MEM_Zero       A blob in Mem.z of length Mem.n plus
-**                             MEM.u.i extra 0x00 bytes at the end.
+**                             Mem.u.nZero extra 0x00 bytes at the end.
 **
 **  *  MEM_Int                 Integer stored in Mem.u.i.
 **
@@ -406,14 +414,17 @@ struct sqlite3_context {
   int isError;            /* Error code returned by the function. */
   u8 enc;                 /* Encoding to use for results */
   u8 skipFlag;            /* Skip accumulator loading if true */
-  u8 argc;                /* Number of arguments */
-  sqlite3_value *argv[1]; /* Argument set */
+  u16 argc;               /* Number of arguments */
+  sqlite3_value *argv[FLEXARRAY]; /* Argument set */
 };
 
-/* A bitfield type for use inside of structures.  Always follow with :N where
-** N is the number of bits.
+/*
+** The size (in bytes) of an sqlite3_context object that holds N
+** argv[] arguments.
 */
-typedef unsigned bft;  /* Bit Field Type */
+#define SZ_CONTEXT(N)  \
+   (offsetof(sqlite3_context,argv)+(N)*sizeof(sqlite3_value*))
+
 
 /* The ScanStatus object holds a single value for the
 ** sqlite3_stmt_scanstatus() interface.
@@ -474,7 +485,7 @@ struct Vdbe {
   i64 nStmtDefCons;       /* Number of def. constraints when stmt started */
   i64 nStmtDefImmCons;    /* Number of def. imm constraints when stmt started */
   Mem *aMem;              /* The memory locations */
-  Mem **apArg;            /* Arguments to currently executing user function */
+  Mem **apArg;            /* Arguments xUpdate and xFilter vtab methods */
   VdbeCursor **apCsr;     /* One element of this array for each open cursor */
   Mem *aVar;              /* Values for the OP_Variable opcode. */
 
@@ -494,6 +505,7 @@ struct Vdbe {
 #ifdef SQLITE_DEBUG
   int rcApp;              /* errcode set by sqlite3_result_error_code() */
   u32 nWrite;             /* Number of write operations that have occurred */
+  int napArg;             /* Size of the apArg[] array */
 #endif
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u16 nResAlloc;          /* Column slots allocated to aColName[] */
@@ -550,16 +562,21 @@ struct PreUpdate {
   VdbeCursor *pCsr;               /* Cursor to read old values from */
   int op;                         /* One of SQLITE_INSERT, UPDATE, DELETE */
   u8 *aRecord;                    /* old.* database record */
-  KeyInfo keyinfo;
+  KeyInfo *pKeyinfo;              /* Key information */
   UnpackedRecord *pUnpacked;      /* Unpacked version of aRecord[] */
   UnpackedRecord *pNewUnpacked;   /* Unpacked version of new.* record */
   int iNewReg;                    /* Register for new.* values */
   int iBlobWrite;                 /* Value returned by preupdate_blobwrite() */
   i64 iKey1;                      /* First key value passed to hook */
   i64 iKey2;                      /* Second key value passed to hook */
+  Mem oldipk;                     /* Memory cell holding "old" IPK value */
   Mem *aNew;                      /* Array of new.* values */
   Table *pTab;                    /* Schema object being updated */
   Index *pPk;                     /* PK index if pTab is WITHOUT ROWID */
+  sqlite3_value **apDflt;         /* Array of default values, if required */
+  struct {
+    u8 keyinfoSpace[SZ_KEYINFO_0];  /* Space to hold pKeyinfo[0] content */
+  } uKey;
 };
 
 /*
@@ -723,9 +740,11 @@ int sqlite3VdbeCheckMemInvariants(Mem*);
 #endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-int sqlite3VdbeCheckFk(Vdbe *, int);
+int sqlite3VdbeCheckFkImmediate(Vdbe*);
+int sqlite3VdbeCheckFkDeferred(Vdbe*);
 #else
-# define sqlite3VdbeCheckFk(p,i) 0
+# define sqlite3VdbeCheckFkImmediate(p) 0
+# define sqlite3VdbeCheckFkDeferred(p) 0
 #endif
 
 #ifdef SQLITE_DEBUG

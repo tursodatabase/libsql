@@ -174,6 +174,150 @@ do_test 3.5 {
   {INSERT sqlite_stat1 CONFLICT {t xyz t sqlite_autoindex_xyz_1 t {100 1 1}} {t xyz t sqlite_autoindex_xyz_1 t {200 1 1}}} 
 }]
 
+#-------------------------------------------------------------------------
+# Test that the conflict-handler is invoked for conflicts caused by
+# DELETE ops even if SQLITE_CHANGESETAPPLY_IGNORENOOP is specified.
+#
+set ::conflict_list [list]
+proc xConflict {args} {
+  lappend ::conflict_list $args
+  return "OMIT"
+}
+
+foreach {tn wo} {
+  1 ""
+  2 " WITHOUT ROWID "
+} {
+  reset_db
+  catch { db2 close }
+  forcedelete test.db2
+  do_execsql_test 4.$tn.0 "
+    CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c) $wo;
+    INSERT INTO x1 VALUES(1, 'one', 'i');
+    INSERT INTO x1 VALUES(2, 'two', 'ii');
+    INSERT INTO x1 VALUES(3, 'three', 'iii');
+    VACUUM INTO 'test.db2';
+  "
+  
+  set C [changeset_from_sql {
+    DELETE FROM x1 WHERE a=2;
+  }]
+  
+  sqlite3 db2 test.db2
+  do_execsql_test -db db2 4.$tn.1 {
+    UPDATE x1 SET b='four hundred' WHERE a=2;
+  }
+  
+  do_test 4.$tn.2.1 {
+    set ::conflict_list [list]
+    sqlite3changeset_apply_v2 db2 $C xConflict
+    set ::conflict_list
+  } [list {*}{
+    {DELETE x1 DATA {i 2 t two t ii} {i 2 t {four hundred} t ii}}
+  }]
+  
+  do_test 4.$tn.2.2 {
+    set ::conflict_list [list]
+    sqlite3changeset_apply_v2 -ignorenoop db2 $C xConflict
+    set ::conflict_list
+  } [list {*}{
+    {DELETE x1 DATA {i 2 t two t ii} {i 2 t {four hundred} t ii}}
+  }]
+}
+
+foreach {tn wo} {
+  1 ""
+  2 " WITHOUT ROWID "
+} {
+  reset_db
+  catch { db2 close }
+  forcedelete test.db2
+  do_execsql_test 5.$tn.0 "
+    PRAGMA foreign_keys = ON;
+    CREATE TABLE p1(a INTEGER PRIMARY KEY, b, c) $wo;
+    CREATE TABLE c1(a INTEGER PRIMARY KEY REFERENCES p1, b);
+    INSERT INTO p1 VALUES(1, 'one', 'i');
+    INSERT INTO p1 VALUES(2, 'two', 'ii');
+    INSERT INTO p1 VALUES(3, 'three', 'iii');
+    VACUUM INTO 'test.db2';
+  "
+  
+  set C [changeset_from_sql {
+    DELETE FROM p1 WHERE a=2;
+  }]
+  
+  sqlite3 db2 test.db2
+  do_execsql_test -db db2 5.$tn.1 {
+    PRAGMA foreign_keys = ON;
+    INSERT INTO c1 VALUES(2, 'xyz');
+  }
+
+  do_test 5.$tn.2.1 {
+    set ::conflict_list [list]
+    sqlite3changeset_apply_v2 db2 $C xConflict
+    set ::conflict_list
+  } [list {*}{
+    {FOREIGN_KEY 1}
+  }]
+
+  # Reinsert the row deleted by test case 5.$tn.2.1
+  execsql { INSERT INTO p1 VALUES(2, 'two', 'ii') } db2
+
+  do_test 5.$tn.2.2 {
+    set ::conflict_list [list]
+    sqlite3changeset_apply_v2 -ignorenoop db2 $C xConflict
+    set ::conflict_list
+  } [list {*}{
+    {FOREIGN_KEY 1}
+  }]
+}
+
+foreach {tn wo} {
+  1 ""
+  2 " WITHOUT ROWID "
+} {
+  reset_db
+  catch { db2 close }
+  forcedelete test.db2
+  do_execsql_test 6.$tn.0 "
+    CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c) $wo;
+    CREATE TABLE x2(x UNIQUE);
+
+    INSERT INTO x1 VALUES(1, 'one', 'i');
+    INSERT INTO x1 VALUES(2, 'two', 'ii');
+    INSERT INTO x1 VALUES(3, 'three', 'iii');
+    VACUUM INTO 'test.db2';
+  "
+  
+  set C [changeset_from_sql {
+    DELETE FROM x1 WHERE a=2;
+  }]
+  
+  sqlite3 db2 test.db2
+  do_execsql_test -db db2 6.$tn.1 {
+    INSERT INTO x2 VALUES(0);
+    CREATE TRIGGER tr1 AFTER DELETE ON x1 BEGIN
+      INSERT INTO x2 VALUES(0);
+    END;
+  }
+
+  do_test 6.$tn.2.1 {
+    set ::conflict_list [list]
+    sqlite3changeset_apply_v2 db2 $C xConflict
+    set ::conflict_list
+  } [list {*}{
+    {DELETE x1 CONSTRAINT {i 2 t two t ii}}
+  }]
+
+breakpoint
+  do_test 6.$tn.2.2 {
+    set ::conflict_list [list]
+    sqlite3changeset_apply_v2 -ignorenoop db2 $C xConflict
+    set ::conflict_list
+  } [list {*}{
+    {DELETE x1 CONSTRAINT {i 2 t two t ii}}
+  }]
+}
 
 
 finish_test

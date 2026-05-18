@@ -70,7 +70,7 @@ do_test shared3-2.5 {
 # test case shared3-2.3 above). The goal of the following tests is to
 # ensure that the cache-size really is 10 pages.
 #
-#if {$::tcl_platform(platform)=="unix"} {
+#if {$::tcl_platform(platform) eq "unix"} {
 #  set alternative_name ./test.db
 #} else {
 #  set alternative_name TEST.DB

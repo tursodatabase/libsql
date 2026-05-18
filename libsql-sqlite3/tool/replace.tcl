@@ -4,8 +4,8 @@
 # only lines successfully modified with a regular
 # expression.
 #
-fconfigure stdout -translation binary -encoding binary
-fconfigure stderr -translation binary -encoding binary
+fconfigure stdout -translation binary
+fconfigure stderr -translation binary
 set mode [string tolower [lindex $argv 0]]
 set from [lindex $argv 1]
 set to [lindex $argv 2]

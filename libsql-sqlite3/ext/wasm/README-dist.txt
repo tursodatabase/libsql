@@ -31,16 +31,20 @@ build:
   use of and is not demonstrated here.
 
 Browsers will not serve WASM files from file:// URLs, so the test and
-demonstration apps require a web server and that server must include
-the following headers in its response when serving the files:
+demonstration apps require a web server and that server must, for the
+OPFS[^1]-related features, include the following headers in its response
+when serving the files:
 
     Cross-Origin-Opener-Policy: same-origin
     Cross-Origin-Embedder-Policy: require-corp
 
-The core library will function without those headers but certain
-features, most notably OPFS storage, will not be available.
+Most functionality will work without those headers but the OPFS[^1]
+storage capability will not be available without them.
 
 One simple way to get the demo apps up and running on Unix-style
 systems is to install althttpd (https://sqlite.org/althttpd) and run:
 
     althttpd --enable-sab --page index.html
+
+
+[^1]: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system

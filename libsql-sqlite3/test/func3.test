@@ -154,7 +154,7 @@ do_test func3-5.39 {
 } [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
 
 # Unlikely() does not preserve the affinity of X.
-# ticket https://www.sqlite.org/src/tktview/0c620df60b
+# ticket https://sqlite.org/src/tktview/0c620df60b
 #
 do_execsql_test func3-5.40 {
   SELECT likely(CAST(1 AS INT))=='1';

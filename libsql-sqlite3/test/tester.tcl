@@ -310,66 +310,6 @@ proc do_delete_file {force args} {
   }
 }
 
-if {$::tcl_platform(platform) eq "windows"} {
-  proc do_remove_win32_dir {args} {
-    set nRetry [getFileRetries]     ;# Maximum number of retries.
-    set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
-
-    foreach dirName $args {
-      # On windows, sometimes even a [remove_win32_dir] can fail just after
-      # a directory is emptied. The cause is usually "tag-alongs" - programs
-      # like anti-virus software, automatic backup tools and various explorer
-      # extensions that keep a file open a little longer than we expect,
-      # causing the delete to fail.
-      #
-      # The solution is to wait a short amount of time before retrying the
-      # removal.
-      #
-      if {$nRetry > 0} {
-        for {set i 0} {$i < $nRetry} {incr i} {
-          set rc [catch {
-            remove_win32_dir $dirName
-          } msg]
-          if {$rc == 0} break
-          if {$nDelay > 0} { after $nDelay }
-        }
-        if {$rc} { error $msg }
-      } else {
-        remove_win32_dir $dirName
-      }
-    }
-  }
-
-  proc do_delete_win32_file {args} {
-    set nRetry [getFileRetries]     ;# Maximum number of retries.
-    set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
-
-    foreach fileName $args {
-      # On windows, sometimes even a [delete_win32_file] can fail just after
-      # a file is closed. The cause is usually "tag-alongs" - programs like
-      # anti-virus software, automatic backup tools and various explorer
-      # extensions that keep a file open a little longer than we expect,
-      # causing the delete to fail.
-      #
-      # The solution is to wait a short amount of time before retrying the
-      # delete.
-      #
-      if {$nRetry > 0} {
-        for {set i 0} {$i < $nRetry} {incr i} {
-          set rc [catch {
-            delete_win32_file $fileName
-          } msg]
-          if {$rc == 0} break
-          if {$nDelay > 0} { after $nDelay }
-        }
-        if {$rc} { error $msg }
-      } else {
-        delete_win32_file $fileName
-      }
-    }
-  }
-}
-
 proc execpresql {handle args} {
   trace remove execution $handle enter [list execpresql $handle]
   if {[info exists ::G(perm:presql)]} {
@@ -847,6 +787,9 @@ proc do_test {name cmd expected} {
         }
       } else {
         set ok [expr {[string compare $result $expected]==0}]
+        if {!$ok} {
+          set ok [fpnum_compare $result $expected]
+        }
       }
       if {!$ok} {
         # if {![info exists ::testprefix] || $::testprefix eq ""} {
@@ -864,6 +807,15 @@ proc do_test {name cmd expected} {
     omit_test $name "pattern mismatch" 0
   }
   flush stdout
+}
+
+# Like do_test except the test is not run in a slave interpreter
+# on Windows because of issues with ANSI and UTF8 I/O on Win11.
+#
+proc do_test_with_ansi_output {name cmd expected} {
+  if {![info exists ::SLAVE] || $::tcl_platform(platform) ne "windows"} {
+    uplevel 1 [list do_test $name $cmd $expected]
+  }
 }
 
 proc dumpbytes {s} {
@@ -897,7 +849,7 @@ proc catchsafecmd {db {cmd ""}} {
 proc catchcmdex {db {cmd ""}} {
   global CLI
   set out [open cmds.txt w]
-  fconfigure $out -encoding binary -translation binary
+  fconfigure $out -translation binary
   puts -nonewline $out $cmd
   close $out
   set line "exec -keepnewline -- $CLI $db < cmds.txt"
@@ -905,7 +857,7 @@ proc catchcmdex {db {cmd ""}} {
   foreach chan $chans {
     catch {
       set modes($chan) [fconfigure $chan]
-      fconfigure $chan -encoding binary -translation binary -buffering none
+      fconfigure $chan -translation binary -buffering none
     }
   }
   set rc [catch { eval $line } msg]
@@ -920,7 +872,7 @@ proc catchcmdex {db {cmd ""}} {
 
 proc filepath_normalize {p} {
   # test cases should be written to assume "unix"-like file paths
-  if {$::tcl_platform(platform)!="unix"} {
+  if {$::tcl_platform(platform) ne "unix"} {
     string map [list \\ / \{/ / .db\} .db] \
         [regsub -nocase -all {[a-z]:[/\\]+} $p {/}]
   } {
@@ -1042,7 +994,7 @@ proc query_plan_graph {sql} {
   }
   set a "\n  QUERY PLAN\n"
   append a [append_graph "  " dx cx 0]
-  regsub -all { 0x[A-F0-9]+\y} $a { xxxxxx} a
+  regsub -all {SUBQUERY 0x[A-F0-9]+\y} $a {SUBQUERY xxxxxx} a
   regsub -all {(MATERIALIZE|CO-ROUTINE|SUBQUERY) \d+\y} $a {\1 xxxxxx} a
   regsub -all {\((join|subquery)-\d+\)} $a {(\1-xxxxxx)} a
   return $a
@@ -1111,6 +1063,29 @@ proc do_eqp_test {name sql res} {
     }
     uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
   }
+}
+
+# Do both an eqp_test and an execsql_test on the same SQL.
+#
+proc do_eqp_execsql_test {name sql res1 res2} {
+  if {[regexp {^\s+QUERY PLAN\n} $res1]} {
+
+    set query_plan [query_plan_graph $sql]
+
+    if {[list {*}$query_plan]==[list {*}$res1]} {
+      uplevel [list do_test ${name}a [list set {} ok] ok]
+    } else {
+      uplevel [list \
+        do_test ${name}a [list query_plan_graph $sql] $res1
+      ]
+    }
+  } else {
+    if {[string index $res 0]!="/"} {
+      set res1 "/*$res1*/"
+    }
+    uplevel do_execsql_test ${name}a [list "EXPLAIN QUERY PLAN $sql"] [list $res1]
+  }
+  uplevel do_execsql_test ${name}b [list $sql] [list $res2]
 }
 
 
@@ -1313,10 +1288,15 @@ proc finalize_testing {} {
          out of $nTest tests"
   } else {
     set cpuinfo {}
-    if {[catch {exec hostname} hname]==0} {set cpuinfo [string trim $hname]}
+    if {[catch {exec hostname} hname]==0} {
+      regsub {\.local$} $hname {} hname
+      set cpuinfo [string trim $hname]
+    }
     append cpuinfo " $::tcl_platform(os)"
     append cpuinfo " [expr {$::tcl_platform(pointerSize)*8}]-bit"
-    append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    if {[string match big* $::tcl_platform(byteOrder)]} {
+      append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    }
     output2 "SQLite [sqlite3 -sourceid]"
     output2 "$nErr errors out of $nTest tests on $cpuinfo"
   }
@@ -1753,7 +1733,7 @@ proc ifcapable {expr code {else ""} {elsecode ""}} {
   return -code $c $r
 }
 
-# This proc execs a seperate process that crashes midway through executing
+# This proc execs a separate process that crashes midway through executing
 # the SQL script $sql on database test.db.
 #
 # The crash occurs during a sync() of file $crashfile. When the crash
@@ -1805,6 +1785,11 @@ proc crashsql {args} {
   # cfSync(), which can be different then what TCL uses by
   # default, so here we force it to the "nativename" format.
   set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
+  ifcapable winrt {
+    # Except on winrt. Winrt has no way to transform a relative path into
+    # an absolute one, so it just uses the relative paths.
+    set cfile $crashfile
+  }
 
   set f [open crash.tcl w]
   puts $f "sqlite3_initialize ; sqlite3_shutdown"
@@ -1847,7 +1832,7 @@ proc crashsql {args} {
   # error message.  We map that to the expected message
   # so that we don't have to change all of the test
   # cases.
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     if {$msg=="child killed: unknown signal"} {
       set msg "child process exited abnormally"
     }
@@ -1898,7 +1883,7 @@ proc crash_on_write {args} {
   # error message.  We map that to the expected message
   # so that we don't have to change all of the test
   # cases.
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     if {$msg=="child killed: unknown signal"} {
       set msg "child process exited abnormally"
     }
@@ -2547,7 +2532,7 @@ proc test_restore_config_pagecache {} {
 }
 
 proc test_binary_name {nm} {
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     set ret "$nm.exe"
   } else {
     set ret $nm

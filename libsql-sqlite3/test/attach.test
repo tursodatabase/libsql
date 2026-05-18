@@ -759,7 +759,7 @@ do_test attach-6.1 {
     ATTACH DATABASE 'no-such-file' AS nosuch;
   }
 } {0 {}}
-if {$tcl_platform(platform)=="unix"} {
+if {$tcl_platform(platform) eq "unix"} {
   do_test attach-6.2 {
     sqlite3 dbx cannot-read
     dbx eval {CREATE TABLE t1(a,b,c)}

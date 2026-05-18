@@ -216,7 +216,7 @@ do_test quota-3.2.9 {
 set ::quota [list]
 proc quota_callback {file limitvar size} {
   upvar $limitvar limit
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     set file [ lindex [string map {\\ \/} $file] 0 ]
   }
   lappend ::quota $file $size
@@ -351,7 +351,7 @@ do_test quota-4.3.1 {
 } {}
 
 unset -nocomplain quotagroup
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   set quotagroup *\\quota-test-A?.db
 } else {
   set quotagroup */quota-test-A?.db
@@ -402,7 +402,7 @@ do_test quota-4.4.7 {
 } [expr {[file size quota-test-A1.db]+[file size quota-test-A2.db]}]
 
 unset -nocomplain quotagroup
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   set quotagroup *\\quota-test-B*
 } else {
   set quotagroup */quota-test-B*

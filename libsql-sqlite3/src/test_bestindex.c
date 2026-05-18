@@ -93,11 +93,7 @@
 
 
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
@@ -105,6 +101,7 @@
 typedef struct tcl_vtab tcl_vtab;
 typedef struct tcl_cursor tcl_cursor;
 typedef struct TestFindFunction TestFindFunction;
+typedef struct TestVtabContext TestVtabContext;
 
 /* 
 ** A fs virtual-table object 
@@ -129,6 +126,10 @@ struct TestFindFunction {
   TestFindFunction *pNext;
 };
 
+struct TestVtabContext {
+  Tcl_Interp *interp;
+  Tcl_Obj *pDefault;
+};
 
 /*
 ** Dequote string z in place.
@@ -182,25 +183,33 @@ static int tclConnect(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  Tcl_Interp *interp = (Tcl_Interp*)pAux;
+  TestVtabContext *pCtx = (TestVtabContext*)pAux;
+  Tcl_Interp *interp = pCtx->interp;
   tcl_vtab *pTab = 0;
   char *zCmd = 0;
   Tcl_Obj *pScript = 0;
   int rc = SQLITE_OK;
 
-  if( argc!=4 ){
+  if( argc!=4 && (argc!=3 || pCtx->pDefault==0) ){
     *pzErr = sqlite3_mprintf("wrong number of arguments");
     return SQLITE_ERROR;
   }
 
-  zCmd = sqlite3_malloc64(strlen(argv[3])+1);
+  if( argc==4 ){
+    zCmd = sqlite3_malloc64(strlen(argv[3])+1);
+  }
   pTab = (tcl_vtab*)sqlite3_malloc64(sizeof(tcl_vtab));
-  if( zCmd && pTab ){
-    memcpy(zCmd, argv[3], strlen(argv[3])+1);
-    tclDequote(zCmd);
+  if( (zCmd || argc==3) && pTab ){
     memset(pTab, 0, sizeof(tcl_vtab));
 
-    pTab->pCmd = Tcl_NewStringObj(zCmd, -1);
+    if( zCmd ){
+      memcpy(zCmd, argv[3], strlen(argv[3])+1);
+      tclDequote(zCmd);
+      pTab->pCmd = Tcl_NewStringObj(zCmd, -1);
+    }else{
+      pTab->pCmd = Tcl_DuplicateObj(pCtx->pDefault);
+    }
+
     pTab->interp = interp;
     pTab->db = db;
     Tcl_IncrRefCount(pTab->pCmd);
@@ -212,9 +221,16 @@ static int tclConnect(
     rc = Tcl_EvalObjEx(interp, pScript, TCL_EVAL_GLOBAL);
     if( rc!=TCL_OK ){
       *pzErr = sqlite3_mprintf("%s", Tcl_GetStringResult(interp));
-      rc = SQLITE_ERROR;
+      if( sqlite3_stricmp(*pzErr, "database schema has changed")==0 ){
+        rc = SQLITE_SCHEMA;
+      }else{
+        rc = SQLITE_ERROR;
+      }
     }else{
       rc = sqlite3_declare_vtab(db, Tcl_GetStringResult(interp));
+      if( rc!=SQLITE_OK ){
+        *pzErr = sqlite3_mprintf("declare_vtab: %s", sqlite3_errmsg(db));
+      }
     }
 
     if( rc!=SQLITE_OK ){
@@ -226,7 +242,7 @@ static int tclConnect(
   }
 
   sqlite3_free(zCmd);
-  *ppVtab = &pTab->base;
+  *ppVtab = pTab ? &pTab->base : 0;
   return rc;
 }
 
@@ -302,11 +318,9 @@ static int tclFilter(
   Tcl_IncrRefCount(pScript);
   Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("xFilter", -1));
   Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(idxNum));
-  if( idxStr ){
-    Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj(idxStr, -1));
-  }else{
-    Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("", -1));
-  }
+  Tcl_ListObjAppendElement(
+      interp, pScript, Tcl_NewStringObj(idxStr ? idxStr : "", -1)
+  );
 
   pArg = Tcl_NewObj();
   Tcl_IncrRefCount(pArg);
@@ -351,14 +365,14 @@ static int tclFilter(
     */
     Tcl_Obj *pRes = Tcl_GetObjResult(interp);
     Tcl_Obj **apElem = 0;
-    int nElem;
+    Tcl_Size nElem;
     rc = Tcl_ListObjGetElements(interp, pRes, &nElem, &apElem);
     if( rc!=TCL_OK ){
       const char *zErr = Tcl_GetStringResult(interp);
       rc = SQLITE_ERROR;
       pTab->base.zErrMsg = sqlite3_mprintf("%s", zErr);
     }else{
-      for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
+      for(ii=0; rc==SQLITE_OK && ii<(int)nElem; ii+=2){
         const char *zCmd = Tcl_GetString(apElem[ii]);
         Tcl_Obj *p = apElem[ii+1];
         if( sqlite3_stricmp("sql", zCmd)==0 ){
@@ -527,6 +541,7 @@ static int SQLITE_TCLAPI testBestIndexObj(
     "distinct",                   /* 3 */
     "in",                         /* 4 */
     "rhs_value",                  /* 5 */
+    "collation",                  /* 6 */
     0
   };
   int ii;
@@ -607,6 +622,17 @@ static int SQLITE_TCLAPI testBestIndexObj(
       Tcl_SetObjResult(interp, Tcl_NewStringObj(zVal, -1));
       break;
     }
+
+    case 6: assert( sqlite3_stricmp(azSub[ii], "collation")==0 ); {
+      int iCons = 0;
+      const char *zColl = "";
+      if( Tcl_GetIntFromObj(interp, objv[2], &iCons) ){
+        return TCL_ERROR;
+      }
+      zColl = sqlite3_vtab_collation(pIdxInfo, iCons);
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(zColl, -1));
+      break;
+    }
   }
 
   return TCL_OK;
@@ -651,7 +677,7 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     */
     Tcl_Obj *pRes = Tcl_GetObjResult(interp);
     Tcl_Obj **apElem = 0;
-    int nElem;
+    Tcl_Size nElem;
     rc = Tcl_ListObjGetElements(interp, pRes, &nElem, &apElem);
     if( rc!=TCL_OK ){
       const char *zErr = Tcl_GetStringResult(interp);
@@ -660,7 +686,7 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     }else{
       int ii;
       int iArgv = 1;
-      for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
+      for(ii=0; rc==SQLITE_OK && ii<(int)nElem; ii+=2){
         const char *zCmd = Tcl_GetString(apElem[ii]);
         Tcl_Obj *p = apElem[ii+1];
         if( sqlite3_stricmp("cost", zCmd)==0 ){
@@ -697,6 +723,10 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
               pIdxInfo->aConstraintUsage[iCons].omit = bOmit;
             }
           }
+        }else
+        if( sqlite3_stricmp("constraint", zCmd)==0 ){
+          rc = SQLITE_CONSTRAINT;
+          pTab->base.zErrMsg = sqlite3_mprintf("%s", Tcl_GetString(p));
         }else{
           rc = SQLITE_ERROR;
           pTab->base.zErrMsg = sqlite3_mprintf("unexpected: %s", zCmd);
@@ -789,6 +819,39 @@ static int tclFindFunction(
   return iRet;
 }
 
+static int tclUpdate(
+  sqlite3_vtab *tab, 
+  int nArg, 
+  sqlite3_value **apVal, 
+  sqlite3_int64 *piRowid
+){
+  tcl_vtab *pTab = (tcl_vtab*)tab;
+  Tcl_Interp *interp = pTab->interp; 
+  Tcl_Obj *pEval = Tcl_DuplicateObj(pTab->pCmd);
+  Tcl_Obj *pRes = 0;
+  int rc = TCL_OK;
+
+  Tcl_IncrRefCount(pEval);
+  Tcl_ListObjAppendElement(interp, pEval, Tcl_NewStringObj("xUpdate",-1));
+
+  rc = Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL);
+  Tcl_DecrRefCount(pEval);
+
+  if( rc==TCL_OK ){
+    Tcl_Obj *pRes = Tcl_GetObjResult(interp);
+    Tcl_WideInt v;
+    rc = Tcl_GetWideIntFromObj(interp, pRes, &v);
+    *piRowid = (sqlite3_int64)v;
+  }
+
+  if( rc!=TCL_OK ){
+    tab->zErrMsg = sqlite3_mprintf("%s", Tcl_GetStringResult(pTab->interp));
+    return rc;
+  }
+
+  return SQLITE_OK;
+}
+
 /*
 ** A virtual table module that provides read-only access to a
 ** Tcl global variable namespace.
@@ -820,11 +883,46 @@ static sqlite3_module tclModule = {
   0,                           /* xShadowName */
   0                            /* xIntegrity */
 };
+static sqlite3_module tclModuleUpdate = {
+  0,                         /* iVersion */
+  tclConnect,
+  tclConnect,
+  tclBestIndex,
+  tclDisconnect, 
+  tclDisconnect,
+  tclOpen,                      /* xOpen - open a cursor */
+  tclClose,                     /* xClose - close a cursor */
+  tclFilter,                    /* xFilter - configure scan constraints */
+  tclNext,                      /* xNext - advance a cursor */
+  tclEof,                       /* xEof - check for end of scan */
+  tclColumn,                    /* xColumn - read data */
+  tclRowid,                     /* xRowid - read data */
+  tclUpdate,                   /* xUpdate */
+  0,                           /* xBegin */
+  0,                           /* xSync */
+  0,                           /* xCommit */
+  0,                           /* xRollback */
+  tclFindFunction,             /* xFindFunction */
+  0,                           /* xRename */
+  0,                           /* xSavepoint */
+  0,                           /* xRelease */
+  0,                           /* xRollbackTo */
+  0,                           /* xShadowName */
+  0                            /* xIntegrity */
+};
 
 /*
 ** Decode a pointer to an sqlite3 object.
 */
 extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+
+static void delTestVtabCtx(void *p){
+  TestVtabContext *pCtx = (TestVtabContext*)p;
+  if( pCtx->pDefault ){
+    Tcl_DecrRefCount(pCtx->pDefault);
+  }
+  ckfree(pCtx);
+}
 
 /*
 ** Register the echo virtual table module.
@@ -836,13 +934,25 @@ static int SQLITE_TCLAPI register_tcl_module(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   sqlite3 *db;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ?DEFAULT-CMD?");
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3_create_module(db, "tcl", &tclModule, (void *)interp);
+  {
+    sqlite3_module *pMod = &tclModule;
+    TestVtabContext *pCtx = (TestVtabContext*)ckalloc(sizeof(TestVtabContext));
+    pCtx->interp = interp;
+    pCtx->pDefault = 0;
+    if( objc==3 ){
+      pCtx->pDefault = objv[2];
+      Tcl_IncrRefCount(pCtx->pDefault);
+    }
+
+    if( objc==3 ){ pMod = &tclModuleUpdate; }
+    sqlite3_create_module_v2(db, "tcl", pMod, (void*)pCtx, delTestVtabCtx);
+  }
 #endif
   return TCL_OK;
 }

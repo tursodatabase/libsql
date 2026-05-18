@@ -10,7 +10,10 @@
 #***********************************************************************
 #
 
-package require Tcl 8.6
+if {$tcl_version<8.6} {
+  puts "Requires TCL 8.6 or later"
+  return
+}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -30,7 +33,7 @@ if {[catch {load_static_extension db fileio} error]} {
 
 proc readfile {f} {
   set fd [open $f]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   set data [read $fd]
   close $fd
   set data
@@ -42,7 +45,7 @@ if {[catch {exec unzip} msg]==0 && \
     [regexp -line {^UnZip \d+\.\d+ .*? Info-ZIP\.} $msg]} {
   set ::UNZIP unzip
   proc fix_stat_mode {name mode} {
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       #
       # NOTE: Set or unset the write bits of the file permissions
       #       based on the read-only attribute because the Win32
@@ -277,7 +280,7 @@ do_execsql_test 1.6.2 {
   i.txt 33188 4 zxcvb 0
 }
 
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(platform) eq "unix"} {
   set modes -rw-r--r-x
   set perms 33189
 } else {
@@ -404,7 +407,7 @@ if {[info exists ::UNZIP]} {
   do_test 2.5.1 {
     forcedelete dirname
     forcedelete dirname2
-    if {$::tcl_platform(platform)=="unix"} {
+    if {$::tcl_platform(platform) eq "unix"} {
       set null /dev/null
     } else {
       set null NUL
@@ -762,7 +765,7 @@ do_execsql_test 11.11 {
 } {b0suffix two b2suffix one}
 
 
-if {$tcl_platform(platform)!="windows"} {
+if {$tcl_platform(platform) ne "windows"} {
   do_test 12.0 {
     catch { file delete -force subdir }
     foreach {path sz} {
@@ -882,6 +885,33 @@ do_test 19.1 {
     INSERT INTO v0 DEFAULT VALUES;
   }
 } {}
+db close
 forcedelete zipfile19.zip
+sqlite3 db :memory:
+load_static_extension db zipfile
+
+#-------------------------------------------------------------------------
+do_catchsql_test 20.0 {
+  SELECT * FROM zipfile(X'504b050600000000010001004000000000a3e1110000');
+} {1 {zip archive is corrupt}}
+
+do_catchsql_test 20.1 {
+  SELECT * FROM zipfile(unhex('
+504b0304140000080000a60d3e5bd42728f602000000020000000500090068
+2e74787455540500012836db682120504b01021e03140000080000a60d3e5b
+d42728f602000000020000000500ffff0000000000000000a4810000000068
+2e74787455540500012836db68504b050600000000010001003c0000002e00
+00000000',char(0x0a,0x0d)));
+} {1 {zip archive is corrupt}}
+
+# https://sqlite.org/forum/forumpost/2025-12-30T23:57:19z
+do_catchsql_test 20.2 {
+  SELECT * FROM zipfile(unhex('504b0304140000000000000000008b9ed9d30100000001000000010000007841504b01021e03140000000000000000008b9ed9d3010000000100000001001e000000000000000000a4810000000078504b050600000000010001002f000000200000000000'));
+} {1 {zip archive is corrupt}}
+
+# https://sqlite.org/forum/forumpost/2026-01-13T00:09:06Z
+do_catchsql_test 21.0 {
+  SELECT * FROM zipfile(X'504B03040A0000000000000000000000000000000000000000000100000078504B010200000A0000000000000000000000000000000000000000000100000000000000000000000000E2FFFFFF78504B050600000000010001002F0000001F0000000000');
+} {1 {failed to read LFH at offset -30}}
 
 finish_test

@@ -1,6 +1,6 @@
 ## Loadable Extensions
 
-Various [loadable extensions](https://www.sqlite.org/loadext.html) for
+Various [loadable extensions](https://sqlite.org/loadext.html) for
 SQLite are found in subfolders.
 
 Most subfolders are dedicated to a single loadable extension (for

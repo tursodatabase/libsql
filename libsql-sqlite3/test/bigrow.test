@@ -220,4 +220,15 @@ do_test bigrow-5.99 {
   execsql {DROP TABLE t1}
 } {}
 
+if {$SQLITE_MAX_LENGTH > 1200*1000*1000} {
+  # If SQLITE_MAX_LENGTH is large enough, check that a serial type greater
+  # than 0x7FFFFFFF does not cause trouble.
+  set v [string repeat A 1100000000]
+  do_execsql_test bigrow-6.0 {
+    CREATE TABLE docs(content TEXT);
+    INSERT INTO docs VALUES ( $v );
+  }
+  do_execsql_test bigrow-6.1 { SELECT content FROM docs } [list $v]
+}
+
 finish_test

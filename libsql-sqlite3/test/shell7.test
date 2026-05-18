@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # Test the readfile() function built into the shell tool. Specifically,
 # that it does not truncate the blob read at the first embedded 0x00
@@ -32,7 +33,6 @@ do_execsql_test 1.0 {
 foreach {tn l x} [db eval { SELECT tn, length(x) AS l, x FROM f1 }] {
   forcedelete shell7_test.bin
   set fd [open shell7_test.bin w]
-  fconfigure $fd -encoding binary
   fconfigure $fd -translation binary
   puts -nonewline $fd $x
   close $fd

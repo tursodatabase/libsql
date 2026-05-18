@@ -237,7 +237,7 @@ do_eqp_test 5.3.3 {
 } {SCAN t1}
 
 # 2015-06-18
-# Ticket [https://www.sqlite.org/see/tktview/472f0742a1868fb58862bc588ed70]
+# Ticket [https://sqlite.org/see/tktview/472f0742a1868fb58862bc588ed70]
 #
 do_execsql_test 6.0 {
   DROP TABLE IF EXISTS t1;
@@ -273,7 +273,7 @@ do_execsql_test 7.3 {
 } {1 3 1 4 9 3 9 4}
 
 # 2019-08-22
-# Ticket https://www.sqlite.org/src/info/7e07a3dbf5a8cd26
+# Ticket https://sqlite.org/src/info/7e07a3dbf5a8cd26
 #
 do_execsql_test 8.1 {
   DROP TABLE IF EXISTS t0;

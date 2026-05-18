@@ -81,6 +81,7 @@ while {![eof $in]} {
     set op($name) -1
     set group($name) 0
     set jump($name) 0
+    set jump0($name) 0
     set in1($name) 0
     set in2($name) 0
     set in3($name) 0
@@ -109,6 +110,7 @@ while {![eof $in]} {
          out2  {set out2($name) 1}
          out3  {set out3($name) 1}
          ncycle {set ncycle($name) 1}
+         jump0 {set jump($name) 1; set jump0($name) 1;}
        }
     }
     if {$group($name)} {
@@ -137,6 +139,7 @@ puts "/* Automatically generated.  Do not edit */"
 puts "/* See the tool/mkopcodeh.tcl script for details */"
 foreach name {OP_Noop OP_Explain OP_Abortable} {
   set jump($name) 0
+  set jump0($name) 0
   set in1($name) 0
   set in2($name) 0
   set in3($name) 0
@@ -256,7 +259,9 @@ for {set i 0} {$i<=$max} {incr i} {
   set name $def($i)
   puts -nonewline [format {#define %-16s %3d} $name $i]
   set com {}
-  if {[info exists jump($name)] && $jump($name)} {
+  if {[info exists jump0($name)] && $jump0($name)} {
+    lappend com "jump0"
+  } elseif {[info exists jump($name)] && $jump($name)} {
     lappend com "jump"
   }
   if {[info exists sameas($i)]} {
@@ -289,6 +294,7 @@ for {set i 0} {$i<=$max} {incr i} {
     if {$out2($name)}  {incr x 16}
     if {$out3($name)}  {incr x 32}
     if {$ncycle($name)}  {incr x 64}
+    if {$jump0($name)}   {incr x 128}
   }
   set bv($i) $x
 }
@@ -304,6 +310,7 @@ puts "#define OPFLG_IN3         0x08  /* in3:   P3 is an input */"
 puts "#define OPFLG_OUT2        0x10  /* out2:  P2 is an output */"
 puts "#define OPFLG_OUT3        0x20  /* out3:  P3 is an output */"
 puts "#define OPFLG_NCYCLE      0x40  /* ncycle:Cycles count against P1 */"
+puts "#define OPFLG_JUMP0       0x80  /* jump0:  P2 might be zero */"
 puts "#define OPFLG_INITIALIZER \173\\"
 for {set i 0} {$i<=$max} {incr i} {
   if {$i%8==0} {

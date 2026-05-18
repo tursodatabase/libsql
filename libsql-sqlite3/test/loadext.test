@@ -66,9 +66,13 @@ if {$::tcl_platform(os) eq "Darwin"} {
   set dlerror_nosymbol   {dlsym.XXX, %2$s.: symbol not found}
 }
 
-if {$::tcl_platform(platform) eq "windows"} {
+if {$::tcl_platform(os) eq "Windows NT"} {
   set dlerror_nosuchfile {The specified module could not be found.*}
-  set dlerror_notadll    {%%1 is not a valid Win32 application.*}
+  if {$::tcl_platform(platform) eq "unix"} {
+    set dlerror_notadll    $dlerror_nosuchfile
+  } else {
+    set dlerror_notadll    {%%1 is not a valid Win32 application.*}
+  }
   set dlerror_nosymbol   {The specified procedure could not be found.*}
 }
 

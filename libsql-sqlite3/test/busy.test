@@ -106,7 +106,7 @@ do_test 3.4 {
 proc busy_handler {n} { return 1 }
 do_test 3.5 {
   catchsql { PRAGMA optimize }
-} {0 {}}
+} {1 {database is locked}}
 
 do_test 3.6 {
   execsql { COMMIT } db2

@@ -738,7 +738,7 @@ do_test index-21.2 {
   }
 } {0 {9 5 1}}
 
-# 2019-05-01 ticket https://www.sqlite.org/src/info/3be1295b264be2fa
+# 2019-05-01 ticket https://sqlite.org/src/info/3be1295b264be2fa
 do_execsql_test index-22.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a, b TEXT);
@@ -748,7 +748,7 @@ do_execsql_test index-22.0 {
   SELECT a, b, '|' FROM t1;
 } {a 1 | a 0 |}
 
-# 2019-05-10 ticket https://www.sqlite.org/src/info/ae0f637bddc5290b
+# 2019-05-10 ticket https://sqlite.org/src/info/ae0f637bddc5290b
 do_execsql_test index-23.0 {
   DROP TABLE t1;
   CREATE TABLE t1(a TEXT, b REAL);

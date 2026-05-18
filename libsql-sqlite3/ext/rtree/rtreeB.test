@@ -47,4 +47,14 @@ ifcapable rtree_int_only {
 
 do_rtree_integrity_test rtreeB-1.2 t1
 
+# https://sqlite.org/forum/forumpost/2026-01-08T23:32:19Z
+#
+db null NULL
+do_execsql_test rtreeB-2.1 {
+  SELECT rtreenode(1,x'00000001'||randomblob(15)) IS NULL;
+} {1}
+do_execsql_test rtreeB-2.2 {
+  SELECT rtreenode(1,x'00000001'||randomblob(16)) IS NOT NULL;
+} {1}
+
 finish_test

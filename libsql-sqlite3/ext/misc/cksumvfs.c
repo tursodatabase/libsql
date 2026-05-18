@@ -197,8 +197,6 @@ struct CksmFile {
   char computeCksm;     /* True to compute checksums.
                         ** Always true if reserve size is 8. */
   char verifyCksm;      /* True to verify checksums */
-  char isWal;           /* True if processing a WAL file */
-  char inCkpt;          /* Currently doing a checkpoint */
   CksmFile *pPartner;   /* Ptr from WAL to main-db, or from main-db to WAL */
 };
 
@@ -444,11 +442,9 @@ static int cksmRead(
     **    (1) the size indicates that we are dealing with a complete
     **        database page
     **    (2) checksum verification is enabled
-    **    (3) we are not in the middle of checkpoint
     */
-    if( iAmt>=512           /* (1) */
-     && p->verifyCksm       /* (2) */
-     && !p->inCkpt          /* (3) */
+    if( iAmt>=512 && (iAmt & (iAmt-1))==0   /* (1) */
+     && p->verifyCksm                       /* (2) */
     ){
       u8 cksum[8];
       cksmCompute((u8*)zBuf, iAmt-8, cksum);
@@ -489,7 +485,6 @@ static int cksmWrite(
   */
   if( iAmt>=512
    && p->computeCksm
-   && !p->inCkpt
   ){
     cksmCompute((u8*)zBuf, iAmt-8, ((u8*)zBuf)+iAmt-8);
   }
@@ -576,21 +571,6 @@ static int cksmFileControl(sqlite3_file *pFile, int op, void *pArg){
       /* Do not allow page size changes on a checksum database */
       return SQLITE_OK;
     }
-  }else if( op==SQLITE_FCNTL_CKPT_START || op==SQLITE_FCNTL_CKPT_DONE ){
-    p->inCkpt = op==SQLITE_FCNTL_CKPT_START;
-    if( p->pPartner ) p->pPartner->inCkpt = p->inCkpt;
-  }else if( op==SQLITE_FCNTL_CKSM_FILE ){
-    /* This VFS needs to obtain a pointer to the corresponding database
-    ** file handle from within xOpen() calls to open wal files. To do this,
-    ** it uses the sqlite3_database_file_object() API to obtain a pointer
-    ** to the file-handle used by SQLite to access the db file. This is
-    ** fine if cksmvfs happens to be the top-level VFS, but not if there
-    ** are one or more wrapper VFS. To handle this case, this file-control
-    ** is used to extract the cksmvfs file-handle from any wrapper file 
-    ** handle.  */
-    sqlite3_file **ppFile = (sqlite3_file**)pArg;
-    *ppFile = (sqlite3_file*)p;
-    return SQLITE_OK;
   }
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
   if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
@@ -611,8 +591,10 @@ static int cksmSectorSize(sqlite3_file *pFile){
 ** Return the device characteristic flags supported by a cksm-file.
 */
 static int cksmDeviceCharacteristics(sqlite3_file *pFile){
+  int devchar = 0;
   pFile = ORIGFILE(pFile);
-  return pFile->pMethods->xDeviceCharacteristics(pFile);
+  devchar = pFile->pMethods->xDeviceCharacteristics(pFile);
+  return (devchar & ~SQLITE_IOCAP_SUBPAGE_READ);
 }
 
 /* Create a shared memory file mapping */
@@ -689,7 +671,7 @@ static int cksmOpen(
   sqlite3_vfs *pSubVfs;
   int rc;
   pSubVfs = ORIGVFS(pVfs);
-  if( (flags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_WAL))==0 ){
+  if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
     return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
   }
   p = (CksmFile*)pFile;
@@ -698,19 +680,6 @@ static int cksmOpen(
   pFile->pMethods = &cksm_io_methods;
   rc = pSubVfs->xOpen(pSubVfs, zName, pSubFile, flags, pOutFlags);
   if( rc ) goto cksm_open_done;
-  if( flags & SQLITE_OPEN_WAL ){
-    sqlite3_file *pDb = sqlite3_database_file_object(zName);
-    rc = pDb->pMethods->xFileControl(pDb, SQLITE_FCNTL_CKSM_FILE, (void*)&pDb);
-    assert( rc==SQLITE_OK );
-    p->pPartner = (CksmFile*)pDb;
-    assert( p->pPartner->pPartner==0 );
-    p->pPartner->pPartner = p;
-    p->isWal = 1;
-    p->computeCksm = p->pPartner->computeCksm;
-  }else{
-    p->isWal = 0;
-    p->computeCksm = 0;
-  }
   p->zFName = zName;
 cksm_open_done:
   if( rc ) pFile->pMethods = 0;
@@ -820,9 +789,7 @@ static int cksmRegisterFunc(
 */
 static int cksmRegisterVfs(void){
   int rc = SQLITE_OK;
-  sqlite3_vfs *pOrig;
-  if( sqlite3_vfs_find("cksmvfs")!=0 ) return SQLITE_OK;
-  pOrig = sqlite3_vfs_find(0);
+  sqlite3_vfs *pOrig = sqlite3_vfs_find(0);
   if( pOrig==0 ) return SQLITE_ERROR;
   cksm_vfs.iVersion = pOrig->iVersion;
   cksm_vfs.pAppData = pOrig;

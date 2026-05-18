@@ -58,9 +58,7 @@
         border: 0 !important;
         padding: 0 !important;
     }
-    .func-wasm {
-        
-    }
+    .func-wasm {}
     .func-wasm::after {
         content: "WASM";
         color: saddlebrown;
@@ -117,6 +115,7 @@
       </li>
       <li><a href='#sqlite3.wasm'><code>sqlite3.wasm</code> namespace</a></li>
       <li><a href='#sqlite3.wasm.pstack'><code>sqlite3.wasm.pstack</code> namespace</a></li>
+      <li><a href='#sqlite3.wasm.ptr'><code>sqlite3.wasm.ptr</code> namespace</a></li>
       <li><a href='#compile-options'>Compilation options used in this module build</a></li>
     </ul>
 
@@ -178,6 +177,14 @@
       following...
     </p>
     <div id='list-wasm-pstack' class='pseudolist'></div>
+
+    <a id="sqlite3.wasm.ptr"></a>
+    <h1><code>sqlite3.wasm.ptr</code> Namespace</h1>
+    <p>
+      The <code>sqlite3.wasm.ptr</code> namespace exposes the
+      following...
+    </p>
+    <div id='list-wasm-ptr' class='pseudolist'></div>
 
     <a id="compile-options"></a>
     <h1>Compilation Options</h1>
@@ -484,6 +491,9 @@
         const psKeys = Object.keys(wasm.pstack);
         psKeys.push('pointer','quota','remaining');
         renderX(E('#list-wasm-pstack'), wasm.pstack, psKeys);
+
+        const pwKeys = Object.keys(wasm.ptr);
+        renderX(E('#list-wasm-ptr'), wasm.ptr, pwKeys);
 
         const cou = wasm.compileOptionUsed();
         //const cou2 = Object.create(null);

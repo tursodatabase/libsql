@@ -443,7 +443,7 @@ sqlite3_simulate_device -char safe_append
 # on the journal file between steps (2) and (3) above.
 #
 set expected_sync_count 2
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
   ifcapable dirsync {
     incr expected_sync_count
   }
@@ -465,7 +465,7 @@ do_test io-4.2.1 {
   execsql { INSERT INTO abc VALUES('c', 'd') }
   file exists test.db-journal
 } {1}
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(platform) eq "unix"} {
   do_test io-4.2.2 {
     hexio_read test.db-journal 8 4
   } {FFFFFFFF}

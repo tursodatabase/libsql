@@ -1,8 +1,9 @@
 This directory houses the [Web Assembly (WASM)](https://en.wikipedia.org/wiki/WebAssembly)
 parts of the sqlite3 build.
 
-It requires [emscripten][] and that the build environment be set up for
-emscripten. A mini-HOWTO for setting that up follows...
+It requires [emscripten][] and that the build environment be set up
+for emscripten. _Release_ builds also require [the wabt tools](#wabt),
+but dev builds do not. A mini-HOWTO for setting that up follows...
 
 First, install the Emscripten SDK, as documented
 [here](https://emscripten.org/docs/getting_started/downloads.html) and summarized
@@ -29,8 +30,16 @@ $ ./emsdk install latest
 $ ./emsdk activate latest
 ```
 
-The following needs to be run for each shell instance which needs the
-`emcc` compiler:
+(Sidebar: Emscripten updates can and do _change things_, i.e. _break
+things_, so it's considered _required practice_ to test thoroughly
+after upgrading it! Our build process makes no guarantees about which
+Emscripten version(s) will or won't work, but it's important that
+production builds are built using a compatible version. During active
+development, the EMSDK is frequently updated, the goal being to keep
+`sqlite3.wasm` working with "the latest" EMSDK.)
+
+The SQLite configure script will search for the EMSDK. One way
+to ensure that it finds it is:
 
 ```
 # Activate PATH and other environment variables in the current terminal:
@@ -38,15 +47,27 @@ $ source ./emsdk_env.sh
 
 $ which emcc
 /path/to/emsdk/upstream/emscripten/emcc
+
+$ ./configure ...
 ```
 
-Optionally, add that to your login shell's resource file (`~/.bashrc`
-or equivalent).
+Optionally, add that `source` part to your login shell's resource file
+(`~/.bashrc` or equivalent).
 
-That `env` script needs to be sourced for building this application
-from the top of the sqlite3 build tree:
+Another way is to pass the EMSDK dir to configure:
 
 ```
+$ ./configure --with-emsdk=/path/to/emsdk
+```
+
+The build tree uses a small wrapper for invoking the `emcc` (the
+Emscripten compiler): `tool/emcc.sh` is generated from
+`tool/emcc.sh.in` using the EMSDK path found by the configure process.
+
+With that in place, the most common build approaches are:
+
+```
+# From the top of the tree:
 $ make fiddle
 ```
 
@@ -57,7 +78,7 @@ $ cd ext/wasm
 $ make
 ```
 
-That will generate the a number of files required for a handful of
+Those will generate the a number of files required for a handful of
 test and demo applications which can be accessed via
 `index.html`. WASM content cannot, due to XMLHttpRequest security
 limitations, be loaded if the containing HTML file is opened directly
@@ -68,16 +89,21 @@ needs to be served via an HTTP server.  For example, using
 ```
 $ cd ext/wasm
 $ althttpd --enable-sab --max-age 1 --page index.html
+# Or, more simply, from the ext/wasm dir:
+$ make httpd
 ```
 
-That will open the system's browser and run the index page, from which
-all of the test and demo applications can be accessed.
+That will open the system's browser and visit the index page, from
+which (almost) all of the test and demo applications can be accessed.
+(`ext/wasm/SQLTester` is not listed in that page because it's only of
+real utility when it's used in conjunction with the project's
+proprietary test suite, which most users don't have access to.)
 
-Note that when serving this app via [althttpd][], it must be a version
-from 2022-09-26 or newer so that it recognizes the `--enable-sab`
-flag, which causes althttpd to emit two HTTP response headers which
-are required to enable JavaScript's `SharedArrayBuffer` and `Atomics`
-APIs. Those APIs are required in order to enable the OPFS-related
+When serving this app via [althttpd][], it must be a version from
+2022-09-26 or newer so that it recognizes the `--enable-sab` flag,
+which causes althttpd to emit two HTTP response headers which are
+required to enable JavaScript's `SharedArrayBuffer` and `Atomics`
+APIs. Those APIs are required in order to enable the [OPFS][]-related
 features in the apps which use them.
 
 # Testing on a remote machine that is accessed via SSH
@@ -100,7 +126,25 @@ connection).  Since the web-server is on a different machine from the
 web-broser, the localhost requirement means that the connection must
 be tunneled using SSH.
 
+<a id="wabt"></a>
+# The wabt Tools
+
+_Release_ builds require the wabt tools:
+
+<https://github.com/WebAssembly/wabt>
+
+Specifically, we need `wasm-strip` so that the resulting WASM file is not
+several megabytes.
+
+Pre-built binaries can be downloaded from:
+
+<https://github.com/WebAssembly/wabt/releases>
+
+As of 2025-10-14, versions 1.36.0 or higher are known to work and
+1.34.0 is known to not work with current Emscripten output.
+
 
 [emscripten]: https://emscripten.org
 [althttpd]: https://sqlite.org/althttpd
 [SharedArrayBuffer]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer
+[OPFS]: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system

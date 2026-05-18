@@ -14,6 +14,13 @@
 ** on stdout when its key interfaces are called.  This is intended for
 ** interactive analysis and debugging of virtual table interfaces.
 **
+** To build this extension as a separately loaded shared library or
+** DLL, use compiler command-lines similar to the following:
+**
+**   (linux)    gcc -fPIC -shared vtablog.c -o vtablog.so
+**   (mac)      clang -fPIC -dynamiclib vtablog.c -o vtablog.dylib
+**   (windows)  cl vtablog.c -link -dll -out:vtablog.dll
+**
 ** Usage example:
 **
 **     .load ./vtablog
@@ -38,8 +45,9 @@ SQLITE_EXTENSION_INIT1
 typedef struct vtablog_vtab vtablog_vtab;
 struct vtablog_vtab {
   sqlite3_vtab base;  /* Base class - must be first */
+  char *zDb;          /* Schema name.  argv[1] of xConnect/xCreate */
+  char *zName;        /* Table name.  argv[2] of xConnect/xCreate */
   int nRow;           /* Number of rows in the table */
-  int iInst;          /* Instance number for this vtablog table */
   int nCursor;        /* Number of cursors created */
 };
 
@@ -167,15 +175,14 @@ static int vtablogConnectCreate(
   char **pzErr,
   int isCreate
 ){
-  static int nInst = 0;
   vtablog_vtab *pNew;
   int i;
   int rc;
-  int iInst = ++nInst;
   char *zSchema = 0;
   char *zNRow = 0;
 
-  printf("vtablog%s(tab=%d):\n", isCreate ? "Create" : "Connect", iInst);
+  printf("%s.%s.%s():\n", argv[1], argv[2], 
+         isCreate ? "xCreate" : "xConnect");
   printf("  argc=%d\n", argc);
   for(i=0; i<argc; i++){
     printf("  argv[%d] = ", i);
@@ -189,17 +196,22 @@ static int vtablogConnectCreate(
   for(i=3; i<argc; i++){
     const char *z = argv[i];
     if( vtablog_string_parameter(pzErr, "schema", z, &zSchema) ){
-      return SQLITE_ERROR;
+      rc = SQLITE_ERROR;
+      goto vtablog_end_connect;
     }
     if( vtablog_string_parameter(pzErr, "rows", z, &zNRow) ){
-      return SQLITE_ERROR;
+      rc = SQLITE_ERROR;
+      goto vtablog_end_connect;
     }
   }
-
   if( zSchema==0 ){
-    *pzErr = sqlite3_mprintf("no schema defined");
-    return SQLITE_ERROR;
+    zSchema = sqlite3_mprintf("%s","CREATE TABLE x(a,b);");
+    if( zSchema==0 ){
+      rc = SQLITE_NOMEM;
+      goto vtablog_end_connect;
+    }
   }
+  printf("  schema = '%s'\n", zSchema);
   rc = sqlite3_declare_vtab(db, zSchema);
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
@@ -208,8 +220,14 @@ static int vtablogConnectCreate(
     memset(pNew, 0, sizeof(*pNew));
     pNew->nRow = 10;
     if( zNRow ) pNew->nRow = atoi(zNRow);
-    pNew->iInst = iInst;
+    printf("  nrow = %d\n", pNew->nRow);
+    pNew->zDb = sqlite3_mprintf("%s", argv[1]);
+    pNew->zName = sqlite3_mprintf("%s", argv[2]);
   }
+
+vtablog_end_connect:
+  sqlite3_free(zSchema);
+  sqlite3_free(zNRow);
   return rc;
 }
 static int vtablogCreate(
@@ -233,21 +251,25 @@ static int vtablogConnect(
 
 
 /*
-** This method is the destructor for vtablog_cursor objects.
+** This method is the destructor for vtablog_vtab objects.
 */
 static int vtablogDisconnect(sqlite3_vtab *pVtab){
   vtablog_vtab *pTab = (vtablog_vtab*)pVtab;
-  printf("vtablogDisconnect(%d)\n", pTab->iInst);
+  printf("%s.%s.xDisconnect()\n", pTab->zDb, pTab->zName);
+  sqlite3_free(pTab->zDb);
+  sqlite3_free(pTab->zName);
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 
 /*
-** This method is the destructor for vtablog_cursor objects.
+** This method is (also) the destructor for vtablog_vtab objects.
 */
 static int vtablogDestroy(sqlite3_vtab *pVtab){
   vtablog_vtab *pTab = (vtablog_vtab*)pVtab;
-  printf("vtablogDestroy(%d)\n", pTab->iInst);
+  printf("%s.%s.xDestroy()\n", pTab->zDb, pTab->zName);
+  sqlite3_free(pTab->zDb);
+  sqlite3_free(pTab->zName);
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
@@ -258,7 +280,8 @@ static int vtablogDestroy(sqlite3_vtab *pVtab){
 static int vtablogOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   vtablog_vtab *pTab = (vtablog_vtab*)p;
   vtablog_cursor *pCur;
-  printf("vtablogOpen(tab=%d, cursor=%d)\n", pTab->iInst, ++pTab->nCursor);
+  printf("%s.%s.xOpen(cursor=%d)\n", pTab->zDb, pTab->zName,
+         ++pTab->nCursor);
   pCur = sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
@@ -273,7 +296,7 @@ static int vtablogOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 static int vtablogClose(sqlite3_vtab_cursor *cur){
   vtablog_cursor *pCur = (vtablog_cursor*)cur;
   vtablog_vtab *pTab = (vtablog_vtab*)cur->pVtab;
-  printf("vtablogClose(tab=%d, cursor=%d)\n", pTab->iInst, pCur->iCursor);
+  printf("%s.%s.xClose(cursor=%d)\n", pTab->zDb, pTab->zName, pCur->iCursor);
   sqlite3_free(cur);
   return SQLITE_OK;
 }
@@ -285,8 +308,9 @@ static int vtablogClose(sqlite3_vtab_cursor *cur){
 static int vtablogNext(sqlite3_vtab_cursor *cur){
   vtablog_cursor *pCur = (vtablog_cursor*)cur;
   vtablog_vtab *pTab = (vtablog_vtab*)cur->pVtab;
-  printf("vtablogNext(tab=%d, cursor=%d)  rowid %d -> %d\n", 
-         pTab->iInst, pCur->iCursor, (int)pCur->iRowid, (int)pCur->iRowid+1);
+  printf("%s.%s.xNext(cursor=%d)  rowid %d -> %d\n", 
+         pTab->zDb, pTab->zName, pCur->iCursor,
+         (int)pCur->iRowid, (int)pCur->iRowid+1);
   pCur->iRowid++;
   return SQLITE_OK;
 }
@@ -310,8 +334,8 @@ static int vtablogColumn(
   }else{
     sqlite3_snprintf(sizeof(zVal),zVal,"{%d}%d", i, pCur->iRowid);
   }
-  printf("vtablogColumn(tab=%d, cursor=%d, i=%d): [%s]\n",
-         pTab->iInst, pCur->iCursor, i, zVal);
+  printf("%s.%s.xColumn(cursor=%d, i=%d): [%s]\n",
+         pTab->zDb, pTab->zName, pCur->iCursor, i, zVal);
   sqlite3_result_text(ctx, zVal, -1, SQLITE_TRANSIENT);
   return SQLITE_OK;
 }
@@ -323,8 +347,8 @@ static int vtablogColumn(
 static int vtablogRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   vtablog_cursor *pCur = (vtablog_cursor*)cur;
   vtablog_vtab *pTab = (vtablog_vtab*)cur->pVtab;
-  printf("vtablogRowid(tab=%d, cursor=%d): %d\n",
-         pTab->iInst, pCur->iCursor, (int)pCur->iRowid);
+  printf("%s.%s.xRowid(cursor=%d): %d\n",
+         pTab->zDb, pTab->zName, pCur->iCursor, (int)pCur->iRowid);
   *pRowid = pCur->iRowid;
   return SQLITE_OK;
 }
@@ -337,8 +361,8 @@ static int vtablogEof(sqlite3_vtab_cursor *cur){
   vtablog_cursor *pCur = (vtablog_cursor*)cur;
   vtablog_vtab *pTab = (vtablog_vtab*)cur->pVtab;
   int rc = pCur->iRowid >= pTab->nRow;
-  printf("vtablogEof(tab=%d, cursor=%d): %d\n",
-         pTab->iInst, pCur->iCursor, rc);
+  printf("%s.%s.xEof(cursor=%d): %d\n",
+         pTab->zDb, pTab->zName, pCur->iCursor, rc);
   return rc;
 }
 
@@ -417,9 +441,42 @@ static int vtablogFilter(
 ){
   vtablog_cursor *pCur = (vtablog_cursor *)cur;
   vtablog_vtab *pTab = (vtablog_vtab*)cur->pVtab;
-  printf("vtablogFilter(tab=%d, cursor=%d):\n", pTab->iInst, pCur->iCursor);
+  printf("%s.%s.xFilter(cursor=%d):\n", pTab->zDb, pTab->zName, pCur->iCursor);
   pCur->iRowid = 0;
   return SQLITE_OK;
+}
+
+/*
+** Return an sqlite3_index_info operator name in static space.
+** The name is possibly overwritten on subsequent calls.
+*/
+static char *vtablogOpName(unsigned char op){
+  static char zUnknown[30];
+  char *zOut;
+  switch( op ){
+    case SQLITE_INDEX_CONSTRAINT_EQ:        zOut = "EQ";        break;
+    case SQLITE_INDEX_CONSTRAINT_GT:        zOut = "GT";        break;
+    case SQLITE_INDEX_CONSTRAINT_LE:        zOut = "LE";        break;
+    case SQLITE_INDEX_CONSTRAINT_LT:        zOut = "LT";        break;
+    case SQLITE_INDEX_CONSTRAINT_GE:        zOut = "GE";        break;
+    case SQLITE_INDEX_CONSTRAINT_MATCH:     zOut = "MATCH";     break;
+    case SQLITE_INDEX_CONSTRAINT_LIKE:      zOut = "LIKE";      break;
+    case SQLITE_INDEX_CONSTRAINT_GLOB:      zOut = "GLOB";      break;
+    case SQLITE_INDEX_CONSTRAINT_REGEXP:    zOut = "REGEXP";    break;
+    case SQLITE_INDEX_CONSTRAINT_NE:        zOut = "NE";        break;
+    case SQLITE_INDEX_CONSTRAINT_ISNOT:     zOut = "ISNOT";     break;
+    case SQLITE_INDEX_CONSTRAINT_ISNOTNULL: zOut = "ISNOTNULL"; break;
+    case SQLITE_INDEX_CONSTRAINT_ISNULL:    zOut = "ISNULL";    break;
+    case SQLITE_INDEX_CONSTRAINT_IS:        zOut = "IS";        break;
+    case SQLITE_INDEX_CONSTRAINT_LIMIT:     zOut = "LIMIT";     break;
+    case SQLITE_INDEX_CONSTRAINT_OFFSET:    zOut = "OFFSET";    break;
+    case SQLITE_INDEX_CONSTRAINT_FUNCTION:  zOut = "FUNCTION";  break;
+    default:
+      sqlite3_snprintf(sizeof(zUnknown),zUnknown,"%d",op);
+      zOut = zUnknown;
+      break;
+  }
+  return zOut;
 }
 
 /*
@@ -430,12 +487,46 @@ static int vtablogFilter(
 */
 static int vtablogBestIndex(
   sqlite3_vtab *tab,
-  sqlite3_index_info *pIdxInfo
+  sqlite3_index_info *p
 ){
   vtablog_vtab *pTab = (vtablog_vtab*)tab;
-  printf("vtablogBestIndex(tab=%d):\n", pTab->iInst);
-  pIdxInfo->estimatedCost = (double)500;
-  pIdxInfo->estimatedRows = 500;
+  int i;
+  printf("%s.%s.xBestIndex():\n", pTab->zDb, pTab->zName);
+  printf("  colUsed: 0x%016llx\n", p->colUsed);
+  printf("  nConstraint: %d\n", p->nConstraint);
+  for(i=0; i<p->nConstraint; i++){
+    sqlite3_value *pVal = 0;
+    int rc = sqlite3_vtab_rhs_value(p, i, &pVal);
+    printf(
+      "  constraint[%d]: col=%d termid=%d op=%s usabled=%d coll=%s rhs=",
+       i,
+       p->aConstraint[i].iColumn,
+       p->aConstraint[i].iTermOffset,
+       vtablogOpName(p->aConstraint[i].op),
+       p->aConstraint[i].usable,
+       sqlite3_vtab_collation(p,i)
+    );
+    if( rc==SQLITE_OK ){
+      vtablogQuote(pVal);
+      printf("\n");
+    }else{
+      printf("N/A\n");
+    }
+  }
+  printf("  nOrderBy: %d\n", p->nOrderBy);
+  for(i=0; i<p->nOrderBy; i++){
+    printf("  orderby[%d]: col=%d desc=%d\n",
+       i,
+       p->aOrderBy[i].iColumn,
+       p->aOrderBy[i].desc);
+  }
+  p->estimatedCost = (double)500;
+  p->estimatedRows = 500;
+  printf("  idxNum=%d\n", p->idxNum);
+  printf("  idxStr=NULL\n");
+  printf("  orderByConsumed=%d\n", p->orderByConsumed);
+  printf("  estimatedCost=%g\n", p->estimatedCost);
+  printf("  estimatedRows=%lld\n", p->estimatedRows);
   return SQLITE_OK;
 }
 
@@ -454,7 +545,7 @@ static int vtablogUpdate(
 ){
   vtablog_vtab *pTab = (vtablog_vtab*)tab;
   int i;
-  printf("vtablogUpdate(tab=%d):\n", pTab->iInst);
+  printf("%s.%s.xUpdate():\n", pTab->zDb, pTab->zName);
   printf("  argc=%d\n", argc);
   for(i=0; i<argc; i++){
     printf("  argv[%d]=", i);
@@ -464,12 +555,88 @@ static int vtablogUpdate(
   return SQLITE_OK;
 }
 
+static int vtablogBegin(sqlite3_vtab *tab){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xBegin()\n", pTab->zDb, pTab->zName);
+  return SQLITE_OK;
+}
+static int vtablogSync(sqlite3_vtab *tab){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xSync()\n", pTab->zDb, pTab->zName);
+  return SQLITE_OK;
+}
+static int vtablogCommit(sqlite3_vtab *tab){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xCommit()\n", pTab->zDb, pTab->zName);
+  return SQLITE_OK;
+}
+static int vtablogRollback(sqlite3_vtab *tab){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xRollback()\n", pTab->zDb, pTab->zName);
+  return SQLITE_OK;
+}
+static int vtablogSavepoint(sqlite3_vtab *tab, int N){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xSavepoint(%d)\n", pTab->zDb, pTab->zName, N);
+  return SQLITE_OK;
+}
+static int vtablogRelease(sqlite3_vtab *tab, int N){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xRelease(%d)\n", pTab->zDb, pTab->zName, N);
+  return SQLITE_OK;
+}
+static int vtablogRollbackTo(sqlite3_vtab *tab, int N){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xRollbackTo(%d)\n", pTab->zDb, pTab->zName, N);
+  return SQLITE_OK;
+}
+
+static int vtablogFindMethod(
+  sqlite3_vtab *tab,
+  int nArg,
+  const char *zName,
+  void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),
+  void **ppArg
+){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xFindMethod(nArg=%d, zName=%s)\n",
+         pTab->zDb, pTab->zName, nArg, zName);
+  return SQLITE_OK;
+}
+static int vtablogRename(sqlite3_vtab *tab, const char *zNew){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xRename('%s')\n", pTab->zDb, pTab->zName, zNew);
+  sqlite3_free(pTab->zName);
+  pTab->zName = sqlite3_mprintf("%s", zNew);
+  return SQLITE_OK;
+}
+
+/* Any table name that contains the text "shadow" is seen as a
+** shadow table.  Nothing else is.
+*/
+static int vtablogShadowName(const char *zName){
+  printf("vtablog.xShadowName('%s')\n", zName);
+  return sqlite3_strglob("*shadow*", zName)==0;
+}
+
+static int vtablogIntegrity(
+  sqlite3_vtab *tab,
+  const char *zSchema,
+  const char *zTabName,
+  int mFlags,
+  char **pzErr
+){
+  vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  printf("%s.%s.xIntegrity(mFlags=0x%x)\n", pTab->zDb, pTab->zName, mFlags);
+  return 0;
+}
+
 /*
 ** This following structure defines all the methods for the 
 ** vtablog virtual table.
 */
 static sqlite3_module vtablogModule = {
-  0,                         /* iVersion */
+  4,                         /* iVersion */
   vtablogCreate,             /* xCreate */
   vtablogConnect,            /* xConnect */
   vtablogBestIndex,          /* xBestIndex */
@@ -483,17 +650,17 @@ static sqlite3_module vtablogModule = {
   vtablogColumn,             /* xColumn - read data */
   vtablogRowid,              /* xRowid - read data */
   vtablogUpdate,             /* xUpdate */
-  0,                         /* xBegin */
-  0,                         /* xSync */
-  0,                         /* xCommit */
-  0,                         /* xRollback */
-  0,                         /* xFindMethod */
-  0,                         /* xRename */
-  0,                         /* xSavepoint */
-  0,                         /* xRelease */
-  0,                         /* xRollbackTo */
-  0,                         /* xShadowName */
-  0                          /* xIntegrity */
+  vtablogBegin,              /* xBegin */
+  vtablogSync,               /* xSync */
+  vtablogCommit,             /* xCommit */
+  vtablogRollback,           /* xRollback */
+  vtablogFindMethod,         /* xFindMethod */
+  vtablogRename,             /* xRename */
+  vtablogSavepoint,          /* xSavepoint */
+  vtablogRelease,            /* xRelease */
+  vtablogRollbackTo,         /* xRollbackTo */
+  vtablogShadowName,         /* xShadowName */
+  vtablogIntegrity           /* xIntegrity */
 };
 
 #ifdef _WIN32

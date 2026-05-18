@@ -454,7 +454,7 @@ do_test pager1.4.2.1 {
   tstvfs delete
 } {}
 
-if {$::tcl_platform(platform)!="windows"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
 do_test pager1.4.2.2 {
   faultsim_restore_and_reopen
   execsql {
@@ -567,7 +567,7 @@ foreach {tn1 tcl} {
     # make sure SQLite doesn't get confused by this.
     #
     set nPadding [expr 511 - $::mj_filename_length]
-    if {$tcl_platform(platform)=="windows"} {
+    if {$tcl_platform(platform) eq "windows"} {
       # TBD need to figure out how to do this correctly for Windows!!!
       set nPadding [expr 255 - $::mj_filename_length]
     }
@@ -1714,7 +1714,7 @@ do_execsql_test pager1-13.1.1 {
   UPDATE t1 SET b = a_string(400);
 } {persist}
 
-if {$::tcl_platform(platform)!="windows"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
 # Run transactions of increasing sizes. Eventually, one (or more than one)
 # of these will write just enough content that one of the old headers created 
 # by the transaction in the block above lies immediately after the content
@@ -1739,7 +1739,7 @@ for {set nUp 1} {$nUp<64} {incr nUp} {
 }
 }
 
-if {$::tcl_platform(platform)!="windows"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
 # Same test as above. But this time with an index on the table.
 #
 do_execsql_test pager1-13.2.1 {
@@ -2538,7 +2538,7 @@ do_test pager1-30.1 {
 # file can still be rolled back. This is required for backward compatibility -
 # versions of SQLite prior to 3.5.8 always set this field to zero.
 #
-if {$tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
 do_test pager1-31.1 {
   faultsim_delete_and_reopen
   execsql {
@@ -2612,7 +2612,7 @@ forcedelete test.db
 # and the call to unlink() returns an ENOENT error, the COMMIT does not
 # succeed.
 #
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
   do_test pager1-33.1 {
     sqlite3 db test.db
     execsql {

@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5vocab2
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -304,6 +304,28 @@ do_catchsql_test 6.2 {
 } {1 {database disk image is malformed}}
 
 sqlite3_fts5_may_be_corrupt 0
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+  CREATE VIRTUAL TABLE v1 USING fts5vocab(t1, col);
+
+  INSERT INTO t1 VALUES('xx', 'xx');
+
+  CREATE TABLE x1(t);
+  INSERT INTO x1 VALUES('xx');
+  INSERT INTO x1 VALUES('xx');
+
+  SELECT term, col FROM v1;
+} {
+  xx a xx b
+}
+
+do_execsql_test 7.1 {
+  SELECT * FROM x1 WHERE 'a'=(SELECT col FROM v1 WHERE term=t)
+} {xx xx}
+
 
 finish_test
 

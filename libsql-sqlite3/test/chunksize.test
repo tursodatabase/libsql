@@ -14,7 +14,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix chunksize
 
-if {$::tcl_platform(platform)!="unix"} {
+if {$::tcl_platform(platform) ne "unix"} {
   finish_test
   return
 }

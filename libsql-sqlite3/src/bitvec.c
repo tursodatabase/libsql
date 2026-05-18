@@ -67,7 +67,7 @@
 ** no fewer collisions than the no-op *1. */
 #define BITVEC_HASH(X)   (((X)*1)%BITVEC_NINT)
 
-#define BITVEC_NPTR      (BITVEC_USIZE/sizeof(Bitvec *))
+#define BITVEC_NPTR      ((u32)(BITVEC_USIZE/sizeof(Bitvec *)))
 
 
 /*
@@ -106,6 +106,7 @@ struct Bitvec {
     Bitvec *apSub[BITVEC_NPTR];  /* Recursive representation */
   } u;
 };
+
 
 /*
 ** Create a new bitmap object able to handle bits between 0 and iSize,
@@ -216,7 +217,9 @@ bitvec_set_rehash:
     }else{
       memcpy(aiValues, p->u.aHash, sizeof(p->u.aHash));
       memset(p->u.apSub, 0, sizeof(p->u.apSub));
-      p->iDivisor = (p->iSize + BITVEC_NPTR - 1)/BITVEC_NPTR;
+      p->iDivisor = p->iSize/BITVEC_NPTR;
+      if( (p->iSize%BITVEC_NPTR)!=0 ) p->iDivisor++;
+      if( p->iDivisor<BITVEC_NBIT ) p->iDivisor = BITVEC_NBIT;
       rc = sqlite3BitvecSet(p, i);
       for(j=0; j<BITVEC_NINT; j++){
         if( aiValues[j] ) rc |= sqlite3BitvecSet(p, aiValues[j]);
@@ -250,7 +253,7 @@ void sqlite3BitvecClear(Bitvec *p, u32 i, void *pBuf){
     }
   }
   if( p->iSize<=BITVEC_NBIT ){
-    p->u.aBitmap[i/BITVEC_SZELEM] &= ~(1 << (i&(BITVEC_SZELEM-1)));
+    p->u.aBitmap[i/BITVEC_SZELEM] &= ~(BITVEC_TELEM)(1<<(i&(BITVEC_SZELEM-1)));
   }else{
     unsigned int j;
     u32 *aiValues = pBuf;
@@ -293,6 +296,52 @@ u32 sqlite3BitvecSize(Bitvec *p){
   return p->iSize;
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Show the content of a Bitvec option and its children.  Indent
+** everything by n spaces.  Add x to each bitvec value.
+**
+** From a debugger such as gdb, one can type:
+**
+**    call sqlite3ShowBitvec(p)
+**
+** For some Bitvec p and see a recursive view of the Bitvec's content.
+*/
+static void showBitvec(Bitvec *p, int n, unsigned x){
+  int i;
+  if( p==0 ){
+    printf("NULL\n");
+    return;
+  }
+  printf("Bitvec 0x%p iSize=%u", p, p->iSize);
+  if( p->iSize<=BITVEC_NBIT ){
+    printf(" bitmap\n");
+    printf("%*s   bits:", n, "");
+    for(i=1; i<=BITVEC_NBIT; i++){
+      if( sqlite3BitvecTest(p,i) ) printf(" %u", x+(unsigned)i);
+    }
+    printf("\n");
+  }else if( p->iDivisor==0 ){
+    printf(" hash with %u entries\n", p->nSet);
+    printf("%*s   bits:", n, "");
+    for(i=0; i<BITVEC_NINT; i++){
+      if( p->u.aHash[i] ) printf(" %u", x+(unsigned)p->u.aHash[i]);
+    }
+    printf("\n");
+  }else{
+    printf(" sub-bitvec with iDivisor=%u\n", p->iDivisor);
+    for(i=0; i<BITVEC_NPTR; i++){
+      if( p->u.apSub[i]==0 ) continue;
+      printf("%*s   apSub[%d]=", n, "", i);
+      showBitvec(p->u.apSub[i], n+4, i*p->iDivisor);
+    }
+  }
+}
+void sqlite3ShowBitvec(Bitvec *p){
+  showBitvec(p, 0, 0);
+}
+#endif
+
 #ifndef SQLITE_UNTESTABLE
 /*
 ** Let V[] be an array of unsigned characters sufficient to hold
@@ -301,8 +350,9 @@ u32 sqlite3BitvecSize(Bitvec *p){
 ** individual bits within V.
 */
 #define SETBIT(V,I)      V[I>>3] |= (1<<(I&7))
-#define CLEARBIT(V,I)    V[I>>3] &= ~(1<<(I&7))
+#define CLEARBIT(V,I)    V[I>>3] &= ~(BITVEC_TELEM)(1<<(I&7))
 #define TESTBIT(V,I)     (V[I>>3]&(1<<(I&7)))!=0
+
 
 /*
 ** This routine runs an extensive test of the Bitvec code.
@@ -312,7 +362,7 @@ u32 sqlite3BitvecSize(Bitvec *p){
 ** by 0, 1, or 3 operands, depending on the opcode.  Another
 ** opcode follows immediately after the last operand.
 **
-** There are 6 opcodes numbered from 0 through 5.  0 is the
+** There are opcodes numbered starting with 0.  0 is the
 ** "halt" opcode and causes the test to end.
 **
 **    0          Halt and return the number of errors
@@ -321,18 +371,25 @@ u32 sqlite3BitvecSize(Bitvec *p){
 **    3 N        Set N randomly chosen bits
 **    4 N        Clear N randomly chosen bits
 **    5 N S X    Set N bits from S increment X in array only, not in bitvec
+**    6          Invoice sqlite3ShowBitvec() on the Bitvec object so far
+**    7 X        Show compile-time parameters and the hash of X         
 **
 ** The opcodes 1 through 4 perform set and clear operations are performed
 ** on both a Bitvec object and on a linear array of bits obtained from malloc.
 ** Opcode 5 works on the linear array only, not on the Bitvec.
 ** Opcode 5 is used to deliberately induce a fault in order to
-** confirm that error detection works.
+** confirm that error detection works.  Opcodes 6 and greater are
+** state output opcodes.  Opcodes 6 and greater are no-ops unless
+** SQLite has been compiled with SQLITE_DEBUG.
 **
 ** At the conclusion of the test the linear array is compared
 ** against the Bitvec object.  If there are any differences,
 ** an error is returned.  If they are the same, zero is returned.
 **
 ** If a memory allocation error occurs, return -1.
+**
+** sz is the size of the Bitvec.  Or if sz is negative, make the size
+** 2*(unsigned)(-sz) and disabled the linear vector check.
 */
 int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   Bitvec *pBitvec = 0;
@@ -343,10 +400,15 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
 
   /* Allocate the Bitvec to be tested and a linear array of
   ** bits to act as the reference */
-  pBitvec = sqlite3BitvecCreate( sz );
-  pV = sqlite3MallocZero( (sz+7)/8 + 1 );
+  if( sz<=0 ){
+    pBitvec = sqlite3BitvecCreate( 2*(unsigned)(-sz) );
+    pV = 0;
+  }else{
+    pBitvec = sqlite3BitvecCreate( sz );
+    pV = sqlite3MallocZero( (7+(i64)sz)/8 + 1 );
+  }
   pTmpSpace = sqlite3_malloc64(BITVEC_SZ);
-  if( pBitvec==0 || pV==0 || pTmpSpace==0  ) goto bitvec_end;
+  if( pBitvec==0 || pTmpSpace==0 || (pV==0 && sz>0) ) goto bitvec_end;
 
   /* NULL pBitvec tests */
   sqlite3BitvecSet(0, 1);
@@ -355,6 +417,24 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   /* Run the program */
   pc = i = 0;
   while( (op = aOp[pc])!=0 ){
+    if( op>=6 ){
+#ifdef SQLITE_DEBUG
+      if( op==6 ){
+        sqlite3ShowBitvec(pBitvec);
+      }else if( op==7 ){
+        printf("BITVEC_SZ     = %d (%d by sizeof)\n",
+               BITVEC_SZ, (int)sizeof(Bitvec));
+        printf("BITVEC_USIZE  = %d\n", (int)BITVEC_USIZE);
+        printf("BITVEC_NELEM  = %d\n", (int)BITVEC_NELEM);
+        printf("BITVEC_NBIT   = %d\n", (int)BITVEC_NBIT);
+        printf("BITVEC_NINT   = %d\n", (int)BITVEC_NINT);
+        printf("BITVEC_MXHASH = %d\n", (int)BITVEC_MXHASH);
+        printf("BITVEC_NPTR   = %d\n", (int)BITVEC_NPTR);
+      }
+#endif
+      pc++;
+      continue;
+    }
     switch( op ){
       case 1:
       case 2:
@@ -376,12 +456,12 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
     pc += nx;
     i = (i & 0x7fffffff)%sz;
     if( (op & 1)!=0 ){
-      SETBIT(pV, (i+1));
+      if( pV ) SETBIT(pV, (i+1));
       if( op!=5 ){
         if( sqlite3BitvecSet(pBitvec, i+1) ) goto bitvec_end;
       }
     }else{
-      CLEARBIT(pV, (i+1));
+      if( pV ) CLEARBIT(pV, (i+1));
       sqlite3BitvecClear(pBitvec, i+1, pTmpSpace);
     }
   }
@@ -391,14 +471,18 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   ** match (rc==0).  Change rc to non-zero if a discrepancy
   ** is found.
   */
-  rc = sqlite3BitvecTest(0,0) + sqlite3BitvecTest(pBitvec, sz+1)
-          + sqlite3BitvecTest(pBitvec, 0)
-          + (sqlite3BitvecSize(pBitvec) - sz);
-  for(i=1; i<=sz; i++){
-    if(  (TESTBIT(pV,i))!=sqlite3BitvecTest(pBitvec,i) ){
-      rc = i;
-      break;
+  if( pV ){
+    rc = sqlite3BitvecTest(0,0) + sqlite3BitvecTest(pBitvec, sz+1)
+            + sqlite3BitvecTest(pBitvec, 0)
+            + (sqlite3BitvecSize(pBitvec) - sz);
+    for(i=1; i<=sz; i++){
+      if( (TESTBIT(pV,i))!=sqlite3BitvecTest(pBitvec,i) ){
+        rc = i;
+        break;
+      }
     }
+  }else{
+    rc = 0;
   }
 
   /* Free allocated structure */

@@ -71,9 +71,8 @@
 
 #include "sqlite3.h"
 
-#include "os_setup.h"
-#if SQLITE_OS_WIN
-#  include "os_win.h"
+#ifdef _WIN32
+#include <windows.h>
 #endif
 
 #include <string.h>
@@ -219,14 +218,7 @@ static sqlite3_io_methods vfslog_io_methods = {
   vfslogShmUnmap                  /* xShmUnmap */
 };
 
-#if SQLITE_OS_UNIX && !defined(NO_GETTOD)
-#include <sys/time.h>
-static sqlite3_uint64 vfslog_time(){
-  struct timeval sTime;
-  gettimeofday(&sTime, 0);
-  return sTime.tv_usec + (sqlite3_uint64)sTime.tv_sec * 1000000;
-}
-#elif SQLITE_OS_WIN
+#ifdef _WIN32
 #include <time.h>
 static sqlite3_uint64 vfslog_time(){
   FILETIME ft;
@@ -240,6 +232,13 @@ static sqlite3_uint64 vfslog_time(){
 
   /* ft is 100-nanosecond intervals, we want microseconds */
   return u64time /(sqlite3_uint64)10;
+}
+#elif !defined(NO_GETTOD)
+#include <sys/time.h>
+static sqlite3_uint64 vfslog_time(){
+  struct timeval sTime;
+  gettimeofday(&sTime, 0);
+  return sTime.tv_usec + (sqlite3_uint64)sTime.tv_sec * 1000000;
 }
 #else
 static sqlite3_uint64 vfslog_time(){
@@ -1109,14 +1108,7 @@ int sqlite3_vfslog_register(sqlite3 *db){
 
 #if defined(SQLITE_TEST) || defined(TCLSH)
 
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 
 static int SQLITE_TCLAPI test_vfslog(
   void *clientData,
@@ -1153,7 +1145,7 @@ static int SQLITE_TCLAPI test_vfslog(
       zMsg = Tcl_GetString(objv[3]);
       rc = sqlite3_vfslog_annotate(zVfs, zMsg);
       if( rc!=SQLITE_OK ){
-        Tcl_AppendResult(interp, "failed", 0);
+        Tcl_AppendResult(interp, "failed", (char*)0);
         return TCL_ERROR;
       }
       break;
@@ -1167,7 +1159,7 @@ static int SQLITE_TCLAPI test_vfslog(
       zVfs = Tcl_GetString(objv[2]);
       rc = sqlite3_vfslog_finalize(zVfs);
       if( rc!=SQLITE_OK ){
-        Tcl_AppendResult(interp, "failed", 0);
+        Tcl_AppendResult(interp, "failed", (char*)0);
         return TCL_ERROR;
       }
       break;
@@ -1187,7 +1179,7 @@ static int SQLITE_TCLAPI test_vfslog(
       if( *zParent=='\0' ) zParent = 0;
       rc = sqlite3_vfslog_new(zVfs, zParent, zLog);
       if( rc!=SQLITE_OK ){
-        Tcl_AppendResult(interp, "failed", 0);
+        Tcl_AppendResult(interp, "failed", (char*)0);
         return TCL_ERROR;
       }
       break;

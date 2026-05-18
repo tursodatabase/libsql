@@ -22,13 +22,13 @@ import org.sqlite.jni.capi.sqlite3_value;
 */
 public interface SqlFunction  {
 
-  public static final int DETERMINISTIC = CApi.SQLITE_DETERMINISTIC;
-  public static final int INNOCUOUS = CApi.SQLITE_INNOCUOUS;
-  public static final int DIRECTONLY = CApi.SQLITE_DIRECTONLY;
-  public static final int SUBTYPE = CApi.SQLITE_SUBTYPE;
-  public static final int RESULT_SUBTYPE = CApi.SQLITE_RESULT_SUBTYPE;
-  public static final int UTF8 = CApi.SQLITE_UTF8;
-  public static final int UTF16 = CApi.SQLITE_UTF16;
+  int DETERMINISTIC = CApi.SQLITE_DETERMINISTIC;
+  int INNOCUOUS = CApi.SQLITE_INNOCUOUS;
+  int DIRECTONLY = CApi.SQLITE_DIRECTONLY;
+  int SUBTYPE = CApi.SQLITE_SUBTYPE;
+  int RESULT_SUBTYPE = CApi.SQLITE_RESULT_SUBTYPE;
+  int UTF8 = CApi.SQLITE_UTF8;
+  int UTF16 = CApi.SQLITE_UTF16;
 
   /**
      The Arguments type is an abstraction on top of the lower-level
@@ -36,7 +36,7 @@ public interface SqlFunction  {
      of the lower-level interface, insofar as possible without "leaking"
      those types into this API.
   */
-  public final static class Arguments implements Iterable<SqlFunction.Arguments.Arg>{
+  final class Arguments implements Iterable<SqlFunction.Arguments.Arg>{
     private final sqlite3_context cx;
     private final sqlite3_value args[];
     public final int length;
@@ -144,7 +144,7 @@ public interface SqlFunction  {
        range.
     */
     public void setAuxData(int argNdx, Object o){
-      /* From the API docs: https://www.sqlite.org/c3ref/get_auxdata.html
+      /* From the API docs: https://sqlite.org/c3ref/get_auxdata.html
 
          The value of the N parameter to these interfaces should be
          non-negative. Future enhancements may make use of negative N
@@ -207,7 +207,7 @@ public interface SqlFunction  {
      Internal-use adapter for wrapping this package's ScalarFunction
      for use with the org.sqlite.jni.capi.ScalarFunction interface.
   */
-  static final class ScalarAdapter extends org.sqlite.jni.capi.ScalarFunction {
+  final class ScalarAdapter extends org.sqlite.jni.capi.ScalarFunction {
     private final ScalarFunction impl;
     ScalarAdapter(ScalarFunction impl){
       this.impl = impl;
@@ -234,8 +234,8 @@ public interface SqlFunction  {
      Internal-use adapter for wrapping this package's AggregateFunction
      for use with the org.sqlite.jni.capi.AggregateFunction interface.
   */
-  static /*cannot be final without duplicating the whole body in WindowAdapter*/
   class AggregateAdapter extends org.sqlite.jni.capi.AggregateFunction {
+  /*cannot be final without duplicating the whole body in WindowAdapter*/
     private final AggregateFunction impl;
     AggregateAdapter(AggregateFunction impl){
       this.impl = impl;
@@ -277,7 +277,7 @@ public interface SqlFunction  {
      Internal-use adapter for wrapping this package's WindowFunction
      for use with the org.sqlite.jni.capi.WindowFunction interface.
   */
-  static final class WindowAdapter extends AggregateAdapter {
+  final class WindowAdapter extends AggregateAdapter {
     private final WindowFunction impl;
     WindowAdapter(WindowFunction impl){
       super(impl);

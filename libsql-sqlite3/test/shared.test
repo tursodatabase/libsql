@@ -161,7 +161,7 @@ do_test shared-$av.1.8 {
 
 do_test shared-$av.2.1 {
   # Open connection db3 to the database.
-  if {$::tcl_platform(platform)=="unix"} {
+  if {$::tcl_platform(platform) eq "unix"} {
     sqlite3 db3 "file:test.db?cache=private" -uri 1
   } else {
     sqlite3 db3 TEST.DB
@@ -312,7 +312,7 @@ do_test shared-$av.4.1.3 {
 } {2}
 
 # Sanity check: Create a table in ./test.db via handle db, and test that handle
-# db2 can "see" the new table immediately. A handle using a seperate pager
+# db2 can "see" the new table immediately. A handle using a separate pager
 # cache would have to reload the database schema before this were possible.
 #
 do_test shared-$av.4.2.1 {
@@ -797,7 +797,7 @@ do_test shared-$av.10.2 {
 do_test shared-$av.10.3 {
   # An external connection should be able to read the database, but not
   # prepare a write operation.
-  if {$::tcl_platform(platform)=="unix"} {
+  if {$::tcl_platform(platform) eq "unix"} {
     sqlite3 db3 "file:test.db?cache=private" -uri 1
   } else {
     sqlite3 db3 TEST.DB

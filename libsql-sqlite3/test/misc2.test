@@ -54,19 +54,34 @@ do_test misc2-2.1 {
   }
 } {}
 ifcapable subquery {
-  do_catchsql_test misc2-2.2 {
-    SELECT rowid, * FROM (SELECT * FROM t1, t2);
-  } {1 {no such column: rowid}}
+  ifcapable allow_rowid_in_view {
+    do_catchsql_test misc2-2.2 {
+      SELECT rowid, * FROM (SELECT * FROM t1, t2);
+    } {0 {{} 1 2 3 7 8 9}}
+  } else {
+    do_catchsql_test misc2-2.2 {
+      SELECT rowid, * FROM (SELECT * FROM t1, t2);
+    } {1 {no such column: rowid}}
+  }
   do_catchsql_test misc2-2.2b {
     SELECT 'rowid', * FROM (SELECT * FROM t1, t2);
   } {0 {rowid 1 2 3 7 8 9}}
 }
 
 ifcapable view {
-  do_catchsql_test misc2-2.3 {
-    CREATE VIEW v1 AS SELECT * FROM t1, t2;
-    SELECT rowid, * FROM v1;
-  } {1 {no such column: rowid}}
+  ifcapable allow_rowid_in_view {
+    do_catchsql_test misc2-2.3 {
+      CREATE VIEW v1 AS SELECT * FROM t1, t2;
+      SELECT rowid, * FROM v1;
+    } {0 {{} 1 2 3 7 8 9}}
+  } else {
+    do_catchsql_test misc2-2.3 {
+      CREATE VIEW v1 AS SELECT * FROM t1, t2;
+      SELECT rowid, * FROM v1;
+    } {1 {no such column: rowid}}
+  }
+
+
   do_catchsql_test misc2-2.3b {
     SELECT 'rowid', * FROM v1;
   } {0 {rowid 1 2 3 7 8 9}}

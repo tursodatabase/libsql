@@ -630,7 +630,7 @@ do_execsql_test 13.5 {
 } {}
 
 # 2018-12-06
-# https://www.sqlite.org/src/info/f09fcd17810f65f7
+# https://sqlite.org/src/info/f09fcd17810f65f7
 # Assertion fault when window functions are used.
 #
 # Root cause is the query flattener invoking sqlite3ExprDup() on
@@ -657,7 +657,7 @@ do_execsql_test 14.1 {
 } {1 2 3}
 
 # 2018-12-31
-# https://www.sqlite.org/src/info/d0866b26f83e9c55
+# https://sqlite.org/src/info/d0866b26f83e9c55
 # Window function in correlated subquery causes assertion fault 
 #
 do_catchsql_test 15.0 {
@@ -1205,7 +1205,7 @@ do_execsql_test 29.2 {
 
 # 2019-07-18
 # Check-in [7ef7b23cbb1b9ace] (which was itself a fix for ticket
-# https://www.sqlite.org/src/info/1be72aab9) introduced a new problem
+# https://sqlite.org/src/info/1be72aab9) introduced a new problem
 # if the LHS of a BETWEEN operator is a WINDOW function.  The problem
 # was found by (the recently enhanced) dbsqlfuzz.
 #
@@ -2375,5 +2375,53 @@ do_execsql_test 77.2 {
   SELECT max(~likely(x)) FILTER (WHERE true) FROM t1 INDEXED BY t1x GROUP BY x;
 } {-2 -3 -5 -9}
 
+# 2024-05-23 https://sqlite.org/forum/forumpost/bf8f43aa522c2299
+#
+# A bug in group_concat() when used as a window function, reported
+# just hours after the 3.46.0 release, though first appearing
+# in 3.28.0.
+#
+# When used as a window function, a group_concat() was not
+# correctly distinguishing between NULL and empty-string for
+# its return value.
+#
+do_execsql_test 78.1 {
+  SELECT quote(group_concat(x) OVER ()) FROM (SELECT '' AS x);
+} ''
+do_execsql_test 78.2 {
+  SELECT quote(group_concat(x) OVER (
+      ORDER BY y RANGE BETWEEN 1 FOLLOWING AND 2 FOLLOWING
+    )) FROM (SELECT 'abc' AS x, 1 AS y);
+} NULL
+
+#-------------------------------------------------------------------------
+# Test that the following queries do not run for a very long time.
+#
+#   https://sqlite.org/forum/forumpost/b1993c858f
+#
+do_execsql_test 79.0 {
+  CREATE TABLE t0 (c0 INTEGER );
+  INSERT INTO t0 VALUES(1);
+  INSERT INTO t0 VALUES(2);
+  INSERT INTO t0 VALUES(3);
+}
+
+do_execsql_test 79.1 {
+  SELECT COUNT(*) 
+  OVER ( ROWS BETWEEN 0 FOLLOWING AND 100 FOLLOWING) 
+  FROM t0;
+} {3 2 1}
+
+do_execsql_test 79.2 {
+  SELECT COUNT(*) 
+  OVER ( ORDER BY c0 RANGE BETWEEN 0 FOLLOWING AND 10_000_000_000 FOLLOWING ) 
+  FROM t0;
+} {3 2 1}
+
+do_execsql_test 79.3 {
+  SELECT sum(c0), COUNT(*) 
+  OVER ( ORDER BY c0 RANGE BETWEEN 0 FOLLOWING AND 10_000_000_000 FOLLOWING ) 
+  FROM t0;
+} {6 1}
 
 finish_test

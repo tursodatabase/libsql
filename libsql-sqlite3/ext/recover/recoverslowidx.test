@@ -39,6 +39,7 @@ do_test 1.2 {
 } [list {*}{
   {BEGIN}
   {PRAGMA writable_schema = on}
+  {PRAGMA foreign_keys = off}
   {PRAGMA encoding = 'UTF-8'}
   {PRAGMA page_size = '1024'}
   {PRAGMA auto_vacuum = '0'}
@@ -67,6 +68,7 @@ do_test 1.4 {
 } [list {*}{
   {BEGIN}
   {PRAGMA writable_schema = on}
+  {PRAGMA foreign_keys = off}
   {PRAGMA encoding = 'UTF-8'}
   {PRAGMA page_size = '1024'}
   {PRAGMA auto_vacuum = '0'}

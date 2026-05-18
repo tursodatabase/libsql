@@ -56,4 +56,28 @@ do_faultsim_test 1 -faults oom* -prep {
   faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  ALTER TABLE t1 ADD COLUMN c DEFAULT 'abcdefghijklmnopqrstuvwxyz';
+}
+faultsim_save_and_close
+
+do_faultsim_test 2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval {SELECT * FROM sqlite_schema}
+} -body {
+  sqlite3session S db main
+  S attach *
+  execsql {
+    DELETE FROM t1 WHERE a = 1;
+  }
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  catch { S delete }
+}
+
 finish_test

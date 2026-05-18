@@ -17,10 +17,6 @@
 #include <string.h>
 #include <assert.h>
 
-#ifndef SQLITE_AMALGAMATION
-typedef sqlite3_int64 i64;
-#endif
-
 /*
 ** Characters that may appear in the second argument to matchinfo().
 */
@@ -108,8 +104,12 @@ struct MatchinfoBuffer {
   int nElem;
   int bGlobal;                    /* Set if global data is loaded */
   char *zMatchinfo;
-  u32 aMatchinfo[1];
+  u32 aMI[FLEXARRAY];
 };
+
+/* Size (in bytes) of a MatchinfoBuffer sufficient for N elements */
+#define SZ_MATCHINFOBUFFER(N) \
+            (offsetof(MatchinfoBuffer,aMI)+(((N)+1)/2)*sizeof(u64))
 
 
 /*
@@ -135,13 +135,13 @@ struct StrBuffer {
 static MatchinfoBuffer *fts3MIBufferNew(size_t nElem, const char *zMatchinfo){
   MatchinfoBuffer *pRet;
   sqlite3_int64 nByte = sizeof(u32) * (2*(sqlite3_int64)nElem + 1)
-                           + sizeof(MatchinfoBuffer);
+                           + SZ_MATCHINFOBUFFER(1);
   sqlite3_int64 nStr = strlen(zMatchinfo);
 
   pRet = sqlite3Fts3MallocZero(nByte + nStr+1);
   if( pRet ){
-    pRet->aMatchinfo[0] = (u8*)(&pRet->aMatchinfo[1]) - (u8*)pRet;
-    pRet->aMatchinfo[1+nElem] = pRet->aMatchinfo[0]
+    pRet->aMI[0] = (u8*)(&pRet->aMI[1]) - (u8*)pRet;
+    pRet->aMI[1+nElem] = pRet->aMI[0]
                                       + sizeof(u32)*((int)nElem+1);
     pRet->nElem = (int)nElem;
     pRet->zMatchinfo = ((char*)pRet) + nByte;
@@ -155,10 +155,10 @@ static MatchinfoBuffer *fts3MIBufferNew(size_t nElem, const char *zMatchinfo){
 static void fts3MIBufferFree(void *p){
   MatchinfoBuffer *pBuf = (MatchinfoBuffer*)((u8*)p - ((u32*)p)[-1]);
 
-  assert( (u32*)p==&pBuf->aMatchinfo[1] 
-       || (u32*)p==&pBuf->aMatchinfo[pBuf->nElem+2] 
+  assert( (u32*)p==&pBuf->aMI[1] 
+       || (u32*)p==&pBuf->aMI[pBuf->nElem+2] 
   );
-  if( (u32*)p==&pBuf->aMatchinfo[1] ){
+  if( (u32*)p==&pBuf->aMI[1] ){
     pBuf->aRef[1] = 0;
   }else{
     pBuf->aRef[2] = 0;
@@ -175,18 +175,18 @@ static void (*fts3MIBufferAlloc(MatchinfoBuffer *p, u32 **paOut))(void*){
 
   if( p->aRef[1]==0 ){
     p->aRef[1] = 1;
-    aOut = &p->aMatchinfo[1];
+    aOut = &p->aMI[1];
     xRet = fts3MIBufferFree;
   }
   else if( p->aRef[2]==0 ){
     p->aRef[2] = 1;
-    aOut = &p->aMatchinfo[p->nElem+2];
+    aOut = &p->aMI[p->nElem+2];
     xRet = fts3MIBufferFree;
   }else{
     aOut = (u32*)sqlite3_malloc64(p->nElem * sizeof(u32));
     if( aOut ){
       xRet = sqlite3_free;
-      if( p->bGlobal ) memcpy(aOut, &p->aMatchinfo[1], p->nElem*sizeof(u32));
+      if( p->bGlobal ) memcpy(aOut, &p->aMI[1], p->nElem*sizeof(u32));
     }
   }
 
@@ -196,7 +196,7 @@ static void (*fts3MIBufferAlloc(MatchinfoBuffer *p, u32 **paOut))(void*){
 
 static void fts3MIBufferSetGlobal(MatchinfoBuffer *p){
   p->bGlobal = 1;
-  memcpy(&p->aMatchinfo[2+p->nElem], &p->aMatchinfo[1], p->nElem*sizeof(u32));
+  memcpy(&p->aMI[2+p->nElem], &p->aMI[1], p->nElem*sizeof(u32));
 }
 
 /*
@@ -398,6 +398,7 @@ static int fts3SnippetNextCandidate(SnippetIter *pIter){
       return 1;
     }
 
+    assert( pIter->nSnippet>=0 );
     pIter->iCurrent = iStart = iEnd - pIter->nSnippet + 1;
     for(i=0; i<pIter->nPhrase; i++){
       SnippetPhrase *pPhrase = &pIter->aPhrase[i];
@@ -446,7 +447,7 @@ static void fts3SnippetDetails(
         }
         mCover |= mPhrase;
 
-        for(j=0; j<pPhrase->nToken; j++){
+        for(j=0; j<pPhrase->nToken && j<pIter->nSnippet; j++){
           mHighlight |= (mPos>>j);
         }
 
@@ -610,7 +611,7 @@ static int fts3StringAppend(
   }
 
   /* If there is insufficient space allocated at StrBuffer.z, use realloc()
-  ** to grow the buffer until so that it is big enough to accomadate the
+  ** to grow the buffer until so that it is big enough to accommodate the
   ** appended data.
   */
   if( pStr->n+nAppend+1>=pStr->nAlloc ){
@@ -1022,16 +1023,16 @@ static size_t fts3MatchinfoSize(MatchInfo *pInfo, char cArg){
       break;
 
     case FTS3_MATCHINFO_LHITS:
-      nVal = pInfo->nCol * pInfo->nPhrase;
+      nVal = (size_t)pInfo->nCol * pInfo->nPhrase;
       break;
 
     case FTS3_MATCHINFO_LHITS_BM:
-      nVal = pInfo->nPhrase * ((pInfo->nCol + 31) / 32);
+      nVal = (size_t)pInfo->nPhrase * ((pInfo->nCol + 31) / 32);
       break;
 
     default:
       assert( cArg==FTS3_MATCHINFO_HITS );
-      nVal = pInfo->nCol * pInfo->nPhrase * 3;
+      nVal = (size_t)pInfo->nCol * pInfo->nPhrase * 3;
       break;
   }
 
@@ -1586,6 +1587,22 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
 }
 
 /*
+** If expression pExpr is a phrase expression that uses an MSR query, 
+** restart it as a regular, non-incremental query. Return SQLITE_OK
+** if successful, or an SQLite error code otherwise.
+*/
+static int fts3ExprRestartIfCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
+  TermOffsetCtx *p = (TermOffsetCtx*)ctx;
+  int rc = SQLITE_OK;
+  UNUSED_PARAMETER(iPhrase);
+  if( pExpr->pPhrase && pExpr->pPhrase->bIncr ){
+    rc = sqlite3Fts3MsrCancel(p->pCsr, pExpr);
+    pExpr->pPhrase->bIncr = 0;
+  }
+  return rc;
+}
+
+/*
 ** Implementation of offsets() function.
 */
 void sqlite3Fts3Offsets(
@@ -1620,6 +1637,12 @@ void sqlite3Fts3Offsets(
   }
   sCtx.iDocid = pCsr->iPrevId;
   sCtx.pCsr = pCsr;
+
+  /* If a query restart will be required, do it here, rather than later of
+  ** after pointers to poslist buffers that may be invalidated by a restart
+  ** have been saved.  */
+  rc = sqlite3Fts3ExprIterate(pCsr->pExpr, fts3ExprRestartIfCb, (void*)&sCtx);
+  if( rc!=SQLITE_OK ) goto offsets_out;
 
   /* Loop through the table columns, appending offset information to 
   ** string-buffer res for each column.

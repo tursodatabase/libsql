@@ -20,7 +20,7 @@ if {[permutation] == "inmemory_journal"} {
   return
 }
 
-if {$::tcl_platform(platform)=="windows"} {
+if {$::tcl_platform(os) eq "Windows NT"} {
   finish_test
   return
 }

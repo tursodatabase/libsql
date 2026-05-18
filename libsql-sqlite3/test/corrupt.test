@@ -290,7 +290,7 @@ ifcapable oversize_cell_check {
   # detecting corruption was not possible at that point, and an assert() failed.
   #
   set fd [open test.db r+]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   seek $fd [expr 1024+8]
   puts -nonewline $fd "\x03\x14"
   close $fd

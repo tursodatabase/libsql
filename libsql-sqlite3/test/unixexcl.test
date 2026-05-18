@@ -18,7 +18,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
-if {$::tcl_platform(platform)!="unix" || [info commands test_syscall]==""} {
+if {[llength [info commands test_syscall]]==0} {
   finish_test
   return
 } 

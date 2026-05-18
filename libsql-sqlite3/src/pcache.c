@@ -512,6 +512,7 @@ static SQLITE_NOINLINE PgHdr *pcacheFetchFinishWithInit(
   pPgHdr->pData = pPage->pBuf;
   pPgHdr->pExtra = (void *)&pPgHdr[1];
   memset(pPgHdr->pExtra, 0, 8);
+  assert( EIGHT_BYTE_ALIGNMENT( pPgHdr->pExtra ) );
   pPgHdr->pCache = pCache;
   pPgHdr->pgno = pgno;
   pPgHdr->flags = PGHDR_CLEAN;

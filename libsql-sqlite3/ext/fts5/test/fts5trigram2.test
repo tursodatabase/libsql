@@ -21,6 +21,9 @@ do_execsql_test 1.0 "
   INSERT INTO t1 VALUES('abc\u0303defghijklm');
   INSERT INTO t1 VALUES('a\u0303b\u0303c\u0303defghijklm');
 "
+do_catchsql_test 1.0.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(z, tokenize='trigram remove_diacritics');
+} {1 {error in tokenizer constructor}}
 
 do_execsql_test 1.1 {
   SELECT highlight(t1, 0, '(', ')') FROM t1('abc');
@@ -101,9 +104,34 @@ do_execsql_test 4.0 {
   CREATE VIRTUAL TABLE t4 USING fts5(z, tokenize=trigram);
 } {}
 
-breakpoint
 do_execsql_test 4.1 {
   INSERT INTO t4 VALUES('ABCD');
+  INSERT INTO t4 VALUES('DEFG');
 } {}
+
+db close
+sqlite3 db test.db
+
+do_eqp_test 4.1 {
+  SELECT rowid FROM t4 WHERE z LIKE '%abc%'
+} {VIRTUAL TABLE INDEX 0:L0}
+
+do_execsql_test 4.2 {
+  SELECT rowid FROM t4 WHERE z LIKE '%abc%'
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t5 USING fts5(
+      c1, tokenize='trigram', detail='none'
+  );
+  INSERT INTO t5(rowid, c1) VALUES(1, 'abc_____xyx_yxz');
+  INSERT INTO t5(rowid, c1) VALUES(2, 'abc_____xyxz');
+  INSERT INTO t5(rowid, c1) VALUES(3, 'ac_____xyxz');
+} {}
+do_execsql_test 5.1 {
+  SELECT rowid FROM t5 WHERE c1 LIKE 'abc%xyxz'
+} {2}
 
 finish_test

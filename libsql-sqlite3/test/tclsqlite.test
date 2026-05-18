@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 # This file implements regression tests for TCL interface to the
-# SQLite library. 
+# SQLite library.
 #
 # Actually, all tests are based on the TCL interface, so the main
 # interface is pretty well tested.  This file contains some addition
@@ -121,7 +121,7 @@ ifcapable {complete} {
 do_test tcl-1.14 {
   set v [catch {db eval} msg]
   lappend v $msg
-} {1 {wrong # args: should be "db eval ?OPTIONS? SQL ?ARRAY-NAME? ?SCRIPT?"}}
+} {1 {wrong # args: should be "db eval ?OPTIONS? SQL ?VAR-NAME? ?SCRIPT?"}}
 do_test tcl-1.15 {
   set v [catch {db function} msg]
   lappend v $msg
@@ -359,6 +359,19 @@ do_test tcl-9.3 {
   execsql {SELECT typeof(ret_int())}
 } {integer}
 
+proc breakAsNullUdf args {
+  if {"1" eq [lindex $args 0]} {return -code break}
+}
+do_test tcl-9.4 {
+  db function banu breakAsNullUdf
+  execsql {SELECT typeof(banu()), typeof(banu(1))}
+} {text null}
+do_test tcl-9.5 {
+  db nullvalue banunull
+  db eval {SELECT banu(), banu(1)}
+} {{} banunull}
+
+
 # Recursive calls to the same user-defined function
 #
 ifcapable tclvar {
@@ -465,7 +478,7 @@ do_test tcl-10.13 {
   db eval {SELECT * FROM t4}
 } {1 2 5 6 7}
 
-# Now test that [db transaction] commands may be nested with 
+# Now test that [db transaction] commands may be nested with
 # the expected results.
 #
 do_test tcl-10.14 {
@@ -475,7 +488,7 @@ do_test tcl-10.14 {
       INSERT INTO t4 VALUES('one');
     }
 
-    catch { 
+    catch {
       db transaction {
         db eval { INSERT INTO t4 VALUES('two') }
         db transaction {
@@ -674,11 +687,11 @@ do_test tcl-15.5 {
 } {0}
 
 
-# 2017-06-26: The --withoutnulls flag to "db eval".
+# 2017-06-26: The -withoutnulls flag to "db eval".
 #
-# In the "db eval --withoutnulls SQL ARRAY" form, NULL results cause the
-# corresponding array entry to be unset.  The default behavior (without
-# the -withoutnulls flags) is for the corresponding array value to get
+# In the "db eval -withoutnulls SQL TARGET" form, NULL results cause the
+# corresponding target entry to be unset.  The default behavior (without
+# the -withoutnulls flags) is for the corresponding target value to get
 # the [db nullvalue] string.
 #
 catch {db close}
@@ -720,64 +733,64 @@ reset_db
 proc add {a b} { return [expr $a + $b] }
 proc ret {a} { return $a }
 
-db function add_i -returntype integer add 
+db function add_i -returntype integer add
 db function add_r -ret        real    add
-db function add_t -return     text    add 
-db function add_b -returntype blob    add 
-db function add_a -returntype any     add 
+db function add_t -return     text    add
+db function add_b -returntype blob    add
+db function add_a -returntype any     add
 
-db function ret_i -returntype int     ret 
+db function ret_i -returntype int     ret
 db function ret_r -returntype real    ret
-db function ret_t -returntype text    ret 
-db function ret_b -returntype blob    ret 
-db function ret_a -r          any     ret 
+db function ret_t -returntype text    ret
+db function ret_b -returntype blob    ret
+db function ret_a -r          any     ret
 
 do_execsql_test 17.0 {
   SELECT quote( add_i(2, 3) );
-  SELECT quote( add_r(2, 3) ); 
-  SELECT quote( add_t(2, 3) ); 
-  SELECT quote( add_b(2, 3) ); 
-  SELECT quote( add_a(2, 3) ); 
+  SELECT quote( add_r(2, 3) );
+  SELECT quote( add_t(2, 3) );
+  SELECT quote( add_b(2, 3) );
+  SELECT quote( add_a(2, 3) );
 } {5 5.0 '5' X'35' 5}
 
 do_execsql_test 17.1 {
   SELECT quote( add_i(2.2, 3.3) );
-  SELECT quote( add_r(2.2, 3.3) ); 
-  SELECT quote( add_t(2.2, 3.3) ); 
-  SELECT quote( add_b(2.2, 3.3) ); 
-  SELECT quote( add_a(2.2, 3.3) ); 
+  SELECT quote( add_r(2.2, 3.3) );
+  SELECT quote( add_t(2.2, 3.3) );
+  SELECT quote( add_b(2.2, 3.3) );
+  SELECT quote( add_a(2.2, 3.3) );
 } {5.5 5.5 '5.5' X'352E35' 5.5}
 
 do_execsql_test 17.2 {
   SELECT quote( ret_i(2.5) );
-  SELECT quote( ret_r(2.5) ); 
-  SELECT quote( ret_t(2.5) ); 
-  SELECT quote( ret_b(2.5) ); 
-  SELECT quote( ret_a(2.5) ); 
+  SELECT quote( ret_r(2.5) );
+  SELECT quote( ret_t(2.5) );
+  SELECT quote( ret_b(2.5) );
+  SELECT quote( ret_a(2.5) );
 } {2.5 2.5 '2.5' X'322E35' 2.5}
 
 do_execsql_test 17.3 {
   SELECT quote( ret_i('2.5') );
-  SELECT quote( ret_r('2.5') ); 
-  SELECT quote( ret_t('2.5') ); 
-  SELECT quote( ret_b('2.5') ); 
-  SELECT quote( ret_a('2.5') ); 
+  SELECT quote( ret_r('2.5') );
+  SELECT quote( ret_t('2.5') );
+  SELECT quote( ret_b('2.5') );
+  SELECT quote( ret_a('2.5') );
 } {2.5 2.5 '2.5' X'322E35' '2.5'}
 
 do_execsql_test 17.4 {
   SELECT quote( ret_i('abc') );
-  SELECT quote( ret_r('abc') ); 
-  SELECT quote( ret_t('abc') ); 
-  SELECT quote( ret_b('abc') ); 
-  SELECT quote( ret_a('abc') ); 
+  SELECT quote( ret_r('abc') );
+  SELECT quote( ret_t('abc') );
+  SELECT quote( ret_b('abc') );
+  SELECT quote( ret_a('abc') );
 } {'abc' 'abc' 'abc' X'616263' 'abc'}
 
 do_execsql_test 17.5 {
   SELECT quote( ret_i(X'616263') );
-  SELECT quote( ret_r(X'616263') ); 
-  SELECT quote( ret_t(X'616263') ); 
-  SELECT quote( ret_b(X'616263') ); 
-  SELECT quote( ret_a(X'616263') ); 
+  SELECT quote( ret_r(X'616263') );
+  SELECT quote( ret_t(X'616263') );
+  SELECT quote( ret_b(X'616263') );
+  SELECT quote( ret_a(X'616263') );
 } {'abc' 'abc' 'abc' X'616263' X'616263'}
 
 do_test 17.6.1 {
@@ -848,21 +861,70 @@ do_catchsql_test 19.911 {
 } {1 {invalid command name "bind_fallback_does_not_exist"}}
 db bind_fallback {}
 
-#-------------------------------------------------------------------------
+# 2025-05-05: the -asdict eval flag
+#
 do_test 20.0 {
+  execsql {CREATE TABLE tad(a,b)}
+  execsql {INSERT INTO tad(a,b) VALUES('aa','bb'),('AA','BB')}
+  db eval -asdict {
+    SELECT a, b FROM tad WHERE 0
+  } D {}
+  set D
+} {* {a b}}
+
+do_test 20.1 {
+  unset D
+  set i 0
+  set res {}
+  set colNames {}
+  db eval -asdict {
+    SELECT a, b FROM tad ORDER BY a
+  } D {
+    dict set D i [incr i]
+    lappend res $i [dict get $D a] [dict get $D b]
+    if {1 == $i} {
+      set colNames [dict get $D *]
+    }
+  }
+  lappend res $colNames
+  unset D
+  set res
+} {1 AA BB 2 aa bb {a b}}
+
+do_test 20.2 {
+  set res {}
+  db eval -asdict -withoutnulls {
+    SELECT n, a, b FROM (
+      SELECT 1 as n, 'aa' as a, NULL as b
+      UNION ALL
+      SELECT 2 as n, NULL as a, 'bb' as b
+    )
+    ORDER BY n
+  } D {
+    dict unset D *
+    lappend res [dict values $D]
+  }
+  unset D
+  execsql {DROP TABLE tad}
+  set res
+} {{1 aa} {2 bb}}
+
+#-------------------------------------------------------------------------
+do_test 21.0 {
   db transaction {
     db close
   }
 } {}
 
-do_test 20.1 {
+do_test 21.1 {
   sqlite3 db test.db
   set rc [catch {
     db eval {SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3} { db close }
   } msg]
   list $rc $msg
 } {1 {invalid command name "db"}}
-  
+
+
 
 proc closedb {} {
   db close
@@ -874,7 +936,7 @@ sqlite3 db test.db
 db func closedb closedb
 db func func1 func1
 
-do_test 20.2 {
+do_test 21.2 {
   set rc [catch {
     db eval {
       SELECT closedb(),func1() UNION ALL SELECT 20,30 UNION ALL SELECT 30,40
@@ -884,9 +946,10 @@ do_test 20.2 {
 } {0 {10 1 20 30 30 40}}
 
 sqlite3 db :memory:
-do_test 21.1 {
+do_test 22.1 {
   catch {db eval {SELECT 1 2 3;}} msg
   db erroroffset
 } {9}
+
 
 finish_test

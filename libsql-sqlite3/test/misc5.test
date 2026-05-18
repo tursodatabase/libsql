@@ -523,6 +523,7 @@ if {[permutation] == ""} {
       CREATE TABLE t1(a,b,c);
     }
   } {1 {file is not a database}}
+  reset_db
 }
 
 # Ticket #1371.  Allow floating point numbers of the form .N  or N.
@@ -569,11 +570,11 @@ ifcapable subquery&&compound {
 }
 
 # Overflow the lemon parser stack by providing an overly complex
-# expression.  Make sure that the overflow is detected and reported.
+# expression.  Make sure that the overflow is detected and the
+# stack is grown automatically such that the application calling
+# SQLite never notices.
 #
-# This test fails when building with -DYYSTACKDEPTH=0
-#
-do_test misc5-7.1 {
+do_test misc5-7.1.1 {
   execsql {CREATE TABLE t1(x)}
   set sql "INSERT INTO t1 VALUES("
   set tail ""
@@ -581,9 +582,21 @@ do_test misc5-7.1 {
     append sql "(1+"
     append tail ")"
   }
-  append sql 2$tail
+  append sql "0$tail); SELECT * FROM t1;"
   catchsql $sql
-} {1 {parser stack overflow}}
+} {0 200}
+do_test misc5-7.1.2 {
+  execsql {DELETE FROM t1}
+  set sql "INSERT INTO t1 VALUES("
+  set tail ""
+  for {set i 0} {$i<900} {incr i} {
+    append sql "(1+"
+    append tail ")"
+  }
+  append sql "0$tail); SELECT * FROM t1;"
+  catchsql $sql
+} {0 900}
+
 
 # Parser stack overflow is silently ignored when it occurs while parsing the
 # schema and PRAGMA writable_schema is turned on.

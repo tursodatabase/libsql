@@ -174,7 +174,7 @@ static int kvstorageRead(const char*, const char *zKey, char *zBuf, int nBuf);
 #define KVSTORAGE_KEY_SZ  32
 
 /* Expand the key name with an appropriate prefix and put the result
-** zKeyOut[].  The zKeyOut[] buffer is assumed to hold at least
+** in zKeyOut[].  The zKeyOut[] buffer is assumed to hold at least
 ** KVSTORAGE_KEY_SZ bytes.
 */
 static void kvstorageMakeKey(
@@ -233,10 +233,12 @@ static int kvstorageDelete(const char *zClass, const char *zKey){
 **
 ** Return the total number of bytes in the data, without truncation, and
 ** not counting the final zero terminator.   Return -1 if the key does
-** not exist.
+** not exist or its key cannot be read.
 **
-** If nBuf<=0 then this routine simply returns the size of the data without
-** actually reading it.
+** If nBuf<=0 then this routine simply returns the size of the data
+** without actually reading it.  Similarly, if nBuf==1 then it
+** zero-terminates zBuf at zBuf[0] and returns the size of the data
+** without reading it.
 */
 static int kvstorageRead(
   const char *zClass,
@@ -285,11 +287,9 @@ static int kvstorageRead(
 ** kvvfs i/o methods with JavaScript implementations in WASM builds.
 ** Maintenance reminder: if this struct changes in any way, the JSON
 ** rendering of its structure must be updated in
-** sqlite3_wasm_enum_json(). There are no binary compatibility
-** concerns, so it does not need an iVersion member. This file is
-** necessarily always compiled together with sqlite3_wasm_enum_json(),
-** and JS code dynamically creates the mapping of members based on
-** that JSON description.
+** sqlite3-wasm.c:sqlite3__wasm_enum_json(). There are no binary
+** compatibility concerns, so it does not need an iVersion
+** member.
 */
 typedef struct sqlite3_kvvfs_methods sqlite3_kvvfs_methods;
 struct sqlite3_kvvfs_methods {
@@ -306,8 +306,8 @@ struct sqlite3_kvvfs_methods {
 ** the compiler can hopefully optimize this level of indirection out.
 ** That said, kvvfs is intended primarily for use in WASM builds.
 **
-** Note that this is not explicitly flagged as static because the
-** amalgamation build will tag it with SQLITE_PRIVATE.
+** This is not explicitly flagged as static because the amalgamation
+** build will tag it with SQLITE_PRIVATE.
 */
 #ifndef SQLITE_WASM
 const

@@ -80,6 +80,9 @@
       }
       App.wasm.xCall('wasm_main', argv.length,
                      App.wasm.scopedAllocMainArgv(argv));
+      log("WASM heap size:",App.wasm.heap8().byteLength,"bytes");
+      log("WASM pointer size:",App.wasm.ptr.size);
+
     }catch(e){
       mPost('error',e.message);
     }finally{
@@ -111,12 +114,10 @@
   self.sqlite3InitModule(EmscriptenModule).then(async (sqlite3)=>{
     const S = globalThis.S = App.sqlite3 = sqlite3;
     log("Loaded speedtest1 module. Setting up...");
-    App.vfsUnlink = function(pDb, fname){
-      const pVfs = S.wasm.sqlite3_wasm_db_vfs(pDb, 0);
-      if(pVfs) S.wasm.sqlite3_wasm_vfs_unlink(pVfs, fname||0);
-    };
     App.pDir = wasmfsDir(S.wasm);
     App.wasm = S.wasm;
+    log("WASM heap size:",sqlite3.wasm.heap8().byteLength,"bytes");
+    log("WASM pointer size:",sqlite3.wasm.ptr.size);
     //if(App.pDir) log("Persistent storage:",pDir);
     //else log("Using transient storage.");
     mPost('ready',true);

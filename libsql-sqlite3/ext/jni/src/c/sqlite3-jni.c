@@ -133,7 +133,7 @@
 ** Which sqlite3.c we're using needs to be configurable to enable
 ** building against a custom copy, e.g. the SEE variant. We have to
 ** include sqlite3.c, as opposed to sqlite3.h, in order to get access
-** to some interal details like SQLITE_MAX_... and friends. This
+** to some internal details like SQLITE_MAX_... and friends. This
 ** increases the rebuild time considerably but we need this in order
 ** to access some internal functionality and keep the to-Java-exported
 ** values of SQLITE_MAX_... and SQLITE_LIMIT_... in sync with the C
@@ -168,6 +168,10 @@
 ** Creates a verbose JNI function name. Suffix must be
 ** the JNI-mangled form of the function's name, minus the
 ** prefix seen in this macro.
+**
+** If you get java.lang.UnsatisfiedLinkError when calling newly-added
+** native bindings, be sure that the mangled name is correct. It can
+** be found in the generated sqlite3-jni.h.
 */
 #define JniFuncName(Suffix) \
   Java_org_sqlite_jni_capi_CApi_sqlite3_ ## Suffix
@@ -177,10 +181,10 @@
   JNIEXPORT ReturnType JNICALL JniFuncName(Suffix)
 
 /*
-** S3JniApi's intent is that CFunc be the C API func(s) the
-** being-declared JNI function is wrapping, making it easier to find
-** that function's JNI-side entry point. The other args are for JniDecl.
-** See the many examples in this file.
+** S3JniApi's intent is that CFunc be the name(s) of the C API func(s)
+** the being-declared JNI function is wrapping, making it easier to
+** find those bindings' JNI-side entry points. The other args are for
+** JniDecl.  See the many examples in this file.
 */
 #define S3JniApi(CFunc,ReturnType,Suffix) JniDecl(ReturnType,Suffix)
 
@@ -948,7 +952,7 @@ static JNIEnv * s3jni_env(void){
 }
 
 /*
-** Fetches the S3JniGlobal.envCache row for the given env, allocing a
+** Fetches the S3JniGlobal.envCache row for the given env, allocating a
 ** row if needed. When a row is allocated, its state is initialized
 ** insofar as possible. Calls (*env)->FatalError() if allocation of an
 ** entry fails. That's hypothetically possible but "shouldn't happen."
@@ -1603,7 +1607,7 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 ** 2023-11-09: testing has not revealed any measurable performance
 ** difference between the approach of passing type T to C compared to
 ** passing pointer-to-T to C, and adding support for the latter
-** everywhere requires sigificantly more code. As of this writing, the
+** everywhere requires significantly more code. As of this writing, the
 ** older/simpler approach is being applied except for (A) where the
 ** newer approach has already been applied and (B) hot-spot APIs where
 ** a difference of microseconds (i.e. below our testing measurement
@@ -3290,7 +3294,7 @@ static void s3jni_rollback_hook_impl(void *pP){
 static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
                                           jlong jpDb, jobject jHook){
   S3JniDb * ps;
-  jobject pOld = 0;  /* previous hoook */
+  jobject pOld = 0;  /* previous hook */
   S3JniHook * pHook; /* ps->hooks.commit|rollback */
 
   S3JniDb_mutex_enter;
@@ -3854,6 +3858,19 @@ S3JniApi(sqlite3_errmsg(),jstring,1errmsg)(
     /* We don't use errmsg16() directly only because it would cause an
        additional level of internal encoding in sqlite3. The end
        effect should be identical to using errmsg16(), however. */;
+}
+
+S3JniApi(sqlite3_set_errmsg(),jint,1set_1errmsg)(
+  JniArgsEnvClass, jobject jpDb, jint errCode, jstring msg
+){
+  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
+  const char *zUtf8;
+  jint rc;
+  if( !pDb ) return SQLITE_MISUSE;
+  zUtf8 = msg ? s3jni_jstring_to_mutf8(msg) : NULL;
+  rc = sqlite3_set_errmsg(pDb, (int)errCode, zUtf8);
+  s3jni_mutf8_release(msg, zUtf8);
+  return rc;
 }
 
 S3JniApi(sqlite3_errstr(),jstring,1errstr)(
@@ -5512,7 +5529,7 @@ static inline jobject new_java_fts5_api(JNIEnv * const env, fts5_api *sv){
 ** Returns a per-JNIEnv global ref to the Fts5ExtensionApi singleton
 ** instance, or NULL on OOM.
 */
-static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
+static jobject s3jni_getFts5ExtensionApi(JNIEnv * const env){
   if( !SJG.fts5.jExt ){
     S3JniGlobal_mutex_enter;
     if( !SJG.fts5.jExt ){
@@ -5578,7 +5595,7 @@ JniDeclFtsApi(jobject,getInstanceForDb)(JniArgsEnvClass,jobject jDb){
 
 
 JniDeclFtsXA(jobject,getInstance)(JniArgsEnvClass){
-  return s3jni_getFts5ExensionApi(env);
+  return s3jni_getFts5ExtensionApi(env);
 }
 
 JniDeclFtsXA(jint,xColumnCount)(JniArgsEnvObj,jobject jCtx){
@@ -5641,7 +5658,7 @@ static void s3jni_fts5_extension_function(Fts5ExtensionApi const *pApi,
   S3JniDeclLocal_env;
 
   assert(pAux);
-  jFXA = s3jni_getFts5ExensionApi(env);
+  jFXA = s3jni_getFts5ExtensionApi(env);
   if( !jFXA ) goto error_oom;
   jpFts = new_java_Fts5Context(env, pFts);
   if( !jpFts ) goto error_oom;
@@ -5696,7 +5713,7 @@ JniDeclFtsApi(jint,xCreateFunction)(JniArgsEnvObj, jstring jName,
 
 typedef struct S3JniFts5AuxData S3JniFts5AuxData;
 /*
-** TODO: this middle-man struct is no longer necessary. Conider
+** TODO: this middle-man struct is no longer necessary. Consider
 ** removing it and passing around jObj itself instead.
 */
 struct S3JniFts5AuxData {

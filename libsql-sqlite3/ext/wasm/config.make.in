@@ -1,0 +1,16 @@
+# config.make.in gets filtered by the top-most configure script to
+# create config.make.
+bin.bash = @BIN_BASH@
+bin.emcc = @EMCC_WRAPPER@
+bin.wasm-strip = @BIN_WASM_STRIP@
+bin.wasm-opt = @BIN_WASM_OPT@
+
+SHELL = $(bin.bash)
+
+# The following overrides can be uncommented to test various
+# validation and if/else branches the makefile code:
+#
+#bin.bash =
+#bin.emcc =
+#bin.wasm-strip =
+#bin.wasm-opt =

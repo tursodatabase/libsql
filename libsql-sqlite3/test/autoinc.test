@@ -669,7 +669,7 @@ ifcapable trigger {
   } {1 124 2 10123}
 }
 
-# 2016-10-03 ticket https://www.sqlite.org/src/tktview/7b3328086a5c1
+# 2016-10-03 ticket https://sqlite.org/src/tktview/7b3328086a5c1
 # Make sure autoincrement plays nicely with the xfer optimization
 #
 do_execsql_test autoinc-10.1 {

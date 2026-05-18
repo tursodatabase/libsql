@@ -415,7 +415,7 @@ do_execsql_test 10.6 {
   SELECT * FROM t1;
 } {b a 3  b b 4}
 
-# 2019-04-29 ticket https://www.sqlite.org/src/info/3182d3879020ef3
+# 2019-04-29 ticket https://sqlite.org/src/info/3182d3879020ef3
 do_execsql_test 11.1 {
   CREATE TABLE t11(a TEXT PRIMARY KEY, b INT) WITHOUT ROWID;
   CREATE INDEX t11a ON t11(a COLLATE NOCASE);
@@ -424,7 +424,7 @@ do_execsql_test 11.1 {
   SELECT a FROM t11 ORDER BY a COLLATE binary;
 } {ok A a}
 
-# 2019-05-13 ticket https://www.sqlite.org/src/info/bba7b69f9849b5b
+# 2019-05-13 ticket https://sqlite.org/src/info/bba7b69f9849b5b
 do_execsql_test 12.1 {
   DROP TABLE IF EXISTS t0;
   CREATE TABLE t0 (c0 INTEGER PRIMARY KEY DESC, c1 UNIQUE DEFAULT NULL) WITHOUT ROWID;
@@ -433,7 +433,7 @@ do_execsql_test 12.1 {
   PRAGMA integrity_check;
 } {ok}
 
-# 2019-11-07 ticket https://www.sqlite.org/src/info/302027baf1374498
+# 2019-11-07 ticket https://sqlite.org/src/info/302027baf1374498
 # The xferCompatibleIndex() function confuses a PRIMARY KEY index
 # with a UNIQUE index.
 #
@@ -487,4 +487,33 @@ ifcapable altertable {
     SELECT name FROM sqlite_sequence ORDER BY +name;
   } {a c0 c2}
 }
+
+# Ensure that the number of columns in an index on a WITHOUT ROWID
+# table does not exceed SQLITE_LIMIT_COLUMN.
+#
+reset_db
+sqlite3_limit db SQLITE_LIMIT_COLUMN 8
+do_execsql_test 16.1 {
+  CREATE TABLE t1(
+    c1,c2,c3,c4,c5,c6,c7,c8,
+    PRIMARY KEY(c1,c2,c1 COLLATE NOCASE)
+  ) WITHOUT ROWID;
+} {}
+do_execsql_test 16.2 {
+  CREATE TABLE t2(
+    c1,c2,c3,c4,c5,c6,c7,c8,
+    PRIMARY KEY(c1 COLLATE nocase,c1 COLLATE rtrim,
+                c2 COLLATE nocase,c2 COLLATE rtrim,
+                c3 COLLATE nocase,c3 COLLATE rtrim,
+                c4 COLLATE nocase,c4 COLLATE rtrim)
+  ) WITHOUT ROWID;
+} {}
+do_execsql_test 16.3 {
+  CREATE TABLE t3(
+    c1,c2,c3,c4,c5,c6,c7,c8,
+    PRIMARY KEY(c1,c2),
+    UNIQUE(c3,c4,c5,c6,c7,c8,c3 COLLATE nocase)
+  ) WITHOUT ROWID;
+} {}
+
 finish_test

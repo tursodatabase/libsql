@@ -63,7 +63,7 @@ static int sqlite3DeleteUnlinkIfExists(
   int *pbExists
 ){
   int rc = SQLITE_ERROR;
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   if( pVfs ){
     if( pbExists ) *pbExists = 1;
     rc = pVfs->xDelete(pVfs, zFile, 0);
@@ -115,7 +115,7 @@ SQLITE_API int sqlite3_delete_database(
     { "%s-wal%03d",     SQLITE_MULTIPLEX_WAL_8_3_OFFSET, 1 },
   };
 
-#ifdef SQLITE_OS_WIN
+#ifdef _WIN32
   sqlite3_vfs *pVfs = sqlite3_vfs_find("win32");
 #else
   sqlite3_vfs *pVfs = 0;
