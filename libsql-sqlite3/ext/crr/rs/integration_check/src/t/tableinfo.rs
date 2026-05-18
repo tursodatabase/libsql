@@ -328,17 +328,16 @@ fn test_leak_condition() {
     // updating schemas prepares stements
     // re-pulling table infos should finalize those statements
     let c1w = crate::opendb_file("test_leak_condition").expect("Opened DB");
-    let c2w = crate::opendb_file("test_leak_condition").expect("Opened DB");
 
     let c1 = &c1w.db;
-    let c2 = &c2w.db;
 
-    c1.exec_safe(
-        "DROP TABLE IF EXISTS foo;
-        DROP TABLE IF EXISTS bar;
-        VACUUM;",
-    )
-    .expect("reset db");
+    c1.exec_safe("DROP TABLE IF EXISTS foo")
+        .expect("dropped foo");
+    c1.exec_safe("DROP TABLE IF EXISTS bar")
+        .expect("dropped bar");
+
+    let c2w = crate::opendb_file("test_leak_condition").expect("Opened DB");
+    let c2 = &c2w.db;
 
     c1.exec_safe("CREATE TABLE foo (a not null, b not null, primary key (a, b));")
         .expect("made foo");
