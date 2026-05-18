@@ -99,7 +99,7 @@ static void testpcacheShutdown(void *pArg){
 */
 typedef struct testpcache testpcache;
 struct testpcache {
-  int szPage;               /* Size of each page.  Multiple of 8. */
+  sqlite3_int64 szPage;     /* Size of each page.  Multiple of 8. */
   int szExtra;              /* Size of extra data that accompanies each page */
   int bPurgeable;           /* True if the page cache is purgeable */
   int nFree;                /* Number of unused slots in a[] */
@@ -141,6 +141,7 @@ static sqlite3_pcache *testpcacheCreate(
   int i;
   assert( testpcacheGlobal.pDummy!=0 );
   szPage = (szPage+7)&~7;
+  szExtra = (szPage+7)&~7;
   nMem = sizeof(testpcache) + TESTPCACHE_NPAGE*(szPage+szExtra);
   p = sqlite3_malloc( nMem );
   if( p==0 ) return 0;

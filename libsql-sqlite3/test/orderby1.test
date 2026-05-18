@@ -520,7 +520,7 @@ do_eqp_test 8.1 {
 } {
   QUERY PLAN
   |--SCAN t1 USING INDEX i1
-  `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+  `--USE TEMP B-TREE FOR LAST TERM OF ORDER BY
 }
 
 do_execsql_test 8.2 {

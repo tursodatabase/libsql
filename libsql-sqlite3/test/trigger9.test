@@ -242,12 +242,27 @@ do_execsql_test 4.1 {
   END;
 }
 
-do_catchsql_test 4.2 {
-  DELETE FROM v1 WHERE rowid=1;
-} {1 {no such column: rowid}}
+ifcapable !allow_rowid_in_view {
+  do_catchsql_test 4.2 {
+    DELETE FROM v1 WHERE rowid=1;
+  } {1 {no such column: rowid}}
 
-do_catchsql_test 4.3 {
-  UPDATE v1 SET a=b WHERE rowid=2;
-} {1 {no such column: rowid}}
+  do_catchsql_test 4.3 {
+    UPDATE v1 SET a=b WHERE rowid=2;
+  } {1 {no such column: rowid}}
+} else {
+  do_execsql_test 4.2a {
+    DELETE FROM log;
+  }
+  do_catchsql_test 4.2 {
+    DELETE FROM v1 WHERE rowid=1;
+  } {0 {}}
+  do_catchsql_test 4.3 {
+    UPDATE v1 SET a=b WHERE rowid=2;
+  } {0 {}}
+  do_execsql_test 4.3b {
+    SELECT * FROM log;
+  }
+}
 
 finish_test

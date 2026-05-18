@@ -14,15 +14,8 @@
 ** (defined in ext/async/sqlite3async.h) to Tcl.
 */
 
-#define TCL_THREADS 
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#define TCL_THREADS
+#include "tclsqlite.h"
 
 #ifdef SQLITE_ENABLE_ASYNCIO
 

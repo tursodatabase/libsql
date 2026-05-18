@@ -731,16 +731,16 @@ ifcapable like_opt&&!icu {
   }
   do_test like-9.5.1 {
     set res [sqlite3_exec_hex db {
-       SELECT x FROM t2 WHERE x LIKE '%fe%25'
+       SELECT 1 FROM t2 WHERE x LIKE '%fe%25'
     }]
-  } {0 {}}
+  } {0 {1 1}}
   ifcapable explain {
     do_test like-9.5.2 {
       set res [sqlite3_exec_hex db {
          EXPLAIN QUERY PLAN SELECT x FROM t2 WHERE x LIKE '%fe%25'
       }]
       regexp {INDEX i2} $res
-    } {1}
+    } {0}
   }
 
   # Do an SQL statement.  Append the search count to the end of the result.

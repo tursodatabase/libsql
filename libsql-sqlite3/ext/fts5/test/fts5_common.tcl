@@ -51,6 +51,10 @@ proc fts5_test_poslist2 {cmd} {
   sort_poslist $res
 }
 
+proc fts5_test_insttoken {cmd iInst iToken} {
+  $cmd xInstToken $iInst $iToken
+}
+
 proc fts5_test_collist {cmd} {
   set res [list]
 
@@ -78,11 +82,22 @@ proc fts5_test_columnsize {cmd} {
 proc fts5_columntext {cmd iCol} {
   $cmd xColumnText $iCol
 }
+proc fts5_columnlocale {cmd iCol} {
+  $cmd xColumnLocale $iCol
+}
 
 proc fts5_test_columntext {cmd} {
   set res [list]
   for {set i 0} {$i < [$cmd xColumnCount]} {incr i} {
     lappend res [$cmd xColumnText $i]
+  }
+  set res
+}
+
+proc fts5_test_columnlocale {cmd} {
+  set res [list]
+  for {set i 0} {$i < [$cmd xColumnCount]} {incr i} {
+    lappend res [$cmd xColumnLocale $i]
   }
   set res
 }
@@ -112,6 +127,10 @@ proc fts5_test_tokenize {cmd} {
 
 proc fts5_test_rowcount {cmd} {
   $cmd xRowCount
+}
+
+proc fts5_test_rowid {cmd} {
+  $cmd xRowid
 }
 
 proc test_queryphrase_cb {cnt cmd} {
@@ -161,17 +180,21 @@ proc fts5_aux_test_functions {db} {
   foreach f {
     fts5_test_columnsize
     fts5_test_columntext
+    fts5_test_columnlocale
     fts5_test_columntotalsize
     fts5_test_poslist
     fts5_test_poslist2
     fts5_test_collist
+    fts5_test_insttoken
     fts5_test_tokenize
     fts5_test_rowcount
+    fts5_test_rowid
     fts5_test_all
 
     fts5_test_queryphrase
     fts5_test_phrasecount
     fts5_columntext
+    fts5_columnlocale
     fts5_queryphrase
     fts5_collist
   } {

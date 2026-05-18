@@ -615,6 +615,58 @@ do_execsql_test indexexpr1-2200 {
            GROUP BY t2.type, t1.tag
          ) v ON v.type = 0 AND v.tag = u.tag;
 } {7 100 8 101}
+do_execsql_test indexexpr1-2210 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x INT, y TEXT);
+  INSERT INTO t1(x,y) VALUES(1,'{b:5}');
+  SELECT json_insert('{}', '$.a', coalesce(null,json(y)))->>'$.a.b' FROM t1;
+} {5}
+db null NULL
+do_execsql_test indexexpr1-2211 {
+  CREATE INDEX t1j ON t1(coalesce(null,json(y)));
+  SELECT json_insert('{}', '$.a', coalesce(null,json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2220 {
+  DROP INDEX t1j;
+  SELECT json_insert('{}', '$.a', iif(1,json(y),123))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2221 {
+  CREATE INDEX t1j ON t1(iif(1,json(y),123));
+  SELECT json_insert('{}', '$.a', iif(1,json(y),123))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2230 {
+  DROP INDEX t1j;
+  SELECT json_insert('{}', '$.a', ifnull(NULL,json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2231 {
+  CREATE INDEX t1j ON t1(ifnull(NULL,json(y)));
+  SELECT json_insert('{}', '$.a', ifnull(NULL,json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2240 {
+  DROP INDEX t1j;
+  SELECT json_insert('{}', '$.a', nullif(json(y),8))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2241 {
+  CREATE INDEX t1j ON t1(nullif(json(y),8));
+  SELECT json_insert('{}', '$.a', nullif(json(y),8))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2250 {
+  DROP INDEX t1j;
+  SELECT json_insert('{}', '$.a', min('~',json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2251 {
+  CREATE INDEX t1j ON t1(min('~',json(y)));
+  SELECT json_insert('{}', '$.a', min('~',json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2260 {
+  DROP INDEX t1j;
+  SELECT json_insert('{}', '$.a', max('...',json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2261 {
+  CREATE INDEX t1j ON t1(max('...',json(y)));
+  SELECT json_insert('{}', '$.a', max('...',json(y)))->>'$.a.b' FROM t1;
+} {5}
+
 
 # 2023-11-08 Forum post https://sqlite.org/forum/forumpost/68d284c86b082c3e
 #

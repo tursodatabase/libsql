@@ -44,7 +44,7 @@
 **    28: Checksum-2 (second part of checksum for first 24 bytes of header).
 **
 ** Immediately following the wal-header are zero or more frames. Each
-** frame consists of a 24-byte frame-header followed by a <page-size> bytes
+** frame consists of a 24-byte frame-header followed by <page-size> bytes
 ** of page data. The frame-header is six big-endian 32-bit unsigned
 ** integer values, as follows:
 **
@@ -585,8 +585,8 @@ struct WalIteratorRev {
 #ifdef SQLITE_USE_SEH
 # error "SEH is not supported in libSQL due to virtual WAL backward compatibility!"
 #else
-# define SEH_TRY          
-# define SEH_EXCEPT(X)    
+# define SEH_TRY
+# define SEH_EXCEPT(X)
 # define SEH_INJECT_FAULT
 # define SEH_FREE_ON_ERROR(X,Y)
 # define SEH_SET_ON_ERROR(X,Y)
@@ -1824,7 +1824,7 @@ static void walIteratorRevFree(struct WalIteratorRev *p) {
 
 
 /*
-** Attempt to enable blocking locks that block for nMs ms. Return 1 if 
+** Attempt to enable blocking locks that block for nMs ms. Return 1 if
 ** blocking locks are successfully enabled, or 0 otherwise.
 */
 static int walEnableBlockingMs(Wal *pWal, int nMs){
@@ -2451,8 +2451,8 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       }
     }else{
       int bWriteLock = pWal->writeLock;
-      if( bWriteLock 
-       || SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) 
+      if( bWriteLock
+       || SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1))
       ){
         pWal->writeLock = 1;
         if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
@@ -2692,7 +2692,7 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
 **   + If SQLITE_ENABLE_SETLK_TIMEOUT is defined and walTryBeginRead() failed
 **     because a blocking lock timed out (SQLITE_BUSY_TIMEOUT from the OS
 **     layer), the WAL_RETRY_BLOCKED_MASK bit is set in "cnt". In this case
-**     the next invocation of walTryBeginRead() may omit an expected call to 
+**     the next invocation of walTryBeginRead() may omit an expected call to
 **     sqlite3OsSleep(). There has already been a delay when the previous call
 **     waited on a lock.
 */
@@ -2800,11 +2800,11 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int *pCnt){
     ** to block for locks for approximately nDelay us. This affects three
     ** locks: (a) the shared lock taken on the DMS slot in os_unix.c (if
     ** using os_unix.c), (b) the WRITER lock taken in walIndexReadHdr() if the
-    ** first attempted read fails, and (c) the shared lock taken on the 
-    ** read-mark.  
+    ** first attempted read fails, and (c) the shared lock taken on the
+    ** read-mark.
     **
     ** If the previous call failed due to an SQLITE_BUSY_TIMEOUT error,
-    ** then sleep for the minimum of 1us. The previous call already provided 
+    ** then sleep for the minimum of 1us. The previous call already provided
     ** an extra delay while it was blocking on the lock.
     */
     nBlockTmout = (nDelay+998) / 1000;
@@ -2867,7 +2867,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int *pCnt){
   SEH_INJECT_FAULT;
   if( !useWal && AtomicLoad(&pInfo->nBackfill)==pWal->hdr.mxFrame
 #ifdef SQLITE_ENABLE_SNAPSHOT
-   && (pWal->pSnapshot==0 || pWal->hdr.mxFrame==0)
+   && ((pWal->bGetSnapshot==0 && pWal->pSnapshot==0) || pWal->hdr.mxFrame==0)
 #endif
   ){
     /* The WAL has been completely backfilled (or it is empty).
@@ -3105,7 +3105,7 @@ static int sqlite3WalSnapshotRecover(Wal *pWal){
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
 /*
-** This function does the work of sqlite3WalBeginReadTransaction() (see 
+** This function does the work of sqlite3WalBeginReadTransaction() (see
 ** below). That function simply calls this one inside an SEH_TRY{...} block.
 */
 static int walBeginReadTransaction(Wal *pWal, int *pChanged){
@@ -3532,12 +3532,12 @@ static int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx)
 
     SEH_TRY {
       /* Restore the clients cache of the wal-index header to the state it
-      ** was in before the client began writing to the database. 
+      ** was in before the client began writing to the database.
       */
       memcpy(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr));
-  
-      for(iFrame=pWal->hdr.mxFrame+1; 
-          ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
+
+      for(iFrame=pWal->hdr.mxFrame+1;
+          ALWAYS(rc==SQLITE_OK) && iFrame<=iMax;
           iFrame++
       ){
         /* This call cannot fail. Unless the page for which the page number
@@ -4048,7 +4048,7 @@ int sqlite3WalFrameCount(Wal *pWal, int locked, unsigned int *pnFrames){
   return SQLITE_OK;
 }
 
-/* 
+/*
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
 **
@@ -4163,8 +4163,8 @@ static int sqlite3WalCheckpoint(
   SEH_TRY {
     if( rc==SQLITE_OK ){
       /* For a passive checkpoint, do not re-enable blocking locks after
-      ** reading the wal-index header. A passive checkpoint should not block 
-      ** or invoke the busy handler. The only lock such a checkpoint may 
+      ** reading the wal-index header. A passive checkpoint should not block
+      ** or invoke the busy handler. The only lock such a checkpoint may
       ** attempt to obtain is a lock on a read-slot, and it should give up
       ** immediately and do a partial checkpoint if it cannot obtain it. */
       walDisableBlocking(pWal);
@@ -4174,7 +4174,7 @@ static int sqlite3WalCheckpoint(
         sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
       }
     }
-  
+
     /* Copy data from the log to the database file. */
     if( rc==SQLITE_OK ){
       if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
@@ -4333,10 +4333,23 @@ static int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
 /* Try to open on pSnapshot when the next read-transaction starts
 */
 static void sqlite3WalSnapshotOpen(
-  Wal *pWal, 
+  Wal *pWal,
   sqlite3_snapshot *pSnapshot
 ){
-  pWal->pSnapshot = (WalIndexHdr*)pSnapshot;
+  if( pSnapshot && ((WalIndexHdr*)pSnapshot)->iVersion==0 ){
+    /* iVersion==0 means that this is a call to sqlite3_snapshot_get().  In
+    ** this case set the bGetSnapshot flag so that if the call to
+    ** sqlite3_snapshot_get() is about to read transaction on this wal
+    ** file, it does not take read-lock 0 if the wal file has been completely
+    ** checkpointed. Taking read-lock 0 would work, but then it would be
+    ** possible for a subsequent writer to destroy the snapshot even while
+    ** this connection is holding its read-transaction open. This is contrary
+    ** to user expectations, so we avoid it by not taking read-lock 0. */
+    pWal->bGetSnapshot = 1;
+  }else{
+    pWal->pSnapshot = (WalIndexHdr*)pSnapshot;
+    pWal->bGetSnapshot = 0;
+  }
 }
 
 /*
@@ -4630,8 +4643,8 @@ RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p) {
     return p;
 }
 
-const libsql_wal_manager sqlite3_wal_manager = { 
-    .pData = NULL, 
+const libsql_wal_manager sqlite3_wal_manager = {
+    .pData = NULL,
     .xOpen = (int (*)(wal_manager_impl *, sqlite3_vfs *, sqlite3_file *, int, long long, const char*, libsql_wal *))sqlite3WalOpen,
     .xClose = (int (*)(wal_manager_impl *, wal_impl *, sqlite3 *, int, int, unsigned char *))sqlite3WalClose,
     .bUsesShm = 1,

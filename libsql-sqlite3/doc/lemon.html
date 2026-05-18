@@ -683,6 +683,7 @@ other than that, the order of directives in Lemon is arbitrary.</p>
 <li><tt><a href='#pifdef'>%endif</a></tt>
 <li><tt><a href='#extraarg'>%extra_argument</a></tt>
 <li><tt><a href='#pfallback'>%fallback</a></tt>
+<li><tt><a href='#reallc'>%free</a></tt>
 <li><tt><a href='#pifdef'>%if</a></tt>
 <li><tt><a href='#pifdef'>%ifdef</a></tt>
 <li><tt><a href='#pifdef'>%ifndef</a></tt>
@@ -693,6 +694,7 @@ other than that, the order of directives in Lemon is arbitrary.</p>
 <li><tt><a href='#parse_accept'>%parse_accept</a></tt>
 <li><tt><a href='#parse_failure'>%parse_failure</a></tt>
 <li><tt><a href='#pright'>%right</a></tt>
+<li><tt><a href='#reallc'>%realloc</a></tt>
 <li><tt><a href='#stack_overflow'>%stack_overflow</a></tt>
 <li><tt><a href='#stack_size'>%stack_size</a></tt>
 <li><tt><a href='#start_symbol'>%start_symbol</a></tt>
@@ -1200,6 +1202,21 @@ match any input token.</p>
 the wildcard token and some other token, the other token is always used.
 The wildcard token is only matched if there are no alternatives.</p>
 
+<a id='reallc'></a>
+<h4>4.4.26 The <tt>%realloc</tt> and <tt>%free</tt> directives</h4>
+
+<p>The <tt>%realloc</tt> and <tt>%free</tt> directives defines function
+that allocate and free heap memory.  The signatures of these functions
+should be the same as the realloc() and free() functions from the standard
+C library.
+
+<p>If both of these functions are defined
+then these functions are used to allocate and free
+memory for supplemental parser stack space, if the initial
+parse stack space is exceeded.  The initial parser stack size
+is specified by either <tt>%stack_size</tt> or the
+-DYYSTACKDEPTH compile-time flag.
+
 <a id='errors'></a>
 <h2>5.0 Error Processing</h2>
 
@@ -1223,6 +1240,7 @@ is invoked and the parser resets itself to its start state, ready
 to begin parsing a new file.  This is what will happen at the very
 first syntax error, of course, if there are no instances of the
 "error" non-terminal in your grammar.</p>
+
 
 <a id='history'></a>
 <h2>6.0 History of Lemon</h2>

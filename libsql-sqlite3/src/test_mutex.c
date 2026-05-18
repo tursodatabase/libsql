@@ -11,12 +11,7 @@
 *************************************************************************
 ** This file contains test logic for the sqlite3_mutex interfaces.
 */
-
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include "sqlite3.h"
 #include "sqliteInt.h"
 #include <stdlib.h>

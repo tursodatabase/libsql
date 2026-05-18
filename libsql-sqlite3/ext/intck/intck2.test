@@ -1,0 +1,177 @@
+# 2024 Feb 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the incremental integrity check
+# (intck) extension.
+#
+
+source [file join [file dirname [info script]] intck_common.tcl]
+set testprefix intck2
+return_if_no_intck
+
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  CREATE INDEX i1 ON t1(b);
+}
+
+proc imposter_edit {obj create sql} {
+  sqlite3 xdb test.db
+  set pgno [xdb one {SELECT rootpage FROM sqlite_schema WHERE name=$obj}]
+
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER xdb main 1 $pgno
+  xdb eval $create
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER xdb main 0 0
+  xdb eval $sql
+  xdb close
+}
+
+imposter_edit i1 {
+  CREATE TABLE imp(b, a, PRIMARY KEY(b)) WITHOUT ROWID;
+} {
+  DELETE FROM imp WHERE b='two';
+  INSERT INTO imp(b, a) VALUES('four', 4);
+}
+
+do_intck_test 1.1 {
+  {surplus entry ('four',4) in index i1}
+  {entry ('two',2) missing from index i1}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a, b, "c d");
+  CREATE INDEX x1a ON x1(a COLLATE nocase DESC , b ASC);
+  CREATE INDEX x1b ON x1( a || b || ' "''" ' COLLATE binary ASC );
+  CREATE INDEX x1c ON x1( format('%s', a)ASC, format('%d', "c d" ) );
+  INSERT INTO x1 VALUES('one', 2, 3);
+  INSERT INTO x1 VALUES('One', 4, 5);
+  INSERT INTO x1 VALUES('ONE', 6, 7);
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+}
+
+do_intck_test 2.1 {}
+
+imposter_edit x1 {
+  CREATE TABLE imp(a, b, c);
+} {
+  DELETE FROM imp WHERE c=7;
+}
+do_intck_test 2.2 {
+  {surplus entry ('ONE',6,3) in index x1a}
+  {surplus entry ('ONE6 "''" ',3) in index x1b}
+  {surplus entry ('ONE','7',3) in index x1c}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE INDEX x1all ON x1(a DESC, b ASC, c DESC);
+  INSERT INTO x1 VALUES(2, 1, 2);
+  INSERT INTO x1 VALUES(2, 1, 1);
+  INSERT INTO x1 VALUES(2, 2, 2);
+  INSERT INTO x1 VALUES(2, 2, 1);
+  INSERT INTO x1 VALUES(1, 1, 2);
+  INSERT INTO x1 VALUES(1, 1, 1);
+  INSERT INTO x1 VALUES(1, 2, 2);
+  INSERT INTO x1 VALUES(1, 2, 1);
+}
+
+do_intck_test 3.1 {
+}
+
+imposter_edit x1 {
+  CREATE TABLE imp(a, b, c);
+} {
+  DELETE FROM imp WHERE 1;
+}
+
+db close
+sqlite3 db test.db
+
+do_intck_test 3.2 {
+  {surplus entry (2,1,2,1) in index x1all} 
+  {surplus entry (2,1,1,2) in index x1all}
+  {surplus entry (2,2,2,3) in index x1all} 
+  {surplus entry (2,2,1,4) in index x1all}
+  {surplus entry (1,1,2,5) in index x1all} 
+  {surplus entry (1,1,1,6) in index x1all} 
+  {surplus entry (1,2,2,7) in index x1all}
+  {surplus entry (1,2,1,8) in index x1all}
+}
+
+do_execsql_test 3.3 {
+  DELETE FROM x1;
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+}
+
+do_intck_test 3.4 {
+}
+
+imposter_edit x1 {
+  CREATE TABLE imp(a, b, c);
+} {
+  DELETE FROM imp WHERE 1;
+  INSERT INTO imp(rowid) VALUES(-123);
+  INSERT INTO imp(rowid) VALUES(456);
+}
+
+db close
+sqlite3 db test.db
+
+do_intck_test 3.5 {
+  {entry (NULL,NULL,NULL,-123) missing from index x1all}
+  {entry (NULL,NULL,NULL,456) missing from index x1all}
+  {surplus entry (NULL,NULL,NULL,1) in index x1all}
+  {surplus entry (NULL,NULL,NULL,2) in index x1all}
+  {surplus entry (NULL,NULL,NULL,3) in index x1all}
+  {surplus entry (NULL,NULL,NULL,4) in index x1all}
+}
+
+reset_db
+
+do_execsql_test 3.6 {
+  CREATE TABLE w1(a PRIMARY KEY, b, c);
+  INSERT INTO w1 VALUES(1.0, NULL, NULL);
+  INSERT INTO w1 VALUES(33.0, NULL, NULL);
+  INSERT INTO w1 VALUES(100.0, NULL, NULL);
+  CREATE INDEX w1bc ON w1(b, c);
+}
+
+do_intck_test 3.7 {
+}
+
+imposter_edit w1 {
+  CREATE TABLE imp(a, b, c);
+} {
+  DELETE FROM imp WHERE a=33;
+  INSERT INTO imp(a) VALUES(1234.5);
+  INSERT INTO imp(a) VALUES(-1234.5);
+}
+
+do_intck_test 3.8 {
+  {surplus entry (33.0,2) in index sqlite_autoindex_w1_1}
+  {entry (1234.5,4) missing from index sqlite_autoindex_w1_1} 
+  {entry (NULL,NULL,4) missing from index w1bc} 
+  {entry (-1234.5,5) missing from index sqlite_autoindex_w1_1} 
+  {entry (NULL,NULL,5) missing from index w1bc} 
+  {surplus entry (NULL,NULL,2) in index w1bc}
+}
+
+finish_test

@@ -370,8 +370,12 @@ do_execsql_test 9.1 {
   ANALYZE sqlite_schema;
   INSERT INTO sqlite_stat1 VALUES('t1','t1x1','648 324 81 81 81 81 81 81 81081 81 81 81');
   ANALYZE sqlite_schema;
-  SELECT a FROM (SELECT a FROM t1 NATURAL LEFT JOIN t1) NATURAL LEFT JOIN t1 WHERE (rowid,1)<=(5,0);
-} {1}
+}
+do_catchsql_test 9.2 {
+  SELECT a FROM 
+      (SELECT a FROM t1 NATURAL LEFT JOIN t1) NATURAL LEFT JOIN t1 
+  WHERE (rowid,1)<=(5,0);
+} {0 1}
 
 # 2022-03-02 https://sqlite.org/forum/info/50a1bbe08ce4c29c
 # Bloom-filter pulldown is incompatible with skip-scan.

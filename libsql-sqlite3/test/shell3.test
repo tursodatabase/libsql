@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool.
 #
@@ -134,5 +135,14 @@ a["b"]
 /*.
 .*/ x
 'y}} 1}
+
+do_test shell3-3.2 {
+  catchcmd "" {
+.open xyz.db
+SELECT ;
+  }
+} {1 {Parse error near line 3: near ";": syntax error
+  SELECT ;
+         ^--- error here}}
 
 finish_test

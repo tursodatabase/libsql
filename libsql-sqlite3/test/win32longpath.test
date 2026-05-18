@@ -49,19 +49,19 @@ set longPath(1) \\\\?\\$path\\[pid]
 set uriPath(1a) %5C%5C%3F%5C$path\\[pid]
 set uriPath(1b) %5C%5C%3F%5C$rawPath/[pid]
 
-make_win32_dir $longPath(1)
+file mkdir $longPath(1)
 
 set longPath(2) $longPath(1)\\[string repeat X 255]
 set uriPath(2a) $uriPath(1a)\\[string repeat X 255]
 set uriPath(2b) $uriPath(1b)/[string repeat X 255]
 
-make_win32_dir $longPath(2)
+file mkdir $longPath(2)
 
 set longPath(3) $longPath(2)\\[string repeat Y 255]
 set uriPath(3a) $uriPath(2a)\\[string repeat Y 255]
 set uriPath(3b) $uriPath(2b)/[string repeat Y 255]
 
-make_win32_dir $longPath(3)
+file mkdir $longPath(3)
 
 set fileName $longPath(3)\\test.db
 
@@ -92,7 +92,6 @@ do_test 1.4 {
 } {5 6 7 8}
 
 db3 close
-# puts "  Database exists \{[exists_win32_path $fileName]\}"
 
 sqlite3 db3 $fileName -vfs win32-longpath
 
@@ -115,7 +114,6 @@ do_test 1.6 {
 } {5 6 7 8 9 10 11 12}
 
 db3 close
-# puts "  Database exists \{[exists_win32_path $fileName]\}"
 
 foreach tn {1a 1b 1c 1d 1e 1f} {
   sqlite3 db3 $uri($tn) -vfs win32-longpath -uri 1 -translatefilename 0
@@ -129,11 +127,20 @@ foreach tn {1a 1b 1c 1d 1e 1f} {
   db3 close
 }
 
-do_delete_win32_file $fileName
-# puts "  Files remaining \{[find_win32_file $longPath(3)\\*]\}"
+# These over-length file and directory names are difficult to delete.
+# The "file delete -force" might not work, depending on the TCL build
+# being used.  So first try to delete using the windows rmdir command.
+#
+set fd [open cleanup.bat w]
+puts $fd "rmdir /q /s $longPath(1)"
+close $fd
+if {[catch {exec cleanup.bat} msg]} {
+  puts "Command \[cleanup.bat\] returns $msg"
+}
 
-do_remove_win32_dir $longPath(3)
-do_remove_win32_dir $longPath(2)
-do_remove_win32_dir $longPath(1)
+file delete -force $fileName
+file delete -force $longPath(3)
+file delete -force $longPath(2)
+file delete -force $longPath(1)
 
 finish_test

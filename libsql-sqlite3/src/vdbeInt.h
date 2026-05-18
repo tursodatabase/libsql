@@ -560,6 +560,7 @@ struct PreUpdate {
   Mem *aNew;                      /* Array of new.* values */
   Table *pTab;                    /* Schema object being updated */
   Index *pPk;                     /* PK index if pTab is WITHOUT ROWID */
+  sqlite3_value **apDflt;         /* Array of default values, if required */
 };
 
 /*

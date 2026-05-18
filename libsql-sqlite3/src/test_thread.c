@@ -16,11 +16,7 @@
 */
 
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 #if SQLITE_THREADSAFE
 
@@ -94,7 +90,7 @@ static int SQLITE_TCLAPI tclScriptEvent(Tcl_Event *evPtr, int flags){
 static void postToParent(SqlThread *p, Tcl_Obj *pScript){
   EvalEvent *pEvent;
   char *zMsg;
-  int nMsg;
+  Tcl_Size nMsg;
 
   zMsg = Tcl_GetStringFromObj(pScript, &nMsg); 
   pEvent = (EvalEvent *)ckalloc(sizeof(EvalEvent)+nMsg+1);
@@ -181,8 +177,8 @@ static int SQLITE_TCLAPI sqlthread_spawn(
   SqlThread *pNew;
   int rc;
 
-  int nVarname; char *zVarname;
-  int nScript; char *zScript;
+  Tcl_Size nVarname; char *zVarname;
+  Tcl_Size nScript; char *zScript;
 
   /* Parameters for thread creation */
   const int nStack = TCL_THREAD_STACK_DEFAULT;
@@ -232,7 +228,7 @@ static int SQLITE_TCLAPI sqlthread_parent(
 ){
   EvalEvent *pEvent;
   char *zMsg;
-  int nMsg;
+  Tcl_Size nMsg;
   SqlThread *p = (SqlThread *)clientData;
 
   assert(objc==3);

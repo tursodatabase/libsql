@@ -1,0 +1,101 @@
+# 2011 March 07
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix sessionchange
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+}
+
+do_test 1.1 { 
+  set C [changeset_from_sql {
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t1 VALUES(10, 20, 30);
+  }]
+
+  set res [list]
+  set iter [sqlite3changeset_start $C]
+  while {[$iter next]=="SQLITE_ROW"} {
+    lappend res [$iter data]
+  }
+  $iter finalize
+
+  set res
+} [list \
+  {INSERT t1 0 X.. {} {i 10 i 20 i 30}}  \
+  {INSERT t1 0 X.. {} {i 1 i 2 i 3}}     \
+]
+
+
+do_test 1.2 {
+  sqlite3changegroup grp
+  set iter [sqlite3changeset_start $C]
+  while {[$iter next]=="SQLITE_ROW"} {
+    grp add_change $iter
+  }
+  $iter finalize
+
+  set res [list]
+  grp output
+  sqlite3session_foreach c [grp output] { lappend res $c }
+  grp delete
+  set res
+} [list \
+  {INSERT t1 0 X.. {} {i 10 i 20 i 30}}  \
+  {INSERT t1 0 X.. {} {i 1 i 2 i 3}}     \
+]
+
+do_test 1.3.1 {
+  set iter [sqlite3changeset_start $C]
+  sqlite3changegroup grp
+  list [catch { grp add_change $iter } msg] $msg
+} {1 SQLITE_ERROR}
+do_test 1.3.2 {
+  while {[$iter next]=="SQLITE_ROW"} { }
+  list [catch { grp add_change $iter } msg] $msg
+} {1 SQLITE_ERROR}
+grp delete
+$iter finalize
+
+do_test 1.4 {
+  set res [list]
+  set iter [sqlite3changeset_start -invert $C]
+  while {[$iter next]=="SQLITE_ROW"} {
+    lappend res [$iter data]
+  }
+  $iter finalize
+  set res
+} [list \
+  {DELETE t1 0 X.. {i 10 i 20 i 30} {}}   \
+  {DELETE t1 0 X.. {i 1 i 2 i 3} {}}      \
+]
+
+do_test 1.5 {
+  sqlite3changegroup grp
+  set iter [sqlite3changeset_start -invert $C]
+  $iter next
+  list [catch { grp add_change $iter } msg] $msg
+} {1 SQLITE_ERROR}
+$iter finalize
+grp delete
+
+
+
+finish_test

@@ -799,6 +799,14 @@ unsigned char *sqlite3_serialize(
     pOut = 0;
   }else{
     sz = sqlite3_column_int64(pStmt, 0)*szPage;
+    if( sz==0 ){
+      sqlite3_reset(pStmt);
+      sqlite3_exec(db, "BEGIN IMMEDIATE; COMMIT;", 0, 0, 0);
+      rc = sqlite3_step(pStmt);
+      if( rc==SQLITE_ROW ){
+        sz = sqlite3_column_int64(pStmt, 0)*szPage;
+      }
+    }
     if( piSize ) *piSize = sz;
     if( mFlags & SQLITE_SERIALIZE_NOCOPY ){
       pOut = 0;

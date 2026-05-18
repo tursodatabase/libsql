@@ -109,7 +109,6 @@ foreach incr {1 2 3 20 40 60 80 100 120 140 160 180 200 220 240 253 254 255} {
 
       forcecopy test.db-wal test2.db-wal
       set fd [open test2.db-wal r+]
-      fconfigure $fd -encoding binary
       fconfigure $fd -translation binary
   
       seek $fd $iOff

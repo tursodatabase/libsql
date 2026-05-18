@@ -524,5 +524,33 @@ do_test 7.1 {
   list [catch { $R finish } msg] $msg
 } {1 {file is not a database}}
 
+reset_db
+breakpoint
+do_test 8.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+| size 8192 pagesize 4096 filename db.sqlite
+| page 1 offset 0
+|      0: ac ae b3 76 74 65 20 66 6f 72 6d 61 74 20 33 00   ...vte format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 01 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01   ................
+|     96: 00 2e 76 8a 0d ff ff ff 1e 0f cb 00 0f cb 00 00   ..v.............
+|   4032: 00 00 00 00 00 00 00 00 00 00 00 33 01 06 17 19   ...........3....
+|   4048: 19 01 43 74 61 62 6c 65 54 61 62 6c 65 30 54 61   ..CtableTable0Ta
+|   4064: 62 6c 65 30 02 43 52 45 41 54 45 20 54 41 42 4c   ble0.CREATE TABL
+|   4080: 45 20 54 61 62 6c 65 30 20 28 43 6f 6c 30 20 29   E Table0 (Col0 )
+| page 2 offset 4096
+|      0: 0d 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00   ................
+| end db.sqlite
+}]} {}
+
+do_test 8.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  catch { $R run }
+  list [catch { $R finish } msg] $msg
+} {0 {}}
+
 finish_test
 

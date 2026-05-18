@@ -116,15 +116,101 @@ AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_s
 USE_AMALGAMATION=1
 
 #########
-# See whether we can run specific tclsh versions known to work well;
-# if not, then we fall back to plain tclsh.
-# TODO: try other versions before falling back?
-# 
-AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.7 tclsh8.6 tclsh8.5 tclsh], none)
+# Figure out all the name of a working tclsh and parameters needed to compile against Tcl.
+# The --with-tcl= and/or --with-tclsh= configuration arguments might be useful for this.
+#
+AC_ARG_WITH(tclsh, AS_HELP_STRING([--with-tclsh=PATHNAME],[full pathname of a tclsh to use]))
+AC_ARG_WITH(tcl, AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfig.sh)]))
+AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[omit building accessory programs that require TCL-dev]),
+      [use_tcl=$enableval],[use_tcl=yes])
+original_use_tcl=${use_tcl}
+if test x"${with_tclsh}" = x -a x"${with_tcl}" = x; then
+  AC_CHECK_PROGS(TCLSH_CMD, [tclsh9.0 tclsh8.6 tclsh],none)
+  with_tclsh=${TCLSH_CMD}
+fi
+if test x"${with_tclsh}" != x -a x"${with_tclsh}" != xnone; then
+  TCLSH_CMD=${with_tclsh}
+  AC_MSG_RESULT([using tclsh at "$TCLSH_CMD"])
+  if test x"${use_tcl}" = "xyes"; then
+    with_tcl=`${with_tclsh} <${srcdir}/tool/find_tclconfig.tcl`
+    if test x"${with_tcl}" != x; then
+      AC_MSG_RESULT([$TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}])
+    else
+      AC_MSG_WARN([$TCLSH_CMD is unable to recommend a tclConfig.sh])
+      use_tcl=no
+    fi
+  fi
+fi
+if test x"${use_tcl}" = "xyes"; then
+  if test x"${with_tcl}" != x; then
+    if test -r ${with_tcl}/tclConfig.sh; then
+      tclconfig="${with_tcl}/tclConfig.sh"
+    else
+      for i in tcl8.6 tcl9.0 lib; do
+        if test -r ${with_tcl}/$i/tclConfig.sh; then
+          tclconfig=${with_tcl}/$i/tclConfig.sh
+          break
+        fi
+      done
+    fi
+    if test ! -r "${tclconfig}"; then
+      AC_MSG_ERROR([no tclConfig.sh file found under ${with_tcl}])
+    fi
+  else
+    # If we have not yet found a tclConfig.sh file, look in $libdir whic is
+    # set automatically by autoconf or by the --prefix command-line option.
+    # See https://sqlite.org/forum/forumpost/e04e693439a22457
+    libdir=${prefix}/lib
+    if test -r ${libdir}/tclConfig.sh; then
+      tclconfig=${libdir}/tclConfig.sh
+    else
+      for i in tcl8.6 tcl9.0 lib; do
+        if test -r ${libdir}/$i/tclConfig.sh; then
+          tclconfig=${libdir}/$i/tclConfig.sh
+          break
+        fi
+      done
+    fi
+    if test ! -r "${tclconfig}"; then
+      AC_MSG_ERROR([cannot find a usable tclConfig.sh file. 
+        Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
+        SQLite does not use TCL internally, but TCL is required to build SQLite
+        from canonical sources and TCL is required for testing.])
+    fi
+  fi
+  AC_MSG_RESULT([loading TCL configuration from ${tclconfig}])
+  . ${tclconfig}
+  AC_SUBST(TCL_INCLUDE_SPEC)
+  AC_SUBST(TCL_LIB_SPEC)
+  AC_SUBST(TCL_STUB_LIB_SPEC)
+  # There are lots of other configuration variables that are provided by the
+  # tclConfig.sh file and that could be included here.  But as of right now,
+  # TCL_LIB_SPEC is the only what that the Makefile uses.
+  HAVE_TCL=1
+elif test x"${original_use_tcl}" = "xno"; then
+  AC_MSG_RESULT([unable to run tests because of --disable-tcl])
+  HAVE_TCL=0
+else
+  AC_MSG_RESULT([unable to run tests because no tclConfig.sh file could be located])
+  HAVE_TCL=0
+fi
+AC_SUBST(HAVE_TCL)
+if test x"$TCLSH_CMD" = x; then
+  TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}
+  if test ! -x ${TCLSH_CMD}; then
+    TCLSH_CMD_2=${TCL_EXEC_PREFIX}/bin/tclsh
+    if test ! -x ${TCLSH_CMD_2}; then
+      AC_MSG_WARN([cannot find a usable tclsh at either ${TCLSH_CMD} or ${TCLSH_CMD_2}])
+      TCLSH_CMD=none
+    else
+      TCLSH_CMD=${TCLSH_CMD_2}
+    fi
+  fi
+fi
 if test "$TCLSH_CMD" = "none"; then
   # If we can't find a local tclsh, then building the amalgamation will fail.
   # We act as though --disable-amalgamation has been used.
-  echo "Warning: can't find tclsh - defaulting to non-amalgamation build."
+  AC_MSG_WARN([Warning: can't find tclsh - defaulting to non-amalgamation build.])
   USE_AMALGAMATION=0
   TCLSH_CMD="tclsh"
 fi
@@ -132,7 +218,6 @@ AC_SUBST(TCLSH_CMD)
 
 AC_ARG_VAR([TCLLIBDIR], [Where to install tcl plugin])
 if test "x${TCLLIBDIR+set}" != "xset" ; then
-  TCLLIBDIR='$(libdir)'
   for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
     if test -d $i ; then
       TCLLIBDIR=$i
@@ -141,6 +226,18 @@ if test "x${TCLLIBDIR+set}" != "xset" ; then
   done
   TCLLIBDIR="${TCLLIBDIR}/sqlite3"
 fi
+
+#########
+# Set up options for running tests.
+#
+AC_ARG_ENABLE(test-status, AS_HELP_STRING([--enable-test-status],[Full-screen status of tests]),
+      [use_vt100=$enableval],[use_vt100=no])
+if test $use_vt100 != no; then
+  TSTRNNR_OPTS=--status
+else
+  TSTRNNR_OPTS=
+fi
+AC_SUBST(TSTRNNR_OPTS)
 
 
 #########
@@ -338,190 +435,6 @@ AC_SUBST(BUILD_EXEEXT)
 AC_SUBST(SQLITE_OS_UNIX)
 AC_SUBST(SQLITE_OS_WIN)
 AC_SUBST(TARGET_EXEEXT)
-
-##########
-# Figure out all the parameters needed to compile against Tcl.
-#
-# This code is derived from the SC_PATH_TCLCONFIG and SC_LOAD_TCLCONFIG
-# macros in the in the tcl.m4 file of the standard TCL distribution.
-# Those macros could not be used directly since we have to make some
-# minor changes to accomodate systems that do not have TCL installed.
-#
-AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[do not build TCL extension]),
-      [use_tcl=$enableval],[use_tcl=yes])
-if test "${use_tcl}" = "yes" ; then
-  AC_ARG_WITH(tcl, AS_HELP_STRING([--with-tcl=DIR],[directory containing tcl configuration (tclConfig.sh)]), with_tclconfig=${withval})
-  AC_MSG_CHECKING([for Tcl configuration])
-  AC_CACHE_VAL(ac_cv_c_tclconfig,[
-    # First check to see if --with-tcl was specified.
-    if test x"${with_tclconfig}" != x ; then
-      if test -f "${with_tclconfig}/tclConfig.sh" ; then
-        ac_cv_c_tclconfig=`(cd ${with_tclconfig}; pwd)`
-      else
-        AC_MSG_ERROR([${with_tclconfig} directory doesn't contain tclConfig.sh])
-      fi
-    fi
-
-    # Start autosearch by asking tclsh
-    if test x"${ac_cv_c_tclconfig}" = x ; then
-      if test x"$cross_compiling" = xno; then
-        for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}`
-        do
-          if test -f "$i/tclConfig.sh" ; then
-            ac_cv_c_tclconfig="$i"
-            break
-          fi
-        done
-      fi
-    fi
-
-    # On ubuntu 14.10, $auto_path on tclsh is not quite correct.
-    # So try again after applying corrections.
-    if test x"${ac_cv_c_tclconfig}" = x ; then
-      if test x"$cross_compiling" = xno; then
-        for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD} | sed 's,/tcltk/tcl,/tcl,g'`
-        do
-          if test -f "$i/tclConfig.sh" ; then
-            ac_cv_c_tclconfig="$i"
-            break
-          fi
-        done
-      fi
-    fi
-
-    # Recent versions of Xcode on Macs hid the tclConfig.sh file
-    # in a strange place.
-    if test x"${ac_cv_c_tclconfig}" = x ; then
-      if test x"$cross_compiling" = xno; then
-        for i in /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk/usr/lib
-        do
-          if test -f "$i/tclConfig.sh" ; then
-            ac_cv_c_tclconfig="$i"
-            break
-          fi
-        done
-      fi
-    fi
-
-    # then check for a private Tcl installation
-    if test x"${ac_cv_c_tclconfig}" = x ; then
-      for i in \
-            ../tcl \
-            `ls -dr ../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
-            `ls -dr ../tcl[[8-9]].[[0-9]] 2>/dev/null` \
-            `ls -dr ../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
-            ../../tcl \
-            `ls -dr ../../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
-            `ls -dr ../../tcl[[8-9]].[[0-9]] 2>/dev/null` \
-            `ls -dr ../../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
-            ../../../tcl \
-            `ls -dr ../../../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
-            `ls -dr ../../../tcl[[8-9]].[[0-9]] 2>/dev/null` \
-            `ls -dr ../../../tcl[[8-9]].[[0-9]]* 2>/dev/null`
-      do
-        if test -f "$i/unix/tclConfig.sh" ; then
-          ac_cv_c_tclconfig=`(cd $i/unix; pwd)`
-          break
-        fi
-      done
-    fi
-
-    # check in a few common install locations
-    if test x"${ac_cv_c_tclconfig}" = x ; then
-      for i in \
-            `ls -d ${libdir} 2>/dev/null` \
-            `ls -d /usr/local/lib 2>/dev/null` \
-            `ls -d /usr/contrib/lib 2>/dev/null` \
-            `ls -d /usr/lib 2>/dev/null`
-      do
-        if test -f "$i/tclConfig.sh" ; then
-           ac_cv_c_tclconfig=`(cd $i; pwd)`
-           break
-        fi
-      done
-    fi
-
-    # check in a few other private locations
-    if test x"${ac_cv_c_tclconfig}" = x ; then
-      for i in \
-         ${srcdir}/../tcl \
-         `ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
-         `ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]] 2>/dev/null` \
-         `ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]]* 2>/dev/null`
-      do
-        if test -f "$i/unix/tclConfig.sh" ; then
-          ac_cv_c_tclconfig=`(cd $i/unix; pwd)`
-          break
-        fi
-      done
-    fi
-  ])
-
-  if test x"${ac_cv_c_tclconfig}" = x ; then
-    use_tcl=no
-    AC_MSG_WARN(Can't find Tcl configuration definitions)
-    AC_MSG_WARN(*** Without Tcl the regression tests cannot be executed ***)
-    AC_MSG_WARN(*** Consider using --with-tcl=... to define location of Tcl ***)
-  else
-    TCL_BIN_DIR=${ac_cv_c_tclconfig}
-    AC_MSG_RESULT(found $TCL_BIN_DIR/tclConfig.sh)
-
-    AC_MSG_CHECKING([for existence of $TCL_BIN_DIR/tclConfig.sh])
-    if test -f "$TCL_BIN_DIR/tclConfig.sh" ; then
-      AC_MSG_RESULT([loading])
-      . $TCL_BIN_DIR/tclConfig.sh
-    else
-      AC_MSG_RESULT([file not found])
-    fi
-    
-    #
-    # If the TCL_BIN_DIR is the build directory (not the install directory),
-    # then set the common variable name to the value of the build variables.
-    # For example, the variable TCL_LIB_SPEC will be set to the value
-    # of TCL_BUILD_LIB_SPEC. An extension should make use of TCL_LIB_SPEC
-    # instead of TCL_BUILD_LIB_SPEC since it will work with both an
-    # installed and uninstalled version of Tcl.
-    #
-    
-    if test -f $TCL_BIN_DIR/Makefile ; then
-      TCL_LIB_SPEC=${TCL_BUILD_LIB_SPEC}
-      TCL_STUB_LIB_SPEC=${TCL_BUILD_STUB_LIB_SPEC}
-      TCL_STUB_LIB_PATH=${TCL_BUILD_STUB_LIB_PATH}
-    fi
-    
-    #
-    # eval is required to do the TCL_DBGX substitution
-    #
-    
-    eval "TCL_LIB_FILE=\"${TCL_LIB_FILE}\""
-    eval "TCL_LIB_FLAG=\"${TCL_LIB_FLAG}\""
-    eval "TCL_LIB_SPEC=\"${TCL_LIB_SPEC}\""
-    
-    eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
-    eval "TCL_STUB_LIB_FLAG=\"${TCL_STUB_LIB_FLAG}\""
-    eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
-    
-    AC_SUBST(TCL_VERSION)
-    AC_SUBST(TCL_BIN_DIR)
-    AC_SUBST(TCL_SRC_DIR)
-    AC_SUBST(TCL_INCLUDE_SPEC)
-    
-    AC_SUBST(TCL_LIB_FILE)
-    AC_SUBST(TCL_LIB_FLAG)
-    AC_SUBST(TCL_LIB_SPEC)
-    
-    AC_SUBST(TCL_STUB_LIB_FILE)
-    AC_SUBST(TCL_STUB_LIB_FLAG)
-    AC_SUBST(TCL_STUB_LIB_SPEC)
-    AC_SUBST(TCL_SHLIB_SUFFIX)
-  fi
-fi
-if test "${use_tcl}" = "no" ; then
-  HAVE_TCL=""
-else
-  HAVE_TCL=1
-fi
-AC_SUBST(HAVE_TCL)
 
 ##########
 # Figure out what C libraries are required to compile programs

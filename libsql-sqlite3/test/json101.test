@@ -378,6 +378,20 @@ do_execsql_test json101-5.8 {
    WHERE jx.value<>jx.atom AND type NOT IN ('array','object');
 } {}
 
+# 2024-02-16 https://sqlite.org/forum/forumpost/ecb94cd210
+# Regression in json_tree()/json_each().  The value column
+# should have the "J" subtype if the value is an array or
+# object.
+#
+do_execsql_test json101-5.10 {
+  SELECT json_insert('{}','$.a',value) FROM json_tree('[1,2,3]') WHERE atom IS NULL;
+} {{{"a":[1,2,3]}}}
+#        ^^^^^^^--- In double-quotes, a string literal, prior to bug fix
+
+do_execsql_test json101-5.11 {
+  SELECT json_insert('{}','$.a',value) FROM json_tree('"[1,2,3]"');
+} {{{"a":"[1,2,3]"}}}
+
 do_execsql_test json101-6.1 {
   SELECT json_valid('{"a":55,"b":72,}');
 } {0}

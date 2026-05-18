@@ -14,7 +14,7 @@
 ** between two SQLite databases.
 **
 ** To compile, simply link against SQLite.  (Windows builds must also link
-** against ext/consio/console_io.c.)
+** against ext/misc/sqlite3_stdio.c.)
 **
 ** See the showHelp() routine below for a brief description of how to
 ** run the utility.
@@ -26,19 +26,7 @@
 #include <string.h>
 #include <assert.h>
 #include "sqlite3.h"
-
-/* Output function substitutions that cause UTF8 characters to be rendered
-** correctly on Windows:
-**
-**     fprintf()  ->  Wfprintf()
-**     
-*/
-#if defined(_WIN32)
-# include "console_io.h"
-# define Wfprintf fPrintfUtf8
-#else
-# define Wfprintf fprintf
-#endif
+#include "sqlite3_stdio.h"
 
 /*
 ** All global variables are gathered into the "g" singleton.
@@ -65,7 +53,7 @@ struct GlobalVars {
 static void strFree(sqlite3_str *pStr){
   sqlite3_free(sqlite3_str_finish(pStr));
 }
-  
+
 /*
 ** Print an error resulting from faulting command-line arguments and
 ** abort the program.
@@ -76,9 +64,9 @@ static void cmdlineError(const char *zFormat, ...){
   va_start(ap, zFormat);
   sqlite3_str_vappendf(pOut, zFormat, ap);
   va_end(ap);
-  Wfprintf(stderr, "%s: %s\n", g.zArgv0, sqlite3_str_value(pOut));
+  sqlite3_fprintf(stderr, "%s: %s\n", g.zArgv0, sqlite3_str_value(pOut));
   strFree(pOut);
-  Wfprintf(stderr, "\"%s --help\" for more help\n", g.zArgv0);
+  sqlite3_fprintf(stderr, "\"%s --help\" for more help\n", g.zArgv0);
   exit(1);
 }
 
@@ -92,7 +80,7 @@ static void runtimeError(const char *zFormat, ...){
   va_start(ap, zFormat);
   sqlite3_str_vappendf(pOut, zFormat, ap);
   va_end(ap);
-  Wfprintf(stderr, "%s: %s\n", g.zArgv0, sqlite3_str_value(pOut));
+  sqlite3_fprintf(stderr, "%s: %s\n", g.zArgv0, sqlite3_str_value(pOut));
   strFree(pOut);
   exit(1);
 }
@@ -349,11 +337,11 @@ static void printQuoted(FILE *out, sqlite3_value *X){
       char zBuf[50];
       r1 = sqlite3_value_double(X);
       sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.15g", r1);
-      fprintf(out, "%s", zBuf);
+      sqlite3_fprintf(out, "%s", zBuf);
       break;
     }
     case SQLITE_INTEGER: {
-      fprintf(out, "%lld", sqlite3_value_int64(X));
+      sqlite3_fprintf(out, "%lld", sqlite3_value_int64(X));
       break;
     }
     case SQLITE_BLOB: {
@@ -361,14 +349,14 @@ static void printQuoted(FILE *out, sqlite3_value *X){
       int nBlob = sqlite3_value_bytes(X);
       if( zBlob ){
         int i;
-        fprintf(out, "x'");
+        sqlite3_fprintf(out, "x'");
         for(i=0; i<nBlob; i++){
-          fprintf(out, "%02x", zBlob[i]);
+          sqlite3_fprintf(out, "%02x", zBlob[i]);
         }
-        fprintf(out, "'");
+        sqlite3_fprintf(out, "'");
       }else{
         /* Could be an OOM, could be a zero-byte blob */
-        fprintf(out, "X''");
+        sqlite3_fprintf(out, "X''");
       }
       break;
     }
@@ -376,38 +364,38 @@ static void printQuoted(FILE *out, sqlite3_value *X){
       const unsigned char *zArg = sqlite3_value_text(X);
 
       if( zArg==0 ){
-        fprintf(out, "NULL");
+        sqlite3_fprintf(out, "NULL");
       }else{
         int inctl = 0;
         int i, j;
-        fprintf(out, "'");
+        sqlite3_fprintf(out, "'");
         for(i=j=0; zArg[i]; i++){
           char c = zArg[i];
-          int ctl = iscntrl(c);
+          int ctl = iscntrl((unsigned char)c);
           if( ctl>inctl ){
             inctl = ctl;
-            fprintf(out, "%.*s'||X'%02x", i-j, &zArg[j], c);
+            sqlite3_fprintf(out, "%.*s'||X'%02x", i-j, &zArg[j], c);
             j = i+1;
           }else if( ctl ){
-            fprintf(out, "%02x", c);
+            sqlite3_fprintf(out, "%02x", c);
             j = i+1;
           }else{
             if( inctl ){
               inctl = 0;
-              fprintf(out, "'\n||'");
+              sqlite3_fprintf(out, "'\n||'");
             }
             if( c=='\'' ){
-              fprintf(out, "%.*s'", i-j+1, &zArg[j]);
+              sqlite3_fprintf(out, "%.*s'", i-j+1, &zArg[j]);
               j = i+1;
             }
           }
         }
-        fprintf(out, "%s'", &zArg[j]);
+        sqlite3_fprintf(out, "%s'", &zArg[j]);
       }
       break;
     }
     case SQLITE_NULL: {
-      fprintf(out, "NULL");
+      sqlite3_fprintf(out, "NULL");
       break;
     }
   }
@@ -428,7 +416,7 @@ static void dump_table(const char *zTab, FILE *out){
 
   pStmt = db_prepare("SELECT sql FROM aux.sqlite_schema WHERE name=%Q", zTab);
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    fprintf(out, "%s;\n", sqlite3_column_text(pStmt,0));
+    sqlite3_fprintf(out, "%s;\n", sqlite3_column_text(pStmt,0));
   }
   sqlite3_finalize(pStmt);
   if( !g.bSchemaOnly ){
@@ -463,14 +451,14 @@ static void dump_table(const char *zTab, FILE *out){
     }
     nCol = sqlite3_column_count(pStmt);
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
-      Wfprintf(out, "%s",sqlite3_str_value(pIns));
+      sqlite3_fprintf(out, "%s",sqlite3_str_value(pIns));
       zSep = "(";
       for(i=0; i<nCol; i++){
-        Wfprintf(out, "%s",zSep);
+        sqlite3_fprintf(out, "%s",zSep);
         printQuoted(out, sqlite3_column_value(pStmt,i));
         zSep = ",";
       }
-      Wfprintf(out, ");\n");
+      sqlite3_fprintf(out, ");\n");
     }
     sqlite3_finalize(pStmt);
     strFree(pIns);
@@ -479,7 +467,7 @@ static void dump_table(const char *zTab, FILE *out){
                      " WHERE type='index' AND tbl_name=%Q AND sql IS NOT NULL",
                      zTab);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    Wfprintf(out, "%s;\n", sqlite3_column_text(pStmt,0));
+    sqlite3_fprintf(out, "%s;\n", sqlite3_column_text(pStmt,0));
   }
   sqlite3_finalize(pStmt);
   sqlite3_free(zId);
@@ -514,14 +502,14 @@ static void diff_one_table(const char *zTab, FILE *out){
     */
     az = columnNames("aux",zTab, &nPk, 0);
     if( az==0 ){
-      Wfprintf(stdout, "Rowid not accessible for %s\n", zId);
+      sqlite3_fprintf(stdout, "Rowid not accessible for %s\n", zId);
     }else{
-      Wfprintf(stdout, "%s:", zId);
+      sqlite3_fprintf(stdout, "%s:", zId);
       for(i=0; az[i]; i++){
-        Wfprintf(stdout, " %s", az[i]);
-        if( i+1==nPk ) Wfprintf(stdout, " *");
+        sqlite3_fprintf(stdout, " %s", az[i]);
+        if( i+1==nPk ) sqlite3_fprintf(stdout, " *");
       }
-      Wfprintf(stdout, "\n");
+      sqlite3_fprintf(stdout, "\n");
     }
     goto end_diff_one_table;
   }
@@ -530,9 +518,9 @@ static void diff_one_table(const char *zTab, FILE *out){
     if( !sqlite3_table_column_metadata(g.db,"main",zTab,0,0,0,0,0,0) ){
       /* Table missing from second database. */
       if( g.bSchemaCompare )
-        Wfprintf(out, "-- 2nd DB has no %s table\n", zTab);
+        sqlite3_fprintf(out, "-- 2nd DB has no %s table\n", zTab);
       else
-        Wfprintf(out, "DROP TABLE %s;\n", zId);
+        sqlite3_fprintf(out, "DROP TABLE %s;\n", zId);
     }
     goto end_diff_one_table;
   }
@@ -540,7 +528,7 @@ static void diff_one_table(const char *zTab, FILE *out){
   if( sqlite3_table_column_metadata(g.db,"main",zTab,0,0,0,0,0,0) ){
     /* Table missing from source */
     if( g.bSchemaCompare ){
-      Wfprintf(out, "-- 1st DB has no %s table\n", zTab);
+      sqlite3_fprintf(out, "-- 1st DB has no %s table\n", zTab);
     }else{
       dump_table(zTab, out);
     }
@@ -560,7 +548,7 @@ static void diff_one_table(const char *zTab, FILE *out){
    || az[n]
   ){
     /* Schema mismatch */
-    Wfprintf(out, "%sDROP TABLE %s; -- due to schema mismatch\n", zLead, zId);
+    sqlite3_fprintf(out, "%sDROP TABLE %s; -- due to schema mismatch\n", zLead, zId);
     dump_table(zTab, out);
     goto end_diff_one_table;
   }
@@ -568,7 +556,7 @@ static void diff_one_table(const char *zTab, FILE *out){
   /* Build the comparison query */
   for(n2=n; az2[n2]; n2++){
     char *zNTab = safeId(az2[n2]);
-    Wfprintf(out, "ALTER TABLE %s ADD COLUMN %s;\n", zId, zNTab);
+    sqlite3_fprintf(out, "ALTER TABLE %s ADD COLUMN %s;\n", zId, zNTab);
     sqlite3_free(zNTab);
   }
   nQ = nPk2+1+2*(n2-nPk2);
@@ -669,7 +657,7 @@ static void diff_one_table(const char *zTab, FILE *out){
     zTab, zTab);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     char *z = safeId((const char*)sqlite3_column_text(pStmt,0));
-    fprintf(out, "DROP INDEX %s;\n", z);
+    sqlite3_fprintf(out, "DROP INDEX %s;\n", z);
     sqlite3_free(z);
   }
   sqlite3_finalize(pStmt);
@@ -681,39 +669,39 @@ static void diff_one_table(const char *zTab, FILE *out){
       int iType = sqlite3_column_int(pStmt, nPk);
       if( iType==1 || iType==2 ){
         if( iType==1 ){       /* Change the content of a row */
-          fprintf(out, "%sUPDATE %s", zLead, zId);
+          sqlite3_fprintf(out, "%sUPDATE %s", zLead, zId);
           zSep = " SET";
           for(i=nPk+1; i<nQ; i+=2){
             if( sqlite3_column_int(pStmt,i)==0 ) continue;
-            fprintf(out, "%s %s=", zSep, az2[(i+nPk-1)/2]);
+            sqlite3_fprintf(out, "%s %s=", zSep, az2[(i+nPk-1)/2]);
             zSep = ",";
             printQuoted(out, sqlite3_column_value(pStmt,i+1));
           }
         }else{                /* Delete a row */
-          fprintf(out, "%sDELETE FROM %s", zLead, zId);
+          sqlite3_fprintf(out, "%sDELETE FROM %s", zLead, zId);
         }
         zSep = " WHERE";
         for(i=0; i<nPk; i++){
-          fprintf(out, "%s %s=", zSep, az2[i]);
+          sqlite3_fprintf(out, "%s %s=", zSep, az2[i]);
           printQuoted(out, sqlite3_column_value(pStmt,i));
           zSep = " AND";
         }
-        fprintf(out, ";\n");
+        sqlite3_fprintf(out, ";\n");
       }else{                  /* Insert a row */
-        fprintf(out, "%sINSERT INTO %s(%s", zLead, zId, az2[0]);
-        for(i=1; az2[i]; i++) fprintf(out, ",%s", az2[i]);
-        fprintf(out, ") VALUES");
+        sqlite3_fprintf(out, "%sINSERT INTO %s(%s", zLead, zId, az2[0]);
+        for(i=1; az2[i]; i++) sqlite3_fprintf(out, ",%s", az2[i]);
+        sqlite3_fprintf(out, ") VALUES");
         zSep = "(";
         for(i=0; i<nPk2; i++){
-          fprintf(out, "%s", zSep);
+          sqlite3_fprintf(out, "%s", zSep);
           zSep = ",";
           printQuoted(out, sqlite3_column_value(pStmt,i));
         }
         for(i=nPk2+2; i<nQ; i+=2){
-          fprintf(out, ",");
+          sqlite3_fprintf(out, ",");
           printQuoted(out, sqlite3_column_value(pStmt,i));
         }
-        fprintf(out, ");\n");
+        sqlite3_fprintf(out, ");\n");
       }
     }
     sqlite3_finalize(pStmt);
@@ -729,7 +717,7 @@ static void diff_one_table(const char *zTab, FILE *out){
     "                      AND sql IS NOT NULL)",
     zTab, zTab);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    fprintf(out, "%s;\n", sqlite3_column_text(pStmt,0));
+    sqlite3_fprintf(out, "%s;\n", sqlite3_column_text(pStmt,0));
   }
   sqlite3_finalize(pStmt);
 
@@ -1283,17 +1271,17 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
     ** statement first. And reset pCt so that it will not be
     ** printed again.  */
     if( sqlite3_str_length(pCt) ){
-      fprintf(out, "%s\n", sqlite3_str_value(pCt));
+      sqlite3_fprintf(out, "%s\n", sqlite3_str_value(pCt));
       sqlite3_str_reset(pCt);
     }
 
     /* Output the first part of the INSERT statement */
-    fprintf(out, "%s", sqlite3_str_value(pInsert));
+    sqlite3_fprintf(out, "%s", sqlite3_str_value(pInsert));
     nRow++;
 
     if( sqlite3_column_type(pStmt, nCol)==SQLITE_INTEGER ){
       for(i=0; i<=nCol; i++){
-        if( i>0 ) fprintf(out, ", ");
+        if( i>0 ) sqlite3_fprintf(out, ", ");
         printQuoted(out, sqlite3_column_value(pStmt, i));
       }
     }else{
@@ -1320,9 +1308,9 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
           nDelta = rbuDeltaCreate(aSrc, nSrc, aFinal, nFinal, aDelta);
           if( nDelta<nFinal ){
             int j;
-            fprintf(out, "x'");
-            for(j=0; j<nDelta; j++) fprintf(out, "%02x", (u8)aDelta[j]);
-            fprintf(out, "'");
+            sqlite3_fprintf(out, "x'");
+            for(j=0; j<nDelta; j++) sqlite3_fprintf(out, "%02x", (u8)aDelta[j]);
+            sqlite3_fprintf(out, "'");
             zOtaControl[i-bOtaRowid] = 'f';
             bDone = 1;
           }
@@ -1332,14 +1320,14 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
         if( bDone==0 ){
           printQuoted(out, sqlite3_column_value(pStmt, i));
         }
-        fprintf(out, ", ");
+        sqlite3_fprintf(out, ", ");
       }
-      fprintf(out, "'%s'", zOtaControl);
+      sqlite3_fprintf(out, "'%s'", zOtaControl);
       sqlite3_free(zOtaControl);
     }
 
     /* And the closing bracket of the insert statement */
-    fprintf(out, ");\n");
+    sqlite3_fprintf(out, ");\n");
   }
 
   sqlite3_finalize(pStmt);
@@ -1347,7 +1335,7 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
     sqlite3_str *pCnt = sqlite3_str_new(0);
     sqlite3_str_appendf(pCnt,
          "INSERT INTO rbu_count VALUES('data_%q', %d);", zTab, nRow);
-    fprintf(out, "%s\n", sqlite3_str_value(pCnt));
+    sqlite3_fprintf(out, "%s\n", sqlite3_str_value(pCnt));
     strFree(pCnt);
   }
 
@@ -1386,14 +1374,14 @@ static void summarize_one_table(const char *zTab, FILE *out){
   if( sqlite3_table_column_metadata(g.db,"aux",zTab,0,0,0,0,0,0) ){
     if( !sqlite3_table_column_metadata(g.db,"main",zTab,0,0,0,0,0,0) ){
       /* Table missing from second database. */
-      Wfprintf(out, "%s: missing from second database\n", zTab);
+      sqlite3_fprintf(out, "%s: missing from second database\n", zTab);
     }
     goto end_summarize_one_table;
   }
 
   if( sqlite3_table_column_metadata(g.db,"main",zTab,0,0,0,0,0,0) ){
     /* Table missing from source */
-    Wfprintf(out, "%s: missing from first database\n", zTab);
+    sqlite3_fprintf(out, "%s: missing from first database\n", zTab);
     goto end_summarize_one_table;
   }
 
@@ -1410,7 +1398,7 @@ static void summarize_one_table(const char *zTab, FILE *out){
    || az[n]
   ){
     /* Schema mismatch */
-    Wfprintf(out, "%s: incompatible schema\n", zTab);
+    sqlite3_fprintf(out, "%s: incompatible schema\n", zTab);
     goto end_summarize_one_table;
   }
 
@@ -1455,7 +1443,7 @@ static void summarize_one_table(const char *zTab, FILE *out){
   sqlite3_str_appendf(pSql, ")\n ORDER BY 1;\n");
 
   if( (g.fDebug & DEBUG_DIFF_SQL)!=0 ){ 
-    Wfprintf(stdout, "SQL for %s:\n%s\n", zId, sqlite3_str_value(pSql));
+    sqlite3_fprintf(stdout, "SQL for %s:\n%s\n", zId, sqlite3_str_value(pSql));
     goto end_summarize_one_table;
   }
 
@@ -1480,7 +1468,7 @@ static void summarize_one_table(const char *zTab, FILE *out){
     }
   }
   sqlite3_finalize(pStmt);
-  Wfprintf(out,
+  sqlite3_fprintf(out,
           "%s: %lld changes, %lld inserts, %lld deletes, %lld unchanged\n",
           zTab, nUpdate, nInsert, nDelete, nUnchanged);
 
@@ -1661,7 +1649,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
   sqlite3_str_appendf(pSql, ";\n");
 
   if( g.fDebug & DEBUG_DIFF_SQL ){ 
-    Wfprintf(stdout, "SQL for %s:\n%s\n", zId, sqlite3_str_value(pSql));
+    sqlite3_fprintf(stdout, "SQL for %s:\n%s\n", zId, sqlite3_str_value(pSql));
     goto end_changeset_one_table;
   }
 
@@ -1891,8 +1879,8 @@ const char *all_tables_sql(){
 ** Print sketchy documentation for this utility program
 */
 static void showHelp(void){
-  Wfprintf(stdout, "Usage: %s [options] DB1 DB2\n", g.zArgv0);
-  Wfprintf(stdout,
+  sqlite3_fprintf(stdout, "Usage: %s [options] DB1 DB2\n", g.zArgv0);
+  sqlite3_fprintf(stdout,
 "Output SQL text that would transform DB1 into DB2.\n"
 "Options:\n"
 "  --changeset FILE      Write a CHANGESET into FILE\n"
@@ -1935,7 +1923,7 @@ int main(int argc, char **argv){
       if( z[0]=='-' ) z++;
       if( strcmp(z,"changeset")==0 ){
         if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
-        out = fopen(argv[++i], "wb");
+        out = sqlite3_fopen(argv[++i], "wb");
         if( out==0 ) cmdlineError("cannot open: %s", argv[i]);
         xDiff = changeset_one_table;
         neverUseTransaction = 1;
@@ -1998,13 +1986,20 @@ int main(int argc, char **argv){
   if( g.bSchemaOnly && g.bSchemaCompare ){
     cmdlineError("The --schema option is useless with --table %s .", zTab);
   }
-  rc = sqlite3_open(zDb1, &g.db);
+  rc = sqlite3_open_v2(zDb1, &g.db, SQLITE_OPEN_READONLY, 0);
   if( rc ){
     cmdlineError("cannot open database file \"%s\"", zDb1);
   }
   rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_schema", 0, 0, &zErrMsg);
   if( rc || zErrMsg ){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb1);
+  }
+  {
+    sqlite3 *db2 = 0;
+    if( sqlite3_open_v2(zDb2, &db2, SQLITE_OPEN_READONLY, 0) ){
+      cmdlineError("cannot open database file \"%s\"", zDb2);
+    }
+    sqlite3_close(db2);
   }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   sqlite3_enable_load_extension(g.db, 1);
@@ -2029,9 +2024,9 @@ int main(int argc, char **argv){
   }
 
   if( neverUseTransaction ) useTransaction = 0;
-  if( useTransaction ) Wfprintf(out, "BEGIN TRANSACTION;\n");
+  if( useTransaction ) sqlite3_fprintf(out, "BEGIN TRANSACTION;\n");
   if( xDiff==rbudiff_one_table ){
-    Wfprintf(out, "CREATE TABLE IF NOT EXISTS rbu_count"
+    sqlite3_fprintf(out, "CREATE TABLE IF NOT EXISTS rbu_count"
            "(tbl TEXT PRIMARY KEY COLLATE NOCASE, cnt INTEGER) "
            "WITHOUT ROWID;\n"
     );
@@ -2046,7 +2041,7 @@ int main(int argc, char **argv){
     }
     sqlite3_finalize(pStmt);
   }
-  if( useTransaction ) Wfprintf(stdout,"COMMIT;\n");
+  if( useTransaction ) sqlite3_fprintf(stdout,"COMMIT;\n");
 
   /* TBD: Handle trigger differences */
   /* TBD: Handle view differences */

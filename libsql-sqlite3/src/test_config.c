@@ -24,11 +24,7 @@
 #  include "os_win.h"
 #endif
 
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -57,6 +53,14 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "rowid32", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "rowid32", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+  Tcl_SetVar2(
+      interp, "sqlite_options", "allow_rowid_in_view", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(
+      interp, "sqlite_options", "allow_rowid_in_view", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_CASE_SENSITIVE_LIKE
@@ -183,6 +187,14 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "offset_sql_func","1",TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "offset_sql_func","0",TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
+  Tcl_SetVar2(interp, "sqlite_options",
+                      "ordered_set_aggregates","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options",
+                      "ordered_set_aggregates","0",TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
@@ -335,6 +347,14 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "columnmetadata", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "columnmetadata", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ENABLE_ORDEREDSETFUNC
+  Tcl_SetVar2(interp, "sqlite_options", "ordered_set_funcs", "1",
+              TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "ordered_set_funcs", "0",
+              TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_ENABLE_OVERSIZE_CELL_CHECK
@@ -491,10 +511,6 @@ static void set_options(Tcl_Interp *interp){
 #else
   Tcl_SetVar2(interp, "sqlite_options", "lookaside", "1", TCL_GLOBAL_ONLY);
 #endif
-
-Tcl_SetVar2(interp, "sqlite_options", "long_double",
-              sizeof(LONGDOUBLE_TYPE)>sizeof(double) ? "1" : "0",
-              TCL_GLOBAL_ONLY);
 
 #ifdef SQLITE_OMIT_MEMORYDB
   Tcl_SetVar2(interp, "sqlite_options", "memorydb", "0", TCL_GLOBAL_ONLY);

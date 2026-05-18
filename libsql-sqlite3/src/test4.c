@@ -12,11 +12,7 @@
 ** Code for testing the SQLite library in a multithreaded environment.
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #if SQLITE_OS_UNIX && SQLITE_THREADSAFE
 #include <stdlib.h>
 #include <string.h>

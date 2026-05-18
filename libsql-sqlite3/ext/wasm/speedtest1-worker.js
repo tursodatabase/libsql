@@ -111,10 +111,6 @@
   self.sqlite3InitModule(EmscriptenModule).then(async (sqlite3)=>{
     const S = globalThis.S = App.sqlite3 = sqlite3;
     log("Loaded speedtest1 module. Setting up...");
-    App.vfsUnlink = function(pDb, fname){
-      const pVfs = S.wasm.sqlite3_wasm_db_vfs(pDb, 0);
-      if(pVfs) S.wasm.sqlite3_wasm_vfs_unlink(pVfs, fname||0);
-    };
     App.pDir = wasmfsDir(S.wasm);
     App.wasm = S.wasm;
     //if(App.pDir) log("Persistent storage:",pDir);

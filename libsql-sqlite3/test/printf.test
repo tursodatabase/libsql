@@ -3833,4 +3833,21 @@ do_execsql_test printf-18.1 {
   SELECT length( format('%,.249f', -5.0e-300) );
 } {252}
 
+# 2024-02-16
+# https://sqlite.org/forum/info/393708f4a8
+#
+# The problem introduced by on 2023-07-03 by
+# https://sqlite.org/src/info/32befb224b254639
+#
+do_execsql_test printf-19.1 {
+  SELECT format('%0.0f %0.0g %0.0g', 0.9, 0.09, 1.9);
+} {{1 0.09 2}}
+do_execsql_test printf-19.2 {
+  SELECT format('%0.0f %#0.0f',0.0, 0.0);
+} {{0 0.}}
+do_execsql_test printf-19.3 {
+  SELECT format('%,.0f %,.0f',12345e+10, 12345e+11);
+} {{123,450,000,000,000 1,234,500,000,000,000}}
+
+
 finish_test

@@ -166,11 +166,10 @@
       stdout("libSQL version", capi.sqlite3_libversion(),
              capi.sqlite3_sourceid().substr(0,19));
       stdout('Welcome to the "fiddle" shell.');
-      if(sqlite3.opfs){
+      if(capi.sqlite3_vfs_find("opfs")){
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
                "  .open file:name?vfs=opfs\n\nbut note that some",
                "features (e.g. upload) do not yet work with OPFS.");
-        sqlite3.opfs.registerVfs();
       }
       stdout('\nEnter ".help" for usage hints.');
       this.exec([ // initialization commands...
@@ -317,7 +316,7 @@
     };
     console.warn("Unknown fiddle-worker message type:",ev);
   };
-  
+
   /**
      emscripten module for use with build mode -sMODULARIZE.
   */
@@ -374,9 +373,7 @@
                  "for use in the dev console.", sqlite3);
     globalThis.sqlite3 = sqlite3;
     const dbVfs = sqlite3.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
-    fiddleModule.fsUnlink = (fn)=>{
-      return sqlite3.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
-    };
+    fiddleModule.fsUnlink = (fn)=>fiddleModule.FS.unlink(fn);
     wMsg('fiddle-ready');
   }).catch(e=>{
     console.error("Fiddle worker init failed:",e);

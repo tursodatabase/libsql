@@ -58,7 +58,7 @@ do_test tkt3457-1.1 {
   # start of the first journal-header has not been written by SQLite.
   # So write it now.
   set fd [open bak.db-journal a+]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   seek $fd 0
   puts -nonewline $fd "\xd9\xd5\x05\xf9\x20\xa1\x63\xd7"
   close $fd

@@ -50,8 +50,8 @@ proc check_on_disk {} {
   set sz [file size test.db]
   set fd [open test.db]
   set fd2 [open test2.db w]
-  fconfigure $fd  -encoding binary -translation binary
-  fconfigure $fd2 -encoding binary -translation binary
+  fconfigure $fd  -translation binary
+  fconfigure $fd2 -translation binary
   if {$sz>$::sqlite_pending_byte} {
     puts -nonewline $fd2 [read $fd $::sqlite_pending_byte]
     seek $fd [expr $::sqlite_pending_byte+512]

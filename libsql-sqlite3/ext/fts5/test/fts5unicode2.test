@@ -17,7 +17,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5unicode2
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -116,6 +116,7 @@ set docs [list {
   connected by OR.  
 }]
 
+unset -nocomplain map
 set map(a) [list "\u00C4" "\u00E4"]  ; # LATIN LETTER A WITH DIAERESIS
 set map(e) [list "\u00CB" "\u00EB"]  ; # LATIN LETTER E WITH DIAERESIS
 set map(i) [list "\u00CF" "\u00EF"]  ; # LATIN LETTER I WITH DIAERESIS
@@ -470,119 +471,23 @@ do_execsql_test 8.2.3 {
 } {2 4}
 
 #-------------------------------------------------------------------------
-#
-if 0 {
-foreach {tn sql} {
-  1 {
-    CREATE VIRTUAL TABLE t5 USING fts4(tokenize=unicode61 [tokenchars= .]);
-    CREATE VIRTUAL TABLE t6 USING fts4(
-        tokenize=unicode61 [tokenchars=="] "tokenchars=[]");
-    CREATE VIRTUAL TABLE t7 USING fts4(tokenize=unicode61 [separators=x\xC4]);
-  }
-  2 {
-    CREATE VIRTUAL TABLE t5 USING fts4(tokenize=unicode61 "tokenchars= .");
-    CREATE VIRTUAL TABLE t6 USING fts4(tokenize=unicode61 "tokenchars=[=""]");
-    CREATE VIRTUAL TABLE t7 USING fts4(tokenize=unicode61 "separators=x\xC4");
-  }
-  3 {
-    CREATE VIRTUAL TABLE t5 USING fts4(tokenize=unicode61 'tokenchars= .');
-    CREATE VIRTUAL TABLE t6 USING fts4(tokenize=unicode61 'tokenchars=="[]');
-    CREATE VIRTUAL TABLE t7 USING fts4(tokenize=unicode61 'separators=x\xC4');
-  }
-  4 {
-    CREATE VIRTUAL TABLE t5 USING fts4(tokenize=unicode61 `tokenchars= .`);
-    CREATE VIRTUAL TABLE t6 USING fts4(tokenize=unicode61 `tokenchars=[="]`);
-    CREATE VIRTUAL TABLE t7 USING fts4(tokenize=unicode61 `separators=x\xC4`);
-  }
+
+foreach {tn val bErr} {
+  1 0 0
+  2 1 0
+  3 2 0
+  4 3  1
+  5 11 1
 } {
-  do_execsql_test 9.$tn.0 { 
-    DROP TABLE IF EXISTS t5;
-    DROP TABLE IF EXISTS t5aux;
-    DROP TABLE IF EXISTS t6;
-    DROP TABLE IF EXISTS t6aux;
-    DROP TABLE IF EXISTS t7;
-    DROP TABLE IF EXISTS t7aux;
-  }
-  do_execsql_test 9.$tn.1 $sql
-
-  do_execsql_test 9.$tn.2 {
-    CREATE VIRTUAL TABLE t5aux USING fts4aux(t5);
-    INSERT INTO t5 VALUES('one two three/four.five.six');
-    SELECT * FROM t5aux;
-  } {
-    four.five.six   * 1 1 four.five.six   0 1 1 
-    {one two three} * 1 1 {one two three} 0 1 1
-  }
-
-  do_execsql_test 9.$tn.3 {
-    CREATE VIRTUAL TABLE t6aux USING fts4aux(t6);
-    INSERT INTO t6 VALUES('alpha=beta"gamma/delta[epsilon]zeta');
-    SELECT * FROM t6aux;
-  } {
-    {alpha=beta"gamma}   * 1 1 {alpha=beta"gamma} 0 1 1 
-    {delta[epsilon]zeta} * 1 1 {delta[epsilon]zeta} 0 1 1
-  }
-
-  do_execsql_test 9.$tn.4 {
-    CREATE VIRTUAL TABLE t7aux USING fts4aux(t7);
-    INSERT INTO t7 VALUES('alephxbeth\xC4gimel');
-    SELECT * FROM t7aux;
-  } {
-    aleph * 1 1 aleph 0 1 1 
-    beth  * 1 1 beth  0 1 1 
-    gimel * 1 1 gimel 0 1 1
-  }
-}
-
-# Check that multiple options are handled correctly.
-#
-do_execsql_test 10.1 {
-  DROP TABLE IF EXISTS t1;
-  CREATE VIRTUAL TABLE t1 USING fts4(tokenize=unicode61
-    "tokenchars=xyz" "tokenchars=.=" "separators=.=" "separators=xy"
-    "separators=a" "separators=a" "tokenchars=a" "tokenchars=a"
-  );
-
-  INSERT INTO t1 VALUES('oneatwoxthreeyfour');
-  INSERT INTO t1 VALUES('a.single=word');
-  CREATE VIRTUAL TABLE t1aux USING fts4aux(t1);
-  SELECT * FROM t1aux;
-} {
-  .single=word * 1 1 .single=word 0 1 1 
-  four         * 1 1 four         0 1 1 
-  one          * 1 1 one          0 1 1 
-  three        * 1 1 three        0 1 1 
-  two          * 1 1 two          0 1 1
-}
-
-# Test that case folding happens after tokenization, not before.
-#
-do_execsql_test 10.2 {
-  DROP TABLE IF EXISTS t2;
-  CREATE VIRTUAL TABLE t2 USING fts4(tokenize=unicode61 "separators=aB");
-  INSERT INTO t2 VALUES('oneatwoBthree');
-  INSERT INTO t2 VALUES('onebtwoAthree');
-  CREATE VIRTUAL TABLE t2aux USING fts4aux(t2);
-  SELECT * FROM t2aux;
-} {
-  one           * 1 1 one           0 1 1 
-  onebtwoathree * 1 1 onebtwoathree 0 1 1 
-  three         * 1 1 three         0 1 1 
-  two           * 1 1 two           0 1 1
-}
-
-# Test that the tokenchars and separators options work with the 
-# fts3tokenize table.
-#
-do_execsql_test 11.1 {
-  CREATE VIRTUAL TABLE ft1 USING fts3tokenize(
-    "unicode61", "tokenchars=@.", "separators=1234567890"
-  );
-  SELECT token FROM ft1 WHERE input = 'berlin@street123sydney.road';
-} {
-  berlin@street sydney.road
-}
-
+  reset_db
+  set aRes(0) {0 {}}
+  set aRes(1) {1 {error in tokenizer constructor}}
+  set res $aRes($bErr)
+  do_catchsql_test 9.1.$tn "
+    CREATE VIRTUAL TABLE bl USING fts5(
+        s, tokenize='trigram remove_diacritics $val'
+    );
+  " $res
 }
 
 finish_test

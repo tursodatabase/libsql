@@ -17,7 +17,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5corrupt2
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -100,6 +100,7 @@ set lrowid [db one {SELECT max(rowid) FROM t1_data WHERE (rowid & $mask)=0}]
 set nbyte [db one {SELECT length(block) FROM t1_data WHERE rowid=$lrowid}]
 set all [db eval {SELECT rowid FROM t1}]
 sqlite3_db_config db DEFENSIVE 0
+unset -nocomplain res
 for {set i [expr $nbyte-2]} {$i>=0} {incr i -1} {
   do_execsql_test 2.$i.1 {
     BEGIN;
@@ -152,7 +153,7 @@ foreach {tn hdr} {
       execsql BEGIN
 
       set fd [db incrblob main x3_data block $rowid]
-      fconfigure $fd -encoding binary -translation binary
+      fconfigure $fd -translation binary
       set existing [read $fd [string length $hdr]]
       seek $fd 0
       puts -nonewline $fd $hdr
@@ -238,7 +239,7 @@ foreach {tn hdr} {
       execsql BEGIN
 
       set fd [db incrblob main x5_data block $rowid]
-      fconfigure $fd -encoding binary -translation binary
+      fconfigure $fd -translation binary
       puts -nonewline $fd $hdr
       close $fd
 

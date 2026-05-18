@@ -313,4 +313,71 @@ do_execsql_test 4020 {
   SELECT b FROM t1 UNION SELECT 1;
 } {1 {  }}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 5010 {
+  CREATE TABLE cnt(a);
+  WITH RECURSIVE cnt2(x) AS (
+    VALUES(1) UNION ALL SELECT x+1 FROM cnt2 WHERE x<50
+  )
+  INSERT INTO cnt SELECT x FROM cnt2;   
+}
+
+do_execsql_test 5020 {
+  SELECT DISTINCT abs(random())%5 AS r FROM cnt ORDER BY r; 
+} {0 1 2 3 4}
+
+do_execsql_test 5030 {
+  SELECT abs(random())%5 AS r FROM cnt GROUP BY 1 ORDER BY 1; 
+} {0 1 2 3 4}
+
+do_execsql_test 5040 {
+  SELECT a FROM cnt WHERE a>45 GROUP BY 1;
+} {46 47 48 49 50}
+
+
+# 2024-06-03 dbsqlfuzz 8a44f675401a8b1f68a43bf813c4f4f72ad8f0ea
+# Use of uninitialized bytecode register due to the call-function-once
+# optimization at check-in 663f5dd32d9db832
+#
+db null NULL
+do_execsql_test 5050 {
+  CREATE TABLE t0(a TEXT); INSERT INTO t0 VALUES('abcd');
+  CREATE TABLE t1(b TEXT);
+  CREATE TABLE t2(c TEXT);
+  CREATE TABLE t3(d TEXT); INSERT INTO t3 VALUES('wxyz');
+  CREATE VIEW  v4(e) AS SELECT (SELECT t2.c FROM t0, t1 GROUP BY 1) FROM t2;
+  SELECT v4.e FROM t3 LEFT JOIN v4 ON true GROUP BY 1;
+} NULL
+do_execsql_test 5060 {
+  DROP VIEW v4;
+  CREATE VIEW  v4(e) AS SELECT (SELECT t2.c COLLATE nocase FROM t0, t1 GROUP BY 1) FROM t2;
+  SELECT v4.e FROM t3 LEFT JOIN v4 ON true GROUP BY 1;
+} NULL
+
+do_execsql_test 5070 {
+  DROP VIEW v4;
+  CREATE VIEW  v4(e) AS SELECT (SELECT unlikely(t2.c COLLATE nocase) FROM t0, t1 GROUP BY 1) FROM t2;
+  SELECT v4.e FROM t3 LEFT JOIN v4 ON true GROUP BY 1;
+} NULL
+
+# 2024-06-28 dbsqlfuzz 46343912848a603e32c6072cae792eb056bac897
+# Do not call sqlite3ExprToRegister() on an expression that is already
+# a register.
+#
+do_execsql_test 5080 {
+  CREATE TABLE dual(dummy TEXT);
+  INSERT INTO dual VALUES('X');
+  SELECT 11 = (
+                SELECT b
+                  FROM (
+                         SELECT a AS b
+                           FROM dual
+                           LEFT JOIN (SELECT 22 AS a FROM dual)
+                       )
+                 GROUP BY b, b
+              );
+} 0
+
 finish_test

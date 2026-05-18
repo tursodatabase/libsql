@@ -4,7 +4,7 @@
 
 The purpose of the Test Script Interpreter is to read and interpret
 script files that contain SQL commands and desired results.  The
-interpreter will check results and report an discrepencies found.
+interpreter will check results and report any discrepencies found.
 
 The test script files are ASCII text files.  The filename always ends with
 ".test".  Each script is evaluated independently; context does not carry
@@ -87,6 +87,7 @@ Each command looks like an SQL comment.  The command begins at the left
 margin (no leading space) and starts with exactly 2 minus signs ("-").
 The command name consists of lowercase letters and maybe a "-" or two.
 Some commands have arguments.
+
 The arguments are separated from the command name by one or more spaces.
 
 Commands have access to the input buffer and might reset the input buffer.
@@ -159,9 +160,9 @@ the result buffer.  This distinction does not matter for the --result
 command itself, but it is important for related commands like --glob
 and --notglob.  Sometimes test cases will contains a bunch of SQL
 followed by multiple --glob and/or --notglob statements.  All of the
-globs should be evaluted agains the result buffer correct, but the SQL
-should only be run once.  This is accomplished by resetting the input
-buffer but not the result buffer.
+globs should be evaluated agains the result buffer, but the SQL should
+only be run once.  This is accomplished by resetting the input buffer
+but not the result buffer.
 
 ### The --glob command
 
@@ -187,7 +188,7 @@ The TEST-GLOB pattern is slightly different for a standard GLOB:
 ### The --notglob command
 
 The --notglob command works just like --glob except that it reports an
-error if the GLOB does match, rather than if the GLOB does not matches.
+error if the GLOB does match, rather than if the GLOB does not match.
 
 ### The --oom command
 

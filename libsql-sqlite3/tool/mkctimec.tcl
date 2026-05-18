@@ -105,6 +105,7 @@ set boolean_defnnz_options {
 set boolean_defnil_options {
   SQLITE_32BIT_ROWID
   SQLITE_4_BYTE_ALIGNED_MALLOC
+  SQLITE_ALLOW_ROWID_IN_VIEW
   SQLITE_ALLOW_URI_AUTHORITY
   SQLITE_BUG_COMPATIBLE_20160819
   SQLITE_CASE_SENSITIVE_LIKE
@@ -158,6 +159,7 @@ set boolean_defnil_options {
   SQLITE_ENABLE_MULTIPLEX
   SQLITE_ENABLE_NORMALIZE
   SQLITE_ENABLE_NULL_TRIM
+  SQLITE_ENABLE_ORDERED_SET_AGGREGATES
   SQLITE_ENABLE_OFFSET_SQL_FUNC
   SQLITE_ENABLE_OVERSIZE_CELL_CHECK
   SQLITE_ENABLE_PREUPDATE_HOOK
@@ -447,6 +449,7 @@ if {[catch {set cfd [open $destfile w]}]!=0} {
   puts stderr "File '$destfile' unwritable."
   exit 1;
 }
+fconfigure $cfd -translation binary
 
 puts $cfd $::headWarning;
 puts $cfd $::headCode;

@@ -360,4 +360,26 @@ do_catchsql_test 8.6 {
   SELECT sql FROM sqlite_master WHERE name='i0';
 } {1 {error in index i0: second argument to likelihood() must be a constant between 0.0 and 1.0}}
 
+
+reset_db
+
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a,b,c,d);
+  CREATE TABLE t2(a,b,c,d,x);
+
+  CREATE TRIGGER AFTER INSERT ON t2 BEGIN
+
+    SELECT group_conct(
+        123 ORDER BY (
+          SELECT 1 FROM ( VALUES(a, 'b'), ('c') )
+          )) 
+    FROM t1;
+
+  END;
+}
+
+do_catchsql_test 9.1 {
+  ALTER TABLE t2 RENAME TO newname;
+} {1 {error in trigger AFTER: all VALUES must have the same number of terms}}
+
 finish_test

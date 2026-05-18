@@ -83,7 +83,7 @@ foreach {tn sql} {
 # Verify that that P4_INTARRAY argument to OP_IntegrityCk is rendered
 # correctly.
 #
-db close
+catch {db close}
 forcedelete test.db
 sqlite3 db test.db
 do_test pragma4-2.100 {
@@ -97,7 +97,7 @@ do_test pragma4-2.100 {
   }
   string map {\[ x \] x \173 {} \175 {}} \
     [db eval {EXPLAIN PRAGMA integrity_check}]
-} {/ IntegrityCk 2 2 1 x[0-9]+,1x /}
+} {/ IntegrityCk 1 2 8 x[0-9]+,1x /}
 
 
 #--------------------------------------------------------------------------
@@ -263,6 +263,52 @@ do_execsql_test 5.0 {
 } {
   0 a {} 0 'abc' 0 1 b {} 0 -1 0 2 c {} 0 +4.0 0
 }
+
+# 2024-03-24 https://sqlite.org/forum/forumpost/85b6a8b6705fb77a
+#
+catch {db2 close}
+catch {db3 close}
+ifcapable vtab {
+  reset_db
+  do_execsql_test 6.0 {
+    DROP TABLE IF EXISTS t1;
+    DROP TABLE IF EXISTS t2;
+    CREATE TABLE t1(a INT PRIMARY KEY, b INT);
+    CREATE TABLE t2(c INT PRIMARY KEY, d INT REFERENCES t1);
+    SELECT t.name, f."table", f."from", i.name, i.pk
+      FROM pragma_table_list() AS t
+           JOIN pragma_foreign_key_list(t.name, t.schema) AS f
+           JOIN pragma_table_info(f."table", t.schema) AS i
+     WHERE i.pk;
+  } {t2 t1 d a 1}
+}
+
+# 2024-05-08 https://sqlite.org/forum/forumpost/cf29a33e94
+#
+ifcapable vtab {
+  do_execsql_test 7.0 {
+    CREATE TABLE t3 ("a" TEXT, "b" TEXT);
+    CREATE TABLE t4 ("a" TEXT, "b" TEXT, "c" TEXT); 
+  }
+  
+  do_execsql_test 7.1 {
+    CREATE TABLE pragma_t3 AS SELECT * FROM pragma_table_info('t3');
+    CREATE TABLE pragma_t4 AS SELECT * FROM pragma_table_info('t4');
+  }
+  
+  do_execsql_test 7.2 {
+    SELECT pragma_t4.name, pragma_t3.name 
+      FROM pragma_t4 RIGHT JOIN pragma_t3 ON (pragma_t4.name=pragma_t3.name);
+  } {a a b b}
+  
+  do_execsql_test 7.3 {
+    SELECT t4.name, t3.name 
+    FROM pragma_table_info('t4') t4 
+    RIGHT JOIN pragma_table_info('t3') t3 ON (t4.name=t3.name);
+  } {a a b b}
+}
+
+
 
 
 finish_test

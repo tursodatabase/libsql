@@ -10,14 +10,14 @@ wMsg('log',"speedtest1-wasmfs starting...");
 */
 const wasmfsDir = function f(wasmUtil,dirName="/opfs"){
   if(undefined !== f._) return f._;
-  if( !self.FileSystemHandle
-      || !self.FileSystemDirectoryHandle
-      || !self.FileSystemFileHandle){
+  if( !globalThis.FileSystemHandle
+      || !globalThis.FileSystemDirectoryHandle
+      || !globalThis.FileSystemFileHandle){
     return f._ = "";
   }
   try{
     if(0===wasmUtil.xCallWrapped(
-      'sqlite3_wasm_init_wasmfs', 'i32', ['string'], dirName
+      'sqlite3__wasm_init_wasmfs', 'i32', ['string'], dirName
     )){
       return f._ = dirName;
     }else{
@@ -36,7 +36,7 @@ const logErr = (...args)=>wMsg('logErr',...args);
 const runTests = function(sqlite3){
   console.log("Module inited.",sqlite3);
   const wasm = sqlite3.wasm;
-  const __unlink = wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["*","string"]);
+  const __unlink = wasm.xWrap("sqlite3__wasm_vfs_unlink", "int", ["*","string"]);
   const unlink = (fn)=>__unlink(0,fn);
   const pDir = wasmfsDir(wasm);
   if(pDir) log("Persistent storage:",pDir);
@@ -46,7 +46,7 @@ const runTests = function(sqlite3){
   }
   const scope = wasm.scopedAllocPush();
   const dbFile = pDir+"/speedtest1.db";
-  const urlParams = new URL(self.location.href).searchParams;
+  const urlParams = new URL(globalThis.location.href).searchParams;
   const argv = ["speedtest1"];
   if(urlParams.has('flags')){
     argv.push(...(urlParams.get('flags').split(',')));

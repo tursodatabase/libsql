@@ -225,7 +225,7 @@ if {$tcl_platform(platform)=="unix" && [atomic_batch_write test.db]==0} {
     }
     forcecopy test2.db-journal test.db-journal
     set f [open test.db-journal a]
-    fconfigure $f -encoding binary
+    fconfigure $f -translation binary
     puts -nonewline $f "hello"
     puts -nonewline $f "\x00\x00\x00\x05\x01\x02\x03\x04"
     puts -nonewline $f "\xd9\xd5\x05\xf9\x20\xa1\x63\xd7"

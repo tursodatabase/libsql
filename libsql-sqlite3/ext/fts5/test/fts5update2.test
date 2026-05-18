@@ -1,0 +1,177 @@
+# 2024 Sep 27
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS5 module.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5update2
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+
+#-------------------------------------------------------------------------
+# Test that the various types of UPDATE statement are handled correctly
+# by different table types.
+#
+foreach_detail_mode $testprefix {
+foreach {tn cu} {
+  1 0
+  2 1
+} {
+  reset_db
+  do_execsql_test 1.$tn.1 "
+    CREATE VIRTUAL TABLE ft1 USING fts5(a, b UNINDEXED, c UNINDEXED, d,
+        content='',
+        contentless_unindexed=$cu,
+        detail=%DETAIL%
+    );
+    CREATE VIRTUAL TABLE ft2 USING fts5(a, b UNINDEXED, c UNINDEXED, d,
+        content='',
+        contentless_unindexed=$cu, contentless_delete=1,
+        detail=%DETAIL%
+    );
+  "
+
+  do_execsql_test 1.$tn.2 {
+    INSERT INTO ft1(rowid, a, b, c, d) VALUES(1, 'a1', 'b1', 'c1', 'd1');
+    INSERT INTO ft1(rowid, a, b, c, d) VALUES(2, 'a2', 'b2', 'c2', 'd2');
+    INSERT INTO ft1(rowid, a, b, c, d) VALUES(3, 'a3', 'b3', 'c3', 'd3');
+
+    INSERT INTO ft2(rowid, a, b, c, d) VALUES(1, 'a1', 'b1', 'c1', 'd1');
+    INSERT INTO ft2(rowid, a, b, c, d) VALUES(2, 'a2', 'b2', 'c2', 'd2');
+    INSERT INTO ft2(rowid, a, b, c, d) VALUES(3, 'a3', 'b3', 'c3', 'd3');
+  }
+
+  # It should be possible to update a subset of the UNINDEXED columns of
+  # a contentless table. Regardless of whether or not contentless_unindexed=1
+  # or contentless_delete=1 is set.
+  do_execsql_test 1.$tn.3 {
+    UPDATE ft1 SET b=b||'.1';
+    UPDATE ft2 SET b=b||'.1';
+  }
+  do_execsql_test 1.$tn.4 {
+    UPDATE ft1 SET b=b||'.2', c=c||'.2';
+    UPDATE ft2 SET b=b||'.2', c=c||'.2';
+  }
+
+  set res(0) {
+    1 {} {} {} {}
+    2 {} {} {} {}
+    3 {} {} {} {}
+  }
+  set res(1) {
+    1 {} b1.1.2 c1.2 {}
+    2 {} b2.1.2 c2.2 {}
+    3 {} b3.1.2 c3.2 {}
+  }
+
+  do_execsql_test 1.$tn.5 {
+    SELECT rowid, * FROM ft2
+  } $res($cu)
+
+  do_execsql_test 1.6.1 { SELECT rowid FROM ft1('a2') } {2}
+  do_execsql_test 1.6.2 { SELECT rowid FROM ft2('a2') } {2}
+
+  # It should be possible to update all indexed columns (but no other subset)
+  # if the contentless_delete=1 option is set, as it is for "ft2".
+  do_execsql_test 1.$tn.7 {
+    UPDATE ft2 SET a='a22', d='d22' WHERE rowid=2;
+  }
+  do_execsql_test 1.$tn.8 { SELECT rowid FROM ft2('a22 AND d22') } {2}
+
+  do_execsql_test 1.$tn.9 {
+    UPDATE ft2 SET a='a33', d='d33', b='b3' WHERE rowid=3;
+  }
+
+  set res(1) {
+    1 {} b1.1.2 c1.2 {}
+    2 {} b2.1.2 c2.2 {}
+    3 {} b3 c3.2 {}
+  }
+  do_execsql_test 1.$tn.10 {
+    SELECT rowid, * FROM ft2
+  } $res($cu)
+
+  do_catchsql_test 1.$tn.11 {
+    UPDATE ft2 SET a='a11' WHERE rowid=1
+  } {1 {cannot UPDATE a subset of columns on fts5 contentless-delete table: ft2}}
+  do_catchsql_test 1.$tn.12 {
+    UPDATE ft2 SET d='d11' WHERE rowid=1
+  } {1 {cannot UPDATE a subset of columns on fts5 contentless-delete table: ft2}}
+
+  # It is not possible to update the values of indexed columns if
+  # contentless_delete=1 is not set.
+  do_catchsql_test 1.$tn.13 {
+    UPDATE ft1 SET a='a11' WHERE rowid=1
+  } {1 {cannot UPDATE contentless fts5 table: ft1}}
+  do_catchsql_test 1.$tn.14 {
+    UPDATE ft1 SET d='d11' WHERE rowid=1
+  } {1 {cannot UPDATE contentless fts5 table: ft1}}
+
+  # It should be possible to update the rowid if contentless_delete=1 is
+  # set and all indexed columns are updated.
+  do_execsql_test 1.$tn.15 {
+    UPDATE ft2 SET a='aXone', d='dXone', rowid=11 WHERE rowid=1
+  } 
+
+  set res(0) {
+    2 {} {} {} {}
+    3 {} {} {} {}
+    11 {} {} {} {}
+  }
+  set res(1) {
+    2 {} b2.1.2 c2.2 {}
+    3 {} b3 c3.2 {}
+    11 {} b1.1.2 c1.2 {}
+  }
+  do_execsql_test 1.$tn.16 {
+    SELECT rowid, * FROM ft2
+  } $res($cu)
+
+  # Should not be possible to update the rowid of a contentless_delete=1
+  # table if no indexed columns are updated.
+  do_catchsql_test 1.$tn.17 {
+    UPDATE ft2 SET rowid=12 WHERE rowid=11
+  } {1 {cannot UPDATE a subset of columns on fts5 contentless-delete table: ft2}}
+  do_catchsql_test 1.$tn.18 {
+    UPDATE ft1 SET rowid=12 WHERE rowid=1
+  } {1 {cannot UPDATE contentless fts5 table: ft1}}
+
+  do_execsql_test 1.$tn.19 {
+    UPDATE ft2 SET a='aXtwo', d='dXtwo', c='newval', rowid=12 WHERE rowid=2
+  }  {}
+
+  set res(0) {
+    3 {} {} {} {}
+    11 {} {} {} {}
+    12 {} {} {} {}
+  }
+  set res(1) {
+    3 {} b3 c3.2 {}
+    11 {} b1.1.2 c1.2 {}
+    12 {} b2.1.2 newval {}
+  }
+  do_execsql_test 1.$tn.20 {
+    SELECT rowid, * FROM ft2
+  } $res($cu)
+
+  do_execsql_test 1.$tn.21 {
+    SELECT rowid, * FROM ft2('aXtwo AND dXtwo')
+  } [lrange $res($cu) 10 end]
+
+}} ;# end of [foreach_detail_mode] loop
+
+finish_test

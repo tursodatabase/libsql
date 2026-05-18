@@ -62,12 +62,7 @@
 **   SELECT * FROM fstree WHERE path LIKE '/home/dan/sqlite/%'
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
-
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>

@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5restart
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -29,6 +29,7 @@ do_execsql_test 1.0 {
 # Run the 'optimize' command. Check that it does not disturb ongoing
 # full-text queries.
 #
+unset -nocomplain lRowid
 do_test 1.1 {
   for {set i 1} {$i < 1000} {incr i} {
     execsql { INSERT INTO f1 VALUES('a b c d e') }

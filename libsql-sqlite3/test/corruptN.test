@@ -276,4 +276,31 @@ do_catchsql_test 6.3 {
   UPDATE t1 SET x='hello world' WHERE rowid=1;
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  BEGIN;
+  CREATE TABLE p1(x PRIMARY KEY);
+  CREATE TABLE c1(y);
+
+  PRAGMA schema_version = 0;
+  PRAGMA writable_schema = RESET;
+
+  INSERT INTO c1 VALUES(1000);
+  ROLLBACK;
+}
+
+do_execsql_test 7.1 {
+  PRAGMA table_info = p1;
+} {0 x {} 0 {} 1}
+
+do_catchsql_test 7.2 {
+  SELECT * FROM p1;
+} {1 {database disk image is malformed}}
+
+do_catchsql_test 7.3 {
+  PRAGMA integrity_check
+} {1 {database disk image is malformed}}
+
+
 finish_test

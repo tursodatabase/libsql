@@ -68,6 +68,19 @@ int sqlite3IsNaN(double x){
 }
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 
+#ifndef SQLITE_OMIT_FLOATING_POINT
+/*
+** Return true if the floating point value is NaN or +Inf or -Inf.
+*/
+int sqlite3IsOverflow(double x){
+  int rc;   /* The value return */
+  u64 y;
+  memcpy(&y,&x,sizeof(y));
+  rc = IsOvfl(y);
+  return rc;
+}
+#endif /* SQLITE_OMIT_FLOATING_POINT */
+
 /*
 ** Compute a string length that is limited to what can be stored in
 ** lower 30 bits of a 32-bit signed integer.
@@ -312,6 +325,44 @@ void sqlite3DequoteExpr(Expr *p){
 }
 
 /*
+** Expression p is a QNUMBER (quoted number). Dequote the value in p->u.zToken
+** and set the type to INTEGER or FLOAT. "Quoted" integers or floats are those
+** that contain '_' characters that must be removed before further processing.
+*/
+void sqlite3DequoteNumber(Parse *pParse, Expr *p){
+  assert( p!=0 || pParse->db->mallocFailed );
+  if( p ){
+    const char *pIn = p->u.zToken;
+    char *pOut = p->u.zToken;
+    int bHex = (pIn[0]=='0' && (pIn[1]=='x' || pIn[1]=='X'));
+    int iValue;
+    assert( p->op==TK_QNUMBER );
+    p->op = TK_INTEGER;
+    do {
+      if( *pIn!=SQLITE_DIGIT_SEPARATOR ){
+        *pOut++ = *pIn;
+        if( *pIn=='e' || *pIn=='E' || *pIn=='.' ) p->op = TK_FLOAT;
+      }else{
+        if( (bHex==0 && (!sqlite3Isdigit(pIn[-1]) || !sqlite3Isdigit(pIn[1])))
+         || (bHex==1 && (!sqlite3Isxdigit(pIn[-1]) || !sqlite3Isxdigit(pIn[1])))
+        ){
+          sqlite3ErrorMsg(pParse, "unrecognized token: \"%s\"", p->u.zToken);
+        }
+      }
+    }while( *pIn++ );
+    if( bHex ) p->op = TK_INTEGER;
+
+    /* tag-20240227-a: If after dequoting, the number is an integer that
+    ** fits in 32 bits, then it must be converted into EP_IntValue.  Other
+    ** parts of the code expect this.  See also tag-20240227-b. */
+    if( p->op==TK_INTEGER && sqlite3GetInt32(p->u.zToken, &iValue) ){
+      p->u.iValue = iValue;
+      p->flags |= EP_IntValue;
+    }
+  }
+}
+
+/*
 ** If the input token p is quoted, try to adjust the token to remove
 ** the quotes.  This is not always possible:
 **
@@ -488,6 +539,8 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
+  u64 s2;          /* round-tripped significand */
+  double rr[2];
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -590,7 +643,7 @@ do_atof_calc:
   e = (e*esign) + d;
 
   /* Try to adjust the exponent to make it smaller */
-  while( e>0 && s<(LARGEST_UINT64/10) ){
+  while( e>0 && s<((LARGEST_UINT64-0x7ff)/10) ){
     s *= 10;
     e--;
   }
@@ -599,65 +652,46 @@ do_atof_calc:
     e++;
   }
 
-  if( e==0 ){
-    *pResult = s;
-  }else if( sqlite3Config.bUseLongDouble ){
-    LONGDOUBLE_TYPE r = (LONGDOUBLE_TYPE)s;
-    if( e>0 ){
-      while( e>=100  ){ e-=100; r *= 1.0e+100L; }
-      while( e>=10   ){ e-=10;  r *= 1.0e+10L;  }
-      while( e>=1    ){ e-=1;   r *= 1.0e+01L;  }
-    }else{
-      while( e<=-100 ){ e+=100; r *= 1.0e-100L; }
-      while( e<=-10  ){ e+=10;  r *= 1.0e-10L;  }
-      while( e<=-1   ){ e+=1;   r *= 1.0e-01L;  }
-    }
-    assert( r>=0.0 );
-    if( r>+1.7976931348623157081452742373e+308L ){
-#ifdef INFINITY
-      *pResult = +INFINITY;
-#else
-      *pResult = 1.0e308*10.0;
-#endif
-    }else{
-      *pResult = (double)r;
-    }
-  }else{
-    double rr[2];
-    u64 s2;
-    rr[0] = (double)s;
+  rr[0] = (double)s;
+  assert( sizeof(s2)==sizeof(rr[0]) );
+  memcpy(&s2, &rr[0], sizeof(s2));
+  if( s2<=0x43efffffffffffffLL ){
     s2 = (u64)rr[0];
     rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
-    if( e>0 ){
-      while( e>=100  ){
-        e -= 100;
-        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
-      }
-      while( e>=10   ){
-        e -= 10;
-        dekkerMul2(rr, 1.0e+10, 0.0);
-      }
-      while( e>=1    ){
-        e -= 1;
-        dekkerMul2(rr, 1.0e+01, 0.0);
-      }
-    }else{
-      while( e<=-100 ){
-        e += 100;
-        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
-      }
-      while( e<=-10  ){
-        e += 10;
-        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
-      }
-      while( e<=-1   ){
-        e += 1;
-        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
-      }
-    }
-    *pResult = rr[0]+rr[1];
-    if( sqlite3IsNaN(*pResult) ) *pResult = 1e300*1e300;
+  }else{
+    rr[1] = 0.0;
   }
+  assert( rr[1]<=1.0e-10*rr[0] );  /* Equal only when rr[0]==0.0 */
+
+  if( e>0 ){
+    while( e>=100  ){
+      e -= 100;
+      dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
+    }
+    while( e>=10   ){
+      e -= 10;
+      dekkerMul2(rr, 1.0e+10, 0.0);
+    }
+    while( e>=1    ){
+      e -= 1;
+      dekkerMul2(rr, 1.0e+01, 0.0);
+    }
+  }else{
+    while( e<=-100 ){
+      e += 100;
+      dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
+    }
+    while( e<=-10  ){
+      e += 10;
+      dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
+    }
+    while( e<=-1   ){
+      e += 1;
+      dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
+    }
+  }
+  *pResult = rr[0]+rr[1];
+  if( sqlite3IsNaN(*pResult) ) *pResult = 1e300*1e300;
   if( sign<0 ) *pResult = -*pResult;
   assert( !sqlite3IsNaN(*pResult) );
 
@@ -961,10 +995,13 @@ int sqlite3Atoi(const char *z){
 ** Decode a floating-point value into an approximate decimal
 ** representation.
 **
-** Round the decimal representation to n significant digits if
-** n is positive.  Or round to -n signficant digits after the
-** decimal point if n is negative.  No rounding is performed if
-** n is zero.
+** If iRound<=0 then round to -iRound significant digits to the
+** the left of the decimal point, or to a maximum of mxRound total
+** significant digits.
+**
+** If iRound>0 round to min(iRound,mxRound) significant digits total.
+**
+** mxRound must be positive.
 **
 ** The significant digits of the decimal representation are
 ** stored in p->z[] which is a often (but not always) a pointer
@@ -975,8 +1012,11 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
   u64 v;
   int e, exp = 0;
+  double rr[2];
+
   p->isSpecial = 0;
   p->z = p->zBuf;
+  assert( mxRound>0 );
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
   ** NaN. */
@@ -1003,62 +1043,45 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
 
   /* Multiply r by powers of ten until it lands somewhere in between
   ** 1.0e+19 and 1.0e+17.
+  **
+  ** Use Dekker-style double-double computation to increase the
+  ** precision.
+  **
+  ** The error terms on constants like 1.0e+100 computed using the
+  ** decimal extension, for example as follows:
+  **
+  **   SELECT decimal_exp(decimal_sub('1.0e+100',decimal(1.0e+100)));
   */
-  if( sqlite3Config.bUseLongDouble ){
-    LONGDOUBLE_TYPE rr = r;
-    if( rr>=1.0e+19 ){
-      while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
-      while( rr>=1.0e+29L  ){ exp+=10;  rr *= 1.0e-10L;  }
-      while( rr>=1.0e+19L  ){ exp++;    rr *= 1.0e-1L;   }
-    }else{
-      while( rr<1.0e-97L   ){ exp-=100; rr *= 1.0e+100L; }
-      while( rr<1.0e+07L   ){ exp-=10;  rr *= 1.0e+10L;  }
-      while( rr<1.0e+17L   ){ exp--;    rr *= 1.0e+1L;   }
+  rr[0] = r;
+  rr[1] = 0.0;
+  if( rr[0]>9.223372036854774784e+18 ){
+    while( rr[0]>9.223372036854774784e+118 ){
+      exp += 100;
+      dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
     }
-    v = (u64)rr;
+    while( rr[0]>9.223372036854774784e+28 ){
+      exp += 10;
+      dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
+    }
+    while( rr[0]>9.223372036854774784e+18 ){
+      exp += 1;
+      dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
+    }
   }else{
-    /* If high-precision floating point is not available using "long double",
-    ** then use Dekker-style double-double computation to increase the
-    ** precision.
-    **
-    ** The error terms on constants like 1.0e+100 computed using the
-    ** decimal extension, for example as follows:
-    **
-    **   SELECT decimal_exp(decimal_sub('1.0e+100',decimal(1.0e+100)));
-    */
-    double rr[2];
-    rr[0] = r;
-    rr[1] = 0.0;
-    if( rr[0]>9.223372036854774784e+18 ){
-      while( rr[0]>9.223372036854774784e+118 ){
-        exp += 100;
-        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
-      }
-      while( rr[0]>9.223372036854774784e+28 ){
-        exp += 10;
-        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
-      }
-      while( rr[0]>9.223372036854774784e+18 ){
-        exp += 1;
-        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
-      }
-    }else{
-      while( rr[0]<9.223372036854774784e-83  ){
-        exp -= 100;
-        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
-      }
-      while( rr[0]<9.223372036854774784e+07  ){
-        exp -= 10;
-        dekkerMul2(rr, 1.0e+10, 0.0);
-      }
-      while( rr[0]<9.22337203685477478e+17  ){
-        exp -= 1;
-        dekkerMul2(rr, 1.0e+01, 0.0);
-      }
+    while( rr[0]<9.223372036854774784e-83  ){
+      exp -= 100;
+      dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
     }
-    v = rr[1]<0.0 ? (u64)rr[0]-(u64)(-rr[1]) : (u64)rr[0]+(u64)rr[1];
+    while( rr[0]<9.223372036854774784e+07  ){
+      exp -= 10;
+      dekkerMul2(rr, 1.0e+10, 0.0);
+    }
+    while( rr[0]<9.22337203685477478e+17  ){
+      exp -= 1;
+      dekkerMul2(rr, 1.0e+01, 0.0);
+    }
   }
-
+  v = rr[1]<0.0 ? (u64)rr[0]-(u64)(-rr[1]) : (u64)rr[0]+(u64)rr[1];
 
   /* Extract significant digits. */
   i = sizeof(p->zBuf)-1;
@@ -1069,7 +1092,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   assert( p->n>0 );
   assert( p->n<sizeof(p->zBuf) );
   p->iDP = p->n + exp;
-  if( iRound<0 ){
+  if( iRound<=0 ){
     iRound = p->iDP - iRound;
     if( iRound==0 && p->zBuf[i+1]>='5' ){
       iRound = 1;
@@ -1828,12 +1851,3 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
   }while( i<mx );
   return 0;
 }
-
-/*
-** High-resolution hardware timer used for debugging and testing only.
-*/
-#if defined(VDBE_PROFILE)  \
- || defined(SQLITE_PERFORMANCE_TRACE) \
- || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
-# include "hwtime.h"
-#endif

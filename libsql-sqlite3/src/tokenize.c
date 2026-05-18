@@ -437,27 +437,58 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       *tokenType = TK_INTEGER;
 #ifndef SQLITE_OMIT_HEX_INTEGER
       if( z[0]=='0' && (z[1]=='x' || z[1]=='X') && sqlite3Isxdigit(z[2]) ){
-        for(i=3; sqlite3Isxdigit(z[i]); i++){}
-        return i;
-      }
+        for(i=3; 1; i++){
+          if( sqlite3Isxdigit(z[i])==0 ){
+            if( z[i]==SQLITE_DIGIT_SEPARATOR ){
+              *tokenType = TK_QNUMBER;
+            }else{
+              break;
+            }
+          }
+        }
+      }else
 #endif
-      for(i=0; sqlite3Isdigit(z[i]); i++){}
+        {
+        for(i=0; 1; i++){
+          if( sqlite3Isdigit(z[i])==0 ){
+            if( z[i]==SQLITE_DIGIT_SEPARATOR ){
+              *tokenType = TK_QNUMBER;
+            }else{
+              break;
+            }
+          }
+        }
 #ifndef SQLITE_OMIT_FLOATING_POINT
-      if( z[i]=='.' ){
-        i++;
-        while( sqlite3Isdigit(z[i]) ){ i++; }
-        *tokenType = TK_FLOAT;
-      }
-      if( (z[i]=='e' || z[i]=='E') &&
-           ( sqlite3Isdigit(z[i+1]) 
-            || ((z[i+1]=='+' || z[i+1]=='-') && sqlite3Isdigit(z[i+2]))
-           )
-      ){
-        i += 2;
-        while( sqlite3Isdigit(z[i]) ){ i++; }
-        *tokenType = TK_FLOAT;
-      }
+        if( z[i]=='.' ){
+          if( *tokenType==TK_INTEGER ) *tokenType = TK_FLOAT;
+          for(i++; 1; i++){
+            if( sqlite3Isdigit(z[i])==0 ){
+              if( z[i]==SQLITE_DIGIT_SEPARATOR ){
+                *tokenType = TK_QNUMBER;
+              }else{
+                break;
+              }
+            }
+          }
+        }
+        if( (z[i]=='e' || z[i]=='E') &&
+             ( sqlite3Isdigit(z[i+1]) 
+              || ((z[i+1]=='+' || z[i+1]=='-') && sqlite3Isdigit(z[i+2]))
+             )
+        ){
+          if( *tokenType==TK_INTEGER ) *tokenType = TK_FLOAT;
+          for(i+=2; 1; i++){
+            if( sqlite3Isdigit(z[i])==0 ){
+              if( z[i]==SQLITE_DIGIT_SEPARATOR ){
+                *tokenType = TK_QNUMBER;
+              }else{
+                break;
+              }
+            }
+          }
+        }
 #endif
+      }
       while( IdChar(z[i]) ){
         *tokenType = TK_ILLEGAL;
         i++;
@@ -622,10 +653,13 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
     if( tokenType>=TK_WINDOW ){
       assert( tokenType==TK_SPACE || tokenType==TK_OVER || tokenType==TK_FILTER
            || tokenType==TK_ILLEGAL || tokenType==TK_WINDOW 
+           || tokenType==TK_QNUMBER
       );
 #else
     if( tokenType>=TK_SPACE ){
-      assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
+      assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL 
+           || tokenType==TK_QNUMBER 
+      );
 #endif /* SQLITE_OMIT_WINDOWFUNC */
       if( AtomicLoad(&db->u1.isInterrupted) ){
         pParse->rc = SQLITE_INTERRUPT;
@@ -658,7 +692,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
         assert( n==6 );
         tokenType = analyzeFilterKeyword((const u8*)&zSql[6], lastTokenParsed);
 #endif /* SQLITE_OMIT_WINDOWFUNC */
-      }else{
+      }else if( tokenType!=TK_QNUMBER ){
         Token x;
         x.z = zSql;
         x.n = n;

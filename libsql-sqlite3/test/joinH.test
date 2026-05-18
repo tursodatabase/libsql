@@ -201,13 +201,13 @@ do_execsql_test 9.0 {
 
 do_catchsql_test 9.1 {
   SELECT rowid FROM wo1, x1, x2;
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.2 {
   SELECT rowid FROM wo1, (x1, x2);
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.3 {
   SELECT rowid FROM wo1 JOIN (x1 JOIN x2);
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.4 {
   SELECT a FROM wo1, x1, x2;
 } {1 {ambiguous column name: a}}
@@ -308,5 +308,37 @@ do_execsql_test 12.2 {
 do_execsql_test 12.3 {
   SELECT * FROM t1 LEFT JOIN t2 ON true RIGHT JOIN t3 ON d2=e3 WHERE c2 BETWEEN NULL AND a1;
 }
+
+#-------------------------------------------------------------------------
+# 2024-04-05 dbsqlfuzz b9e65e2f110df998f1306571fae7af6c01e4d92b
+reset_db
+do_execsql_test 13.1 {
+  CREATE TABLE t1(a INT AS (b), b INT);
+  INSERT INTO t1(b) VALUES(123);
+  CREATE TABLE t2(a INT, c INT);
+  SELECT a FROM t2 NATURAL RIGHT JOIN t1;
+} {123}
+do_execsql_test 13.2 {
+  CREATE INDEX t1a ON t1(a);
+  SELECT a FROM t2 NATURAL RIGHT JOIN t1;
+} {123}
+# Further tests of the same logic (indexes on expressions
+# used by RIGHT JOIN) from check-in ffe23af73fcb324d and
+# forum post https://sqlite.org/forum/forumpost/9b491e1debf0b67a.
+db null NULL
+do_execsql_test 13.3 {
+  CREATE TABLE t3(a INT, b INT);
+  CREATE UNIQUE INDEX t3x ON t3(a, a+b);
+  INSERT INTO t3(a,b) VALUES(1,2),(4,8),(16,32),(4,80),(1,-300);
+  CREATE TABLE t4(x INT, y INT);
+  INSERT INTO t4(x,y) SELECT a, b FROM t3;
+  INSERT INTO t4(x,y) VALUES(99,99);
+  SELECT a1.a, sum( a1.a+a1.b ) FROM t3 AS a1 RIGHT JOIN t4 ON a=x
+   GROUP BY a1.a ORDER BY 1;
+} {NULL NULL 1 -592 4 192 16 48}
+do_execsql_test 13.4 {
+  SELECT sum( a1.a+a1.b ) FROM t3 AS a1 RIGHT JOIN t3 ON true
+   GROUP BY a1.a ORDER BY 1;
+} {-1480 240 480}
 
 finish_test

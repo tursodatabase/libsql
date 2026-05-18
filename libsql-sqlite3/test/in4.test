@@ -458,14 +458,14 @@ do_execsql_test 11.0 {
 do_execsql_test 11.1 {
   SELECT * FROM t1
    WHERE b IN (345, (SELECT 1 FROM t1 
-                      WHERE b IN (345 NOT GLOB 510)
+                      WHERE b IN (coalesce(1,random()))
                         AND c GLOB 'abc*xyz'))
      AND c BETWEEN 'abc' AND 'xyz';
 } {xyz 1 abcdefxyz 99}
 do_execsql_test 11.2 {
   EXPLAIN SELECT * FROM t1
    WHERE b IN (345, (SELECT 1 FROM t1 
-                      WHERE b IN (345 NOT GLOB 510)
+                      WHERE b IN (coalesce(1,random()))
                         AND c GLOB 'abc*xyz'))
      AND c BETWEEN 'abc' AND 'xyz';
 } {/ SeekScan /}

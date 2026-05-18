@@ -33,6 +33,7 @@ proc progress_handler {args} {
   return 0
 }
 
+unset -nocomplain res
 foreach {tn sql} {
   1 { INSERT INTO t1(rowid, a) VALUES(0, 'z z z z') }
   2 { COMMIT }
@@ -64,4 +65,3 @@ foreach {tn sql} {
 }
 
 finish_test
-

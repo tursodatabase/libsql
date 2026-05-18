@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool.
 #
@@ -216,6 +217,7 @@ do_test shell2-1.4.9 {
 done
 2}}
 
+ifcapable vtab {
 # Verify that generate_series stays sane near 64-bit range boundaries.
 # See overflow report at https://sqlite.org/forum/forumpost/5d34ce5280
 do_test shell2-1.4.10 {
@@ -246,7 +248,9 @@ do_test shell2-1.4.10 {
 0
 1
 2}}
+}  ;# ifcapable vtab
 
+ifcapable vtab {
 # Bug discovered while messing around, .import hangs with
 # bit 7 set in column separator.
 do_test shell2-1.4.11 {
@@ -261,6 +265,7 @@ do_test shell2-1.4.11 {
 .import dummy.csv t
  SELECT count(*) FROM t;}]]
 } {0 1}
+} ;# ifcapable vtab
 
 # Bug from forum post 7cbe081746dd3803
 # Keywords as column names were producing an error message.

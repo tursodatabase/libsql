@@ -209,8 +209,8 @@ datetest 3.16 "strftime('[repeat 200 %Y]','2003-10-31')" [repeat 200 2003]
 datetest 3.17 "strftime('[repeat 200 abc%m123]','2003-10-31')" \
     [repeat 200 abc10123]
 
-foreach c {a b c g h i n o q r t v x y z
-           A B C D E G K L N O Q V Z
+foreach c {a b c h i n o q r t v x y z
+           A B C D E K L N O Q Z
            0 1 2 3 4 5 6 6 7 9 _} {
   datetest 3.18.$c "strftime('%$c','2003-10-31')" NULL
 }
@@ -262,7 +262,7 @@ datetest 5.15 {datetime('1994-04-16 14:00:00 +05:00 Z')} NULL
 # localtime->utc and utc->localtime conversions.
 #
 # Use SQLITE_TESTCTRL_LOCALTIME_FAULT=2 to set an alternative localtime_r()
-# implementation that is not locale-dependent.  This testing localtime_r()
+# implementation that is not locale-dependent.  The testing localtime_r()
 # operates as follows:
 #
 #     (1)  Localtime is 30 minutes earlier than (west of) UTC on
@@ -320,6 +320,38 @@ local_to_utc 6.21 {1800-10-29 12:00:00} {1800-10-29 12:30:00}
 utc_to_local 6.22 {1800-10-29 12:30:00} {1800-10-29 12:00:00}
 local_to_utc 6.23 {3000-10-30 12:00:00} {3000-10-30 11:30:00}
 utc_to_local 6.24 {3000-10-30 11:30:00} {3000-10-30 12:00:00}
+
+# If the time is specified to be ZULU, or if it has an explicit
+# timezone extension, then the time will already be UTC and subsequent
+# 'utc' modifiers are no-ops.
+#
+do_execsql_test date-6.25 {
+  SELECT datetime('2000-10-29 12:00Z','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.26 {
+  SELECT datetime('2000-10-29 12:00:00+05:00');
+} {{2000-10-29 07:00:00}}
+do_execsql_test date-6.27 {
+  SELECT datetime('2000-10-29 12:00:00+05:00', 'utc');
+} {{2000-10-29 07:00:00}}
+
+# Multiple back-and-forth UTC to LOCAL to UTC...
+do_execsql_test date-6.28 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'localtime');
+} {{2000-10-29 12:30:00}}
+do_execsql_test date-6.29 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'utc', 'localtime');
+} {{2000-10-29 12:30:00}}
+do_execsql_test date-6.30 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'utc', 'localtime', 'utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.31 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'utc','localtime','utc','localtime');
+} {{2000-10-29 12:30:00}}
+do_execsql_test date-6.32 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'localtime','localtime');
+} {{2000-10-29 12:30:00}}
+
 
 # Restore the use of the OS localtime_r() before going on...
 sqlite3_test_control SQLITE_TESTCTRL_LOCALTIME_FAULT 0
@@ -573,4 +605,51 @@ datetest 18.2 {unixepoch('1970-01-01T00:00:00.1', 'subsec')} {0.1}
 datetest 18.3 {unixepoch('1970-01-01T00:00:00.2', 'subsecond')} {0.2}
 datetest 18.4 {julianday('-4713-11-24 13:40:48.864', 'subsec')} {0.07001}
 datetest 18.5 {typeof(unixepoch('now', 'subsecond'))} {real}
+
+# 2024-03-03 the 'ceiling' and 'floor' operators.
+#
+datetest 19.1 {date('2000-01-31','floor')} {2000-01-31}
+datetest 19.2a {date('2000-02-31','floor')} {2000-02-29}
+datetest 19.2b {date('1999-02-31','floor')} {1999-02-28}
+datetest 19.2c {date('1900-02-31','floor')} {1900-02-28}
+datetest 19.3 {date('2000-03-31','floor')} {2000-03-31}
+datetest 19.4 {date('2000-04-31','floor')} {2000-04-30}
+datetest 19.5 {date('2000-05-31','floor')} {2000-05-31}
+datetest 19.6 {date('2000-06-31','floor')} {2000-06-30}
+datetest 19.7 {date('2000-07-31','floor')} {2000-07-31}
+datetest 19.8 {date('2000-08-31','floor')} {2000-08-31}
+datetest 19.9 {date('2000-09-31','floor')} {2000-09-30}
+datetest 19.10 {date('2000-10-31','floor')} {2000-10-31}
+datetest 19.11 {date('2000-11-31','floor')} {2000-11-30}
+datetest 19.12 {date('2000-12-31','floor')} {2000-12-31}
+datetest 19.21 {date('2000-01-31','ceiling')} {2000-01-31}
+datetest 19.22a {date('2000-02-31','ceiling')} {2000-03-02}
+datetest 19.22b {date('1999-02-31','ceiling')} {1999-03-03}
+datetest 19.22c {date('1900-02-31','ceiling')} {1900-03-03}
+datetest 19.23 {date('2000-03-31','ceiling')} {2000-03-31}
+datetest 19.24 {date('2000-04-31','ceiling')} {2000-05-01}
+datetest 19.25 {date('2000-05-31','ceiling')} {2000-05-31}
+datetest 19.26 {date('2000-06-31','ceiling')} {2000-07-01}
+datetest 19.27 {date('2000-07-31','ceiling')} {2000-07-31}
+datetest 19.28 {date('2000-08-31','ceiling')} {2000-08-31}
+datetest 19.29 {date('2000-09-31','ceiling')} {2000-10-01}
+datetest 19.30 {date('2000-10-31','ceiling')} {2000-10-31}
+datetest 19.31 {date('2000-11-31','ceiling')} {2000-12-01}
+datetest 19.32 {date('2000-12-31','ceiling')} {2000-12-31}
+datetest 19.40 {date('2024-01-31','+1 month','ceiling')} {2024-03-02}
+datetest 19.41 {date('2024-01-31','+1 month','floor')} {2024-02-29}
+datetest 19.42 {date('2023-01-31','+1 month','ceiling')} {2023-03-03}
+datetest 19.43 {date('2023-01-31','+1 month','floor')} {2023-02-28}
+datetest 19.44 {date('2024-02-29','+1 year','ceiling')} {2025-03-01}
+datetest 19.45 {date('2024-02-29','+1 year','floor')} {2025-02-28}
+datetest 19.46 {date('2024-02-29','-110 years','ceiling')} {1914-03-01}
+datetest 19.47 {date('2024-02-29','-110 years','floor')} {1914-02-28}
+datetest 19.48 {date('2024-02-29','-0110-00-00','floor')} {1914-02-28}
+datetest 19.49 {date('2024-02-29','-0110-00-00','ceiling')} {1914-03-01}
+datetest 19.50 {date('2000-08-31','+0023-06-00','floor')} {2024-02-29}
+datetest 19.51 {date('2000-08-31','+0022-06-00','floor')} {2023-02-28}
+datetest 19.52 {date('2000-08-31','+0023-06-00','ceiling')} {2024-03-02}
+datetest 19.53 {date('2000-08-31','+0022-06-00','ceiling')} {2023-03-03}
+
+
 finish_test

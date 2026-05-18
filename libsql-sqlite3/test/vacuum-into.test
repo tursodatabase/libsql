@@ -26,13 +26,36 @@ ifcapable {!vacuum} {
 
 forcedelete out.db
 do_execsql_test vacuum-into-100 {
-  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t1(
+    a INTEGER PRIMARY KEY,
+    b ANY,
+    c INT AS (b+1),                          --- See "2024-04-09" block
+    CHECK( typeof(b)!='integer' OR b>a-5 )   --- comment below
+  );
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
   INSERT INTO t1(a,b) SELECT x, randomblob(600) FROM c;
   CREATE INDEX t1b ON t1(b);
   DELETE FROM t1 WHERE a%2;
   SELECT count(*), sum(a), sum(length(b)) FROM t1;
 } {50 2550 30000}
+
+# Update 2024-04-09 for forum post eec177d68fe7fa2c.
+#
+# VACUUM INTO is sensitive to tables holding both generated columns
+# and CHECK constraints.  
+#
+# CHECK constraints are ignored for read-only databases in order to save
+# memory (see check-in 34ddf02d3d21151b on 2014-05-21).  But the xfer
+# optimization normally only works if CHECK constraints match between the
+# source and destination tables.  So the xfer optimization was not
+# working for VACUUM INTO when the source was a read-only database and the
+# table held CHECK constraints.  But if the table has generated columns,
+# then the xfer optimization is required or else VACUUM will raise an
+# error.
+#
+# Fix this by ignoring CHECK constraints when determining whether or not
+# the xfer optimization can run while doing VACUUM.
+
 do_execsql_test vacuum-into-110 {
   VACUUM main INTO 'out.db';
 } {}
@@ -88,10 +111,20 @@ do_catchsql_test vacuum-into-420 {
 
 # The ability to VACUUM INTO a read-only database
 db close
+if {$tcl_platform(platform)=="windows"} {
+  file attributes test.db -readonly 1
+} else {
+  file attributes test.db -permissions 292  ;# 292 == 0444
+}
 sqlite3 db test.db -readonly 1
 forcedelete test.db2
 do_execsql_test vacuum-into-500 {
   VACUUM INTO 'test.db2';
+}
+if {$tcl_platform(platform)=="windows"} {
+  file attributes test.db -readonly 0
+} else {
+  file attributes test.db -permissions 420   ;# 420 = 0644
 }
 sqlite3 db2 test.db2
 do_test vacuum-into-510 {

@@ -1340,10 +1340,10 @@ do_eqp_test 4.1.2 {
   `--MERGE (UNION ALL)
      |--LEFT
      |  |--SCAN t5 USING INDEX i2
-     |  `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+     |  `--USE TEMP B-TREE FOR LAST TERM OF ORDER BY
      `--RIGHT
         |--SCAN t4 USING INDEX i1
-        `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+        `--USE TEMP B-TREE FOR LAST TERM OF ORDER BY
 }
 
 do_execsql_test 4.1.3 {

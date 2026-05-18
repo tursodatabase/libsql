@@ -102,6 +102,7 @@ do_test 3.4 {
   set blobs [list]
   for {set i 1} {$i<100} {incr i} {
     set b [db incrblob -readonly t3 b $i]
+    fconfigure $b -translation binary
     read $b
     lappend blobs $b
   }

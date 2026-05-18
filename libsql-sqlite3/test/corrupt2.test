@@ -69,7 +69,7 @@ do_test corrupt2-1.3 {
   forcedelete corrupt.db-journal
   forcecopy test.db corrupt.db
   set f [open corrupt.db RDWR]
-  fconfigure $f -encoding binary
+  fconfigure $f -translation binary
   seek $f 16 start
   puts -nonewline $f "\x00\xFF"
   close $f
@@ -89,7 +89,7 @@ do_test corrupt2-1.4 {
   forcedelete corrupt.db-journal
   forcecopy test.db corrupt.db
   set f [open corrupt.db RDWR]
-  fconfigure $f -encoding binary
+  fconfigure $f -translation binary
   seek $f 101 start
   puts -nonewline $f "\xFF\xFF"
   close $f
@@ -109,7 +109,7 @@ do_test corrupt2-1.5 {
   forcedelete corrupt.db-journal
   forcecopy test.db corrupt.db
   set f [open corrupt.db RDWR]
-  fconfigure $f -encoding binary
+  fconfigure $f -translation binary
   seek $f 101 start
   puts -nonewline $f "\x00\xC8"
   seek $f 200 start
@@ -179,7 +179,7 @@ do_test corrupt2-3.1 {
   # of the DROP TABLE operation below.
   #
   set fd [open corrupt.db r+]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   seek $fd [expr 1024*3 + 12]
   set zCelloffset [read $fd 2]
   binary scan $zCelloffset S iCelloffset
@@ -227,7 +227,7 @@ do_test corrupt2-5.1 {
   # This block links a page from table t2 into the t1 table structure.
   #
   set fd [open corrupt.db r+]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   seek $fd [expr 1024 + 12]
   set zCelloffset [read $fd 2]
   binary scan $zCelloffset S iCelloffset
@@ -392,7 +392,7 @@ corruption_test -sqlprep $sqlprep -corrupt {
   # 0x0D (interpreted by SQLite as "leaf page of a table B-Tree").
   #
   set fd [open corrupt.db r+]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   seek $fd [expr 1024*2 + 8] 
   set zRightChild [read $fd 4]
   binary scan $zRightChild I iRightChild
@@ -410,7 +410,7 @@ corruption_test -sqlprep $sqlprep -corrupt {
   # The corruption is detected as part of an OP_Prev opcode.
   #
   set fd [open corrupt.db r+]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   seek $fd [expr 1024*2 + 12] 
   set zCellOffset [read $fd 2]
   binary scan $zCellOffset S iCellOffset
@@ -431,7 +431,7 @@ corruption_test -sqlprep $sqlprep -corrupt {
   # 0x0A (interpreted by SQLite as "leaf page of an index B-Tree").
   #
   set fd [open corrupt.db r+]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   seek $fd [expr 1024*1 + 8] 
   set zRightChild [read $fd 4]
   binary scan $zRightChild I iRightChild
@@ -459,7 +459,7 @@ corruption_test -sqlprep {
   CREATE TABLE x6(a, b, c); CREATE TABLE xD(a, b, c); CREATE TABLE xJ(a, b, c);
 } -corrupt {
   set fd [open corrupt.db r+]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   seek $fd 108
   set zRightChild [read $fd 4]
   binary scan $zRightChild I iRightChild

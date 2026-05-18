@@ -117,7 +117,7 @@ foreach locking_mode {normal exclusive} {
     # Read the contents of the database file into a Tcl variable.
     #
     set fd [open test.db]
-    fconfigure $fd -translation binary -encoding binary
+    fconfigure $fd -translation binary
     set zDatabase [read $fd]
     close $fd
 
@@ -138,7 +138,7 @@ foreach locking_mode {normal exclusive} {
     #
     do_test ioerr5-1.$locking_mode-$iFail.4 {
       set fd [open test.db]
-      fconfigure $fd -translation binary -encoding binary
+      fconfigure $fd -translation binary
       set zDatabase2 [read $fd]
       close $fd
       expr {$zDatabase eq $zDatabase2}

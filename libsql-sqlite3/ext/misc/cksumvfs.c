@@ -446,9 +446,9 @@ static int cksmRead(
     **    (2) checksum verification is enabled
     **    (3) we are not in the middle of checkpoint
     */
-    if( iAmt>=512           /* (1) */
-     && p->verifyCksm       /* (2) */
-     && !p->inCkpt          /* (3) */
+    if( iAmt>=512 && (iAmt & (iAmt-1))==0   /* (1) */
+     && p->verifyCksm                       /* (2) */
+     && !p->inCkpt                          /* (3) */
     ){
       u8 cksum[8];
       cksmCompute((u8*)zBuf, iAmt-8, cksum);

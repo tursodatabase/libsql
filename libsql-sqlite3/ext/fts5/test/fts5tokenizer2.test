@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5tokenizer2
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -84,6 +84,26 @@ do_execsql_test 1.6 {
 do_execsql_test 1.7 {
   SELECT highlight(t1, 0, '>', '<') FROM t1('BB mess');
 } {AAdont>BBmess<}
+
+# 2024-08-06 https://sqlite.org/forum/forumpost/171bcc2bcd
+# Error handling of tokenize= arguments.
+#
+foreach {n tkz} {
+  1  {ascii none}
+  2  {unicode61 none}
+  3  {porter none}
+  4  {trigram none}
+  5  {ascii none 0}
+  6  {unicode61 none 0}
+  7  {porter none 0}
+  8  {trigram none 0}
+} {
+  db eval {DROP TABLE IF EXISTS t2;}
+  do_catchsql_test 2.$n "
+     DROP TABLE IF EXISTS t2;
+     CREATE VIRTUAL TABLE t2 USING fts5(a,b,c,tokenize='$tkz');
+  " {1 {error in tokenizer constructor}}
+}
 
 
 finish_test

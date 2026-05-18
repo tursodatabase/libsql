@@ -4376,6 +4376,8 @@ do_test 25.0 {
 | end crash-dde9e76ed8ab2d.db
 }]} {}
 
+reset_prng_state
+
 do_catchsql_test 25.1 {
   PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x%1 FROM c WHERE x<599237)

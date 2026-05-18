@@ -236,9 +236,11 @@ do_eqp_test 5.1 {
   QUERY PLAN
   |--SEARCH d2 USING INDEX d2ab (a=? AND b=?)
   |--LIST SUBQUERY xxxxxx
-  |  `--SCAN d1
+  |  |--SCAN d1
+  |  `--CREATE BLOOM FILTER
   `--LIST SUBQUERY xxxxxx
-     `--SCAN d1
+     |--SCAN d1
+     `--CREATE BLOOM FILTER
 }
 
 do_execsql_test 6.0 {

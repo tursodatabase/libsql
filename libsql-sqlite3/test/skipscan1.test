@@ -337,12 +337,12 @@ do_execsql_test skipscan1-9.2 {
 } {/USING INDEX t9a_ab .ANY.a. AND b=./}
 
 
-optimization_control db skip-scan 0
+optimization_control db skip-scan off
 do_execsql_test skipscan1-9.3 {
   EXPLAIN QUERY PLAN
   SELECT  * FROM t9a WHERE b IN (SELECT x FROM t9b WHERE y!=5);
 } {/{SCAN t9a}/}
-optimization_control db skip-scan 1
+optimization_control db all on
 
 do_execsql_test skipscan1-2.1 {
   CREATE TABLE t6(a TEXT, b INT, c INT, d INT);

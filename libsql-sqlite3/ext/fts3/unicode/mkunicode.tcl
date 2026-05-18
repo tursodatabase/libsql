@@ -628,6 +628,9 @@ proc print_categories {lMap} {
         $caseP
         $caseS
         $caseZ
+
+        default:
+          return 1;
       }
       return 0;
     }

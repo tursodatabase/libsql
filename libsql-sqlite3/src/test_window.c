@@ -16,7 +16,7 @@
 #ifdef SQLITE_TEST
 
 #include "sqliteInt.h"
-#include <tcl.h>
+#include "tclsqlite.h"
 
 extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 extern const char *sqlite3ErrName(int);

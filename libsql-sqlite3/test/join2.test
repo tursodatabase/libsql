@@ -428,4 +428,25 @@ do_eqp_test 12.3 {
   `--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
 }
 
+# 2024-09-05 https://sqlite.org/forum/forumpost/8a1e467e905b8d27
+# When performing the Omit-Noop-Join optimization, if FROM clause terms
+# to the right of the omitted join have the reverse-order bit set in the
+# WhereInfo.revMask bitmask, those bits need to be shifted to account
+# for the omitted join.
+#
+reset_db
+do_execsql_test 13.0 {
+  CREATE TABLE t1(a1 INTEGER PRIMARY KEY, b1 INT);
+  CREATE TABLE t2(c2 INT, d2 INTEGER PRIMARY KEY);
+  CREATE TABLE t3(e3 INTEGER PRIMARY KEY);
+  INSERT INTO t1 VALUES(33,0);
+  INSERT INTO t2 VALUES(33,1),(33,2);
+}
+do_execsql_test 13.1 {
+  SELECT t1.a1, t2.d2
+    FROM (t1 LEFT JOIN t3 ON t3.e3=t1.b1) JOIN t2 ON t2.c2=t1.a1
+   WHERE t1.a1=33
+   ORDER BY t2.d2 DESC;
+} {33 2 33 1}
+
 finish_test

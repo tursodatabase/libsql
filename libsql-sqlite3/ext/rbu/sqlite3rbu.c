@@ -199,6 +199,7 @@ typedef unsigned int u32;
 typedef unsigned short u16;
 typedef unsigned char u8;
 typedef sqlite3_int64 i64;
+typedef sqlite3_uint64 u64;
 #endif
 
 /*
@@ -335,6 +336,27 @@ struct RbuFrame {
   u32 iWalFrame;
 };
 
+#ifndef UNUSED_PARAMETER
+/*
+** The following macros are used to suppress compiler warnings and to
+** make it clear to human readers when a function parameter is deliberately
+** left unused within the body of a function. This usually happens when
+** a function is called via a function pointer. For example the
+** implementation of an SQL aggregate step callback may not use the
+** parameter indicating the number of arguments passed to the aggregate,
+** if it knows that this is enforced elsewhere.
+**
+** When a function parameter is not used at all within the body of a function,
+** it is generally named "NotUsed" or "NotUsed2" to make things even clearer.
+** However, these macros may also be used to suppress warnings related to
+** parameters that may or may not be used depending on compilation options.
+** For example those parameters only used in assert() statements. In these
+** cases the parameters are named as per the usual conventions.
+*/
+#define UNUSED_PARAMETER(x) (void)(x)
+#define UNUSED_PARAMETER2(x,y) UNUSED_PARAMETER(x),UNUSED_PARAMETER(y)
+#endif
+
 /*
 ** RBU handle.
 **
@@ -386,7 +408,7 @@ struct sqlite3rbu {
   int rc;                         /* Value returned by last rbu_step() call */
   char *zErrmsg;                  /* Error message if rc!=SQLITE_OK */
   int nStep;                      /* Rows processed for current object */
-  int nProgress;                  /* Rows processed for all objects */
+  sqlite3_int64 nProgress;        /* Rows processed for all objects */
   RbuObjIter objiter;             /* Iterator for skipping through tbl/idx */
   const char *zVfsName;           /* Name of automatically created rbu vfs */
   rbu_file *pTargetFd;            /* File handle open on target db */
@@ -503,7 +525,7 @@ static unsigned int rbuDeltaGetInt(const char **pz, int *pLen){
      v = (v<<6) + c;
   }
   z--;
-  *pLen -= z - zStart;
+  *pLen -= (int)(z - zStart);
   *pz = (char*)z;
   return v;
 }
@@ -688,6 +710,7 @@ static void rbuFossilDeltaFunc(
   char *aOut;
 
   assert( argc==2 );
+  UNUSED_PARAMETER(argc);
 
   nOrig = sqlite3_value_bytes(argv[0]);
   aOrig = (const char*)sqlite3_value_blob(argv[0]);
@@ -885,6 +908,7 @@ static int rbuObjIterNext(sqlite3rbu *p, RbuObjIter *pIter){
         if( rc!=SQLITE_ROW ){
           rc = resetAndCollectError(pIter->pTblIter, &p->zErrmsg);
           pIter->zTbl = 0;
+          pIter->zDataTbl = 0;
         }else{
           pIter->zTbl = (const char*)sqlite3_column_text(pIter->pTblIter, 0);
           pIter->zDataTbl = (const char*)sqlite3_column_text(pIter->pTblIter,1);
@@ -2266,13 +2290,13 @@ static char *rbuObjIterGetIndexWhere(sqlite3rbu *p, RbuObjIter *pIter){
           else if( c==')' ){
             nParen--;
             if( nParen==0 ){
-              int nSpan = &zSql[i] - pIter->aIdxCol[iIdxCol].zSpan;
+              int nSpan = (int)(&zSql[i] - pIter->aIdxCol[iIdxCol].zSpan);
               pIter->aIdxCol[iIdxCol++].nSpan = nSpan;
               i++;
               break;
             }
           }else if( c==',' && nParen==1 ){
-            int nSpan = &zSql[i] - pIter->aIdxCol[iIdxCol].zSpan;
+            int nSpan = (int)(&zSql[i] - pIter->aIdxCol[iIdxCol].zSpan);
             pIter->aIdxCol[iIdxCol++].nSpan = nSpan;
             pIter->aIdxCol[iIdxCol].zSpan = &zSql[i+1];
           }else if( c=='"' || c=='\'' || c=='`' ){
@@ -2962,6 +2986,8 @@ static void rbuFileSuffix3(const char *zBase, char *z){
     for(i=sz-1; i>0 && z[i]!='/' && z[i]!='.'; i--){}
     if( z[i]=='.' && sz>i+4 ) memmove(&z[i+1], &z[sz-3], 4);
   }
+#else
+  UNUSED_PARAMETER2(zBase,z);
 #endif
 }
 
@@ -2979,7 +3005,7 @@ static i64 rbuShmChecksum(sqlite3rbu *p){
     u32 volatile *ptr;
     p->rc = pDb->pMethods->xShmMap(pDb, 0, 32*1024, 0, (void volatile**)&ptr);
     if( p->rc==SQLITE_OK ){
-      iRet = ((i64)ptr[10] << 32) + ptr[11];
+      iRet = (i64)(((u64)ptr[10] << 32) + ptr[11]);
     }
   }
   return iRet;
@@ -3546,7 +3572,7 @@ static void rbuSaveState(sqlite3rbu *p, int eStage){
           "(%d, %Q), "
           "(%d, %Q), "
           "(%d, %d), "
-          "(%d, %d), "
+          "(%d, %lld), "
           "(%d, %lld), "
           "(%d, %lld), "
           "(%d, %lld), "
@@ -3904,6 +3930,7 @@ static void rbuIndexCntFunc(
   sqlite3 *db = (rbuIsVacuum(p) ? p->dbRbu : p->dbMain);
 
   assert( nVal==1 );
+  UNUSED_PARAMETER(nVal);
   
   rc = prepareFreeAndCollectError(db, &pStmt, &zErrmsg, 
       sqlite3_mprintf("SELECT count(*) FROM sqlite_schema "
@@ -4179,7 +4206,7 @@ sqlite3rbu *sqlite3rbu_vacuum(
 ){
   if( zTarget==0 ){ return rbuMisuseError(); }
   if( zState ){
-    int n = strlen(zState);
+    size_t n = strlen(zState);
     if( n>=7 && 0==memcmp("-vactmp", &zState[n-7], 7) ){
       return rbuMisuseError();
     }
@@ -4396,6 +4423,7 @@ int sqlite3rbu_savestate(sqlite3rbu *p){
 */
 static int xDefaultRename(void *pArg, const char *zOld, const char *zNew){
   int rc = SQLITE_OK;
+  UNUSED_PARAMETER(pArg);
 #if defined(_WIN32_WCE)
   {
     LPWSTR zWideOld;
@@ -5300,6 +5328,9 @@ static int rbuVfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
 ** No-op.
 */
 static int rbuVfsGetLastError(sqlite3_vfs *pVfs, int a, char *b){
+  UNUSED_PARAMETER(pVfs);
+  UNUSED_PARAMETER(a);
+  UNUSED_PARAMETER(b);
   return 0;
 }
 

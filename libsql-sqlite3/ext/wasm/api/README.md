@@ -78,10 +78,12 @@ browser client:
       a Promise-based interface into the Worker #1 API. This is
       a far user-friendlier way to interface with databases running
       in a Worker thread.
-- **`sqlite3-v-helper.js`**\  
-  Installs `sqlite3.vfs` and `sqlite3.vtab`, namespaces which contain
-  helpers for use by downstream code which creates `sqlite3_vfs`
-  and `sqlite3_module` implementations.
+- **`sqlite3-vfs-helper.js`**\  
+  Installs the `sqlite3.vfs` namespace, which contain helpers for use
+  by downstream code which creates `sqlite3_vfs` implementations.
+- **`sqlite3-vtab-helper.js`**\  
+  Installs the `sqlite3.vtab` namespace, which contain helpers for use
+  by downstream code which creates `sqlite3_module` implementations.
 - **`sqlite3-vfs-opfs.c-pp.js`**\  
   is an sqlite3 VFS implementation which supports the Origin-Private
   FileSystem (OPFS) as a storage layer to provide persistent storage

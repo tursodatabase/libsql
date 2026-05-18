@@ -12,7 +12,6 @@
 **
 **    time ./a.out 0 10000000     <-- standard library
 **    time ./a.out 1 10000000     <-- SQLite
-**    time ./a.out 2 10000000     <-- SQLite with long-double disabled
 */
 static double aVal[] = {
   -1.0163830486285643089e+063,
@@ -150,15 +149,6 @@ int main(int argc, char **argv){
       }
       break;
     }
-    case 2: {
-      printf("Doing %d calls to sqlite3_snprintf() without long double\n", cnt);
-      sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, 0);
-      for(i=0; i<cnt; i++){
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.26g", aVal[i%NN]);
-      }
-      break;
-    }
-
   }
   return 0;
 }

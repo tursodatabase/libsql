@@ -1084,17 +1084,28 @@ static void ptrmap_coverage_report(const char *zDbName){
     printf("%5llu: PTRMAP page covering %llu..%llu\n", pgno,
            pgno+1, pgno+perPage);
     a = fileRead((pgno-1)*g.pagesize, usable);
-    for(i=0; i+5<=usable && pgno+1+i/5<=g.mxPage; i+=5){
-      const char *zType = "???";
+    for(i=0; i+5<=usable; i+=5){
+      const char *zType;
       u32 iFrom = decodeInt32(&a[i+1]);
+      const char *zExtra = pgno+1+i/5>g.mxPage ? " (off end of DB)" : "";
       switch( a[i] ){
         case 1:  zType = "b-tree root page";        break;
         case 2:  zType = "freelist page";           break;
         case 3:  zType = "first page of overflow";  break;
         case 4:  zType = "later page of overflow";  break;
         case 5:  zType = "b-tree non-root page";    break;
+        default: {
+          if( zExtra[0]==0 ){
+            printf("%5llu: invalid (0x%02x), parent=%u\n", 
+                   pgno+1+i/5, a[i], iFrom);
+          }
+          zType = 0;
+          break;
+        }
       }
-      printf("%5llu: %s, parent=%u\n", pgno+1+i/5, zType, iFrom);
+      if( zType ){
+        printf("%5llu: %s, parent=%u%s\n", pgno+1+i/5, zType, iFrom, zExtra);
+      }
     }
     sqlite3_free(a);
   }

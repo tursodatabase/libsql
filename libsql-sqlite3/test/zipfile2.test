@@ -10,7 +10,10 @@
 #***********************************************************************
 #
 
-package require Tcl 8.6
+if {$tcl_version<8.6} {
+  puts "Requires TCL 8.6 or later"
+  return
+}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

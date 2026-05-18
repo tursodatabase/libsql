@@ -192,7 +192,7 @@ void sqlite3FinishCoding(Parse *pParse){
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
 
-#if SQLITE_USER_AUTHENTICATION
+#if SQLITE_USER_AUTHENTICATION && !defined(SQLITE_OMIT_SHARED_CACHE)
     if( pParse->nTableLock>0 && db->init.busy==0 ){
       sqlite3UserAuthInit(db);
       if( db->auth.authLevel<UAUTH_User ){
@@ -500,12 +500,12 @@ Table *sqlite3LocateTableItem(
   SrcItem *p
 ){
   const char *zDb;
-  assert( p->pSchema==0 || p->zDatabase==0 );
-  if( p->pSchema ){
-    int iDb = sqlite3SchemaToIndex(pParse->db, p->pSchema);
+  if( p->fg.fixedSchema ){
+    int iDb = sqlite3SchemaToIndex(pParse->db, p->u4.pSchema);
     zDb = pParse->db->aDb[iDb].zDbSName;
   }else{
-    zDb = p->zDatabase;
+    assert( !p->fg.isSubquery );
+    zDb = p->u4.zDatabase;
   }
   return sqlite3LocateTable(pParse, flags, p->zName, zDb);
 }
@@ -2840,20 +2840,20 @@ void sqlite3EndTable(
       int regRowid;       /* Rowid of the next row to insert */
       int addrInsLoop;    /* Top of the loop for inserting rows */
       Table *pSelTab;     /* A table that describes the SELECT results */
+      int iCsr;           /* Write cursor on the new table */
 
       if( IN_SPECIAL_PARSE ){
         pParse->rc = SQLITE_ERROR;
         pParse->nErr++;
         return;
       }
+      iCsr = pParse->nTab++;
       regYield = ++pParse->nMem;
       regRec = ++pParse->nMem;
       regRowid = ++pParse->nMem;
-      assert(pParse->nTab==1);
       sqlite3MayAbort(pParse);
-      sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, pParse->regRoot, iDb);
+      sqlite3VdbeAddOp3(v, OP_OpenWrite, iCsr, pParse->regRoot, iDb);
       sqlite3VdbeChangeP5(v, OPFLAG_P2ISREG);
-      pParse->nTab = 2;
       addrTop = sqlite3VdbeCurrentAddr(v) + 1;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
       if( pParse->nErr ) return;
@@ -2874,11 +2874,11 @@ void sqlite3EndTable(
       VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, dest.iSdst, dest.nSdst, regRec);
       sqlite3TableAffinity(v, p, 0);
-      sqlite3VdbeAddOp2(v, OP_NewRowid, 1, regRowid);
-      sqlite3VdbeAddOp3(v, OP_Insert, 1, regRec, regRowid);
+      sqlite3VdbeAddOp2(v, OP_NewRowid, iCsr, regRowid);
+      sqlite3VdbeAddOp3(v, OP_Insert, iCsr, regRec, regRowid);
       sqlite3VdbeGoto(v, addrInsLoop);
       sqlite3VdbeJumpHere(v, addrInsLoop);
-      sqlite3VdbeAddOp1(v, OP_Close, 1);
+      sqlite3VdbeAddOp1(v, OP_Close, iCsr);
     }
 
     /* Compute the complete text of the CREATE statement */
@@ -2935,13 +2935,10 @@ void sqlite3EndTable(
     /* Test for cycles in generated columns and illegal expressions
     ** in CHECK constraints and in DEFAULT clauses. */
     if( p->tabFlags & TF_HasGenerated ){
-      sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+      sqlite3VdbeAddOp4(v, OP_SqlExec, 0x0001, 0, 0,
              sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%w\"",
                    db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
     }
-    sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
-           sqlite3MPrintf(db, "PRAGMA \"%w\".integrity_check(%Q)",
-                 db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
   }
 
   /* Add the table to the in-memory representation of the database.
@@ -3018,9 +3015,12 @@ void sqlite3CreateView(
   ** on a view, even though views do not have rowids.  The following flag
   ** setting fixes this problem.  But the fix can be disabled by compiling
   ** with -DSQLITE_ALLOW_ROWID_IN_VIEW in case there are legacy apps that
-  ** depend upon the old buggy behavior. */
-#ifndef SQLITE_ALLOW_ROWID_IN_VIEW
-  p->tabFlags |= TF_NoVisibleRowid;
+  ** depend upon the old buggy behavior.  The ability can also be toggled
+  ** using sqlite3_config(SQLITE_CONFIG_ROWID_IN_VIEW,...) */
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+  p->tabFlags |= sqlite3Config.mNoVisibleRowid; /* Optional. Allow by default */
+#else
+  p->tabFlags |= TF_NoVisibleRowid;             /* Never allow rowid in view */
 #endif
 
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
@@ -3076,8 +3076,9 @@ create_view_fail:
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
 /*
 ** The Table structure pTable is really a VIEW.  Fill in the names of
-** the columns of the view in the pTable structure.  Return the number
-** of errors.  If an error is seen leave an error message in pParse->zErrMsg.
+** the columns of the view in the pTable structure.  Return non-zero if
+** there are errors.  If an error is seen an error message is left
+** in pParse->zErrMsg.
 */
 static SQLITE_NOINLINE int viewGetColumnNames(Parse *pParse, Table *pTable){
   Table *pSelTab;   /* A fake table from which we get the result set */
@@ -3200,7 +3201,7 @@ static SQLITE_NOINLINE int viewGetColumnNames(Parse *pParse, Table *pTable){
     sqlite3DeleteColumnNames(db, pTable);
   }
 #endif /* SQLITE_OMIT_VIEW */
-  return nErr; 
+  return nErr + pParse->nErr; 
 }
 int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable!=0 );
@@ -3522,6 +3523,8 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
+  assert( pName->a[0].fg.fixedSchema==0 );
+  assert( pName->a[0].fg.isSubquery==0 );
   if( sqlite3ReadSchema(pParse) ) goto exit_drop_table;
   if( noErr ) db->suppressErr++;
   assert( isView==0 || isView==LOCATE_VIEW );
@@ -3530,7 +3533,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
 
   if( pTab==0 ){
     if( noErr ){
-      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
+      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].u4.zDatabase);
       sqlite3ForceNotReadOnly(pParse);
     }
     goto exit_drop_table;
@@ -4660,15 +4663,17 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   }
   assert( pParse->nErr==0 );   /* Never called with prior non-OOM errors */
   assert( pName->nSrc==1 );
+  assert( pName->a[0].fg.fixedSchema==0 );
+  assert( pName->a[0].fg.isSubquery==0 );
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto exit_drop_index;
   }
-  pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
+  pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].u4.zDatabase);
   if( pIndex==0 ){
     if( !ifExists ){
       sqlite3ErrorMsg(pParse, "no such index: %S", pName->a);
     }else{
-      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
+      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].u4.zDatabase);
       sqlite3ForceNotReadOnly(pParse);
     }
     pParse->checkSchema = 1;
@@ -4981,12 +4986,14 @@ SrcList *sqlite3SrcListAppend(
   if( pDatabase && pDatabase->z==0 ){
     pDatabase = 0;
   }
+  assert( pItem->fg.fixedSchema==0 );
+  assert( pItem->fg.isSubquery==0 );
   if( pDatabase ){
     pItem->zName = sqlite3NameFromToken(db, pDatabase);
-    pItem->zDatabase = sqlite3NameFromToken(db, pTable);
+    pItem->u4.zDatabase = sqlite3NameFromToken(db, pTable);
   }else{
     pItem->zName = sqlite3NameFromToken(db, pTable);
-    pItem->zDatabase = 0;
+    pItem->u4.zDatabase = 0;
   }
   return pList;
 }
@@ -5002,11 +5009,38 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
       if( pItem->iCursor>=0 ) continue;
       pItem->iCursor = pParse->nTab++;
-      if( pItem->pSelect ){
-        sqlite3SrcListAssignCursors(pParse, pItem->pSelect->pSrc);
+      if( pItem->fg.isSubquery ){
+        assert( pItem->u4.pSubq!=0 );
+        assert( pItem->u4.pSubq->pSelect!=0 );
+        assert( pItem->u4.pSubq->pSelect->pSrc!=0 );
+        sqlite3SrcListAssignCursors(pParse, pItem->u4.pSubq->pSelect->pSrc);
       }
     }
   }
+}
+
+/*
+** Delete a Subquery object and its substructure.
+*/
+void sqlite3SubqueryDelete(sqlite3 *db, Subquery *pSubq){
+  assert( pSubq!=0 && pSubq->pSelect!=0 );
+  sqlite3SelectDelete(db, pSubq->pSelect);
+  sqlite3DbFree(db, pSubq);
+}
+
+/*
+** Remove a Subquery from a SrcItem.  Return the associated Select object.
+** The returned Select becomes the responsibility of the caller.
+*/
+Select *sqlite3SubqueryDetach(sqlite3 *db, SrcItem *pItem){
+  Select *pSel;
+  assert( pItem!=0 );
+  assert( pItem->fg.isSubquery );
+  pSel = pItem->u4.pSubq->pSelect;
+  sqlite3DbFree(db, pItem->u4.pSubq);
+  pItem->u4.pSubq = 0;
+  pItem->fg.isSubquery = 0;
+  return pSel;
 }
 
 /*
@@ -5018,13 +5052,24 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   assert( db!=0 );
   if( pList==0 ) return;
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
-    if( pItem->zDatabase ) sqlite3DbNNFreeNN(db, pItem->zDatabase);
+ 
+    /* Check invariants on SrcItem */
+    assert( !pItem->fg.isIndexedBy || !pItem->fg.isTabFunc );
+    assert( !pItem->fg.isCte || !pItem->fg.isIndexedBy );
+    assert( !pItem->fg.fixedSchema || !pItem->fg.isSubquery );
+    assert( !pItem->fg.isSubquery || (pItem->u4.pSubq!=0 && 
+                                      pItem->u4.pSubq->pSelect!=0) );
+
     if( pItem->zName ) sqlite3DbNNFreeNN(db, pItem->zName);
     if( pItem->zAlias ) sqlite3DbNNFreeNN(db, pItem->zAlias);
+    if( pItem->fg.isSubquery ){
+      sqlite3SubqueryDelete(db, pItem->u4.pSubq);
+    }else if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+      sqlite3DbNNFreeNN(db, pItem->u4.zDatabase);
+    }
     if( pItem->fg.isIndexedBy ) sqlite3DbFree(db, pItem->u1.zIndexedBy);
     if( pItem->fg.isTabFunc ) sqlite3ExprListDelete(db, pItem->u1.pFuncArg);
-    sqlite3DeleteTable(db, pItem->pTab);
-    if( pItem->pSelect ) sqlite3SelectDelete(db, pItem->pSelect);
+    sqlite3DeleteTable(db, pItem->pSTab);
     if( pItem->fg.isUsing ){
       sqlite3IdListDelete(db, pItem->u3.pUsing);
     }else if( pItem->u3.pOn ){
@@ -5033,6 +5078,54 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   }
   sqlite3DbNNFreeNN(db, pList);
 }
+
+/*
+** Attach a Subquery object to pItem->uv.pSubq.  Set the
+** pSelect value but leave all the other values initialized
+** to zero.
+**
+** A copy of the Select object is made if dupSelect is true, and the
+** SrcItem takes responsibility for deleting the copy.  If dupSelect is
+** false, ownership of the Select passes to the SrcItem.  Either way,
+** the SrcItem will take responsibility for deleting the Select.
+**
+** When dupSelect is zero, that means the Select might get deleted right
+** away if there is an OOM error.  Beware.
+**
+** Return non-zero on success.  Return zero on an OOM error.
+*/
+int sqlite3SrcItemAttachSubquery(
+  Parse *pParse,     /* Parsing context */
+  SrcItem *pItem,    /* Item to which the subquery is to be attached */
+  Select *pSelect,   /* The subquery SELECT.  Must be non-NULL */
+  int dupSelect      /* If true, attach a copy of pSelect, not pSelect itself.*/
+){
+  Subquery *p;
+  assert( pSelect!=0 );
+  assert( pItem->fg.isSubquery==0 );
+  if( pItem->fg.fixedSchema ){
+    pItem->u4.pSchema = 0;
+    pItem->fg.fixedSchema = 0;
+  }else if( pItem->u4.zDatabase!=0 ){
+    sqlite3DbFree(pParse->db, pItem->u4.zDatabase);
+    pItem->u4.zDatabase = 0;
+  }
+  if( dupSelect ){
+    pSelect = sqlite3SelectDup(pParse->db, pSelect, 0);
+    if( pSelect==0 ) return 0;
+  }
+  p = pItem->u4.pSubq = sqlite3DbMallocRawNN(pParse->db, sizeof(Subquery));
+  if( p==0 ){
+    sqlite3SelectDelete(pParse->db, pSelect);
+    return 0;
+  }
+  pItem->fg.isSubquery = 1;
+  p->pSelect = pSelect;
+  assert( offsetof(Subquery, pSelect)==0 );
+  memset(((char*)p)+sizeof(p->pSelect), 0, sizeof(*p)-sizeof(p->pSelect));
+  return 1;
+}
+
 
 /*
 ** This routine is called by the parser to add a new term to the
@@ -5083,10 +5176,12 @@ SrcList *sqlite3SrcListAppendFromTerm(
   if( pAlias->n ){
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
   }
+  assert( pSubquery==0 || pDatabase==0 );
   if( pSubquery ){
-    pItem->pSelect = pSubquery;
-    if( pSubquery->selFlags & SF_NestedFrom ){
-      pItem->fg.isNestedFrom = 1;
+    if( sqlite3SrcItemAttachSubquery(pParse, pItem, pSubquery, 0) ){
+      if( pSubquery->selFlags & SF_NestedFrom ){
+        pItem->fg.isNestedFrom = 1;
+      }
     }
   }
   assert( pOnUsing==0 || pOnUsing->pOn==0 || pOnUsing->pUsing==0 );

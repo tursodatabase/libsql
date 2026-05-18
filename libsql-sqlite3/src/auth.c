@@ -165,7 +165,7 @@ void sqlite3AuthRead(
     assert( pTabList );
     for(iSrc=0; iSrc<pTabList->nSrc; iSrc++){
       if( pExpr->iTable==pTabList->a[iSrc].iCursor ){
-        pTab = pTabList->a[iSrc].pTab;
+        pTab = pTabList->a[iSrc].pSTab;
         break;
       }
     }

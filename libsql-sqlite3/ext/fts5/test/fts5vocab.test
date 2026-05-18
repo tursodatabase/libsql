@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5vocab
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -513,6 +513,7 @@ do_execsql_test 10.5 {
     INSERT INTO ft(a) VALUES('4 5 6');
 }
 
+unset -nocomplain x res
 do_test 10.6 {
   set res [list]
   db eval { SELECT rowid FROM ft('4') } x {

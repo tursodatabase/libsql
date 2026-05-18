@@ -49,7 +49,7 @@ do_test tkt-8454a207b9.4 {
     ALTER TABLE t1 ADD COLUMN e DEFAULT -123.0;
     SELECT e, typeof(e) FROM t1;
   }
-} {-123 integer}
+} {-123.0 real}
 do_test tkt-8454a207b9.5 {
   db eval {
     ALTER TABLE t1 ADD COLUMN f DEFAULT -123.5;

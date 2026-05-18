@@ -851,11 +851,26 @@ class JsonBlockCommand extends TableResultCommand {
 //! --new command
 class NewDbCommand extends OpenDbCommand {
   public NewDbCommand(){ super(true); }
+  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+    if(argv.length>1){
+      Util.unlink(argv[1]);
+    }
+    super.process(t, ts, argv);
+  }
+
 }
 
-//! Placeholder dummy/no-op commands
+//! Placeholder dummy/no-op/unimplemented commands
 class NoopCommand extends Command {
+  private boolean verbose = false;
+  public NoopCommand(boolean verbose){
+    this.verbose = verbose;
+  }
+  public NoopCommand(){}
   public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+    if( this.verbose ){
+      t.outln("Skipping unhandled command: "+argv[0]);
+    }
   }
 }
 
@@ -1021,6 +1036,7 @@ class CommandDispatcher {
       case "db":           rv = new DbCommand(); break;
       case "glob":         rv = new GlobCommand(); break;
       case "json":         rv = new JsonCommand(); break;
+      case "jsonglob":     rv = new NoopCommand(true); break;
       case "json-block":   rv = new JsonBlockCommand(); break;
       case "new":          rv = new NewDbCommand(); break;
       case "notglob":      rv = new NotGlobCommand(); break;
@@ -1030,6 +1046,7 @@ class CommandDispatcher {
       case "print":        rv = new PrintCommand(); break;
       case "result":       rv = new ResultCommand(); break;
       case "run":          rv = new RunCommand(); break;
+      case "stmt-cache":   rv = new NoopCommand(); break;
       case "tableresult":  rv = new TableResultCommand(); break;
       case "testcase":     rv = new TestCaseCommand(); break;
       case "verbosity":    rv = new VerbosityCommand(); break;

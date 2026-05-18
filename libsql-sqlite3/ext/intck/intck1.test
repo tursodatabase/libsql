@@ -1,0 +1,332 @@
+# 2008 Feb 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the incremental integrity check
+# (intck) extension.
+#
+
+source [file join [file dirname [info script]] intck_common.tcl]
+set testprefix intck1
+return_if_no_intck
+
+foreach {tn sql} {
+  1 "CREATE TABLE t1(a PRIMARY KEY, b)"
+  2 "CREATE TABLE t2(a PRIMARY KEY, b) WITHOUT   ROWID  "
+  3 "CREATE TABLE t3(a PRIMARY KEY, b) WITHOUT   rowID;"
+  4 "CREATE TABLE t4(a PRIMARY KEY, ROWID)"
+  5 {CREATE TABLE t5(a PRIMARY KEY, ROWID) WITHOUT ROWID
+    }
+} {
+  do_test 1.1.$tn {
+    db eval $sql
+    set {} {}
+  } {}
+}
+
+set space " \n\v\t\r\f"
+
+do_execsql_test 1.2 {
+  SELECT name, (rtrim(sql, $space) LIKE '%rowid') 
+  FROM sqlite_schema WHERE type='table'
+  ORDER BY 1
+} {
+  t1 0
+  t2 1
+  t3 1
+  t4 0
+  t5 1
+}
+
+do_execsql_test 1.3 {
+  CREATE TABLE x1(a COLLATE nocase, b INTEGER, c BLOB);
+  INSERT INTO x1 VALUES('lEtTeRs', 1234, 1234);
+}
+do_execsql_test 1.3.1 {
+  WITH wrapper(c1, c2, c3) AS (
+    SELECT a, b, c FROM x1
+  )
+  SELECT * FROM wrapper WHERE c1='letters';
+} {lEtTeRs 1234 1234}
+do_execsql_test 1.3.2 {
+  WITH wrapper(c1, c2, c3) AS (
+    SELECT a, b, c FROM x1
+  )
+  SELECT * FROM wrapper WHERE c2='1234';
+} {lEtTeRs 1234 1234}
+do_execsql_test 1.3.2 {
+  WITH wrapper(c1, c2, c3) AS (
+    SELECT a, b, c FROM x1
+  )
+  SELECT * FROM wrapper WHERE c3='1234';
+} {}
+
+do_execsql_test 1.4 {
+  CREATE TABLE z1(a, b);
+  CREATE INDEX z1ab ON z1(a+b COLLATE nocase);
+}
+do_execsql_test 1.4.1 {
+  SELECT * FROM z1 INDEXED BY z1ab 
+}
+
+do_catchsql_test 1.5.1 {
+  CREATE INDEX z1b ON z1(b ASC NULLS LAST);
+} {1 {unsupported use of NULLS LAST}}
+do_catchsql_test 1.5.2 {
+  CREATE INDEX z1b ON z1(b DESC NULLS LAST);
+} {1 {unsupported use of NULLS LAST}}
+do_catchsql_test 1.5.3 {
+  CREATE INDEX z1b ON z1(b ASC NULLS FIRST);
+} {1 {unsupported use of NULLS FIRST}}
+do_catchsql_test 1.5.4 {
+  CREATE INDEX z1b ON z1(b DESC NULLS FIRST);
+} {1 {unsupported use of NULLS FIRST}}
+
+
+reset_db
+do_execsql_test 1.6.1 {
+  CREATE TABLE t1(i INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON t1(b);
+  ANALYZE;
+  INSERT INTO sqlite_stat1 VALUES('t1', 'i1', '10000 10000');
+  ANALYZE sqlite_schema;
+} {}
+do_eqp_test 1.6.2 {
+  SELECT 1 FROM t1 INDEXED BY i1 WHERE (b, i) IS (?, ?);
+} {SEARCH}
+
+
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_test 2.0 {
+  set ic [sqlite3_intck db main]
+  $ic close
+} {}
+
+do_execsql_test 2.1 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+
+  CREATE INDEX i1 ON t1(a COLLATE nocase);
+  CREATE INDEX i2 ON t1(b, a);
+  CREATE INDEX i3 ON t1(b + a COLLATE nocase) WHERE a!=1;
+}
+
+do_intck_test 2.2 {
+}
+
+# Delete a row from each of the i1 and i2 indexes using the imposter
+# table interface.
+#
+do_test 2.3 {
+  db eval {SELECT name, rootpage FROM sqlite_schema} {
+    set R($name) $rootpage
+  }
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $R(i1)
+  db eval { CREATE TABLE imp1(a PRIMARY KEY, rowid) WITHOUT ROWID; }
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $R(i2)
+  db eval { CREATE TABLE imp2(b, a, rowid, PRIMARY KEY(b, a)) WITHOUT ROWID; }
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
+
+  db eval {
+    DELETE FROM imp1 WHERE rowid=1;
+    DELETE FROM imp2 WHERE rowid=2;
+  }
+
+  db close
+  sqlite3 db test.db
+} {}
+
+do_intck_test 2.4 {
+  {entry (1,1) missing from index i1} 
+  {entry (4,3,2) missing from index i2}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a, b, c, PRIMARY KEY(c, b)) WITHOUT ROWID;
+  CREATE INDEX x1a ON x1(a COLLATE nocase);
+
+  INSERT INTO x1 VALUES(1, 2, 'three');
+  INSERT INTO x1 VALUES(4, 5, 'six');
+  INSERT INTO x1 VALUES(7, 8, 'nine');
+}
+
+do_intck_test 3.1 { }
+
+do_test 3.2 {
+  db eval {SELECT name, rootpage FROM sqlite_schema} {
+    set R($name) $rootpage
+  }
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $R(x1a)
+  db eval { CREATE TABLE imp1(c, b, a, PRIMARY KEY(c, b)) WITHOUT ROWID }
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
+
+  db eval {
+    DELETE FROM imp1 WHERE a=5;
+  }
+  execsql_pp {
+  }
+
+  db close
+  sqlite3 db test.db
+} {}
+
+do_intck_test 3.3 { 
+  {entry (4,'six',5) missing from index x1a}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE www(x, y, z);
+  CREATE INDEX w1 ON www( (x+1), z );
+  INSERT INTO www VALUES(1, 1, 1), (2, 2, 2);
+}
+
+do_intck_test 4.1 { }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a, b);             
+  CREATE INDEX i1 ON t1(a COLLATE NOCASE);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t1 VALUES(2, 2);
+}
+
+do_test 5.1 {
+  set ic [sqlite3_intck db nosuchdb]
+  $ic step
+} {SQLITE_ERROR}
+
+do_test 5.2 {
+  $ic close
+  set ic [sqlite3_intck db {}]
+  while {[$ic step]=="SQLITE_OK"} {}
+  set res [$ic error]
+  $ic close
+  set res
+} {SQLITE_OK {}}
+
+do_test 5.3 { test_do_intck db "main" } {}
+
+do_test 5.4 {
+  set ret {}
+  set ic [sqlite3_intck db main]
+  db eval [$ic test_sql t1] {
+    if {$error_message!=""} { lappend ret $error_message }
+  }
+  $ic close
+  set ret
+} {}
+
+do_test 5.5 {
+  set ret {}
+  set ic [sqlite3_intck db main]
+  db eval [$ic test_sql {}] {
+    if {$error_message!=""} { lappend ret $error_message }
+  }
+  $ic close
+  set ret
+} {}
+
+db cache flush
+
+do_test 5.6 {
+  set ret {}
+  set ic [sqlite3_intck db main]
+  $ic step
+  db eval [$ic test_sql {}] {
+    if {$error_message!=""} { lappend ret $error_message }
+  }
+  $ic close
+  set ret
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 6.0 {
+  CREATE TABLE t1(x, y, PRIMARY KEY(x)) WITHOUT ROWID;
+  CREATE INDEX i1 ON t1(y, x);
+  INSERT INTO t1 VALUES(X'0000', X'1111');
+}
+
+do_intck_test 6.1 {}
+
+do_execsql_test 6.2.1 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET sql = 'CREATE INDEX i1' WHERE name='i1';
+} {}
+do_intck_test 6.2.2 {}
+
+do_execsql_test 6.3.1 {
+  UPDATE sqlite_schema SET sql = 'CREATE INDEX i1(y' WHERE name='i1';
+} {}
+do_intck_test 6.3.2 {}
+
+do_execsql_test 6.4.1 {
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE INDEX i1(y) hello world' 
+  WHERE name='i1';
+} {}
+do_intck_test 6.4.2 {}
+
+do_execsql_test 6.5.1 {
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE INDEX i1(y, x) WHERE 1     ' 
+  WHERE name='i1';
+} {}
+do_intck_test 6.5.2 {}
+
+do_execsql_test 6.6.1 {
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE INDEX i1(  ,  ) WHERE 1     ' 
+  WHERE name='i1';
+} {}
+
+do_test 6.7.2 {
+  set ic [sqlite3_intck db main]
+  $ic step
+} {SQLITE_ERROR}
+do_test 6.5.3 {
+  $ic error
+} {SQLITE_ERROR {near "AS": syntax error}}
+$ic close
+
+do_execsql_test 6.6.1 {
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE INDEX i1([y'
+  WHERE name='i1';
+} {}
+do_intck_test 6.6.2 {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE x1("1", "22", "3333", four);
+  CREATE INDEX i1 ON x1(  "1"  , "22", NULL);
+  INSERT INTO x1 VALUES(1, 22, 3333, NULL);
+  INSERT INTO x1 VALUES(1, 22, 3333, NULL);
+}
+do_execsql_test 7.1 " CREATE INDEX i2 ON x1(  \"1\"\r\n\t ) "
+do_execsql_test 7.2 { CREATE INDEX i3 ON x1( "22" || 'abc''def' || `1` ) }
+do_execsql_test 7.3 { CREATE INDEX i4 ON x1( [22] + [1] ) }
+do_execsql_test 7.4 { CREATE INDEX i5 ON x1( four||'hello' ) }
+
+do_intck_test 7.5 {}
+
+
+finish_test

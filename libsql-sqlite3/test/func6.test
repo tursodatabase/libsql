@@ -43,7 +43,7 @@ do_execsql_test func6-100 {
 # string.
 proc loadhex {file} {
   set fd [open $file]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   set data [read $fd]
   close $fd
   binary encode hex $data 

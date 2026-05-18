@@ -1219,14 +1219,7 @@ int sqlite3_multiplex_shutdown(int eForce){
 
 /***************************** Test Code ***********************************/
 #ifdef SQLITE_TEST
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 extern const char *sqlite3ErrName(int);
 
 

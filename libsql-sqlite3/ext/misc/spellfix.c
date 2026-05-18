@@ -351,7 +351,7 @@ static int substituteCost(char cPrev, char cFrom, char cTo){
 ** Negative values indicate an error:
 **    -1  One of the inputs is NULL
 **    -2  Non-ASCII characters on input
-**    -3  Unable to allocate memory 
+**    -3  Unable to allocate memory
 **
 ** If pnMatch is not NULL, then *pnMatch is set to the number of bytes
 ** of zB that matched the pattern in zA. If zA does not end with a '*',
@@ -360,8 +360,8 @@ static int substituteCost(char cPrev, char cFrom, char cTo){
 ** of zB that was deemed to match zA.
 */
 static int editdist1(const char *zA, const char *zB, int *pnMatch){
-  int nA, nB;            /* Number of characters in zA[] and zB[] */
-  int xA, xB;            /* Loop counters for zA[] and zB[] */
+  unsigned int nA, nB;   /* Number of characters in zA[] and zB[] */
+  unsigned int xA, xB;   /* Loop counters for zA[] and zB[] */
   char cA = 0, cB;       /* Current character of zA and zB */
   char cAprev, cBprev;   /* Previous character of zA and zB */
   char cAnext, cBnext;   /* Next character in zA and zB */
@@ -3021,7 +3021,7 @@ static sqlite3_module spellfix1Module = {
 */
 static int spellfix1Register(sqlite3 *db){
   int rc = SQLITE_OK;
-  int i;
+  unsigned int i;
   rc = sqlite3_create_function(db, "spellfix1_translit", 1,
                                SQLITE_UTF8|SQLITE_DETERMINISTIC, 0,
                                 transliterateSqlFunc, 0, 0);

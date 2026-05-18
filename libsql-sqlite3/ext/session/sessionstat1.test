@@ -92,7 +92,7 @@ do_test 2.1 {
 } {}
 
 do_execsql_test -db db2 2.2 {
-  SELECT * FROM sqlite_stat1
+  SELECT * FROM sqlite_stat1 ORDER BY tbl, idx
 } {
   t1 sqlite_autoindex_t1_1 {32 1} 
   t1 t1b {32 4} 
@@ -104,7 +104,7 @@ do_test 2.3 {
 } {}
 
 do_execsql_test -db db2 2.4 {
-  SELECT * FROM sqlite_stat1
+  SELECT * FROM sqlite_stat1 ORDER BY tbl, idx;
 } {
   t1 sqlite_autoindex_t1_1 {32 1} 
   t1 t1b {32 4} 

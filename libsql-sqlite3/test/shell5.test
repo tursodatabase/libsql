@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool.
 # These tests are specific to the .import command.
@@ -82,6 +83,14 @@ do_test shell5-1.4.1 {
   set res [catchcmd "test.db" {CREATE TABLE t1(a, b);
 .import FOO t1}]
 } {1 {Error: cannot open "FOO"}}
+
+# the remainder of these test cases require virtual tables.
+#
+ifcapable !vtab {
+  puts "Skipping subsequent tests due to SQLITE_OMIT_VIRTUALTABLE"
+  finish_test
+  return
+}
 
 # empty import file
 do_test shell5-1.4.2 {
@@ -409,7 +418,7 @@ CREATE TABLE t4(a, b);
 #
 do_test shell5-3.1 {
   set fd [open shell5.csv w]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   puts -nonewline $fd "\"test 1\"\x1F,test 2\r\n\x1E"
   puts -nonewline $fd "test 3\x1Ftest 4\n"
   close $fd
@@ -569,5 +578,31 @@ do_test shell5-6.2 {
 SELECT * FROM t1;}
 } {0 {    1 = あい
     2 = うえお}}
+
+# 2024-03-11 https://sqlite.org/forum/forumpost/ca014d7358
+# Import into a table that contains computed columns.
+#
+do_test shell5-7.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {aaa|bbb}
+  close $out
+  forcedelete test.db
+  catchcmd :memory: {CREATE TABLE t1(a TEXT, b TEXT, c AS (a||b));
+.import shell5.csv t1
+SELECT * FROM t1;}
+} {0 aaa|bbb|aaabbb}
+
+#-------------------------------------------------------------------------
+
+do_test shell5-8.1 {
+
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out x
+  close $out
+
+  catchcmd :memory: {.import --csv shell5.csv '""""""""""""""""""""""""""""""""""""""""""""""'}
+} {0 {}}
 
 finish_test

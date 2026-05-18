@@ -234,6 +234,7 @@ do_test cast-3.1 {
 do_test cast-3.2 {
   execsql {SELECT CAST(9223372036854774800 AS numeric)}
 } 9223372036854774800
+breakpoint
 do_realnum_test cast-3.3 {
   execsql {SELECT CAST(9223372036854774800 AS real)}
 } 9.22337203685477e+18
@@ -261,11 +262,9 @@ do_test cast-3.12 {
 do_realnum_test cast-3.13 {
   execsql {SELECT CAST('9223372036854774800' AS real)}
 } 9.22337203685477e+18
-ifcapable long_double {
-  do_test cast-3.14 {
-    execsql {SELECT CAST(CAST('9223372036854774800' AS real) AS integer)}
-  } 9223372036854774784
-}
+do_test cast-3.14 {
+  execsql {SELECT CAST(CAST('9223372036854774800' AS real) AS integer)}
+} 9223372036854774784
 do_test cast-3.15 {
   execsql {SELECT CAST('-9223372036854774800' AS integer)}
 } -9223372036854774800
@@ -275,11 +274,9 @@ do_test cast-3.16 {
 do_realnum_test cast-3.17 {
   execsql {SELECT CAST('-9223372036854774800' AS real)}
 } -9.22337203685477e+18
-ifcapable long_double {
-  do_test cast-3.18 {
-    execsql {SELECT CAST(CAST('-9223372036854774800' AS real) AS integer)}
-  } -9223372036854774784
-}
+do_test cast-3.18 {
+  execsql {SELECT CAST(CAST('-9223372036854774800' AS real) AS integer)}
+} -9223372036854774784
 if {[db eval {PRAGMA encoding}]=="UTF-8"} {
   do_test cast-3.21 {
     execsql {SELECT CAST(x'39323233333732303336383534373734383030' AS integer)}
@@ -290,14 +287,12 @@ if {[db eval {PRAGMA encoding}]=="UTF-8"} {
   do_realnum_test cast-3.23 {
     execsql {SELECT CAST(x'39323233333732303336383534373734383030' AS real)}
   } 9.22337203685477e+18
-  ifcapable long_double {
-    do_test cast-3.24 {
-      execsql {
-        SELECT CAST(CAST(x'39323233333732303336383534373734383030' AS real)
-                    AS integer)
-      }
-    } 9223372036854774784
-  }
+  do_test cast-3.24 {
+    execsql {
+      SELECT CAST(CAST(x'39323233333732303336383534373734383030' AS real)
+                  AS integer)
+    }
+  } 9223372036854774784
 }
 do_test cast-3.31 {
   execsql {SELECT CAST(NULL AS numeric)}

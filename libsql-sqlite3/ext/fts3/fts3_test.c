@@ -18,14 +18,7 @@
 ** that the sqlite3_tokenizer_module.xLanguage() method is invoked correctly.
 */
 
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 #include <string.h>
 #include <assert.h>
 
@@ -167,7 +160,8 @@ static int SQLITE_TCLAPI fts3_near_match_cmd(
   Tcl_Obj *pPhrasecount = 0;
   
   Tcl_Obj **apExprToken;
-  int nExprToken;
+  Tcl_Size nExprToken;
+  Tcl_Size nn;
 
   UNUSED_PARAMETER(clientData);
 
@@ -201,23 +195,25 @@ static int SQLITE_TCLAPI fts3_near_match_cmd(
     }
   }
 
-  rc = Tcl_ListObjGetElements(interp, objv[1], &doc.nToken, &apDocToken);
+  rc = Tcl_ListObjGetElements(interp, objv[1], &nn, &apDocToken);
+  doc.nToken = (int)nn;
   if( rc!=TCL_OK ) goto near_match_out;
   doc.aToken = (NearToken *)ckalloc(doc.nToken*sizeof(NearToken));
   for(ii=0; ii<doc.nToken; ii++){
-    doc.aToken[ii].z = Tcl_GetStringFromObj(apDocToken[ii], &doc.aToken[ii].n);
+    doc.aToken[ii].z = Tcl_GetStringFromObj(apDocToken[ii], &nn);
+    doc.aToken[ii].n = (int)nn;
   }
 
   rc = Tcl_ListObjGetElements(interp, objv[2], &nExprToken, &apExprToken);
   if( rc!=TCL_OK ) goto near_match_out;
 
-  nPhrase = (nExprToken + 1) / 2;
+  nPhrase = (int)(nExprToken + 1) / 2;
   aPhrase = (NearPhrase *)ckalloc(nPhrase * sizeof(NearPhrase));
   memset(aPhrase, 0, nPhrase * sizeof(NearPhrase));
   for(ii=0; ii<nPhrase; ii++){
     Tcl_Obj *pPhrase = apExprToken[ii*2];
     Tcl_Obj **apToken;
-    int nToken;
+    Tcl_Size nToken;
     int jj;
 
     rc = Tcl_ListObjGetElements(interp, pPhrase, &nToken, &apToken);
@@ -227,11 +223,12 @@ static int SQLITE_TCLAPI fts3_near_match_cmd(
       rc = TCL_ERROR;
       goto near_match_out;
     }
-    for(jj=0; jj<nToken; jj++){
+    for(jj=0; jj<(int)nToken; jj++){
       NearToken *pT = &aPhrase[ii].aToken[jj];
-      pT->z = Tcl_GetStringFromObj(apToken[jj], &pT->n);
+      pT->z = Tcl_GetStringFromObj(apToken[jj], &nn);
+      pT->n = (int)nn;
     }
-    aPhrase[ii].nToken = nToken;
+    aPhrase[ii].nToken = (int)nToken;
   }
   for(ii=1; ii<nPhrase; ii++){
     Tcl_Obj *pNear = apExprToken[2*ii-1];

@@ -342,7 +342,7 @@ foreach enc {utf8 utf16 utf16le utf16be} {
     DELETE FROM sqlite_schema WHERE name='t1';
   }
 
-  proc my_sql_hook {sql} {
+  proc my_sql_hook2 {sql} {
     if {[string match "INSERT INTO lostandfound*" $sql]} {
       lappend ::script $sql
     }
@@ -350,7 +350,7 @@ foreach enc {utf8 utf16 utf16le utf16be} {
   }
   do_test 18.$enc.2 {
     set ::script [list]
-    set R [sqlite3_recover_init_sql db main my_sql_hook]
+    set R [sqlite3_recover_init_sql db main my_sql_hook2]
     $R config lostandfound lostandfound
     $R run
     $R finish
@@ -358,7 +358,18 @@ foreach enc {utf8 utf16 utf16le utf16be} {
   } {{INSERT INTO lostandfound VALUES(2, 2, 2, 1, 'abc', 'def')}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 19.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
 
+  ALTER TABLE t1 ADD COLUMN c NOT NULL DEFAULT 13;
+  INSERT INTO t1 VALUES(3, 'three', 'hello world');
+}
+
+do_recover_test 19.1
 
 
 

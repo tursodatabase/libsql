@@ -10,6 +10,7 @@
 #     sqlite3                 -- the SQLite CLI
 #     sqldiff                 -- Program to diff two databases
 #     sqlite3_analyzer        -- Space analyzer
+#     sqlite3_rsync           -- Remote db sync
 #
 switch $tcl_platform(os) {
   {Windows NT} {
@@ -54,16 +55,7 @@ close $in
 scan $vers %d.%d.%d v1 v2 v3
 set v2 [format 3%02d%02d00 $v2 $v3]
 set name sqlite-tools-$OS-$ARCH-$v2.zip
-
-if {$OS=="win32"} {
-  # The win32 tar.exe supports the -a ("auto-compress") option. This causes
-  # tar to create an archive type based on the extension of the output file.
-  # In this case, a zip file.
-  puts "tar -a -cf $name sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE"
-  puts [exec tar -a -cf $name sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE]
-  puts "$name: [file size $name] bytes"
-} else {
-  puts "zip $name sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE"
-  puts [exec zip $name sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE]
-  puts [exec ls -l $name]
-}
+set toollist "sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE sqlite3_rsync$EXE"
+puts "zip $name {*}$toollist"
+exec zip $name {*}$toollist
+puts "$name: [file size $name] bytes"

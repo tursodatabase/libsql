@@ -517,7 +517,7 @@ fts5_aux_test_functions db
 do_execsql_test 15.3 {
   SELECT fts5_test_all(t1) FROM t1 LIMIT 1;
 } {
-  {columnsize {0 0} columntext {c d} columntotalsize {2 2} poslist {} tokenize {c d} rowcount 2}
+  {columnsize {1 1} columntext {c d} columntotalsize {2 2} poslist {} tokenize {c d} rowcount 2}
 }
 
 finish_test

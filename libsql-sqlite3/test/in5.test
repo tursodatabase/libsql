@@ -266,4 +266,26 @@ do_execsql_test 9.2 {
   SELECT lower('1e500') FROM t0 WHERE rowid != lower('1e500');
 } {1e500}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+
+do_execsql_test 10.0 {
+  CREATE TABLE t1(a, b TEXT COLLATE NOCASE);
+  INSERT INTO t1 VALUES('abc', 'def');
+  INSERT INTO t1 VALUES('ghi', 'jkl');
+}
+
+do_execsql_test 10.1 {
+  SELECT rowid FROM t1 WHERE (a, b) IN ( VALUES('abc', 'def'), ('ghi', 'JKL') );
+} {1 2}
+
+do_execsql_test 10.2 {
+  CREATE INDEX i1 ON t1(a, b COLLATE BINARY);
+}
+
+do_execsql_test 10.3 {
+  SELECT rowid FROM t1 WHERE (a, b) IN ( VALUES('abc', 'def'), ('ghi', 'JKL') );
+} {1 2}
+
 finish_test

@@ -1,3 +1,15 @@
+*********************************** NOTICE ************************************
+* This extension is deprecated. The SQLite developers do not maintain this    *
+* extension. At some point in the future, it might disappear from the source  *
+* tree.                                                                       *
+*                                                                             *
+* If you are using this extension and think it should be supported moving     *
+* forward, visit the SQLite Forum (https://sqlite.org/forum) and argue your   *
+* case there.                                                                 *
+*                                                                             *
+* This deprecation notice was added on 2024-01-22.                            *
+*******************************************************************************
+
 Activate the user authentication logic by including the
 ext/userauth/userauth.c source code file in the build and
 adding the -DSQLITE_USER_AUTHENTICATION compile-time option.

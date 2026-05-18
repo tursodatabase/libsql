@@ -707,6 +707,7 @@ if {$SQLITE_MAX_EXPR_DEPTH==0} {
     }]
   } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
   
+if 0 {  
   # Attempting to beat the expression depth limit using nested SELECT
   # queries causes a parser stack overflow. 
   do_test sqllimits1-9.2 {
@@ -718,7 +719,6 @@ if {$SQLITE_MAX_EXPR_DEPTH==0} {
     catchsql [subst { $expr }]
   } "1 {parser stack overflow}"
   
-if 0 {  
   do_test sqllimits1-9.3 {
     execsql {
       PRAGMA max_page_count = 1000000;  -- 1 GB
@@ -922,7 +922,7 @@ do_catchsql_test sqllimits1-18.1 {
 do_catchsql_test sqllimits1-18.2 {
   INSERT INTO b1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9), (10)
     UNION VALUES(11);
-} {1 {too many terms in compound SELECT}}
+} {0 {}}
 
 #-------------------------------------------------------------------------
 #

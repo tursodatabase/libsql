@@ -38,6 +38,24 @@ static void noopfunc(
   sqlite3_result_value(context, argv[0]);
 }
 
+/*
+** Implementation of the multitype_text() function.
+**
+** The function returns its argument.  The result will always have a
+** TEXT value.  But if the original input is numeric, it will also
+** have that numeric value.
+*/
+static void multitypeTextFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  assert( argc==1 );
+  (void)argc;
+  (void)sqlite3_value_text(argv[0]);
+  sqlite3_result_value(context, argv[0]);
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -64,5 +82,9 @@ int sqlite3_noop_init(
   rc = sqlite3_create_function(db, "noop_nd", 1,
                      SQLITE_UTF8,
                      0, noopfunc, 0, 0);
+  if( rc ) return rc;
+  rc = sqlite3_create_function(db, "multitype_text", 1,
+                     SQLITE_UTF8,
+                     0, multitypeTextFunc, 0, 0);
   return rc;
 }

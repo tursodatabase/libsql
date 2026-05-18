@@ -65,7 +65,6 @@ proc wal_set_walhdr {filename {intlist {}}} {
 
     set fd [open $filename r+]
     fconfigure $fd -translation binary
-    fconfigure $fd -encoding binary
     seek $fd 0
     puts -nonewline $fd $blob
     close $fd
@@ -73,7 +72,6 @@ proc wal_set_walhdr {filename {intlist {}}} {
 
   set fd [open $filename]
   fconfigure $fd -translation binary
-  fconfigure $fd -encoding binary
   set blob [read $fd 24]
   close $fd
 
@@ -89,5 +87,3 @@ proc wal_fix_walindex_cksum {hdrvar} {
   lset hdr 10 $c1
   lset hdr 11 $c2
 }
-
-

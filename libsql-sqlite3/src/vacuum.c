@@ -166,6 +166,9 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   const char *zDbMain;    /* Schema name of database to vacuum */
   const char *zOut;       /* Name of output file */
   u32 pgflags = PAGER_SYNCHRONOUS_OFF; /* sync flags for output db */
+  u64 iRandom;            /* Random value used for zDbVacuum[] */
+  char zDbVacuum[42];     /* Name of the ATTACH-ed database used for vacuum */
+
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
@@ -206,27 +209,29 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   pMain = db->aDb[iDb].pBt;
   isMemDb = sqlite3PagerIsMemdb(sqlite3BtreePager(pMain));
 
-  /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
+  /* Attach the temporary database as 'vacuum_XXXXXX'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash
   ** occurs anyway. The integrity of the database is maintained by a
   ** (possibly synchronous) transaction opened on the main database before
   ** sqlite3BtreeCopyFile() is called.
   **
   ** An optimization would be to use a non-journaled pager.
-  ** (Later:) I tried setting "PRAGMA vacuum_db.journal_mode=OFF" but
+  ** (Later:) I tried setting "PRAGMA vacuum_XXXXXX.journal_mode=OFF" but
   ** that actually made the VACUUM run slower.  Very little journalling
   ** actually occurs when doing a vacuum since the vacuum_db is initially
   ** empty.  Only the journal header is written.  Apparently it takes more
   ** time to parse and run the PRAGMA to turn journalling off than it does
   ** to write the journal header file.
   */
+  sqlite3_randomness(sizeof(iRandom),&iRandom);
+  sqlite3_snprintf(sizeof(zDbVacuum), zDbVacuum, "vacuum_%016llx", iRandom);
   nDb = db->nDb;
-  rc = execSqlF(db, pzErrMsg, "ATTACH %Q AS vacuum_db", zOut);
+  rc = execSqlF(db, pzErrMsg, "ATTACH %Q AS %s", zOut, zDbVacuum);
   db->openFlags = saved_openFlags;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   assert( (db->nDb-1)==nDb );
   pDb = &db->aDb[nDb];
-  assert( strcmp(pDb->zDbSName,"vacuum_db")==0 );
+  assert( strcmp(pDb->zDbSName,zDbVacuum)==0 );
   pTemp = pDb->pBt;
   if( pOut ){
     sqlite3_file *id = sqlite3PagerFile(sqlite3BtreePager(pTemp));
@@ -324,11 +329,11 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   ** the contents to the temporary database.
   */
   rc = execSqlF(db, pzErrMsg,
-      "SELECT'INSERT INTO vacuum_db.'||quote(name)"
+      "SELECT'INSERT INTO %s.'||quote(name)"
       "||' SELECT*FROM\"%w\".'||quote(name)"
-      "FROM vacuum_db.sqlite_schema "
+      "FROM %s.sqlite_schema "
       "WHERE type='table'AND coalesce(rootpage,1)>0",
-      zDbMain
+      zDbVacuum, zDbMain, zDbVacuum
   );
 #endif
   assert( (db->mDbFlags & DBFLAG_Vacuum)!=0 );
@@ -341,11 +346,11 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   ** from the schema table.
   */
   rc = execSqlF(db, pzErrMsg,
-      "INSERT INTO vacuum_db.sqlite_schema"
+      "INSERT INTO %s.sqlite_schema"
       " SELECT*FROM \"%w\".sqlite_schema"
       " WHERE type IN('view','trigger')"
       " OR(type='table'AND rootpage=0)",
-      zDbMain
+      zDbVacuum, zDbMain
   );
   if( rc ) goto end_of_vacuum;
 

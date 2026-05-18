@@ -182,7 +182,7 @@ static const char *vfstraceNextSystemCall(sqlite3_vfs*, const char *zName);
 **     xyzzy.txt           -> xyzzy.txt
 */
 static const char *fileTail(const char *z){
-  int i;
+  size_t i;
   if( z==0 ) return 0;
   i = strlen(z)-1;
   while( i>0 && z[i-1]!='/' ){ i--; }
@@ -207,36 +207,34 @@ static void vfstrace_printf(
 }
 
 /*
-** Convert value rc into a string and print it using zFormat.  zFormat
-** should have exactly one %s
+** Try to convert an error code into a symbolic name for that error code.
 */
-static void vfstrace_print_errcode(
-  vfstrace_info *pInfo,
-  const char *zFormat,
-  int rc
-){
-  char zBuf[50];
-  char *zVal;
+static const char *vfstrace_errcode_name(int rc ){
+  const char *zVal = 0;
   switch( rc ){
-    case SQLITE_OK:         zVal = "SQLITE_OK";          break;
-    case SQLITE_ERROR:      zVal = "SQLITE_ERROR";       break;
-    case SQLITE_PERM:       zVal = "SQLITE_PERM";        break;
-    case SQLITE_ABORT:      zVal = "SQLITE_ABORT";       break;
-    case SQLITE_BUSY:       zVal = "SQLITE_BUSY";        break;
-    case SQLITE_NOMEM:      zVal = "SQLITE_NOMEM";       break;
-    case SQLITE_READONLY:   zVal = "SQLITE_READONLY";    break;
-    case SQLITE_INTERRUPT:  zVal = "SQLITE_INTERRUPT";   break;
-    case SQLITE_IOERR:      zVal = "SQLITE_IOERR";       break;
-    case SQLITE_CORRUPT:    zVal = "SQLITE_CORRUPT";     break;
-    case SQLITE_FULL:       zVal = "SQLITE_FULL";        break;
-    case SQLITE_CANTOPEN:   zVal = "SQLITE_CANTOPEN";    break;
-    case SQLITE_PROTOCOL:   zVal = "SQLITE_PROTOCOL";    break;
-    case SQLITE_EMPTY:      zVal = "SQLITE_EMPTY";       break;
-    case SQLITE_SCHEMA:     zVal = "SQLITE_SCHEMA";      break;
-    case SQLITE_CONSTRAINT: zVal = "SQLITE_CONSTRAINT";  break;
-    case SQLITE_MISMATCH:   zVal = "SQLITE_MISMATCH";    break;
-    case SQLITE_MISUSE:     zVal = "SQLITE_MISUSE";      break;
-    case SQLITE_NOLFS:      zVal = "SQLITE_NOLFS";       break;
+    case SQLITE_OK:                 zVal = "SQLITE_OK";                 break;
+    case SQLITE_INTERNAL:           zVal = "SQLITE_INTERNAL";           break;
+    case SQLITE_ERROR:              zVal = "SQLITE_ERROR";              break;
+    case SQLITE_PERM:               zVal = "SQLITE_PERM";               break;
+    case SQLITE_ABORT:              zVal = "SQLITE_ABORT";              break;
+    case SQLITE_BUSY:               zVal = "SQLITE_BUSY";               break;
+    case SQLITE_LOCKED:             zVal = "SQLITE_LOCKED";             break;
+    case SQLITE_NOMEM:              zVal = "SQLITE_NOMEM";              break;
+    case SQLITE_READONLY:           zVal = "SQLITE_READONLY";           break;
+    case SQLITE_INTERRUPT:          zVal = "SQLITE_INTERRUPT";          break;
+    case SQLITE_IOERR:              zVal = "SQLITE_IOERR";              break;
+    case SQLITE_CORRUPT:            zVal = "SQLITE_CORRUPT";            break;
+    case SQLITE_NOTFOUND:           zVal = "SQLITE_NOTFOUND";           break;
+    case SQLITE_FULL:               zVal = "SQLITE_FULL";               break;
+    case SQLITE_CANTOPEN:           zVal = "SQLITE_CANTOPEN";           break;
+    case SQLITE_PROTOCOL:           zVal = "SQLITE_PROTOCOL";           break;
+    case SQLITE_EMPTY:              zVal = "SQLITE_EMPTY";              break;
+    case SQLITE_SCHEMA:             zVal = "SQLITE_SCHEMA";             break;
+    case SQLITE_TOOBIG:             zVal = "SQLITE_TOOBIG";             break;
+    case SQLITE_CONSTRAINT:         zVal = "SQLITE_CONSTRAINT";         break;
+    case SQLITE_MISMATCH:           zVal = "SQLITE_MISMATCH";           break;
+    case SQLITE_MISUSE:             zVal = "SQLITE_MISUSE";             break;
+    case SQLITE_NOLFS:              zVal = "SQLITE_NOLFS";              break;
     case SQLITE_IOERR_READ:         zVal = "SQLITE_IOERR_READ";         break;
     case SQLITE_IOERR_SHORT_READ:   zVal = "SQLITE_IOERR_SHORT_READ";   break;
     case SQLITE_IOERR_WRITE:        zVal = "SQLITE_IOERR_WRITE";        break;
@@ -266,11 +264,30 @@ static void vfstrace_print_errcode(
     case SQLITE_LOCKED_SHAREDCACHE: zVal = "SQLITE_LOCKED_SHAREDCACHE"; break;
     case SQLITE_BUSY_RECOVERY:      zVal = "SQLITE_BUSY_RECOVERY";      break;
     case SQLITE_CANTOPEN_NOTEMPDIR: zVal = "SQLITE_CANTOPEN_NOTEMPDIR"; break;
-    default: {
-       sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", rc);
-       zVal = zBuf;
-       break;
+  }
+  return zVal;
+}
+
+/*
+** Convert value rc into a string and print it using zFormat.  zFormat
+** should have exactly one %s
+*/
+static void vfstrace_print_errcode(
+  vfstrace_info *pInfo,
+  const char *zFormat,
+  int rc
+){
+  const char *zVal;
+  char zBuf[50];
+  zVal = vfstrace_errcode_name(rc);
+  if( zVal==0 ){
+    zVal = vfstrace_errcode_name(rc&0xff);
+    if( zVal ){
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "%s | 0x%x", zVal, rc&0xffff00);
+    }else{
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "%d (0x%x)", rc, rc);
     }
+    zVal = zBuf;
   }
   vfstrace_printf(pInfo, zFormat, zVal);
 }
@@ -399,7 +416,7 @@ static const char *lockName(int eLock){
   const char *azLockNames[] = {
      "NONE", "SHARED", "RESERVED", "PENDING", "EXCLUSIVE"
   };
-  if( eLock<0 || eLock>=sizeof(azLockNames)/sizeof(azLockNames[0]) ){
+  if( eLock<0 || eLock>=(int)(sizeof(azLockNames)/sizeof(azLockNames[0])) ){
     return "???";
   }else{
     return azLockNames[eLock];
@@ -457,12 +474,14 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
   vfstrace_info *pInfo = p->pInfo;
   int rc;
   char zBuf[100];
+  char zBuf2[100];
   char *zOp;
+  char *zRVal = 0;
   switch( op ){
-    case SQLITE_FCNTL_LOCKSTATE:    zOp = "LOCKSTATE";          break;
-    case SQLITE_GET_LOCKPROXYFILE:  zOp = "GET_LOCKPROXYFILE";  break;
-    case SQLITE_SET_LOCKPROXYFILE:  zOp = "SET_LOCKPROXYFILE";  break;
-    case SQLITE_LAST_ERRNO:         zOp = "LAST_ERRNO";         break;
+    case SQLITE_FCNTL_LOCKSTATE:           zOp = "LOCKSTATE";           break;
+    case SQLITE_GET_LOCKPROXYFILE:         zOp = "GET_LOCKPROXYFILE";   break;
+    case SQLITE_SET_LOCKPROXYFILE:         zOp = "SET_LOCKPROXYFILE";   break;
+    case SQLITE_LAST_ERRNO:                zOp = "LAST_ERRNO";          break;
     case SQLITE_FCNTL_SIZE_HINT: {
       sqlite3_snprintf(sizeof(zBuf), zBuf, "SIZE_HINT,%lld",
                        *(sqlite3_int64*)pArg);
@@ -474,20 +493,62 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
       zOp = zBuf;
       break;
     }
-    case SQLITE_FCNTL_FILE_POINTER: zOp = "FILE_POINTER";       break;
-    case SQLITE_FCNTL_SYNC_OMITTED: zOp = "SYNC_OMITTED";       break;
-    case SQLITE_FCNTL_WIN32_AV_RETRY: zOp = "WIN32_AV_RETRY";   break;
-    case SQLITE_FCNTL_PERSIST_WAL:  zOp = "PERSIST_WAL";        break;
-    case SQLITE_FCNTL_OVERWRITE:    zOp = "OVERWRITE";          break;
-    case SQLITE_FCNTL_VFSNAME:      zOp = "VFSNAME";            break;
-    case SQLITE_FCNTL_TEMPFILENAME: zOp = "TEMPFILENAME";       break;
-    case 0xca093fa0:                zOp = "DB_UNCHANGED";       break;
+    case SQLITE_FCNTL_FILE_POINTER:        zOp = "FILE_POINTER";        break;
+    case SQLITE_FCNTL_WIN32_AV_RETRY:      zOp = "WIN32_AV_RETRY";      break;
+    case SQLITE_FCNTL_PERSIST_WAL: {
+       sqlite3_snprintf(sizeof(zBuf), zBuf, "PERSIST_WAL,%d", *(int*)pArg);
+       zOp = zBuf;
+       break;
+    }
+    case SQLITE_FCNTL_OVERWRITE:           zOp = "OVERWRITE";           break;
+    case SQLITE_FCNTL_VFSNAME:             zOp = "VFSNAME";             break;
+    case SQLITE_FCNTL_POWERSAFE_OVERWRITE: zOp = "POWERSAFE_OVERWRITE"; break;
     case SQLITE_FCNTL_PRAGMA: {
       const char *const* a = (const char*const*)pArg;
       sqlite3_snprintf(sizeof(zBuf), zBuf, "PRAGMA,[%s,%s]",a[1],a[2]);
       zOp = zBuf;
       break;
     }
+    case SQLITE_FCNTL_BUSYHANDLER:         zOp = "BUSYHANDLER";         break;
+    case SQLITE_FCNTL_TEMPFILENAME:        zOp = "TEMPFILENAME";        break;
+    case SQLITE_FCNTL_MMAP_SIZE: {
+      sqlite3_int64 iMMap = *(sqlite3_int64*)pArg;
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "MMAP_SIZE,%lld",iMMap);
+      zOp = zBuf;
+      break;
+    }
+    case SQLITE_FCNTL_TRACE:               zOp = "TRACE";               break;
+    case SQLITE_FCNTL_HAS_MOVED:           zOp = "HAS_MOVED";           break;
+    case SQLITE_FCNTL_SYNC:                zOp = "SYNC";                break;
+    case SQLITE_FCNTL_COMMIT_PHASETWO:     zOp = "COMMIT_PHASETWO";     break;
+    case SQLITE_FCNTL_WIN32_SET_HANDLE:    zOp = "WIN32_SET_HANDLE";    break;
+    case SQLITE_FCNTL_WAL_BLOCK:           zOp = "WAL_BLOCK";           break;
+    case SQLITE_FCNTL_ZIPVFS:              zOp = "ZIPVFS";              break; 
+    case SQLITE_FCNTL_RBU:                 zOp = "RBU";                 break;
+    case SQLITE_FCNTL_VFS_POINTER:         zOp = "VFS_POINTER";         break;
+    case SQLITE_FCNTL_JOURNAL_POINTER:     zOp = "JOURNAL_POINTER";     break;
+    case SQLITE_FCNTL_WIN32_GET_HANDLE:    zOp = "WIN32_GET_HANDLE";    break;
+    case SQLITE_FCNTL_PDB:                 zOp = "PDB";                 break;
+    case SQLITE_FCNTL_BEGIN_ATOMIC_WRITE:  zOp = "BEGIN_ATOMIC_WRITE";  break;
+    case SQLITE_FCNTL_COMMIT_ATOMIC_WRITE: zOp = "COMMIT_ATOMIC_WRITE"; break;
+    case SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE: {
+       zOp = "ROLLBACK_ATOMIC_WRITE";
+       break;
+    }
+    case SQLITE_FCNTL_LOCK_TIMEOUT: {
+       sqlite3_snprintf(sizeof(zBuf), zBuf, "LOCK_TIMEOUT,%d", *(int*)pArg);
+       zOp = zBuf;
+       break;
+    }
+    case SQLITE_FCNTL_DATA_VERSION:        zOp = "DATA_VERSION";        break;
+    case SQLITE_FCNTL_SIZE_LIMIT:          zOp = "SIZE_LIMIT";          break;
+    case SQLITE_FCNTL_CKPT_DONE:           zOp = "CKPT_DONE";           break;
+    case SQLITE_FCNTL_RESERVE_BYTES:       zOp = "RESERVED_BYTES";      break;
+    case SQLITE_FCNTL_CKPT_START:          zOp = "CKPT_START";          break;
+    case SQLITE_FCNTL_EXTERNAL_READER:     zOp = "EXTERNAL_READER";     break;
+    case SQLITE_FCNTL_CKSM_FILE:           zOp = "CKSM_FILE";           break;
+    case SQLITE_FCNTL_RESET_CACHE:         zOp = "RESET_CACHE";         break;
+    case 0xca093fa0:                       zOp = "DB_UNCHANGED";        break;
     default: {
       sqlite3_snprintf(sizeof zBuf, zBuf, "%d", op);
       zOp = zBuf;
@@ -497,15 +558,37 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
   vfstrace_printf(pInfo, "%s.xFileControl(%s,%s)",
                   pInfo->zVfsName, p->zFName, zOp);
   rc = p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
-  vfstrace_print_errcode(pInfo, " -> %s\n", rc);
-  if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
-    *(char**)pArg = sqlite3_mprintf("vfstrace.%s/%z",
+  if( rc==SQLITE_OK ){
+    switch( op ){
+      case SQLITE_FCNTL_VFSNAME: {
+        *(char**)pArg = sqlite3_mprintf("vfstrace.%s/%z",
                                     pInfo->zVfsName, *(char**)pArg);
+        zRVal = *(char**)pArg;
+        break;
+      }
+      case SQLITE_FCNTL_MMAP_SIZE: {
+        sqlite3_snprintf(sizeof(zBuf2), zBuf2, "%lld", *(sqlite3_int64*)pArg);
+        zRVal = zBuf2;
+        break;
+      }
+      case SQLITE_FCNTL_HAS_MOVED:
+      case SQLITE_FCNTL_PERSIST_WAL: {
+        sqlite3_snprintf(sizeof(zBuf2), zBuf2, "%d", *(int*)pArg);
+        zRVal = zBuf2;
+        break;
+      }
+      case SQLITE_FCNTL_PRAGMA:
+      case SQLITE_FCNTL_TEMPFILENAME: {
+        zRVal = *(char**)pArg;
+        break;
+      }
+    }
   }
-  if( (op==SQLITE_FCNTL_PRAGMA || op==SQLITE_FCNTL_TEMPFILENAME)
-   && rc==SQLITE_OK && *(char**)pArg ){
-    vfstrace_printf(pInfo, "%s.xFileControl(%s,%s) returns %s",
-                    pInfo->zVfsName, p->zFName, zOp, *(char**)pArg);
+  if( zRVal ){
+    vfstrace_print_errcode(pInfo, " -> %s", rc);
+    vfstrace_printf(pInfo, ", %s\n", zRVal);
+  }else{
+    vfstrace_print_errcode(pInfo, " -> %s\n", rc);
   }
   return rc;
 }
@@ -840,14 +923,14 @@ int vfstrace_register(
   sqlite3_vfs *pNew;
   sqlite3_vfs *pRoot;
   vfstrace_info *pInfo;
-  int nName;
-  int nByte;
+  size_t nName;
+  size_t nByte;
 
   pRoot = sqlite3_vfs_find(zOldVfsName);
   if( pRoot==0 ) return SQLITE_NOTFOUND;
   nName = strlen(zTraceName);
   nByte = sizeof(*pNew) + sizeof(*pInfo) + nName + 1;
-  pNew = sqlite3_malloc( nByte );
+  pNew = sqlite3_malloc64( nByte );
   if( pNew==0 ) return SQLITE_NOMEM;
   memset(pNew, 0, nByte);
   pInfo = (vfstrace_info*)&pNew[1];
@@ -889,4 +972,16 @@ int vfstrace_register(
   vfstrace_printf(pInfo, "%s.enabled_for(\"%s\")\n",
        pInfo->zVfsName, pRoot->zName);
   return sqlite3_vfs_register(pNew, makeDefault);
+}
+
+/*
+** Look for the named VFS.  If it is a TRACEVFS, then unregister it
+** and delete it.
+*/
+void vfstrace_unregister(const char *zTraceName){
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(zTraceName);
+  if( pVfs==0 ) return;
+  if( pVfs->xOpen!=vfstraceOpen ) return;
+  sqlite3_vfs_unregister(pVfs);
+  sqlite3_free(pVfs);
 }

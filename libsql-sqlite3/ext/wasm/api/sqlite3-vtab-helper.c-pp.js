@@ -10,19 +10,17 @@
 */
 
 /**
-   This file installs sqlite3.vfs, and object which exists to assist
-   in the creation of JavaScript implementations of sqlite3_vfs, along
-   with its virtual table counterpart, sqlite3.vtab.
+   This file installs sqlite3.vtab, a namespace of helpers for use in
+   the creation of JavaScript implementations virtual tables. If built
+   without virtual table support then this function does nothing.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+  if( !sqlite3.wasm.exports.sqlite3_declare_vtab ){
+    return;
+  }
   const wasm = sqlite3.wasm, capi = sqlite3.capi, toss = sqlite3.util.toss3;
-  const vfs = Object.create(null), vtab = Object.create(null);
-
-  const StructBinder = sqlite3.StructBinder
-  /* we require a local alias b/c StructBinder is removed from the sqlite3
-     object during the final steps of the API cleanup. */;
-  sqlite3.vfs = vfs;
+  const vtab = Object.create(null);
   sqlite3.vtab = vtab;
 
   const sii = capi.sqlite3_index_info;
@@ -70,257 +68,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       sii.sqlite3_index_orderby.structInfo.sizeof * n
     );
     return asPtr ? ptr : new sii.sqlite3_index_orderby(ptr);
-  };
-
-  /**
-     Installs a StructBinder-bound function pointer member of the
-     given name and function in the given StructType target object.
-
-     It creates a WASM proxy for the given function and arranges for
-     that proxy to be cleaned up when tgt.dispose() is called. Throws
-     on the slightest hint of error, e.g. tgt is-not-a StructType,
-     name does not map to a struct-bound member, etc.
-
-     As a special case, if the given function is a pointer, then
-     `wasm.functionEntry()` is used to validate that it is a known
-     function. If so, it is used as-is with no extra level of proxying
-     or cleanup, else an exception is thrown. It is legal to pass a
-     value of 0, indicating a NULL pointer, with the caveat that 0
-     _is_ a legal function pointer in WASM but it will not be accepted
-     as such _here_. (Justification: the function at address zero must
-     be one which initially came from the WASM module, not a method we
-     want to bind to a virtual table or VFS.)
-
-     This function returns a proxy for itself which is bound to tgt
-     and takes 2 args (name,func). That function returns the same
-     thing as this one, permitting calls to be chained.
-
-     If called with only 1 arg, it has no side effects but returns a
-     func with the same signature as described above.
-
-     ACHTUNG: because we cannot generically know how to transform JS
-     exceptions into result codes, the installed functions do no
-     automatic catching of exceptions. It is critical, to avoid
-     undefined behavior in the C layer, that methods mapped via
-     this function do not throw. The exception, as it were, to that
-     rule is...
-
-     If applyArgcCheck is true then each JS function (as opposed to
-     function pointers) gets wrapped in a proxy which asserts that it
-     is passed the expected number of arguments, throwing if the
-     argument count does not match expectations. That is only intended
-     for dev-time usage for sanity checking, and will leave the C
-     environment in an undefined state.
-  */
-  const installMethod = function callee(
-    tgt, name, func, applyArgcCheck = callee.installMethodArgcCheck
-  ){
-    if(!(tgt instanceof StructBinder.StructType)){
-      toss("Usage error: target object is-not-a StructType.");
-    }else if(!(func instanceof Function) && !wasm.isPtr(func)){
-      toss("Usage errror: expecting a Function or WASM pointer to one.");
-    }
-    if(1===arguments.length){
-      return (n,f)=>callee(tgt, n, f, applyArgcCheck);
-    }
-    if(!callee.argcProxy){
-      callee.argcProxy = function(tgt, funcName, func,sig){
-        return function(...args){
-          if(func.length!==arguments.length){
-            toss("Argument mismatch for",
-                 tgt.structInfo.name+"::"+funcName
-                 +": Native signature is:",sig);
-          }
-          return func.apply(this, args);
-        }
-      };
-      /* An ondispose() callback for use with
-         StructBinder-created types. */
-      callee.removeFuncList = function(){
-        if(this.ondispose.__removeFuncList){
-          this.ondispose.__removeFuncList.forEach(
-            (v,ndx)=>{
-              if('number'===typeof v){
-                try{wasm.uninstallFunction(v)}
-                catch(e){/*ignore*/}
-              }
-              /* else it's a descriptive label for the next number in
-                 the list. */
-            }
-          );
-          delete this.ondispose.__removeFuncList;
-        }
-      };
-    }/*static init*/
-    const sigN = tgt.memberSignature(name);
-    if(sigN.length<2){
-      toss("Member",name,"does not have a function pointer signature:",sigN);
-    }
-    const memKey = tgt.memberKey(name);
-    const fProxy = (applyArgcCheck && !wasm.isPtr(func))
-    /** This middle-man proxy is only for use during development, to
-        confirm that we always pass the proper number of
-        arguments. We know that the C-level code will always use the
-        correct argument count. */
-          ? callee.argcProxy(tgt, memKey, func, sigN)
-          : func;
-    if(wasm.isPtr(fProxy)){
-      if(fProxy && !wasm.functionEntry(fProxy)){
-        toss("Pointer",fProxy,"is not a WASM function table entry.");
-      }
-      tgt[memKey] = fProxy;
-    }else{
-      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
-      tgt[memKey] = pFunc;
-      if(!tgt.ondispose || !tgt.ondispose.__removeFuncList){
-        tgt.addOnDispose('ondispose.__removeFuncList handler',
-                         callee.removeFuncList);
-        tgt.ondispose.__removeFuncList = [];
-      }
-      tgt.ondispose.__removeFuncList.push(memKey, pFunc);
-    }
-    return (n,f)=>callee(tgt, n, f, applyArgcCheck);
-  }/*installMethod*/;
-  installMethod.installMethodArgcCheck = false;
-
-  /**
-     Installs methods into the given StructType-type instance. Each
-     entry in the given methods object must map to a known member of
-     the given StructType, else an exception will be triggered.  See
-     installMethod() for more details, including the semantics of the
-     3rd argument.
-
-     As an exception to the above, if any two or more methods in the
-     2nd argument are the exact same function, installMethod() is
-     _not_ called for the 2nd and subsequent instances, and instead
-     those instances get assigned the same method pointer which is
-     created for the first instance. This optimization is primarily to
-     accommodate special handling of sqlite3_module::xConnect and
-     xCreate methods.
-
-     On success, returns its first argument. Throws on error.
-  */
-  const installMethods = function(
-    structInstance, methods, applyArgcCheck = installMethod.installMethodArgcCheck
-  ){
-    const seen = new Map /* map of <Function, memberName> */;
-    for(const k of Object.keys(methods)){
-      const m = methods[k];
-      const prior = seen.get(m);
-      if(prior){
-        const mkey = structInstance.memberKey(k);
-        structInstance[mkey] = structInstance[structInstance.memberKey(prior)];
-      }else{
-        installMethod(structInstance, k, m, applyArgcCheck);
-        seen.set(m, k);
-      }
-    }
-    return structInstance;
-  };
-
-  /**
-     Equivalent to calling installMethod(this,...arguments) with a
-     first argument of this object. If called with 1 or 2 arguments
-     and the first is an object, it's instead equivalent to calling
-     installMethods(this,...arguments).
-  */
-  StructBinder.StructType.prototype.installMethod = function callee(
-    name, func, applyArgcCheck = installMethod.installMethodArgcCheck
-  ){
-    return (arguments.length < 3 && name && 'object'===typeof name)
-      ? installMethods(this, ...arguments)
-      : installMethod(this, ...arguments);
-  };
-
-  /**
-     Equivalent to calling installMethods() with a first argument
-     of this object.
-  */
-  StructBinder.StructType.prototype.installMethods = function(
-    methods, applyArgcCheck = installMethod.installMethodArgcCheck
-  ){
-    return installMethods(this, methods, applyArgcCheck);
-  };
-
-  /**
-     Uses sqlite3_vfs_register() to register this
-     sqlite3.capi.sqlite3_vfs. This object must have already been
-     filled out properly. If the first argument is truthy, the VFS is
-     registered as the default VFS, else it is not.
-
-     On success, returns this object. Throws on error.
-  */
-  capi.sqlite3_vfs.prototype.registerVfs = function(asDefault=false){
-    if(!(this instanceof sqlite3.capi.sqlite3_vfs)){
-      toss("Expecting a sqlite3_vfs-type argument.");
-    }
-    const rc = capi.sqlite3_vfs_register(this, asDefault ? 1 : 0);
-    if(rc){
-      toss("sqlite3_vfs_register(",this,") failed with rc",rc);
-    }
-    if(this.pointer !== capi.sqlite3_vfs_find(this.$zName)){
-      toss("BUG: sqlite3_vfs_find(vfs.$zName) failed for just-installed VFS",
-           this);
-    }
-    return this;
-  };
-
-  /**
-     A wrapper for installMethods() or registerVfs() to reduce
-     installation of a VFS and/or its I/O methods to a single
-     call.
-
-     Accepts an object which contains the properties "io" and/or
-     "vfs", each of which is itself an object with following properties:
-
-     - `struct`: an sqlite3.StructType-type struct. This must be a
-       populated (except for the methods) object of type
-       sqlite3_io_methods (for the "io" entry) or sqlite3_vfs (for the
-       "vfs" entry).
-
-     - `methods`: an object mapping sqlite3_io_methods method names
-       (e.g. 'xClose') to JS implementations of those methods. The JS
-       implementations must be call-compatible with their native
-       counterparts.
-
-     For each of those object, this function passes its (`struct`,
-     `methods`, (optional) `applyArgcCheck`) properties to
-     installMethods().
-
-     If the `vfs` entry is set then:
-
-     - Its `struct` property's registerVfs() is called. The
-       `vfs` entry may optionally have an `asDefault` property, which
-       gets passed as the argument to registerVfs().
-
-     - If `struct.$zName` is falsy and the entry has a string-type
-       `name` property, `struct.$zName` is set to the C-string form of
-       that `name` value before registerVfs() is called. That string
-       gets added to the on-dispose state of the struct.
-
-     On success returns this object. Throws on error.
-  */
-  vfs.installVfs = function(opt){
-    let count = 0;
-    const propList = ['io','vfs'];
-    for(const key of propList){
-      const o = opt[key];
-      if(o){
-        ++count;
-        installMethods(o.struct, o.methods, !!o.applyArgcCheck);
-        if('vfs'===key){
-          if(!o.struct.$zName && 'string'===typeof o.name){
-            o.struct.addOnDispose(
-              o.struct.$zName = wasm.allocCString(o.name)
-            );
-          }
-          o.struct.registerVfs(!!o.asDefault);
-        }
-      }
-    }
-    if(!count) toss("Misuse: installVfs() options object requires at least",
-                    "one of:", propList);
-    return this;
   };
 
   /**
@@ -457,30 +204,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   vtab.xIndexInfo = (pIdxInfo)=>new capi.sqlite3_index_info(pIdxInfo);
 
   /**
-     Given an error object, this function returns
-     sqlite3.capi.SQLITE_NOMEM if (e instanceof
-     sqlite3.WasmAllocError), else it returns its
-     second argument. Its intended usage is in the methods
-     of a sqlite3_vfs or sqlite3_module:
-
-     ```
-     try{
-      let rc = ...
-      return rc;
-     }catch(e){
-       return sqlite3.vtab.exceptionToRc(e, sqlite3.capi.SQLITE_XYZ);
-       // where SQLITE_XYZ is some call-appropriate result code.
-     }
-     ```
-  */
-  /**vfs.exceptionToRc = vtab.exceptionToRc =
-    (e, defaultRc=capi.SQLITE_ERROR)=>(
-      (e instanceof sqlite3.WasmAllocError)
-        ? capi.SQLITE_NOMEM
-        : defaultRc
-    );*/
-
-  /**
      Given an sqlite3_module method name and error object, this
      function returns sqlite3.capi.SQLITE_NOMEM if (e instanceof
      sqlite3.WasmAllocError), else it returns its second argument. Its
@@ -524,20 +247,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return rc || capi.SQLITE_ERROR;
   };
   vtab.xError.errorReporter = 1 ? console.error.bind(console) : false;
-
-  /**
-     "The problem" with this is that it introduces an outer function with
-     a different arity than the passed-in method callback. That means we
-     cannot do argc validation on these. Additionally, some methods (namely
-     xConnect) may have call-specific error handling. It would be a shame to
-     hard-coded that per-method support in this function.
-  */
-  /** vtab.methodCatcher = function(methodName, method, defaultErrRc=capi.SQLITE_ERROR){
-    return function(...args){
-      try { method(...args); }
-      }catch(e){ return vtab.xError(methodName, e, defaultRc) }
-  };
-  */
 
   /**
      A helper for sqlite3_vtab::xRowid() and xUpdate()
@@ -685,12 +394,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             remethods[k] = fwrap(k, m);
           }
         }
-        installMethods(mod, remethods, false);
+        mod.installMethods(remethods, false);
       }else{
         // No automatic exception handling. Trust the client
         // to not throw.
-        installMethods(
-          mod, methods, !!opt.applyArgcCheck/*undocumented option*/
+        mod.installMethods(
+          methods, !!opt.applyArgcCheck/*undocumented option*/
         );
       }
       if(0===mod.$iVersion){

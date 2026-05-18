@@ -320,7 +320,8 @@ static int pcache1InitBulk(PCache1 *pCache){
     do{
       PgHdr1 *pX = (PgHdr1*)&zBulk[pCache->szPage];
       pX->page.pBuf = zBulk;
-      pX->page.pExtra = &pX[1];
+      pX->page.pExtra = (u8*)pX + ROUND8(sizeof(*pX));
+      assert( EIGHT_BYTE_ALIGNMENT( pX->page.pExtra ) );
       pX->isBulkLocal = 1;
       pX->isAnchor = 0;
       pX->pNext = pCache->pFree;
@@ -457,7 +458,8 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
     if( pPg==0 ) return 0;
     p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
     p->page.pBuf = pPg;
-    p->page.pExtra = &p[1];
+    p->page.pExtra = (u8*)p + ROUND8(sizeof(*p));
+    assert( EIGHT_BYTE_ALIGNMENT( p->page.pExtra ) );
     p->isBulkLocal = 0;
     p->isAnchor = 0;
     p->pLruPrev = 0;           /* Initializing this saves a valgrind error */

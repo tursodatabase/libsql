@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5unicode
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -60,6 +60,7 @@ do_execsql_test 2.1 "
 # require 17 or more bits to store).
 #
 
+unset -nocomplain A B C D
 set A [db one {SELECT char(0x1F75E)}]    ;# Type So
 set B [db one {SELECT char(0x1F5FD)}]    ;# Type So
 set C [db one {SELECT char(0x2F802)}]    ;# Type Lo

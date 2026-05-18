@@ -371,7 +371,7 @@ do_test alter2-7.5 {
   execsql {
     SELECT a, typeof(a), b, typeof(b), c, typeof(c) FROM t1 LIMIT 1;
   }
-} {1 integer -123 integer 5 text}
+} {1 integer -123.0 real 5 text}
 
 #-----------------------------------------------------------------------
 # Test that UPDATE trigger tables work with default values, and that when
@@ -397,11 +397,11 @@ do_test alter2-8.2 {
     UPDATE t1 SET c = 10 WHERE a = 1;
     SELECT a, typeof(a), b, typeof(b), c, typeof(c) FROM t1 LIMIT 1;
   }
-} {1 integer -123 integer 10 text}
+} {1 integer -123.0 real 10 text}
 ifcapable trigger {
   do_test alter2-8.3 {
     set ::val
-  } {-123 integer 5 text -123 integer 10 text}
+  } {-123.0 real 5 text -123.0 real 10 text}
 }
 
 #-----------------------------------------------------------------------
@@ -425,7 +425,7 @@ ifcapable trigger {
       DELETE FROM t1 WHERE a = 2;
     }
     set ::val
-  } {-123 integer 5 text}
+  } {-123.0 real 5 text}
 }
 
 #-----------------------------------------------------------------------

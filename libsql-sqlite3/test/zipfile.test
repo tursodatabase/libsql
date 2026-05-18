@@ -10,7 +10,10 @@
 #***********************************************************************
 #
 
-package require Tcl 8.6
+if {$tcl_version<8.6} {
+  puts "Requires TCL 8.6 or later"
+  return
+}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -30,7 +33,7 @@ if {[catch {load_static_extension db fileio} error]} {
 
 proc readfile {f} {
   set fd [open $f]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   set data [read $fd]
   close $fd
   set data

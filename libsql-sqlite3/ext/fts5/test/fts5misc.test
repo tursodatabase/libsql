@@ -35,21 +35,21 @@ do_catchsql_test 1.1.2 {
 
 do_catchsql_test 1.2.1 { 
   SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*id'); 
-} {0 {{}}}
+} {1 {no such cursor: 4}}
 
 do_catchsql_test 1.2.2 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*id'));
-} {0 {}}
+} {1 {no such cursor: 6}}
 
 do_catchsql_test 1.3.1 { 
   SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'); 
-} {1 {no such cursor: 2}}
+} {1 {no such cursor: 0}}
 
 do_catchsql_test 1.3.2 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'));
-} {1 {no such cursor: 2}}
+} {1 {no such cursor: 0}}
 
 db close
 sqlite3 db test.db
@@ -57,7 +57,12 @@ sqlite3 db test.db
 do_catchsql_test 1.3.3 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'));
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 0}}
+
+fts5_aux_test_functions db
+do_catchsql_test 1.3.4 {
+  SELECT fts5_columntext(t1) FROM t1('*reads');
+} {1 {no such cursor: 0}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -534,6 +539,131 @@ do_execsql_test 19.0 {
     ROLLBACK TO one;
   COMMIT;
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a);
+  INSERT INTO x1(rowid, a) VALUES
+      (1, 'a b c d'),
+      (2, 'x b c d'),
+      (3, 'x y z d'),
+      (4, 'a y c x');
+}
+
+do_execsql_test 20.1 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' AND x1 MATCH 'b';
+} {1}
+
+do_execsql_test 20.2 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' AND x1 MATCH 'y';
+} {4}
+
+do_execsql_test 20.3 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' OR x1 MATCH 'y';
+} {1 4 3}
+
+do_execsql_test 20.4 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' OR (x1 MATCH 'y' AND x1 MATCH 'd');
+} {1 4 3}
+
+do_execsql_test 20.5 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'z' OR (x1 MATCH 'a' AND x1 MATCH 'd');
+} {3 1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 21.0 {
+  CREATE TABLE t1(ii INTEGER, x TEXT, y TEXT);
+  CREATE VIRTUAL TABLE xyz USING fts5(content_rowid=ii, content=t1, x, y);
+  INSERT INTO t1 VALUES(1, 'one', 'i');
+  INSERT INTO t1 VALUES(2, 'two', 'ii');
+  INSERT INTO t1 VALUES(3, 'tree', 'iii');
+  INSERT INTO xyz(xyz) VALUES('rebuild');
+}
+
+do_execsql_test 21.1 {
+  UPDATE xyz SET y='TWO' WHERE rowid=2;
+  UPDATE t1 SET y='TWO' WHERE ii=2;
+}
+
+do_execsql_test 21.2 {
+  PRAGMA integrity_check
+} {ok}
+
+breakpoint
+sqlite3_db_config db DEFENSIVE 1
+do_execsql_test 21.3 {
+  CREATE TABLE xyz_notashadow(x, y);
+  DROP TABLE xyz_notashadow;
+}
+sqlite3_db_config db DEFENSIVE 0
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 22.0 {
+  SELECT fts5(NULL);
+} {{}}
+do_execsql_test 22.1 {
+  SELECT count(*) FROM (
+    SELECT fts5_source_id()
+  )
+} {1}
+execsql_pp {
+  SELECT fts5_source_id()
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 23.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1 VALUES('one + two + three');
+  INSERT INTO x1 VALUES('one + xyz + three');
+  INSERT INTO x1 VALUES('xyz + two + xyz');
+}
+do_execsql_test 23.1 {
+  SELECT rowid FROM x1('one + two + three');
+} {1}
+
+do_execsql_test 23.2 {
+  SELECT rowid FROM x1('^".." AND one');
+} {}
+
+do_execsql_test 23.3 {
+  SELECT rowid FROM x1('abc NEAR ".." NEAR def');
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 24.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail='none');
+  INSERT INTO t1(a) VALUES('a');
+}
+
+do_execsql_test 24.2 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') ) ORDER BY 1;
+} {-1e-06}
+
+do_execsql_test 24.3 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT � NOT def') ) ORDER BY 1;
+} {-1e-06}
+
+do_execsql_test 24.4 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') );
+} {-1e-06}
+
+#-------------------------------------------------------------------------
+reset_db
+fts5_aux_test_functions db
+
+do_execsql_test 25.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail='none', content='');
+  INSERT INTO t1(a) VALUES('a b c');
+}
+
+do_execsql_test 25.0 {
+  SELECT fts5_test_poslist(t1) FROM t1('b') ORDER BY rank;
+} {{}}
 
 finish_test
 

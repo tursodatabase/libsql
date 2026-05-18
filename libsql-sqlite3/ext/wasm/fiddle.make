@@ -7,19 +7,23 @@ MAKEFILE.fiddle := $(lastword $(MAKEFILE_LIST))
 
 ########################################################################
 # shell.c and its build flags...
-make-np-0 := make -C  $(dir.top) -n -p
-make-np-1 := sed -e 's/(TOP)/(dir.top)/g'
-$(eval $(shell $(make-np-0) | grep -e '^SHELL_OPT ' | $(make-np-1)))
-$(eval $(shell $(make-np-0) | grep -e '^SHELL_SRC ' | $(make-np-1)))
-# ^^^ can't do that in 1 invocation b/c newlines get stripped
-ifeq (,$(SHELL_OPT))
-$(error Could not parse SHELL_OPT from $(dir.top)/Makefile.)
-endif
-ifeq (,$(SHELL_SRC))
-$(error Could not parse SHELL_SRC from $(dir.top)/Makefile.)
-endif
-$(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl $(sqlite3.c)
+ifneq (1,$(MAKING_CLEAN))
+  make-np-0 := make -C  $(dir.top) -n -p
+  make-np-1 := sed -e 's/(TOP)/(dir.top)/g'
+  # Extract SHELL_OPT and SHELL_DEP from the top-most makefile and import
+  # them as vars here...
+  $(eval $(shell $(make-np-0) | grep -e '^SHELL_OPT ' | $(make-np-1)))
+  $(eval $(shell $(make-np-0) | grep -e '^SHELL_DEP ' | $(make-np-1)))
+  # ^^^ can't do that in 1 invocation b/c newlines get stripped
+  ifeq (,$(SHELL_OPT))
+  $(error Could not parse SHELL_OPT from $(dir.top)/Makefile.)
+  endif
+  ifeq (,$(SHELL_DEP))
+  $(error Could not parse SHELL_DEP from $(dir.top)/Makefile.)
+  endif
+$(dir.top)/shell.c: $(SHELL_DEP) $(dir.tool)/mkshellc.tcl $(sqlite3.c)
 	$(MAKE) -C $(dir.top) shell.c
+endif
 # /shell.c
 ########################################################################
 
@@ -39,19 +43,28 @@ fiddle.emcc-flags = \
   $(emcc.exportedRuntimeMethods) \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
   -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
-  $(SQLITE_OPT) $(SHELL_OPT) \
+  $(SQLITE_OPT.full-featured) \
+  $(SQLITE_OPT.common) \
+  $(SHELL_OPT) \
+  -USQLITE_WASM_BARE_BONES \
   -DSQLITE_SHELL_FIDDLE
-# -D_POSIX_C_SOURCE is needed for strdup() with emcc
+
+# Flags specifically for debug builds of fiddle. Performance suffers
+# greatly in debug builds.
+fiddle.emcc-flags.debug := $(fiddle.emcc-flags) \
+  -DSQLITE_DEBUG \
+  -DSQLITE_ENABLE_SELECTTRACE \
+  -DSQLITE_ENABLE_WHERETRACE
 
 fiddle.EXPORTED_FUNCTIONS.in := \
     EXPORTED_FUNCTIONS.fiddle.in \
-    $(EXPORTED_FUNCTIONS.api)
+    $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core \
+    $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 
-$(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
+$(EXPORTED_FUNCTIONS.fiddle): $(MKDIR.bld) $(fiddle.EXPORTED_FUNCTIONS.in) \
+    $(MAKEFILE.fiddle)
 	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
-fiddle-module.js := $(dir.fiddle)/fiddle-module.js
-fiddle-module.wasm := $(subst .js,.wasm,$(fiddle-module.js))
 fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
 
 fiddle.SOAP.js := $(dir.fiddle)/$(notdir $(SOAP.js))
@@ -75,13 +88,13 @@ $(dir.fiddle)/fiddle.js.gz: $(dir.fiddle)/fiddle.js
 
 clean: clean-fiddle
 clean-fiddle:
-	rm -f $(fiddle-module.js) $(fiddle-module.js).gz \
-        $(fiddle-module.wasm) $(fiddle-module.wasm).gz \
-        $(dir.fiddle)/$(SOAP.js) \
-        $(dir.fiddle)/fiddle-module.worker.js \
+	rm -f $(dir.fiddle)/fiddle-module.js \
+        $(dir.fiddle)/*.wasm \
+        $(dir.fiddle)/sqlite3-opfs-*.js \
+        $(dir.fiddle)/*.gz \
         EXPORTED_FUNCTIONS.fiddle
-.PHONY: fiddle
-fiddle: $(fiddle-module.js) $(dir.fiddle)/fiddle.js.gz
+	rm -fr $(dir.fiddle-debug)
+.PHONY: fiddle fiddle.debug
 all: fiddle
 
 ########################################################################

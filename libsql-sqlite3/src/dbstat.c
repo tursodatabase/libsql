@@ -279,6 +279,7 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     pIdxInfo->orderByConsumed = 1;
     pIdxInfo->idxNum |= 0x08;
   }
+  pIdxInfo->idxFlags |= SQLITE_INDEX_SCAN_HEX;
 
   return SQLITE_OK;
 }

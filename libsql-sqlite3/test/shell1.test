@@ -11,6 +11,7 @@
 #
 # The focus of this file is testing the CLI shell tool.
 #
+# TESTRUNNER: shell
 #
 
 # Test plan:
@@ -515,6 +516,8 @@ do_test shell1-3.15.3 {
    Options:
      --bom                 Prefix output with a UTF8 byte-order mark
      -e                    Send output to the system text editor
+     --plain               Use text/plain for -w option
+     -w                    Send output to a web browser
      -x                    Send output as CSV to a spreadsheet
 child process exited abnormally}}
 
@@ -531,6 +534,8 @@ do_test shell1-3.16.2 {
    Options:
      --bom                 Prefix output with a UTF8 byte-order mark
      -e                    Send output to the system text editor
+     --plain               Use text/plain for -w option
+     -w                    Send output to a web browser
      -x                    Send output as CSV to a spreadsheet
 child process exited abnormally}}
 
@@ -1058,7 +1063,10 @@ do_test shell1-5.0 {
       continue
     }
     # Tcl 8.7 maps 0x80 through 0x9f into valid UTF8.  So skip those tests.
-    if {$i>=0x80 && $i<=0x9f} continue
+    if {$i>=0x80} {
+      if {$i<=0x9F || $tcl_version>=9.0} continue
+      if {$tcl_platform(platform)=="windows"} continue
+    }
     if {$i>=0xE0 && $tcl_platform(os)=="OpenBSD"}  continue
     if {$i>=0xE0 && $i<=0xEF && $tcl_platform(os)=="Linux"}  continue
     set hex [format %02X $i]

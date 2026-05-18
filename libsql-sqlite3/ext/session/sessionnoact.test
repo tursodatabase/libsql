@@ -82,6 +82,7 @@ do_execsql_test 1.5 {
   UPDATE p1 SET c=12345 WHERE a = 45;
 }
 
+breakpoint
 sqlite3changeset_apply_v2 -noaction db $C conflict
 do_execsql_test 1.6 {
   SELECT * FROM c1

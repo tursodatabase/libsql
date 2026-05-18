@@ -16,7 +16,7 @@ source [file join [file dirname [info script]] fts5_common.tcl]
 source $testdir/malloc_common.tcl
 set testprefix fts5securefault
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 return_if_no_fts5
 
 do_execsql_test 1.0 {

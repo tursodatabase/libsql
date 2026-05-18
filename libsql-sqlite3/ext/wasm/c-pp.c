@@ -1,7 +1,8 @@
 /*
 ** 2022-11-12:
 **
-** In place of a legal notice, here is a blessing:
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
 **  * May you do good and not evil.
 **  * May you find forgiveness for yourself and forgive others.
@@ -1507,7 +1508,7 @@ int main(int argc, char const * const * argv){
     }
     ISFLAG("debug"){
       ++g.doDebug;
-    }else if(!zInfile){
+    }else if(!zInfile && '-'!=argv[i][0]){
       goto do_infile;
     }else{
       fatal("Unhandled flag: %s", argv[i]);

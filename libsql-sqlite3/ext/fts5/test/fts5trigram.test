@@ -56,6 +56,7 @@ foreach {tn like res} {
   7 {ABCDEFG%} 1
   8 {%รุงเ%}    2
   9 {%งเ%}     2
+  10 {%"งเ"%}  {}
 } {
   do_execsql_test 1.3.$tn {
     SELECT rowid FROM t1 WHERE y LIKE $like
@@ -69,6 +70,9 @@ do_execsql_test 2.0 {
   INSERT INTO t1 VALUES('abcdefghijklm');
   INSERT INTO t1 VALUES('กรุงเทพมหานคร');
 }
+do_catchsql_test 2.0.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(z, tokenize='trigram case_sensitive');
+} {1 {error in tokenizer constructor}}
 
 foreach {tn s res} {
   1 abc           "(abc)defghijklm"
@@ -197,6 +201,12 @@ do_eqp_test 6.3 {
 do_eqp_test 6.4 {
   SELECT * FROM ci1 WHERE x GLOB ?
 } {VIRTUAL TABLE INDEX 0:G0}
+do_eqp_test 6.5 {
+  SELECT * FROM ci1 WHERE x < ?
+} {{SCAN ci1 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 6.6 {
+  SELECT * FROM ci0 WHERE x < ?
+} {{SCAN ci0 VIRTUAL TABLE INDEX 0:}}
 
 reset_db
 do_execsql_test 7.0 {
@@ -206,7 +216,7 @@ do_execsql_test 7.0 {
       (20, "жираф.png"), 
       (30, "cat.png"), 
       (40, "кот.png"), 
-      (50, "misic-🎵-.mp3");
+      (50, "misic-ðµ-.mp3");
 }
 do_execsql_test 7.1 {
   SELECT rowid FROM f WHERE +filename GLOB '*ир*';
@@ -252,5 +262,86 @@ do_execsql_test 8.3 {
   {[abc] [cde]}
   {[abcde]}
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(
+    a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, 
+    tokenize=trigram
+  );
+
+  INSERT INTO t1(rowid, a12) VALUES(111, 'thats a tricky case though');
+  INSERT INTO t1(rowid, a12) VALUES(222, 'the query planner cannot do');
+}
+
+do_execsql_test 9.1 {
+  SELECT rowid FROM t1 WHERE a12 LIKE '%tricky%'
+} {111}
+
+do_execsql_test 9.2 {
+  SELECT rowid FROM t1 WHERE a12 LIKE '%tricky%' AND a12 LIKE '%case%'
+} {111}
+
+do_execsql_test 9.3 {
+  SELECT rowid FROM t1 WHERE a12 LIKE NULL
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, tokenize=trigram);
+}
+
+do_test 10.1 {
+  foreach {val} {
+    "abc \UFFjkl\UFF"
+    "abc \UFFFjkl\UFFF"
+    "abc \UFFFFjkl\UFFFF"
+    "abc \UFFFFFjkl\UFFFFF"
+    "\UFFjkl\UFF abc"
+    "\UFFFjkl\UFFF abc"
+    "\UFFFFjkl\UFFFF abc"
+    "\UFFFFFjkl\UFFFFF abc"
+    "\U10001jkl\U10001 abc"
+  } {
+    execsql { INSERT INTO t1 VALUES( $val ) }
+  }
+} {}
+
+do_test 10.2 {
+  foreach {val} {
+    X'E18000626320646566'
+    X'61EDA0806320646566'
+    X'61EDA0806320646566'
+    X'61EFBFBE6320646566'
+    X'76686920E18000626320646566'
+    X'7668692061EDA0806320646566'
+    X'7668692061EDA0806320646566'
+    X'7668692061EFBFBE6320646566'
+  } {
+    execsql " INSERT INTO t1 VALUES( $val ) "
+  }
+} {}
+
+do_test 10.3 {
+  set a [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0x62}]
+  set b [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0x62}]
+  set c [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0x62}]
+  set d [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0xBF 0x62}]
+  execsql {
+    INSERT INTO t1 VALUES($a);
+    INSERT INTO t1 VALUES($b);
+    INSERT INTO t1 VALUES($c);
+    INSERT INTO t1 VALUES($d);
+
+    INSERT INTO t1 VALUES('abcd' || $a);
+    INSERT INTO t1 VALUES('abcd' || $b);
+    INSERT INTO t1 VALUES('abcd' || $c);
+    INSERT INTO t1 VALUES('abcd' || $d);
+  }
+} {}
+
+
 
 finish_test

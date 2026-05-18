@@ -1,4 +1,4 @@
-# 2013 March 10
+# 2023-03-10
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -9,7 +9,10 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library. The focus of
-# this file is testing the tointeger() and toreal() functions.
+# this file is testing the tointeger() and toreal() functions that are
+# part of the "totype.c" extension.  This file does not test the core
+# SQLite library.  Failures of tests in this file are related to the
+# ext/misc/totype.c extension.
 #
 # Several of the toreal() tests are disabled on platforms where floating
 # point precision is not high enough to represent their constant integer
@@ -23,6 +26,20 @@ load_static_extension db totype
 
 set highPrecision(1) [expr \
     {[db eval {SELECT tointeger(9223372036854775807 + 1);}] eq {{}}}]
+set highPrecision(2) [expr \
+    {[db eval {SELECT toreal(-9223372036854775808 + 1);}] eq {{}}}]
+
+# highPrecision(3) is only known to be false on i586 with gcc-13 and -O2.
+# It is true on the exact same platform with -O0.  Both results seem
+# reasonable, so we'll just very the expectation accordingly.
+#
+set highPrecision(3) [expr \
+    {[db eval {SELECT toreal(9007199254740992 + 1);}] eq {{}}}]
+
+if {!$highPrecision(1) || !$highPrecision(2) || !$highPrecision(3)} {
+  puts "NOTICE:\
+        highPrecision: $highPrecision(1) $highPrecision(2) $highPrecision(3)"
+}
 
 do_execsql_test func4-1.1 {
   SELECT tointeger(NULL);
@@ -195,8 +212,6 @@ do_execsql_test func4-1.55 {
 } {{}}
 
 ifcapable floatingpoint {
-  set highPrecision(2) [expr \
-      {[db eval {SELECT toreal(-9223372036854775808 + 1);}] eq {{}}}]
 
   do_execsql_test func4-2.1 {
     SELECT toreal(NULL);
@@ -341,10 +356,14 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.45 {
     SELECT toreal(9007199254740992);
   } {9007199254740992.0}
-  if {$highPrecision(2)} {
+  if {$highPrecision(3)} {
     do_execsql_test func4-2.46 {
       SELECT toreal(9007199254740992 + 1);
     } {{}}
+  } else {
+    do_execsql_test func4-2.46 {
+      SELECT toreal(9007199254740992 + 1);
+    } {9007199254740992.0}
   }
   do_execsql_test func4-2.47 {
     SELECT toreal(9007199254740992 + 2);
@@ -626,10 +645,14 @@ ifcapable floatingpoint {
   do_execsql_test func4-5.22 {
     SELECT tointeger(toreal(9007199254740992));
   } {9007199254740992}
-  if {$highPrecision(2)} {
+  if {$highPrecision(3)} {
     do_execsql_test func4-5.23 {
       SELECT tointeger(toreal(9007199254740992 + 1));
     } {{}}
+  } else {
+    do_execsql_test func4-5.23 {
+      SELECT tointeger(toreal(9007199254740992 + 1));
+    } {9007199254740992}
   }
   do_execsql_test func4-5.24 {
     SELECT tointeger(toreal(9007199254740992 + 2));

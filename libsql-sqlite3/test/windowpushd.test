@@ -97,7 +97,11 @@ do_execsql_test 2.0 {
 }
 
 foreach tn {0 1} {
-  optimization_control db push-down $tn
+  if {$tn} {
+    optimization_control db all on
+  } else {
+    optimization_control db push-down off
+  }
 
   do_execsql_test 2.$tn.1.1 {
     SELECT * FROM v1;

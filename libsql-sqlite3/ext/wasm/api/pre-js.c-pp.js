@@ -48,7 +48,7 @@ Module['locateFile'] = function(path, prefix) {
   }else{
     theFile = prefix + path;
   }
-  sqlite3InitModuleState.debugModule(
+  this.debugModule(
     "locateFile(",arguments[0], ',', arguments[1],")",
     'sqlite3InitModuleState.scriptDir =',this.scriptDir,
     'up.entries() =',Array.from(up.entries()),
@@ -59,6 +59,7 @@ Module['locateFile'] = function(path, prefix) {
 }.bind(sqlite3InitModuleState);
 //#endif ifnot target=es6-bundler-friendly
 
+//#if custom-Module.instantiateModule
 /**
    Bug warning: a custom Module.instantiateWasm() does not work
    in WASMFS builds:
@@ -67,7 +68,15 @@ Module['locateFile'] = function(path, prefix) {
 
    In such builds we must disable this.
 */
-const xNameOfInstantiateWasm = false
+const xNameOfInstantiateWasm =
+//#if wasmfs
+  false
+//#else
+  true /* This works, but it does not have the testing coverage in the
+          wild which Emscripten's default impl does, so we'll save
+          this option until we really need a custom
+          Module.instantiateWasm() */
+//#endif
       ? 'instantiateWasm'
       : 'emscripten-bug-17951';
 Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
@@ -80,6 +89,7 @@ Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
   sqlite3InitModuleState.debugModule(
     "instantiateWasm() uri =", uri
   );
+  //console.warn("Custom instantiateModule",uri);
   const wfetch = ()=>fetch(uri, {credentials: 'same-origin'});
   const loadWasm = WebAssembly.instantiateStreaming
         ? async ()=>{
@@ -105,6 +115,7 @@ Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
   scripts.
 */
 Module[xNameOfInstantiateWasm].uri = 'sqlite3.wasm';
+//#endif custom-Module.instantiateModule
 /* END FILE: api/pre-js.js, noting that the build process may add a
    line after this one to change the above .uri to a build-specific
    one. */

@@ -1278,14 +1278,7 @@ int sqlite3_quota_remove(const char *zFilename){
 
 /***************************** Test Code ***********************************/
 #ifdef SQLITE_TEST
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 
 /*
 ** Argument passed to a TCL quota-over-limit callback.
@@ -1420,7 +1413,7 @@ static int SQLITE_TCLAPI test_quota_set(
   Tcl_Obj *pScript;               /* Tcl script to invoke to increase quota */
   int rc;                         /* Value returned by quota_set() */
   TclQuotaCallback *p;            /* Callback object */
-  int nScript;                    /* Length of callback script */
+  Tcl_Size nScript;               /* Length of callback script */
   void (*xDestroy)(void*);        /* Optional destructor for pArg */
   void (*xCallback)(const char *, sqlite3_int64 *, sqlite3_int64, void *);
 

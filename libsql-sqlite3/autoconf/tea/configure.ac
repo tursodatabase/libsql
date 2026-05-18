@@ -19,7 +19,7 @@ dnl	to configure the system for the local environment.
 # so that we create the export library with the dll.
 #-----------------------------------------------------------------------
 
-AC_INIT([sqlite],[3.45.1])
+AC_INIT([sqlite],[3.47.2])
 
 #--------------------------------------------------------------------
 # Call TEA_INIT as the first TEA_ macro to set up initial vars.
@@ -97,7 +97,7 @@ TEA_ADD_TCL_SOURCES([])
 # Patchs from rmax.
 #--------------------------------------------------------------------
 AC_ARG_WITH([system-sqlite],
- [AC_HELP_STRING([--with-system-sqlite],
+ [AS_HELP_STRING([--with-system-sqlite],
    [use a system-supplied libsqlite3 instead of the bundled one])],
  [], [with_system_sqlite=no])
 if test x$with_system_sqlite != xno; then

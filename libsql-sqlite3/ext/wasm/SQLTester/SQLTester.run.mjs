@@ -9,7 +9,8 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains a test application for SQLTester.js.
+** This file contains a test application for SQLTester.mjs. It loads
+** test scripts and runs them through the SQLTester class.
 */
 import {default as ns} from './SQLTester.mjs';
 import {default as allTests} from './test-list.mjs';
@@ -33,7 +34,7 @@ const affirm = function(expr, msg){
   }
 }
 
-let ts = new ns.TestScript('/foo.test',`
+let ts = new ns.TestScript('SQLTester-sanity-check.test',`
 /*
 ** This is a comment. There are many like it but this one is mine.
 **
@@ -69,11 +70,13 @@ intentional error;
 SELECT json_array(1,2,3)
 --json [1,2,3]
 --testcase tableresult-1
-  select 1, 'a';
-  select 2, 'b';
+  select 1, 'a' UNION
+  select 2, 'b' UNION
+  select 3, 'c' ORDER by 1
 --tableresult
   # [a-z]
   2 b
+  3 c
 --end
 --testcase json-block-1
   select json_array(1,2,3);
@@ -91,6 +94,7 @@ SELECT json_array(1,2,3)
   select 1 as 'a', 2 as 'b';
 --result 1 2
 --close
+--testcase the-end
 --print Until next time
 `);
 
@@ -110,14 +114,13 @@ const runTests = function(){
       ts.run(sqt);
       affirm( 'zilch' === sqt.nullValue() );
       sqt.addTestScript(ts);
-      sqt.runTests();
     }else{
       for(const t of allTests){
         sqt.addTestScript( new ns.TestScript(t) );
       }
       allTests.length = 0;
-      sqt.runTests();
     }
+    sqt.runTests();
   }finally{
     //log( "Metrics:", sqt.metrics );
     sqt.reset();

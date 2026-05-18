@@ -212,17 +212,38 @@ do_execsql_test 10.2 {
   END;
 }
 
-do_catchsql_test 10.3a {
-  INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
-} {1 {no such column: new.rowid}}
-
-do_catchsql_test 10.3b {
-  UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
-} {1 {no such column: new.rowid}}
-
-do_execsql_test 10.4 {
-  SELECT * FROM log;
-} {}
+ifcapable !allow_rowid_in_view {
+  do_catchsql_test 10.3a {
+    INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
+  } {1 {no such column: new.rowid}}
+  
+  do_catchsql_test 10.3b {
+    UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
+  } {1 {no such column: new.rowid}}
+  
+  do_execsql_test 10.4 {
+    SELECT * FROM log;
+  } {}
+} else {
+  # Note: The values returned by the RETURNING clauses of the following
+  # two statements are the rowid columns of views. These values are not
+  # well defined, so the INSERT returns -1, and the UPDATE returns NULL.
+  # These match the values used for new.rowid expressions, but not much 
+  # else.
+  do_catchsql_test 10.3a {
+    INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
+  } {0 -1}
+  
+  do_catchsql_test 10.3b {
+    UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
+  } {0 {{} {} {}}}
+  
+  do_execsql_test 10.4 {
+    SELECT * FROM log;
+  } {
+    insert -1 1234 5678 update {} z y update {} z y update {} z y
+  }
+}
 
 # 2021-04-27 dbsqlfuzz 78b9400770ef8cc7d9427dfba26f4fcf46ea7dc2
 # Returning clauses on TEMP tables with triggers.
@@ -438,5 +459,89 @@ do_catchsql_test 19.1 {
     INSERT  INTO t1(a) VALUES (2) RETURNING TRUE;
   END;
 } {0 {}}
+
+# 2024-04-24
+# https://sqlite.org/forum/forumpost/2c83569ce8945d39
+#
+# If the RETURNING clause includes subqueries that reference the
+# table being modified, make sure that the subqueries are identified
+# as correlated so that the results are recomputed after each step
+# instead of being computed once and reused.
+#
+reset_db
+db null N
+do_execsql_test 20.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+  INSERT INTO t1 VALUES(1,10),(2,20),(3,30),(4,40),(6,60),(8,80);
+  BEGIN;
+  DELETE FROM t1 WHERE a<>3
+    RETURNING a,
+              (SELECT min(a) FROM t1),
+              (SELECT max(a) FROM t1),
+              (SELECT round(avg(a),2) FROM t1);
+  ROLLBACK;
+} {
+  1 2 8 4.6
+  2 3 8 5.25
+  4 3 8 5.67
+  6 3 8 5.5
+  8 3 3 3.0
+}
+do_execsql_test 20.2 {
+  BEGIN;
+  DELETE FROM t1
+    RETURNING a,
+              (SELECT min(a) FROM t1),
+              (SELECT max(a) FROM t1),
+              (SELECT round(avg(a),2) FROM t1);
+  ROLLBACK;
+} {
+  1 2 8 4.6
+  2 3 8 5.25
+  3 4 8 6.0
+  4 6 8 7.0
+  6 8 8 8.0
+  8 N N N
+}
+do_execsql_test 20.3 {
+  BEGIN;
+  DELETE FROM t1
+    RETURNING a,
+              (SELECT min(t2.a)+t1.a*100 FROM t1 AS t2),
+              (SELECT max(t2.a)+t1.a*100 FROM t1 AS t2),
+              (SELECT round(avg(t2.a),2)+t1.a*100 FROM t1 AS t2);
+  ROLLBACK;
+} {
+  1 102 108 104.6
+  2 203 208 205.25
+  3 304 308 306.0
+  4 406 408 407.0
+  6 608 608 608.0
+  8 N N N
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 21.0 {
+  PRAGMA writable_schema=ON;
+  INSERT INTO sqlite_schema DEFAULT VALUES RETURNING sqlite_schema.name;
+} {{}}
+
+do_execsql_test 21.1 {
+  INSERT INTO sqlite_temp_schema DEFAULT VALUES RETURNING sqlite_temp_schema.name;
+} {{}}
+
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 22.0 {
+  PRAGMA writable_schema=ON;
+  CREATE TABLE xyz (a);
+}
+do_catchsql_test 22.1 {
+  INSERT INTO sqlite_temp_schema DEFAULT VALUES 
+    RETURNING
+    (SELECT * FROM xyz AS sqlite_master WHERE a=sqlite_master.name);
+} {1 {no such column: sqlite_master.name}}
+
 
 finish_test

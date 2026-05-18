@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5contentless
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -266,5 +266,25 @@ do_execsql_test 8.2 {
   COMMIT;
   SELECT rowid FROM ft('four');
 } {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=0);
+  INSERT INTO ft VALUES('hello world');
+  INSERT INTO ft VALUES('one two three');
+}
+
+do_catchsql_test 9.1 {
+  INSERT INTO ft(ft, rowid, x) VALUES('delete', 1, 'hello world');
+} {0 {}}
+
+do_catchsql_test 9.2 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(x, content='', contentless_delete=2);
+} {1 {malformed contentless_delete=... directive}}
+
+do_catchsql_test 9.3 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(x, content='', contentless_delete=11);
+} {1 {malformed contentless_delete=... directive}}
 
 finish_test

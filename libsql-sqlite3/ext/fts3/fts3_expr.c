@@ -319,10 +319,11 @@ static int getNextString(
         Fts3PhraseToken *pToken;
 
         p = fts3ReallocOrFree(p, nSpace + ii*sizeof(Fts3PhraseToken));
-        if( !p ) goto no_mem;
-
         zTemp = fts3ReallocOrFree(zTemp, nTemp + nByte);
-        if( !zTemp ) goto no_mem;
+        if( !zTemp || !p ){
+          rc = SQLITE_NOMEM;
+          goto getnextstring_out;
+        }
 
         assert( nToken==ii );
         pToken = &((Fts3Phrase *)(&p[1]))->aToken[ii];
@@ -337,9 +338,6 @@ static int getNextString(
         nToken = ii+1;
       }
     }
-
-    pModule->xClose(pCursor);
-    pCursor = 0;
   }
 
   if( rc==SQLITE_DONE ){
@@ -347,7 +345,10 @@ static int getNextString(
     char *zBuf = 0;
 
     p = fts3ReallocOrFree(p, nSpace + nToken*sizeof(Fts3PhraseToken) + nTemp);
-    if( !p ) goto no_mem;
+    if( !p ){
+      rc = SQLITE_NOMEM;
+      goto getnextstring_out;
+    }
     memset(p, 0, (char *)&(((Fts3Phrase *)&p[1])->aToken[0])-(char *)p);
     p->eType = FTSQUERY_PHRASE;
     p->pPhrase = (Fts3Phrase *)&p[1];
@@ -355,11 +356,9 @@ static int getNextString(
     p->pPhrase->nToken = nToken;
 
     zBuf = (char *)&p->pPhrase->aToken[nToken];
+    assert( nTemp==0 || zTemp );
     if( zTemp ){
       memcpy(zBuf, zTemp, nTemp);
-      sqlite3_free(zTemp);
-    }else{
-      assert( nTemp==0 );
     }
 
     for(jj=0; jj<p->pPhrase->nToken; jj++){
@@ -369,17 +368,17 @@ static int getNextString(
     rc = SQLITE_OK;
   }
 
-  *ppExpr = p;
-  return rc;
-no_mem:
-
+ getnextstring_out:
   if( pCursor ){
     pModule->xClose(pCursor);
   }
   sqlite3_free(zTemp);
-  sqlite3_free(p);
-  *ppExpr = 0;
-  return SQLITE_NOMEM;
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(p);
+    p = 0;
+  }
+  *ppExpr = p;
+  return rc;
 }
 
 /*

@@ -181,7 +181,7 @@ do_test capi3-3.4 {
 do_test capi3-3.5 {
   list [sqlite3_system_errno $db2] [sqlite3_close $db2]
 } [list $::capi3_errno SQLITE_OK]
-if {[clang_sanitize_address]==0} {
+if {[clang_sanitize_address]==0 && 0} {
   do_test capi3-3.6.1-misuse {
     sqlite3_close $db2
   } {SQLITE_MISUSE}

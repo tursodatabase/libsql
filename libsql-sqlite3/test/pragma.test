@@ -372,27 +372,30 @@ ifcapable attach {
       db close
       sqlite3 db test.db
       execsql {PRAGMA integrity_check}
-    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+    } {{wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2}}
     do_test pragma-3.3 {
       execsql {PRAGMA integrity_check=1}
-    } {{row 1 missing from index i2}}
+    } {{wrong # of entries in index i2}}
     do_test pragma-3.4 {
       execsql {
         ATTACH DATABASE 'test.db' AS t2;
         PRAGMA integrity_check
       }
-    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+    } {{wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2}}
     do_test pragma-3.5 {
       execsql {
         PRAGMA integrity_check=4
       }
-    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2}}
+    } {{wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+    do_catchsql_test pragma-3.5.2 {
+      PRAGMA integrity_check='4'
+    } {1 {no such table: 4}}
     do_catchsql_test pragma-3.6 {
       PRAGMA integrity_check=xyz
     } {1 {no such table: xyz}}
     do_catchsql_test pragma-3.6b {
       PRAGMA integrity_check=t2
-    } {0 {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}}
+    } {0 {{wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2}}}
     do_catchsql_test pragma-3.6c {
       PRAGMA integrity_check=sqlite_schema
     } {0 ok}
@@ -400,7 +403,7 @@ ifcapable attach {
       execsql {
         PRAGMA integrity_check=0
       }
-    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+    } {{wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2}}
   
     # Add additional corruption by appending unused pages to the end of
     # the database file testerr.db
@@ -435,10 +438,10 @@ ifcapable attach {
     } {{*** in database t2 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+Page 6: never used} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2}}
     do_execsql_test pragma-3.9b {
       PRAGMA t2.integrity_check=t2;
-    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+    } {{wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2}}
     do_execsql_test pragma-3.9c {
       PRAGMA t2.integrity_check=sqlite_schema;
     } {ok}
@@ -455,7 +458,7 @@ Page 4: never used}}
     } {{*** in database t2 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2}}
+Page 6: never used} {wrong # of entries in index i2} {row 1 missing from index i2}}
     do_test pragma-3.12 {
       execsql {
         PRAGMA integrity_check=4
@@ -463,7 +466,7 @@ Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2}}
     } {{*** in database t2 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2}}
+Page 6: never used} {wrong # of entries in index i2}}
     do_test pragma-3.13 {
       execsql {
         PRAGMA integrity_check=3
@@ -487,10 +490,10 @@ Page 5: never used}}
     } {{*** in database t2 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6: never used} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {*** in database t3 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+Page 6: never used} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2}}
     do_test pragma-3.16 {
       execsql {
         PRAGMA integrity_check(10)
@@ -498,10 +501,10 @@ Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} 
     } {{*** in database t2 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6: never used} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {*** in database t3 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2}}
+Page 6: never used} {wrong # of entries in index i2}}
     do_test pragma-3.17 {
       execsql {
         PRAGMA integrity_check=8
@@ -509,7 +512,7 @@ Page 6: never used} {row 1 missing from index i2}}
     } {{*** in database t2 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6: never used} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {*** in database t3 ***
 Page 4: never used
 Page 5: never used}}
     do_test pragma-3.18 {
@@ -519,7 +522,7 @@ Page 5: never used}}
     } {{*** in database t2 ***
 Page 4: never used
 Page 5: never used
-Page 6: never used} {row 1 missing from index i2}}
+Page 6: never used} {wrong # of entries in index i2}}
   }
   do_test pragma-3.19 {
     catch {db close}
@@ -556,6 +559,21 @@ ifcapable altertable {
   do_execsql_test pragma-3.23 {
     PRAGMA integrity_check(1);
   } {{non-unique entry in index t1a}}
+
+  # forum post https://sqlite.org/forum/forumpost/ee4f6fa5ab
+  do_execsql_test pragma-3.24 {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES (1);
+    ALTER TABLE t1 ADD COLUMN b NOT NULL DEFAULT 0.25;
+    SELECT * FROM t1;
+    PRAGMA integrity_check(t1);
+  } {1 0.25 ok}
+  do_execsql_test pragma-3.25 {
+    ALTER TABLE t1 ADD COLUMN c CHECK (1);
+    SELECT * FROM t1;
+    PRAGMA integrity_check(t1);
+  } {1 0.25 {} ok}
 }
 
 # PRAGMA integrity check (or more specifically the sqlite3BtreeCount()

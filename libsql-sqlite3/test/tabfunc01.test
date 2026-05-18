@@ -121,26 +121,26 @@ do_eqp_test tabfunc01-3.10 {
   SELECT value FROM generate_series(1,10) ORDER BY value;
 } {
   QUERY PLAN
-  `--SCAN generate_series VIRTUAL TABLE INDEX 19:
+  `--SCAN generate_series VIRTUAL TABLE INDEX 0x13:
 }
 do_eqp_test tabfunc01-3.11 {
   SELECT value FROM generate_series(1,10) ORDER BY +value;
 } {
   QUERY PLAN
-  |--SCAN generate_series VIRTUAL TABLE INDEX 3:
+  |--SCAN generate_series VIRTUAL TABLE INDEX 0x3:
   `--USE TEMP B-TREE FOR ORDER BY
 }
 do_eqp_test tabfunc01-3.12 {
   SELECT value FROM generate_series(1,10) ORDER BY value, stop;
 } {
   QUERY PLAN
-  `--SCAN generate_series VIRTUAL TABLE INDEX 19:
+  `--SCAN generate_series VIRTUAL TABLE INDEX 0x13:
 }
 do_eqp_test tabfunc01-3.13 {
   SELECT value FROM generate_series(1,10) ORDER BY stop, value;
 } {
   QUERY PLAN
-  |--SCAN generate_series VIRTUAL TABLE INDEX 3:
+  |--SCAN generate_series VIRTUAL TABLE INDEX 0x3:
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -156,9 +156,9 @@ do_eqp_test tabfunc01-3.20 {
   QUERY PLAN
   `--MERGE (UNION ALL)
      |--LEFT
-     |  `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |  `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      `--RIGHT
-        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
 }
   
 
@@ -321,6 +321,55 @@ ifcapable altertable {
     }
   } {1 {table pragma_compile_options may not be altered}}
 }
+
+#-----------------------------------------------------------------------------
+# 2024-04-26  LIMIT and OFFSET passed into virtual tables
+# https://sqlite.org/forum/forumpost/c243b8f856
+#
+do_execsql_test tabfunc01-900 {
+  SELECT * FROM (
+    SELECT * FROM generate_series(1,10)
+    UNION ALL
+    SELECT * FROM generate_series(101,104)
+  ) LIMIT 10 OFFSET 5;
+} {6 7 8 9 10 101 102 103 104}
+do_execsql_test tabfunc01-910 {
+  SELECT * FROM (
+    SELECT * FROM generate_series(1,10)
+    UNION ALL
+    SELECT * FROM generate_series(101,104)
+  ) LIMIT -1 OFFSET 5;
+} {6 7 8 9 10 101 102 103 104}
+do_execsql_test tabfunc01-920 {
+  SELECT * FROM (
+    SELECT * FROM generate_series(1,10)
+    UNION ALL
+    SELECT * FROM generate_series(101,104)
+  ) LIMIT -1 OFFSET 0;
+} {1 2 3 4 5 6 7 8 9 10 101 102 103 104}
+
+#-------------------------------------------------------------------------
+# Forum post https://sqlite.org/forum/forumpost/e7c3ae1215
+#
+foreach {tn where res} {
+  1000 "where value = 2" 2
+  1010 "where value in (2)" 2
+  1020 "where value in (select 2)" 2
+  1030 "where value = 2 OR value = 4" {2 4}
+  1040 "where value in (2, 4)" {2 4}
+} {
+  do_execsql_test $tn "
+    SELECT value FROM generate_series(1, 5) $where
+  " $res
+}
+
+do_execsql_test 1100 {
+  select 1 as c_0
+    from        
+    generate_series(1, 1) as ref_3
+    where (ref_3.value) in (select 1);
+} {1}
+
 
 
 # Free up memory allocations

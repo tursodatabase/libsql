@@ -1,0 +1,52 @@
+# 2024 August 8
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS5 module.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5expr
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a);
+  INSERT INTO x1(rowid, a) VALUES (113, 'fts5 expr test');
+}
+
+do_execsql_test 1.1 {
+  SELECT rowid FROM x1('expr');
+} {113}
+
+for {set ii 0} {$ii < 300} {incr ii} {
+  set expr "expr "
+  append expr [string repeat "NOT abcd " $ii]
+
+  if {$ii<257} {
+    set res {0 113}
+  } else {
+    set res {1 {fts5 expression tree is too large (maximum depth 256)}}
+  }
+  do_catchsql_test 1.1.$ii {
+    SELECT rowid FROM x1($expr)
+  } $res
+}
+
+do_execsql_test 1.2 {
+  SELECT rowid FROM x1 WHERE a MATCH '"..."'
+} {}
+
+finish_test
+

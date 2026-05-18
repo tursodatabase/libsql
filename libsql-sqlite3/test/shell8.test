@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # Test the shell tool ".ar" command.
 #
@@ -164,7 +165,7 @@ foreach {tn tcl} {
   #
   # Because it is slow, only do this for $tn==1.
   if {$tn==1} {
-    do_test 1.$tn.1 {
+    do_test 1.$tn.4 {
       catchcmd test_ar.db $c1
       file delete -force ar1
       after 2000
@@ -192,5 +193,30 @@ do_test 2.1.1 {
   catchcmd shell8.db {.ar -C ar4 -x .}
   regsub -all {ar4} [dir_content ar4] ar2
 } {ar2/file1 ar2/file2 ar2/junk1}
+
+# Test symbolic links.
+#
+if {$tcl_platform(platform)=="unix"} {
+  populate_dir ar2 {
+    file1 "1234" 
+    file2 "3456"
+  }
+  file link ar2/link1 file1
+
+  forcedelete shell8.db
+  forcedelete link1
+
+  do_test 3.1 {
+    catchcmd shell8.db {.ar -C ar2 -c file2 link1 }
+  } {0 {}}
+
+  do_test 3.2 {
+    catchcmd shell8.db {.ar -x} 
+  } {0 {}}
+
+  do_test 3.3 {
+    catchcmd shell8.db {.ar -x} 
+  } {0 {}}
+}
 
 finish_test

@@ -764,4 +764,35 @@ do_execsql_test json102-1720 {
   SELECT * FROM t1;
 } {ok 2023-08-03 876 5 {{"x":77,"y":6}}}
 
+# 2024-05-21 https://sqlite.org/forum/forumpost/9e52cdfe15c3926e
+# What if the RHS of the -> or ->> operator is a string that looks
+# like a number?  PostgreSQL treats it as a string.
+#
+do_execsql_test json102-1800 {
+  SELECT '{"1":"one","2":"two","3":"three"}'->>'2';
+} two
+db null NULL
+do_execsql_test json102-1801 {
+  SELECT '{"1":"one","2":"two","3":"three"}'->>2;
+} NULL
+do_execsql_test json102-1810 {
+  SELECT '["zero","one","two"]'->>'1';
+} NULL
+do_execsql_test json102-1811 {
+  SELECT '["zero","one","two"]'->>1;
+} one
+do_execsql_test json102-1820 {
+  SELECT '{"1":"one","2":"two","3":"three"}'->'2';
+} {{"two"}}
+do_execsql_test json102-1821 {
+  SELECT '{"1":"one","2":"two","3":"three"}'->2;
+} {NULL}
+do_execsql_test json102-1830 {
+  SELECT '["zero","one","two"]'->'1';
+} {NULL}
+do_execsql_test json102-1831 {
+  SELECT '["zero","one","two"]'->1;
+} {{"one"}}
+
+
 finish_test

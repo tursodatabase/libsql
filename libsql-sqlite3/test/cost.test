@@ -103,7 +103,7 @@ do_eqp_test 5.2 {
 } {
   QUERY PLAN
   |--SCAN t2 USING INDEX t2i1
-  `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+  `--USE TEMP B-TREE FOR LAST TERM OF ORDER BY
 }
 
 do_eqp_test 5.3 {

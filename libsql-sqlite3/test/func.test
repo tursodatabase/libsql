@@ -261,9 +261,6 @@ ifcapable floatingpoint {
     catchsql {SELECT round(b,2.0) FROM t1 ORDER BY b}
   } {0 {-2.0 1.23 2.0}}
   # Verify some values reported on the mailing list.
-  # Some of these fail on MSVC builds with 64-bit
-  # long doubles, but not on GCC builds with 80-bit
-  # long doubles.
   for {set i 1} {$i<999} {incr i} {
     set x1 [expr 40222.5 + $i]
     set x2 [expr 40223.0 + $i]
@@ -786,6 +783,11 @@ do_test func-16.1 {
   }
 } {X'616263' NULL}
 
+# Test the quote function for +Inf and -Inf
+do_execsql_test func-16.2 {
+  SELECT quote(4.2e+859), quote(-7.8e+904);
+} {9.0e+999 -9.0e+999}
+
 # Correctly handle function error messages that include %.  Ticket #1354
 #
 do_test func-17.1 {
@@ -1042,6 +1044,9 @@ do_test func-21.8 {
     SELECT replace('aaaaaaa', 'a', '0123456789');
   }
 } {0123456789012345678901234567890123456789012345678901234567890123456789}
+do_execsql_test func-21.9 {
+  SELECT typeof(replace(1,'',0));
+} {text}
 
 ifcapable tclvar {
   do_test func-21.9 {
@@ -1552,5 +1557,26 @@ do_execsql_test func-38.100 {
   WITH t1(x) AS (VALUES(9e+999)) SELECT sum(x), avg(x), total(x) FROM t1;
   WITH t1(x) AS (VALUES(-9e+999)) SELECT sum(x), avg(x), total(x) FROM t1;
 } {Inf Inf Inf -Inf -Inf -Inf}
+
+# 2024-03-21 https://sqlite.org/forum/forumpost/23b8688ef4
+# Another problem with Kahan-Babushka-Neumaier summation and
+# infinities.
+#
+do_execsql_test func-39.101 {
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<1)
+  SELECT sum(1.7976931348623157e308),
+         avg(1.7976931348623157e308),
+         total(1.7976931348623157e308)
+    FROM c;
+} {1.79769313486232e+308 1.79769313486232e+308 1.79769313486232e+308}
+for {set i 2} {$i<10} {incr i} {
+  do_execsql_test func-39.[expr {10*$i+100}] {
+    WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<$i)
+    SELECT sum(1.7976931348623157e308),
+           avg(1.7976931348623157e308),
+           total(1.7976931348623157e308)
+      FROM c;
+  } {Inf Inf Inf}
+}
 
 finish_test

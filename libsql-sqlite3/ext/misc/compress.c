@@ -89,7 +89,7 @@ static void uncompressFunc(
   unsigned int nIn;
   unsigned long int nOut;
   int rc;
-  int i;
+  unsigned int i;
 
   pIn = sqlite3_value_blob(argv[0]);
   nIn = sqlite3_value_bytes(argv[0]);

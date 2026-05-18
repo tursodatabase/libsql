@@ -1,0 +1,71 @@
+# 2024 June 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focusing on the auxiliary function APIs.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5aux
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a, b);
+  INSERT INTO x1 VALUES('a b', 'c d');
+  INSERT INTO x1 VALUES('d e', 'a b');
+  INSERT INTO x1 VALUES('a b', 'e f');
+  INSERT INTO x1 VALUES('d e', 'c d');
+}
+
+fts5_aux_test_functions db
+do_execsql_test 1.1 {
+  SELECT fts5_test_all(x1) FROM x1 WHERE rowid=2
+} [list [list {*}{
+  columnsize {2 2}
+  columntext {{d e} {a b}}
+  columntotalsize {8 8}
+  poslist {}
+  tokenize {{d e} {a b}}
+  rowcount 4
+}]]
+
+do_execsql_test 1.2 {
+  SELECT fts5_test_columntext(x1) FROM x1
+} {
+  {{a b} {c d}}
+  {{d e} {a b}}
+  {{a b} {e f}}
+  {{d e} {c d}}
+}
+
+do_execsql_test 1.3 {
+  SELECT fts5_test_rowid(x1) FROM x1
+} {
+  1 2 3 4
+}
+do_execsql_test 1.4 {
+  SELECT fts5_test_phrasecount(x1) FROM x1
+} {
+  0 0 0 0
+}
+do_catchsql_test 1.5 {
+  SELECT fts5_queryphrase(x1, 0) FROM x1
+} {1 SQLITE_RANGE} 
+do_execsql_test 1.6 {
+  SELECT fts5_test_rowcount(x1) FROM x1
+} {4 4 4 4}
+
+
+finish_test

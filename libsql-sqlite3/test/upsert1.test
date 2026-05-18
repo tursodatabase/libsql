@@ -268,4 +268,28 @@ do_catchsql_test upsert1-1210 {
   INSERT INTO t1(a,b) VALUES(1,2) ON CONFLICT(b+?1) DO NOTHING;
 } {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
 
+# 2024-04-11 https://sqlite.org/forum/forumpost/284955a3cd454a15
+# Incorrect value passed into a trigger that fires as the result of
+# an upsert.
+#
+reset_db
+do_execsql_test upsert1-1300 {
+  CREATE TABLE t1(x INT, y TEXT);
+  INSERT INTO t1 VALUES
+    (11, printf('%.9000c','a')),
+    (11, printf('%.9000c','a')),
+    (33, printf('%.9000c','b')),
+    (33, printf('%.9000c','b'));
+  CREATE TABLE t2(x INT UNIQUE, y TEXT);
+  CREATE TRIGGER r1 BEFORE UPDATE ON t2 BEGIN
+    SELECT raise(ABORT,'Incorrect old.y value passed to trigger!')
+     WHERE old.y != new.y;
+    /* ^^^ This trigger will fire and cause the ABORT if the problem has
+    ** not been fixed, or if there is a regression. */
+  END;
+  INSERT INTO t2(x, y) SELECT x, y FROM t1
+   WHERE true
+   ON CONFLICT (x) DO UPDATE SET y = excluded.y;
+} {}
+
 finish_test

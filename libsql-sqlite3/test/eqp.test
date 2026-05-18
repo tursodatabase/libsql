@@ -288,6 +288,7 @@ det 3.2.1 {
   |--SCAN (subquery-xxxxxx)
   `--USE TEMP B-TREE FOR ORDER BY
 }
+
 det 3.2.2 {
   SELECT * FROM 
     (SELECT * FROM t1 ORDER BY x LIMIT 10) AS x1,
@@ -305,13 +306,24 @@ det 3.2.2 {
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
+det 3.2.3 {
+  SELECT * FROM (SELECT * FROM t1 ORDER BY x LIMIT 10) ORDER BY x LIMIT 5
+} {
+  QUERY PLAN
+  |--CO-ROUTINE (subquery-xxxxxx)
+  |  |--SCAN t1
+  |  `--USE TEMP B-TREE FOR ORDER BY
+  `--SCAN (subquery-xxxxxx)
+}
+
 det 3.3.1 {
   SELECT * FROM t1 WHERE y IN (SELECT y FROM t2)
 } {
   QUERY PLAN
   |--SCAN t1
   `--LIST SUBQUERY xxxxxx
-     `--SCAN t2
+     |--SCAN t2
+     `--CREATE BLOOM FILTER
 }
 det 3.3.2 {
   SELECT * FROM t1 WHERE y IN (SELECT y FROM t2 WHERE t1.x!=t2.x)
@@ -413,7 +425,7 @@ do_eqp_test 4.2.3 {
      |  `--USE TEMP B-TREE FOR ORDER BY
      `--RIGHT
         |--SCAN t2 USING INDEX t2i1
-        `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+        `--USE TEMP B-TREE FOR LAST 2 TERMS OF ORDER BY
 }
 do_eqp_test 4.2.4 {
   SELECT * FROM t1 INTERSECT SELECT * FROM t2 ORDER BY 1
@@ -425,7 +437,7 @@ do_eqp_test 4.2.4 {
      |  `--USE TEMP B-TREE FOR ORDER BY
      `--RIGHT
         |--SCAN t2 USING INDEX t2i1
-        `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+        `--USE TEMP B-TREE FOR LAST 2 TERMS OF ORDER BY
 }
 do_eqp_test 4.2.5 {
   SELECT * FROM t1 EXCEPT SELECT * FROM t2 ORDER BY 1
@@ -437,7 +449,7 @@ do_eqp_test 4.2.5 {
      |  `--USE TEMP B-TREE FOR ORDER BY
      `--RIGHT
         |--SCAN t2 USING INDEX t2i1
-        `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+        `--USE TEMP B-TREE FOR LAST 2 TERMS OF ORDER BY
 }
 
 do_eqp_test 4.3.1 {
@@ -806,6 +818,7 @@ do_execsql_test 9.0 {
   CREATE INDEX event_i1 ON event(mtime);
   CREATE TABLE private(rid INTEGER PRIMARY KEY);
 }
+optimization_control db order-by-subquery off
 do_eqp_test 9.1 {
   WITH thread(age,duration,cnt,root,last) AS (
     SELECT
@@ -845,6 +858,47 @@ do_eqp_test 9.1 {
   |--SEARCH blob USING INTEGER PRIMARY KEY (rowid=?)
   |--SEARCH event USING INTEGER PRIMARY KEY (rowid=?)
   `--USE TEMP B-TREE FOR ORDER BY
+}
+optimization_control db all on
+db cache flush
+do_eqp_test 9.2 {
+  WITH thread(age,duration,cnt,root,last) AS (
+    SELECT
+      julianday('now') - max(fmtime) AS age,
+      max(fmtime) - min(fmtime) AS duration,
+      sum(fprev IS NULL) AS msg_count,
+      froot,
+      (SELECT fpid FROM forumpost
+        WHERE froot=x.froot
+          AND fpid NOT IN private
+        ORDER BY fmtime DESC LIMIT 1)
+    FROM forumpost AS x
+    WHERE fpid NOT IN private  --- Ensure this table mentioned in EQP output!
+    GROUP BY froot
+    ORDER BY 1 LIMIT 26 OFFSET 5
+  )
+  SELECT
+    thread.age,
+    thread.duration,
+    thread.cnt,
+    blob.uuid,
+    substr(event.comment,instr(event.comment,':')+1)
+  FROM thread, blob, event
+  WHERE blob.rid=thread.last
+    AND event.objid=thread.last
+  ORDER BY 1;
+} {
+  QUERY PLAN
+  |--CO-ROUTINE thread
+  |  |--SCAN x USING INDEX forumthread
+  |  |--USING ROWID SEARCH ON TABLE private FOR IN-OPERATOR
+  |  |--CORRELATED SCALAR SUBQUERY xxxxxx
+  |  |  |--SEARCH forumpost USING COVERING INDEX forumthread (froot=?)
+  |  |  `--USING ROWID SEARCH ON TABLE private FOR IN-OPERATOR
+  |  `--USE TEMP B-TREE FOR ORDER BY
+  |--SCAN thread
+  |--SEARCH blob USING INTEGER PRIMARY KEY (rowid=?)
+  `--SEARCH event USING INTEGER PRIMARY KEY (rowid=?)
 }
 
 finish_test

@@ -17,11 +17,7 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -36,7 +32,7 @@ static int SQLITE_TCLAPI binarize(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int len;
+  Tcl_Size len;
   char *bytes;
   Tcl_Obj *pRet;
   assert(objc==2);
@@ -133,7 +129,7 @@ static int SQLITE_TCLAPI test_translate(
   sqlite3_value *pVal;
 
   char *z;
-  int len;
+  Tcl_Size len;
   void (*xDel)(void *p) = SQLITE_STATIC;
 
   if( objc!=4 && objc!=5 ){
@@ -164,7 +160,7 @@ static int SQLITE_TCLAPI test_translate(
     z = (char*)Tcl_GetByteArrayFromObj(objv[1], &len);
     if( objc==5 ){
       char *zTmp = z;
-      z = sqlite3_malloc(len);
+      z = sqlite3_malloc64(len);
       memcpy(z, zTmp, len);
     }
     sqlite3ValueSetStr(pVal, -1, z, enc_from, xDel);

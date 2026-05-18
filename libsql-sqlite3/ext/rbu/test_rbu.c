@@ -17,14 +17,7 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU)
 
 #include "sqlite3rbu.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 #include <assert.h>
 #include <string.h>
 
@@ -432,11 +425,7 @@ int SqliteRbu_Init(Tcl_Interp *interp){
 }
 
 #else
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 int SqliteRbu_Init(Tcl_Interp *interp){ return TCL_OK; }
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU) */
 #endif /* defined(SQLITE_TEST) */

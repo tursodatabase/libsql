@@ -13,7 +13,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5eb
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -86,13 +86,13 @@ do_execsql_test 3.0 {
   INSERT INTO e1 VALUES ('just a few words with a / inside');
 }
 do_execsql_test 3.1 {
-  SELECT rowid, bm25(e1) FROM e1 WHERE e1 MATCH '"just"' ORDER BY rank;
+  SELECT rowid, format('%g',bm25(e1)) FROM e1 WHERE e1 MATCH '"just"' ORDER BY rank;
 } {1 -1e-06}
 do_execsql_test 3.2 {
   SELECT rowid FROM e1 WHERE e1 MATCH '"/" OR "just"'
 } 1
 do_execsql_test 3.3 {
-  SELECT rowid, bm25(e1) FROM e1 WHERE e1 MATCH '"/" OR "just"' ORDER BY rank;
+  SELECT rowid, format('%g',bm25(e1)) FROM e1 WHERE e1 MATCH '"/" OR "just"' ORDER BY rank;
 } {1 -1e-06}
 
 do_execsql_test 3.4 "

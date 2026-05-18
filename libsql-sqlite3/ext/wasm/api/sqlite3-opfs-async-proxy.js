@@ -51,7 +51,7 @@
 */
 "use strict";
 const wPost = (type,...args)=>postMessage({type, payload:args});
-const installAsyncProxy = function(self){
+const installAsyncProxy = function(){
   const toss = function(...args){throw new Error(args.join(' '))};
   if(globalThis.window === globalThis){
     toss("This code cannot run from the main thread.",
@@ -87,35 +87,6 @@ const installAsyncProxy = function(self){
   const log =    (...args)=>logImpl(2, ...args);
   const warn =   (...args)=>logImpl(1, ...args);
   const error =  (...args)=>logImpl(0, ...args);
-  const metrics = Object.create(null);
-  metrics.reset = ()=>{
-    let k;
-    const r = (m)=>(m.count = m.time = m.wait = 0);
-    for(k in state.opIds){
-      r(metrics[k] = Object.create(null));
-    }
-    let s = metrics.s11n = Object.create(null);
-    s = s.serialize = Object.create(null);
-    s.count = s.time = 0;
-    s = metrics.s11n.deserialize = Object.create(null);
-    s.count = s.time = 0;
-  };
-  metrics.dump = ()=>{
-    let k, n = 0, t = 0, w = 0;
-    for(k in state.opIds){
-      const m = metrics[k];
-      n += m.count;
-      t += m.time;
-      w += m.wait;
-      m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
-    }
-    console.log(globalThis?.location?.href,
-                "metrics for",globalThis?.location?.href,":\n",
-                metrics,
-                "\nTotal of",n,"op(s) for",t,"ms",
-                "approx",w,"ms spent waiting on OPFS APIs.");
-    console.log("Serialization metrics:",metrics.s11n);
-  };
 
   /**
      __openFiles is a map of sqlite3_file pointers (integers) to
@@ -173,10 +144,10 @@ const installAsyncProxy = function(self){
 
   /**
      If the given file-holding object has a sync handle attached to it,
-     that handle is remove and asynchronously closed. Though it may
+     that handle is removed and asynchronously closed. Though it may
      sound sensible to continue work as soon as the close() returns
      (noting that it's asynchronous), doing so can cause operations
-     performed soon afterwards, e.g. a call to getSyncHandle() to fail
+     performed soon afterwards, e.g. a call to getSyncHandle(), to fail
      because they may happen out of order from the close(). OPFS does
      not guaranty that the actual order of operations is retained in
      such cases. i.e.  always "await" on the result of this function.
@@ -265,23 +236,34 @@ const installAsyncProxy = function(self){
       this.name = 'GetSyncHandleError';
     }
   };
+
+  /**
+     Attempts to find a suitable SQLITE_xyz result code for Error
+     object e. Returns either such a translation or rc if if it does
+     not know how to translate the exception.
+  */
   GetSyncHandleError.convertRc = (e,rc)=>{
-    if(1){
-      return (
-        e instanceof GetSyncHandleError
-          && ((e.cause.name==='NoModificationAllowedError')
-              /* Inconsistent exception.name from Chrome/ium with the
-                 same exception.message text: */
-              || (e.cause.name==='DOMException'
-                  && 0===e.cause.message.indexOf('Access Handles cannot')))
-      ) ? (
-        /*console.warn("SQLITE_BUSY",e),*/
-        state.sq3Codes.SQLITE_BUSY
-      ) : rc;
-    }else{
-      return rc;
+    if( e instanceof GetSyncHandleError ){
+      if( e.cause.name==='NoModificationAllowedError'
+        /* Inconsistent exception.name from Chrome/ium with the
+           same exception.message text: */
+          || (e.cause.name==='DOMException'
+              && 0===e.cause.message.indexOf('Access Handles cannot')) ){
+        return state.sq3Codes.SQLITE_BUSY;
+      }else if( 'NotFoundError'===e.cause.name ){
+        /**
+           Maintenance reminder: SQLITE_NOTFOUND, though it looks like
+           a good match, has different semantics than NotFoundError
+           and is not suitable here.
+        */
+        return state.sq3Codes.SQLITE_CANTOPEN;
+      }
+    }else if( 'NotFoundError'===e?.name ){
+      return state.sq3Codes.SQLITE_CANTOPEN;
     }
-  }
+    return rc;
+  };
+
   /**
      Returns the sync access handle associated with the given file
      handle object (which must be a valid handle object, as created by
@@ -293,6 +275,20 @@ const installAsyncProxy = function(self){
      times. If acquisition still fails at that point it will give up
      and propagate the exception. Client-level code will see that as
      an I/O error.
+
+     2024-06-12: there is a rare race condition here which has been
+     reported a single time:
+
+     https://sqlite.org/forum/forumpost/9ee7f5340802d600
+
+     What appears to be happening is that file we're waiting for a
+     lock on is deleted while we wait. What currently happens here is
+     that a locking exception is thrown but the exception type is
+     NotFoundError. In such cases, we very probably should attempt to
+     re-open/re-create the file an obtain the lock on it (noting that
+     there's another race condition there). That's easy to say but
+     creating a viable test for that condition has proven challenging
+     so far.
   */
   const getSyncHandle = async (fh,opName)=>{
     if(!fh.syncHandle){
@@ -348,37 +344,6 @@ const installAsyncProxy = function(self){
   };
 
   /**
-     We track 2 different timers: the "metrics" timer records how much
-     time we spend performing work. The "wait" timer records how much
-     time we spend waiting on the underlying OPFS timer. See the calls
-     to mTimeStart(), mTimeEnd(), wTimeStart(), and wTimeEnd()
-     throughout this file to see how they're used.
-  */
-  const __mTimer = Object.create(null);
-  __mTimer.op = undefined;
-  __mTimer.start = undefined;
-  const mTimeStart = (op)=>{
-    __mTimer.start = performance.now();
-    __mTimer.op = op;
-    //metrics[op] || toss("Maintenance required: missing metrics for",op);
-    ++metrics[op].count;
-  };
-  const mTimeEnd = ()=>(
-    metrics[__mTimer.op].time += performance.now() - __mTimer.start
-  );
-  const __wTimer = Object.create(null);
-  __wTimer.op = undefined;
-  __wTimer.start = undefined;
-  const wTimeStart = (op)=>{
-    __wTimer.start = performance.now();
-    __wTimer.op = op;
-    //metrics[op] || toss("Maintenance required: missing metrics for",op);
-  };
-  const wTimeEnd = ()=>(
-    metrics[__wTimer.op].wait += performance.now() - __wTimer.start
-  );
-
-  /**
      Gets set to true by the 'opfs-async-shutdown' command to quit the
      wait loop. This is only intended for debugging purposes: we cannot
      inspect this file's state while the tight waitLoop() is running and
@@ -388,37 +353,24 @@ const installAsyncProxy = function(self){
 
   /**
      Asynchronous wrappers for sqlite3_vfs and sqlite3_io_methods
-     methods, as well as helpers like mkdir(). Maintenance reminder:
-     members are in alphabetical order to simplify finding them.
+     methods, as well as helpers like mkdir().
   */
   const vfsAsyncImpls = {
-    'opfs-async-metrics': async ()=>{
-      mTimeStart('opfs-async-metrics');
-      metrics.dump();
-      storeAndNotify('opfs-async-metrics', 0);
-      mTimeEnd();
-    },
     'opfs-async-shutdown': async ()=>{
       flagAsyncShutdown = true;
       storeAndNotify('opfs-async-shutdown', 0);
     },
     mkdir: async (dirname)=>{
-      mTimeStart('mkdir');
       let rc = 0;
-      wTimeStart('mkdir');
       try {
         await getDirForFilename(dirname+"/filepart", true);
       }catch(e){
         state.s11n.storeException(2,e);
         rc = state.sq3Codes.SQLITE_IOERR;
-      }finally{
-        wTimeEnd();
       }
       storeAndNotify('mkdir', rc);
-      mTimeEnd();
     },
     xAccess: async (filename)=>{
-      mTimeStart('xAccess');
       /* OPFS cannot support the full range of xAccess() queries
          sqlite3 calls for. We can essentially just tell if the file
          is accessible, but if it is then it's automatically writable
@@ -431,26 +383,20 @@ const installAsyncProxy = function(self){
          accessible, non-0 means not accessible.
       */
       let rc = 0;
-      wTimeStart('xAccess');
       try{
         const [dh, fn] = await getDirForFilename(filename);
         await dh.getFileHandle(fn);
       }catch(e){
         state.s11n.storeException(2,e);
         rc = state.sq3Codes.SQLITE_IOERR;
-      }finally{
-        wTimeEnd();
       }
       storeAndNotify('xAccess', rc);
-      mTimeEnd();
     },
     xClose: async function(fid/*sqlite3_file pointer*/){
       const opName = 'xClose';
-      mTimeStart(opName);
       __implicitLocks.delete(fid);
       const fh = __openFiles[fid];
       let rc = 0;
-      wTimeStart(opName);
       if(fh){
         delete __openFiles[fid];
         await closeSyncHandle(fh);
@@ -462,15 +408,11 @@ const installAsyncProxy = function(self){
         state.s11n.serialize();
         rc = state.sq3Codes.SQLITE_NOTFOUND;
       }
-      wTimeEnd();
       storeAndNotify(opName, rc);
-      mTimeEnd();
     },
     xDelete: async function(...args){
-      mTimeStart('xDelete');
       const rc = await vfsAsyncImpls.xDeleteNoWait(...args);
       storeAndNotify('xDelete', rc);
-      mTimeEnd();
     },
     xDeleteNoWait: async function(filename, syncDir = 0, recursive = false){
       /* The syncDir flag is, for purposes of the VFS API's semantics,
@@ -486,7 +428,6 @@ const installAsyncProxy = function(self){
          is false.
       */
       let rc = 0;
-      wTimeStart('xDelete');
       try {
         while(filename){
           const [hDir, filenamePart] = await getDirForFilename(filename, false);
@@ -502,14 +443,11 @@ const installAsyncProxy = function(self){
         state.s11n.storeException(2,e);
         rc = state.sq3Codes.SQLITE_IOERR_DELETE;
       }
-      wTimeEnd();
       return rc;
     },
     xFileSize: async function(fid/*sqlite3_file pointer*/){
-      mTimeStart('xFileSize');
       const fh = __openFiles[fid];
       let rc = 0;
-      wTimeStart('xFileSize');
       try{
         const sz = await (await getSyncHandle(fh,'xFileSize')).getSize();
         state.s11n.serialize(Number(sz));
@@ -518,19 +456,15 @@ const installAsyncProxy = function(self){
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR);
       }
       await releaseImplicitLock(fh);
-      wTimeEnd();
       storeAndNotify('xFileSize', rc);
-      mTimeEnd();
     },
     xLock: async function(fid/*sqlite3_file pointer*/,
                           lockType/*SQLITE_LOCK_...*/){
-      mTimeStart('xLock');
       const fh = __openFiles[fid];
       let rc = 0;
       const oldLockType = fh.xLock;
       fh.xLock = lockType;
       if( !fh.syncHandle ){
-        wTimeStart('xLock');
         try {
           await getSyncHandle(fh,'xLock');
           __implicitLocks.delete(fid);
@@ -539,18 +473,14 @@ const installAsyncProxy = function(self){
           rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_LOCK);
           fh.xLock = oldLockType;
         }
-        wTimeEnd();
       }
       storeAndNotify('xLock',rc);
-      mTimeEnd();
     },
     xOpen: async function(fid/*sqlite3_file pointer*/, filename,
                           flags/*SQLITE_OPEN_...*/,
                           opfsFlags/*OPFS_...*/){
       const opName = 'xOpen';
-      mTimeStart(opName);
       const create = (state.sq3Codes.SQLITE_OPEN_CREATE & flags);
-      wTimeStart('xOpen');
       try{
         let hDir, filenamePart;
         try {
@@ -558,12 +488,17 @@ const installAsyncProxy = function(self){
         }catch(e){
           state.s11n.storeException(1,e);
           storeAndNotify(opName, state.sq3Codes.SQLITE_NOTFOUND);
-          mTimeEnd();
-          wTimeEnd();
           return;
         }
+        if( state.opfsFlags.OPFS_UNLINK_BEFORE_OPEN & opfsFlags ){
+          try{
+            await hDir.removeEntry(filenamePart);
+          }catch(e){
+            /* ignoring */
+            //warn("Ignoring failed Unlink of",filename,":",e);
+          }
+        }
         const hFile = await hDir.getFileHandle(filenamePart, {create});
-        wTimeEnd();
         const fh = Object.assign(Object.create(null),{
           fid: fid,
           filenameAbs: filename,
@@ -571,83 +506,56 @@ const installAsyncProxy = function(self){
           dirHandle: hDir,
           fileHandle: hFile,
           sabView: state.sabFileBufView,
-          readOnly: create
-            ? false : (state.sq3Codes.SQLITE_OPEN_READONLY & flags),
+          readOnly: !create && !!(state.sq3Codes.SQLITE_OPEN_READONLY & flags),
           deleteOnClose: !!(state.sq3Codes.SQLITE_OPEN_DELETEONCLOSE & flags)
         });
         fh.releaseImplicitLocks =
           (opfsFlags & state.opfsFlags.OPFS_UNLOCK_ASAP)
           || state.opfsFlags.defaultUnlockAsap;
-        if(0 /* this block is modelled after something wa-sqlite
-                does but it leads to immediate contention on journal files.
-                Update: this approach reportedly only works for DELETE journal
-                mode. */
-           && (0===(flags & state.sq3Codes.SQLITE_OPEN_MAIN_DB))){
-          /* sqlite does not lock these files, so go ahead and grab an OPFS
-             lock. */
-          fh.xLock = "xOpen"/* Truthy value to keep entry from getting
-                               flagged as auto-locked. String value so
-                               that we can easily distinguish is later
-                               if needed. */;
-          await getSyncHandle(fh,'xOpen');
-        }
         __openFiles[fid] = fh;
         storeAndNotify(opName, 0);
       }catch(e){
-        wTimeEnd();
         error(opName,e);
         state.s11n.storeException(1,e);
         storeAndNotify(opName, state.sq3Codes.SQLITE_IOERR);
       }
-      mTimeEnd();
     },
     xRead: async function(fid/*sqlite3_file pointer*/,n,offset64){
-      mTimeStart('xRead');
       let rc = 0, nRead;
       const fh = __openFiles[fid];
       try{
-        wTimeStart('xRead');
         nRead = (await getSyncHandle(fh,'xRead')).read(
           fh.sabView.subarray(0, n),
           {at: Number(offset64)}
         );
-        wTimeEnd();
         if(nRead < n){/* Zero-fill remaining bytes */
           fh.sabView.fill(0, nRead, n);
           rc = state.sq3Codes.SQLITE_IOERR_SHORT_READ;
         }
       }catch(e){
-        if(undefined===nRead) wTimeEnd();
         error("xRead() failed",e,fh);
         state.s11n.storeException(1,e);
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_READ);
       }
       await releaseImplicitLock(fh);
       storeAndNotify('xRead',rc);
-      mTimeEnd();
     },
     xSync: async function(fid/*sqlite3_file pointer*/,flags/*ignored*/){
-      mTimeStart('xSync');
       const fh = __openFiles[fid];
       let rc = 0;
       if(!fh.readOnly && fh.syncHandle){
         try {
-          wTimeStart('xSync');
           await fh.syncHandle.flush();
         }catch(e){
           state.s11n.storeException(2,e);
           rc = state.sq3Codes.SQLITE_IOERR_FSYNC;
         }
-        wTimeEnd();
       }
       storeAndNotify('xSync',rc);
-      mTimeEnd();
     },
     xTruncate: async function(fid/*sqlite3_file pointer*/,size){
-      mTimeStart('xTruncate');
       let rc = 0;
       const fh = __openFiles[fid];
-      wTimeStart('xTruncate');
       try{
         affirmNotRO('xTruncate', fh);
         await (await getSyncHandle(fh,'xTruncate')).truncate(size);
@@ -657,33 +565,27 @@ const installAsyncProxy = function(self){
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_TRUNCATE);
       }
       await releaseImplicitLock(fh);
-      wTimeEnd();
       storeAndNotify('xTruncate',rc);
-      mTimeEnd();
     },
     xUnlock: async function(fid/*sqlite3_file pointer*/,
                             lockType/*SQLITE_LOCK_...*/){
-      mTimeStart('xUnlock');
       let rc = 0;
       const fh = __openFiles[fid];
-      if( state.sq3Codes.SQLITE_LOCK_NONE===lockType
-          && fh.syncHandle ){
-        wTimeStart('xUnlock');
+      if( fh.syncHandle
+          && state.sq3Codes.SQLITE_LOCK_NONE===lockType
+          /* Note that we do not differentiate between lock types in
+             this VFS. We're either locked or unlocked. */ ){
         try { await closeSyncHandle(fh) }
         catch(e){
           state.s11n.storeException(1,e);
           rc = state.sq3Codes.SQLITE_IOERR_UNLOCK;
         }
-        wTimeEnd();
       }
       storeAndNotify('xUnlock',rc);
-      mTimeEnd();
     },
     xWrite: async function(fid/*sqlite3_file pointer*/,n,offset64){
-      mTimeStart('xWrite');
       let rc;
       const fh = __openFiles[fid];
-      wTimeStart('xWrite');
       try{
         affirmNotRO('xWrite', fh);
         rc = (
@@ -697,9 +599,7 @@ const installAsyncProxy = function(self){
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_WRITE);
       }
       await releaseImplicitLock(fh);
-      wTimeEnd();
       storeAndNotify('xWrite',rc);
-      mTimeEnd();
     }
   }/*vfsAsyncImpls*/;
 
@@ -733,8 +633,6 @@ const installAsyncProxy = function(self){
       }
     };
     state.s11n.deserialize = function(clear=false){
-      ++metrics.s11n.deserialize.count;
-      const t = performance.now();
       const argc = viewU8[0];
       const rc = argc ? [] : null;
       if(argc){
@@ -759,12 +657,9 @@ const installAsyncProxy = function(self){
       }
       if(clear) viewU8[0] = 0;
       //log("deserialize:",argc, rc);
-      metrics.s11n.deserialize.time += performance.now() - t;
       return rc;
     };
     state.s11n.serialize = function(...args){
-      const t = performance.now();
-      ++metrics.s11n.serialize.count;
       if(args.length){
         //log("serialize():",args);
         const typeIds = [];
@@ -795,7 +690,6 @@ const installAsyncProxy = function(self){
       }else{
         viewU8[0] = 0;
       }
-      metrics.s11n.serialize.time += performance.now() - t;
     };
 
     state.s11n.storeException = state.asyncS11nExceptions
@@ -877,7 +771,6 @@ const installAsyncProxy = function(self){
               }
             });
             initS11n();
-            metrics.reset();
             log("init state",state);
             wPost('opfs-async-inited');
             waitLoop();
@@ -889,9 +782,6 @@ const installAsyncProxy = function(self){
               flagAsyncShutdown = false;
               waitLoop();
             }
-            break;
-          case 'opfs-async-metrics':
-            metrics.dump();
             break;
       }
     };
@@ -911,5 +801,5 @@ if(!globalThis.SharedArrayBuffer){
          !navigator?.storage?.getDirectory){
   wPost('opfs-unavailable',"Missing required OPFS APIs.");
 }else{
-  installAsyncProxy(self);
+  installAsyncProxy();
 }

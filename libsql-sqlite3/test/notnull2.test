@@ -59,14 +59,14 @@ do_vmstep_test 1.4.2 {
 
 do_vmstep_test 1.5.1 {
   SELECT count(*) FROM t2 WHERE EXISTS(
-    SELECT t2.d IS NULL FROM t1 WHERE t1.a=450
+    SELECT 1 FROM t1 WHERE t1.a=450 AND t2.d IS NULL
   )
-} 10000 {1000}
+} 7000 {0}
 do_vmstep_test 1.5.2 {
   SELECT count(*) FROM t2 WHERE EXISTS(
-    SELECT t2.c IS NULL FROM t1 WHERE t1.a=450
+    SELECT 1 FROM t1 WHERE t1.a=450 AND t2.c IS NULL
   )
-} +100000 {1000}
+} +8000 {0}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -110,5 +110,13 @@ do_execsql_test 4.1 {
   CREATE TABLE t2(b INT);
   SELECT * FROM (SELECT 3 AS c FROM t1) AS t3 LEFT JOIN t2 ON c IS NULL;
 } {3 {}}
+
+# 2024-03-08 https://sqlite.org/forum/forumpost/440f2a2f17
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a INT NOT NULL);
+  SELECT a IS NULL, a IS NOT NULL, count(*) FROM t1;
+} {1 0 0}
 
 finish_test

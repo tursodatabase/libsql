@@ -76,11 +76,7 @@
 
 #include "sqliteInt.h"
 #include "sqlite3.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -197,7 +193,7 @@ static int tsIsFail(void){
 */
 static int tsErrno(const char *zFunc){
   int i;
-  int nFunc = strlen(zFunc);
+  size_t nFunc = strlen(zFunc);
   for(i=0; aSyscall[i].zName; i++){
     if( strlen(aSyscall[i].zName)!=nFunc ) continue;
     if( memcmp(aSyscall[i].zName, zFunc, nFunc) ) continue;
@@ -429,7 +425,7 @@ static int SQLITE_TCLAPI test_syscall_install(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3_vfs *pVfs; 
-  int nElem;
+  Tcl_Size nElem;
   int i;
   Tcl_Obj **apElem;
 
@@ -442,7 +438,7 @@ static int SQLITE_TCLAPI test_syscall_install(
   }
   pVfs = sqlite3_vfs_find(0);
 
-  for(i=0; i<nElem; i++){
+  for(i=0; i<(int)nElem; i++){
     int iCall;
     int rc = Tcl_GetIndexFromObjStruct(interp, 
         apElem[i], aSyscall, sizeof(aSyscall[0]), "system-call", 0, &iCall
@@ -502,7 +498,7 @@ static int SQLITE_TCLAPI test_syscall_reset(
     rc = pVfs->xSetSystemCall(pVfs, 0, 0);
     for(i=0; aSyscall[i].zName; i++) aSyscall[i].xOrig = 0;
   }else{
-    int nFunc;
+    Tcl_Size nFunc;
     char *zFunc = Tcl_GetStringFromObj(objv[2], &nFunc);
     rc = pVfs->xSetSystemCall(pVfs, Tcl_GetString(objv[2]), 0);
     for(i=0; rc==SQLITE_OK && aSyscall[i].zName; i++){

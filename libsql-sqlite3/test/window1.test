@@ -2375,5 +2375,23 @@ do_execsql_test 77.2 {
   SELECT max(~likely(x)) FILTER (WHERE true) FROM t1 INDEXED BY t1x GROUP BY x;
 } {-2 -3 -5 -9}
 
+# 2024-05-23 https://sqlite.org/forum/forumpost/bf8f43aa522c2299
+#
+# A bug in group_concat() when used as a window function, reported
+# just hours after the 3.46.0 release, though first appearing
+# in 3.28.0.
+#
+# When used as a window function, a group_concat() was not
+# correctly distinguishing between NULL and empty-string for
+# its return value.
+#
+do_execsql_test 78.1 {
+  SELECT quote(group_concat(x) OVER ()) FROM (SELECT '' AS x);
+} ''
+do_execsql_test 78.2 {
+  SELECT quote(group_concat(x) OVER (
+      ORDER BY y RANGE BETWEEN 1 FOLLOWING AND 2 FOLLOWING
+    )) FROM (SELECT 'abc' AS x, 1 AS y);
+} NULL
 
 finish_test

@@ -12,18 +12,15 @@
 # of this file is testing the interaction of SQLite manifest types
 # with Tcl dual-representations.
 #
-# $Id: types3.test,v 1.8 2008/04/28 13:02:58 drh Exp $
-#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # A variable with only a string representation comes in as TEXT
 do_test types3-1.1 {
-  set V {}
-  append V x
+  set V [format %s xxxxx]
   concat [tcl_variable_type V] [execsql {SELECT typeof(:V)}]
-} {string text}
+} {text}
 
 # A variable with an integer representation comes in as INTEGER
 do_test types3-1.2 {
@@ -94,6 +91,34 @@ do_test types3-2.5 {
 do_test types3-2.6 {
   set V [db one {SELECT NULL}]
   tcl_variable_type V
+} {}
+
+# See https://sqlite.org/forum/forumpost/3776b48e71
+#
+# On a text-affinity comparison of two values where one of
+# the values has both MEM_Str and a numeric type like MEM_Int,
+# make sure that only the MEM_Str representation is used.
+#
+sqlite3_create_function db
+do_execsql_test types3-3.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x TEXT PRIMARY KEY);
+  INSERT INTO t1 VALUES('1');
+  SELECT * FROM t1 WHERE NOT x=upper(1);
+} {}
+do_execsql_test types3-3.2 {
+  SELECT * FROM t1 WHERE NOT x=add_text_type(1);
+} {}
+do_execsql_test types3-3.3 {
+  SELECT * FROM t1 WHERE NOT x=add_int_type('1');
+} {}
+do_execsql_test types3-3.4 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(1.25);
+  SELECT * FROM t1 WHERE NOT x=add_real_type('1.25');
+} {}
+do_execsql_test types3-3.5 {
+  SELECT * FROM t1 WHERE NOT x=add_text_type(1.25);
 } {}
 
 finish_test

@@ -22,7 +22,6 @@ ifcapable !wal {finish_test ; return }
 #
 proc readfile {filename} {
   set fd [open $filename]
-  fconfigure $fd -encoding binary
   fconfigure $fd -translation binary
   set data [read $fd]
   close $fd
@@ -59,7 +58,6 @@ proc log_checksum_write {filename iFrame endian} {
 
   set bin [binary format II $c1 $c2]
   set fd [open $filename r+]
-  fconfigure $fd -encoding binary
   fconfigure $fd -translation binary
   seek $fd $offset
   puts -nonewline $fd $bin
@@ -114,7 +112,6 @@ proc log_checksum_writemagic {filename endian} {
   set val [expr {0x377f0682 | ($endian == "big" ? 1 : 0)}]
   set bin [binary format I $val]
   set fd [open $filename r+]
-  fconfigure $fd -encoding binary
   fconfigure $fd -translation binary
   puts -nonewline $fd $bin
 

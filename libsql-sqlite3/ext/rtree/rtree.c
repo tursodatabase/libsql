@@ -694,11 +694,9 @@ static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
 ** Clear the Rtree.pNodeBlob object
 */
 static void nodeBlobReset(Rtree *pRtree){
-  if( pRtree->pNodeBlob && pRtree->inWrTrans==0 && pRtree->nCursor==0 ){
-    sqlite3_blob *pBlob = pRtree->pNodeBlob;
-    pRtree->pNodeBlob = 0;
-    sqlite3_blob_close(pBlob);
-  }
+  sqlite3_blob *pBlob = pRtree->pNodeBlob;
+  pRtree->pNodeBlob = 0;
+  sqlite3_blob_close(pBlob);
 }
 
 /*
@@ -742,7 +740,6 @@ static int nodeAcquire(
                            &pRtree->pNodeBlob);
   }
   if( rc ){
-    nodeBlobReset(pRtree);
     *ppNode = 0;
     /* If unable to open an sqlite3_blob on the desired row, that can only
     ** be because the shadow tables hold erroneous data. */
@@ -802,6 +799,7 @@ static int nodeAcquire(
     }
     *ppNode = pNode;
   }else{
+    nodeBlobReset(pRtree);
     if( pNode ){
       pRtree->nNodeRef--;
       sqlite3_free(pNode);
@@ -946,6 +944,7 @@ static void nodeGetCoord(
   int iCoord,                  /* Which coordinate to extract */
   RtreeCoord *pCoord           /* OUT: Space to write result to */
 ){
+  assert( iCell<NCELL(pNode) );
   readCoord(&pNode->zData[12 + pRtree->nBytesPerCell*iCell + 4*iCoord], pCoord);
 }
 
@@ -1135,7 +1134,9 @@ static int rtreeClose(sqlite3_vtab_cursor *cur){
   sqlite3_finalize(pCsr->pReadAux);
   sqlite3_free(pCsr);
   pRtree->nCursor--;
-  nodeBlobReset(pRtree);
+  if( pRtree->nCursor==0 && pRtree->inWrTrans==0 ){
+    nodeBlobReset(pRtree);
+  }
   return SQLITE_OK;
 }
 
@@ -1720,7 +1721,11 @@ static int rtreeRowid(sqlite3_vtab_cursor *pVtabCursor, sqlite_int64 *pRowid){
   int rc = SQLITE_OK;
   RtreeNode *pNode = rtreeNodeOfFirstSearchPoint(pCsr, &rc);
   if( rc==SQLITE_OK && ALWAYS(p) ){
-    *pRowid = nodeGetRowid(RTREE_OF_CURSOR(pCsr), pNode, p->iCell);
+    if( p->iCell>=NCELL(pNode) ){
+      rc = SQLITE_ABORT;
+    }else{
+      *pRowid = nodeGetRowid(RTREE_OF_CURSOR(pCsr), pNode, p->iCell);
+    }
   }
   return rc;
 }
@@ -1738,6 +1743,7 @@ static int rtreeColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
 
   if( rc ) return rc;
   if( NEVER(p==0) ) return SQLITE_OK;
+  if( p->iCell>=NCELL(pNode) ) return SQLITE_ABORT;
   if( i==0 ){
     sqlite3_result_int64(ctx, nodeGetRowid(pRtree, pNode, p->iCell));
   }else if( i<=pRtree->nDim2 ){
@@ -1835,6 +1841,8 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   return SQLITE_OK;
 }
 
+int sqlite3IntFloatCompare(i64,double);
+
 /* 
 ** Rtree virtual table module xFilter method.
 */
@@ -1864,7 +1872,8 @@ static int rtreeFilter(
     i64 iNode = 0;
     int eType = sqlite3_value_numeric_type(argv[0]);
     if( eType==SQLITE_INTEGER
-     || (eType==SQLITE_FLOAT && sqlite3_value_double(argv[0])==iRowid)
+     || (eType==SQLITE_FLOAT 
+         && 0==sqlite3IntFloatCompare(iRowid,sqlite3_value_double(argv[0])))
     ){
       rc = findLeafNode(pRtree, iRowid, &pLeaf, &iNode);
     }else{
@@ -3220,7 +3229,7 @@ constraint:
 static int rtreeBeginTransaction(sqlite3_vtab *pVtab){
   Rtree *pRtree = (Rtree *)pVtab;
   assert( pRtree->inWrTrans==0 );
-  pRtree->inWrTrans++;
+  pRtree->inWrTrans = 1;
   return SQLITE_OK;
 }
 
@@ -3233,6 +3242,9 @@ static int rtreeEndTransaction(sqlite3_vtab *pVtab){
   pRtree->inWrTrans = 0;
   nodeBlobReset(pRtree);
   return SQLITE_OK;
+}
+static int rtreeRollback(sqlite3_vtab *pVtab){
+  return rtreeEndTransaction(pVtab);  
 }
 
 /*
@@ -3352,7 +3364,7 @@ static sqlite3_module rtreeModule = {
   rtreeBeginTransaction,      /* xBegin - begin transaction */
   rtreeEndTransaction,        /* xSync - sync transaction */
   rtreeEndTransaction,        /* xCommit - commit transaction */
-  rtreeEndTransaction,        /* xRollback - rollback transaction */
+  rtreeRollback,              /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
   rtreeSavepoint,             /* xSavepoint */

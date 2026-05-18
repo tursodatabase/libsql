@@ -6,7 +6,11 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
+//#if target=es6-module
+    <title>worker-promise (via ESM) tests</title>
+//#else
     <title>worker-promise tests</title>
+//#endif
   </head>
   <body>
     <header id='titlebar'><span>worker-promise tests</span></header>
@@ -22,13 +26,17 @@
     </figure>
     <div class="emscripten" id="module-status">Downloading...</div>
     <div class="emscripten">
-      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>
     </div><!-- /emscripten bits -->
     <div>Most stuff on this page happens in the dev console.</div>
     <hr>
     <div id='test-output'></div>
     <script src="common/SqliteTestUtil.js"></script>
+//#if target=es6-module
+    <script src="demo-worker1-promiser.mjs" type="module"></script>
+//#else
     <script src="jswasm/sqlite3-worker1-promiser.js"></script>
     <script src="demo-worker1-promiser.js"></script>
+//#endif
   </body>
 </html>

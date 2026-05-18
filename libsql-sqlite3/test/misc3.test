@@ -88,8 +88,8 @@ do_test misc3-2.4 {
   execsql {SELECT 2e-25*0.5e250}
 } 1e+225
 do_test misc3-2.5 {
-  execsql {SELECT 2.0e-250*0.5e25}
-} 1e-225
+  execsql {SELECT format('%.15e',2.0e-250*0.5e25)}
+} {1.0000000000000e-225}
 do_test misc3-2.6 {
   execsql {SELECT '-2.0e-127' * '-0.5e27'}
 } 1e-100

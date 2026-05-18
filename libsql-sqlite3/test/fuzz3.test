@@ -83,7 +83,7 @@ proc modify_database {iMod} {
   set offset [expr {$iMod>>8}]
 
   set fd [open test.db r+]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   seek $fd $offset
   set old_blob [read $fd 1]
   seek $fd $offset

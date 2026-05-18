@@ -1,0 +1,294 @@
+# 2010 June 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5faultI
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+set ::testprefix fts5faultI
+
+do_execsql_test 1.0 {
+  PRAGMA encoding = utf16;
+  CREATE VIRTUAL TABLE t1 USING fts5(x, locale=1);
+  INSERT INTO t1 VALUES('origintext unicode61 ascii porter trigram');
+}
+
+faultsim_save_and_close
+faultsim_restore_and_reopen
+
+do_faultsim_test 1 -faults oom* -prep { 
+} -body {
+  execsql {
+    SELECT rowid FROM t1(fts5_locale('en_US', 'origintext'));
+  }
+} -test {
+  faultsim_test_result {0 1}
+}
+
+do_faultsim_test 2 -faults oom* -prep { 
+  faultsim_restore_and_reopen
+  execsql {
+    SELECT * FROM t1('ascii');
+  }
+} -body {
+  execsql {
+    UPDATE t1 SET rowid=rowid+1;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+fts5_aux_test_functions db
+do_faultsim_test 3 -faults oom* -prep { 
+} -body {
+  execsql {
+    SELECT fts5_columnlocale(t1, 0) FROM t1('unicode*');
+  }
+} -test {
+  faultsim_test_result {0 {{}}} {1 SQLITE_NOMEM}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE w1 USING fts5(a);
+}
+faultsim_save_and_close
+
+do_faultsim_test 4 -faults oom* -prep { 
+  faultsim_restore_and_reopen
+  execsql {
+    BEGIN;
+      INSERT INTO w1 VALUES('token token token');
+  }
+} -body {
+  execsql {
+    INSERT INTO w1(w1, rank) VALUES('rank', 'bm25()');
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 5 -faults oom* -prep { 
+  faultsim_restore_and_reopen
+  execsql { 
+    BEGIN;
+      INSERT INTO w1 VALUES('one');
+      SAVEPOINT one;
+        INSERT INTO w1 VALUES('two');
+      ROLLBACK TO one;
+  }
+
+} -body {
+  execsql {
+    INSERT INTO w1 VALUES('string');
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE w1 USING fts5(a);
+  INSERT INTO w1 VALUES('one two three');
+}
+fts5_aux_test_functions db
+
+do_faultsim_test 5 -faults oom* -prep {
+} -body {
+  execsql {
+    SELECT fts5_test_insttoken(w1, 0, 0) FROM w1('two');
+  }
+} -test {
+  faultsim_test_result {0 two} {1 SQLITE_NOMEM}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE w1 USING fts5(a);
+  INSERT INTO w1 VALUES('one two three');
+}
+fts5_aux_test_functions db
+faultsim_save_and_close
+
+do_faultsim_test 6 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  db eval {
+    BEGIN;
+      INSERT INTO w1 VALUES('four five six');
+      SAVEPOINT abc;
+        INSERT INTO w1 VALUES('seven eight nine');
+        SAVEPOINT def;
+          INSERT INTO w1 VALUES('ten eleven twelve');
+  }
+} -body {
+  execsql {
+    RELEASE abc;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE w1 USING fts5(a);
+  INSERT INTO w1 VALUES('one two three');
+  INSERT INTO w1 VALUES('three two one');
+  DELETE FROM w1_content WHERE rowid=1;
+}
+
+faultsim_save_and_close
+
+do_faultsim_test 7 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM w1 }
+} -body {
+  execsql {
+    PRAGMA integrity_check;
+  }
+} -test {
+}
+
+#-------------------------------------------------------------------------
+reset_db
+fts5_tclnum_register db
+fts5_aux_test_functions db
+
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize = "tclnum query", detail=columns
+  );
+  INSERT INTO ft VALUES('one two three i ii iii');
+  INSERT INTO ft VALUES('four five six iv v vi');
+  INSERT INTO ft VALUES('eight nine ten viii ix x');
+} {}
+
+do_faultsim_test 8.1 -faults oom* -prep {
+} -body {
+  execsql {
+    SELECT fts5_test_collist (ft) FROM ft('one two');
+  }
+} -test {
+  faultsim_test_result {0 {{0.0 1.0}}} {1 {SQL logic error}} {1 SQLITE_NOMEM}
+}
+
+do_faultsim_test 8.2 -faults oom* -prep {
+} -body {
+  execsql {
+    SELECT rowid FROM ft('one two') ORDER BY rank;
+  }
+} -test {
+  faultsim_test_result {0 1} {1 {SQL logic error}} {1 SQLITE_NOMEM}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+  INSERT INTO ft VALUES('one two three i ii iii');
+  INSERT INTO ft VALUES('four five six iv v vi');
+  INSERT INTO ft VALUES('eight nine ten viii ix x');
+} {}
+
+faultsim_save_and_close
+
+do_faultsim_test 9.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    UPDATE ft SET rowid=4 WHERE rowid=1
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 9.2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT rowid FROM ft WHERE x MATCH 'one AND two AND three'
+  }
+} -test {
+  faultsim_test_result {0 1}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, locale=1);
+  INSERT INTO ft VALUES(fts5_locale('hello', 'one two three i ii iii'));
+  INSERT INTO ft VALUES('four five six iv v vi');
+  INSERT INTO ft VALUES('eight nine ten viii ix x');
+} {}
+
+do_execsql_test 10.1 {
+  SELECT fts5_get_locale(ft, 0) FROM ft WHERE x MATCH 'one AND two AND three'
+} {hello}
+
+faultsim_save_and_close
+do_faultsim_test 10.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT fts5_get_locale(ft, 0) FROM ft WHERE x MATCH 'one AND two AND three'
+  }
+} -test {
+  faultsim_test_result {0 hello}
+}
+
+breakpoint
+faultsim_save_and_close
+do_faultsim_test 10.2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    INSERT INTO ft VALUES(zeroblob(10000));
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 11.0 {
+  CREATE VIRTUAL TABLE f1 USING fts5(content);
+  CREATE TABLE g1(id, content);
+  INSERT INTO g1 VALUES(30000, 'a b c');
+  INSERT INTO g1 VALUES(40000, 'd e f');
+}
+
+faultsim_save_and_close
+
+do_faultsim_test 11 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    INSERT INTO f1(rowid, content) SELECT id, content FROM g1;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+finish_test
+

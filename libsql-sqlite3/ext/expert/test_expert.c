@@ -16,15 +16,7 @@
 #include "sqlite3expert.h"
 #include <assert.h>
 #include <string.h>
-
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 

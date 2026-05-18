@@ -854,11 +854,15 @@ int main(int argc, char **argv){
       xErr = errorMsgNH;
       continue;
     }
+  usage:
     fprintf(stderr, "Usage: %s DIRECTORY\n"
                     "   or: %s --sha1 FILE ...\n"
                     "   or: %s --sha3 FILE ...\n",
       argv[0], argv[0], argv[0]);
     return 1;
+  }
+  if( !zDir ){
+    goto usage;
   }
   if( strlen(zDir)>1000 ){
     fprintf(stderr, "Directory argument too big: [%s]\n", zDir);

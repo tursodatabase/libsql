@@ -74,6 +74,16 @@ Options:
 }
   exit 1
 }
+
+# Exit with given code, but first close db if open.
+#
+proc exit_clean {exit_code} {
+  if {0 < [llength [info commands db]]} {
+    db close
+  }
+  exit $exit_code
+}
+
 set file_to_analyze {}
 set flags(-pageinfo) 0
 set flags(-stats) 0
@@ -157,7 +167,7 @@ if {![db exists {SELECT 1 FROM pragma_compile_options
         lacks required capabilities. Recompile using the\
         -DSQLITE_ENABLE_DBSTAT_VTAB compile-time option to fix\
         this problem."
-  exit 1
+  exit_clean 1
 }
 
 db eval {SELECT count(*) FROM sqlite_schema}
@@ -168,7 +178,7 @@ if {$flags(-pageinfo)} {
   db eval {SELECT name, path, pageno FROM temp.stat ORDER BY pageno} {
     puts "$pageno $name $path"
   }
-  exit 0
+  exit_clean 0
 }
 if {$flags(-stats)} {
   db eval {CREATE VIRTUAL TABLE temp.stat USING dbstat}
@@ -198,7 +208,7 @@ if {$flags(-stats)} {
     puts "INSERT INTO stats VALUES($x);"
   }
   puts "COMMIT;"
-  exit 0
+  exit_clean 0
 }
 
 
@@ -596,6 +606,7 @@ set nindex [db eval {SELECT count(*) FROM sqlite_schema WHERE type='index'}]
 set sql {SELECT count(*) FROM sqlite_schema WHERE name LIKE 'sqlite_autoindex%'}
 set nautoindex [db eval $sql]
 set nmanindex [expr {$nindex-$nautoindex}]
+set nwithoutrowid [db eval {SELECT count(*) FROM pragma_table_list WHERE wr}]
 
 # set total_payload [mem eval "SELECT sum(payload) FROM space_used"]
 set user_payload [mem one {SELECT int(sum(payload)) FROM space_used
@@ -614,6 +625,7 @@ statline {Pages on the freelist (per header)} $free_pgcnt2 $free_percent2
 statline {Pages on the freelist (calculated)} $free_pgcnt $free_percent
 statline {Pages of auto-vacuum overhead} $av_pgcnt $av_percent
 statline {Number of tables in the database} $ntable
+statline {Number of WITHOUT ROWID tables} $nwithoutrowid
 statline {Number of indices} $nindex
 statline {Number of defined indices} $nmanindex
 statline {Number of implied indices} $nautoindex
@@ -672,6 +684,14 @@ if {$nindex>0} {
   subreport {All tables and indices} 1 0
 }
 subreport {All tables} {NOT is_index} 0
+if {$nwithoutrowid>0} {
+  subreport {All WITHOUT ROWID tables} {is_without_rowid} 0
+  set nrowidtab [db eval {SELECT count(*) FROM pragma_table_list
+                         WHERE type='table' AND NOT wr}]
+  if {$nrowidtab>0} {
+     subreport {ALL rowid tables} {NOT is_without_rowid AND NOT is_index} 0
+  }
+}
 if {$nindex>0} {
   subreport {All indices} {is_index} 0
 }
@@ -891,5 +911,7 @@ puts "COMMIT;"
 } err]} {
   puts "ERROR: $err"
   puts $errorInfo
-  exit 1
+  exit_clean 1
 }
+
+exit_clean 0

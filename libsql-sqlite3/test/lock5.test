@@ -11,10 +11,10 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock5.test,v 1.6 2008/12/04 12:34:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix lock5
 
 # This file is only run if using the unix backend compiled with the
 # SQLITE_ENABLE_LOCKING_STYLE macro.
@@ -101,10 +101,7 @@ do_test lock5-dotfile.X {
 #####################################################################
 
 forcedelete test.db
-if {[catch {sqlite3 db test.db -vfs unix-flock} msg]} {
-  finish_test
-  return
-}
+if {0==[catch {sqlite3 db test.db -vfs unix-flock} msg]} {
 
 do_test lock5-flock.1 {
   sqlite3 db test.db -vfs unix-flock
@@ -149,13 +146,67 @@ do_test lock5-flock.8 {
   db2 close
 } {}
 
+do_test lock5-flock.9 {
+  sqlite3 db test.db -vfs unix-flock
+  execsql {
+    SELECT * FROM t1
+  }
+} {1 2}
+
+do_test lock5-flock.10 {
+  sqlite3 db2 test.db -vfs unix-flock
+  execsql {
+    SELECT * FROM t1
+  } db2
+} {1 2}
+
+do_test lock5-flock.10 {
+  execsql {
+    PRAGMA cache_size = 1;
+    BEGIN;
+      WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10000
+      )
+      INSERT INTO t1 SELECT i, i+1 FROM s;
+  }
+
+  catchsql {
+    SELECT * FROM t1
+  } db2
+} {1 {database is locked}}
+
+if {[permutation]!="inmemory_journal"} {
+  do_test lock5-flock.11 {
+    forcecopy test.db test.db2
+    forcecopy test.db-journal test.db2-journal
+    db2 close
+    sqlite3 db2 test.db2 -vfs unix-flock
+    catchsql {
+      SELECT * FROM t1
+    } db2
+  } {0 {1 2}}
+  
+  do_test lock5-flock.12 {
+    file exists test.db2-journal
+  } 0
+}
+
+db close
+db2 close
+
+}
+
 #####################################################################
+
+reset_db
 
 do_test lock5-none.1 {
   sqlite3 db test.db -vfs unix-none
   sqlite3 db2 test.db -vfs unix-none
   execsql { PRAGMA mmap_size = 0 } db2
   execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
     BEGIN;
     INSERT INTO t1 VALUES(3, 4);
   }
@@ -178,10 +229,12 @@ do_test lock5-none.5 {
 } {1 2}
 
 ifcapable memorymanage {
-  do_test lock5-none.6 {
-    sqlite3_release_memory 1000000
-    execsql {SELECT * FROM t1} db2
-  } {1 2 3 4}
+  if {[permutation]!="memsubsys1" && [permutation]!="memsubsys2"} { 
+    do_test lock5-none.6 {
+      sqlite3_release_memory 1000000
+      execsql {SELECT * FROM t1} db2
+    } {1 2 3 4}
+  }
 }
 
 do_test lock5-none.X {
@@ -191,6 +244,76 @@ do_test lock5-none.X {
 
 ifcapable lock_proxy_pragmas {
   set env(SQLITE_FORCE_PROXY_LOCKING) $::using_proxy
+}
+
+#####################################################################
+reset_db
+if {[permutation]!="inmemory_journal"} {
+  
+  # 1. Create a large database using the unix-dotfile VFS
+  # 2. Write a large transaction to the db, so that the cache spills, but do
+  #    not commit it.
+  # 3. Make a copy of the database files on disk.
+  # 4. Try to read from the copy using unix-dotfile VFS. This fails because
+  #    the dotfile still exists, so SQLite thinks the database is locked.
+  # 5. Remove the dotfile.
+  # 6. Try to read the db again. This time, the old transaction is rolled
+  #    back and the read permitted.
+  #
+  do_test 2.dotfile.1 {
+    sqlite3 db test.db -vfs unix-dotfile
+    execsql {
+      PRAGMA cache_size = 10;
+      CREATE TABLE t1(x, y, z);
+      CREATE INDEX t1x ON t1(x);
+      WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+      )
+      INSERT INTO t1 SELECT hex(randomblob(20)), hex(randomblob(500)), i FROM s;
+    }
+  } {}
+  
+  do_execsql_test 2.dotfile.2 {
+    BEGIN;
+      UPDATE t1 SET z=z+1, x=hex(randomblob(20));
+  }
+  
+  do_test 2.dotfile.3 {
+    list                            \
+      [file exists test.db]         \
+      [file exists test.db-journal] \
+      [file exists test.db.lock]
+  } {1 1 1}
+  
+  do_test 2.dotfile.4 {
+    forcecopy test.db test.db2
+    forcecopy test.db-journal test.db2-journal
+    file mkdir test.db2.lock
+  
+    sqlite3 db2 test.db2 -vfs unix-dotfile
+    catchsql {
+      SELECT count(*) FROM t1;
+    } db2
+  } {1 {database is locked}}
+  
+  do_test 2.dotfile.5 {
+    file delete test.db2.lock
+    execsql {
+      PRAGMA integrity_check
+    } db2
+  } {ok}
+  
+  db2 close
+  
+  do_test 2.dotfile.6 {
+    forcecopy test.db test.db2
+    forcecopy test.db-journal test.db2-journal
+  
+    sqlite3 db2 file:test.db2?nolock=1 -vfs unix-dotfile -uri 1
+    catchsql {
+      SELECT count(*) FROM t1;
+    } db2
+  } {0 1000}
 }
 
 finish_test

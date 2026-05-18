@@ -11,7 +11,10 @@
 # This file implements regression tests for the session module. 
 # 
 
-package require Tcl 8.6
+if {$tcl_version<8.6} {
+  puts "This module requires Tcl 8.6 or later"
+  return
+}
 
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
@@ -136,7 +139,7 @@ foreach {tn blob} {
   do_test 2.$tn {
     set changeset [binary decode hex $blob]
 #set fd [open x.change w+]
-#fconfigure $fd -encoding binary -translation binary
+#fconfigure $fd -translation binary
 #puts -nonewline $fd $changeset
 #close $fd
     list [catch { sqlite3changeset_apply db $changeset xConflict } msg] $msg

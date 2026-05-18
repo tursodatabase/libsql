@@ -57,6 +57,7 @@ do_execsql_test 1.0 {
   INSERT INTO t1 VALUES(1,9999);
 }
 
+forcedelete link.db
 do_test 2.0 {
   createWin32Symlink link.db test.db
 } {}
@@ -87,12 +88,13 @@ do_test 3.4 {
   db3 close
 } {}
 
+# The -nofollow option does not work on Windows
 do_test 3.5 {
   list [catch {
     sqlite3 db4 link.db -nofollow true
     execsql { SELECT x, y FROM t1; } db4
   } res] $res
-} {1 {unable to open database file}}
+} {0 {1 9999}}
 
 catch {db4 close}
 

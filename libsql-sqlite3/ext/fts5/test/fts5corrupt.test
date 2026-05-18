@@ -16,7 +16,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5corrupt
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -99,6 +99,27 @@ sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test 3.1 {
   DELETE FROM t3_content WHERE rowid = 3;
   SELECT * FROM t3 WHERE t3 MATCH 'o';
+} {1 {fts5: missing row 3 from content table 'main'.'t3_content'}}
+
+#--------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x);
+  INSERT INTO t2 VALUES('one two three');
+  INSERT INTO t2 VALUES('four five six');
+  INSERT INTO t2 VALUES('seven eight nine');
+  INSERT INTO t2 VALUES('ten eleven twelve');
+}
+do_execsql_test 4.1 {
+  SELECT hex(block) FROM t2_data WHERE id=1;
+} {040C}
+do_execsql_test 4.2 {
+  UPDATE t2_data SET block = X'0402' WHERE id=1
+}
+breakpoint
+do_catchsql_test 4.3 {
+  DELETE FROM t2 WHERE rowid=3
 } {1 {database disk image is malformed}}
 
 finish_test

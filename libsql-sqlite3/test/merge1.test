@@ -64,21 +64,21 @@ do_eqp_test 101 {
      |     |--LEFT
      |     |  `--MERGE (UNION ALL)
      |     |     |--LEFT
-     |     |     |  `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |     |     |  `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      |     |     `--RIGHT
-     |     |        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |     |        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      |     `--RIGHT
-     |        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      `--RIGHT
         `--MERGE (UNION ALL)
            |--LEFT
            |  `--MERGE (UNION ALL)
            |     |--LEFT
-           |     |  `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+           |     |  `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
            |     `--RIGHT
-           |        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+           |        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
            `--RIGHT
-              `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+              `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
 }
 
 # Same test with the blanced-merge optimization
@@ -129,17 +129,17 @@ do_eqp_test 111 {
      |     |     |     |--LEFT
      |     |     |     |  `--MERGE (UNION ALL)
      |     |     |     |     |--LEFT
-     |     |     |     |     |  `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |     |     |     |     |  `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      |     |     |     |     `--RIGHT
-     |     |     |     |        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |     |     |     |        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      |     |     |     `--RIGHT
-     |     |     |        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |     |     |        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      |     |     `--RIGHT
-     |     |        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |     |        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      |     `--RIGHT
-     |        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      `--RIGHT
-        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
 }
 
 finish_test

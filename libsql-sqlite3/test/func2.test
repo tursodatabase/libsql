@@ -508,4 +508,27 @@ do_test func2-3.9.2 {
   bin_to_hex [lindex $blob 0]
 } "12"
 
+#-------------------------------------------------------------------------
+# At one point this was extremely slow to compile.
+#
+do_test func2-3.10 {
+  set tm [time {
+    execsql {
+      SELECT '' IN (zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(
+      zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(
+      zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(
+      zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(
+      zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(
+      zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(
+      zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(
+      zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(
+      zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(zerobloB(1)
+      )))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+  }
+  }]
+
+  set tm [lindex $tm 0]
+  expr $tm<2000000
+} {1}
+
 finish_test

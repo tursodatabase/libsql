@@ -67,6 +67,12 @@ for {set ii 1} {$ii<=5000} {incr ii} {
       FROM t1, kv
      WHERE p->>key IS NOT val
   } 0
+  do_execsql_test $ii.8 {
+    SELECT j0 FROM t1 WHERE json(j0)!=json(json_pretty(j0));
+  } {}
+  do_execsql_test $ii.9 {
+    SELECT j5 FROM t1 WHERE json(j5)!=json(json_pretty(j5));
+  } {}
 }
 
 

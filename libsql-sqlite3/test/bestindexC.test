@@ -1,0 +1,352 @@
+# 2024-04-26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix bestindexC
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+register_tcl_module db
+
+proc vtab_command {lVal method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+
+      set idxstr [list]
+      set res [list]
+
+      set idx 0
+      foreach c $clist {
+        array set a $c
+        if {$a(usable)==0} continue
+        if {$a(op)=="limit" && ![info exists ::do_not_use_limit]} { 
+          lappend idxstr limit
+          lappend res omit $idx
+        }
+        if {$a(op)=="offset" && ![info exists ::do_not_use_offset]} { 
+          lappend idxstr offset
+          lappend res omit $idx
+        }
+        incr idx
+      }
+
+      return "cost 1000000 rows 1000000 idxnum 0 idxstr {$idxstr} $res"
+    }
+
+    xFilter {
+      set idxstr [lindex $args 1]
+      set LIMIT ""
+      foreach a $idxstr b [lindex $args 2] {
+        set x($a) $b
+      }
+
+      if {![info exists x(limit)]} { set x(limit) -1 }
+      if {![info exists x(offset)]} { set x(offset) -1 }
+      set LIMIT " LIMIT $x(limit) OFFSET $x(offset)"
+
+      set idx 1
+      foreach v $lVal {
+        lappend lRow "($idx, '$v')"
+        incr idx
+      }
+
+      return [list sql "
+        SELECT * FROM ( VALUES [join $lRow ,]) $LIMIT
+      "]
+    }
+  }
+
+  return {}
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command "a b c d e f");
+  CREATE VIRTUAL TABLE x2 USING tcl(vtab_command "A B C D E F a b");
+} {}
+
+do_execsql_test 1.1 {
+  CREATE TEMP TABLE t_unionall AS 
+    SELECT * FROM x1 UNION ALL SELECT * FROM x2;
+
+  CREATE TEMP TABLE t_intersect AS 
+    SELECT * FROM x1 INTERSECT SELECT * FROM x2;
+
+  CREATE TEMP TABLE t_union AS 
+    SELECT * FROM x1 UNION SELECT * FROM x2;
+
+  CREATE TEMP TABLE t_except AS 
+    SELECT * FROM x1 EXCEPT SELECT * FROM x2;
+}
+
+foreach {tn limit} {
+  1 "LIMIT 8" 
+  2 "LIMIT 4" 
+  3 "LIMIT 4 OFFSET 2" 
+  4 "LIMIT 8 OFFSET 4" 
+} {
+
+  foreach {op tbl} {
+    "UNION ALL" t_unionall
+    "UNION"     t_union
+    "INTERSECT" t_intersect
+    "EXCEPT"    t_except
+  } {
+
+    set expect [execsql "SELECT * FROM $tbl $limit"]
+    do_execsql_test 1.2.$tbl.$tn "SELECT * FROM (
+      SELECT * FROM x1 $op SELECT * FROM x2
+    ) $limit" $expect
+
+  }
+
+}
+
+#-------------------------------------------------------------------------
+reset_db
+register_tcl_module db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command "a b c d e f");
+  CREATE VIRTUAL TABLE x2 USING tcl(vtab_command "a b e f");
+} {}
+
+do_execsql_test 2.1 {
+  SELECT * FROM x1 
+    EXCEPT
+  SELECT * FROM x2
+  LIMIT 3
+} {c d}
+
+#-------------------------------------------------------------------------
+reset_db
+register_tcl_module db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE y1 USING tcl(vtab_command "1 2 3 4 5 6 7 8 9 10");
+} {}
+
+do_execsql_test 3.1 {
+  SELECT * FROM y1 WHERE a = COALESCE('8', a) LIMIT 3
+} {8}
+
+do_execsql_test 3.2 {
+  SELECT * FROM y1 WHERE a = '2' LIMIT 3
+} {2}
+
+load_static_extension db series
+do_execsql_test 3.3 {
+  SELECT * FROM generate_series(1, 5) WHERE value = (value & 14) LIMIT 3
+} {2 4}
+
+do_execsql_test 3.4 {
+  SELECT value FROM generate_series(1,10) WHERE value>2 LIMIT 4 OFFSET 1;
+} {4 5 6 7}
+
+set ::do_not_use_limit 1
+do_execsql_test 3.5 {
+  SELECT * FROM y1 LIMIT 5 OFFSET 3
+} {4 5 6 7 8}
+unset ::do_not_use_limit
+set ::do_not_use_offset 1
+do_execsql_test 3.6 {
+  SELECT * FROM y1 LIMIT 5 OFFSET 3
+} {4 5 6 7 8}
+unset ::do_not_use_offset
+
+#-------------------------------------------------------------------------
+reset_db
+proc vtab_command {lVal method args} {
+  switch -- $method {
+    xConnect { error "not happy!" }
+  }
+
+  return {}
+}
+
+register_tcl_module db
+do_catchsql_test 4.0 {
+  CREATE VIRTUAL TABLE y1 USING tcl(vtab_command 1);
+} {1 {not happy!}}
+do_test 4.1 {
+  sqlite3_errcode db
+} SQLITE_ERROR
+
+proc vtab_command {lVal method args} {
+  switch -- $method {
+    xConnect {
+      return $lVal
+    }
+  }
+  return {}
+}
+
+do_catchsql_test 4.2 {
+  CREATE VIRTUAL TABLE y1 USING tcl(vtab_command "PRAGMA page_size=1024");
+} {1 {declare_vtab: syntax error}}
+do_catchsql_test 4.3 {
+  CREATE VIRTUAL TABLE y1 USING tcl(vtab_command "CREATE TABLE x1(");
+} {1 {declare_vtab: incomplete input}}
+do_catchsql_test 4.4 {
+  CREATE VIRTUAL TABLE y1 USING tcl(vtab_command "CREATE TABLE x1(insert)");
+} {1 {declare_vtab: near "insert": syntax error}}
+
+#-------------------------------------------------------------------------
+reset_db
+register_tcl_module db
+
+proc quote {str} {
+  return "'[string map {' ''} $str]'"
+}
+
+proc vtab_command {lVal method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a, b, c, d)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+
+      set res [list]
+      set idx 0
+      set idxnum 0
+
+      set cols(0) a
+      set cols(1) b
+      set cols(2) c
+
+      set lCons [list]
+
+      foreach c $clist {
+        array set a $c
+        if {$a(usable)==0} continue
+
+        if {($a(op)=="eq" || $a(op)=="is") && [info exists cols($a(column))]} {
+          lappend res omit $idx
+          set coll [$hdl collation $idx]
+          lappend lCons "$cols($a(column)) = %[llength $lCons]% COLLATE $coll"
+
+          set idxnum [expr {$idx + (1 << $a(column))}]
+          catch { unset cols($a(column)) }
+        }
+
+        incr idx
+      }
+
+      if {[llength [array names cols]]>0} {
+        set missing [list]
+        for {set i 0} {$i < 3} {incr i} {
+          catch { lappend missing $cols($i) }
+        }
+        set msg "missing required constraints: [join $missing ,]"
+        return [list constraint $msg]
+      }
+
+      set idxstr [join $lCons " AND "]
+      return "cost 1000 rows 1000 idxnum $idxnum $res idxstr {$idxstr}"
+    }
+
+    xFilter {
+      foreach {idxnum idxstr lArg} $args {}
+      set i 0
+      set where $idxstr
+      foreach a $lArg {
+        set where [string map [list %$i% [quote $a]] $where]
+        incr i
+      }
+   #   puts $where
+      return [list sql "SELECT rowid, * FROM $lVal WHERE $where"]
+    }
+  }
+
+  return {}
+}
+
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command t1);
+  CREATE TABLE t1(a, b, c, d);
+}
+
+foreach {tn where ok} {
+  0    "WHERE a=? AND b=? AND c=? AND c=?"              1
+  1    "WHERE a=? AND b=? AND c=?"                      1
+  2    "WHERE a=? AND b=? AND (c=? OR c=?)"             1
+  3    "WHERE a=? AND b=? AND (c=? OR c=? OR c=?)"      1
+  4    "WHERE a=? AND b=? AND (c IS ? OR c IS ?)"       1
+  5    "WHERE a=? AND ((b=? AND c=?) OR (c=? AND b=?))" 1
+  6    "WHERE a=? AND ((b=? AND c=?) OR (c=?))"         0
+} {
+  do_test 5.2.$tn {
+    catch { execsql "SELECT * FROM x1 $::where" } msg
+#    if {$tn==0 || $tn==2 || $tn==3} { puts "MSG: $msg" }
+  } [expr !$ok]
+}
+
+do_execsql_test 5.3 {
+  SELECT * FROM x1 WHERE (a, b, c) = (?, ?, ?);
+}
+
+do_execsql_test 5.4 {
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(1, 'x', 'y', 'z', 'one');
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(2, 'X', 'Y', 'Z', 'two');
+  SELECT * FROM x1 WHERE (a, b, c) = ('X', 'Y', 'Z');
+} {X Y Z two}
+do_execsql_test 5.5 {
+  SELECT * FROM x1 WHERE a='x' AND b='y' AND c='z';
+} {x y z one}
+do_execsql_test 5.6 {
+  SELECT * FROM x1 
+  WHERE a='x' COLLATE nocase AND b='y' COLLATE nocase AND c='z'COLLATE nocase;
+} {x y z one X Y Z two}
+
+do_execsql_test 5.7 {
+  DELETE FROM t1;
+
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(0, 'x', 'y', 'z', 'zero');
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(1, 'x', 'y', 'Z', 'one');
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(2, 'x', 'Y', 'z', 'two');
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(3, 'x', 'Y', 'Z', 'three');
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(4, 'X', 'y', 'z', 'four');
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(5, 'X', 'y', 'Z', 'five');
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(6, 'X', 'Y', 'z', 'six');
+  INSERT INTO t1(rowid, a, b, c, d) VALUES(7, 'X', 'Y', 'z', 'seven');
+}
+
+do_execsql_test 5.8 {
+  SELECT d FROM x1 
+  WHERE a='x' AND ((b='y' AND c='z') OR (b='Y' AND c='z' COLLATE nocase))
+} {
+  zero two three
+}
+
+do_execsql_test 5.9 {
+  SELECT d FROM x1 
+  WHERE a='x' COLLATE nocase 
+  AND ((b='y' AND c='z') OR (b='Y' AND c='z' COLLATE nocase))
+} {
+  zero four two
+  three six seven
+}
+
+finish_test

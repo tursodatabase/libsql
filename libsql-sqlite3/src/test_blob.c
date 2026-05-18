@@ -12,11 +12,7 @@
 **
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -58,7 +54,7 @@ static int blobHandleFromObj(
   sqlite3_blob **ppBlob
 ){
   char *z;
-  int n;
+  Tcl_Size n;
 
   z = Tcl_GetStringFromObj(pObj, &n);
   if( n==0 ){
@@ -88,7 +84,7 @@ static int blobHandleFromObj(
 ** NULL Pointer is returned.
 */
 static char *blobStringFromObj(Tcl_Obj *pObj){
-  int n;
+  Tcl_Size n;
   char *z;
   z = Tcl_GetStringFromObj(pObj, &n);
   return (n ? z : 0);
@@ -112,7 +108,7 @@ static int SQLITE_TCLAPI test_blob_open(
   Tcl_WideInt iRowid;
   int flags;
   const char *zVarname;
-  int nVarname;
+  Tcl_Size nVarname;
 
   sqlite3_blob *pBlob = (sqlite3_blob*)&flags;   /* Non-zero initialization */
   int rc;
@@ -281,7 +277,8 @@ static int SQLITE_TCLAPI test_blob_write(
   int rc;
 
   unsigned char *zBuf;
-  int nBuf;
+  Tcl_Size nBuf;
+  int n;
   
   if( objc!=4 && objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE OFFSET DATA ?NDATA?");
@@ -294,10 +291,11 @@ static int SQLITE_TCLAPI test_blob_write(
   }
 
   zBuf = Tcl_GetByteArrayFromObj(objv[3], &nBuf);
-  if( objc==5 && Tcl_GetIntFromObj(interp, objv[4], &nBuf) ){
+  n = (int)(nBuf & 0x7fffffff);
+  if( objc==5 && Tcl_GetIntFromObj(interp, objv[4], &n) ){
     return TCL_ERROR;
   }
-  rc = sqlite3_blob_write(pBlob, zBuf, nBuf, iOffset);
+  rc = sqlite3_blob_write(pBlob, zBuf, n, iOffset);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   }

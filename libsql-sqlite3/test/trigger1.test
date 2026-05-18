@@ -838,4 +838,17 @@ do_catchsql_test trigger1-23.1 {
   END;
 } {1 {near "#1": syntax error}}
 
+# 2024-05-08 Allow arbitrary expressions as the 2nd argument to RAISE().
+#
+do_catchsql_test trigger1-24.1 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    SELECT raise(abort,format('attempt to insert %d where is not a power of 2',new.a))
+     WHERE (new.a & (new.a-1))!=0;
+  END;
+  INSERT INTO t1 VALUES(0),(1),(2),(4),(8),(65536);
+} {0 {}}
+do_catchsql_test trigger1-24.2 {
+  INSERT INTO t1 VALUES(9876);
+} {1 {attempt to insert 9876 where is not a power of 2}}
+
 finish_test

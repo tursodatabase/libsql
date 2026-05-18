@@ -13,7 +13,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5simple
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -350,7 +350,7 @@ do_execsql_test 14.3 {
 
 do_execsql_test 14.4 {
   SELECT rowid, x, x1 FROM x1 WHERE x1 MATCH '*reads'
-} {0 {} 3}
+} {0 {} 2}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -479,5 +479,34 @@ do_execsql_test 22.0 {
 
 do_catchsql_test 22.1 {SELECT * FROM x1('')}   {1 {fts5: syntax error near ""}}
 do_catchsql_test 22.2 {SELECT * FROM x1(NULL)} {1 {fts5: syntax error near ""}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 23.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  SELECT count(*) FROM x1_data;
+} {2}
+
+do_execsql_test 23.1 {
+  BEGIN;
+    INSERT INTO x1 VALUES('a b c d');
+    INSERT INTO x1 VALUES('a b c d');
+    INSERT INTO x1 VALUES('a b c d');
+}
+
+do_execsql_test 23.2 {
+  SELECT count(*) FROM x1_data;
+} {2}
+
+do_execsql_test 23.3 {
+  INSERT INTO x1(x1) VALUES('flush');
+  SELECT count(*) FROM x1_data;
+} {3}
+
+do_execsql_test 23.4 {
+  ROLLBACK;
+  SELECT count(*) FROM x1_data;
+} {2}
+
 
 finish_test

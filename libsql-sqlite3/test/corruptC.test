@@ -98,7 +98,7 @@ do_test corruptC-2.1 {
   sqlite3 db test.db
   catchsql {PRAGMA integrity_check}
 } {0 {{*** in database main ***
-Tree 3 page 3: free space corruption}}}
+Tree 3 page 3: free space corruption} {wrong # of entries in index t1i1}}}
 
 # test that a corrupt content offset size is handled (seed 5649)
 #

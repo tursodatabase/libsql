@@ -158,7 +158,7 @@ do_test 2.2 {
   set ::lFilterArgs [list]
   execsql { SELECT * FROM vt1 LIMIT 5 OFFSET 50 }
   set ::lFilterArgs
-} {{5 50}}
+} {{50 5}}
 
 do_test 2.3 {
   set ::lFilterArgs [list]

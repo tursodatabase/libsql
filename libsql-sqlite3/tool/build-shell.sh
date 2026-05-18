@@ -17,5 +17,5 @@ gcc -o sqlite3 -g -Os -I. \
    -DSQLITE_ENABLE_RTREE \
    -DHAVE_READLINE \
    ../sqlite/src/shell.c \
-   ../sqlite/src/test_vfstrace.c \
+   ../sqlite/ext/misc/vfstrace.c \
    sqlite3.c -ldl -lreadline -lncurses

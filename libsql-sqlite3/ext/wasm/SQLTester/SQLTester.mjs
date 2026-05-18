@@ -13,8 +13,8 @@
 ** implementation of the SQLTester framework.
 **
 ** This version is not well-documented because it's a direct port of
-** the Java immplementation, which is documented: in the main SQLite3
-** source tree, see ext/jni/src/org/sqlite/jni/tester/SQLite3Tester.java.
+** the Java implementation, which is documented: in the main SQLite3
+** source tree, see ext/jni/src/org/sqlite/jni/capi/SQLTester.java.
 */
 
 import sqlite3ApiInit from '/jswasm/sqlite3.mjs';
@@ -28,7 +28,7 @@ const log = (...args)=>{
 /**
    Try to install vfsName as the new default VFS. Once this succeeds
    (returns true) then it becomes a no-op on future calls. Throws if
-   vfs registration as the default VFS fails but has no side effects
+   VFS registration as the default VFS fails but has no side effects
    if vfsName is not currently registered.
 */
 const tryInstallVfs = function f(vfsName){
@@ -48,11 +48,10 @@ tryInstallVfs.vfsName = undefined;
 
 if( 0 && globalThis.WorkerGlobalScope ){
   // Try OPFS storage, if available...
-  if( 0 && sqlite3.oo1.OpfsDb ){
+  if( 1 && sqlite3.oo1.OpfsDb ){
     /* Really slow with these tests */
     tryInstallVfs("opfs");
-  }
-  if( sqlite3.installOpfsSAHPoolVfs ){
+  }else if( sqlite3.installOpfsSAHPoolVfs ){
     await sqlite3.installOpfsSAHPoolVfs({
       clearOnInit: true,
       initialCapacity: 15,
@@ -174,11 +173,17 @@ const Rx = newObj({
   squiggly: /[{}]/
 });
 
+
+
 const Util = newObj({
   toss,
 
-  unlink: function(fn){
-    return 0==sqlite3.wasm.sqlite3_wasm_vfs_unlink(0,fn);
+  unlink: function f(fn){
+    if(!f.unlink){
+      f.unlink = sqlite3.wasm.xWrap('sqlite3__wasm_vfs_unlink','int',
+                                    ['*','string']);
+    }
+    return 0==f.unlink(0,fn);
   },
 
   argvToString: (list)=>{
@@ -197,10 +202,13 @@ const Util = newObj({
 
   utf8Encode: (str)=>__utf8Encoder.encode(str),
 
-  strglob: sqlite3.wasm.xWrap('sqlite3_wasm_SQLTester_strglob','int',
+  strglob: sqlite3.wasm.xWrap('sqlite3__wasm_SQLTester_strglob','int',
                               ['string','string'])
 })/*Util*/;
 
+/**
+   Output logger utility.
+*/
 class Outer {
   #lnBuf = [];
   #verbosity = 0;
@@ -346,7 +354,7 @@ class SQLTester {
     this.closeAllDbs();
     this.metrics.nTest = 0;
     this.#nullView = "nil";
-    this.emitColNames = false;
+    this.#emitColNames = false;
     this.#db.iCurrentDb = 0;
     //this.#db.initSql.push("SELECT 1;");
   }
@@ -599,7 +607,7 @@ class SQLTester {
         }
       }
     }
-    sb.append("\"");
+    sb.push("\"");
     return sb.join('');
   }
 
@@ -688,11 +696,11 @@ class SQLTester {
                   break;
               }
             }/* column loop */
+            if( ResultRowMode.NEWLINE === rowMode ){
+              spacing = 0;
+              sb.push('\n');
+            }
           }/* row loop */
-          if( ResultRowMode.NEWLINE === rowMode ){
-            spacing = 0;
-            sb.push('\n');
-          }
         }else{ // no output but possibly other side effects
           while( capi.SQLITE_ROW === (rc = capi.sqlite3_step(pStmt)) ) {}
         }
@@ -700,7 +708,7 @@ class SQLTester {
         if( capi.SQLITE_ROW===rc || capi.SQLITE_DONE===rc) rc = 0;
         else if( rc!=0 ){
           if( sb ){
-            self.#appendDbErr(db, sb, rc);
+            self.#appendDbErr(pDb, sb, rc);
           }
           break;
         }

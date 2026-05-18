@@ -14,11 +14,7 @@
 */
 
 #include "sqlite3.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 /* Solely for the UNUSED_PARAMETER() macro. */
 #include "sqliteInt.h"
@@ -90,7 +86,7 @@ static int invokeTclGeomCb(
     if( rc!=TCL_OK ){
       rc = SQLITE_ERROR;
     }else{
-      int nObj = 0;
+      Tcl_Size nObj = 0;
       Tcl_Obj **aObj = 0;
 
       pRes = Tcl_GetObjResult(interp);
@@ -279,7 +275,7 @@ static int box_query(sqlite3_rtree_query_info *pInfo){
 
   if( rc==SQLITE_OK ){
     double rScore = 0.0;
-    int nObj = 0;
+    Tcl_Size nObj = 0;
     int eP = 0;
     Tcl_Obj **aObj = 0;
     Tcl_Obj *pRes = Tcl_GetObjResult(interp);

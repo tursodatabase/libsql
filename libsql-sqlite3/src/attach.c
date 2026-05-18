@@ -514,20 +514,21 @@ static int fixSelectCb(Walker *p, Select *pSelect){
 
   if( NEVER(pList==0) ) return WRC_Continue;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-    if( pFix->bTemp==0 ){
-      if( pItem->zDatabase ){
-        if( iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
+    if( pFix->bTemp==0 && pItem->fg.isSubquery==0 ){
+      if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+        if( iDb!=sqlite3FindDbName(db, pItem->u4.zDatabase) ){
           sqlite3ErrorMsg(pFix->pParse,
               "%s %T cannot reference objects in database %s",
-              pFix->zType, pFix->pName, pItem->zDatabase);
+              pFix->zType, pFix->pName, pItem->u4.zDatabase);
           return WRC_Abort;
         }
-        sqlite3DbFree(db, pItem->zDatabase);
-        pItem->zDatabase = 0;
+        sqlite3DbFree(db, pItem->u4.zDatabase);
         pItem->fg.notCte = 1;
+        pItem->fg.hadSchema = 1;
       }
-      pItem->pSchema = pFix->pSchema;
+      pItem->u4.pSchema = pFix->pSchema;
       pItem->fg.fromDDL = 1;
+      pItem->fg.fixedSchema = 1;
     }
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
     if( pList->a[i].fg.isUsing==0

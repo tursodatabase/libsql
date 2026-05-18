@@ -13,9 +13,15 @@
   Demonstration of the sqlite3 Worker API #1 Promiser: a Promise-based
   proxy for for the sqlite3 Worker #1 API.
 */
-'use strict';
-(function(){
-  const T = self.SqliteTestUtil;
+//#if target=es6-module
+import {default as promiserFactory} from "./jswasm/sqlite3-worker1-promiser.mjs";
+//#else
+"use strict";
+const promiserFactory = globalThis.sqlite3Worker1Promiser.v2;
+delete globalThis.sqlite3Worker1Promiser;
+//#endif
+(async function(){
+  const T = globalThis.SqliteTestUtil;
   const eOutput = document.querySelector('#test-output');
   const warn = console.warn.bind(console);
   const error = console.error.bind(console);
@@ -33,31 +39,35 @@
     logHtml("","Total test count:",T.counter+". Total time =",(performance.now() - startTime),"ms");
   };
 
-  //why is this triggered even when we catch() a Promise?
-  //window.addEventListener('unhandledrejection', function(event) {
-  //  warn('unhandledrejection',event);
-  //});
-
   const promiserConfig = {
-    worker: ()=>{
-      const w = new Worker("jswasm/sqlite3-worker1.js");
-      w.onerror = (event)=>error("worker.onerror",event);
-      return w;
+//#ifnot target=es6-module
+    /**
+       The v1 interfaces uses an onready function. The v2 interface optionally
+       accepts one but does not require it. If provided, it is called _before_
+       the promise is resolved, and the promise is rejected if onready() throws.
+    */
+    onready: function(f){
+      /* f === the function returned by promiserFactory().
+         Ostensibly (f === workerPromise) but this function is
+         called before the promiserFactory() Promise resolves, so
+         before workerPromise is set. */
+      console.warn("This is the v2 interface - you don't need an onready() function.");
     },
+//#endif
     debug: 1 ? undefined : (...args)=>console.debug('worker debug',...args),
     onunhandled: function(ev){
       error("Unhandled worker message:",ev.data);
-    },
-    onready: function(){
-      self.sqlite3TestModule.setStatus(null)/*hide the HTML-side is-loading spinner*/;
-      runTests();
     },
     onerror: function(ev){
       error("worker1 error:",ev);
     }
   };
-  const workerPromise = self.sqlite3Worker1Promiser(promiserConfig);
-  delete self.sqlite3Worker1Promiser;
+  const workerPromise = await promiserFactory(promiserConfig)
+        .then((func)=>{
+          console.log("Init complete. Starting tests momentarily.");
+          globalThis.sqlite3TestModule.setStatus(null)/*hide the HTML-side is-loading spinner*/;
+          return func;
+        });
 
   const wtest = async function(msgType, msgArgs, callback){
     if(2===arguments.length && 'function'===typeof msgArgs){
@@ -271,5 +281,5 @@
     }).finally(()=>logHtml('',"That's all, folks!"));
   }/*runTests2()*/;
 
-  log("Init complete, but async init bits may still be running.");
+  runTests();
 })();

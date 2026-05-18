@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # Test the shell tool ".ar" command.
 #
@@ -42,7 +43,6 @@ proc compare_dbs {db1 db2} {
 proc recover_with_opts {opts} {
   set cmd ".recover $opts"
   set fd [open [list |$::CLI test.db $cmd]]
-  fconfigure $fd -encoding binary
   fconfigure $fd -translation binary
   set sql [read $fd]
   close $fd

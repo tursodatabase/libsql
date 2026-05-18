@@ -123,7 +123,7 @@ proc dump_jrnl_page {jrnl_pgno} {
   # now hex dump the data
   # This is derived from the Tcler's WIKI
   set fid [open $jrnl_name r]
-  fconfigure $fid -translation binary -encoding binary
+  fconfigure $fid -translation binary
   seek $fid [expr $jrnl_pg_offset+4]
   set data [read $fid $db_pgsz]
   close $fid
@@ -230,4 +230,3 @@ do_test restore_jrnl-1.0 {
   catchsql {PRAGMA integrity_check}
 } {0 ok}
 db close
-

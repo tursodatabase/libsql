@@ -185,7 +185,8 @@ do_eqp_test autoindex1-500.1 {
   QUERY PLAN
   |--SEARCH t501 USING INTEGER PRIMARY KEY (rowid=?)
   `--LIST SUBQUERY xxxxxx
-     `--SCAN t502
+     |--SCAN t502
+     `--CREATE BLOOM FILTER
 }
 do_eqp_test autoindex1-501 {
   SELECT b FROM t501

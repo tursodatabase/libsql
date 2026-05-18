@@ -19,8 +19,10 @@ Module.postRun.push(function(Module/*the Emscripten-style module object*/){
      - sqlite3-api-glue.js      => glues previous parts together
      - sqlite3-api-oo.js        => SQLite3 OO API #1
      - sqlite3-api-worker1.js   => Worker-based API
-     - sqlite3-vfs-helper.js    => Internal-use utilities for...
-     - sqlite3-vfs-opfs.js      => OPFS VFS
+     - sqlite3-vfs-helper.c-pp.js  => Utilities for VFS impls
+     - sqlite3-vtab-helper.c-pp.js => Utilities for virtual table impls
+     - sqlite3-vfs-opfs.c-pp.js  => OPFS VFS
+     - sqlite3-vfs-opfs-sahpool.c-pp.js => OPFS SAHPool VFS
      - sqlite3-api-cleanup.js   => final API cleanup
      - post-js-footer.js        => closes this postRun() function
   */

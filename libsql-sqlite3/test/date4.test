@@ -24,12 +24,12 @@ ifcapable {!datetime} {
 }
 
 if {$tcl_platform(os)=="Linux"} {
-  set FMT {%d,%e,%F,%H,%k,%I,%l,%j,%m,%M,%u,%w,%W,%Y,%%,%P,%p}
+  set FMT {%d,%e,%F,%H,%k,%I,%l,%j,%m,%M,%u,%w,%W,%Y,%%,%P,%p,%U,%V,%G,%g}
 } else {
   set FMT {%d,%e,%F,%H,%I,%j,%p,%R,%u,%w,%W,%%}
 }
-for {set i 0} {$i<=24854} {incr i} {
-  set TS [expr {$i*86401}]
+for {set i 0} {$i<=24858} {incr i} {
+  set TS [expr {$i*86390}]
   do_execsql_test date4-$i {
     SELECT strftime($::FMT,$::TS,'unixepoch');
   } [list [strftime $FMT $TS]]

@@ -21,7 +21,6 @@ static const char zHelp[] =
   "  --memdb             Use an in-memory database\n"
   "  --mmap SZ           MMAP the first SZ bytes of the database file\n"
   "  --multithread       Set multithreaded mode\n"
-  "  --nolongdouble      Disable the use of long double\n"
   "  --nomemstat         Disable memory statistics\n"
   "  --nomutex           Open db with SQLITE_OPEN_NOMUTEX\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"
@@ -2150,6 +2149,50 @@ void testset_debug1(void){
   }
 }
 
+/*
+** This testset focuses on the speed of parsing numeric literals (integers
+** and real numbers). This was added to test the impact of allowing "_"
+** characters to appear in numeric SQL literals to make them easier to read. 
+** For example, "SELECT 1_000_000;" instead of "SELECT 1000000;".
+*/
+void testset_parsenumber(void){
+  const char *zSql1 = "SELECT 1, 12, 123, 1234, 12345, 123456";
+  const char *zSql2 = "SELECT 8227256643844975616, 7932208612563860480, "
+                      "2010730661871032832, 9138463067404021760, "
+                      "2557616153664746496, 2557616153664746496";
+  const char *zSql3 = "SELECT 1.0, 1.2, 1.23, 123.4, 1.2345, 1.23456";
+  const char *zSql4 = "SELECT 8.227256643844975616, 7.932208612563860480, "
+                      "2.010730661871032832, 9.138463067404021760, "
+                      "2.557616153664746496, 2.557616153664746496";
+
+  const int NROW = 100*g.szTest;
+  int ii;
+
+  speedtest1_begin_test(100, "parsing small integers");
+  for(ii=0; ii<NROW; ii++){
+    sqlite3_exec(g.db, zSql1, 0, 0, 0);
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "parsing large integers");
+  for(ii=0; ii<NROW; ii++){
+    sqlite3_exec(g.db, zSql2, 0, 0, 0);
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(200, "parsing small reals");
+  for(ii=0; ii<NROW; ii++){
+    sqlite3_exec(g.db, zSql3, 0, 0, 0);
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(210, "parsing large reals");
+  for(ii=0; ii<NROW; ii++){
+    sqlite3_exec(g.db, zSql4, 0, 0, 0);
+  }
+  speedtest1_end_test();
+}
+
 #ifdef __linux__
 #include <sys/types.h>
 #include <unistd.h>
@@ -2308,10 +2351,6 @@ int main(int argc, char **argv){
         ARGC_VALUE_CHECK(1);
         mmapSize = integerValue(argv[++i]);
  #endif
-      }else if( strcmp(z,"nolongdouble")==0 ){
-#ifdef SQLITE_TESTCTRL_USELONGDOUBLE
-        sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, 0);
-#endif       
       }else if( strcmp(z,"nomutex")==0 ){
         openFlags |= SQLITE_OPEN_NOMUTEX;
       }else if( strcmp(z,"nosync")==0 ){
@@ -2557,6 +2596,8 @@ int main(int argc, char **argv){
       testset_fp();
     }else if( strcmp(zThisTest,"trigger")==0 ){
       testset_trigger();
+    }else if( strcmp(zThisTest,"parsenumber")==0 ){
+      testset_parsenumber();
     }else if( strcmp(zThisTest,"rtree")==0 ){
 #ifdef SQLITE_ENABLE_RTREE
       testset_rtree(6, 147);

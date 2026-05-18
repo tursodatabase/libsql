@@ -18,6 +18,13 @@ USE_AMALGAMATION = 1
 !ENDIF
 # <</mark>>
 
+# Optionally set EXTRA_SRC to a list of C files to append to
+# the generated sqlite3.c.
+#
+!IFNDEF EXTRA_SRC
+EXTRA_SRC =
+!ENDIF
+
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN
@@ -57,6 +64,14 @@ USE_STDCALL = 0
 #
 !IFNDEF USE_SEH
 USE_SEH = 1
+!ENDIF
+
+# Use STATICALLY_LINK_TCL=1 to statically link against TCL
+#
+!IFNDEF STATICALLY_LINK_TCL
+STATICALLY_LINK_TCL = 0
+!ELSEIF $(STATICALLY_LINK_TCL)!=0
+CCOPTS = $(CCOPTS) -DSTATIC_BUILD
 !ENDIF
 
 # Set this non-0 to have the shell executable link against the core dynamic
@@ -372,6 +387,7 @@ SQLITE_TCL_DEP =
 # the Windows platform.
 #
 !IFNDEF OPT_FEATURE_FLAGS
+OPT_FEATURE_FLAGS = $(OPT_XTRA)
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5=1
@@ -383,6 +399,14 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBSTAT_VTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
 !ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+!ENDIF
+
+# Additional feature-options above and beyond what are normally used can be
+# be added using OPTIONS=.... on the command-line.  These values are
+# appended to the OPT_FEATURE_FLAGS variable.
+#
+!IFDEF OPTIONS
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) $(OPTIONS)
 !ENDIF
 
 # Should the session extension be enabled?  If so, add compilation options
@@ -913,16 +937,28 @@ TCC = $(TCC) /fsanitize=address
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
-!IFNDEF TCLVERSION
-TCLVERSION = 86
+!IF $(STATICALLY_LINK_TCL)!=0
+TCLSUFFIX = s
 !ENDIF
-
 !IFNDEF TCLSUFFIX
 TCLSUFFIX =
 !ENDIF
 
 !IFNDEF TCLDIR
-TCLDIR = $(TOP)\compat\tcl
+TCLDIR = C:\Tcl
+!ENDIF
+
+!IFNDEF TCLVERSION
+!IF EXISTS("$(TCLDIR)\lib\tcl90$(TCLSUFFIX).lib")
+TCLVERSION = 90
+!ELSEIF EXISTS("$(TCLDIR)\lib\tcl86$(TCLSUFFIX).lib")
+TCLVERSION = 86
+!ELSEIF EXISTS("$(TCLDIR)\lib\tcl86t.lib")
+TCLSUFFIX = t
+TCLVERSION = 86
+!ELSE
+TCLVERSION = 90
+!ENDIF
 !ENDIF
 
 !IFNDEF TCLINCDIR
@@ -937,8 +973,20 @@ TCLLIBDIR = $(TCLDIR)\lib
 LIBTCL = tcl$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
 
+!IFNDEF TCLLIBS
+!IF $(STATICALLY_LINK_TCL)!=0
+TCLLIBS = /NODEFAULTLIB:libucrt.lib netapi32.lib user32.lib ucrt.lib
+!ELSE
+TCLLIBS =
+!ENDIF
+!ENDIF
+
 !IFNDEF LIBTCLSTUB
+!IF EXISTS("$(TCLLIBDIR)\tclstub$(TCLSUFFIX).lib")
+LIBTCLSTUB = tclstub$(TCLSUFFIX).lib
+!ELSE
 LIBTCLSTUB = tclstub$(TCLVERSION)$(TCLSUFFIX).lib
+!ENDIF
 !ENDIF
 
 !IFNDEF LIBTCLPATH
@@ -997,10 +1045,18 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
-!IF $(USE_TCLSH_IN_PATH)!=0 || !EXIST("$(TCLDIR)\bin\tclsh.exe")
-TCLSH_CMD = tclsh
-!ELSE
+!IF EXISTS("$(TCLDIR)\bin\tclsh$(TCLVERSION).exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh$(TCLVERSION).exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh90.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh90.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh86.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh86.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh86t.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh86t.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh.exe")
 TCLSH_CMD = $(TCLDIR)\bin\tclsh.exe
+!ELSE
+TCLSH_CMD = tclsh
 !ENDIF
 !ENDIF
 # <</mark>>
@@ -1591,12 +1647,15 @@ TESTEXT = \
   $(TOP)\ext\misc\remember.c \
   $(TOP)\ext\misc\series.c \
   $(TOP)\ext\misc\spellfix.c \
+  $(TOP)\ext\misc\stmtrand.c \
   $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\unionvtab.c \
   $(TOP)\ext\misc\wholenumber.c \
   $(TOP)\ext\rtree\test_rtreedoc.c \
   $(TOP)\ext\recover\sqlite3recover.c \
   $(TOP)\ext\recover\test_recover.c \
+  $(TOP)\ext\intck\test_intck.c  \
+  $(TOP)\ext\intck\sqlite3intck.c \
   $(TOP)\ext\recover\dbdata.c 
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
@@ -1750,6 +1809,7 @@ FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\fuzzinvariants.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\vt02.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\dbdata.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\sqlite3recover.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\percentile.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\randomjson.c
 
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
@@ -1806,12 +1866,25 @@ tclsqlite3.def:	tclsqlite.lo
 
 pkgIndex.tcl:	$(TOP)\VERSION
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
-		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] sqlite3] \
+		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] Sqlite3] \
 			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact @version@ %%V > pkgIndex.tcl \
 	)
 
 $(SQLITE3TCLDLL):	libtclsqlite3.lib $(LIBRESOBJS) tclsqlite3.def pkgIndex.tcl
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:tclsqlite3.def /OUT:$@ libtclsqlite3.lib $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+
+tclextension:	$(SQLITE3TCLDLL)
+
+tclextension-install:	$(SQLITE3TCLDLL)
+	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --install-only
+
+tclextension-uninstall:
+	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --uninstall
+
+tclextension-list:
+	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --info
+
+
 # <</mark>>
 
 $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
@@ -1830,11 +1903,24 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\consio $(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\misc $(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+RSYNC_SRC = \
+  $(TOP)\tool\sqlite3_rsync.c \
+  $(SQLITE3C)
+
+RSYNC_OPT = \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED
+
+sqlite3_rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
+	$(LTLINK) $(RSYNC_OPT) $(NO_WARN) $(RSYNC_SRC) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSCRUB_STANDALONE=1 $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -1862,6 +1948,10 @@ fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 
 fuzzcheck-asan.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) /fsanitize=address $(FUZZCHECK_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+run-fuzzcheck:	fuzzcheck.exe fuzzcheck-asan.exe
+	fuzzcheck --spinner $(FUZZDB)
+	fuzzcheck-asan --spinner $(FUZZDB)
 
 ossshell.exe:	$(OSSSHELL_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZCHECK_OPTS) $(OSSSHELL_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -1915,7 +2005,7 @@ mptest:	mptester.exe
 	echo > .target_source
 
 sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL) src-verify.exe
-	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS)
+	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS) $(EXTRA_SRC)
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
@@ -2265,39 +2355,47 @@ mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
 
-# Source files that go into making shell.c
-SHELL_SRC = \
-	$(TOP)\src\shell.c.in \
-	$(TOP)\ext\consio\console_io.c \
-	$(TOP)\ext\consio\console_io.h \
-	$(TOP)\ext\misc\appendvfs.c \
-	$(TOP)\ext\misc\completion.c \
-	$(TOP)\ext\misc\base64.c \
-	$(TOP)\ext\misc\base85.c \
-	$(TOP)\ext\misc\decimal.c \
-	$(TOP)\ext\misc\fileio.c \
-	$(TOP)\ext\misc\ieee754.c \
-	$(TOP)\ext\misc\regexp.c \
-	$(TOP)\ext\misc\series.c \
-	$(TOP)\ext\misc\shathree.c \
-	$(TOP)\ext\misc\uint.c \
-	$(TOP)\ext\expert\sqlite3expert.c \
-	$(TOP)\ext\expert\sqlite3expert.h \
-	$(TOP)\ext\misc\memtrace.c \
-	$(TOP)\ext\misc\pcachetrace.c \
-	$(TOP)\ext\recover\dbdata.c \
-	$(TOP)\ext\recover\sqlite3recover.c \
-	$(TOP)\ext\recover\sqlite3recover.h \
-	$(TOP)\src\test_windirent.c
+# Source and header files that shell.c depends on
+SHELL_DEP = \
+    $(TOP)\src\shell.c.in \
+    $(TOP)\ext\expert\sqlite3expert.c \
+    $(TOP)\ext\expert\sqlite3expert.h \
+    $(TOP)\ext\intck\sqlite3intck.c \
+    $(TOP)\ext\intck\sqlite3intck.h \
+    $(TOP)\ext\misc\appendvfs.c \
+    $(TOP)\ext\misc\base64.c \
+    $(TOP)\ext\misc\base85.c \
+    $(TOP)\ext\misc\completion.c \
+    $(TOP)\ext\misc\decimal.c \
+    $(TOP)\ext\misc\fileio.c \
+    $(TOP)\ext\misc\ieee754.c \
+    $(TOP)\ext\misc\memtrace.c \
+    $(TOP)\ext\misc\pcachetrace.c \
+    $(TOP)\ext\misc\percentile.c \
+    $(TOP)\ext\misc\regexp.c \
+    $(TOP)\ext\misc\series.c \
+    $(TOP)\ext\misc\sha1.c \
+    $(TOP)\ext\misc\shathree.c \
+    $(TOP)\ext\misc\sqlar.c \
+    $(TOP)\ext\misc\sqlite3_stdio.c \
+    $(TOP)\ext\misc\sqlite3_stdio.h \
+    $(TOP)\ext\misc\uint.c \
+    $(TOP)\ext\misc\vfstrace.c \
+    $(TOP)\ext\misc\zipfile.c \
+    $(TOP)\ext\recover\dbdata.c \
+    $(TOP)\ext\recover\sqlite3recover.c \
+    $(TOP)\ext\recover\sqlite3recover.h \
+    $(TOP)\src\test_windirent.c \
+    $(TOP)\src\test_windirent.h
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
 !IF $(USE_ZLIB)!=0
-SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\sqlar.c
-SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\zipfile.c
+SHELL_DEP = $(SHELL_DEP) $(TOP)\ext\misc\sqlar.c
+SHELL_DEP = $(SHELL_DEP) $(TOP)\ext\misc\zipfile.c
 !ENDIF
 
-shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
+shell.c:	$(SHELL_DEP) $(TOP)\tool\mkshellc.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
 
 zlib:
@@ -2481,12 +2579,12 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
-coretestprogs:	$(TESTPROGS)
+coretestprogs:	testfixture.exe sqlite3.exe
 
-testprogs:	coretestprogs srcck1.exe fuzzcheck.exe sessionfuzz.exe
+testprogs:	$(TESTPROGS) srcck1.exe fuzzcheck.exe sessionfuzz.exe
 
 fulltest:	alltest fuzztest
 
@@ -2509,6 +2607,13 @@ queryplantest:	testfixture.exe shell
 fuzztest:	fuzzcheck.exe
 	.\fuzzcheck.exe $(FUZZDATA)
 
+# Legacy testing target for third-party integrators.  The SQLite
+# developers seldom use this target themselves.  Instead
+# they use "nmake /f Makefile.msc devtest" which runs tests on
+# a standard set of options
+#
+test:	$(TESTPROGS) sourcetest fuzztest tcltest
+
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
 quicktest:	testfixture.exe sourcetest
@@ -2518,7 +2623,6 @@ quicktest:	testfixture.exe sourcetest
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) sourcetest fuzztest tcltest
 
 # The veryquick.test TCL tests.
 #
@@ -2532,17 +2636,27 @@ tcltest: testfixture.exe
 testrunner:	testfixture.exe
 	.\testfixture.exe $(TOP)\test\testrunner.tcl
 
-# Runs both fuzztest and testrunner, consecutively.
+# This is the testing target preferred by the core SQLite developers.
+# It runs tests under a standard configuration.  The devs run 
+# "nmake /f Makefile.msc devtest" prior to each check-in, at a minimum.
+# Probably other tests too, but at least this one.
 #
-devtest:	testfixture.exe fuzztest testrunner
+devtest:	srctree-check sourcetest
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
 mdevtest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
+# Validate that various generated files in the source tree
+# are up-to-date.
+#
+srctree-check:	$(TOP)\tool\srctree-check.tcl
+	$(TCLSH_CMD) $(TOP)\tool\srctree-check.tcl
+
 # Testing for a release
 #
-releasetest: testfixture.exe fuzztest
-	testfixture.exe $(TOP)\test\testrunner.tcl release
+releasetest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
 
 
 smoketest:	$(TESTPROGS)
@@ -2552,7 +2666,7 @@ smoketest:	$(TESTPROGS)
 shelltest: $(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\permutations.test shell
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE_TCL_DEP)
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in > $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
@@ -2674,6 +2788,16 @@ THREADTEST3_SRC = \
 threadtest3.exe: $(THREADTEST3_SRC) $(TOP)\src\test_multiplex.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\test\threadtest3.c $(TOP)\src\test_multiplex.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+# Display key variables that control which version of TCL is to be used.
+#
+tcl-env:
+	@echo TCLDIR = $(TCLDIR)
+	@echo TCLVERSION = $(TCLVERSION)
+	@echo TCLSUFFIX = $(TCLSUFFIX)
+	@echo LIBTCL = $(LIBTCL)
+	@echo LIBTCLSTUB = $(LIBTCLSTUB)
+	@echo TCLSH_CMD = $(TCLSH_CMD)
+
 LSMDIR=$(TOP)\ext\lsm1
 !INCLUDE $(LSMDIR)\Makefile.msc
 
@@ -2707,7 +2831,7 @@ clean:
 	del /Q sqlite3.c sqlite3-*.c sqlite3.h 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h sqlite3session.h 2>NUL
-	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c sqlite3_rsync.exe 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q sqltclsh.* 2>NUL

@@ -132,7 +132,7 @@ proc readFile { fileName } {
   #       may contain binary data.
   #
   set file_id [open $fileName RDONLY]
-  fconfigure $file_id -encoding binary -translation binary
+  fconfigure $file_id -translation binary
   set result [read $file_id]
   close $file_id
   return $result
@@ -144,7 +144,7 @@ proc writeFile { fileName data } {
   #       binary data.
   #
   set file_id [open $fileName {WRONLY CREAT TRUNC}]
-  fconfigure $file_id -encoding binary -translation binary
+  fconfigure $file_id -translation binary
   puts -nonewline $file_id $data
   close $file_id
   return ""

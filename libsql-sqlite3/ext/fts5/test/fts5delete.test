@@ -113,5 +113,58 @@ do_execsql_test 3.4 {
   INSERT INTO tx(tx) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE ft1 USING fts5(a, b UNINDEXED, 
+      content='', contentless_unindexed=1
+  );
+  CREATE VIRTUAL TABLE ft2 USING fts5(a, b UNINDEXED, 
+      content='', contentless_unindexed=1, contentless_delete=1
+  );
+
+  INSERT INTO ft1(rowid, a, b) VALUES(1, 'one', 'i');
+  INSERT INTO ft1(rowid, a, b) VALUES(2, 'two', 'ii');
+  INSERT INTO ft1(rowid, a, b) VALUES(3, 'three', 'iii');
+  INSERT INTO ft2(rowid, a, b) VALUES(1, 'one', 'i');
+  INSERT INTO ft2(rowid, a, b) VALUES(2, 'two', 'ii');
+  INSERT INTO ft2(rowid, a, b) VALUES(3, 'three', 'iii');
+}
+
+do_catchsql_test 4.1 {
+  DELETE FROM ft1 WHERE rowid=2
+} {1 {cannot DELETE from contentless fts5 table: ft1}}
+do_catchsql_test 4.2 {
+  DELETE FROM ft2 WHERE rowid=2
+} {0 {}}
+
+do_catchsql_test 4.3 {
+  INSERT INTO ft1(ft1, rowid, a) VALUES('delete', 2, 'two');
+} {0 {}}
+do_catchsql_test 4.2 {
+  INSERT INTO ft2(ft2, rowid, a) VALUES('delete', 2, 'two');
+} {1 {'delete' may not be used with a contentless_delete=1 table}}
+
+do_execsql_test 4.3 {
+  SELECT rowid, * FROM ft1;
+} {
+  1 {} i
+  3 {} iii
+}
+do_execsql_test 4.4 {
+  SELECT rowid, * FROM ft2;
+} {
+  1 {} i
+  3 {} iii
+}
+
+do_execsql_test 4.5 {
+  SELECT * FROM ft1_content
+} {1 i 3 iii}
+
+do_execsql_test 4.6 {
+  SELECT * FROM ft2_content
+} {1 i 3 iii}
+
 finish_test
 

@@ -20,14 +20,7 @@
 ** in an effort to keep the tclsqlite.c file pure.
 */
 #include "sqlite3.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-# include "sqlite_tcl.h"
-#else
-# include "tcl.h"
-# ifndef SQLITE_TCLAPI
-#  define SQLITE_TCLAPI
-# endif
-#endif
+#include "tclsqlite.h"
 
 /* Needed for the setrlimit() system call on unix */
 #if defined(unix)
@@ -108,6 +101,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   extern int Sqlitetest_window_Init(Tcl_Interp *);
   extern int Sqlitetestvdbecov_Init(Tcl_Interp *);
   extern int TestRecover_Init(Tcl_Interp*);
+  extern int Sqlitetestintck_Init(Tcl_Interp*);
 
   Tcl_CmdInfo cmdInfo;
 
@@ -175,6 +169,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   Sqlitetest_window_Init(interp);
   Sqlitetestvdbecov_Init(interp);
   TestRecover_Init(interp);
+  Sqlitetestintck_Init(interp);
 
   Tcl_CreateObjCommand(
       interp, "load_testfixture_extensions", load_testfixture_extensions,0,0

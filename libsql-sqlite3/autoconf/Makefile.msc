@@ -18,6 +18,13 @@
 TOP = .
 
 
+# Optionally set EXTRA_SRC to a list of C files to append to
+# the generated sqlite3.c.
+#
+!IFNDEF EXTRA_SRC
+EXTRA_SRC =
+!ENDIF
+
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN
@@ -57,6 +64,14 @@ USE_STDCALL = 0
 #
 !IFNDEF USE_SEH
 USE_SEH = 1
+!ENDIF
+
+# Use STATICALLY_LINK_TCL=1 to statically link against TCL
+#
+!IFNDEF STATICALLY_LINK_TCL
+STATICALLY_LINK_TCL = 0
+!ELSEIF $(STATICALLY_LINK_TCL)!=0
+CCOPTS = $(CCOPTS) -DSTATIC_BUILD
 !ENDIF
 
 # Set this non-0 to have the shell executable link against the core dynamic
@@ -294,6 +309,7 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 # the Windows platform.
 #
 !IFNDEF OPT_FEATURE_FLAGS
+OPT_FEATURE_FLAGS = $(OPT_XTRA)
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5=1
@@ -305,6 +321,14 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBSTAT_VTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
 !ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+!ENDIF
+
+# Additional feature-options above and beyond what are normally used can be
+# be added using OPTIONS=.... on the command-line.  These values are
+# appended to the OPT_FEATURE_FLAGS variable.
+#
+!IFDEF OPTIONS
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) $(OPTIONS)
 !ENDIF
 
 # Should the session extension be enabled?  If so, add compilation options

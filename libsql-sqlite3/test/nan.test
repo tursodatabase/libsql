@@ -281,6 +281,7 @@ do_test nan-4.14 {
 
 # These tests test some really, really small floating point numbers.
 #
+load_static_extension db decimal
 if {$tcl_platform(platform) != "symbian"} {
   # These two are not run on symbian because tcl has trouble converting
   # the very small numbers back to text form (probably due to a difference
@@ -291,15 +292,15 @@ if {$tcl_platform(platform) != "symbian"} {
     set small \
         [string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
     db eval "INSERT INTO t1 VALUES($small)"
-    db eval {SELECT x, typeof(x) FROM t1}
-  } {9.88131291682493e-324 real}
+    db eval {SELECT decimal_exp(x), typeof(x) FROM t1}
+  } {/9\.88131291682493\d*e-324 real/}
   do_test nan-4.16 {
     db eval {DELETE FROM t1}
     set small \
         -[string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
     db eval "INSERT INTO t1 VALUES($small)"
-    db eval {SELECT x, typeof(x) FROM t1}
-  } {-9.88131291682493e-324 real}
+    db eval {SELECT decimal_exp(x), typeof(x) FROM t1}
+  } {/-9\.88131291682493\d*e-324 real/}
 }
 do_test nan-4.17 {
   db eval {DELETE FROM t1}

@@ -100,13 +100,13 @@ do_execsql_test func7-pg-300 {
    SELECT acos(1);
 } {0.0}
 do_execsql_test func7-pg-301 {
-   SELECT degrees(acos(0.5));
+   SELECT format('%f',degrees(acos(0.5)));
 } {60.0}
 do_execsql_test func7-pg-310 {
    SELECT round( asin(1), 7);
 } {1.5707963}
 do_execsql_test func7-pg-311 {
-   SELECT degrees( asin(0.5) );
+   SELECT format('%f',degrees( asin(0.5) ));
 } {30.0}
 do_execsql_test func7-pg-320 {
    SELECT round( atan(1), 7);
@@ -139,7 +139,7 @@ do_execsql_test func7-pg-420 {
    SELECT round( tan(1), 7);
 } {1.5574077}
 do_execsql_test func7-pg-421 {
-   SELECT tan( radians(45) );
+   SELECT round(tan( radians(45) ),10);
 } {1.0}
 do_execsql_test func7-pg-500 {
    SELECT round( sinh(1), 7);

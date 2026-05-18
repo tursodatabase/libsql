@@ -14,11 +14,7 @@
 ** memory allocation subsystem.
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -387,7 +383,8 @@ static int SQLITE_TCLAPI test_memset(
   Tcl_Obj *CONST objv[]
 ){
   void *p;
-  int size, n, i;
+  int size, i;
+  Tcl_Size n;
   char *zHex;
   char *zOut;
   char zBin[100];
@@ -409,7 +406,7 @@ static int SQLITE_TCLAPI test_memset(
   }
   zHex = Tcl_GetStringFromObj(objv[3], &n);
   if( n>sizeof(zBin)*2 ) n = sizeof(zBin)*2;
-  n = sqlite3TestHexToBin(zHex, n, zBin);
+  n = sqlite3TestHexToBin(zHex, (int)n, zBin);
   if( n==0 ){
     Tcl_AppendResult(interp, "no data", (char*)0);
     return TCL_ERROR;
@@ -624,7 +621,7 @@ static int SQLITE_TCLAPI test_memdebug_fail(
   if( Tcl_GetIntFromObj(interp, objv[1], &iFail) ) return TCL_ERROR;
 
   for(ii=2; ii<objc; ii+=2){
-    int nOption;
+    Tcl_Size nOption;
     char *zOption = Tcl_GetStringFromObj(objv[ii], &nOption);
     char *zErr = 0;
 

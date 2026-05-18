@@ -39,14 +39,14 @@ foreach {pgsz bOverflow} {
 
 
   set fd [open test.db]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   seek $fd $pgsz
   set pg1 [read $fd $pgsz]
   set pg2 [read $fd $pgsz]
   close $fd
 
   set fd2 [open test.db2 w]
-  fconfigure $fd2 -encoding binary -translation binary
+  fconfigure $fd2 -translation binary
   seek $fd2 $pgsz
   puts -nonewline $fd2 $pg1
   close $fd2
@@ -71,7 +71,7 @@ foreach {pgsz bOverflow} {
   forcedelete test.db2
 
   set fd2 [open test.db2 w]
-  fconfigure $fd2 -encoding binary -translation binary
+  fconfigure $fd2 -translation binary
   seek $fd2 $pgsz
   puts -nonewline $fd2 $pg2
   close $fd2
@@ -95,6 +95,3 @@ foreach {pgsz bOverflow} {
 
 
 finish_test
-
-
-

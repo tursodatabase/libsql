@@ -20,8 +20,8 @@ INCLUDE sqlite3.c
 INCLUDE $ROOT/src/tclsqlite.c
 
 #if defined(_WIN32)
-INCLUDE $ROOT/ext/consio/console_io.h
-INCLUDE $ROOT/ext/consio/console_io.c
+INCLUDE $ROOT/ext/misc/sqlite3_stdio.h
+INCLUDE $ROOT/ext/misc/sqlite3_stdio.c
 
 /* Substitute "puts" command.  Only these forms recognized:
 **
@@ -56,8 +56,8 @@ static int subst_puts(
       return TCL_ERROR;
     }
   }
-  fPutsUtf8(zOut, pOut);
-  if( addNewLine ) fPutsUtf8("\n", pOut);
+  sqlite3_fputs(zOut, pOut);
+  if( addNewLine ) sqlite3_fputs("\n", pOut);
   return TCL_OK;
 }
 #endif /* defined(_WIN32) */

@@ -440,7 +440,7 @@ do_execsql_test 16.1 {
 proc funk {} {
   db eval { UPDATE n1_config SET v=50 WHERE k='version' }
   set fd [db incrblob main n1_data block 10]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
 #  puts -nonewline $fd "\x44\x45"
   close $fd
 }
@@ -453,7 +453,7 @@ db func funk funk
 # statement no longer fails.
 #
 do_catchsql_test 16.2 {
-  SELECT funk(), bm25(n1), funk() FROM n1 WHERE n1 MATCH 'a+b+c+d'
+  SELECT funk(), format('%g',bm25(n1)), funk() FROM n1 WHERE n1 MATCH 'a+b+c+d'
 } {0 {{} -1e-06 {}}}
 # {1 {SQL logic error}}
 

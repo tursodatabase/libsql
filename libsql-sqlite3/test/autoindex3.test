@@ -90,5 +90,40 @@ do_eqp_test 220 {
   `--SEARCH u USING AUTOMATIC COVERING INDEX (b=?)
 }
 
+# 2024-05-27
+# ticket https://sqlite.org/src/tktview/8ff324e120
+# forum post https://sqlite.org/forum/forumpost/b21c2101a559be0a
+#
+# If an index with STAT1 data indicates that a column is not very
+# selective, then do not attempt to create an automatic index on
+# that column.
+#
+reset_db
+do_execsql_test 300 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY);
+  CREATE TABLE t2(cid INT, pid INT, rx INT, PRIMARY KEY(cid, pid, rx));
+  CREATE INDEX x1 ON t2(pid, rx);
+  ANALYZE sqlite_schema;
+  REPLACE INTO sqlite_stat1(tbl, idx, stat) VALUES
+    ('t2', 'x1', '500000 250 250'),
+    ('t2','sqlite_autoindex_t2_1','500000 1 1 1');
+  ANALYZE sqlite_schema;
+}
+do_eqp_test 310 {
+  WITH RECURSIVE children(id) AS (
+    SELECT cid FROM t2 WHERE pid = ?1 AND rx = ?2
+    UNION 
+    SELECT cid FROM t2 JOIN children ON t2.pid = children.id AND rx = ?2
+  ) SELECT count(id) FROM children;
+} {
+  QUERY PLAN
+  |--CO-ROUTINE children
+  |  |--SETUP
+  |  |  `--SEARCH t2 USING INDEX x1 (pid=? AND rx=?)
+  |  `--RECURSIVE STEP
+  |     |--SCAN children
+  |     `--SEARCH t2 USING INDEX x1 (pid=? AND rx=?)
+  `--SCAN children
+}  
 
 finish_test

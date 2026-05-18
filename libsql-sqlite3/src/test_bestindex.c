@@ -93,11 +93,7 @@
 
 
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
@@ -215,6 +211,9 @@ static int tclConnect(
       rc = SQLITE_ERROR;
     }else{
       rc = sqlite3_declare_vtab(db, Tcl_GetStringResult(interp));
+      if( rc!=SQLITE_OK ){
+        *pzErr = sqlite3_mprintf("declare_vtab: %s", sqlite3_errmsg(db));
+      }
     }
 
     if( rc!=SQLITE_OK ){
@@ -226,7 +225,7 @@ static int tclConnect(
   }
 
   sqlite3_free(zCmd);
-  *ppVtab = &pTab->base;
+  *ppVtab = pTab ? &pTab->base : 0;
   return rc;
 }
 
@@ -302,11 +301,9 @@ static int tclFilter(
   Tcl_IncrRefCount(pScript);
   Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("xFilter", -1));
   Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(idxNum));
-  if( idxStr ){
-    Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj(idxStr, -1));
-  }else{
-    Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("", -1));
-  }
+  Tcl_ListObjAppendElement(
+      interp, pScript, Tcl_NewStringObj(idxStr ? idxStr : "", -1)
+  );
 
   pArg = Tcl_NewObj();
   Tcl_IncrRefCount(pArg);
@@ -351,14 +348,14 @@ static int tclFilter(
     */
     Tcl_Obj *pRes = Tcl_GetObjResult(interp);
     Tcl_Obj **apElem = 0;
-    int nElem;
+    Tcl_Size nElem;
     rc = Tcl_ListObjGetElements(interp, pRes, &nElem, &apElem);
     if( rc!=TCL_OK ){
       const char *zErr = Tcl_GetStringResult(interp);
       rc = SQLITE_ERROR;
       pTab->base.zErrMsg = sqlite3_mprintf("%s", zErr);
     }else{
-      for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
+      for(ii=0; rc==SQLITE_OK && ii<(int)nElem; ii+=2){
         const char *zCmd = Tcl_GetString(apElem[ii]);
         Tcl_Obj *p = apElem[ii+1];
         if( sqlite3_stricmp("sql", zCmd)==0 ){
@@ -527,6 +524,7 @@ static int SQLITE_TCLAPI testBestIndexObj(
     "distinct",                   /* 3 */
     "in",                         /* 4 */
     "rhs_value",                  /* 5 */
+    "collation",                  /* 6 */
     0
   };
   int ii;
@@ -607,6 +605,17 @@ static int SQLITE_TCLAPI testBestIndexObj(
       Tcl_SetObjResult(interp, Tcl_NewStringObj(zVal, -1));
       break;
     }
+
+    case 6: assert( sqlite3_stricmp(azSub[ii], "collation")==0 ); {
+      int iCons = 0;
+      const char *zColl = "";
+      if( Tcl_GetIntFromObj(interp, objv[2], &iCons) ){
+        return TCL_ERROR;
+      }
+      zColl = sqlite3_vtab_collation(pIdxInfo, iCons);
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(zColl, -1));
+      break;
+    }
   }
 
   return TCL_OK;
@@ -651,7 +660,7 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     */
     Tcl_Obj *pRes = Tcl_GetObjResult(interp);
     Tcl_Obj **apElem = 0;
-    int nElem;
+    Tcl_Size nElem;
     rc = Tcl_ListObjGetElements(interp, pRes, &nElem, &apElem);
     if( rc!=TCL_OK ){
       const char *zErr = Tcl_GetStringResult(interp);
@@ -660,7 +669,7 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     }else{
       int ii;
       int iArgv = 1;
-      for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
+      for(ii=0; rc==SQLITE_OK && ii<(int)nElem; ii+=2){
         const char *zCmd = Tcl_GetString(apElem[ii]);
         Tcl_Obj *p = apElem[ii+1];
         if( sqlite3_stricmp("cost", zCmd)==0 ){
@@ -697,6 +706,10 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
               pIdxInfo->aConstraintUsage[iCons].omit = bOmit;
             }
           }
+        }else
+        if( sqlite3_stricmp("constraint", zCmd)==0 ){
+          rc = SQLITE_CONSTRAINT;
+          pTab->base.zErrMsg = sqlite3_mprintf("%s", Tcl_GetString(p));
         }else{
           rc = SQLITE_ERROR;
           pTab->base.zErrMsg = sqlite3_mprintf("unexpected: %s", zCmd);

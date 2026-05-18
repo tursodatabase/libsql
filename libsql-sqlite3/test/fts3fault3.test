@@ -50,5 +50,33 @@ do_faultsim_test 1 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  BEGIN;
+  CREATE VIRTUAL TABLE t1 USING fts3(a);
+  WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50
+  )
+  INSERT INTO t1 SELECT 'abc def ghi jkl mno pqr' FROM s;
+  COMMIT;
+}
+
+faultsim_save_and_close
+do_faultsim_test 2 -faults oom-t* -prep { 
+  faultsim_restore_and_reopen
+  execsql {
+    BEGIN;
+      CREATE TABLE x1(a PRIMARY KEY);
+  }
+} -body {
+  execsql {
+    PRAGMA integrity_check;
+  }
+} -test {
+  faultsim_test_result {0 ok} $::TMPDBERROR
+}
+
 
 finish_test

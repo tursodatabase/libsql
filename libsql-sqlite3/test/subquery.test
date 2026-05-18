@@ -651,5 +651,64 @@ do_eqp_test subquery-10.2 {
 # `--SEARCH t1 USING INDEX x12 (aa=?)
 #
 
+#-----------------------------------------------------------------------------
+# 2024-04-25 Column affinities for columns of compound subqueries
+#
+reset_db
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
+do_execsql_test subquery-11.1 {
+  CREATE TABLE t1(ix INT, rx REAL, bx BLOB, tx TEXT, ax);
+  INSERT INTO t1 VALUES(1,1.0,x'31','x',NULL);
+  WITH c(a) AS (SELECT 'y' UNION SELECT tx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT tx FROM t1 UNION SELECT 'y') SELECT affinity(a) FROM c;
+} {text text text text}
+do_execsql_test subquery-11.2 {
+  WITH c(a) AS (SELECT 2 UNION SELECT tx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT tx FROM t1 UNION SELECT 2) SELECT affinity(a) FROM c;
+} {blob blob blob blob}
+do_execsql_test subquery-11.3 {
+  WITH c(a) AS (SELECT 2.0 UNION SELECT tx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT tx FROM t1 UNION SELECT 2.0) SELECT affinity(a) FROM c;
+} {blob blob blob blob}
+do_execsql_test subquery-11.4 {
+  WITH c(a) AS (SELECT null UNION SELECT tx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT tx FROM t1 UNION SELECT null) SELECT affinity(a) FROM c;
+} {text text text text}
+do_execsql_test subquery-11.5 {
+  WITH c(a) AS (SELECT x'32' UNION SELECT tx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT tx FROM t1 UNION SELECT x'32') SELECT affinity(a) FROM c;
+} {text text text text}
+do_execsql_test subquery-11.6 {
+  WITH c(a) AS (SELECT 3 UNION SELECT ix FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT ix FROM t1 UNION SELECT 3) SELECT affinity(a) FROM c;
+} {integer integer integer integer}
+do_execsql_test subquery-11.7 {
+  WITH c(a) AS (SELECT 3.0 UNION SELECT ix FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT ix FROM t1 UNION SELECT 3.0) SELECT affinity(a) FROM c;
+} {integer integer integer integer}
+do_execsql_test subquery-11.8 {
+  WITH c(a) AS (SELECT '3' UNION SELECT ix FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT ix FROM t1 UNION SELECT '3') SELECT affinity(a) FROM c;
+} {blob blob blob blob}
+do_execsql_test subquery-11.10 {
+  WITH c(a) AS (SELECT x'32' UNION SELECT ix FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT ix FROM t1 UNION SELECT x'32') SELECT affinity(a) FROM c;
+} {integer integer integer integer}
+do_execsql_test subquery-11.11 {
+  WITH c(a) AS (SELECT 4 UNION SELECT rx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT rx FROM t1 UNION SELECT 4) SELECT affinity(a) FROM c;
+} {real real real real}
+do_execsql_test subquery-11.12 {
+  WITH c(a) AS (SELECT '4' UNION SELECT rx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT rx FROM t1 UNION SELECT '4') SELECT affinity(a) FROM c;
+} {blob blob blob blob}
+do_execsql_test subquery-11.13 {
+  WITH c(a) AS (SELECT null UNION SELECT rx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT rx FROM t1 UNION SELECT null) SELECT affinity(a) FROM c;
+} {real real real real}
+do_execsql_test subquery-11.14 {
+  WITH c(a) AS (SELECT x'b4' UNION SELECT rx FROM t1) SELECT affinity(a) FROM c;
+  WITH c(a) AS (SELECT rx FROM t1 UNION SELECT x'b4') SELECT affinity(a) FROM c;
+} {real real real real}
 
 finish_test

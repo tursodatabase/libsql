@@ -424,7 +424,7 @@ do_catchsql_test colname-9.400 {
 #
 do_catchsql_test colname-9.410 {
   CREATE TABLE t5 AS SELECT RAISE(abort,a);
-} {1 {RAISE() may only be used within a trigger-program}}
+} {1 {no such column: a}}
 
 # Make sure the quotation marks get removed from the column names
 # when constructing a new table from an aggregate SELECT.

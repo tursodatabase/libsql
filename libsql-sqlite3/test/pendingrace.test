@@ -61,12 +61,12 @@ proc my_db_restore {} {
   forcecopy sv_test.db-journal test.db-journal
 
   set fd1 [open sv_test.db r]
-  fconfigure $fd1 -encoding binary -translation binary
+  fconfigure $fd1 -translation binary
   set data [read $fd1]
   close $fd1
 
   set fd1 [open test.db w]
-  fconfigure $fd1 -encoding binary -translation binary
+  fconfigure $fd1 -translation binary
   puts -nonewline $fd1 $data
   close $fd1
 }

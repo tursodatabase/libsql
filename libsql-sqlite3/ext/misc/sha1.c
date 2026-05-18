@@ -196,7 +196,8 @@ static void hash_step_vformat(
 ** zOut[].  zOut[] must be at least 41 bytes long. */
 static void hash_finish(
   SHA1Context *p,           /* The SHA1 context to finish and render */
-  char *zOut                /* Store hexadecimal hash here */
+  char *zOut,               /* Store hex or binary hash here */
+  int bAsBinary             /* 1 for binary hash, 0 for hex hash */
 ){
   unsigned int i;
   unsigned char finalcount[8];
@@ -215,11 +216,15 @@ static void hash_finish(
   for (i = 0; i < 20; i++){
     digest[i] = (unsigned char)((p->state[i>>2] >> ((3-(i & 3)) * 8) ) & 255);
   }
-  for(i=0; i<20; i++){
-    zOut[i*2] = zEncode[(digest[i]>>4)&0xf];
-    zOut[i*2+1] = zEncode[digest[i] & 0xf];
+  if( bAsBinary ){
+    memcpy(zOut, digest, 20);
+  }else{
+    for(i=0; i<20; i++){
+      zOut[i*2] = zEncode[(digest[i]>>4)&0xf];
+      zOut[i*2+1] = zEncode[digest[i] & 0xf];
+    }
+    zOut[i*2]= 0;
   }
-  zOut[i*2]= 0;
 }
 /* End of the hashing logic
 *****************************************************************************/
@@ -251,8 +256,13 @@ static void sha1Func(
   }else{
     hash_step(&cx, sqlite3_value_text(argv[0]), nByte);
   }
-  hash_finish(&cx, zOut);
-  sqlite3_result_text(context, zOut, 40, SQLITE_TRANSIENT);
+  if( sqlite3_user_data(context)!=0 ){
+    hash_finish(&cx, zOut, 1);
+    sqlite3_result_blob(context, zOut, 20, SQLITE_TRANSIENT);
+  }else{
+    hash_finish(&cx, zOut, 0);
+    sqlite3_result_blob(context, zOut, 40, SQLITE_TRANSIENT);
+  }
 }
 
 /*
@@ -365,7 +375,7 @@ static void sha1QueryFunc(
     }
     sqlite3_finalize(pStmt);
   }
-  hash_finish(&cx, zOut);
+  hash_finish(&cx, zOut, 0);
   sqlite3_result_text(context, zOut, 40, SQLITE_TRANSIENT);
 }
 
@@ -379,11 +389,17 @@ int sqlite3_sha_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
+  static int one = 1;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
   rc = sqlite3_create_function(db, "sha1", 1, 
                        SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
-                               0, sha1Func, 0, 0);
+                                0, sha1Func, 0, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "sha1b", 1, 
+                       SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
+                          (void*)&one, sha1Func, 0, 0);
+  }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "sha1_query", 1, 
                                  SQLITE_UTF8|SQLITE_DIRECTONLY, 0,

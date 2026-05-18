@@ -111,7 +111,7 @@ if {$tcl_platform(platform) == "unix"
   ]
   set iOffset [expr (([file size testA.db-journal] + 511)/512)*512]
   set fd [open testA.db-journal a+]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   seek $fd $iOffset
   puts -nonewline $fd $zAppend
 

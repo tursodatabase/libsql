@@ -1098,7 +1098,11 @@ if {$::tcl_platform(platform) == "unix"} {
    3 00600
    4 00755
   } {
-    set effective [format %.5o [expr $permissions & ~$umask]]
+    if {$tcl_version>=9.0} {
+      set effective [format %.5d [expr $permissions & ~$umask]]
+    } else {
+      set effective [format %.5o [expr $permissions & ~$umask]]
+    }
     do_test wal2-12.2.$tn.1 {
       file attributes test.db -permissions $permissions
       string map {o 0} [file attributes test.db -permissions]

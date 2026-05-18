@@ -631,6 +631,7 @@ static int SQLITE_TCLAPI btree_insert(
   BtCursor *pCur;
   int rc;
   BtreePayload x;
+  Tcl_Size n;
 
   if( objc!=4 && objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?-intkey? CSR KEY VALUE");
@@ -641,10 +642,11 @@ static int SQLITE_TCLAPI btree_insert(
   if( objc==4 ){
     if( Tcl_GetIntFromObj(interp, objv[2], &rc) ) return TCL_ERROR;
     x.nKey = rc;
-    x.pData = (void*)Tcl_GetByteArrayFromObj(objv[3], &x.nData);
+    x.pData = (void*)Tcl_GetByteArrayFromObj(objv[3], &n);
+    x.nData = (int)n;
   }else{
-    x.pKey = (void*)Tcl_GetByteArrayFromObj(objv[2], &rc);
-    x.nKey = rc;
+    x.pKey = (void*)Tcl_GetByteArrayFromObj(objv[2], &n);
+    x.nKey = (int)n;
   }
   pCur = (BtCursor*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
 

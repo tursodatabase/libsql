@@ -17,7 +17,7 @@
 # After the "tsrc" directory has been created and populated, run
 # this script:
 #
-#      tclsh mksqlite3c.tcl
+#      tclsh mksqlite3c.tcl [flags] [extra source files]
 #
 # The amalgamated SQLite code will be written into sqlite3.c
 #
@@ -42,6 +42,7 @@ set linemacros 0
 set useapicall 0
 set enable_recover 0
 set srcdir tsrc
+set extrasrc [list]
 
 for {set i 0} {$i<[llength $argv]} {incr i} {
   set x [lindex $argv $i]
@@ -63,8 +64,10 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
   } elseif {[regexp {^-?-((help)|\?)$} $x]} {
     puts $help
     exit 0
-  } else {
+  } elseif {[regexp {^-?-} $x]} {
     error "unknown command-line option: $x"
+  } else {
+    lappend extrasrc $x
   }
 }
 set in [open $srcdir/sqlite3.h]
@@ -355,6 +358,21 @@ proc copy_file {filename} {
   section_comment "End of $tail"
 }
 
+# Read the source file named $filename and write it into the
+# sqlite3.c output file. The only transformation is the trimming
+# of EOL whitespace.
+#
+proc copy_file_verbatim {filename} {
+  global out
+  set in [open $filename r]
+  set tail [file tail $filename]
+  section_comment "Begin EXTRA_SRC file $tail"
+  while {![eof $in]} {
+    set line [string trimright [gets $in]]
+    puts $out $line
+  }
+  section_comment "End of EXTRA_SRC $tail"
+}
 
 # Process the source files.  Process files containing commonly
 # used subroutines first in order to help the compiler find
@@ -493,6 +511,9 @@ if {$enable_recover} {
 }
 foreach file $flist {
   copy_file $srcdir/$file
+}
+foreach file $extrasrc {
+  copy_file_verbatim $file
 }
 
 puts $out \
