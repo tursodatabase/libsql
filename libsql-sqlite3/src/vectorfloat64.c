@@ -174,6 +174,36 @@ double vectorF64DistanceL2(const Vector *v1, const Vector *v2){
   return sqrt(sum);
 }
 
+void vectorF64Add(Vector *v1, const Vector *v2){
+  double sum = 0;
+  double *e1 = v1->data;
+  double *e2 = v2->data;
+  int i;
+
+  assert( v1->dims == v2->dims );
+  assert( v1->type == VECTOR_TYPE_FLOAT64 );
+  assert( v2->type == VECTOR_TYPE_FLOAT64 );
+
+  for(i = 0; i < v1->dims; i++){
+    e1[i] += e2[i];
+  }
+}
+
+void vectorF64Sub(Vector *v1, const Vector *v2){
+  double sum = 0;
+  double *e1 = v1->data;
+  double *e2 = v2->data;
+  int i;
+
+  assert( v1->dims == v2->dims );
+  assert( v1->type == VECTOR_TYPE_FLOAT64 );
+  assert( v2->type == VECTOR_TYPE_FLOAT64 );
+
+  for(i = 0; i < v1->dims; i++){
+    e1[i] -= e2[i];
+  }
+}
+
 void vectorF64DeserializeFromBlob(
   Vector *pVector,
   const unsigned char *pBlob,
