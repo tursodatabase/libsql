@@ -184,6 +184,8 @@ set flags {
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build}
   with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
+  wasm-runtime         => {Enable the libsql WebAssembly UDF runtime, statically linked (sets OPT_WASM_RUNTIME=y)}
+  wasm-runtime-dynamic => {Enable the libsql WebAssembly UDF runtime, dynamically linked (sets OPT_WASM_RUNTIME=d)}
   # </alternative-builds>
   # <developer>
   # Note that using the --debug/--enable-debug flag here requires patching
@@ -515,6 +517,18 @@ proj-define-for-opt test-status TSTRNNR_OPTS \
 
 proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
   "Use #line macros in the amalgamation:"
+
+# libsql Wasm UDF runtime: --enable-wasm-runtime / --enable-wasm-runtime-dynamic
+# map to the legacy OPT_WASM_RUNTIME = y / d switch read by main.mk.
+if {[proj-opt-truthy wasm-runtime-dynamic]} {
+  define OPT_WASM_RUNTIME d
+  msg-result "libsql Wasm UDF runtime: dynamic"
+} elseif {[proj-opt-truthy wasm-runtime]} {
+  define OPT_WASM_RUNTIME y
+  msg-result "libsql Wasm UDF runtime: static"
+} else {
+  define OPT_WASM_RUNTIME n
+}
 
 msg-checking "SQLITE_DEBUG build? "
 proj-if-opt-truthy debug {

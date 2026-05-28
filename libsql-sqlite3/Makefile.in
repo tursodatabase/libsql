@@ -335,4 +335,9 @@ distclean: distclean-autosetup
 version-info$(T.exe): $(TOP)/tool/version-info.c Makefile sqlite3.h
 	$(T.link) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
 
+# libsql Wasm UDF runtime mode (y = static, d = dynamic, n = off).
+# Set by configure from --enable-wasm-runtime / --enable-wasm-runtime-dynamic.
+OPT_WASM_RUNTIME = @OPT_WASM_RUNTIME@
+
 include $(TOP)/main.mk
+include $(TOP)/libsql.mk
