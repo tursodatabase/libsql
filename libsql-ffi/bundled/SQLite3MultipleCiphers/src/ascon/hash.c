@@ -89,6 +89,7 @@ forceinline void ascon_squeeze(ascon_state_t* s, uint8_t* out,
   ascon_printstate("squeeze output", s);
 }
 
+SQLITE_PRIVATE
 int ascon_hash(uint8_t* out, const uint8_t* in, uint64_t inlen)
 {
   ascon_state_t s;

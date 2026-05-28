@@ -15,6 +15,8 @@ typedef union {
 
 #define ASCON_U64TOWORD(x) ASCON_U64BIG(x)
 #define ASCON_WORDTOU64(x) ASCON_U64BIG(x)
+#define ASCON_LOAD(b, n) ASCON_LOADBYTES(b, n)
+#define ASCON_STORE(b, w, n) ASCON_STOREBYTES(b, w, n)
 
 forceinline uint64_t ASCON_ROR(uint64_t x, int n) { return x >> n | x << (-n & 63); }
 
@@ -32,6 +34,8 @@ forceinline int ASCON_NOTZERO(uint64_t a, uint64_t b) {
 
 forceinline uint64_t ASCON_PAD(int i) { return 0x80ull << (56 - 8 * i); }
 
+forceinline uint64_t ASCON_DSEP() { return 0x01; }
+
 forceinline uint64_t ASCON_PRFS_MLEN(uint64_t len) { return len << 51; }
 
 forceinline uint64_t ASCON_CLEAR(uint64_t w, int n) {
@@ -43,16 +47,6 @@ forceinline uint64_t ASCON_CLEAR(uint64_t w, int n) {
 forceinline uint64_t ASCON_MASK(int n) {
   /* undefined for n == 0 */
   return ~0ull >> (64 - 8 * n);
-}
-
-forceinline uint64_t ASCON_LOAD(const uint8_t* bytes, int n) {
-  uint64_t x = *(uint64_t*)bytes & ASCON_MASK(n);
-  return ASCON_U64TOWORD(x);
-}
-
-forceinline void ASCON_STORE(uint8_t* bytes, uint64_t w, int n) {
-  *(uint64_t*)bytes &= ~ASCON_MASK(n);
-  *(uint64_t*)bytes |= ASCON_WORDTOU64(w);
 }
 
 forceinline uint64_t ASCON_LOADBYTES(const uint8_t* bytes, int n) {

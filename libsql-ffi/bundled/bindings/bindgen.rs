@@ -23,10 +23,10 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 
-pub const SQLITE_VERSION: &[u8; 7] = b"3.47.0\0";
-pub const SQLITE_VERSION_NUMBER: i32 = 3047000;
+pub const SQLITE_VERSION: &[u8; 7] = b"3.48.0\0";
+pub const SQLITE_VERSION_NUMBER: i32 = 3048000;
 pub const SQLITE_SOURCE_ID: &[u8; 85] =
-    b"2024-10-21 16:30:22 03a9703e27c44437c39363d0baf82db4ebc94538a0f28411c85dda156f82alt1\0";
+    b"2025-01-14 11:05:00 d2fe6b05f38d9d7cd78c5d252e99ac59f1aea071d669830c1ffe4e8966e8alt1\0";
 pub const LIBSQL_VERSION: &[u8; 6] = b"0.2.3\0";
 pub const SQLITE_OK: i32 = 0;
 pub const SQLITE_ERROR: i32 = 1;
@@ -174,6 +174,7 @@ pub const SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN: i32 = 2048;
 pub const SQLITE_IOCAP_POWERSAFE_OVERWRITE: i32 = 4096;
 pub const SQLITE_IOCAP_IMMUTABLE: i32 = 8192;
 pub const SQLITE_IOCAP_BATCH_ATOMIC: i32 = 16384;
+pub const SQLITE_IOCAP_SUBPAGE_READ: i32 = 32768;
 pub const SQLITE_LOCK_NONE: i32 = 0;
 pub const SQLITE_LOCK_SHARED: i32 = 1;
 pub const SQLITE_LOCK_RESERVED: i32 = 2;
@@ -223,6 +224,7 @@ pub const SQLITE_FCNTL_CKPT_START: i32 = 39;
 pub const SQLITE_FCNTL_EXTERNAL_READER: i32 = 40;
 pub const SQLITE_FCNTL_CKSM_FILE: i32 = 41;
 pub const SQLITE_FCNTL_RESET_CACHE: i32 = 42;
+pub const SQLITE_FCNTL_NULL_IO: i32 = 43;
 pub const SQLITE_FCNTL_WAL_METHODS_POINTER: i32 = 129;
 pub const SQLITE_GET_LOCKPROXYFILE: i32 = 2;
 pub const SQLITE_SET_LOCKPROXYFILE: i32 = 3;
@@ -340,6 +342,7 @@ pub const SQLITE_LIMIT_WORKER_THREADS: i32 = 11;
 pub const SQLITE_PREPARE_PERSISTENT: i32 = 1;
 pub const SQLITE_PREPARE_NORMALIZE: i32 = 2;
 pub const SQLITE_PREPARE_NO_VTAB: i32 = 4;
+pub const SQLITE_PREPARE_DONT_LOG: i32 = 16;
 pub const SQLITE_INTEGER: i32 = 1;
 pub const SQLITE_FLOAT: i32 = 2;
 pub const SQLITE_BLOB: i32 = 4;

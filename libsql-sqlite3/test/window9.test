@@ -282,4 +282,62 @@ do_catchsql_test 9.1 {
   FROM t1
 } {1 {frame ending offset must be a non-negative number}}
 
+#--------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 10.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 'a');
+  INSERT INTO t1 VALUES(2, 'b');
+  INSERT INTO t1 VALUES(3, 'c');
+  INSERT INTO t1 VALUES(4, 'd');
+  INSERT INTO t1 VALUES(5, 'e');
+  INSERT INTO t1 VALUES(6, 'f');
+}
+
+do_execsql_test 10.1 {
+  SELECT a, min(b) OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY a ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING)
+} {
+  1 a
+  2 a
+  3 a
+  4 b
+  5 c
+  6 d
+}
+
+do_execsql_test 10.2 {
+  SELECT a, min(b) FILTER (WHERE a%2) OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY a ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING)
+} {
+  1 a
+  2 a
+  3 a
+  4 c
+  5 c
+  6 e
+}
+
+do_execsql_test 10.3 {
+  SELECT a, min(b) FILTER (WHERE (a%2)=0) OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY a ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING)
+} {
+  1 b
+  2 b
+  3 b
+  4 b
+  5 d
+  6 d
+}
+
+do_catchsql_test 10.4 {
+  SELECT a, nth_value(b, 1) FILTER (WHERE (a%2)=0) OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY a ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING)
+} {1 {FILTER clause may only be used with aggregate window functions}}
+
 finish_test

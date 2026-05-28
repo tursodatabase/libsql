@@ -48,7 +48,7 @@ do_catchsql_test 2.0 {
       SAVEPOINT two;
         INSERT INTO ft1 VALUES('b');
   COMMIT;
-} {1 {SQL logic error}}
+} {1 {database disk image is malformed}}
 
 reset_db
 ifcapable fts3 {

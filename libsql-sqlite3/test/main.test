@@ -472,67 +472,10 @@ do_test main-3.6 {
   catchsql {SELECT 'abc' + #9}
 } {1 {near "#9": syntax error}}
 
-# The following test-case tests the linked list code used to manage
-# sqlite3_vfs structures.
-if {$::tcl_platform(platform)=="unix" 
-     && [info command sqlite3async_initialize]!=""} {
-  ifcapable threadsafe {
-    do_test main-4.1 {
-      sqlite3_crash_enable 1
-      sqlite3_crash_enable 0
-    
-      sqlite3async_initialize "" 1
-      sqlite3async_shutdown
-    
-      sqlite3_crash_enable 1
-      sqlite3async_initialize "" 1
-      sqlite3_crash_enable 0
-      sqlite3async_shutdown
-    
-      sqlite3_crash_enable 1
-      sqlite3async_initialize "" 1
-      sqlite3async_shutdown
-      sqlite3_crash_enable 0
-    
-      sqlite3async_initialize "" 1
-      sqlite3_crash_enable 1
-      sqlite3_crash_enable 0
-      sqlite3async_shutdown
-    
-      sqlite3async_initialize "" 1
-      sqlite3_crash_enable 1
-      sqlite3async_shutdown
-      sqlite3_crash_enable 0
-    } {}
-    do_test main-4.2 {
-      set rc [catch {sqlite3 db test.db -vfs crash} msg]
-      list $rc $msg
-    } {1 {no such vfs: crash}}
-    do_test main-4.3 {
-      set rc [catch {sqlite3 db test.db -vfs async} msg]
-      list $rc $msg
-    } {1 {no such vfs: async}}
-  }
-}
-
 # Print the version number so that it can be picked up by releasetest.tcl.
 #
 puts [db one {SELECT 'VERSION: ' ||
                   sqlite_version() || ' ' ||
                   sqlite_source_id();}]
-
-# Do deliberate failures if the TEST_FAILURE environment variable is set.
-# This is done to verify that failure notifications are detected by the
-# releasetest.tcl script, or possibly by other scripts involved in automatic
-# testing.
-#
-if {[info exists ::env(TEST_FAILURE)]} {
-  set res 123
-  if {$::env(TEST_FAILURE)==0} {set res 234}
-  do_test main-99.1 {
-     bad_behavior $::env(TEST_FAILURE)
-     set x 123
-  } $res
-}
-    
+   
 finish_test

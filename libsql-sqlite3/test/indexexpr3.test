@@ -78,6 +78,44 @@ do_hasfunction_test 1.6 {
   2 {{"y":"two"}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b, j);
+  CREATE INDEX i1 ON t1( a, json_extract(j, '$.x') );
+}
+
+do_eqp_test 2.1 {
+  SELECT json_extract(j, '$.x') FROM t1 WHERE a=?
+} {
+  t1 USING COVERING INDEX i1
+}
+
+do_eqp_test 2.2 {
+  SELECT b, json_extract(j, '$.x') FROM t1 WHERE a=?
+} {
+  t1 USING INDEX i1
+}
+
+do_eqp_test 2.3 {
+  SELECT json_insert( '{}', json_extract(j, '$.x') ) FROM t1 WHERE a=?
+} {
+  t1 USING INDEX i1
+}
+
+do_eqp_test 2.4 {
+  SELECT sum( json_extract(j, '$.x') ) FROM t1 WHERE a=?
+} {
+  t1 USING COVERING INDEX i1
+}
+
+do_eqp_test 2.5 {
+  SELECT json_extract(j, '$.x'), sum( json_extract(j, '$.x') ) FROM t1 WHERE a=?
+} {
+  t1 USING INDEX i1
+}
+
+
 
 finish_test
 

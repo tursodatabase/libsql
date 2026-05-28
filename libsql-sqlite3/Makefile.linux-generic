@@ -1,0 +1,64 @@
+#!/usr/make
+all:
+#
+# Makefile for SQLITE
+#
+# This is a template makefile for SQLite.  Most people prefer to
+# use the autoconf generated "configure" script to generate the
+# makefile automatically.  But that does not work for everybody
+# and in every situation.  If you are having problems with the
+# "configure" script, you might want to try this makefile as an
+# alternative.  Create a copy of this file, edit the parameters
+# below and type "make".
+#
+# Maintenance note: because this is the template for Linux systems, it
+# is assumed that the platform has GNU make and this file takes
+# advantage of that.
+#
+####
+#
+# $(TOP) = The toplevel directory of the source tree.  This is the
+# directory that contains "Makefile.in" and "auto.def".
+#
+TOP ?= $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+
+#
+# $(CFLAGS) will be used when compiling the library and most
+# utilities.  It must normally contain -fPIC on Linux systems,
+# but overriding CFLAGS is an easy way for users to inadvertently
+# remove -fPIC from their builds, so we generally expect to see
+# -fPIC in $(CFLAGS.core), which main.mk will integrate with
+# the CFLAGS where needed.
+#
+CFLAGS =
+CFLAGS.core = -fPIC
+
+#
+# $(SHELL_OPT) contains CFLAGS for building the sqlite3 CLI shell.
+# See main.mk for other potentially-relevant vars which may need
+# tweaking, like $(LDFLAGS_READLINE).
+#
+SHELL_OPT += -DHAVE_READLINE=1
+SHELL_OPT += -DSQLITE_HAVE_ZLIB=1
+LDFLAGS.readline = -lreadline # may need -lcurses etc, depending on the system
+CFLAGS.readline = # needs -I... if readline.h is in an unusual place.
+LDFLAGS.zlib = -lz
+
+#
+# Library's version number.
+#
+PACKAGE_VERSION ?= $(shell cat $(TOP)/VERSION 2>/dev/null)
+
+# sqlite_cfg.h is typically created by the configure script. It's
+# commonly not needed but main.mk does not know that so we have to
+# create a dummy if we don't already have one.
+sqlite_cfg.h:
+	touch $@
+distclean-.:
+	rm -f sqlite_cfg.h
+
+#
+# With the above in place, we can now import the rules make use of
+# it...
+#
+include $(TOP)/main.mk

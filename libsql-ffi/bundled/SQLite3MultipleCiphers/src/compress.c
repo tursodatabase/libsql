@@ -107,19 +107,19 @@ static void uncompressFunc(
   }
 }
 
-
-#ifdef _WIN32
-__declspec(dllexport)
+#ifndef SQLITE_API
+#define SQLITE_API
 #endif
+SQLITE_API
 int sqlite3_compress_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "compress", 1, 
+  rc = sqlite3_create_function(db, "compress", 1,
                     SQLITE_UTF8 | SQLITE_INNOCUOUS,
                     0, compressFunc, 0, 0);
   if( rc==SQLITE_OK ){

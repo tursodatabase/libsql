@@ -3,7 +3,7 @@
 ** Purpose:     Implementation of SQLite codecs
 ** Author:      Ulrich Telle
 ** Created:     2020-02-02
-** Copyright:   (c) 2006-2022 Ulrich Telle
+** Copyright:   (c) 2006-2024 Ulrich Telle
 ** License:     MIT
 */
 
@@ -55,6 +55,7 @@ typedef struct _CipherName
   char m_name[CIPHER_NAME_MAXLEN];
 } CipherName;
 
+static char globalConfigTableName[CIPHER_NAME_MAXLEN] = "";
 static int globalCipherCount = 0;
 static char* globalSentinelName = "";
 static CipherName globalCipherNameTable[CODEC_COUNT_LIMIT + 2] = { 0 };
@@ -116,20 +117,21 @@ sqlite3mcCloneCodecParameterTable()
 }
 
 SQLITE_PRIVATE void
-sqlite3mcFreeCodecParameterTable(CodecParameter* codecParams)
+sqlite3mcFreeCodecParameterTable(void* ptr)
 {
+  CodecParameter* codecParams = (CodecParameter*)ptr;
   sqlite3_free(codecParams[0].m_params);
   sqlite3_free(codecParams);
 }
 
 static const CipherDescriptor mcSentinelDescriptor =
 {
-  "", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+  "", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 static const CipherDescriptor mcDummyDescriptor =
 {
-  "@dummy@", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+  "@dummy@", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 static CipherDescriptor globalCodecDescriptorTable[CODEC_COUNT_MAX + 1];
@@ -144,7 +146,7 @@ sqlite3mcGetCipherType(sqlite3* db)
 {
   CodecParameter* codecParams = (db != NULL) ? sqlite3mcGetCodecParams(db) : globalCodecParameterTable;
   CipherParams* cipherParamTable = (codecParams != NULL) ? codecParams[0].m_params : commonParams;
-  int cipherType = CODEC_TYPE;
+  int cipherType = CODEC_TYPE_UNKNOWN;
   CipherParams* cipher = cipherParamTable;
   for (; cipher->m_name[0] != 0; ++cipher)
   {
@@ -207,6 +209,7 @@ sqlite3mcCodecInit(Codec* codec)
     memset(codec->m_page, 0, sizeof(codec->m_page));
     codec->m_pageSize = 0;
     codec->m_reserved = 0;
+    codec->m_lastError = SQLITE_OK;
     codec->m_hasKeySalt = 0;
     memset(codec->m_keySalt, 0, sizeof(codec->m_keySalt));
   }
@@ -245,6 +248,10 @@ sqlite3mcCodecSetup(Codec* codec, int cipherType, char* userPassword, int passwo
 {
   int rc = SQLITE_OK;
   CipherParams* globalParams = sqlite3mcGetCipherParams(codec->m_db, CIPHER_NAME_GLOBAL);
+  if (cipherType <= CODEC_TYPE_UNKNOWN)
+  {
+    return SQLITE_ERROR;
+  }
   codec->m_isEncrypted = 1;
   codec->m_hmacCheck = sqlite3mcGetCipherParameter(globalParams, "hmac_check");
   codec->m_walLegacy = sqlite3mcGetCipherParameter(globalParams, "mc_legacy_wal");
@@ -270,6 +277,10 @@ sqlite3mcSetupWriteCipher(Codec* codec, int cipherType, char* userPassword, int 
 {
   int rc = SQLITE_OK;
   CipherParams* globalParams = sqlite3mcGetCipherParams(codec->m_db, CIPHER_NAME_GLOBAL);
+  if (cipherType <= CODEC_TYPE_UNKNOWN)
+  {
+    return SQLITE_ERROR;
+  }
   if (codec->m_writeCipher != NULL)
   {
     globalCodecDescriptorTable[codec->m_writeCipherType-1].m_freeCipher(codec->m_writeCipher);
@@ -414,7 +425,7 @@ sqlite3mcGetLegacyWriteCipher(Codec* codec)
 SQLITE_PRIVATE int
 sqlite3mcGetPageSizeReadCipher(Codec* codec)
 {
-  int pageSize = (codec->m_hasReadCipher  && codec->m_readCipher != NULL) ? globalCodecDescriptorTable[codec->m_readCipherType - 1].m_getPageSize(codec->m_readCipher) : 0;
+  int pageSize = (codec->m_hasReadCipher  && codec->m_readCipher != NULL) ? globalCodecDescriptorTable[codec->m_readCipherType - 1].m_getPageSize(codec->m_readCipher) : -1;
   return pageSize;
 }
 
@@ -445,6 +456,21 @@ sqlite3mcReservedEqual(Codec* codec)
   int readReserved  = (codec->m_hasReadCipher  && codec->m_readCipher  != NULL) ? globalCodecDescriptorTable[codec->m_readCipherType-1].m_getReserved(codec->m_readCipher)   : -1;
   int writeReserved = (codec->m_hasWriteCipher && codec->m_writeCipher != NULL) ? globalCodecDescriptorTable[codec->m_writeCipherType-1].m_getReserved(codec->m_writeCipher) : -1;
   return (readReserved == writeReserved);
+}
+
+SQLITE_PRIVATE void
+sqlite3mcSetCodecLastError(Codec* codec, int error)
+{
+  if (codec)
+  {
+    codec->m_lastError = error;
+  }
+}
+
+SQLITE_PRIVATE int
+sqlite3mcGetCodecLastError(Codec* codec)
+{
+  return codec ? codec->m_lastError : SQLITE_OK;
 }
 
 SQLITE_PRIVATE unsigned char*
@@ -500,6 +526,9 @@ sqlite3mcCodecCopy(Codec* codec, Codec* other)
   codec->m_bt = other->m_bt;
 #endif
   codec->m_btShared = other->m_btShared;
+
+  codec->m_lastError = SQLITE_OK;
+
   return rc;
 }
 
@@ -570,16 +599,30 @@ sqlite3mcPadPassword(char* password, int pswdlen, unsigned char pswd[32])
   }
 }
 
+SQLITE_PRIVATE unsigned char* mcReadDatabaseHeader(Codec* codec, unsigned char* dbHeader)
+{
+  Pager* pPager = codec->m_btShared->pPager;
+  sqlite3_file* fd = (isOpen(pPager->fd)) ? pPager->fd : NULL;
+  if (fd == NULL || sqlite3OsRead(fd, dbHeader, KEYSALT_LENGTH, 0) != SQLITE_OK)
+    return NULL;
+  else
+    return dbHeader;
+}
+
 SQLITE_PRIVATE void
 sqlite3mcGenerateReadKey(Codec* codec, char* userPassword, int passwordLength, unsigned char* cipherSalt)
 {
-  globalCodecDescriptorTable[codec->m_readCipherType-1].m_generateKey(codec->m_readCipher, codec->m_btShared, userPassword, passwordLength, 0, cipherSalt);
+  unsigned char dbHeader[KEYSALT_LENGTH];
+  unsigned char* pDbHeader = (cipherSalt == NULL) ? mcReadDatabaseHeader(codec, dbHeader) : cipherSalt;
+  globalCodecDescriptorTable[codec->m_readCipherType-1].m_generateKey(codec->m_readCipher, userPassword, passwordLength, 0, pDbHeader);
 }
 
 SQLITE_PRIVATE void
 sqlite3mcGenerateWriteKey(Codec* codec, char* userPassword, int passwordLength, unsigned char* cipherSalt)
 {
-  globalCodecDescriptorTable[codec->m_writeCipherType-1].m_generateKey(codec->m_writeCipher, codec->m_btShared, userPassword, passwordLength, 1, cipherSalt);
+  unsigned char dbHeader[KEYSALT_LENGTH];
+  unsigned char* pDbHeader = (cipherSalt == NULL) ? mcReadDatabaseHeader(codec, dbHeader) : cipherSalt;
+  globalCodecDescriptorTable[codec->m_writeCipherType-1].m_generateKey(codec->m_writeCipher, userPassword, passwordLength, 1, pDbHeader);
 }
 
 SQLITE_PRIVATE int
@@ -610,10 +653,10 @@ sqlite3mcConfigureSQLCipherVersion(sqlite3* db, int configDefault, int legacyVer
   static char* defNames[] = { "default:legacy_page_size", "default:kdf_iter", "default:hmac_use", "default:kdf_algorithm", "default:hmac_algorithm", NULL };
   static int versionParams[SQLCIPHER_VERSION_MAX][5] =
   {
-    { 1024,   4000, 0, SQLCIPHER_KDF_ALGORITHM_SHA1,   SQLCIPHER_HMAC_ALGORITHM_SHA1   }, 
-    { 1024,   4000, 1, SQLCIPHER_KDF_ALGORITHM_SHA1,   SQLCIPHER_HMAC_ALGORITHM_SHA1   },
-    { 1024,  64000, 1, SQLCIPHER_KDF_ALGORITHM_SHA1,   SQLCIPHER_HMAC_ALGORITHM_SHA1   },
-    { 4096, 256000, 1, SQLCIPHER_KDF_ALGORITHM_SHA512, SQLCIPHER_HMAC_ALGORITHM_SHA512 }
+    { 1024,   4000, 0, SQLCIPHER_ALGORITHM_SHA1,   SQLCIPHER_ALGORITHM_SHA1   },
+    { 1024,   4000, 1, SQLCIPHER_ALGORITHM_SHA1,   SQLCIPHER_ALGORITHM_SHA1   },
+    { 1024,  64000, 1, SQLCIPHER_ALGORITHM_SHA1,   SQLCIPHER_ALGORITHM_SHA1   },
+    { 4096, 256000, 1, SQLCIPHER_ALGORITHM_SHA512, SQLCIPHER_ALGORITHM_SHA512 }
   };
   if (legacyVersion > 0 && legacyVersion <= SQLCIPHER_VERSION_MAX)
   {

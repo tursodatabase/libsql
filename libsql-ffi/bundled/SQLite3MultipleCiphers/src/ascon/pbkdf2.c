@@ -15,6 +15,7 @@
 #define ASCON_HASH_SIZE 32
 #define ASCON_PBKDF2_SIZE 32
 
+SQLITE_PRIVATE
 void ascon_pbkdf2_init(ascon_state_t* state, const char* functionName,
                        const unsigned char* custom, uint32_t customlen, uint32_t outlen)
 {
@@ -60,10 +61,11 @@ void ascon_pbkdf2_init(ascon_state_t* state, const char* functionName,
  * Note: Instead of HMAC like in RFC 8018, use the following PRF:
  * PRF(P, X) = ASCON-cXOF(X, 256, "PBKDF2", P)
  */
-static void ascon_pbkdf2_f(ascon_state_t* state,
-                           uint8_t* T, /*uint8_t* U,*/
-                           const uint8_t* salt, uint32_t saltlen,
-                           uint32_t count, uint32_t blocknum)
+static
+void ascon_pbkdf2_f(ascon_state_t* state,
+                    uint8_t* T, /*uint8_t* U,*/
+                    const uint8_t* salt, uint32_t saltlen,
+                    uint32_t count, uint32_t blocknum)
 {
   uint32_t asconSaltLen = (saltlen < ASCON_SALT_LEN) ? saltlen : ASCON_SALT_LEN;
   uint8_t temp[ASCON_SALT_LEN+4];
@@ -73,7 +75,7 @@ static void ascon_pbkdf2_f(ascon_state_t* state,
   memset(temp, 0, ASCON_SALT_LEN);
   memcpy(temp, salt, asconSaltLen);
   STORE32_BE(temp+ASCON_SALT_LEN, blocknum);
-  
+
   /* Copy initial state */
   for (j = 0; j < 5; ++j) state2.x[j] = state->x[j];
 
@@ -109,6 +111,7 @@ static void ascon_pbkdf2_f(ascon_state_t* state,
   sqlite3mcSecureZeroMemory(&state2, sizeof(ascon_state_t));
 }
 
+SQLITE_PRIVATE
 void ascon_pbkdf2(uint8_t* out, uint32_t outlen,
                   const uint8_t* password, uint32_t passwordlen,
                   const uint8_t* salt, uint32_t saltlen, uint32_t count)

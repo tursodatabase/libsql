@@ -80,8 +80,10 @@ foreach {tn delrow trans conflictargs conflictret} {
   8   3 1 {FOREIGN_KEY 1} ABORT
 } {
 
-  set A(OMIT)  {0 {}}
-  set A(ABORT) {1 SQLITE_CONSTRAINT}
+  set A(OMIT,0)  {1 SQLITE_CONSTRAINT}
+  set A(OMIT,1)  {0 {}}
+  set A(ABORT,0) {1 SQLITE_CONSTRAINT}
+  set A(ABORT,1) {1 SQLITE_CONSTRAINT}
   do_test 1.2.$tn.1 {
     populate_db
     execsql { DELETE FROM p1 WHERE a=($delrow+0) }
@@ -89,20 +91,24 @@ foreach {tn delrow trans conflictargs conflictret} {
 
     set ::xConflict [list]
     list [catch {sqlite3changeset_apply db $::cc xConflict} msg] $msg
-  } $A($conflictret)
+  } $A($conflictret,$trans)
 
   do_test 1.2.$tn.2 { set ::xConflict } $conflictargs
 
-  set A(OMIT)  {1 1}
-  set A(ABORT) {0 0}
+  set A(OMIT,0)  {0 0}
+  set A(OMIT,1)  {1 1}
+  set A(ABORT,0) {0 0}
+  set A(ABORT,1) {0 0}
+
   do_test 1.2.$tn.3 {
     execsql { SELECT count(*) FROM c1 UNION ALL SELECT count(*) FROM c2 }
-  } $A($conflictret)
+  } $A($conflictret,$trans)
 
   do_test 1.2.$tn.4 { expr ![sqlite3_get_autocommit db] } $trans
   do_test 1.2.$tn.5 {
-    if { $trans } { execsql COMMIT }
+    if { $trans && $conflictret=="ABORT" } { execsql COMMIT }
   } {}
+  catchsql ROLLBACK
 }
 
 #--------------------------------------------------------------------

@@ -1,12 +1,23 @@
 # Notes On Compiling SQLite On Windows 11
 
-Here are step-by-step instructions on how to build SQLite from
-canonical source on a new Windows 11 PC, as of 2024-10-09:
+Below are step-by-step instructions on how to build SQLite from
+canonical source on a new Windows 11 PC, as of 2024-10-09.
+See [](./compile-for-unix.md) for a similar guide for unix-like
+systems, including MacOS.
 
   1. Install Microsoft Visual Studio. The free "community edition"
       will work fine.  Do a standard install for C++ development.
       SQLite only needs the
       "cl" compiler and the "nmake" build tool.
+      <ul><li><b>Note:</b>
+      VS2015 or later is required for the procedures below to
+      all work.  You *might* be able to get the build to work with
+      earlier versions of MSVC, but in that case the TCL installation
+      of step 3 will be required, since the "jimsh0.c" program of
+      Autosetup that is used as a substitute for "tclsh.exe" won't
+      compile with versions of Visual Studio prior to VS2015.  In any
+      event, building SQLite from canonical source code on Windows
+      is not supported for earlier versions of Visual Studio.</ul>
 
   2. Under the "Start" menu, find "All Apps" then go to "Visual Studio 20XX"
       and find "x64 Native Tools Command Prompt for VS 20XX".  Pin that
@@ -16,15 +27,16 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       a 32-bit build.)  The subsequent steps will not work in a vanilla
       DOS prompt.  Nor will they work in PowerShell.
 
-  3. Install TCL development libraries.  This note assumes that you will
+  3.  *(Optional):* Install TCL development libraries.
+      This note assumes that you will
       install the TCL development libraries in the "`c:\Tcl`" directory.
       Make adjustments
       if you want TCL installed somewhere else.  SQLite needs both the
       "tclsh90.exe" command-line tool as part of the build process, and
       the "tcl90.lib" and "tclstub.lib" libraries in order to run tests.
-      This document assumes you are working with <b>TCL version 9.0</b>.
-      See versions of this document from prior to 2024-10-10 for
-      instructions on how to build using TCL version 8.6.
+      This document assumes you are working with TCL version 9.0.
+      See [](./tcl-extension-testing.md#windows) for guidance on how
+      to compile TCL version 8.6 for use with SQLite.
       <ol type="a">
       <li>Get the TCL source archive, perhaps from
       <https://www.tcl.tk/software/tcltk/download.html>
@@ -43,37 +55,16 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
           making this change.
       </ol>
 
-        1. Get the TCL source archive, perhaps from
-      [https://www.tcl.tk/software/tcltk/download.html](https://www.tcl.tk/software/tcltk/download.html).
-        2. Untar or unzip the source archive. CD into the "win/" subfolder
-            of the source tree.
-        3. Run: `nmake /f makefile.vc release`
-        4. Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl install`
-        5. CD to `c:\Tcl\lib`. In that subfolder make a copy of the
-            "`tcl86t.lib`" file to the alternative name "`tcl86.lib`"
-            (omitting the second 't').
-        6. CD to `c:\Tcl\bin`. Make a copy of the "`tclsh86t.exe`"
-            file into "`tclsh.exe`" (without the "86t") in the same directory.
-        7. Add `c:\Tcl\bin` to your %PATH%. To do this, go to Settings
-            and search for "path". Select "edit environment variables for
-            your account" and modify your default PATH accordingly.
-            You will need to close and reopen your command prompts after
-            making this change.
+      As of 2024-10-25, TCL is not longer required for many
+      common build targets, such as "sqlite3.c" or the "sqlite3.exe"
+      command-line tool.  So you can skip this step if that is all
+      you want to build.  TCL is still required to run "make test"
+      and similar, or to build the TCL extension, of course.
 
-  4. Download the SQLite source tree and unpack it. CD into the
+  4.  Download the SQLite source tree and unpack it. CD into the
       toplevel directory of the source tree.
 
-  5. Set the TCLDIR environment variable to point to your TCL installation.
-      Like this:
-        - `set TCLDIR=c:\Tcl`
-
-      If you install TCL in the "`c:\Tcl`" directory (as recommended
-      in step 3 above), then this step is optional because
-      "`c:\Tcl`" is the default value for TCLDIR.  You can also skip this
-      step by specifying "`TCLDIR=c:\Tcl`" as an argument to the nmake
-      commands in step 6 below.
-
-  6.  Run the "`Makefile.msc`" makefile with an appropriate target.
+  5.  Run the "`Makefile.msc`" makefile with an appropriate target.
       Examples:
       <ul>
       <li>  `nmake /f makefile.msc`
@@ -81,6 +72,13 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       <li>  `nmake /f makefile.msc sqlite3.exe`
       <li>  `nmake /f makefile.msc sqldiff.exe`
       <li>  `nmake /f makefile.msc sqlite3_rsync.exe`
+      </ul>
+      <p>No TCL is required for the nmake targets above.  But for the ones
+      that follow, you will need a TCL installation, as described in step 3
+      above.  If you install TCL in some directory other than C:\\Tcl, then
+      you will also need to add the "TCLDIR=<i>&lt;dir&gt;</i>" option on the
+      nmake command line to tell nmake where your TCL is installed.
+      <ul>
       <li>  `nmake /f makefile.msc tclextension-install`
       <li>  `nmake /f makefile.msc devtest`
       <li>  `nmake /f makefile.msc releasetest`

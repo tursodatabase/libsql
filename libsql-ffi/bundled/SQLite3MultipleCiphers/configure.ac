@@ -1,10 +1,10 @@
 dnl Process this script with autoconf to create configure for sqlite3mc library
 dnl
-dnl Copyright (C) 2019-2023 Ulrich Telle <ulrich@telle-online.de>
+dnl Copyright (C) 2019-2025 Ulrich Telle <ulrich@telle-online.de>
 dnl
 dnl This file is covered by the same licence as the entire SQLite3 Multiple Ciphers package.
 
-AC_INIT([sqlite3mc], [1.8.1], [ulrich@telle-online.de])
+AC_INIT([sqlite3mc], [2.0.2], [ulrich@telle-online.de])
 
 dnl This is the version tested with, might work with earlier ones.
 AC_PREREQ([2.69])
@@ -95,6 +95,15 @@ AC_ARG_WITH([ascon128],
 AS_IF([test "x$with_ascon128" = xno],
     [AC_DEFINE([HAVE_CIPHER_ASCON128], [0], [Define if you have Ascon-128  disabled])])
 
+AC_ARG_WITH([aegis],
+    [AS_HELP_STRING([--without-aegis],
+        [Disable support for AEGIS Encryption])],
+    [],
+    [with_aegis=yes])
+
+AS_IF([test "x$with_aegis" = xno],
+    [AC_DEFINE([HAVE_CIPHER_AEGIS], [0], [Define if you have AEGIS disabled])])
+
 dnl Enable cipher codec
 
 AC_ARG_ENABLE(codec,
@@ -104,7 +113,8 @@ AC_ARG_ENABLE(codec,
                               chacha20 [default]: ChaCha20-Poly1305 Encryption
                               sqlcipher: SQLCipher Encryption
                               rc4: System.Data.SQLite RC4 Encryption
-                              ascon128: Ascon-128 Encryption],
+                              ascon128: Ascon-128 Encryption
+                              aegis: AEGIS Encryption],
       [if   test "x$enableval" = "xaes128" && test "x$with_aes128cbc" = xyes ; then
         codec_type=CODEC_TYPE_AES128
       elif test "x$enableval" = "xaes256" && test "x$with_aes256cbc" = xyes ; then
@@ -117,6 +127,8 @@ AC_ARG_ENABLE(codec,
         codec_type=CODEC_TYPE_RC4
       elif test "x$enableval" = "xascon128" && test "x$with_ascon128" = xyes ; then
         codec_type=CODEC_TYPE_ASCON128
+      elif test "x$enableval" = "xaegis" && test "x$with_aegis" = xyes ; then
+        codec_type=CODEC_TYPE_AEGIS
       else
         echo
         echo "Error!"
@@ -131,7 +143,8 @@ AS_IF([test "x$with_aes128cbc" = xno &&
        test "x$with_chacha20" = xno &&
        test "x$with_sqlcipher" = xno &&
        test "x$with_rc4" = xno &&
-       test "x$with_ascon128" = xno],
+       test "x$with_ascon128" = xno &&
+       test "x$with_aegis" = xno],
        [AC_DEFINE([SQLITE_HAS_CODEC], [0], [All ciphers disabled so encryption is disabled])])
 
 dnl Check for zlib

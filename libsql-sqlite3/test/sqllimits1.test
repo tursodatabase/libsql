@@ -75,6 +75,13 @@ do_test sqllimits1-1.23 {
   sqlite3_limit db SQLITE_LIMIT_TOOBIG 123
 } {-1}
 
+# Minimum value for SQLITE_LIMIT_LENGTH is 30
+#
+do_test sqllimits1-1.30 {
+  set prior [sqlite3_limit db SQLITE_LIMIT_LENGTH 1]
+  sqlite3_limit db SQLITE_LIMIT_LENGTH $prior
+} 30
+
 
 # Decrease all limits by half.  Verify that the new limits take.
 #

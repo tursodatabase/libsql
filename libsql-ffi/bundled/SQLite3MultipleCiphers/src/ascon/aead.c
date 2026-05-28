@@ -88,7 +88,7 @@ forceinline void ascon_adata(ascon_state_t* s, const uint8_t* ad,
     ASCON_P(s, nr);
   }
   /* domain separation */
-  s->x[4] ^= 1;
+  s->x[4] ^= ASCON_DSEP();
   ascon_printstate("domain separation", s);
 }
 
@@ -197,6 +197,7 @@ forceinline void ascon_final(ascon_state_t* s, const ascon_key_t* key) {
   ascon_printstate("final 2nd key xor", s);
 }
 
+SQLITE_PRIVATE
 int ascon_aead_encrypt(uint8_t* ctext,
                        uint8_t tag[ASCON_AEAD_TAG_LEN],
                        const uint8_t* mtext, uint64_t mlen,
@@ -220,6 +221,7 @@ int ascon_aead_encrypt(uint8_t* ctext,
   return 0;
 }
 
+SQLITE_PRIVATE
 int ascon_aead_decrypt(uint8_t* mtext,
                        const uint8_t* ctext, uint64_t clen,
                        const uint8_t* ad, uint64_t adlen,

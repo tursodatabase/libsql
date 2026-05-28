@@ -1917,6 +1917,7 @@ int main(int argc, char **argv){
   int bTimer = 0;              /* Show elapse time for each test */
   int nV;                      /* How much to increase verbosity with -vvvv */
   sqlite3_int64 tmStart;       /* Start of each test */
+  int iEstTime = 0;            /* LPF for the time-to-go */
 
   sqlite3_config(SQLITE_CONFIG_URI,1);
   registerOomSimulator();
@@ -2416,9 +2417,29 @@ int main(int argc, char **argv){
         if( bScript ){
           /* No progress output */
         }else if( bSpinner ){
-          int nTotal =g.nSql;
+          int nTotal = g.nSql;
           int idx = pSql->seq;
-          printf("\r%s: %d/%d   ", zDbName, idx, nTotal);
+          if( nSrcDb==1 && nTotal>idx && idx>=20 ){
+            int iToGo = (timeOfDay() - iBegin)*(nTotal-idx)/(idx*1000);
+            int hr, min, sec;
+            if( idx==20 ){
+              iEstTime = iToGo;
+            }else{
+              iEstTime = (iToGo + 7*iEstTime)/8;
+            }
+            hr = iEstTime/3600;
+            min = (iEstTime/60)%60;
+            sec = iEstTime%60;
+            if( hr>0 ){
+              printf("\r%s: %d/%d ETC %d:%02d:%02d  ",
+                     zDbName, idx, nTotal, hr, min, sec);
+            }else{
+              printf("\r%s: %d/%d ETC %02d:%02d    ",
+                     zDbName, idx, nTotal, min, sec);
+            }
+          }else{  
+            printf("\r%s: %d/%d           ", zDbName, idx, nTotal);
+          }
           fflush(stdout);
         }else if( verboseFlag>1 ){
           printf("%s\n", g.zTestName);
@@ -2457,7 +2478,7 @@ int main(int argc, char **argv){
         }else if( bSpinner ){
           int nTotal = g.nDb*g.nSql;
           int idx = pSql->seq*g.nDb + pDb->id - 1;
-          printf("\r%s: %d/%d   ", zDbName, idx, nTotal);
+          printf("\r%s: %d/%d            ", zDbName, idx, nTotal);
           fflush(stdout);
         }else if( verboseFlag>1 ){
           printf("%s\n", g.zTestName);
@@ -2560,7 +2581,7 @@ int main(int argc, char **argv){
       /* No progress output */
     }else if( bSpinner ){
       int nTotal = g.nDb*g.nSql;
-      printf("\r%s: %d/%d   \n", zDbName, nTotal, nTotal);
+      printf("\r%s: %d/%d          \n", zDbName, nTotal, nTotal);
     }else if( !quietFlag && verboseFlag<2 ){
       printf(" 100%% - %d tests\n", g.nDb*g.nSql);
     }

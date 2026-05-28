@@ -938,6 +938,7 @@ void sqlite3RecordErrorOffsetOfExpr(sqlite3 *db, const Expr *pExpr){
     pExpr = pExpr->pLeft;
   }
   if( pExpr==0 ) return;
+  if( ExprHasProperty(pExpr, EP_FromDDL) ) return;
   db->errByteOffset = pExpr->w.iOfst;
 }
 

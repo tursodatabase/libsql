@@ -108,4 +108,148 @@ do_execsql_test 300 {
   SELECT * FROM sqlite_temp_schema, sqlite_dbpage;
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 400 {
+  ATTACH ':memory:' AS aux1;
+  BEGIN;
+    CREATE VIRTUAL TABLE aux1.t1 USING sqlite_dbpage;
+    INSERT INTO t1 VALUES(17, NULL);
+  COMMIT;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+db2 eval {
+  PRAGMA auto_vacuum=NONE;
+  CREATE TABLE t1(x, y);
+}
+
+do_execsql_test 500 {
+  PRAGMA auto_vacuum=NONE;
+  CREATE TABLE x1(a);
+  INSERT INTO x1 VALUES( hex(randomblob(2000)) );
+  INSERT INTO x1 VALUES( hex(randomblob(2000)) );
+  INSERT INTO x1 VALUES( hex(randomblob(2000)) );
+  INSERT INTO x1 VALUES( hex(randomblob(2000)) );
+  PRAGMA page_count;
+} {18}
+
+do_test 510 {
+  db eval  BEGIN 
+  db2 eval { PRAGMA page_count } {
+    db eval {
+      INSERT INTO sqlite_dbpage values($page_count, NULL);
+    }
+  }
+  db2 eval { SELECT pgno, data FROM sqlite_dbpage } {
+    db eval {
+      INSERT INTO sqlite_dbpage values($pgno, $data);
+    }
+  }
+
+  db eval COMMIT
+} {}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 520 {
+  PRAGMA page_count;
+  SELECT * FROM t1;
+} {2}
+
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+do_execsql_test 610 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+  INSERT INTO t1 VALUES(1234);
+  CREATE TABLE aux.x1(z);
+}
+
+set pgno [db one {SELECT max(rootpage) FROM sqlite_schema}]
+sqlite3 db2 test.db2
+db2 eval {
+  BEGIN;
+    SELECT * FROM x1;
+}
+
+do_catchsql_test 620 {
+  UPDATE sqlite_dbpage SET data = (
+    SELECT data FROM sqlite_dbpage WHERE pgno=$pgno-1
+  ) WHERE pgno = $pgno;
+} {1 {database is locked}}
+
+db2 eval {
+  COMMIT;
+}
+
+do_catchsql_test 630 {
+  UPDATE sqlite_dbpage SET data = (
+    SELECT data FROM sqlite_dbpage WHERE pgno=$pgno-1
+  ) WHERE pgno = $pgno;
+} {0 {}}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 640 {
+  SELECT * FROM t2;
+} {1234}
+
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 700 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES( hex(randomblob(1000)) );
+  INSERT INTO t1 VALUES( hex(randomblob(1000)) );
+  INSERT INTO t1 VALUES( hex(randomblob(1000)) );
+}
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+db2 eval {
+  CREATE TABLE y1(y);
+  INSERT INTO y1 VALUES( hex(randomblob(1000)) );
+}
+
+set max [db2 one {PRAGMA page_count}]
+
+do_test 710 {
+  execsql {
+    BEGIN;
+  }
+
+  for {set ii 1} {$ii <= $max} {incr ii} {
+    set data [db2 one {SELECT data FROM sqlite_dbpage WHERE pgno=$ii}]
+    execsql {
+      UPDATE sqlite_dbpage SET data=$data WHERE pgno=$ii
+    }
+  }
+
+  execsql {
+      SAVEPOINT abc;
+        INSERT INTO sqlite_dbpage VALUES(2, NULL);
+      ROLLBACK TO abc;
+    COMMIT;
+  }
+} {}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 720 {
+  PRAGMA integrity_check
+} {ok}
+
+
 finish_test

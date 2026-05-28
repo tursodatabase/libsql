@@ -74,6 +74,7 @@ static void chacha20_block(uint32_t x[16])
   #undef CC20QR
 }
 
+SQLITE_PRIVATE
 void chacha20_xor(void* buffer, size_t n, const uint8_t key[32],
                   const uint8_t nonce[12], uint32_t counter)
 {
@@ -141,6 +142,7 @@ void chacha20_xor(void* buffer, size_t n, const uint8_t key[32],
 /*
  * Poly1305 authentication tags
  */
+SQLITE_PRIVATE
 void poly1305(const uint8_t* msg, size_t n, const uint8_t key[32],
               uint8_t tag[16])
 {
@@ -210,6 +212,7 @@ process_block:
   s4 = d4; STORE32_LE(tag + 12, s4);
 }
 
+SQLITE_PRIVATE
 int poly1305_tagcmp(const uint8_t tag1[16], const uint8_t tag2[16])
 {
   uint8_t d = 0;
@@ -286,7 +289,7 @@ static size_t entropy(void* buf, size_t n)
 }
 
 #else
-  
+
 #include <windows.h>
 #define RtlGenRandom SystemFunction036
 BOOLEAN NTAPI RtlGenRandom(PVOID RandomBuffer, ULONG RandomBufferLength);
@@ -405,6 +408,7 @@ static size_t entropy(void* buf, size_t n)
 /*
  * ChaCha20 random number generator
  */
+SQLITE_PRIVATE
 void chacha20_rng(void* out, size_t n)
 {
   static uint8_t key[32], nonce[12], buffer[64] = { 0 };

@@ -1,6 +1,6 @@
 /*
 ** Name:        prolog.h
-** Purpose:     Include important header files, before 
+** Purpose:     Include important header files, before
 ** Based on:    Public domain Ascon reference implementation
 **              and optimized variants for 32- and 64-bit
 **              (see https://github.com/ascon/ascon-c)

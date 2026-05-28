@@ -1,0 +1,66 @@
+#!/bin/sh
+# ^^^^^^^ Please try to keep this script Bourne-compatible.
+########################################################################
+# WARNING: emcc.sh is generated from emcc.sh.in by the configure
+# process. Do not edit emcc.sh directly, as it may be deleted or
+# overwritten by the configure script.
+#
+# A wrapper around the emcc compiler which uses configure-time state
+# to locate the Emscripten SDK and import the SDK's environment
+# script, if needed.
+########################################################################
+# EMSDK_HOME comes from the configure --with-emsdk=/dir flag.
+# EMSDK_ENV_SH is ${thatDir}/emsdk_env.sh and is also set by the
+# configure process.
+EMSDK_HOME="@EMSDK_HOME@"
+EMSDK_ENV_SH="@EMSDK_ENV_SH@"
+emcc="@BIN_EMCC@"
+
+if [ x = "x${emcc}" ]; then
+    emcc=`which emcc 2>/dev/null`
+fi
+
+if [ x = "x${emcc}" ]; then
+  # If emcc is not found in the path, try to find it via an emsdk
+  # installation. The SDK variant is the official installation style
+  # supported by the Emscripten project, but emcc is also available
+  # via package managers on some OSes.
+  if [ x = "x${EMSDK_HOME}" ]; then
+    echo "EMSDK_HOME is not set. Pass --with-emsdk=/path/to/emsdk" \
+         "to the configure script." 1>&2
+    exit 1
+  fi
+
+  if [ x = "x${EMSDK_ENV_SH}" ]; then
+    if [ -f "${EMSDK_HOME}/emsdk_env.sh" ]; then
+      EMSDK_ENV_SH="${EMSDK_HOME}/emsdk_env.sh"
+    else
+      echo "EMSDK_ENV_SH is not set. Expecting configure script to set it." 1>&2
+      exit 2
+    fi
+  fi
+
+  if [ ! -f "${EMSDK_ENV_SH}" ]; then
+    echo "emsdk_env script not found: $EMSDK_ENV_SH" 1>&2
+    exit 3
+  fi
+
+  # $EMSDK is part of the state set by emsdk_env.sh.
+  if [ x = "x${EMSDK}" ]; then
+    EMSDK_QUIET=1
+    export EMSDK_QUIET
+    # ^^^ Squelches informational output from ${EMSDK_ENV_SH}.
+    source "${EMSDK_ENV_SH}" || {
+      rc=$?
+      echo "Error sourcing ${EMSDK_ENV_SH}"
+      exit $rc
+    }
+  fi
+  emcc=`which emcc 2>/dev/null`
+  if [ x = "x${emcc}" ]; then
+    echo "emcc not found in PATH. Normally that's set up by ${EMSDK_ENV_SH}." 1>&2
+    exit 4
+  fi
+fi
+
+exec emcc "$@"

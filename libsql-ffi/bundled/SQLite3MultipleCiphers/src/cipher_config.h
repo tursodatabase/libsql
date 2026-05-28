@@ -16,7 +16,7 @@ SQLITE_PRIVATE void sqlite3mcConfigTable(sqlite3_context* context, int argc, sql
 SQLITE_PRIVATE CodecParameter* sqlite3mcGetCodecParams(sqlite3* db);
 
 /* Forward declaration */
-static unsigned char* sqlite3mcGetSaltWriteCipher(Codec* codec);
+SQLITE_PRIVATE unsigned char* sqlite3mcGetSaltWriteCipher(Codec* codec);
 
 SQLITE_PRIVATE void sqlite3mcCodecDataSql(sqlite3_context* context, int argc, sqlite3_value** argv);
 SQLITE_PRIVATE void sqlite3mcConfigParams(sqlite3_context* context, int argc, sqlite3_value** argv);

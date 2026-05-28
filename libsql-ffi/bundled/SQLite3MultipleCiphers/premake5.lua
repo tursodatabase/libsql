@@ -39,7 +39,7 @@ project "sqlite3mc_lib"
     end
   else
     toolset("gcc")
-    buildoptions { "-msse4.2", "-maes" }
+--    buildoptions { "-msse4.2", "-maes" }
 --    buildoptions { "-march=native" }
   end
   makesettings { "include config.gcc" }
@@ -51,7 +51,7 @@ project "sqlite3mc_lib"
   }
   characterset ("Unicode")
   staticruntime "On"
-  includedirs { "src" }
+  includedirs { "src", "src/aegis/include", "src/argon2/include" }
 
   location( BUILDDIR )
   targetname "sqlite3mc"
@@ -92,10 +92,9 @@ project "sqlite3mc_lib"
 --    "SQLITE_ENABLE_SQLAR=1"
 --    "SQLITE_ENABLE_ZIPFILE=1"
     "SQLITE3MC_SECURE_MEMORY=$(SQLITE3MC_SECURE_MEMORY)",
---    "SQLITE3MC_USE_RANDOM_FILL_MEMORY=$(SQLITE3MC_USE_RANDOM_FILL_MEMORY)",
     "SQLITE_TEMP_STORE=2",
     "SQLITE_USE_URI=1",
-    "SQLITE_USER_AUTHENTICATION=1",
+    "SQLITE_USER_AUTHENTICATION=0",
 -- Compatibility with official SQLite3 shell
     "SQLITE_ENABLE_DBPAGE_VTAB=1",
     "SQLITE_ENABLE_DBSTAT_VTAB=1",
@@ -136,7 +135,7 @@ project "sqlite3mc_dll"
     end
   else
     toolset("gcc")
-    buildoptions { "-msse4.2", "-maes" }
+--    buildoptions { "-msse4.2", "-maes" }
 --    buildoptions { "-march=native" }
   end
   makesettings { "include config.gcc" }
@@ -149,7 +148,7 @@ project "sqlite3mc_dll"
   }
   characterset ("Unicode")
   staticruntime "On"
-  includedirs { "src" }
+  includedirs { "src", "src/aegis/include", "src/argon2/include" }
 
   location( BUILDDIR )
   targetname "sqlite3mc"
@@ -190,10 +189,9 @@ project "sqlite3mc_dll"
 --    "SQLITE_ENABLE_SQLAR=1"
 --    "SQLITE_ENABLE_ZIPFILE=1"
     "SQLITE3MC_SECURE_MEMORY=$(SQLITE3MC_SECURE_MEMORY)",
---    "SQLITE3MC_USE_RANDOM_FILL_MEMORY=$(SQLITE3MC_USE_RANDOM_FILL_MEMORY)",
     "SQLITE_TEMP_STORE=2",
     "SQLITE_USE_URI=1",
-    "SQLITE_USER_AUTHENTICATION=1"
+    "SQLITE_USER_AUTHENTICATION=0"
   }
 
   -- Intermediate directory
@@ -229,7 +227,7 @@ project "sqlite3mc_shell"
     end
   else
     toolset("gcc")
-    buildoptions { "-msse4.2", "-maes" }
+--    buildoptions { "-msse4.2", "-maes" }
 --    buildoptions { "-march=native" }
   end
   makesettings { "include config.gcc" }
@@ -251,7 +249,7 @@ project "sqlite3mc_shell"
     "SQLITE_SHELL_IS_UTF8=1",
     "SQLITE_ENABLE_SESSION=1",
     "SQLITE_ENABLE_DBPAGE_VTAB=1",
-    "SQLITE_USER_AUTHENTICATION=1"
+    "SQLITE_USER_AUTHENTICATION=0"
   }
 
   -- Intermediate directory
@@ -288,7 +286,7 @@ project "sqlite3mc_libicu"
     end
   else
     toolset("gcc")
-    buildoptions { "-msse4.2", "-maes" }
+--    buildoptions { "-msse4.2", "-maes" }
 --    buildoptions { "-march=native" }
   end
   makesettings { "include config.gcc" }
@@ -300,7 +298,7 @@ project "sqlite3mc_libicu"
   }
   characterset ("Unicode")
   staticruntime "On"
-  includedirs { "src", "$(LIBICU_PATH)/include" }
+  includedirs { "src", "src/aegis/include", "src/argon2/include", "$(LIBICU_PATH)/include" }
 
   location( BUILDDIR )
   targetname "sqlite3mc_icu"
@@ -342,10 +340,9 @@ project "sqlite3mc_libicu"
 --    "SQLITE_ENABLE_SQLAR=1"
 --    "SQLITE_ENABLE_ZIPFILE=1"
     "SQLITE3MC_SECURE_MEMORY=$(SQLITE3MC_SECURE_MEMORY)",
---    "SQLITE3MC_USE_RANDOM_FILL_MEMORY=$(SQLITE3MC_USE_RANDOM_FILL_MEMORY)",
     "SQLITE_TEMP_STORE=2",
     "SQLITE_USE_URI=1",
-    "SQLITE_USER_AUTHENTICATION=1",
+    "SQLITE_USER_AUTHENTICATION=0",
 -- Compatibility with official SQLite3 shell
     "SQLITE_ENABLE_DBPAGE_VTAB=1",
     "SQLITE_ENABLE_DBSTAT_VTAB=1",
@@ -386,7 +383,7 @@ project "sqlite3mc_dllicu"
     end
   else
     toolset("gcc")
-    buildoptions { "-msse4.2", "-maes" }
+--    buildoptions { "-msse4.2", "-maes" }
 --    buildoptions { "-march=native" }
   end
   makesettings { "include config.gcc" }
@@ -399,7 +396,7 @@ project "sqlite3mc_dllicu"
   }
   characterset ("Unicode")
   staticruntime "On"
-  includedirs { "src", "$(LIBICU_PATH)/include" }
+  includedirs { "src", "src/aegis/include", "src/argon2/include", "$(LIBICU_PATH)/include" }
 
   filter { "platforms:Win32" }
     libdirs { "$(LIBICU_PATH)/lib" }
@@ -453,10 +450,9 @@ project "sqlite3mc_dllicu"
 --    "SQLITE_ENABLE_SQLAR=1"
 --    "SQLITE_ENABLE_ZIPFILE=1"
     "SQLITE3MC_SECURE_MEMORY=$(SQLITE3MC_SECURE_MEMORY)",
---    "SQLITE3MC_USE_RANDOM_FILL_MEMORY=$(SQLITE3MC_USE_RANDOM_FILL_MEMORY)",
     "SQLITE_TEMP_STORE=2",
     "SQLITE_USE_URI=1",
-    "SQLITE_USER_AUTHENTICATION=1"
+    "SQLITE_USER_AUTHENTICATION=0"
   }
 
   -- Intermediate directory
@@ -492,7 +488,7 @@ project "sqlite3mc_shellicu"
     end
   else
     toolset("gcc")
-    buildoptions { "-msse4.2", "-maes" }
+--    buildoptions { "-msse4.2", "-maes" }
 --    buildoptions { "-march=native" }
   end
   makesettings { "include config.gcc" }
@@ -526,7 +522,7 @@ project "sqlite3mc_shellicu"
     "SQLITE_SHELL_IS_UTF8=1",
     "SQLITE_ENABLE_SESSION=1",
     "SQLITE_ENABLE_DBPAGE_VTAB=1",
-    "SQLITE_USER_AUTHENTICATION=1"
+    "SQLITE_USER_AUTHENTICATION=0"
   }
 
   -- Intermediate directory

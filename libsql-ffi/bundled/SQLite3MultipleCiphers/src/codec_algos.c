@@ -135,7 +135,7 @@ sqlite3mcAES128(Rijndael* aesCtx, int page, int encrypt, unsigned char encryptio
   {
     len = RijndaelBlockDecrypt(aesCtx, datain, datalen*8, dataout);
   }
-  
+
   /* It is a good idea to check the error code */
   if (len < 0)
   {
@@ -189,7 +189,7 @@ sqlite3mcAES256(Rijndael* aesCtx, int page, int encrypt, unsigned char encryptio
   {
     len = RijndaelBlockDecrypt(aesCtx, datain, datalen*8, dataout);
   }
-  
+
   /* It is a good idea to check the error code */
   if (len < 0)
   {

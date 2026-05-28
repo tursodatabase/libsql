@@ -1,0 +1,105 @@
+# 2014 Jan 08
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focused on phrase queries.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5tokendata
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+foreach_detail_mode $testprefix {
+
+  sqlite3_fts5_register_origintext db
+  fts5_aux_test_functions db
+  proc b {x} { string map [list "\0" "."] $x }
+  db func b b
+
+  do_execsql_test 1.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a, b, tokendata=1,
+      tokenize="origintext unicode61", detail=%DETAIL%
+    );
+    CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
+  }
+
+  do_execsql_test 1.1 {
+    INSERT INTO ft(rowid, a, b) VALUES
+      (1, 'Pedagog Pedal Pedant', 'Peculier Day Today'),
+      (2, 'Pedant pedantic pecked', 'Peck Penalize Pen');
+
+    INSERT INTO ft(rowid, a, b) VALUES
+      (3, 'Penalty Pence Penciled', 'One Two Three'),
+      (4, 'Pedant Pedal Pedant', 'Peculier Day Today');
+  }
+
+  do_execsql_test 1.2 {
+    SELECT DISTINCT b(term) FROM vocab
+  } {
+    day.Day one.One peck.Peck pecked peculier.Peculier pedagog.Pedagog
+    pedal.Pedal pedant.Pedant pedantic pen.Pen penalize.Penalize 
+    penalty.Penalty pence.Pence penciled.Penciled three.Three 
+    today.Today two.Two
+  }
+
+  do_execsql_test 1.3.1 {
+    SELECT rowid FROM ft('pe*')
+  } {
+    1 2 3 4
+  }
+
+  do_execsql_test 1.3.2 {
+    SELECT rowid FROM ft('pe*') ORDER BY rowid DESC
+  } {
+    4 3 2 1
+  }
+  
+  if {"%DETAIL%"!="none"} {
+    do_execsql_test 1.3.3 {
+      SELECT rowid FROM ft WHERE a MATCH 'pe*' ORDER BY rowid DESC
+    } {
+      4 3 2 1
+    }
+  }
+
+  do_execsql_test 1.4 {
+    SELECT rowid, b( fts5_test_insttoken(ft, 0, 0) ) FROM ft('pedant')
+  } {
+    1 pedant.Pedant
+    2 pedant.Pedant
+    4 pedant.Pedant
+  }
+
+  do_execsql_test 1.5 {
+    SELECT rowid, b( fts5_test_insttoken(ft, 0, 0) ) FROM ft('pe*')
+  } {
+    1 pedagog.Pedagog
+    2 pedant.Pedant
+    3 penalty.Penalty
+    4 pedant.Pedant
+  }
+
+  do_execsql_test 1.6 {
+    SELECT rowid, fts5_test_poslist(ft) FROM ft('pe*')
+  } {
+    1 {0.0.0 0.0.1 0.0.2 0.1.0} 
+    2 {0.0.0 0.0.1 0.0.2 0.1.0 0.1.1 0.1.2}
+    3 {0.0.0 0.0.1 0.0.2}
+    4 {0.0.0 0.0.1 0.0.2 0.1.0}
+  }
+}
+
+finish_test
+

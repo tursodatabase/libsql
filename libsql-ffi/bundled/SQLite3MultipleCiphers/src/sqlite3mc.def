@@ -250,10 +250,6 @@ sqlite3_uri_int64
 sqlite3_uri_key
 sqlite3_uri_parameter
 sqlite3_user_data
-sqlite3_user_add
-sqlite3_user_authenticate
-sqlite3_user_change
-sqlite3_user_delete
 sqlite3_value_blob
 sqlite3_value_bytes
 sqlite3_value_bytes16

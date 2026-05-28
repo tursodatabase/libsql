@@ -589,11 +589,16 @@ static int closureOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 }
 
 /*
+** Wrapper around sqlite3_free
+*/
+static void closureMemFree(closure_avl *p){ sqlite3_free(p); }
+
+/*
 ** Free up all the memory allocated by a cursor.  Set it rLimit to 0
 ** to indicate that it is at EOF.
 */
 static void closureClearCursor(closure_cursor *pCur){
-  closureAvlDestroy(pCur->pClosure, (void(*)(closure_avl*))sqlite3_free);
+  closureAvlDestroy(pCur->pClosure, closureMemFree);
   sqlite3_free(pCur->zTableName);
   sqlite3_free(pCur->zIdColumn);
   sqlite3_free(pCur->zParentColumn);

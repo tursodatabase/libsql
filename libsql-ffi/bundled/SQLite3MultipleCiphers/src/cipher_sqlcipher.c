@@ -3,7 +3,7 @@
 ** Purpose:     Implementation of cipher SQLCipher (version 1 to 4)
 ** Author:      Ulrich Telle
 ** Created:     2020-02-02
-** Copyright:   (c) 2006-2020 Ulrich Telle
+** Copyright:   (c) 2006-2024 Ulrich Telle
 ** License:     MIT
 */
 
@@ -31,13 +31,11 @@
 #define SQLCIPHER_HMAC_PGNO_NATIVE  0
 #define SQLCIPHER_HMAC_SALT_MASK    0x3a
 
-#define SQLCIPHER_KDF_ALGORITHM_SHA1   0
-#define SQLCIPHER_KDF_ALGORITHM_SHA256 1
-#define SQLCIPHER_KDF_ALGORITHM_SHA512 2
+#define SQLCIPHER_ALGORITHM_SHA1   0
+#define SQLCIPHER_ALGORITHM_SHA256 1
+#define SQLCIPHER_ALGORITHM_SHA512 2
 
-#define SQLCIPHER_HMAC_ALGORITHM_SHA1   0
-#define SQLCIPHER_HMAC_ALGORITHM_SHA256 1
-#define SQLCIPHER_HMAC_ALGORITHM_SHA512 2
+#define SQLCIPHER_HMAC_ALGO_COMPAT 1
 
 #define SQLCIPHER_VERSION_1   1
 #define SQLCIPHER_VERSION_2   2
@@ -58,13 +56,13 @@
 #if SQLCIPHER_VERSION_DEFAULT < SQLCIPHER_VERSION_4
 #define SQLCIPHER_KDF_ITER          64000
 #define SQLCIPHER_LEGACY_PAGE_SIZE  1024
-#define SQLCIPHER_KDF_ALGORITHM     SQLCIPHER_KDF_ALGORITHM_SHA1
-#define SQLCIPHER_HMAC_ALGORITHM    SQLCIPHER_HMAC_ALGORITHM_SHA1
+#define SQLCIPHER_KDF_ALGORITHM     SQLCIPHER_ALGORITHM_SHA1
+#define SQLCIPHER_HMAC_ALGORITHM    SQLCIPHER_ALGORITHM_SHA1
 #else
 #define SQLCIPHER_KDF_ITER          256000
 #define SQLCIPHER_LEGACY_PAGE_SIZE  4096
-#define SQLCIPHER_KDF_ALGORITHM  SQLCIPHER_KDF_ALGORITHM_SHA512
-#define SQLCIPHER_HMAC_ALGORITHM SQLCIPHER_HMAC_ALGORITHM_SHA512
+#define SQLCIPHER_KDF_ALGORITHM  SQLCIPHER_ALGORITHM_SHA512
+#define SQLCIPHER_HMAC_ALGORITHM SQLCIPHER_ALGORITHM_SHA512
 #endif
 
 SQLITE_PRIVATE CipherParams mcSQLCipherParams[] =
@@ -78,6 +76,7 @@ SQLITE_PRIVATE CipherParams mcSQLCipherParams[] =
   { "hmac_salt_mask",        SQLCIPHER_HMAC_SALT_MASK,   SQLCIPHER_HMAC_SALT_MASK,   0x00, 0xff },
   { "kdf_algorithm",         SQLCIPHER_KDF_ALGORITHM,    SQLCIPHER_KDF_ALGORITHM,    0, 2 },
   { "hmac_algorithm",        SQLCIPHER_HMAC_ALGORITHM,   SQLCIPHER_HMAC_ALGORITHM,   0, 2 },
+  { "hmac_algorithm_compat", SQLCIPHER_HMAC_ALGO_COMPAT, SQLCIPHER_HMAC_ALGO_COMPAT, 0, 1 },
   { "plaintext_header_size", 0,                          0,                          0, 100 /* restrict to db header size */ },
   CIPHER_PARAMS_SENTINEL
 };
@@ -98,6 +97,7 @@ typedef struct _sqlCipherCipher
   int       m_hmacSaltMask;
   int       m_kdfAlgorithm;
   int       m_hmacAlgorithm;
+  int       m_hmacAlgorithmCompat;
   int       m_plaintextHeaderSize;
   int       m_keyLength;
   uint8_t   m_key[KEYLENGTH_SQLCIPHER];
@@ -139,6 +139,7 @@ AllocateSQLCipherCipher(sqlite3* db)
     sqlCipherCipher->m_hmacSaltMask = sqlite3mcGetCipherParameter(cipherParams, "hmac_salt_mask");
     sqlCipherCipher->m_kdfAlgorithm = sqlite3mcGetCipherParameter(cipherParams, "kdf_algorithm");
     sqlCipherCipher->m_hmacAlgorithm = sqlite3mcGetCipherParameter(cipherParams, "hmac_algorithm");
+    sqlCipherCipher->m_hmacAlgorithmCompat = sqlite3mcGetCipherParameter(cipherParams, "hmac_algorithm_compat");
     if (sqlCipherCipher->m_legacy >= SQLCIPHER_VERSION_4)
     {
       int plaintextHeaderSize = sqlite3mcGetCipherParameter(cipherParams, "plaintext_header_size");
@@ -176,6 +177,7 @@ CloneSQLCipherCipher(void* cipherTo, void* cipherFrom)
   sqlCipherCipherTo->m_hmacSaltMask = sqlCipherCipherFrom->m_hmacSaltMask;
   sqlCipherCipherTo->m_kdfAlgorithm = sqlCipherCipherFrom->m_kdfAlgorithm;
   sqlCipherCipherTo->m_hmacAlgorithm = sqlCipherCipherFrom->m_hmacAlgorithm;
+  sqlCipherCipherTo->m_hmacAlgorithmCompat = sqlCipherCipherFrom->m_hmacAlgorithmCompat;
   sqlCipherCipherTo->m_plaintextHeaderSize = sqlCipherCipherFrom->m_plaintextHeaderSize;
   sqlCipherCipherTo->m_keyLength = sqlCipherCipherFrom->m_keyLength;
   memcpy(sqlCipherCipherTo->m_key, sqlCipherCipherFrom->m_key, KEYLENGTH_SQLCIPHER);
@@ -217,11 +219,11 @@ GetReservedSQLCipherCipher(void* cipher)
   {
     switch (sqlCipherCipher->m_hmacAlgorithm)
     {
-      case SQLCIPHER_HMAC_ALGORITHM_SHA1:
-      case SQLCIPHER_HMAC_ALGORITHM_SHA256:
+      case SQLCIPHER_ALGORITHM_SHA1:
+      case SQLCIPHER_ALGORITHM_SHA256:
         reserved += SHA256_DIGEST_SIZE;
         break;
-      case SQLCIPHER_HMAC_ALGORITHM_SHA512:
+      case SQLCIPHER_ALGORITHM_SHA512:
       default:
         reserved += SHA512_DIGEST_SIZE;
         break;
@@ -238,18 +240,15 @@ GetSaltSQLCipherCipher(void* cipher)
 }
 
 static void
-GenerateKeySQLCipherCipher(void* cipher, BtShared* pBt, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt)
+GenerateKeySQLCipherCipher(void* cipher, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt)
 {
   SQLCipherCipher* sqlCipherCipher = (SQLCipherCipher*) cipher;
 
-  Pager *pPager = pBt->pPager;
-  sqlite3_file* fd = (isOpen(pPager->fd)) ? pPager->fd : NULL;
-
-  if (rekey || fd == NULL || sqlite3OsRead(fd, sqlCipherCipher->m_salt, SALTLENGTH_SQLCIPHER, 0) != SQLITE_OK)
+  if (rekey || cipherSalt == NULL)
   {
     chacha20_rng(sqlCipherCipher->m_salt, SALTLENGTH_SQLCIPHER);
   }
-  else if (cipherSalt != NULL)
+  else
   {
     memcpy(sqlCipherCipher->m_salt, cipherSalt, SALTLENGTH_SQLCIPHER);
   }
@@ -271,19 +270,19 @@ GenerateKeySQLCipherCipher(void* cipher, BtShared* pBt, char* userPassword, int 
   {
     switch (sqlCipherCipher->m_kdfAlgorithm)
     {
-      case SQLCIPHER_KDF_ALGORITHM_SHA1:
+      case SQLCIPHER_ALGORITHM_SHA1:
         fastpbkdf2_hmac_sha1((unsigned char*) userPassword, passwordLength,
                              sqlCipherCipher->m_salt, SALTLENGTH_SQLCIPHER,
                              sqlCipherCipher->m_kdfIter,
                              sqlCipherCipher->m_key, KEYLENGTH_SQLCIPHER);
         break;
-      case SQLCIPHER_KDF_ALGORITHM_SHA256:
+      case SQLCIPHER_ALGORITHM_SHA256:
         fastpbkdf2_hmac_sha256((unsigned char*) userPassword, passwordLength,
                                sqlCipherCipher->m_salt, SALTLENGTH_SQLCIPHER,
                                sqlCipherCipher->m_kdfIter,
                                sqlCipherCipher->m_key, KEYLENGTH_SQLCIPHER);
         break;
-      case SQLCIPHER_KDF_ALGORITHM_SHA512:
+      case SQLCIPHER_ALGORITHM_SHA512:
       default:
         fastpbkdf2_hmac_sha512((unsigned char*) userPassword, passwordLength,
                                sqlCipherCipher->m_salt, SALTLENGTH_SQLCIPHER,
@@ -296,6 +295,7 @@ GenerateKeySQLCipherCipher(void* cipher, BtShared* pBt, char* userPassword, int 
   if (sqlCipherCipher->m_hmacUse != 0)
   {
     int j;
+    int algorithm = (sqlCipherCipher->m_hmacAlgorithmCompat) ? sqlCipherCipher->m_kdfAlgorithm : sqlCipherCipher->m_hmacAlgorithm;
     unsigned char hmacSaltMask = sqlCipherCipher->m_hmacSaltMask;
     unsigned char hmacSalt[SALTLENGTH_SQLCIPHER];
     memcpy(hmacSalt, sqlCipherCipher->m_salt, SALTLENGTH_SQLCIPHER);
@@ -303,21 +303,21 @@ GenerateKeySQLCipherCipher(void* cipher, BtShared* pBt, char* userPassword, int 
     {
       hmacSalt[j] ^= hmacSaltMask;
     }
-    switch (sqlCipherCipher->m_hmacAlgorithm)
+    switch (algorithm)
     {
-      case SQLCIPHER_HMAC_ALGORITHM_SHA1:
+      case SQLCIPHER_ALGORITHM_SHA1:
         fastpbkdf2_hmac_sha1(sqlCipherCipher->m_key, KEYLENGTH_SQLCIPHER,
                              hmacSalt, SALTLENGTH_SQLCIPHER,
                              sqlCipherCipher->m_fastKdfIter,
                              sqlCipherCipher->m_hmacKey, KEYLENGTH_SQLCIPHER);
       break;
-      case SQLCIPHER_HMAC_ALGORITHM_SHA256:
+      case SQLCIPHER_ALGORITHM_SHA256:
         fastpbkdf2_hmac_sha256(sqlCipherCipher->m_key, KEYLENGTH_SQLCIPHER,
                                hmacSalt, SALTLENGTH_SQLCIPHER,
                                sqlCipherCipher->m_fastKdfIter,
                                sqlCipherCipher->m_hmacKey, KEYLENGTH_SQLCIPHER);
         break;
-      case SQLCIPHER_HMAC_ALGORITHM_SHA512:
+      case SQLCIPHER_ALGORITHM_SHA512:
       default:
         fastpbkdf2_hmac_sha512(sqlCipherCipher->m_key, KEYLENGTH_SQLCIPHER,
                                hmacSalt, SALTLENGTH_SQLCIPHER,
@@ -334,11 +334,13 @@ GetHmacSizeSQLCipherCipher(int algorithm)
   int hmacSize = SHA512_DIGEST_SIZE;
   switch (algorithm)
   {
-    case SQLCIPHER_HMAC_ALGORITHM_SHA1:
+    case SQLCIPHER_ALGORITHM_SHA1:
       hmacSize = SHA1_DIGEST_SIZE;
       break;
-    case SQLCIPHER_HMAC_ALGORITHM_SHA256:
-    case SQLCIPHER_HMAC_ALGORITHM_SHA512:
+    case SQLCIPHER_ALGORITHM_SHA256:
+      hmacSize = SHA256_DIGEST_SIZE;
+      break;
+    case SQLCIPHER_ALGORITHM_SHA512:
     default:
       hmacSize = SHA512_DIGEST_SIZE;
       break;
@@ -356,7 +358,7 @@ EncryptPageSQLCipherCipher(void* cipher, int page, unsigned char* data, int len,
   int n = len - nReserved;
   int offset = (page == 1) ? (sqlCipherCipher->m_legacy != 0) ? 16 : 24 : 0;
   int blen;
-  unsigned char iv[64];
+  unsigned char iv[128];
   int usePlaintextHeader = 0;
 
   /* Check whether a plaintext header should be used */
@@ -373,10 +375,10 @@ EncryptPageSQLCipherCipher(void* cipher, int page, unsigned char* data, int len,
   }
 
   /* Generate nonce (64 bytes) */
-  memset(iv, 0, 64);
+  memset(iv, 0, 128);
   if (nReserved > 0)
   {
-    chacha20_rng(iv, 64);
+    chacha20_rng(iv, 128);
   }
   else
   {

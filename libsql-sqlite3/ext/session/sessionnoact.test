@@ -82,7 +82,6 @@ do_execsql_test 1.5 {
   UPDATE p1 SET c=12345 WHERE a = 45;
 }
 
-breakpoint
 sqlite3changeset_apply_v2 -noaction db $C conflict
 do_execsql_test 1.6 {
   SELECT * FROM c1
@@ -108,4 +107,62 @@ do_execsql_test 1.8 {
   PRAGMA foreign_key_check
 }
 
+#-------------------------------------------------------------------------
+# Check that a changeset that causes an FK violation may not be applied,
+# even if SQLITE_CHANGESETAPPLY_FKNOACTION is specified.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE p1(a INTEGER PRIMARY KEY, b, c UNIQUE);
+  INSERT INTO p1 VALUES(1, 1, 'one');
+  INSERT INTO p1 VALUES(2, 2, 'two');
+
+  CREATE TABLE c1(x REFERENCES p1(c) ON DELETE CASCADE);
+  INSERT INTO c1 VALUES('two');
+}
+
+db_save
+
+set C [changeset_from_sql {
+  DELETE FROM p1 WHERE a=2;
+}]
+
+db_restore_and_reopen
+
+do_test 2.1 {
+  sqlite3changeset_apply_v2 -noaction db $C conflict
+} {}
+do_execsql_test 2.2 {
+  SELECT * FROM p1
+} {1 1 one}
+
+db_restore_and_reopen
+db eval { PRAGMA foreign_keys = 1 }
+
+do_test 2.3 {
+  list [catch { sqlite3changeset_apply_v2 -noaction db $C conflict } msg] $msg
+} {1 SQLITE_CONSTRAINT}
+do_execsql_test 2.4 {
+  SELECT * FROM p1;
+} {1 1 one 2 2 two}
+do_execsql_test 2.5 {
+  SELECT * FROM c1;
+} {two}
+
+db_restore_and_reopen
+db eval { PRAGMA foreign_keys = 1 }
+
+do_test 2.6 {
+  list [catch { 
+    sqlite3changeset_apply_v2 -ignorenoop -noaction db $C conflict 
+  } msg] $msg
+} {1 SQLITE_CONSTRAINT}
+do_execsql_test 2.7 {
+  SELECT * FROM p1;
+} {1 1 one 2 2 two}
+do_execsql_test 2.8 {
+  SELECT * FROM c1;
+} {two}
+
 finish_test
+

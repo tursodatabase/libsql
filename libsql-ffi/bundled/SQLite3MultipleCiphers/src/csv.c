@@ -170,7 +170,7 @@ static int csv_getc(CsvReader *p){
   return ((unsigned char*)p->zIn)[p->iIn++];
 }
 
-/* Increase the size of p->z and append character c to the end. 
+/* Increase the size of p->z and append character c to the end.
 ** Return 0 on success and non-zero if there is an OOM error */
 static CSV_NOINLINE int csv_resize_and_append(CsvReader *p, char c){
   char *zNew;
@@ -289,9 +289,9 @@ static char *csv_read_one_field(CsvReader *p){
 
 /* Forward references to the various virtual table methods implemented
 ** in this file. */
-static int csvtabCreate(sqlite3*, void*, int, const char*const*, 
+static int csvtabCreate(sqlite3*, void*, int, const char*const*,
                            sqlite3_vtab**,char**);
-static int csvtabConnect(sqlite3*, void*, int, const char*const*, 
+static int csvtabConnect(sqlite3*, void*, int, const char*const*,
                            sqlite3_vtab**,char**);
 static int csvtabBestIndex(sqlite3_vtab*,sqlite3_index_info*);
 static int csvtabDisconnect(sqlite3_vtab*);
@@ -476,7 +476,7 @@ static int csv_boolean_parameter(
 **    columns=N                  Assume the CSV file contains N columns.
 **
 ** Only available if compiled with SQLITE_TEST:
-**    
+**
 **    testflags=N                Bitmask of test flags.  Optional
 **
 ** If schema= is omitted, then the columns are named "c0", "c1", "c2",
@@ -503,7 +503,7 @@ static int csvtabConnect(
   CsvReader sRdr;            /* A CSV file reader used to store an error
                              ** message and/or to count the number of columns */
   static const char *azParam[] = {
-     "filename", "data", "schema", 
+     "filename", "data", "schema",
   };
   char *azPValue[3];         /* Parameter values */
 # define CSV_FILENAME (azPValue[0])
@@ -805,7 +805,7 @@ static int csvtabEof(sqlite3_vtab_cursor *cur){
 ** the beginning.
 */
 static int csvtabFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
+  sqlite3_vtab_cursor *pVtabCursor,
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
@@ -861,7 +861,7 @@ static int csvtabBestIndex(
       unsigned char op;
       if( pIdxInfo->aConstraint[i].usable==0 ) continue;
       op = pIdxInfo->aConstraint[i].op;
-      if( op==SQLITE_INDEX_CONSTRAINT_EQ 
+      if( op==SQLITE_INDEX_CONSTRAINT_EQ
        || op==SQLITE_INDEX_CONSTRAINT_LIKE
        || op==SQLITE_INDEX_CONSTRAINT_GLOB
       ){
@@ -944,18 +944,18 @@ static sqlite3_module CsvModuleFauxWrite = {
 
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
-
-#ifdef _WIN32
-__declspec(dllexport)
+#ifndef SQLITE_API
+#define SQLITE_API
 #endif
-/* 
+/*
 ** This routine is called when the extension is loaded.  The new
 ** CSV virtual table module is registered with the calling database
 ** connection.
 */
+SQLITE_API
 int sqlite3_csv_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
 #ifndef SQLITE_OMIT_VIRTUALTABLE

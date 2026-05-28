@@ -46,11 +46,11 @@ LSMTESTSRC = $(LSMDIR)/lsm-test/lsmtest1.c $(LSMDIR)/lsm-test/lsmtest2.c     \
 LSMOPTS += -fPIC -DLSM_MUTEX_PTHREADS=1 -I$(LSMDIR) -DHAVE_ZLIB
 
 lsm.so:	$(LSMOBJ)
-	$(TCCX) -shared -fPIC -o lsm.so $(LSMOBJ)
+	$(T.link) -shared -fPIC -o lsm.so $(LSMOBJ)
 
 %.o:	$(LSMDIR)/%.c $(LSMHDR) sqlite3.h
-	$(TCCX) $(LSMOPTS) -c $<
-	
+	$(T.link) $(LSMOPTS) -c $<
+
 lsmtest$(EXE): $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR) sqlite3.o
-	# $(TCPPX) -c $(TOP)/lsm-test/lsmtest_tdb2.cc
-	$(TCCX) $(LSMOPTS) $(LSMTESTSRC) $(LSMOBJ) sqlite3.o -o lsmtest$(EXE) $(THREADLIB) -lz
+	# $(T.link) -c $(TOP)/lsm-test/lsmtest_tdb2.cc
+	$(T.link) $(LSMOPTS) $(LSMTESTSRC) $(LSMOBJ) sqlite3.o -o lsmtest$(EXE) $(THREADLIB) -lz

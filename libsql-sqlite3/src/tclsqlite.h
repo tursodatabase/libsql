@@ -35,8 +35,8 @@
 /* Compatability between Tcl8.6 and Tcl9.0 */
 #if TCL_MAJOR_VERSION==9
 # define CONST const
-#else
-  typedef int Tcl_Size;
+#elif !defined(Tcl_Size)
+# define Tcl_Size int
 #endif
 
 /******  Any edits to this file must mirrored in tclsqlite.c ***********/

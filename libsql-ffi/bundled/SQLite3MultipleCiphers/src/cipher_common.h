@@ -87,6 +87,7 @@ typedef struct _Codec
   unsigned char m_page[SQLITE_MAX_PAGE_SIZE + 24];
   int           m_pageSize;
   int           m_reserved;
+  int           m_lastError;
   int           m_hasKeySalt;
   unsigned char m_keySalt[KEYSALT_LENGTH];
 } Codec;
@@ -157,6 +158,9 @@ SQLITE_PRIVATE int sqlite3mcGetReservedReadCipher(Codec* codec);
 SQLITE_PRIVATE int sqlite3mcGetReservedWriteCipher(Codec* codec);
 
 SQLITE_PRIVATE int sqlite3mcReservedEqual(Codec* codec);
+
+SQLITE_PRIVATE void sqlite3mcSetCodecLastError(Codec* codec, int error);
+SQLITE_PRIVATE int sqlite3mcGetCodecLastError(Codec* codec);
 
 SQLITE_PRIVATE unsigned char* sqlite3mcGetSaltWriteCipher(Codec* codec);
 

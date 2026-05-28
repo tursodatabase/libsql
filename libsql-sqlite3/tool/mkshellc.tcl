@@ -34,7 +34,8 @@ set in [open $topdir/src/shell.c.in]
 fconfigure $in -translation binary
 proc omit_redundant_typedefs {line} {
   global typedef_seen
-  if {[regexp {^typedef .*\y([a-zA-Z0-9_]+);} $line all typename]} {
+  if {[regexp {^typedef .* ([a-zA-Z0-9_]+);} $line all typename]} {
+    # --------------------\y jimtcl does not support \y
     if {[info exists typedef_seen($typename)]} {
       return "/* [string map {/* // */ //} $line] */"
     }

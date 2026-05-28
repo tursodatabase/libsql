@@ -1232,11 +1232,17 @@ db nullvalue {}
 # EVIDENCE-OF: R-13943-13592 A NULL result is considered untrue when
 # evaluating WHEN terms.
 #
-do_execsql_test e_expr-21.4.1 {
+do_execsql_test e_expr-21.4.1a {
   SELECT CASE WHEN NULL THEN 'A' WHEN 1 THEN 'B' END, iif(NULL,8,99);
 } {B 99}
-do_execsql_test e_expr-21.4.2 {
+do_execsql_test e_expr-21.4.1b {
+  SELECT CASE WHEN NULL THEN 'A' WHEN 1 THEN 'B' END, if(NULL,8,99);
+} {B 99}
+do_execsql_test e_expr-21.4.2a {
   SELECT CASE WHEN 0 THEN 'A' WHEN NULL THEN 'B' ELSE 'C' END, iif(0,8,99);
+} {C 99}
+do_execsql_test e_expr-21.4.2b {
+  SELECT CASE WHEN 0 THEN 'A' WHEN NULL THEN 'B' ELSE 'C' END, if(0,8,99);
 } {C 99}
 
 # EVIDENCE-OF: R-38620-19499 In a CASE with a base expression, the base
@@ -1969,8 +1975,11 @@ do_execsql_test e_expr-37.5 {
 # EVIDENCE-OF: R-55532-10108 Values 1, 1.0, 0.1, -0.1 and '1english' are
 # considered to be true.
 #
-do_execsql_test e_expr-37.6 {
+do_execsql_test e_expr-37.6a {
    SELECT CASE WHEN 1 THEN 'true' ELSE 'false' END, iif(1,'true','false');
+} {true true}
+do_execsql_test e_expr-37.6b {
+   SELECT CASE WHEN 1 THEN 'true' ELSE 'false' END, if(1,'true');
 } {true true}
 do_execsql_test e_expr-37.7 {
    SELECT CASE WHEN 1.0 THEN 'true' ELSE 'false' END, iif(1.0,'true','false');

@@ -2003,11 +2003,10 @@ static sqlite3_module VsvModuleFauxWrite = {
 ** VSV virtual table module is registered with the calling database
 ** connection.
 */
-#ifndef SQLITE_CORE
-#ifdef _WIN32
-__declspec(dllexport)
+#ifndef SQLITE_API
+#define SQLITE_API
 #endif
-#endif
+SQLITE_API
 int sqlite3_vsv_init(
                     sqlite3 *db,
                     char **pzErrMsg,

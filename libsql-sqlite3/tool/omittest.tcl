@@ -200,8 +200,8 @@ foreach sym $CompileOptionsToTest {
   } else {
     set opts OPT_FEATURE_FLAGS=-D$sym
   }
-  puts            "make tidy sqlite3.lo $opts"
-  if {[catch {exec make tidy sqlite3.lo $opts >& $logfile}]} {
+  puts            "make tidy sqlite3.o $opts"
+  if {[catch {exec make tidy sqlite3.o $opts >& $logfile}]} {
     puts "BUILD FAILED: see $logfile for details"
     if {[info exists FailIsOk($sym)]} {
       set Failure($sym) 1

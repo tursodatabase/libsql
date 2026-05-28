@@ -13,6 +13,10 @@
 #ifndef CRYPTO_AEAD_H
 #define CRYPTO_AEAD_H
 
+#ifndef SQLITE_PRIVATE
+#define SQLITE_PRIVATE
+#endif
+
 #include <stddef.h>
 
 /*
@@ -27,6 +31,7 @@
 ** \param nonce Buffer with nonce data
 ** \param k Buffer with key data
 */
+SQLITE_PRIVATE
 int ascon_aead_encrypt(uint8_t* ctext, uint8_t tag[ASCON_AEAD_TAG_LEN],
                        const uint8_t* mtext, uint64_t mlen,
                        const uint8_t* ad, uint64_t adlen,
@@ -45,6 +50,7 @@ int ascon_aead_encrypt(uint8_t* ctext, uint8_t tag[ASCON_AEAD_TAG_LEN],
 ** \param nonce Buffer with nonce data
 ** \param k Buffer with key data
 */
+SQLITE_PRIVATE
 int ascon_aead_decrypt(uint8_t* mtext, const uint8_t* ctext, uint64_t clen,
                        const uint8_t* ad, uint64_t adlen,
                        const uint8_t tag[ASCON_AEAD_TAG_LEN],

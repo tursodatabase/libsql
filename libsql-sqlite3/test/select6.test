@@ -628,4 +628,43 @@ do_execsql_test 12.100 {
     SELECT * from t2);
 } {1 3}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.100 {
+
+  CREATE  TABLE  t1(y INT);
+  INSERT INTO t1 (y) VALUES (1);
+
+  CREATE  TABLE  t2(x INTEGER);
+  INSERT INTO t2 VALUES(0);
+
+  CREATE  TABLE  empty1(z);
+}
+
+do_execsql_test 13.110 {
+  SELECT t1.y 
+    FROM ( SELECT 'AAA' ) 
+    INNER JOIN (
+      SELECT 1 AS abc FROM (
+        SELECT 1 FROM t2 LEFT JOIN empty1
+      )
+    ) AS sub0 ON sub0.abc
+    , t1
+    RIGHT JOIN (SELECT 'BBB' FROM ( SELECT 'CCC' ))
+} {1}
+
+do_execsql_test 13.120 {
+  SELECT t1.y 
+    FROM ( SELECT 'AAA' ) 
+    INNER JOIN (
+      SELECT 1 AS abc FROM (
+        SELECT 1 FROM t2 LEFT JOIN empty1
+      )
+    ) AS sub0 ON sub0.abc
+    , t1
+    RIGHT JOIN (SELECT 'BBB' FROM ( SELECT 'CCC' ))
+    WHERE t1.y
+} {1}
+
+
 finish_test

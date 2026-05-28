@@ -22,6 +22,11 @@ ifcapable !fts5 {
 }
 
 foreach_detail_mode $testprefix {
+  foreach {tn insttoken} {
+    1 0
+    2 1
+  } {
+
   reset_db
 
   sqlite3_fts5_register_origintext db
@@ -32,21 +37,25 @@ foreach_detail_mode $testprefix {
   }
   sqlite3_fts5_create_function db insttoken insttoken
   
-  do_execsql_test 1.0 {
+  do_execsql_test $tn.1.0 {
     CREATE VIRTUAL TABLE ft USING fts5(
         x, tokenize="origintext unicode61", tokendata=1, detail=%DETAIL%
     );
   }
+
+  do_execsql_test $tn.1.0.1 {
+    INSERT INTO ft(ft, rank) VALUES('insttoken', 1);
+  }
   
-  do_execsql_test 1.1 {
+  do_execsql_test $tn.1.1 {
     INSERT INTO ft VALUES('Hello world HELLO WORLD hello');
   }
   
-  do_execsql_test 1.2 {
+  do_execsql_test $tn.1.2 {
     SELECT fts5_test_poslist(ft) FROM ft('hello');
   } {{0.0.0 0.0.2 0.0.4}}
 
-  do_execsql_test 1.3 {
+  do_execsql_test $tn.1.3 {
     SELECT 
       insttoken(ft, 0, 0),
       insttoken(ft, 1, 0),
@@ -54,7 +63,15 @@ foreach_detail_mode $testprefix {
     FROM ft('hello');
   } {hello.Hello hello.HELLO hello}
 
-  do_execsql_test 1.4 {
+  do_execsql_test $tn.1.3.1 {
+    SELECT 
+      insttoken(ft, 0, 0),
+      insttoken(ft, 1, 0),
+      insttoken(ft, 2, 0)
+    FROM ft('hel*');
+  } {hello.Hello hello.HELLO hello}
+
+  do_execsql_test $tn.1.4 {
     SELECT 
       insttoken(ft, 0, 0),
       insttoken(ft, 1, 0),
@@ -62,7 +79,7 @@ foreach_detail_mode $testprefix {
     FROM ft('hello') ORDER BY rank;
   } {hello.Hello hello.HELLO hello}
 
-  do_execsql_test 1.5 {
+  do_execsql_test $tn.1.5 {
     CREATE VIRTUAL TABLE ft2 USING fts5(
         x, tokenize="origintext unicode61", tokendata=1, detail=%DETAIL%
     );
@@ -71,11 +88,11 @@ foreach_detail_mode $testprefix {
     INSERT INTO ft2(rowid, x) VALUES(3, 'THREE one two three THREE');
   }
 
-  do_execsql_test 1.6 {
+  do_execsql_test $tn.1.6 {
     SELECT insttoken(ft2, 0, 0), rowid FROM ft2('three') ORDER BY rank;
   } {three.THREE 3 three 1 three 2}
 
-  do_execsql_test 1.7 {
+  do_execsql_test $tn.1.7 {
     INSERT INTO ft2(rowid, x) VALUES(10, 'aaa bbb BBB');
     INSERT INTO ft2(rowid, x) VALUES(12, 'bbb bbb bbb');
     INSERT INTO ft2(rowid, x) VALUES(13, 'bbb bbb bbb');
@@ -92,9 +109,32 @@ foreach_detail_mode $testprefix {
     INSERT INTO ft2(rowid, x) VALUES(24, 'aaa bbb BBB');
   }
 
-  do_execsql_test 1.8 { SELECT rowid FROM ft2('aaa AND bbb'); } {10 24}
-  do_execsql_test 1.9 { SELECT rowid FROM ft2('bbb AND aaa'); } {10 24}
+  do_execsql_test $tn.1.8 { SELECT rowid FROM ft2('aaa AND bbb'); } {10 24}
+  do_execsql_test $tn.1.9 { SELECT rowid FROM ft2('bbb AND aaa'); } {10 24}
 
+  do_execsql_test $tn.2.0 {
+    CREATE VIRTUAL TABLE ft3 USING fts5(
+        x, tokenize="origintext unicode61", tokendata=1, detail=%DETAIL%,
+        prefix=2
+    );
+  }
+  do_execsql_test $tn.2.1 {
+    INSERT INTO ft3(rowid, x) VALUES(1, 'one');
+    INSERT INTO ft3(rowid, x) VALUES(2, 'ONE');
+    INSERT INTO ft3(rowid, x) VALUES(3, 'ONT');
+    INSERT INTO ft3(rowid, x) VALUES(4, 'on');
+    INSERT INTO ft3(rowid, x) VALUES(5, 'On');
+  }
+
+  do_execsql_test $tn.2.2 {
+    SELECT rowid FROM ft3('on*');
+  } {1 2 3 4 5}
+
+  do_execsql_test $tn.2.3 {
+    SELECT rowid, insttoken(ft3, 0, 0) FROM ft3('on*');
+  } {1 one 2 one.ONE 3 ont.ONT 4 on 5 on.On}
+
+  }
 }
 
 finish_test
