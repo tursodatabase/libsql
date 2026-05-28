@@ -242,11 +242,14 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-registry-
+      - name: Install x86_64-pc-windows-msvc target
+        run: rustup target add x86_64-pc-windows-msvc
       - name: build libsql all features
-        run: cargo build -p libsql --all-features 
+        run: |
+          cargo clean -p libsql-ffi
+          cargo build -p libsql --all-features --release --target x86_64-pc-windows-msvc
 
   # test-rust-wasm:
   #   runs-on: ubuntu-latest
