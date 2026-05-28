@@ -3,7 +3,7 @@
 ** Purpose:     Implementation of cipher ChaCha20 - Poly1305
 ** Author:      Ulrich Telle
 ** Created:     2020-02-02
-** Copyright:   (c) 2006-2020 Ulrich Telle
+** Copyright:   (c) 2006-2024 Ulrich Telle
 ** License:     MIT
 */
 
@@ -140,21 +140,18 @@ GetSaltChaCha20Cipher(void* cipher)
 }
 
 static void
-GenerateKeyChaCha20Cipher(void* cipher, BtShared* pBt, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt)
+GenerateKeyChaCha20Cipher(void* cipher, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt)
 {
   ChaCha20Cipher* chacha20Cipher = (ChaCha20Cipher*) cipher;
   int bypass = 0;
 
-  Pager *pPager = pBt->pPager;
-  sqlite3_file* fd = (isOpen(pPager->fd)) ? pPager->fd : NULL;
-
   int keyOnly = 1;
-  if (rekey || fd == NULL || sqlite3OsRead(fd, chacha20Cipher->m_salt, SALTLENGTH_CHACHA20, 0) != SQLITE_OK)
+  if (rekey || cipherSalt == NULL)
   {
     chacha20_rng(chacha20Cipher->m_salt, SALTLENGTH_CHACHA20);
     keyOnly = 0;
   }
-  else if (cipherSalt != NULL)
+  else
   {
     memcpy(chacha20Cipher->m_salt, cipherSalt, SALTLENGTH_CHACHA20);
   }
@@ -274,7 +271,8 @@ EncryptPageChaCha20Cipher(void* cipher, int page, unsigned char* data, int len, 
   return rc;
 }
 
-int chacha20_ismemset(const void* v, unsigned char value, int len)
+static int
+chacha20_ismemset(const void* v, unsigned char value, int len)
 {
   const unsigned char* a = v;
   int i = 0, result = 0;

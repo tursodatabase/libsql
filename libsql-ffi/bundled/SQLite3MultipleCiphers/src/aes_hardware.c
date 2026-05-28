@@ -104,6 +104,37 @@ toUint32FromLE(const void* buffer)
 #if HAS_AES_HARDWARE == AES_HARDWARE_NI
 /* --- Implementation for AES-NI --- */
 
+/* Define SQLITE3MC_COMPILER_HAS_ATTRIBUTE */
+#if defined(__has_attribute)
+  #define SQLITE3MC_COMPILER_HAS_ATTRIBUTE(x) __has_attribute(x)
+  #define SQLITE3MC_COMPILER_ATTRIBUTE(x) __attribute__((x))
+#else
+  #define SQLITE3MC_COMPILER_HAS_ATTRIBUTE(x) 0
+  #define SQLITE3MC_COMPILER_ATTRIBUTE(x) /**/
+#endif
+
+/* Define SQLITE3MC_FORCE_INLINE */
+#if !defined(SQLITE3MC_FORCE_INLINE)
+  #if SQLITE3MC_COMPILER_HAS_ATTRIBUTE(always_inline)
+    #define SQLITE3MC_FORCE_INLINE inline SQLITE3MC_COMPILER_ATTRIBUTE(always_inline)
+  #elif defined(_MSC_VER)
+    #define SQLITE3MC_FORCE_INLINE __forceinline
+  #else
+    #define SQLITE3MC_FORCE_INLINE inline
+  #endif
+#endif
+
+/* Define SQLITE3MC_FUNC_ISA */
+#if SQLITE3MC_COMPILER_HAS_ATTRIBUTE(target)
+   #define SQLITE3MC_FUNC_ISA(isa) SQLITE3MC_COMPILER_ATTRIBUTE(target(isa))
+#else
+   #define SQLITE3MC_FUNC_ISA(isa)
+#endif
+
+/* Define SQLITE3MC_FUNC_ISA_INLINE */
+#define SQLITE3MC_FUNC_ISA_INLINE(isa) SQLITE3MC_FUNC_ISA(isa) SQLITE3MC_FORCE_INLINE
+
+
 /*
 ** Define function for detecting hardware AES support at runtime
 */
@@ -140,6 +171,7 @@ aesHardwareCheck()
 #include <wmmintrin.h>
 #include <smmintrin.h>
 
+SQLITE3MC_FUNC_ISA("sse4.2,aes")
 static int
 aesGenKeyEncryptInternal(const unsigned char* userKey, const int bits, __m128i* keyData)
 {
@@ -193,12 +225,13 @@ aesGenKeyEncryptInternal(const unsigned char* userKey, const int bits, __m128i* 
   return rc;
 }
 
+SQLITE3MC_FUNC_ISA("sse4.2,aes")
 static int
 aesGenKeyEncrypt(const unsigned char* userKey, const int bits, unsigned char* keyData)
 {
   int numberOfRounds = (bits == 128) ? 10 : (bits == 192) ? 12 : (bits == 256) ? 14 : 0;
   int rc = (!userKey || !keyData) ? -1 : (numberOfRounds > 0) ? 0 : -2;
-  
+
   if (rc == 0)
   {
     __m128i tempKey[_MAX_ROUNDS + 1];
@@ -215,6 +248,7 @@ aesGenKeyEncrypt(const unsigned char* userKey, const int bits, unsigned char* ke
   return rc;
 }
 
+SQLITE3MC_FUNC_ISA("sse4.2,aes")
 static int
 aesGenKeyDecrypt(const unsigned char* userKey, const int bits, unsigned char* keyData)
 {
@@ -249,6 +283,7 @@ aesGenKeyDecrypt(const unsigned char* userKey, const int bits, unsigned char* ke
 ** AES CBC CTS Encryption
 */
 
+SQLITE3MC_FUNC_ISA("sse4.2,aes")
 static void
 aesEncryptCBC(const unsigned char* in,
               unsigned char* out,
@@ -316,6 +351,7 @@ aesEncryptCBC(const unsigned char* in,
 /*
 ** AES CBC CTS decryption
 */
+SQLITE3MC_FUNC_ISA("sse4.2,aes")
 static void
 aesDecryptCBC(const unsigned char* in,
               unsigned char* out,
@@ -347,7 +383,7 @@ aesDecryptCBC(const unsigned char* in,
     int offset;
     --numBlocks;
     offset = numBlocks * 16;
- 
+
     /* Decrypt the last plain block. */
     last_in = _mm_loadu_si128(&((__m128i*) in)[numBlocks]);
     data = _mm_xor_si128(last_in, key[numberOfRounds - 0]);
@@ -477,7 +513,7 @@ aesGenKeyEncryptInternal(const unsigned char* userKey, const int bits, uint8x16_
   int i;
   int j;
   int numberOfRounds = (bits == 128) ? 10 : (bits == 192) ? 12 : (bits == 256) ? 14 : 0;
-  int keyWords = bits / 32;  
+  int keyWords = bits / 32;
   int schedWords = (numberOfRounds + 1) * 4;
 
   /*
@@ -538,7 +574,7 @@ aesGenKeyEncrypt(const unsigned char* userKey, const int bits, unsigned char* ke
 {
   int numberOfRounds = (bits == 128) ? 10 : (bits == 192) ? 12 : (bits == 256) ? 14 : 0;
   int rc = (!userKey || !keyData) ? -1 : (numberOfRounds > 0) ? 0 : -2;
-  
+
   if (rc == 0)
   {
     uint8x16_t tempKey[_MAX_ROUNDS + 1];
@@ -648,7 +684,7 @@ aesEncryptCBC(const unsigned char* in,
     }
     feedback = vaeseq_u8(feedback, key[numberOfRounds-1]);
     feedback = veorq_u8(feedback, key[numberOfRounds]);                          \
-    
+
     vst1q_u8(&out[(numBlocks-1)*16], feedback);
 
     memcpy(&out[numBlocks*16], lastblock, lenFrag);
@@ -689,7 +725,7 @@ aesDecryptCBC(const unsigned char* in,
     int offset;
     --numBlocks;
     offset = numBlocks * 16;
- 
+
     /* Decrypt the last plain block. */
     last_in = vld1q_u8(&in[numBlocks*16]);
 

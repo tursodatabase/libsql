@@ -7,6 +7,115 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2025-01-15
+
+### Changed
+
+- Based on SQLite version 3.48.0
+
+## [2.0.1] - 2025-01-06
+
+### Fixed
+
+- Fixed issue [#186](../../issues/186)) - crashes due to _illegal instruction_ exception on some Linux systems
+- Fixed issue [#185](../../issues/185)) - missing header file and include path in CMake build file
+
+## [2.0.0] - 2024-12-31
+
+### Added
+
+- Added new cipher scheme AEGIS
+
+### Changed
+
+- Removed User Authentication extension
+- Cleaned up some extensions to use SQLITE_API
+
+### Fixed
+
+- Fixed undefined behavior related to function pointer cast
+
+## [1.9.2] - 2024-12-08
+
+### Changed
+
+- Based on SQLite version 3.47.2
+
+### Fixed
+
+- Fixed issue with page size change request for encrypted databases
+
+## [1.9.1] - 2024-11-26
+
+### Changed
+
+- Based on SQLite version 3.47.1
+- Remove need to specify AES hw compile time options
+
+## [1.9.0] - 2024-10-22
+
+### Changed
+
+- Based on SQLite version 3.47.0
+- Changed signature of cipher scheme method `GenerateKey` (affects only developers of dynamic cipher schemes)
+
+### Fixed
+
+- Using differing KDF and HMAC algorithms resulted in databases incompatible with the original SQLCipher library. Setting the parameter `hmac_algorithm_compat` to 0 restores the (incompatible) behaviour.
+
+## [1.8.7] - 2024-08-14
+
+### Changed
+
+- Based on SQLite version 3.46.1
+
+## [1.8.6] - 2024-06-14
+
+### Changed
+
+- Removed extern keyword in function declarations
+- Cleaned up white space
+- Added SQLITE_PRIVATE for several internal functions
+- The cipher configuration parameter `legacy_page_size` now accepts only valid page sizes
+- The cipher configuration parameter `plaintext_header_size` now accepts only values that are multiples of 16
+
+### Fixed
+
+- Fixed issue [#156](../../issues/156)) - corrupted database if MMAP_SIZE > 0 was used
+- Fixed issue [#158](../../issues/158)) - add check to verify compatibility of source and target database in backup operation
+- Fixed issue [#160](../../issues/160)) - fix accessing memory out of array bounds
+- Fixed issue [#162](../../issues/162)) - fix loading/storing misaligned data
+- Fixed issue [#164](../../issues/164)) - fix return of error messages from rekey
+- Fixed issue [#165](../../issues/165)) - fix rekey function by enforcing page size and number of reserved bytes per page
+- Fixed issue [#166](../../issues/166)) - missing attribute SQLITE_PRIVATE for several internal functions
+- Fixed issue [#167](../../issues/167)) - improve VFS error reporting
+- Fixed issue [#168](../../issues/168)) - add check for encryption support
+
+## [1.8.5] - 2024-05-24
+
+### Changed
+
+- Based on SQLite version 3.46.0
+
+## [1.8.4] - 2024-03-14
+
+### Changed
+
+- Based on SQLite version 3.45.2
+- Disable user authentication extension by default
+
+## [1.8.3] - 2024-01-31
+
+### Changed
+
+- Based on SQLite version 3.45.1
+
+## [1.8.2] - 2024-01-16
+
+### Changed
+
+- Based on SQLite version 3.45.0
+
 ## [1.8.1] - 2023-12-02
 
 ### Changed
@@ -469,7 +578,20 @@ The following ciphers are supported:
 - AES 256 Bit CBC - SHA1/SHA256/SHA512 HMAC ([SQLCipher](https://www.zetetic.net/sqlcipher/), database versions 1, 2, 3, and 4)
 - RC4 - No HMAC ([System.Data.SQLite](http://system.data.sqlite.org))
 
-[Unreleased]: ../../compare/v1.8.0...HEAD
+[Unreleased]: ../../compare/v2.0.2...HEAD
+[2.0.2]: ../../compare/v2.0.1...v2.0.2
+[2.0.1]: ../../compare/v2.0.0...v2.0.1
+[2.0.0]: ../../compare/v1.9.2...v2.0.0
+[1.9.2]: ../../compare/v1.9.1...v1.9.2
+[1.9.1]: ../../compare/v1.9.0...v1.9.1
+[1.9.0]: ../../compare/v1.8.7...v1.9.0
+[1.8.7]: ../../compare/v1.8.6...v1.8.7
+[1.8.6]: ../../compare/v1.8.5...v1.8.6
+[1.8.5]: ../../compare/v1.8.4...v1.8.5
+[1.8.4]: ../../compare/v1.8.3...v1.8.4
+[1.8.3]: ../../compare/v1.8.2...v1.8.3
+[1.8.2]: ../../compare/v1.8.1...v1.8.2
+[1.8.1]: ../../compare/v1.8.0...v1.8.1
 [1.8.0]: ../../compare/v1.7.4...v1.8.0
 [1.7.4]: ../../compare/v1.7.3...v1.7.4
 [1.7.3]: ../../compare/v1.7.2...v1.7.3

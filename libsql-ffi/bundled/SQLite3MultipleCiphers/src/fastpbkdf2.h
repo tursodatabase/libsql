@@ -15,6 +15,10 @@
 #ifndef FASTPBKDF2_H
 #define FASTPBKDF2_H
 
+#ifndef SQLITE_PRIVATE
+#define SQLITE_PRIVATE
+#endif
+
 #include <stdlib.h>
 #include "mystdint.h"
 
@@ -31,6 +35,7 @@ extern "C" {
  *
  *  This function cannot fail; it does not report errors.
  */
+SQLITE_PRIVATE
 void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
                           const uint8_t *salt, size_t nsalt,
                           uint32_t iterations,
@@ -45,6 +50,7 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
  *
  *  This function cannot fail; it does not report errors.
  */
+SQLITE_PRIVATE
 void fastpbkdf2_hmac_sha256(const uint8_t *pw, size_t npw,
                             const uint8_t *salt, size_t nsalt,
                             uint32_t iterations,
@@ -59,6 +65,7 @@ void fastpbkdf2_hmac_sha256(const uint8_t *pw, size_t npw,
  *
  *  This function cannot fail; it does not report errors.
  */
+SQLITE_PRIVATE
 void fastpbkdf2_hmac_sha512(const uint8_t *pw, size_t npw,
                             const uint8_t *salt, size_t nsalt,
                             uint32_t iterations,
@@ -68,6 +75,7 @@ void fastpbkdf2_hmac_sha512(const uint8_t *pw, size_t npw,
  *
  *  This function cannot fail; it does not report errors.
  */
+SQLITE_PRIVATE
 void sqlcipher_hmac(int algorithm,
                     unsigned char* key, int nkey,
                     unsigned char* in, int in_sz,

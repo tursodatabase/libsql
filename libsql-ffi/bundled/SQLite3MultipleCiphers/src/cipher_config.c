@@ -3,7 +3,7 @@
 ** Purpose:     Configuration of SQLite codecs
 ** Author:      Ulrich Telle
 ** Created:     2020-03-02
-** Copyright:   (c) 2006-2023 Ulrich Telle
+** Copyright:   (c) 2006-2024 Ulrich Telle
 ** License:     MIT
 */
 
@@ -29,18 +29,7 @@ sqlite3mcConfigTable(sqlite3_context* context, int argc, sqlite3_value** argv)
 SQLITE_PRIVATE CodecParameter*
 sqlite3mcGetCodecParams(sqlite3* db)
 {
-  CodecParameter* codecParams = NULL;
-  sqlite3_stmt* pStmt = 0;
-  int rc = sqlite3_prepare_v2(db, "SELECT sqlite3mc_config_table();", -1, &pStmt, 0);
-  if (rc == SQLITE_OK)
-  {
-    if (SQLITE_ROW == sqlite3_step(pStmt))
-    {
-      sqlite3_value* ptrValue = sqlite3_column_value(pStmt, 0);
-      codecParams = (CodecParameter*) sqlite3_value_pointer(ptrValue, "sqlite3mc_codec_params");
-    }
-    sqlite3_finalize(pStmt);
-  }
+  CodecParameter* codecParams = (CodecParameter*) sqlite3_get_clientdata(db, globalConfigTableName);
   return codecParams;
 }
 
@@ -188,6 +177,21 @@ sqlite3mc_cipher_name(int cipherIndex)
   return cipherName;
 }
 
+static
+int checkParameterValue(const char* paramName, int value)
+{
+  int ok = 1;
+  if (sqlite3_stricmp(paramName, "legacy_page_size") == 0 && value > 0)
+  {
+    ok = value >= 512 && value <= SQLITE_MAX_PAGE_SIZE && ((value - 1) & value) == 0;
+  }
+  if (ok && sqlite3_stricmp(paramName, "plaintext_header_size") == 0 && value > 0)
+  {
+    ok = value % 16 == 0;
+  }
+  return ok;
+}
+
 SQLITE_API int
 sqlite3mc_config_cipher(sqlite3* db, const char* cipherName, const char* paramName, int newValue)
 {
@@ -294,7 +298,8 @@ sqlite3mc_config_cipher(sqlite3* db, const char* cipherName, const char* paramNa
       value = (hasDefaultPrefix) ? param->m_default : (hasMinPrefix) ? param->m_minValue : (hasMaxPrefix) ? param->m_maxValue : param->m_value;
       if (!hasMinPrefix && !hasMaxPrefix)
       {
-        if (newValue >= 0 && newValue >= param->m_minValue && newValue <= param->m_maxValue)
+        if (newValue >= 0 && newValue >= param->m_minValue && newValue <= param->m_maxValue &&
+            checkParameterValue(paramName, newValue))
         {
           if (hasDefaultPrefix)
           {
@@ -763,20 +768,53 @@ sqlite3mcConfigureFromUri(sqlite3* db, const char *zDbName, int configDefault)
         }
 #endif
 
+#if HAVE_CIPHER_AEGIS
+        int hasAegisAlgorithm = 0;
+        int aegisAlgorithm = 0;
+        if (sqlite3_stricmp(cipherName, "aegis") == 0)
+        {
+          const char* algorithm = sqlite3_uri_parameter(dbFileName, "algorithm");
+          if (algorithm != NULL && *algorithm != 0)
+          {
+            int intValue = -1;
+            int isIntValue = sqlite3GetInt32(algorithm, &intValue) != 0;
+            if (!isIntValue)
+            {
+              intValue = sqlite3mcAegisAlgorithmToIndex(algorithm);
+            }
+            if (intValue > 0)
+            {
+              hasAegisAlgorithm = 1;
+              aegisAlgorithm = intValue;
+            }
+          }
+        }
+#endif
+
         /* Check all cipher specific parameters */
         for (j = 0; cipherParams[j].m_name[0] != 0; ++j)
         {
+          int value = -1;
           if (skipLegacy && sqlite3_stricmp(cipherParams[j].m_name, "legacy") == 0) continue;
 
-          int value = (int) sqlite3_uri_int64(dbFileName, cipherParams[j].m_name, -1);
+#if HAVE_CIPHER_AEGIS
+          if (hasAegisAlgorithm && sqlite3_stricmp(cipherParams[j].m_name, "algorithm") == 0)
+          {
+            value = aegisAlgorithm;
+          }
+          else
+#endif
+          {
+            value = (int)sqlite3_uri_int64(dbFileName, cipherParams[j].m_name, -1);
+          }
           if (value >= 0)
           {
             /* Configure cipher parameter if it was given in the URI */
-            char* param = (configDefault) ? sqlite3_mprintf("default:%s", cipherParams[j].m_name) : cipherParams[j].m_name;
+            const char* param = (configDefault) ? sqlite3_mprintf("default:%s", cipherParams[j].m_name) : cipherParams[j].m_name;
             sqlite3mc_config_cipher(db, cipherName, param, value);
             if (configDefault)
             {
-              sqlite3_free(param);
+              sqlite3_free((char*) param);
             }
           }
         }
@@ -857,8 +895,16 @@ int libsql_extra_pragma(sqlite3* db, const char* zDbName, void* pArg)
         {
           value = sqlite3mc_config(db, "cipher", cipherId);
         }
-        rc = SQLITE_OK;
-        ((char**)pArg)[0] = sqlite3_mprintf("%s", globalCodecDescriptorTable[value - 1].m_name);
+        if (value > 0)
+        {
+          ((char**)pArg)[0] = sqlite3_mprintf("%s", globalCodecDescriptorTable[value - 1].m_name);
+          rc = SQLITE_OK;
+        }
+        else
+        {
+          ((char**)pArg)[0] = sqlite3_mprintf("Cipher '%s' could not be located.", pragmaValue);
+          rc = SQLITE_ERROR;
+        }
       }
       else
       {
@@ -1049,6 +1095,19 @@ int libsql_extra_pragma(sqlite3* db, const char* zDbName, void* pArg)
       if (cipherParams != NULL)
       {
         const char* cipherName = globalCodecParameterTable[j].m_name;
+#if HAVE_CIPHER_AEGIS
+        int isAegisAlgorithm = 0;
+        if (sqlite3_stricmp(cipherName, "aegis") == 0 &&
+            sqlite3_stricmp(pragmaName, "algorithm") == 0)
+        {
+          if (!isIntValue)
+          {
+            intValue = sqlite3mcAegisAlgorithmToIndex(pragmaValue);
+            isIntValue = 1;
+          }
+          isAegisAlgorithm = 1;
+        }
+#endif
         for (j = 0; cipherParams[j].m_name[0] != 0; ++j)
         {
           if (sqlite3_stricmp(pragmaName, cipherParams[j].m_name) == 0) break;
@@ -1059,7 +1118,16 @@ int libsql_extra_pragma(sqlite3* db, const char* zDbName, void* pArg)
           if (isIntValue)
           {
             int value = sqlite3mc_config_cipher(db, cipherName, param, intValue);
-            ((char**)pArg)[0] = sqlite3_mprintf("%d", value);
+#if HAVE_CIPHER_AEGIS
+            if (isAegisAlgorithm)
+            {
+              ((char**)pArg)[0] = sqlite3_mprintf("%s", sqlite3mcAegisAlgorithmToString(value));
+            }
+            else
+#endif
+            {
+              ((char**)pArg)[0] = sqlite3_mprintf("%d", value);
+            }
             rc = SQLITE_OK;
           }
           else

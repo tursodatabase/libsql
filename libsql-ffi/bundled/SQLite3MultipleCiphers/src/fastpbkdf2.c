@@ -391,6 +391,7 @@ DECL_PBKDF2(sha512,
             sha512_extract,
             sha512_xor)
 
+SQLITE_PRIVATE
 void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
                           const uint8_t *salt, size_t nsalt,
                           uint32_t iterations,
@@ -402,6 +403,7 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
 #endif
 }
 
+SQLITE_PRIVATE
 void fastpbkdf2_hmac_sha256(const uint8_t *pw, size_t npw,
                             const uint8_t *salt, size_t nsalt,
                             uint32_t iterations,
@@ -410,6 +412,7 @@ void fastpbkdf2_hmac_sha256(const uint8_t *pw, size_t npw,
   PBKDF2(sha256)(pw, npw, salt, nsalt, iterations, out, nout);
 }
 
+SQLITE_PRIVATE
 void fastpbkdf2_hmac_sha512(const uint8_t *pw, size_t npw,
                             const uint8_t *salt, size_t nsalt,
                             uint32_t iterations,
@@ -418,6 +421,7 @@ void fastpbkdf2_hmac_sha512(const uint8_t *pw, size_t npw,
   PBKDF2(sha512)(pw, npw, salt, nsalt, iterations, out, nout);
 }
 
+SQLITE_PRIVATE
 void sqlcipher_hmac(int algorithm, unsigned char* key, int nkey, unsigned char* in, int in_sz, unsigned char* in2, int in2_sz, unsigned char* out)
 {
   switch (algorithm)

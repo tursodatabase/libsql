@@ -17,6 +17,10 @@
 #ifndef ASCON_PBKDF2_H
 #define ASCON_PBKDF2_H
 
+#ifndef SQLITE_PRIVATE
+#define SQLITE_PRIVATE
+#endif
+
 #include <stddef.h>
 
 /*
@@ -35,6 +39,7 @@
 ** \param saltlen Number of bytes in the salt
 ** \param count Number of iterations to perform
 */
+SQLITE_PRIVATE
 void ascon_pbkdf2(uint8_t* out, uint32_t outlen,
                   const uint8_t* password, uint32_t passwordlen,
                   const uint8_t* salt, uint32_t saltlen, uint32_t count)

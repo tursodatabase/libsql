@@ -46,7 +46,7 @@
 **       ctype TEXT HIDDEN
 **     );
 **
-** If the hidden columns "pointer" and "count" are unconstrained, then 
+** If the hidden columns "pointer" and "count" are unconstrained, then
 ** the virtual table has no rows.  Otherwise, the virtual table interprets
 ** the integer value of "pointer" as a pointer to the array and "count"
 ** as the number of elements in the array.  The virtual table steps through
@@ -64,7 +64,7 @@ SQLITE_EXTENSION_INIT1
 #else
 # include <sys/uio.h>
 #endif
- 
+
 /* Allowed values for the mFlags parameter to sqlite3_carray_bind().
 ** Must exactly match the definitions in carray.h.
 */
@@ -74,14 +74,6 @@ SQLITE_EXTENSION_INIT1
 # define CARRAY_DOUBLE    2      /* Data is doubles */
 # define CARRAY_TEXT      3      /* Data is char* */
 # define CARRAY_BLOB      4      /* Data is struct iovec* */
-#endif
-
-#ifndef SQLITE_API
-# ifdef _WIN32
-#  define SQLITE_API __declspec(dllexport)
-# else
-#  define SQLITE_API
-# endif
 #endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -271,7 +263,7 @@ static int carrayEof(sqlite3_vtab_cursor *cur){
 ** to the first row of output.
 */
 static int carrayFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
+  sqlite3_vtab_cursor *pVtabCursor,
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
@@ -385,7 +377,7 @@ static int carrayBestIndex(
 }
 
 /*
-** This following structure defines all the methods for the 
+** This following structure defines all the methods for the
 ** carray virtual table.
 */
 static sqlite3_module carrayModule = {
@@ -468,7 +460,7 @@ SQLITE_API int sqlite3_carray_bind(
       for(i=0; i<nData; i++){
         sz += ((struct iovec*)aData)[i].iov_len;
       }
-    } 
+    }
     pNew->aData = sqlite3_malloc64( sz );
     if( pNew->aData==0 ){
       sqlite3_free(pNew);
@@ -541,9 +533,13 @@ static void inttoptrFunc(
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-SQLITE_API int sqlite3_carray_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+#ifndef SQLITE_API
+#define SQLITE_API
+#endif
+SQLITE_API
+int sqlite3_carray_init(
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;

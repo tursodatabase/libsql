@@ -3,7 +3,7 @@
 ** Purpose:     Header file for SQLite3 Multiple Ciphers support
 ** Author:      Ulrich Telle
 ** Created:     2020-03-01
-** Copyright:   (c) 2019-2023 Ulrich Telle
+** Copyright:   (c) 2019-2024 Ulrich Telle
 ** License:     MIT
 */
 
@@ -21,7 +21,7 @@
 #include "sqlite3.h"
 
 #ifdef SQLITE_USER_AUTHENTICATION
-#include "sqlite3userauth.h"
+#undef SQLITE_USER_AUTHENTICATION
 #endif
 
 /*
@@ -34,7 +34,8 @@
 #define CODEC_TYPE_SQLCIPHER   4
 #define CODEC_TYPE_RC4         5
 #define CODEC_TYPE_ASCON128    6
-#define CODEC_TYPE_MAX_BUILTIN 6
+#define CODEC_TYPE_AEGIS       7
+#define CODEC_TYPE_MAX_BUILTIN 7
 
 /*
 ** Definition of API functions
@@ -133,7 +134,7 @@ SQLITE_API unsigned char* wxsqlite3_codec_data(sqlite3* db, const char* zDbName,
 */
 typedef struct _CipherParams
 {
-  char* m_name;
+  const char* m_name;
   int   m_value;
   int   m_default;
   int   m_minValue;
@@ -166,13 +167,13 @@ typedef int   (*GetLegacy_t)(void* cipher);
 typedef int   (*GetPageSize_t)(void* cipher);
 typedef int   (*GetReserved_t)(void* cipher);
 typedef unsigned char* (*GetSalt_t)(void* cipher);
-typedef void  (*GenerateKey_t)(void* cipher, BtSharedMC* pBt, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt);
+typedef void  (*GenerateKey_t)(void* cipher, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt);
 typedef int   (*EncryptPage_t)(void* cipher, int page, unsigned char* data, int len, int reserved);
 typedef int   (*DecryptPage_t)(void* cipher, int page, unsigned char* data, int len, int reserved, int hmacCheck);
 
 typedef struct _CipherDescriptor
 {
-  char* m_name;
+  const char*      m_name;
   AllocateCipher_t m_allocateCipher;
   FreeCipher_t     m_freeCipher;
   CloneCipher_t    m_cloneCipher;

@@ -65,7 +65,7 @@ sqlite3_activate_see(const char *info)
 
 /*
 ** Free the encryption data structure associated with a pager instance.
-** (called from the modified code in pager.c) 
+** (called from the modified code in pager.c)
 */
 SQLITE_PRIVATE void
 sqlite3mcCodecFree(void *pCodecArg)
@@ -95,12 +95,15 @@ mcReportCodecError(BtShared* pBt, int error)
   {
     pBt->pPager->eState = PAGER_ERROR;
   }
-  setGetterMethod(pBt->pPager);
   if (error == SQLITE_OK)
   {
     /* Clear cache to force reread of database after a new passphrase has been set */
     sqlite3PagerClearCache(pBt->pPager);
+    /* unlock required?
+    pager_unlock(pBt->pPager);
+    */
   }
+  setGetterMethod(pBt->pPager);
 }
 
 /*
@@ -119,6 +122,7 @@ sqlite3mcCodec(void* pCodecArg, void* data, Pgno nPageNum, int nMode)
   codec = (Codec*) pCodecArg;
   if (!sqlite3mcIsEncrypted(codec))
   {
+    sqlite3mcSetCodecLastError(codec, rc);
     return data;
   }
 
@@ -132,7 +136,11 @@ sqlite3mcCodec(void* pCodecArg, void* data, Pgno nPageNum, int nMode)
       if (sqlite3mcHasReadCipher(codec))
       {
         rc = sqlite3mcDecrypt(codec, nPageNum, (unsigned char*) data, pageSize);
-        if (rc != SQLITE_OK) mcReportCodecError(sqlite3mcGetBtShared(codec), rc);
+        if (rc != SQLITE_OK)
+        {
+          mcReportCodecError(sqlite3mcGetBtShared(codec), rc);
+          memset(data, 0, pageSize);
+        }
       }
       break;
 
@@ -166,6 +174,7 @@ sqlite3mcCodec(void* pCodecArg, void* data, Pgno nPageNum, int nMode)
       }
       break;
   }
+  sqlite3mcSetCodecLastError(codec, rc);
   return data;
 }
 
@@ -174,6 +183,9 @@ sqlite3mcGetMainCodec(sqlite3* db);
 
 SQLITE_PRIVATE void
 sqlite3mcSetCodec(sqlite3* db, const char* zDbName, const char* zFileName, Codec* codec);
+
+SQLITE_PRIVATE int
+sqlite3mcIsEncryptionSupported(sqlite3* db, const char* zDbName);
 
 static int
 mcAdjustBtree(Btree* pBt, int nPageSize, int nReserved, int isLegacy)
@@ -190,11 +202,12 @@ mcAdjustBtree(Btree* pBt, int nPageSize, int nReserved, int isLegacy)
   /* Adjust the page size and the reserved area */
   if (pager->pageSize != pagesize || pager->nReserve != nReserved)
   {
+    int reserved = (nReserved >= 0) ? nReserved : 0;
     if (isLegacy != 0)
     {
       pBt->pBt->btsFlags &= ~BTS_PAGESIZE_FIXED;
     }
-    rc = sqlite3BtreeSetPageSize(pBt, pagesize, nReserved, 0);
+    rc = sqlite3BtreeSetPageSize(pBt, pagesize, reserved, 0);
   }
   return rc;
 }
@@ -332,6 +345,11 @@ SQLITE_API int
 sqlite3_key_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
 {
   int rc = SQLITE_ERROR;
+  if (!sqlite3mcIsEncryptionSupported(db, zDbName))
+  {
+    sqlite3ErrorWithMsg(db, rc, "Setting key failed. Encryption is not supported by the VFS.");
+    return rc;
+  }
   if (zKey != NULL && nKey < 0)
   {
     /* Key is zero-terminated string */
@@ -348,7 +366,8 @@ sqlite3_key_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
       return rc;
     }
     /* Configure cipher from URI parameters if requested */
-    if (sqlite3FindFunction(db, "sqlite3mc_config_table", 0, SQLITE_UTF8, 0) == NULL)
+    void* codecParamTable = sqlite3_get_clientdata(db, globalConfigTableName);
+    if (codecParamTable == NULL)
     {
       /*
       ** Encryption extension of database connection not yet initialized;
@@ -384,7 +403,15 @@ sqlite3_rekey_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
   int nReserved;
   Pager* pPager;
   Codec* codec;
+  int codecAllocated = 0;
   int rc = SQLITE_ERROR;
+  char* err = NULL;
+
+  if (!sqlite3mcIsEncryptionSupported(db, zDbName))
+  {
+    sqlite3ErrorWithMsg(db, rc, "Rekeying failed. Encryption is not supported by the VFS.");
+    return rc;
+  }
   if (zKey != NULL && nKey < 0)
   {
     /* Key is zero-terminated string */
@@ -417,10 +444,10 @@ sqlite3_rekey_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
     sqlite3ErrorWithMsg(db, rc, "Rekeying is not supported in WAL journal mode.");
     return rc;
   }
-  
+
   if ((zKey == NULL || nKey == 0) && (codec == NULL || !sqlite3mcIsEncrypted(codec)))
   {
-    /* Database not encrypted and key not specified, therefore do nothing	*/
+    /* Database not encrypted and key not specified, therefore do nothing */
     return SQLITE_OK;
   }
 
@@ -428,9 +455,10 @@ sqlite3_rekey_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
 
   if (codec == NULL || !sqlite3mcIsEncrypted(codec))
   {
-    /* Database not encrypted, but key specified, therefore encrypt database	*/
+    /* Database not encrypted, but key specified, therefore encrypt database */
     if (codec == NULL)
     {
+      codecAllocated = 1;
       codec = (Codec*) sqlite3_malloc(sizeof(Codec));
       rc = (codec != NULL) ? sqlite3mcCodecInit(codec) : SQLITE_NOMEM;
     }
@@ -454,14 +482,9 @@ sqlite3_rekey_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
         if (nReserved != nReservedWriteCipher)
         {
           /* Use VACUUM to change the number of reserved bytes */
-          char* err = NULL;
           sqlite3mcSetReadReserved(codec, nReserved);
           sqlite3mcSetWriteReserved(codec, nReservedWriteCipher);
           rc = sqlite3mcRunVacuumForRekey(&err, db, dbIndex, NULL, nReservedWriteCipher);
-          if (rc != SQLITE_OK && err != NULL)
-          {
-            sqlite3ErrorWithMsg(db, rc, err);
-          }
           goto leave_rekey;
         }
       }
@@ -469,12 +492,17 @@ sqlite3_rekey_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
       {
         /* Pagesize cannot be changed for an encrypted database */
         rc = SQLITE_ERROR;
-        sqlite3ErrorWithMsg(db, rc, "Rekeying failed. Pagesize cannot be changed for an encrypted database.");
+        err = "Rekeying failed. Pagesize cannot be changed for an encrypted database.";
         goto leave_rekey;
       }
     }
     else
     {
+      sqlite3_mutex_leave(db->mutex);
+      if (codecAllocated)
+      {
+        sqlite3mcCodecFree(codec);
+      }
       return rc;
     }
   }
@@ -486,14 +514,10 @@ sqlite3_rekey_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
     if (nReserved > 0)
     {
       /* Use VACUUM to change the number of reserved bytes */
-      char* err = NULL;
+      err = NULL;
       sqlite3mcSetReadReserved(codec, nReserved);
       sqlite3mcSetWriteReserved(codec, 0);
       rc = sqlite3mcRunVacuumForRekey(&err, db, dbIndex, NULL, 0);
-      if (rc != SQLITE_OK && err != NULL)
-      {
-        sqlite3ErrorWithMsg(db, rc, err);
-      }
       goto leave_rekey;
     }
   }
@@ -511,14 +535,10 @@ sqlite3_rekey_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
         if (nReserved != nReservedWriteCipher)
         {
           /* Use VACUUM to change the number of reserved bytes */
-          char* err = NULL;
+          err = NULL;
           sqlite3mcSetReadReserved(codec, nReserved);
           sqlite3mcSetWriteReserved(codec, nReservedWriteCipher);
           rc = sqlite3mcRunVacuumForRekey(&err, db, dbIndex, NULL, nReservedWriteCipher);
-          if (rc != SQLITE_OK && err != NULL)
-          {
-            sqlite3ErrorWithMsg(db, rc, err);
-          }
           goto leave_rekey;
         }
       }
@@ -526,14 +546,14 @@ sqlite3_rekey_v2(sqlite3* db, const char* zDbName, const void* zKey, int nKey)
       {
         /* Pagesize cannot be changed for an encrypted database */
         rc = SQLITE_ERROR;
-        sqlite3ErrorWithMsg(db, rc, "Rekeying failed. Pagesize cannot be changed for an encrypted database.");
+        err = "Rekeying failed. Pagesize cannot be changed for an encrypted database.";
         goto leave_rekey;
       }
     }
     else
     {
       /* Setup of write cipher failed */
-      sqlite3ErrorWithMsg(db, rc, "Rekeying failed. Setup of write cipher failed.");
+      err = "Rekeying failed. Setup of write cipher failed.";
       goto leave_rekey;
     }
   }
@@ -584,8 +604,15 @@ leave_rekey:
     /* Set read key equal to write key if necessary */
     if (sqlite3mcHasWriteCipher(codec))
     {
+      /* Set Read cipher equal to Write cipher */
       sqlite3mcCopyCipher(codec, 0);
       sqlite3mcSetHasReadCipher(codec, 1);
+
+      /* Enforce page size and number of reserved bytes per page */
+      int pageSize = sqlite3mcGetPageSizeWriteCipher(codec);
+      int reserved = sqlite3mcGetReservedWriteCipher(codec);
+      mcAdjustBtree(pBt, pageSize, reserved, sqlite3mcGetLegacyWriteCipher(codec));
+      sqlite3mcCodecSizeChange(codec, pageSize, reserved);
     }
     else
     {
@@ -614,6 +641,10 @@ leave_rekey:
   {
     /* Remove codec for unencrypted database */
     sqlite3mcSetCodec(db, zDbName, dbFileName, NULL);
+  }
+  if (rc != SQLITE_OK && err != NULL)
+  {
+    sqlite3ErrorWithMsg(db, rc, err);
   }
   return rc;
 }

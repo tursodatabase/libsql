@@ -13,10 +13,10 @@ Still 100% Public Domain
 
 Corrected a problem which generated improper hash values on 16 bit machines
 Routine SHA1Update changed from
-	void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int
+  void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int
 len)
 to
-	void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned
+  void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned
 long len)
 
 The 'len' parameter was declared an int which works fine on 32 bit machines.
@@ -141,6 +141,7 @@ A million repetitions of "a"
   z+=(w^x^y)+blk(i)+0xCA62C1D6+rol(v,5);w=ror(w,2);
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
+SQLITE_PRIVATE
 void sha1_transform(sha1_ctx *context, const uint8_t buffer[64])
 {
   uint32_t a, b, c, d, e;
@@ -205,6 +206,7 @@ void sha1_transform(sha1_ctx *context, const uint8_t buffer[64])
 *
 * @param context SHA1-Context
 */
+SQLITE_PRIVATE
 void sha1_init(sha1_ctx *context)
 {
   /* SHA1 initialization constants */
@@ -224,6 +226,7 @@ void sha1_init(sha1_ctx *context)
 * @param p       Buffer to run SHA1 on
 * @param len     Number of bytes
 */
+SQLITE_PRIVATE
 void sha1_update(sha1_ctx *context, const void *p, size_t len)
 {
   const uint8_t *data = p;
@@ -259,6 +262,7 @@ void sha1_update(sha1_ctx *context, const void *p, size_t len)
 * @param digest  Generated message digest
 * @param context SHA1-Context
 */
+SQLITE_PRIVATE
 void sha1_final(sha1_ctx *context, uint8_t digest[SHA1_DIGEST_SIZE])
 {
   uint32_t i;

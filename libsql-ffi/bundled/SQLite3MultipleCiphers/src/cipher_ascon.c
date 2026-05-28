@@ -3,7 +3,7 @@
 ** Purpose:     Implementation of cipher Ascon
 ** Author:      Ulrich Telle
 ** Created:     2023-11-13
-** Copyright:   (c) 2023-2023 Ulrich Telle
+** Copyright:   (c) 2023-2024 Ulrich Telle
 ** License:     MIT
 */
 
@@ -114,21 +114,18 @@ GetSaltAscon128Cipher(void* cipher)
 }
 
 static void
-GenerateKeyAscon128Cipher(void* cipher, BtShared* pBt, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt)
+GenerateKeyAscon128Cipher(void* cipher, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt)
 {
   Ascon128Cipher* ascon128Cipher = (Ascon128Cipher*) cipher;
   int bypass = 0;
 
-  Pager *pPager = pBt->pPager;
-  sqlite3_file* fd = (isOpen(pPager->fd)) ? pPager->fd : NULL;
-
   int keyOnly = 1;
-  if (rekey || fd == NULL || sqlite3OsRead(fd, ascon128Cipher->m_salt, SALTLENGTH_ASCON128, 0) != SQLITE_OK)
+  if (rekey || cipherSalt == NULL)
   {
     chacha20_rng(ascon128Cipher->m_salt, SALTLENGTH_ASCON128);
     keyOnly = 0;
   }
-  else if (cipherSalt != NULL)
+  else
   {
     memcpy(ascon128Cipher->m_salt, cipherSalt, SALTLENGTH_ASCON128);
   }

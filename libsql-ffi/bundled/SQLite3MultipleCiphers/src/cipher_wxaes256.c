@@ -3,7 +3,7 @@
 ** Purpose:     Implementation of cipher wxSQLite3 AES 256-bit
 ** Author:      Ulrich Telle
 ** Created:     2020-02-02
-** Copyright:   (c) 2006-2020 Ulrich Telle
+** Copyright:   (c) 2006-2024 Ulrich Telle
 ** License:     MIT
 */
 
@@ -136,7 +136,7 @@ GetSaltAES256Cipher(void* cipher)
 }
 
 static void
-GenerateKeyAES256Cipher(void* cipher, BtShared* pBt, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt)
+GenerateKeyAES256Cipher(void* cipher, char* userPassword, int passwordLength, int rekey, unsigned char* cipherSalt)
 {
   AES256Cipher* aesCipher = (AES256Cipher*) cipher;
   unsigned char userPad[32];

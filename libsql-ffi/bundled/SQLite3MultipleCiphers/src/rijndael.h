@@ -18,6 +18,10 @@
 #ifndef _RIJNDAEL_H_
 #define _RIJNDAEL_H_
 
+#ifndef SQLITE_PRIVATE
+#define SQLITE_PRIVATE
+#endif
+
 /*
 // File : rijndael.h
 // Creation date : Sun Nov 5 2000 03:21:05 CEST
@@ -116,16 +120,16 @@ typedef unsigned short UINT16;
 */
 
 typedef struct _Rijndael
-{	
-	int     m_state;
-	int     m_mode;
-	int     m_direction;
-	UINT8   m_initVector[MAX_IV_SIZE];
-	UINT32  m_uRounds;
-	UINT8   m_expandedKey[_MAX_ROUNDS+1][4][4];
+{
+  int     m_state;
+  int     m_mode;
+  int     m_direction;
+  UINT8   m_initVector[MAX_IV_SIZE];
+  UINT32  m_uRounds;
+  UINT8   m_expandedKey[_MAX_ROUNDS+1][4][4];
 } Rijndael;
 
-void RijndaelCreate(Rijndael* rijndael);
+SQLITE_PRIVATE void RijndaelCreate(Rijndael* rijndael);
 
 /*
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -147,7 +151,7 @@ void RijndaelCreate(Rijndael* rijndael);
 // keyLen    : Rijndael::Key16Bytes , Rijndael::Key24Bytes or Rijndael::Key32Bytes
 // initVector: initialization vector, you will usually use 0 here
 */
-int RijndaelInit(Rijndael* rijndael, int mode, int dir, UINT8* key, int keyLen, UINT8* initVector);
+SQLITE_PRIVATE int RijndaelInit(Rijndael* rijndael, int mode, int dir, UINT8* key, int keyLen, UINT8* initVector);
 
 /*
 // Encrypts the input array (can be binary data)
@@ -158,7 +162,7 @@ int RijndaelInit(Rijndael* rijndael, int mode, int dir, UINT8* key, int keyLen, 
 // outBuffer must be at least inputLen / 8 bytes long.
 // Returns the encrypted buffer length in BITS or an error code < 0 in case of error
 */
-int RijndaelBlockEncrypt(Rijndael* rijndael, UINT8 *input, int inputLen, UINT8 *outBuffer);
+SQLITE_PRIVATE int RijndaelBlockEncrypt(Rijndael* rijndael, UINT8 *input, int inputLen, UINT8 *outBuffer);
 
 /*
 // Encrypts the input array (can be binary data)
@@ -167,7 +171,7 @@ int RijndaelBlockEncrypt(Rijndael* rijndael, UINT8 *input, int inputLen, UINT8 *
 // outBuffer must be at least (inputLen + 16) bytes long
 // Returns the encrypted buffer length in BYTES or an error code < 0 in case of error
 */
-int RijndaelPadEncrypt(Rijndael* rijndael, UINT8 *input, int inputOctets, UINT8 *outBuffer);
+SQLITE_PRIVATE int RijndaelPadEncrypt(Rijndael* rijndael, UINT8 *input, int inputOctets, UINT8 *outBuffer);
 
 /*
 // Decrypts the input vector
@@ -175,7 +179,7 @@ int RijndaelPadEncrypt(Rijndael* rijndael, UINT8 *input, int inputOctets, UINT8 
 // outBuffer must be at least inputLen / 8 bytes long
 // Returns the decrypted buffer length in BITS and an error code < 0 in case of error
 */
-int RijndaelBlockDecrypt(Rijndael* rijndael, UINT8 *input, int inputLen, UINT8 *outBuffer);
+SQLITE_PRIVATE int RijndaelBlockDecrypt(Rijndael* rijndael, UINT8 *input, int inputLen, UINT8 *outBuffer);
 
 /*
 // Decrypts the input vector
@@ -183,12 +187,12 @@ int RijndaelBlockDecrypt(Rijndael* rijndael, UINT8 *input, int inputLen, UINT8 *
 // outBuffer must be at least inputLen bytes long
 // Returns the decrypted buffer length in BYTES and an error code < 0 in case of error
 */
-int RijndaelPadDecrypt(Rijndael* rijndael, UINT8 *input, int inputOctets, UINT8 *outBuffer);
+SQLITE_PRIVATE int RijndaelPadDecrypt(Rijndael* rijndael, UINT8 *input, int inputOctets, UINT8 *outBuffer);
 
-void RijndaelInvalidate(Rijndael* rijndael);
-void RijndaelKeySched(Rijndael* rijndael, UINT8 key[_MAX_KEY_COLUMNS][4]);
-void RijndaelKeyEncToDec(Rijndael* rijndael);
-void RijndaelEncrypt(Rijndael* rijndael, UINT8 a[16], UINT8 b[16]);
-void RijndaelDecrypt(Rijndael* rijndael, UINT8 a[16], UINT8 b[16]);
-	
+SQLITE_PRIVATE void RijndaelInvalidate(Rijndael* rijndael);
+SQLITE_PRIVATE void RijndaelKeySched(Rijndael* rijndael, UINT8 key[_MAX_KEY_COLUMNS][4]);
+SQLITE_PRIVATE void RijndaelKeyEncToDec(Rijndael* rijndael);
+SQLITE_PRIVATE void RijndaelEncrypt(Rijndael* rijndael, UINT8 a[16], UINT8 b[16]);
+SQLITE_PRIVATE void RijndaelDecrypt(Rijndael* rijndael, UINT8 a[16], UINT8 b[16]);
+
 #endif /* _RIJNDAEL_H_ */

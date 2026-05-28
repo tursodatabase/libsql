@@ -34,6 +34,10 @@
 #ifndef SHA2_H
 #define SHA2_H
 
+#ifndef SQLITE_PRIVATE
+#define SQLITE_PRIVATE
+#endif
+
 #define SHA224_DIGEST_SIZE ( 224 / 8)
 #define SHA256_DIGEST_SIZE ( 256 / 8)
 #define SHA384_DIGEST_SIZE ( 384 / 8)
@@ -55,7 +59,7 @@ typedef sqlite3_uint64 uint64;
   #define li_64(h) 0x##h##ui64
 #else
   #define li_64(h) 0x##h##ull
-#endif 
+#endif
 
 #if 0  /* Start of original int64 defines */
 
@@ -127,35 +131,27 @@ typedef struct {
 typedef sha512_ctx sha384_ctx;
 typedef sha256_ctx sha224_ctx;
 
-void sha224_init(sha224_ctx *ctx);
-void sha224_update(sha224_ctx *ctx, const unsigned char *message,
-                   unsigned int len);
-void sha224_final(sha224_ctx *ctx, unsigned char *digest);
-void sha224(const unsigned char *message, unsigned int len,
-            unsigned char *digest);
+SQLITE_PRIVATE void sha224_init(sha224_ctx *ctx);
+SQLITE_PRIVATE void sha224_update(sha224_ctx *ctx, const unsigned char *message, unsigned int len);
+SQLITE_PRIVATE void sha224_final(sha224_ctx *ctx, unsigned char *digest);
+SQLITE_PRIVATE void sha224(const unsigned char *message, unsigned int len, unsigned char *digest);
 
-void sha256_init(sha256_ctx * ctx);
-void sha256_update(sha256_ctx *ctx, const unsigned char *message,
-                   unsigned int len);
-void sha256_final(sha256_ctx *ctx, unsigned char *digest);
-void sha256_transform(sha256_ctx *ctx, const unsigned char *message);
-void sha256(const unsigned char *message, unsigned int len,
-            unsigned char *digest);
+SQLITE_PRIVATE void sha256_init(sha256_ctx * ctx);
+SQLITE_PRIVATE void sha256_update(sha256_ctx *ctx, const unsigned char *message, unsigned int len);
+SQLITE_PRIVATE void sha256_final(sha256_ctx *ctx, unsigned char *digest);
+SQLITE_PRIVATE void sha256_transform(sha256_ctx *ctx, const unsigned char *message);
+SQLITE_PRIVATE void sha256(const unsigned char *message, unsigned int len, unsigned char *digest);
 
-void sha384_init(sha384_ctx *ctx);
-void sha384_update(sha384_ctx *ctx, const unsigned char *message,
-                   unsigned int len);
-void sha384_final(sha384_ctx *ctx, unsigned char *digest);
-void sha384(const unsigned char *message, unsigned int len,
-            unsigned char *digest);
+SQLITE_PRIVATE void sha384_init(sha384_ctx *ctx);
+SQLITE_PRIVATE void sha384_update(sha384_ctx *ctx, const unsigned char *message, unsigned int len);
+SQLITE_PRIVATE void sha384_final(sha384_ctx *ctx, unsigned char *digest);
+SQLITE_PRIVATE void sha384(const unsigned char *message, unsigned int len, unsigned char *digest);
 
-void sha512_init(sha512_ctx *ctx);
-void sha512_update(sha512_ctx *ctx, const unsigned char *message,
-                   unsigned int len);
-void sha512_final(sha512_ctx *ctx, unsigned char *digest);
-void sha512_transform(sha512_ctx *ctx, const unsigned char *message);
-void sha512(const unsigned char *message, unsigned int len,
-            unsigned char *digest);
+SQLITE_PRIVATE void sha512_init(sha512_ctx *ctx);
+SQLITE_PRIVATE void sha512_update(sha512_ctx *ctx, const unsigned char *message, unsigned int len);
+SQLITE_PRIVATE void sha512_final(sha512_ctx *ctx, unsigned char *digest);
+SQLITE_PRIVATE void sha512_transform(sha512_ctx *ctx, const unsigned char *message);
+SQLITE_PRIVATE void sha512(const unsigned char *message, unsigned int len, unsigned char *digest);
 
 #ifdef __cplusplus
 }

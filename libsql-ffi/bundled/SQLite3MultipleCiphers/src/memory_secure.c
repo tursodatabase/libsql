@@ -44,38 +44,6 @@ static volatile int mcSecureMemoryFlag = 0;
 /* Map of default memory allocation methods */
 static volatile sqlite3_mem_methods mcDefaultMemoryMethods;
 
-#if SQLITE3MC_ENABLE_RANDOM_FILL_MEMORY
-
-/*
-** Fill a buffer with pseudo-random bytes.  This is used to preset
-** the content of a new memory allocation to unpredictable values and
-** to clear the content of a freed allocation to unpredictable values.
-*/
-static void mcRandomFill(char* pBuf, int nByte)
-{
-  unsigned int x, y, r;
-  x = SQLITE_PTR_TO_INT(pBuf);
-  y = nByte | 1;
-  while( nByte >= 4 )
-  {
-    x = (x>>1) ^ (-(int)(x&1) & 0xd0000001);
-    y = y*1103515245 + 12345;
-    r = x ^ y;
-    *(int*)pBuf = r;
-    pBuf += 4;
-    nByte -= 4;
-  }
-  while( nByte-- > 0 )
-  {
-    x = (x>>1) ^ (-(int)(x&1) & 0xd0000001);
-    y = y*1103515245 + 12345;
-    r = x ^ y;
-    *(pBuf++) = r & 0xff;
-  }
-}
-
-#endif
-
 /*
 ** Return the size of an allocation
 */
@@ -99,13 +67,8 @@ static void mcMemoryFree(void* pPrior)
 {
   if (mcSecureMemoryFlag)
   {
-#if SQLITE3MC_USE_RANDOM_FILL_MEMORY
-    int nSize = mcMemorySize(pPrior);
-    mcRandomFill((char*) pPrior, nSize)
-#else
     int nSize = mcMemorySize(pPrior);
     sqlite3mcSecureZeroMemory(pPrior, 0, nSize);
-#endif
   }
   mcDefaultMemoryMethods.xFree(pPrior);
 }

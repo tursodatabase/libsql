@@ -13,6 +13,10 @@
 #ifndef CRYPTO_HASH_H
 #define CRYPTO_HASH_H
 
+#ifndef SQLITE_PRIVATE
+#define SQLITE_PRIVATE
+#endif
+
 #include <stddef.h>
 
 /*
@@ -22,6 +26,7 @@
 ** \param in Buffer with input data
 ** \param passwordlen Length of input data in bytes
 */
+SQLITE_PRIVATE
 int ascon_hash(uint8_t* out, const uint8_t* in, uint64_t inlen);
 
 #endif

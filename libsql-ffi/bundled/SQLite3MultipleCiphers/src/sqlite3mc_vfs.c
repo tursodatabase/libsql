@@ -98,6 +98,8 @@ static int mcIoUnfetch(sqlite3_file* pFile, sqlite3_int64 iOfst, void* p);
 
 #define SQLITE3MC_VFS_NAME ("multipleciphers")
 
+#define SQLITE3MC_FCNTL_PVFS 0x3f98c078
+
 /*
 ** Header sizes of WAL journal files
 */
@@ -213,7 +215,7 @@ static void mcMainListRemove(sqlite3mc_file* pFile)
 }
 
 /*
-** Given that zFileName points to a buffer containing a database file name passed to 
+** Given that zFileName points to a buffer containing a database file name passed to
 ** either the xOpen() or xAccess() VFS method, search the list of main database files
 ** for a file handle opened by the same database connection on the corresponding
 ** database file.
@@ -242,34 +244,27 @@ static sqlite3mc_vfs* mcFindVfs(sqlite3* db, const char* zDbName)
   {
     /*
     ** The top level VFS is not a Multiple Ciphers VFS.
-    ** Retrieve the VFS names stack.
+    ** Retrieve the Multiple Ciphers VFS via file control function,
+    ** if it is included in the VFS stack.
     */
-    char* zVfsNameStack = 0;
-    if ((sqlite3_file_control(db, zDbName, SQLITE_FCNTL_VFSNAME, &zVfsNameStack) == SQLITE_OK) && (zVfsNameStack != NULL))
+    sqlite3mc_vfs* pVfs = NULL;
+    if ((sqlite3_file_control(db, zDbName, SQLITE3MC_FCNTL_PVFS, &pVfs) == SQLITE_OK) &&
+        (pVfs && pVfs->base.xOpen == mcVfsOpen))
     {
-      /* Search for the name prefix of a Multiple Ciphers VFS. */
-      char* zVfsName = strstr(zVfsNameStack, SQLITE3MC_VFS_NAME);
-      if (zVfsName != NULL)
-      {
-        /* The prefix was found, now determine the full VFS name. */
-        char* zVfsNameEnd = zVfsName + strlen(SQLITE3MC_VFS_NAME);
-        if (*zVfsNameEnd == '-')
-        {
-          for (++zVfsNameEnd; *zVfsNameEnd != '/'  && *zVfsNameEnd != 0; ++zVfsNameEnd);
-          if (*zVfsNameEnd == '/') *zVfsNameEnd = 0;
-
-          /* Find a pointer to the VFS with the determined name. */
-          sqlite3_vfs* pVfs = sqlite3_vfs_find(zVfsName);
-          if (pVfs && pVfs->xOpen == mcVfsOpen)
-          {
-            pVfsMC = (sqlite3mc_vfs*) pVfs;
-          }
-        }
-      }
-      sqlite3_free(zVfsNameStack);
+      pVfsMC = pVfs;
     }
   }
   return pVfsMC;
+}
+
+/*
+** Check whether the VFS of the database file corresponding
+** to the database schema name supports encryption.
+*/
+SQLITE_PRIVATE int sqlite3mcIsEncryptionSupported(sqlite3* db, const char* zDbName)
+{
+  sqlite3mc_vfs* pVfsMC = mcFindVfs(db, zDbName);
+  return (pVfsMC != NULL);
 }
 
 /*
@@ -301,6 +296,30 @@ SQLITE_PRIVATE Codec* sqlite3mcGetMainCodec(sqlite3* db)
   return sqlite3mcGetCodec(db, "main");
 }
 
+SQLITE_PRIVATE int sqlite3mcIsBackupSupported(sqlite3* pSrc, const char* zSrc, sqlite3* pDest, const char* zDest)
+{
+  int ok = 1;
+  if (pSrc != pDest)
+  {
+    Codec* codecSrc = sqlite3mcGetCodec(pSrc, zSrc);
+    Codec* codecDest = sqlite3mcGetCodec(pDest, zDest);
+    if (codecSrc && codecDest)
+    {
+      /* Both databases have a codec, are encrypted, and have the same page size */
+      ok = sqlite3mcIsEncrypted(codecSrc) && sqlite3mcIsEncrypted(codecDest) &&
+           (sqlite3mcGetPageSizeReadCipher(codecSrc) == sqlite3mcGetPageSizeWriteCipher(codecDest)) &&
+           (sqlite3mcGetReadReserved(codecSrc) == sqlite3mcGetWriteReserved(codecDest));
+    }
+    else
+    {
+      /* At least one database has no codec */
+      /* Backup supported if both databases are plain databases */
+      ok = !codecSrc && !codecDest;
+    }
+  }
+  return ok;
+}
+
 /*
 ** Set the codec of the database file with the given database file name.
 **
@@ -317,12 +336,13 @@ SQLITE_PRIVATE void sqlite3mcSetCodec(sqlite3* db, const char* zDbName, const ch
   sqlite3mc_vfs* pVfsMC = mcFindVfs(db, zDbName);
   if (pVfsMC)
   {
-    pDbMain = mcFindDbMainFileName((sqlite3mc_vfs*)(db->pVfs), zFileName);
+    pDbMain = mcFindDbMainFileName(pVfsMC, zFileName);
   }
   if (pDbMain)
   {
     Codec* prevCodec = pDbMain->codec;
     Codec* msgCodec = (codec) ? codec : prevCodec;
+    pDbMain->codec = codec;
     if (msgCodec)
     {
       /* Reset error state of pager */
@@ -335,7 +355,6 @@ SQLITE_PRIVATE void sqlite3mcSetCodec(sqlite3* db, const char* zDbName, const ch
       */
       sqlite3mcCodecFree(prevCodec);
     }
-    pDbMain->codec = codec;
   }
   else
   {
@@ -363,8 +382,8 @@ int libsql_pager_codec_impl(libsql_pghdr* pPg, void **ret)
   sqlite3_file* pFile = sqlite3PagerFile(pPg->pPager);
 
   void* aData = 0;
-  if (pFile->pMethods == &mcIoMethodsGlobal1 || 
-      pFile->pMethods == &mcIoMethodsGlobal2 || 
+  if (pFile->pMethods == &mcIoMethodsGlobal1 ||
+      pFile->pMethods == &mcIoMethodsGlobal2 ||
       pFile->pMethods == &mcIoMethodsGlobal3)
   {
     sqlite3mc_file* mcFile = (sqlite3mc_file*) pFile;
@@ -643,6 +662,7 @@ static int mcReadMainDb(sqlite3_file* pFile, void* buffer, int count, sqlite3_in
       */
       pageNo = prevOffset / pageSize + 1;
       bufferDecrypted = sqlite3mcCodec(mcFile->codec, pageBuffer, pageNo, 3);
+      rc = sqlite3mcGetCodecLastError(mcFile->codec);
 
       /*
       ** Return the requested content
@@ -671,6 +691,7 @@ static int mcReadMainDb(sqlite3_file* pFile, void* buffer, int count, sqlite3_in
       for (iPage = 0; iPage < nPages; ++iPage)
       {
         void* bufferDecrypted = sqlite3mcCodec(mcFile->codec, data, pageNo, 3);
+        rc = sqlite3mcGetCodecLastError(mcFile->codec);
         data += pageSize;
         offset += pageSize;
         ++pageNo;
@@ -699,6 +720,7 @@ static int mcReadMainJournal(sqlite3_file* pFile, const void* buffer, int count,
       ** Decrypt the page buffer, but only if the page number is valid
       */
       void* bufferDecrypted = sqlite3mcCodec(codec, (char*) buffer, mcFile->pageNo, 3);
+      rc = sqlite3mcGetCodecLastError(codec);
       mcFile->pageNo = 0;
     }
     else if (count == 4)
@@ -732,6 +754,7 @@ static int mcReadSubJournal(sqlite3_file* pFile, const void* buffer, int count, 
       ** Decrypt the page buffer, but only if the page number is valid
       */
       void* bufferDecrypted = sqlite3mcCodec(codec, (char*) buffer, mcFile->pageNo, 3);
+      rc = sqlite3mcGetCodecLastError(codec);
     }
     else if (count == 4)
     {
@@ -780,6 +803,7 @@ static int mcReadWal(sqlite3_file* pFile, const void* buffer, int count, sqlite3
       if (pageNo != 0)
       {
         void* bufferDecrypted = sqlite3mcCodec(codec, (char*)buffer, pageNo, 3);
+        rc = sqlite3mcGetCodecLastError(codec);
       }
     }
     else if (codec->m_walLegacy != 0 && count == pageSize + walFrameHeaderSize)
@@ -792,6 +816,7 @@ static int mcReadWal(sqlite3_file* pFile, const void* buffer, int count, sqlite3
       if (pageNo != 0)
       {
         void* bufferDecrypted = sqlite3mcCodec(codec, (char*)buffer+walFrameHeaderSize, pageNo, 3);
+        rc = sqlite3mcGetCodecLastError(codec);
       }
     }
   }
@@ -1203,6 +1228,12 @@ static int mcIoFileControl(sqlite3_file* pFile, int op, void* pArg)
 
   switch (op)
   {
+    case SQLITE3MC_FCNTL_PVFS:
+      {
+        *(sqlite3mc_vfs**) pArg = p->pVfsMC;
+        doReal = 0;
+      }
+      break;
     case SQLITE_FCNTL_PDB:
       {
 #if 0
@@ -1219,7 +1250,7 @@ static int mcIoFileControl(sqlite3_file* pFile, int op, void* pArg)
         */
         sqlite3* db = *((sqlite3**) pArg);
 #endif
-    }
+      }
       break;
     case SQLITE_FCNTL_PRAGMA:
       {
