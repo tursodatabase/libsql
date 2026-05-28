@@ -204,7 +204,9 @@ proc do_conflict_test {tn args} {
   foreach t $O(-tables) { S attach $t }
   execsql $O(-sql)
   set ::xConflict [list]
-  sqlite3changeset_apply db2 [S changeset] xConflict
+  catch {
+    sqlite3changeset_apply db2 [S changeset] xConflict
+  }
 
   set conflicts [list]
   foreach c $O(-conflicts) {
@@ -283,7 +285,7 @@ do_conflict_test $tn.3.2.3 -tables t2 -sql {
   {FOREIGN_KEY 1}
 }
 do_execsql_test $tn.3.2.4 "SELECT * FROM t2" {}
-do_db2_test $tn.3.2.5 "SELECT * FROM t2" {4 five}
+do_db2_test $tn.3.2.5 "SELECT * FROM t2" {1 one 2 two 4 five}
 
 # Test UPDATE changesets.
 #

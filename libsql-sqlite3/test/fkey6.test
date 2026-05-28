@@ -225,5 +225,32 @@ do_execsql_test 3.3.4 {
   SELECT * FROM p2;
 } {0 one 1 deleted!}
 
+#-------------------------------------------------------------------------
+# Verify that, even with "PRAGMA defer_foreign_keys", a transaction cannot
+# be committed if there are outstanding foreign key violations.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE p1(a INTEGER PRIMARY KEY, b UNIQUE);
+  CREATE TABLE c1(x REFERENCES p1(b));
+
+  INSERT INTO p1 VALUES(1, 'one'), (2, 'two'), (3, 'three');
+  INSERT INTO c1 VALUES('two');
+
+  PRAGMA foreign_keys = 1;
+  PRAGMA defer_foreign_keys = 1;
+}
+
+do_execsql_test 4.1 {
+  BEGIN;
+    DELETE FROM p1 WHERE a=2;
+}
+
+do_catchsql_test 4.2 {
+  COMMIT;
+} {1 {FOREIGN KEY constraint failed}}
+
+
+
 
 finish_test

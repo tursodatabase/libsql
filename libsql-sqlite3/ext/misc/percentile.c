@@ -484,10 +484,10 @@ int sqlite3_percentile_init(
 ){
   int rc = SQLITE_OK;
   unsigned int i;
-#if defined(SQLITE3_H) || defined(SQLITE_STATIC_PERCENTILE)
-  (void)pApi;      /* Unused parameter */
-#else
+#ifdef SQLITE3EXT_H
   SQLITE_EXTENSION_INIT2(pApi);
+#else
+  (void)pApi;      /* Unused parameter */
 #endif
   (void)pzErrMsg;  /* Unused parameter */
   for(i=0; i<sizeof(aPercentFunc)/sizeof(aPercentFunc[0]); i++){

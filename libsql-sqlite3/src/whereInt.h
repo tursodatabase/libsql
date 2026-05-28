@@ -533,9 +533,17 @@ int sqlite3WhereExplainBloomFilter(
   const WhereInfo *pWInfo,        /* WHERE clause */
   const WhereLevel *pLevel        /* Bloom filter on this level */
 );
+void sqlite3WhereAddExplainText(
+  Parse *pParse,                  /* Parse context */
+  int addr, 
+  SrcList *pTabList,              /* Table list this loop refers to */
+  WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
+  u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
+);
 #else
 # define sqlite3WhereExplainOneScan(u,v,w,x) 0
 # define sqlite3WhereExplainBloomFilter(u,v,w) 0
+# define  sqlite3WhereAddExplainText(u,v,w,x,y)
 #endif /* SQLITE_OMIT_EXPLAIN */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 void sqlite3WhereAddScanStatus(

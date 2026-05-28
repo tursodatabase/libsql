@@ -19,7 +19,9 @@ TOP = .
 
 
 # Optionally set EXTRA_SRC to a list of C files to append to
-# the generated sqlite3.c.
+# the generated sqlite3.c. Any sqlite3 extensions added this
+# way may require manual editing, as described in
+# https://sqlite.org/forum/forumpost/903f721f3e7c0d25
 #
 !IFNDEF EXTRA_SRC
 EXTRA_SRC =
@@ -799,15 +801,6 @@ RCC = $(RCC) -DSQLITE_THREAD_OVERRIDE_LOCK=-1
 TLIBS =
 !ENDIF
 
-# Flags controlling use of the in memory btree implementation
-#
-# SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
-# default to file, 2 to default to memory, and 3 to force temporary
-# tables to always be in memory.
-#
-TCC = $(TCC) -DSQLITE_TEMP_STORE=1
-RCC = $(RCC) -DSQLITE_TEMP_STORE=1
-
 # Enable/disable loadable extensions, and other optional features
 # based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
 # The same set of OMIT and ENABLE flags should be passed to the
@@ -1038,6 +1031,11 @@ dll:	$(SQLITE3DLL)
 # Shell executable.
 #
 shell:	$(SQLITE3EXE)
+
+# jimsh0 - replacement for tclsh
+#
+jimsh0.exe:	$(TOP)\autosetup\jimsh0.c
+	cl -DHAVE__FULLPATH=1 $(TOP)\autosetup\jimsh0.c
 
 
 $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)

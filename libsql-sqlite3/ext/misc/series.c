@@ -659,7 +659,7 @@ static int seriesBestIndex(
       continue;
     }
     if( pConstraint->iColumn<SERIES_COLUMN_START ){
-      if( pConstraint->iColumn==SERIES_COLUMN_VALUE ){
+      if( pConstraint->iColumn==SERIES_COLUMN_VALUE && pConstraint->usable ){
         switch( op ){
           case SQLITE_INDEX_CONSTRAINT_EQ:
           case SQLITE_INDEX_CONSTRAINT_IS: {
@@ -667,7 +667,9 @@ static int seriesBestIndex(
             idxNum &= ~0x3300;
             aIdx[5] = i;
             aIdx[6] = -1;
+#ifndef ZERO_ARGUMENT_GENERATE_SERIES
             bStartSeen = 1;
+#endif
             break;
           }
           case SQLITE_INDEX_CONSTRAINT_GE: {
@@ -675,7 +677,9 @@ static int seriesBestIndex(
             idxNum |=  0x0100;
             idxNum &= ~0x0200;
             aIdx[5] = i;
+#ifndef ZERO_ARGUMENT_GENERATE_SERIES
             bStartSeen = 1;
+#endif
             break;
           }
           case SQLITE_INDEX_CONSTRAINT_GT: {
@@ -683,7 +687,9 @@ static int seriesBestIndex(
             idxNum |=  0x0200;
             idxNum &= ~0x0100;
             aIdx[5] = i;
+#ifndef ZERO_ARGUMENT_GENERATE_SERIES
             bStartSeen = 1;
+#endif
             break;
           }
           case SQLITE_INDEX_CONSTRAINT_LE: {

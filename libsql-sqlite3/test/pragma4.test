@@ -281,6 +281,27 @@ ifcapable vtab {
            JOIN pragma_table_info(f."table", t.schema) AS i
      WHERE i.pk;
   } {t2 t1 d a 1}
+
+  # With a corrupt VIEW in the schema, the PRAGMA table_list command
+  # will generate internal errors.  Confirm that these internal errors
+  # do not appears on the log.  https://sqlite.org/src/forumpost/00ee467e
+  test_sqlite3_log [list lappend ::log]
+  set ::log {}
+  do_execsql_test 6.1 {
+    CREATE VIEW v1 AS SELECT abs(a) FROM t1;
+    PRAGMA writable_schema=ON;
+    UPDATE sqlite_schema
+       SET sql=replace(sql,'abs(a)','nosuchfunc(a)')
+     WHERE name='v1';
+    PRAGMA writable_schema=RESET;
+  } {}
+  do_execsql_test 6.2 {
+    PRAGMA table_list;
+  } {main v1 view 0 0 0 main t2 table 2 0 0 main t1 table 2 0 0 main sqlite_schema table 5 0 0 temp sqlite_temp_schema table 5 0 0}
+  do_test 6.3 {
+    set ::log
+  } {}
+  test_sqlite3_log
 }
 
 # 2024-05-08 https://sqlite.org/forum/forumpost/cf29a33e94

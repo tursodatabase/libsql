@@ -72,7 +72,7 @@ foreach {tn schema sql} {
 } {
   db_restore_and_reopen
   do_execsql_test 1.1.$tn.1 $schema
-  do_catchsql_test 1.1.$tn.2 $sql {1 {SQL logic error}}
+  do_catchsql_test 1.1.$tn.2 $sql {1 {database disk image is malformed}}
   db close
 }
 

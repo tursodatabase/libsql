@@ -117,6 +117,15 @@ do_test func-2.9 {
 do_test func-2.10 {
   execsql {SELECT substr(a,2,2) FROM t2}
 } {{} {} 45 {} 78}
+do_test func-2.11 {
+  execsql {SELECT substr('abcdefg',0x100000001,2)}
+} {{}}
+do_test func-2.12 {
+  execsql {SELECT substr('abcdefg',1,0x100000002)}
+} {abcdefg}
+do_test func-2.13 {
+  execsql {SELECT quote(substr(x'313233343536373839',0x7ffffffffffffffe,5))}
+} {X''}
 
 # Only do the following tests if TCL has UTF-8 capabilities
 #
@@ -339,6 +348,9 @@ ifcapable floatingpoint {
   do_test func-4.39 {
     string tolower [db eval {SELECT round(1e500), round(-1e500);}]
   } {inf -inf}
+  do_execsql_test func-4.40 {
+    SELECT round(123.456 , 4294967297);
+  } {123.456}
 }
 
 # Test the upper() and lower() functions
@@ -1183,7 +1195,9 @@ set midargs {}
 unset -nocomplain midres
 set midres {}
 unset -nocomplain result
-for {set i 1} {$i<[sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG -1]} {incr i} {
+set limit [sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG -1]
+if {$limit>400} {set limit 400}
+for {set i 1} {$i<$limit} {incr i} {
   append midargs ,'/$i'
   append midres /$i
   set result [md5 \
@@ -1261,7 +1275,8 @@ do_test func-26.1 {
 #
 do_test func-26.2 {
   set a {}
-  for {set i 1} {$i<=$::SQLITE_MAX_FUNCTION_ARG} {incr i} {
+  set limit $::SQLITE_MAX_FUNCTION_ARG
+  for {set i 1} {$i<=$limit} {incr i} {
     lappend a $i
   }
   db eval "
@@ -1279,7 +1294,8 @@ do_test func-26.3 {
 } {1 {too many arguments on function nullx_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789}}
 do_test func-26.4 {
   set a {}
-  for {set i 1} {$i<=$::SQLITE_MAX_FUNCTION_ARG-1} {incr i} {
+  set limit [expr {$::SQLITE_MAX_FUNCTION_ARG-1}]
+  for {set i 1} {$i<=$limit} {incr i} {
     lappend a $i
   }
   catchsql "

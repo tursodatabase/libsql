@@ -247,7 +247,8 @@ struct Fts5Config {
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
   int bSecureDelete;              /* 'secure-delete' */
-  int nDeleteMerge;           /* 'deletemerge' */
+  int nDeleteMerge;               /* 'deletemerge' */
+  int bPrefixInsttoken;           /* 'prefix-insttoken' */
 
   /* If non-NULL, points to sqlite3_vtab.base.zErrmsg. Often NULL. */
   char **pzErrmsg;
@@ -504,7 +505,14 @@ int sqlite3Fts5StructureTest(Fts5Index*, void*);
 /*
 ** Used by xInstToken():
 */
-int sqlite3Fts5IterToken(Fts5IndexIter*, i64, int, int, const char**, int*);
+int sqlite3Fts5IterToken(
+  Fts5IndexIter *pIndexIter, 
+  const char *pToken, int nToken,
+  i64 iRowid,
+  int iCol, 
+  int iOff, 
+  const char **ppOut, int *pnOut
+);
 
 /*
 ** Insert or remove data to or from the index. Each time a document is 

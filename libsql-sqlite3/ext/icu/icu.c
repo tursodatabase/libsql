@@ -571,7 +571,7 @@ int sqlite3IcuInit(sqlite3 *db){
   return rc;
 }
 
-#if !SQLITE_CORE
+#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif

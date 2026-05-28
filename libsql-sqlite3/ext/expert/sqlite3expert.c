@@ -1491,7 +1491,7 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
     }else{
       IdxTable *pTab;
       rc = idxGetTableInfo(p->db, zName, &pTab, pzErrmsg);
-      if( rc==SQLITE_OK ){
+      if( rc==SQLITE_OK && ALWAYS(pTab!=0) ){
         int i;
         char *zInner = 0;
         char *zOuter = 0;

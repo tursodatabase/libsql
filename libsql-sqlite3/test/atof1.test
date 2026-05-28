@@ -82,5 +82,43 @@ do_execsql_test atof1-2.40 {
   SELECT randomblob(0) - 1;
 } {-1}
 
+# 2024-12-07 https://sqlite.org/forum/forumpost/569a7209179a7f5e
+# Incorrect conversion of floating point or integer literals that
+# have significant digits that begin with 1844674407370955 followed
+# by more digits in the range 0592 throgh 1609.
+#
+do_execsql_test atof-3.1 {
+  WITH RECURSIVE bigval(i,vtxt) AS (
+    SELECT 0, '18446744073709550000'
+    UNION ALL
+    SELECT i+1, format('1844674407370955%04d',i+1) FROM bigval
+     WHERE i+1<=9999
+  )
+  SELECT vtxt, CAST(vtxt AS REAL) FROM bigval
+   WHERE CAST(vtxt AS REAL) NOT GLOB '1.8446744073709[56]*';
+} {}
+do_execsql_test atof-3.2 {
+  WITH RECURSIVE bigval(i,vtxt) AS (
+    SELECT 0, '18.446744073709550000'
+    UNION ALL
+    SELECT i+1, format('18.44674407370955%04d',i+1) FROM bigval
+     WHERE i+1<=9999
+  )
+  SELECT vtxt, CAST(vtxt AS REAL) FROM bigval
+   WHERE CAST(vtxt AS REAL) NOT GLOB '18.446744073709*';
+} {}
+do_execsql_test atof-3.3 {
+  WITH RECURSIVE exp(n,v1,v2) AS (
+    SELECT -200, '1.8446744073709550592e-200', '1.8446744073709551609e-200'
+    UNION ALL
+    SELECT n+1, ('1.8446744073709550592e'||n),('1.8446744073709551609e'||n)
+      FROM exp WHERE n<200
+  )
+  SELECT n, v1, v2
+    FROM exp
+   WHERE format('%.10e',CAST(v1 AS REAL)) NOT GLOB '1.8446*'
+      OR format('%.10e',CAST(v2 AS REAL)) NOT GLOB '1.8446*';
+} {}
+
 
 finish_test

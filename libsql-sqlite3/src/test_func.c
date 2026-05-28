@@ -773,7 +773,7 @@ static int SQLITE_TCLAPI abuse_create_function(
   rc = sqlite3_create_function(db, "tx", -2, SQLITE_UTF8, 0, tStep, 0, 0);
   if( rc!=SQLITE_MISUSE ) goto abuse_err;
 
-  rc = sqlite3_create_function(db, "tx", 128, SQLITE_UTF8, 0, tStep, 0, 0);
+  rc = sqlite3_create_function(db, "tx", 32768, SQLITE_UTF8, 0, tStep, 0, 0);
   if( rc!=SQLITE_MISUSE ) goto abuse_err;
 
   rc = sqlite3_create_function(db, "funcxx"
@@ -789,7 +789,7 @@ static int SQLITE_TCLAPI abuse_create_function(
   ** a no-op function (that always returns NULL) and which has the
   ** maximum-length function name and the maximum number of parameters.
   */
-  sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, 10000);
+  sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, 1000000);
   mxArg = sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, -1);
   rc = sqlite3_create_function(db, "nullx"
        "_123456789_123456789_123456789_123456789_123456789"

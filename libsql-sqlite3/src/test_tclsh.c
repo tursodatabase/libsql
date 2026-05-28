@@ -59,7 +59,6 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   extern int Sqlitetest6_Init(Tcl_Interp*);
   extern int Sqlitetest8_Init(Tcl_Interp*);
   extern int Sqlitetest9_Init(Tcl_Interp*);
-  extern int Sqlitetestasync_Init(Tcl_Interp*);
   extern int Sqlitetest_autoext_Init(Tcl_Interp*);
   extern int Sqlitetest_blob_Init(Tcl_Interp*);
   extern int Sqlitetest_demovfs_Init(Tcl_Interp *);
@@ -131,7 +130,6 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   Sqlitetest6_Init(interp);
   Sqlitetest8_Init(interp);
   Sqlitetest9_Init(interp);
-  Sqlitetestasync_Init(interp);
   Sqlitetest_autoext_Init(interp);
   Sqlitetest_blob_Init(interp);
   Sqlitetest_demovfs_Init(interp);

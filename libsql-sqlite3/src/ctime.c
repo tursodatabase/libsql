@@ -767,9 +767,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_UNTESTABLE
   "UNTESTABLE",
 #endif
-#ifdef SQLITE_USER_AUTHENTICATION
-  "USER_AUTHENTICATION",
-#endif
 #ifdef SQLITE_USE_ALLOCA
   "USE_ALLOCA",
 #endif

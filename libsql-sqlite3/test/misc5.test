@@ -523,6 +523,7 @@ if {[permutation] == ""} {
       CREATE TABLE t1(a,b,c);
     }
   } {1 {file is not a database}}
+  reset_db
 }
 
 # Ticket #1371.  Allow floating point numbers of the form .N  or N.

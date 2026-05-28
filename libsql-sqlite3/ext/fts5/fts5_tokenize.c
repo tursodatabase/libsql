@@ -1353,8 +1353,8 @@ static int fts5TriTokenize(
   char *zOut = aBuf;
   int ii;
   const unsigned char *zIn = (const unsigned char*)pText;
-  const unsigned char *zEof = &zIn[nText];
-  u32 iCode;
+  const unsigned char *zEof = (zIn ? &zIn[nText] : 0);
+  u32 iCode = 0;
   int aStart[3];                  /* Input offset of each character in aBuf[] */
 
   UNUSED_PARAM(unusedFlags);
@@ -1363,8 +1363,8 @@ static int fts5TriTokenize(
   for(ii=0; ii<3; ii++){
     do {
       aStart[ii] = zIn - (const unsigned char*)pText;
+      if( zIn>=zEof ) return SQLITE_OK;
       READ_UTF8(zIn, zEof, iCode);
-      if( iCode==0 ) return SQLITE_OK;
       if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, p->iFoldParam);
     }while( iCode==0 );
     WRITE_UTF8(zOut, iCode);
@@ -1385,8 +1385,11 @@ static int fts5TriTokenize(
     /* Read characters from the input up until the first non-diacritic */
     do {
       iNext = zIn - (const unsigned char*)pText;
+      if( zIn>=zEof ){
+        iCode = 0;
+        break;
+      }
       READ_UTF8(zIn, zEof, iCode);
-      if( iCode==0 ) break;
       if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, p->iFoldParam);
     }while( iCode==0 );
 

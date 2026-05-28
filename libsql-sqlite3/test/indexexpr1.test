@@ -49,7 +49,7 @@ do_execsql_test indexexpr1-130 {
 do_execsql_test indexexpr1-130eqp {
   EXPLAIN QUERY PLAN
   SELECT c FROM t1 WHERE b=1 AND substr(a,2,3)='nd_' ORDER BY c;
-} {/USING INDEX t1ba/}
+} {/USING COVERING INDEX t1ba/}
 
 do_execsql_test indexexpr1-140 {
   SELECT rowid, substr(a,b,3), '|' FROM t1 ORDER BY 2;
@@ -61,7 +61,7 @@ do_execsql_test indexexpr1-141 {
 do_execsql_test indexexpr1-141eqp {
   EXPLAIN QUERY PLAN
   SELECT rowid FROM t1 WHERE substr(a,b,3)<='and' ORDER BY +rowid;
-} {/USING INDEX t1abx/}
+} {/USING COVERING INDEX t1abx/}
 do_execsql_test indexexpr1-142 {
   SELECT rowid FROM t1 WHERE +substr(a,b,3)<='and' ORDER BY +rowid;
 } {1 2 3}
@@ -73,7 +73,7 @@ do_execsql_test indexexpr1-150eqp {
   EXPLAIN QUERY PLAN
   SELECT rowid FROM t1 WHERE substr(a,b,3) IN ('and','l_t','xyz')
    ORDER BY +rowid;
-} {/USING INDEX t1abx/}
+} {/USING COVERING INDEX t1abx/}
 
 ifcapable altertable {
   do_execsql_test indexexpr1-160 {
@@ -99,14 +99,14 @@ do_execsql_test indexexpr1-170 {
 do_execsql_test indexexpr1-170eqp {
   EXPLAIN QUERY PLAN
   SELECT length(a) FROM t1 ORDER BY length(a);
-} {/SCAN t1 USING INDEX t1alen/}
+} {/SCAN t1 USING COVERING INDEX t1alen/}
 do_execsql_test indexexpr1-171 {
   SELECT length(a) FROM t1 ORDER BY length(a) DESC;
 } {52 38 29 27 25 20}
 do_execsql_test indexexpr1-171eqp {
   EXPLAIN QUERY PLAN
   SELECT length(a) FROM t1 ORDER BY length(a) DESC;
-} {/SCAN t1 USING INDEX t1alen/}
+} {/SCAN t1 USING COVERING INDEX t1alen/}
 
 do_execsql_test indexexpr1-200 {
   DROP TABLE t1;
@@ -142,7 +142,7 @@ do_execsql_test indexexpr1-230 {
 do_execsql_test indexexpr1-230eqp {
   EXPLAIN QUERY PLAN
   SELECT c FROM t1 WHERE b=1 AND substr(a,2,3)='nd_' ORDER BY c;
-} {/USING INDEX t1ba/}
+} {/USING COVERING INDEX t1ba/}
 
 do_execsql_test indexexpr1-240 {
   SELECT id, substr(a,b,3), '|' FROM t1 ORDER BY 2;
@@ -154,7 +154,7 @@ do_execsql_test indexexpr1-241 {
 do_execsql_test indexexpr1-241eqp {
   EXPLAIN QUERY PLAN
   SELECT id FROM t1 WHERE substr(a,b,3)<='and' ORDER BY +id;
-} {/USING INDEX t1abx/}
+} {/USING COVERING INDEX t1abx/}
 do_execsql_test indexexpr1-242 {
   SELECT id FROM t1 WHERE +substr(a,b,3)<='and' ORDER BY +id;
 } {1 2 3}
@@ -166,7 +166,7 @@ do_execsql_test indexexpr1-250eqp {
   EXPLAIN QUERY PLAN
   SELECT id FROM t1 WHERE substr(a,b,3) IN ('and','l_t','xyz')
    ORDER BY +id;
-} {/USING INDEX t1abx/}
+} {/USING COVERING INDEX t1abx/}
 
 ifcapable altertable {
   do_execsql_test indexexpr1-260 {
@@ -238,7 +238,7 @@ do_execsql_test indexexpr1-510 {
 do_execsql_test indexexpr1-510eqp {
   EXPLAIN QUERY PLAN
   SELECT substr(a,4,3) AS k FROM cnt, t5 WHERE k=printf('%03d',x);
-} {/USING INDEX t5ax/}
+} {/USING COVERING INDEX t5ax/}
 
 # Skip-scan on an indexed expression
 #
@@ -547,7 +547,7 @@ do_execsql_test indexexpr1-2030 {
     (3, '{"x":1}',  6,  7);
   CREATE INDEX t1x ON t1(d, a, b->>'x', c);
 }
-do_execsql_test indexexpr1-2030 {
+do_execsql_test indexexpr1-2040 {
   SELECT a,
        SUM(1)                              AS t1,
        SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
@@ -555,7 +555,7 @@ do_execsql_test indexexpr1-2030 {
        SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
     FROM t1;
 } {1 6 4 54 46}
-do_execsql_test indexexpr1-2030 {
+do_execsql_test indexexpr1-2050 {
   explain query plan
   SELECT a,
        SUM(1)                              AS t1,
@@ -563,7 +563,7 @@ do_execsql_test indexexpr1-2030 {
        SUM(c)                              AS t3,
        SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
     FROM t1;
-} {/.*SCAN t1 USING INDEX t1x.*/}
+} {/.*SCAN t1 USING COVERING INDEX t1x.*/}
 
 reset_db
 do_execsql_test indexexpr1-2100 {

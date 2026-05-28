@@ -3,6 +3,8 @@
 ** text on standard output.
 */
 #define TCLSH_INIT_PROC sqlite3_analyzer_init_proc
+IFDEF INCLUDE_SQLITE3_C
+#undef SQLITE_ENABLE_DBSTAT_VTAB
 #define SQLITE_ENABLE_DBSTAT_VTAB 1
 #undef SQLITE_THREADSAFE
 #define SQLITE_THREADSAFE 0
@@ -14,9 +16,10 @@
 #define SQLITE_DEFAULT_MEMSTATUS 0
 #define SQLITE_MAX_EXPR_DEPTH 0
 #define SQLITE_OMIT_LOAD_EXTENSION 1
-#if !defined(SQLITE_AMALGAMATION) && !defined(USE_EXTERNAL_SQLITE)
 INCLUDE sqlite3.c
-#endif
+ELSE
+#include "sqlite3.h"
+ENDIF
 INCLUDE $ROOT/src/tclsqlite.c
 
 #if defined(_WIN32)

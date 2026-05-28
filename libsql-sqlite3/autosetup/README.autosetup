@@ -1,0 +1,11 @@
+README.autosetup created by autosetup v0.7.2
+
+This is the autosetup directory for a local install of autosetup.
+It contains autosetup, support files and loadable modules.
+
+*.tcl files in this directory are optional modules which
+can be loaded with the 'use' directive.
+
+*.auto files in this directory are auto-loaded.
+
+For more information, see https://msteveb.github.io/autosetup/

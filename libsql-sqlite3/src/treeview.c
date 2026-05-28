@@ -215,10 +215,13 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
       sqlite3_str_appendf(&x, " DDL");
     }
     if( pItem->fg.isCte ){
-      sqlite3_str_appendf(&x, " CteUse=0x%p", pItem->u2.pCteUse);
+      static const char *aMat[] = {",MAT", "", ",NO-MAT"};
+      sqlite3_str_appendf(&x, " CteUse=%d%s",
+                          pItem->u2.pCteUse->nUse,
+                          aMat[pItem->u2.pCteUse->eM10d]);
     }
     if( pItem->fg.isOn || (pItem->fg.isUsing==0 && pItem->u3.pOn!=0) ){
-      sqlite3_str_appendf(&x, " ON");
+      sqlite3_str_appendf(&x, " isOn");
     }
     if( pItem->fg.isTabFunc )      sqlite3_str_appendf(&x, " isTabFunc");
     if( pItem->fg.isCorrelated )   sqlite3_str_appendf(&x, " isCorrelated");
@@ -246,9 +249,6 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
         sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, 1);
       }
       assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem) );
-      sqlite3TreeViewPush(&pView, 0);
-      sqlite3TreeViewLine(pView, "SUBQUERY");
-      sqlite3TreeViewPop(&pView);
       sqlite3TreeViewSelect(pView, pItem->u4.pSubq->pSelect, 0);
     }
     if( pItem->fg.isTabFunc ){
@@ -1302,6 +1302,10 @@ void sqlite3TreeViewTrigger(
 ** accessible to the debugging, and to avoid warnings about unused
 ** functions.  But these routines only exist in debugging builds, so they
 ** do not contaminate the interface.
+**
+** See Also:
+**
+**     sqlite3ShowWhereTerm() in where.c
 */
 void sqlite3ShowExpr(const Expr *p){ sqlite3TreeViewExpr(0,p,0); }
 void sqlite3ShowExprList(const ExprList *p){ sqlite3TreeViewExprList(0,p,0,0);}

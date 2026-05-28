@@ -61,7 +61,8 @@ struct intarray_cursor {
 /*
 ** Free an sqlite3_intarray object.
 */
-static void intarrayFree(sqlite3_intarray *p){
+static void intarrayFree(void *pX){
+  sqlite3_intarray *p = (sqlite3_intarray*)pX;
   if( p->xFree ){
     p->xFree(p->a);
   }

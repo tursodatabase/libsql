@@ -437,7 +437,7 @@ static int writeFile(
 
     GetSystemTime(&currentTime);
     SystemTimeToFileTime(&currentTime, &lastAccess);
-    intervals = Int32x32To64(mtime, 10000000) + 116444736000000000;
+    intervals = (mtime*10000000) + 116444736000000000;
     lastWrite.dwLowDateTime = (DWORD)intervals;
     lastWrite.dwHighDateTime = intervals >> 32;
     zUnicodeName = sqlite3_win32_utf8_to_unicode(zFile);

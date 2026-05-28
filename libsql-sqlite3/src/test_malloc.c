@@ -41,8 +41,9 @@ static struct MemFault {
 ** fire on any simulated malloc() failure.
 */
 static void sqlite3Fault(void){
-  static int cnt = 0;
+  static u64 cnt = 0;
   cnt++;
+  if( cnt>((u64)1<<63) ) abort();
 }
 
 /*
@@ -52,8 +53,9 @@ static void sqlite3Fault(void){
 ** This routine only runs on the first such failure.
 */
 static void sqlite3FirstFault(void){
-  static int cnt2 = 0;
+  static u64 cnt2 = 0;
   cnt2++;
+  if( cnt2>((u64)1<<63) ) abort();
 }
 
 /*

@@ -21,7 +21,7 @@ source $testdir/tester.tcl
 #
 do_test lock-1.0 {
   # Give a complex pathname to stress the path simplification logic in
-  # the vxworks driver and in test_async.
+  # the vxworks driver.
   file mkdir tempdir/t1/t2
   sqlite3 db2 ./tempdir/../tempdir/t1/.//t2/../../..//test.db
   set dummy {}

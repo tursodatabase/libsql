@@ -205,6 +205,11 @@ static int fts5StorageGetStmt(
       if( rc!=SQLITE_OK && pzErrMsg ){
         *pzErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pC->db));
       }
+      if( rc==SQLITE_ERROR && eStmt>FTS5_STMT_LOOKUP2 && eStmt<FTS5_STMT_SCAN ){
+        /* One of the internal tables - not the %_content table - is missing.
+        ** This counts as a corrupted table.  */
+       rc = SQLITE_CORRUPT;
+      }
     }
   }
 

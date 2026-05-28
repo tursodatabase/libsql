@@ -249,4 +249,33 @@ do_execsql_test enc-12.10 {
   SELECT * FROM t1;
 } {d e f xxx yyy zzz}
 
+
+# 2024-11-04
+# https://sqlite.org/forum/forumpost/bc75a4d20b756044
+#
+# Ensure the database encoding is detected in a timely manner,
+# and before we get too far along in generating and running
+# bytecode.
+#
+# See also check-in https://sqlite.org/src/info/a02da71f3a.
+#
+db close
+forcedelete utf16.db
+sqlite3 db utf16.db
+db eval {PRAGMA encoding=UTF16; CREATE TABLE t2(y); INSERT INTO t2 VALUES('utf16');}
+db close
+sqlite3 db utf16.db
+do_test enc-13.1 {
+  db eval {PRAGMA function_list} {db eval {SELECT * FROM sqlite_schema}}
+} {}
+ifcapable rtree {
+  db eval {CREATE VIRTUAL TABLE t3 USING rtree(id,x1,x2)}
+  db close
+  sqlite3 db utf16.db
+  do_execsql_test enc-13.2 {
+    WITH t1(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM t1 WHERE x<3)
+    SELECT rtreecheck('t3') FROM t1;
+  } {ok ok ok}
+}
+
 finish_test

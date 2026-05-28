@@ -187,7 +187,7 @@ static int SQLITE_TCLAPI hexio_write(
 }
 
 /*
-** USAGE:   hexio_get_int   HEXDATA
+** USAGE:   hexio_get_int [-littleendian] HEXDATA
 **
 ** Interpret the HEXDATA argument as a big-endian integer.  Return
 ** the value of that integer.  HEXDATA can contain between 2 and 8
@@ -205,12 +205,20 @@ static int SQLITE_TCLAPI hexio_get_int(
   const unsigned char *zIn;
   unsigned char *aOut;
   unsigned char aNum[4];
+  int bLittle = 0;
 
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "HEXDATA");
+  if( objc==3 ){
+    Tcl_Size n;
+    char *z = Tcl_GetStringFromObj(objv[1], &n);
+    if( n>=2 && n<=13 && memcmp(z, "-littleendian", n)==0 ){
+      bLittle = 1;
+    }
+  }
+  if( (objc-bLittle)!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "[-littleendian] HEXDATA");
     return TCL_ERROR;
   }
-  zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[1], &nIn);
+  zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[1+bLittle], &nIn);
   aOut = sqlite3_malloc64( 1 + nIn/2 );
   if( aOut==0 ){
     return TCL_ERROR;
@@ -223,7 +231,11 @@ static int SQLITE_TCLAPI hexio_get_int(
     memcpy(&aNum[4-nOut], aOut, nOut);
   }
   sqlite3_free(aOut);
-  val = (aNum[0]<<24) | (aNum[1]<<16) | (aNum[2]<<8) | aNum[3];
+  if( bLittle ){
+    val = (int)((u32)aNum[3]<<24) | (aNum[2]<<16) | (aNum[1]<<8) | aNum[0];
+  }else{
+    val = (int)((u32)aNum[0]<<24) | (aNum[1]<<16) | (aNum[2]<<8) | aNum[3];
+  }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(val));
   return TCL_OK;
 }

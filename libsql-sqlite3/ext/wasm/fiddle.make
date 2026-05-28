@@ -46,6 +46,8 @@ fiddle.emcc-flags = \
   $(SQLITE_OPT.full-featured) \
   $(SQLITE_OPT.common) \
   $(SHELL_OPT) \
+  -UHAVE_READLINE -UHAVE_EDITLINE -UHAVE_LINENOISE \
+  -USQLITE_HAVE_ZLIB \
   -USQLITE_WASM_BARE_BONES \
   -DSQLITE_SHELL_FIDDLE
 

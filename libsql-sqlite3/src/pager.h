@@ -83,6 +83,22 @@ typedef struct libsql_pghdr DbPage;
 #define PAGER_JOURNALMODE_MEMORY      4   /* In-memory journal file */
 #define PAGER_JOURNALMODE_WAL         5   /* Use write-ahead logging */
 
+#define isWalMode(x) ((x)==PAGER_JOURNALMODE_WAL)
+
+/*
+** The argument to this macro is a file descriptor (type sqlite3_file*).
+** Return 0 if it is not open, or non-zero (but not 1) if it is.
+**
+** This is so that expressions can be written as:
+**
+**   if( isOpen(pPager->jfd) ){ ...
+**
+** instead of
+**
+**   if( pPager->jfd->pMethods ){ ...
+*/
+#define isOpen(pFd) ((pFd)->pMethods!=0)
+
 /*
 ** Flags that make up the mask passed to sqlite3PagerGet().
 */

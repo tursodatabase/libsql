@@ -1670,6 +1670,7 @@ static void windowAggStep(
     int regArg;
     int nArg = pWin->bExprArgs ? 0 : windowArgCount(pWin);
     int i;
+    int addrIf = 0;
 
     assert( bInverse==0 || pWin->eStart!=TK_UNBOUNDED );
 
@@ -1685,6 +1686,18 @@ static void windowAggStep(
       }
     }
     regArg = reg;
+
+    if( pWin->pFilter ){
+      int regTmp;
+      assert( ExprUseXList(pWin->pOwner) );
+      assert( pWin->bExprArgs || !nArg ||nArg==pWin->pOwner->x.pList->nExpr );
+      assert( pWin->bExprArgs || nArg  ||pWin->pOwner->x.pList==0 );
+      regTmp = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol+nArg,regTmp);
+      addrIf = sqlite3VdbeAddOp3(v, OP_IfNot, regTmp, 0, 1);
+      VdbeCoverage(v);
+      sqlite3ReleaseTempReg(pParse, regTmp);
+    }
 
     if( pMWin->regStartRowid==0
      && (pFunc->funcFlags & SQLITE_FUNC_MINMAX)
@@ -1705,25 +1718,13 @@ static void windowAggStep(
       }
       sqlite3VdbeJumpHere(v, addrIsNull);
     }else if( pWin->regApp ){
+      assert( pWin->pFilter==0 );
       assert( pFunc->zName==nth_valueName
            || pFunc->zName==first_valueName
       );
       assert( bInverse==0 || bInverse==1 );
       sqlite3VdbeAddOp2(v, OP_AddImm, pWin->regApp+1-bInverse, 1);
     }else if( pFunc->xSFunc!=noopStepFunc ){
-      int addrIf = 0;
-      if( pWin->pFilter ){
-        int regTmp;
-        assert( ExprUseXList(pWin->pOwner) );
-        assert( pWin->bExprArgs || !nArg ||nArg==pWin->pOwner->x.pList->nExpr );
-        assert( pWin->bExprArgs || nArg  ||pWin->pOwner->x.pList==0 );
-        regTmp = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol+nArg,regTmp);
-        addrIf = sqlite3VdbeAddOp3(v, OP_IfNot, regTmp, 0, 1);
-        VdbeCoverage(v);
-        sqlite3ReleaseTempReg(pParse, regTmp);
-      }
-     
       if( pWin->bExprArgs ){
         int iOp = sqlite3VdbeCurrentAddr(v);
         int iEnd;
@@ -1750,12 +1751,13 @@ static void windowAggStep(
       sqlite3VdbeAddOp3(v, bInverse? OP_AggInverse : OP_AggStep,
                         bInverse, regArg, pWin->regAccum);
       sqlite3VdbeAppendP4(v, pFunc, P4_FUNCDEF);
-      sqlite3VdbeChangeP5(v, (u8)nArg);
+      sqlite3VdbeChangeP5(v, (u16)nArg);
       if( pWin->bExprArgs ){
         sqlite3ReleaseTempRange(pParse, regArg, nArg);
       }
-      if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
     }
+
+    if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
   }
 }
 

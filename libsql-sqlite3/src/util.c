@@ -539,8 +539,8 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
+  u64 s2;          /* round-tripped significand */
   double rr[2];
-  u64 s2;
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -643,7 +643,7 @@ do_atof_calc:
   e = (e*esign) + d;
 
   /* Try to adjust the exponent to make it smaller */
-  while( e>0 && s<(LARGEST_UINT64/10) ){
+  while( e>0 && s<((LARGEST_UINT64-0x7ff)/10) ){
     s *= 10;
     e--;
   }
@@ -653,11 +653,22 @@ do_atof_calc:
   }
 
   rr[0] = (double)s;
-  s2 = (u64)rr[0];
-#if defined(_MSC_VER) && _MSC_VER<1700
-  if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
+  assert( sizeof(s2)==sizeof(rr[0]) );
+#ifdef SQLITE_DEBUG
+  rr[1] = 18446744073709549568.0;
+  memcpy(&s2, &rr[1], sizeof(s2));
+  assert( s2==0x43efffffffffffffLL );
 #endif
-  rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+  /* Largest double that can be safely converted to u64
+  **         vvvvvvvvvvvvvvvvvvvvvv   */
+  if( rr[0]<=18446744073709549568.0 ){
+    s2 = (u64)rr[0];
+    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+  }else{
+    rr[1] = 0.0;
+  }
+  assert( rr[1]<=1.0e-10*rr[0] );  /* Equal only when rr[0]==0.0 */
+  
   if( e>0 ){
     while( e>=100  ){
       e -= 100;

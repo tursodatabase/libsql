@@ -232,12 +232,16 @@ static u8* fromBase85( char *pIn, int ncIn, u8 *pOut ){
     switch( nbo ){
     case 4:
       *pOut++ = (qv >> 24)&0xff;
+      /* FALLTHRU */
     case 3:
       *pOut++ = (qv >> 16)&0xff;
+      /* FALLTHRU */
     case 2:
       *pOut++ = (qv >> 8)&0xff;
+      /* FALLTHRU */
     case 1:
       *pOut++ = qv&0xff;
+      /* FALLTHRU */
     case 0:
       break;
     }

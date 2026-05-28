@@ -192,6 +192,31 @@ do_execsql_test 3.4 {
   1 2 3 4 5 6
 }
 
-
+# 2024-11-20 https://sqlite.org/forum/forumpost/0b9ded2f8428ac00
+#
+# Bug in SubrtnSig logic.  If a SELECT statement is copied and the copy
+# is subsequently modified, we need to change the Select.selId on the
+# copy so that when the copy is used to generate code, the SubrtnSig
+# logic won't try to substitute the original SELECT in place of the
+# copy which is now different.
+#
+do_execsql_test 3.5 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1 (a int UNIQUE);
+  CREATE TABLE t2 (b int UNIQUE);
+  INSERT INTO t1 VALUES (1);
+  INSERT INTO t2 VALUES (1), (2);
+  SELECT t1.a, t2.b FROM t1, t2 WHERE (t1.a, t2.b) = (1, 1);
+} {1 1}
+do_execsql_test 3.6 {
+  SELECT t1.a, t2.b FROM t1, t2 WHERE (t1.a, t2.b) IN ((1, 1));
+} {1 1}
+do_execsql_test 3.7 {
+  SELECT t1.a, t2.b FROM t1, t2 WHERE (t1.a, t2.b) = (1, 2);
+} {1 2}
+do_execsql_test 3.8 {
+  SELECT t1.a, t2.b FROM t1, t2 WHERE (t1.a, t2.b) IN ((1, 2));
+} {1 2}
 
 finish_test

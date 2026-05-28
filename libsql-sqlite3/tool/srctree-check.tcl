@@ -36,17 +36,6 @@ set TCLSH [info nameofexe]
 #
 set NERR 0
 
-######################### configure ###########################################
-
-set conf [readfile $ROOT/configure]
-set vers [readfile $ROOT/VERSION]
-if {[string first $vers $conf]<=0} {
-  puts "ERROR: ./configure does not agree with ./VERSION"
-  puts "...... Fix: run autoconf"
-  incr NERR
-}
-unset conf
-
 ######################### autoconf/tea/configure.ac ###########################
 
 set confac [readfile $ROOT/autoconf/tea/configure.ac]

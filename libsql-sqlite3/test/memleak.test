@@ -38,8 +38,6 @@ set EXCLUDE {
   misuse.test
   memleak.test
   btree2.test
-  async.test
-  async2.test
   trans.test
   crash.test
   autovacuum_crash.test

@@ -38,7 +38,7 @@
 ########################################################################
 default: all
 #default: quick
-SHELL := $(firstword $(wildcard /usr/local/bin/bash /usr/bin/bash /bin/bash))
+SHELL := $(firstword $(shell which bash) $(wildcard /usr/local/bin/bash /usr/bin/bash /bin/bash))
 ifeq (,$(SHELL))
   $(error Cannot find the bash shell)
 endif
@@ -174,14 +174,9 @@ ifeq (1,$(MAKING_CLEAN))
   emcc.bin := echo
   emcc.version := unknown
 else
-  emcc.bin := $(shell which emcc 2>/dev/null)
-  ifeq (,$(emcc.bin))
-    ifneq (,$(EMSDK_HOME))
-      emcc.bin := $(wildcard $(EMSDK_HOME)/upstream/emscripten/emcc)
-    endif
-    ifeq (,$(emcc.bin))
-      $(error Cannot find emcc in path.)
-    endif
+  emcc.bin := $(dir.tool)/emcc.sh
+  ifeq (,$(wildcard $(emcc.bin)))
+    $(error Configure script did not find emcc.)
   endif
   emcc.version := $(shell $(emcc.bin) --version | sed -n 1p | sed -e 's/^.* \([3-9][^ ]*\) .*$$/\1/;')
   $(info using emcc version [$(emcc.version)])

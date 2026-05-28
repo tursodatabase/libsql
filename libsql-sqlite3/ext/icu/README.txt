@@ -1,19 +1,18 @@
-
 This directory contains source code for the SQLite "ICU" extension, an
 integration of the "International Components for Unicode" library with
 SQLite. Documentation follows.
 
     1. Features
-    
+
         1.1  SQL Scalars upper() and lower()
         1.2  Unicode Aware LIKE Operator
         1.3  ICU Collation Sequences
         1.4  SQL REGEXP Operator
-    
+
     2. Compilation and Usage
-    
+
     3. Bugs, Problems and Security Issues
-    
+
         3.1  The "case_sensitive_like" Pragma
         3.2  The SQLITE_MAX_LIKE_PATTERN_LENGTH Macro
         3.3  Collation Sequence Security Issue
@@ -23,10 +22,10 @@ SQLite. Documentation follows.
 
   1.1  SQL Scalars upper() and lower()
 
-    SQLite's built-in implementations of these two functions only 
+    SQLite's built-in implementations of these two functions only
     provide case mapping for the 26 letters used in the English
     language. The ICU based functions provided by this extension
-    provide case mapping, where defined, for the full range of 
+    provide case mapping, where defined, for the full range of
     unicode characters.
 
     ICU provides two types of case mapping, "general" case mapping and
@@ -36,7 +35,7 @@ SQLite. Documentation follows.
        http://www.icu-project.org/userguide/caseMappings.html
        http://www.icu-project.org/userguide/posix.html#case_mappings
 
-    To utilise "general" case mapping, the upper() or lower() scalar 
+    To utilise "general" case mapping, the upper() or lower() scalar
     functions are invoked with one argument:
 
         upper('abc') -> 'ABC'
@@ -57,7 +56,7 @@ SQLite. Documentation follows.
     operator understands case equivalence for the 26 letters of the English
     language alphabet. The implementation of LIKE included in this
     extension uses the ICU function u_foldCase() to provide case
-    independent comparisons for the full range of unicode characters.  
+    independent comparisons for the full range of unicode characters.
 
     The U_FOLD_CASE_DEFAULT flag is passed to u_foldCase(), meaning the
     dotless 'I' character used in the Turkish language is considered
@@ -66,9 +65,9 @@ SQLite. Documentation follows.
 
   1.3  ICU Collation Sequences
 
-    A special SQL scalar function, icu_load_collation() is provided that 
+    A special SQL scalar function, icu_load_collation() is provided that
     may be used to register ICU collation sequences with SQLite. It
-    is always called with exactly two arguments, the ICU locale 
+    is always called with exactly two arguments, the ICU locale
     identifying the collation sequence to ICU, and the name of the
     SQLite collation sequence to create. For example, to create an
     SQLite collation sequence named "turkish" using Turkish language
@@ -87,7 +86,7 @@ SQLite. Documentation follows.
           australian_penpal_name TEXT COLLATE australian,
           turkish_penpal_name    TEXT COLLATE turkish
         );
-  
+
   1.4 SQL REGEXP Operator
 
     This extension provides an implementation of the SQL binary
@@ -116,13 +115,18 @@ SQLite. Documentation follows.
   and use it as a dynamically loadable SQLite extension. To do this
   using gcc on *nix:
 
-    gcc -fPIC -shared icu.c `pkg-config --libs --cflags icu-uc icu-io` \
+    gcc -fPIC -shared icu.c `pkg-config --libs --cflags icu-io` \
         -o libSqliteIcu.so
 
   You may need to add "-I" flags so that gcc can find sqlite3ext.h
   and sqlite3.h. The resulting shared lib, libSqliteIcu.so, may be
   loaded into sqlite in the same way as any other dynamically loadable
   extension.
+
+  As of version 3.48, it can be enabled in the canonical build process
+  by passing one of --with-icu-config or --with-icu-ldflags to the
+  configure script, optionally together with --enable-icu-collations.
+  See the configure --help for more details.
 
 
 3 BUGS, PROBLEMS AND SECURITY ISSUES
@@ -144,13 +148,13 @@ SQLite. Documentation follows.
     SQLITE_MAX_LIKE_PATTERN_LENGTH macro as the maximum length of a
     pattern in bytes (irrespective of encoding). The default value is
     defined in internal header file "limits.h".
-    
-    The ICU extension LIKE implementation suffers from the same 
+
+    The ICU extension LIKE implementation suffers from the same
     problem and uses the same solution. However, since the ICU extension
     code does not include the SQLite file "limits.h", modifying
     the default value therein does not affect the ICU extension.
     The default value of SQLITE_MAX_LIKE_PATTERN_LENGTH used by
-    the ICU extension LIKE operator is 50000, defined in source 
+    the ICU extension LIKE operator is 50000, defined in source
     file "icu.c".
 
   3.3 Collation Sequence Security

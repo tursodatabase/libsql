@@ -69,7 +69,7 @@ set namechars {abcefghjklmnopqrstuvwxyz}
 set nnc [string length $namechars]
 while {![eof stdin]} {
   set line [gets stdin]
-  if {[regexp "^case (OP_\\w+): \173" $line all operator]} {
+  if {[regexp "^case (OP_\\w+): \\x7B" $line all operator]} {
     append afterUnion $line\n
     set vlist {}
     while {![eof stdin]} {

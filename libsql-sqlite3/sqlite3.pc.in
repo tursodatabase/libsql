@@ -9,5 +9,5 @@ Name: SQLite
 Description: SQL database engine
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} -lsqlite3
-Libs.private: @LIBS@
+Libs.private: @LDFLAGS_MATH@ @LDFLAGS_ZLIB@ @LDFLAGS_ICU@
 Cflags: -I${includedir}

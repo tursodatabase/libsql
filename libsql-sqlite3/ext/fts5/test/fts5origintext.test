@@ -22,34 +22,40 @@ ifcapable !fts5 {
 }
 
 foreach_detail_mode $testprefix {
+foreach {tn insttoken} {
+  1 0
+  2 1
+} {
+reset_db
 
 sqlite3_fts5_register_origintext db
-do_execsql_test 1.0 {
+do_execsql_test $tn.1.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
       x, tokenize="origintext unicode61", detail=%DETAIL%
   );
+  INSERT INTO ft(ft, rank) VALUES('insttoken', $insttoken);
   CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
 }
 
-do_execsql_test 1.1 {
+do_execsql_test $tn.1.1 {
   INSERT INTO ft VALUES('Hello world');
 }
 
-do_execsql_test 1.2 {
+do_execsql_test $tn.1.2 {
   INSERT INTO ft(ft) VALUES('integrity-check');
 }
 
 proc b {x} { string map [list "\0" "."] $x }
 db func b b
 
-do_execsql_test 1.3 {
+do_execsql_test $tn.1.3 {
   select b(term) from vocab;
 } {
   hello.Hello
   world
 }
 
-do_execsql_test 1.4 {
+do_execsql_test $tn.1.4 {
   SELECT rowid FROM ft('Hello');
 } {1}
 
@@ -88,33 +94,34 @@ proc document {} {
 db func document document
 
 sqlite3_fts5_register_origintext db
-do_execsql_test 2.0 {
+do_execsql_test $tn.2.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
       x, tokenize="origintext unicode61", detail=%DETAIL%
   );
+  INSERT INTO ft(ft, rank) VALUES('insttoken', $insttoken);
   INSERT INTO ft(ft, rank) VALUES('pgsz', 128);
   CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
 }
 
-do_test 2.1 {
+do_test $tn.2.1 {
   for {set ii 0} {$ii < 500} {incr ii} {
     execsql { INSERT INTO ft VALUES( document() ) }
   }
 } {}
 
-do_execsql_test 2.2 {
+do_execsql_test $tn.2.2 {
   INSERT INTO ft(ft) VALUES('integrity-check');
 }
 
-do_execsql_test 2.3 {
+do_execsql_test $tn.2.3 {
   INSERT INTO ft(ft, rank) VALUES('merge', 16);
 }
 
-do_execsql_test 2.4 {
+do_execsql_test $tn.2.4 {
   INSERT INTO ft(ft) VALUES('integrity-check');
 }
 
-do_execsql_test 2.5 {
+do_execsql_test $tn.2.5 {
   INSERT INTO ft(ft) VALUES('optimize');
 }
 
@@ -122,10 +129,11 @@ do_execsql_test 2.5 {
 reset_db
 
 sqlite3_fts5_register_origintext db
-do_execsql_test 3.0 {
+do_execsql_test $tn.3.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
       x, tokenize="origintext unicode61", detail=%DETAIL%
   );
+  INSERT INTO ft(ft, rank) VALUES('insttoken', $insttoken);
   CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
 
   INSERT INTO ft(rowid, x) VALUES(1, 'hello');
@@ -137,16 +145,17 @@ do_execsql_test 3.0 {
 #db func b b
 #execsql_pp { SELECT b(term) FROM vocab }
 
-do_execsql_test 3.1.1 { SELECT rowid FROM ft('hello') } 1
-do_execsql_test 3.1.2 { SELECT rowid FROM ft('Hello') } 2
-do_execsql_test 3.1.3 { SELECT rowid FROM ft('HELLO') } 3
+do_execsql_test $tn.3.1.1 { SELECT rowid FROM ft('hello') } 1
+do_execsql_test $tn.3.1.2 { SELECT rowid FROM ft('Hello') } 2
+do_execsql_test $tn.3.1.3 { SELECT rowid FROM ft('HELLO') } 3
 
-do_execsql_test 3.2 {
+do_execsql_test $tn.3.2 {
   CREATE VIRTUAL TABLE ft2 USING fts5(x, 
       tokenize="origintext unicode61", 
       tokendata=1,
       detail=%DETAIL%
   );
+  INSERT INTO ft2(ft2, rank) VALUES('insttoken', $insttoken);
   CREATE VIRTUAL TABLE vocab2 USING fts5vocab(ft2, instance);
 
   INSERT INTO ft2(rowid, x) VALUES(1, 'hello');
@@ -160,11 +169,18 @@ do_execsql_test 3.2 {
 #db func b b
 #execsql_pp { SELECT b(term) FROM vocab }
 
-do_execsql_test 3.3.1 { SELECT rowid FROM ft2('hello') } {1 2 3}
-do_execsql_test 3.3.2 { SELECT rowid FROM ft2('Hello') } {1 2 3}
-do_execsql_test 3.3.3 { SELECT rowid FROM ft2('HELLO') } {1 2 3}
+do_execsql_test $tn.3.3.1 { SELECT rowid FROM ft2('hello') } {1 2 3}
+do_execsql_test $tn.3.3.2 { SELECT rowid FROM ft2('Hello') } {1 2 3}
+do_execsql_test $tn.3.3.3 { SELECT rowid FROM ft2('HELLO') } {1 2 3}
 
-do_execsql_test 3.3.4 { SELECT rowid FROM ft2('hello*') } {1 2 3 10}
+do_execsql_test $tn.3.3.4 { SELECT rowid FROM ft2('hello*') } {1 2 3 10}
+
+do_execsql_test $tn.3.3.5.1 { SELECT rowid FROM ft2('HELLO') ORDER BY rowid DESC} {
+  3 2 1
+}
+do_execsql_test $tn.3.3.5.2 { SELECT rowid FROM ft2('HELLO') ORDER BY +rowid DESC} {
+  3 2 1
+}
 
 #-------------------------------------------------------------------------
 #
@@ -176,36 +192,37 @@ proc querytoken {cmd iPhrase iToken} {
 }
 sqlite3_fts5_create_function db querytoken querytoken
 
-do_execsql_test 4.0 {
+do_execsql_test $tn.4.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
       x, tokenize='origintext unicode61', tokendata=1, detail=%DETAIL%
   );
+  INSERT INTO ft(ft, rank) VALUES('insttoken', $insttoken);
   INSERT INTO ft VALUES('one two three four');
 }
 
-do_execsql_test 4.1 {
+do_execsql_test $tn.4.1 {
   SELECT rowid, querytoken(ft, 0, 0) FROM ft('TwO')
 } {1 two.TwO}
-do_execsql_test 4.2 {
+do_execsql_test $tn.4.2 {
   SELECT rowid, querytoken(ft, 0, 0) FROM ft('one TWO ThreE')
 } {1 one}
-do_execsql_test 4.3 {
+do_execsql_test $tn.4.3 {
   SELECT rowid, querytoken(ft, 1, 0) FROM ft('one TWO ThreE')
 } {1 two.TWO}
 
 if {"%DETAIL%"=="full"} {
   # Phrase queries are only supported for detail=full.
   #
-  do_execsql_test 4.4 {
+  do_execsql_test $tn.4.4 {
     SELECT rowid, querytoken(ft, 0, 2) FROM ft('"one TWO ThreE"')
   } {1 three.ThreE}
-  do_catchsql_test 4.5 {
+  do_catchsql_test $tn.4.5 {
     SELECT rowid, querytoken(ft, 0, 3) FROM ft('"one TWO ThreE"')
   } {1 SQLITE_RANGE}
-  do_catchsql_test 4.6 {
+  do_catchsql_test $tn.4.6 {
     SELECT rowid, querytoken(ft, 1, 0) FROM ft('"one TWO ThreE"')
   } {1 SQLITE_RANGE}
-  do_catchsql_test 4.7 {
+  do_catchsql_test $tn.4.7 {
     SELECT rowid, querytoken(ft, -1, 0) FROM ft('"one TWO ThreE"')
   } {1 SQLITE_RANGE}
 }
@@ -221,14 +238,15 @@ proc insttoken {cmd iIdx iToken} {
 sqlite3_fts5_create_function db insttoken insttoken
 fts5_aux_test_functions db
 
-do_execsql_test 5.0 {
+do_execsql_test $tn.5.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
       x, tokenize='origintext unicode61', tokendata=1, detail=%DETAIL%
   );
+  INSERT INTO ft(ft, rank) VALUES('insttoken', $insttoken);
   INSERT INTO ft VALUES('one ONE One oNe oNE one');
 }
 
-do_execsql_test 5.1 {
+do_execsql_test $tn.5.1 {
   SELECT insttoken(ft, 0, 0), 
          insttoken(ft, 1, 0),
          insttoken(ft, 2, 0),
@@ -240,13 +258,37 @@ do_execsql_test 5.1 {
   one one.ONE one.One one.oNe one.oNE one
 }
 
-do_execsql_test 5.2 {
+do_execsql_test $tn.5.2 {
+  SELECT insttoken(ft, 0, 0), 
+         insttoken(ft, 1, 0),
+         insttoken(ft, 2, 0),
+         insttoken(ft, 3, 0),
+         insttoken(ft, 4, 0),
+         insttoken(ft, 5, 0)
+  FROM ft('on*');
+} {
+  one one.ONE one.One one.oNe one.oNE one
+}
+
+do_execsql_test $tn.5.3 {
+  SELECT insttoken(ft, 0, 0), 
+         insttoken(ft, 1, 0),
+         insttoken(ft, 2, 0),
+         insttoken(ft, 3, 0),
+         insttoken(ft, 4, 0),
+         insttoken(ft, 5, 0)
+  FROM ft(fts5_insttoken('on*'));
+} {
+  one one.ONE one.One one.oNe one.oNE one
+}
+
+do_execsql_test $tn.5.4 {
   SELECT insttoken(ft, 1, 0) FROM ft('one');
 } {
   one.ONE
 }
 
-do_execsql_test 5.3 {
+do_execsql_test $tn.5.5 {
   SELECT fts5_test_poslist(ft) FROM ft('one');
 } {
   {0.0.0 0.0.1 0.0.2 0.0.3 0.0.4 0.0.5}
@@ -260,10 +302,11 @@ do_execsql_test 5.3 {
 #
 reset_db
 sqlite3_fts5_register_origintext db
-do_execsql_test 6.0 {
+do_execsql_test $tn.6.0 {
   CREATE VIRTUAL TABLE ft USING fts5( 
       x, y, tokenize='origintext unicode61', detail=%DETAIL%, tokendata=0
   );
+  INSERT INTO ft(ft, rank) VALUES('insttoken', $insttoken);
 
   INSERT INTO ft VALUES('One Two', 'Three two');
   INSERT INTO ft VALUES('three Three', 'one One');
@@ -279,34 +322,35 @@ proc tokens {cmd} {
 }
 sqlite3_fts5_create_function db tokens tokens
 
-do_execsql_test 6.1 {
+do_execsql_test $tn.6.1 {
   SELECT rowid, tokens(ft) FROM ft('One');
 } {1 one.One 2 one.One}
 
-do_execsql_test 6.2 {
+do_execsql_test $tn.6.2 {
   SELECT rowid, tokens(ft) FROM ft('on*');
-} {1 {{}} 2 {{} {}}}
+} {1 one.One 2 {one one.One}}
 
-do_execsql_test 6.3 {
+do_execsql_test $tn.6.3 {
   SELECT rowid, tokens(ft) FROM ft('Three*');
-} {1 {{}} 2 {{}}}
+} {1 three.Three 2 three.Three}
 
 fts5_aux_test_functions db
-do_catchsql_test 6.4 {
+do_catchsql_test $tn.6.4 {
   SELECT fts5_test_insttoken(ft, -1, 0) FROM ft('one');
 } {1 SQLITE_RANGE}
 
-do_catchsql_test 6.5 {
+do_catchsql_test $tn.6.5 {
   SELECT fts5_test_insttoken(ft, 1, 0) FROM ft('one');
 } {1 SQLITE_RANGE}
 
-do_catchsql_test 6.6 {
+do_catchsql_test $tn.6.6 {
   CREATE VIRTUAL TABLE ft2 USING fts5(x, tokendata=2);
 } {1 {malformed tokendata=... directive}}
-do_catchsql_test 6.7 {
+do_catchsql_test $tn.6.7 {
   CREATE VIRTUAL TABLE ft2 USING fts5(x, content='', tokendata=11);
 } {1 {malformed tokendata=... directive}}
 
+}
 }
 
 finish_test

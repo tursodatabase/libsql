@@ -112,7 +112,7 @@ do_execsql_test 2.1 {
 
 do_execsql_test 2.2 {
       SELECT v FROM xyz_config WHERE k='version';
-} {5}
+} {4}
 
 do_execsql_test 2.3 {
     ROLLBACK TO one;

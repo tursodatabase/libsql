@@ -112,11 +112,7 @@ int sqlite3AuthReadCol(
   int rc;                            /* Auth callback return code */
 
   if( db->init.busy ) return SQLITE_OK;
-  rc = db->xAuth(db->pAuthArg, SQLITE_READ, zTab,zCol,zDb,pParse->zAuthContext
-#ifdef SQLITE_USER_AUTHENTICATION
-                 ,db->auth.zAuthUser
-#endif
-                );
+  rc = db->xAuth(db->pAuthArg, SQLITE_READ, zTab,zCol,zDb,pParse->zAuthContext);
   if( rc==SQLITE_DENY ){
     char *z = sqlite3_mprintf("%s.%s", zTab, zCol);
     if( db->nDb>2 || iDb!=0 ) z = sqlite3_mprintf("%s.%z", zDb, z);
@@ -223,11 +219,7 @@ int sqlite3AuthCheck(
   testcase( zArg3==0 );
   testcase( pParse->zAuthContext==0 );
 
-  rc = db->xAuth(db->pAuthArg, code, zArg1, zArg2, zArg3, pParse->zAuthContext
-#ifdef SQLITE_USER_AUTHENTICATION
-                 ,db->auth.zAuthUser
-#endif
-                );
+  rc = db->xAuth(db->pAuthArg,code,zArg1,zArg2,zArg3,pParse->zAuthContext);
   if( rc==SQLITE_DENY ){
     sqlite3ErrorMsg(pParse, "not authorized");
     pParse->rc = SQLITE_AUTH;

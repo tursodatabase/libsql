@@ -192,17 +192,6 @@ void sqlite3FinishCoding(Parse *pParse){
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
 
-#if SQLITE_USER_AUTHENTICATION && !defined(SQLITE_OMIT_SHARED_CACHE)
-    if( pParse->nTableLock>0 && db->init.busy==0 ){
-      sqlite3UserAuthInit(db);
-      if( db->auth.authLevel<UAUTH_User ){
-        sqlite3ErrorMsg(pParse, "user not authenticated");
-        pParse->rc = SQLITE_AUTH_USER;
-        return;
-      }
-    }
-#endif
-
     /* The cookie mask contains one bit for each database file open.
     ** (Bit 0 is for main, bit 1 is for temp, and so forth.)  Bits are
     ** set for each database that is used.  Generate code to start a
@@ -331,16 +320,6 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   pParse->nested--;
 }
 
-#if SQLITE_USER_AUTHENTICATION
-/*
-** Return TRUE if zTable is the name of the system table that stores the
-** list of users and their access credentials.
-*/
-int sqlite3UserAuthTable(const char *zTable){
-  return sqlite3_stricmp(zTable, "sqlite_user")==0;
-}
-#endif
-
 /*
 ** Locate the in-memory structure that describes a particular database
 ** table given the name of that table and (optionally) the name of the
@@ -359,13 +338,6 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
 
   /* All mutexes are required for schema access.  Make sure we hold them. */
   assert( zDatabase!=0 || sqlite3BtreeHoldsAllMutexes(db) );
-#if SQLITE_USER_AUTHENTICATION
-  /* Only the admin user is allowed to know that the sqlite_user table
-  ** exists */
-  if( db->auth.authLevel<UAUTH_Admin && sqlite3UserAuthTable(zName)!=0 ){
-    return 0;
-  }
-#endif
   if( zDatabase ){
     for(i=0; i<db->nDb; i++){
       if( sqlite3StrICmp(zDatabase, db->aDb[i].zDbSName)==0 ) break;
@@ -4080,9 +4052,6 @@ void sqlite3CreateIndex(
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0
        && db->init.busy==0
        && pTblName!=0
-#if SQLITE_USER_AUTHENTICATION
-       && sqlite3UserAuthTable(pTab->zName)==0
-#endif
   ){
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;

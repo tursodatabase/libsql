@@ -2344,10 +2344,15 @@ static int fts3PoslistPhraseMerge(
   if( *p1==POS_COLUMN ){ 
     p1++;
     p1 += fts3GetVarint32(p1, &iCol1);
+    /* iCol1==0 indicates corruption. Column 0 does not have a POS_COLUMN
+    ** entry, so this is actually end-of-doclist. */
+    if( iCol1==0 ) return 0;
   }
   if( *p2==POS_COLUMN ){ 
     p2++;
     p2 += fts3GetVarint32(p2, &iCol2);
+    /* As above, iCol2==0 indicates corruption. */
+    if( iCol2==0 ) return 0;
   }
 
   while( 1 ){
@@ -5518,7 +5523,7 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
       nTmp += p->pRight->pPhrase->doclist.nList;
     }
     nTmp += p->pPhrase->doclist.nList;
-    aTmp = sqlite3_malloc64(nTmp*2);
+    aTmp = sqlite3_malloc64(nTmp*2 + FTS3_VARINT_MAX);
     if( !aTmp ){
       *pRc = SQLITE_NOMEM;
       res = 0;
@@ -6169,7 +6174,7 @@ int sqlite3Fts3Corrupt(){
 }
 #endif
 
-#if !SQLITE_CORE
+#if !defined(SQLITE_CORE)
 /*
 ** Initialize API pointer table, if required.
 */
