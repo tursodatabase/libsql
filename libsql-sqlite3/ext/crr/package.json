@@ -32,5 +32,8 @@
     "sqlite",
     "sqlite3",
     "crdt"
-  ]
+  ],
+  "dependencies": {
+    "minimatch": "3.1.3"
+  }
 }
