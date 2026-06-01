@@ -99,6 +99,7 @@ indicatif = "0.17.8"
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
 env_logger = "0.10"
+hex = "0.4"
 hyper = { workspace = true, features = ["client"] }
 insta = { version = "1.26.0", features = ["json"] }
 libsql = { path = "../libsql/"}
@@ -114,6 +115,7 @@ s3s-fs = "0.8.1"
 ring = { version = "0.17.8", features = ["std"] }
 tonic-build = "0.11"
 prost-build = "0.12"
+reqwest = { version = "0.11", features = ["json"] }
 
 [build-dependencies]
 vergen = { version = "8", features = ["build", "git", "gitcl"] }

@@ -129,6 +129,9 @@ pub async fn metastore_connection_maker(
                 max_batch_interval: config.backup_interval,
                 s3_max_parallelism: 32,
                 s3_max_retries: 10,
+                s3_read_timeout_secs: 5,
+                s3_connect_timeout_secs: 5,
+                s3_operation_attempt_timeout_secs: 10,
                 skip_snapshot: false,
                 skip_shutdown_upload: false,
             };

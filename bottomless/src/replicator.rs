@@ -15,6 +15,7 @@ use aws_sdk_s3::operation::list_objects::builders::ListObjectsFluentBuilder;
 use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
+use aws_smithy_types::timeout::TimeoutConfig;
 use bytes::{Buf, Bytes};
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use libsql_replication::injector::Injector as _;
@@ -121,6 +122,12 @@ pub struct Options {
     pub s3_max_parallelism: usize,
     /// Max number of retries for S3 operations
     pub s3_max_retries: u32,
+    /// Timeout for reading the first byte of an S3 response (seconds)
+    pub s3_read_timeout_secs: u64,
+    /// Timeout for establishing a TCP connection to S3 (seconds)
+    pub s3_connect_timeout_secs: u64,
+    /// Timeout for a single S3 operation attempt, including retries (seconds)
+    pub s3_operation_attempt_timeout_secs: u64,
     /// Skip snapshot upload per checkpoint.
     pub skip_snapshot: bool,
     /// Skip uploading snapshots on shutdown
@@ -145,6 +152,11 @@ impl Options {
             "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
         ))?;
         let session_token: Option<String> = self.session_token.clone();
+        let timeout_config = TimeoutConfig::builder()
+            .read_timeout(Duration::from_secs(self.s3_read_timeout_secs))
+            .connect_timeout(Duration::from_secs(self.s3_connect_timeout_secs))
+            .operation_attempt_timeout(Duration::from_secs(self.s3_operation_attempt_timeout_secs))
+            .build();
         let conf = loader
             .behavior_version(BehaviorVersion::latest())
             .region(Region::new(region))
@@ -159,6 +171,7 @@ impl Options {
                 aws_sdk_s3::config::retry::RetryConfig::standard()
                     .with_max_attempts(self.s3_max_retries),
             )
+            .timeout_config(timeout_config)
             .build();
 
         let s3_config = aws_sdk_s3::config::Builder::from(&conf)
@@ -233,6 +246,12 @@ impl Options {
             ),
         };
         let s3_max_retries = env_var_or("LIBSQL_BOTTOMLESS_S3_MAX_RETRIES", 10).parse::<u32>()?;
+        let s3_read_timeout_secs =
+            env_var_or("LIBSQL_BOTTOMLESS_S3_READ_TIMEOUT_SECS", 5).parse::<u64>()?;
+        let s3_connect_timeout_secs =
+            env_var_or("LIBSQL_BOTTOMLESS_S3_CONNECT_TIMEOUT_SECS", 5).parse::<u64>()?;
+        let s3_operation_attempt_timeout_secs =
+            env_var_or("LIBSQL_BOTTOMLESS_S3_OPERATION_ATTEMPT_TIMEOUT_SECS", 10).parse::<u64>()?;
         let cipher = match encryption_cipher {
             Some(cipher) => Cipher::from_str(&cipher)?,
             None => Cipher::default(),
@@ -261,6 +280,9 @@ impl Options {
             region,
             bucket_name,
             s3_max_retries,
+            s3_read_timeout_secs,
+            s3_connect_timeout_secs,
+            s3_operation_attempt_timeout_secs,
             skip_snapshot,
             skip_shutdown_upload,
         })

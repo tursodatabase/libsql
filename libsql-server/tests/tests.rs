@@ -4,6 +4,7 @@
 mod common;
 
 mod auth;
+mod bottomless;
 mod cluster;
 mod embedded_replica;
 mod hrana;
