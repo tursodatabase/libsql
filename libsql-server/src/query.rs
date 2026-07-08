@@ -4,11 +4,12 @@ use anyhow::{anyhow, ensure, Context};
 use rusqlite::types::{ToSqlOutput, ValueRef};
 use rusqlite::ToSql;
 use serde::{Deserialize, Serialize};
+use wincode::{SchemaRead, SchemaWrite};
 
 use crate::query_analysis::Statement;
 
 /// Mirrors rusqlite::Value, but implement extra traits
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, SchemaWrite, SchemaRead)]
 #[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub enum Value {
     Null,

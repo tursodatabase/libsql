@@ -29,7 +29,7 @@ cbc = "0.1.2"
  
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
-bincode = "1.3.3"
+wincode = { version = "0.2", features = ["derive"] }
 tempfile = "3.8.0"
 prost-build = "0.12"
 tonic-build = "0.11"

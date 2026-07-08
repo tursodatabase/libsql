@@ -27,7 +27,7 @@ bitflags = { version = "2.4.0", optional = true }
 tower = { workspace = true, features = ["util"], optional = true }
 worker = { version = "0.6.7", optional = true }
 
-bincode = { version = "1", optional = true }
+wincode = { version = "0.2", optional = true, features = ["derive"] }
 anyhow = { version = "1.0.71", optional = true }
 bytes = { version = "1.4.0", features = ["serde"], optional = true }
 uuid = { version = "1.4.0", features = ["v4", "serde"], optional = true }
@@ -83,7 +83,7 @@ replication = [
   "dep:http",
   "dep:tokio",
   "dep:anyhow",
-  "dep:bincode",
+  "dep:wincode",
   "dep:zerocopy",
   "dep:bytes",
   "dep:uuid",

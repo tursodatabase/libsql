@@ -99,7 +99,7 @@ pub mod rpc {
                 crate::query::Params::Named(params) => {
                     let iter = params.into_iter().map(|(k, v)| -> Result<_, SqldError> {
                         let v = Value {
-                            data: bincode::serialize(&v)?,
+                            data: wincode::serialize(&v)?,
                         };
                         Ok((k, v))
                     });
@@ -111,7 +111,7 @@ pub mod rpc {
                         .iter()
                         .map(|v| {
                             Ok(Value {
-                                data: bincode::serialize(&v)?,
+                                data: wincode::serialize(&v)?,
                             })
                         })
                         .collect::<Result<Vec<_>, SqldError>>()?;
@@ -130,12 +130,12 @@ pub mod rpc {
                     let params = pos
                         .values
                         .into_iter()
-                        .map(|v| bincode::deserialize(&v.data).map_err(|e| e.into()))
+                        .map(|v| wincode::deserialize(&v.data).map_err(|e| e.into()))
                         .collect::<Result<Vec<_>, SqldError>>()?;
                     Ok(Self::Positional(params))
                 }
                 query::Params::Named(named) => {
-                    let values = named.values.iter().map(|v| bincode::deserialize(&v.data));
+                    let values = named.values.iter().map(|v| wincode::deserialize(&v.data));
                     let params = itertools::process_results(values, |values| {
                         named.names.into_iter().zip(values).collect()
                     })?;
@@ -455,7 +455,7 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
     }
 
     fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError> {
-        let data = bincode::serialize(
+        let data = wincode::serialize(
             &crate::query::Value::try_from(v).map_err(QueryResultBuilderError::from_any)?,
         )
         .map_err(QueryResultBuilderError::from_any)?;

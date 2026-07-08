@@ -71,7 +71,7 @@ message Description {
 }
 
 message Value {
-    /// bincode encoded Value
+    /// wincode encoded Value (binary compatible with bincode)
     bytes data = 1;
 }
 

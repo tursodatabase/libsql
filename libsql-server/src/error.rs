@@ -244,8 +244,14 @@ impl From<tokio::sync::oneshot::error::RecvError> for Error {
     }
 }
 
-impl From<bincode::Error> for Error {
-    fn from(other: bincode::Error) -> Self {
+impl From<wincode::WriteError> for Error {
+    fn from(other: wincode::WriteError) -> Self {
+        Self::Internal(other.to_string())
+    }
+}
+
+impl From<wincode::ReadError> for Error {
+    fn from(other: wincode::ReadError) -> Self {
         Self::Internal(other.to_string())
     }
 }

@@ -4,6 +4,10 @@ use crate::{Error, Result};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(
+    feature = "replication",
+    derive(wincode::SchemaWrite, wincode::SchemaRead)
+)]
 pub enum Value {
     Null,
     Integer(i64),
@@ -449,24 +453,7 @@ impl TryFrom<&libsql_replication::rpc::proxy::Value> for Value {
     type Error = Error;
 
     fn try_from(value: &libsql_replication::rpc::proxy::Value) -> Result<Self> {
-        #[derive(serde::Deserialize)]
-        pub enum BincodeValue {
-            Null,
-            Integer(i64),
-            Real(f64),
-            Text(String),
-            Blob(Vec<u8>),
-        }
-
-        Ok(
-            match bincode::deserialize::<'_, BincodeValue>(&value.data[..]).map_err(Error::from)? {
-                BincodeValue::Null => Value::Null,
-                BincodeValue::Integer(i) => Value::Integer(i),
-                BincodeValue::Real(x) => Value::Real(x),
-                BincodeValue::Text(s) => Value::Text(s),
-                BincodeValue::Blob(b) => Value::Blob(b),
-            },
-        )
+        wincode::deserialize(&value.data[..]).map_err(Error::from)
     }
 }
 
