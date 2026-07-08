@@ -270,6 +270,7 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
                 .with_webpki_roots()
                 .https_or_http()
                 .enable_http1()
+                .enable_http2()
                 .build();
             builder = builder.connector(https);
         }
@@ -315,6 +316,7 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
             .with_webpki_roots()
             .https_or_http()
             .enable_http1()
+            .enable_http2()
             .build();
         builder = builder.connector(https);
     }
@@ -497,6 +499,7 @@ unsafe fn libsql_open_remote_internal(
             .with_webpki_roots()
             .https_or_http()
             .enable_http1()
+            .enable_http2()
             .build();
         builder = builder.connector(https);
     }

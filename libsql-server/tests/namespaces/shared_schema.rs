@@ -1,4 +1,4 @@
-use hyper::StatusCode;
+use http::StatusCode;
 use insta::{assert_debug_snapshot, assert_json_snapshot};
 use libsql::Database;
 use serde_json::json;

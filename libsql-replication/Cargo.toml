@@ -8,8 +8,8 @@ repository.workspace = true
 description = "Replication protocol for libSQL"
 
 [dependencies]
-tonic = { version = "0.11", default-features = false, features = ["codegen", "prost"] }
-prost = "0.12"
+tonic = { version = "0.12", default-features = false, features = ["codegen", "prost"] }
+prost = "0.13"
 libsql-sys = { workspace = true, default-features = false, features = ["wal", "rusqlite", "api"] }
 rusqlite = { workspace = true }
 parking_lot = "0.12.1"
@@ -29,10 +29,10 @@ cbc = "0.1.2"
  
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
-bincode = "1.3.3"
+bincode = { version = "2", features = ["serde"] }
 tempfile = "3.8.0"
-prost-build = "0.12"
-tonic-build = "0.11"
+prost-build = "0.13"
+tonic-build = "0.12"
 
 [features]
 encryption = ["libsql-sys/encryption"]

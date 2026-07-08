@@ -12,16 +12,20 @@ pub mod timing;
 use std::sync::Arc;
 
 use anyhow::Context;
-use axum::extract::{FromRef, FromRequest, FromRequestParts, Path as AxumPath, State as AxumState};
+use axum::body::Body;
+use axum::extract::Request;
+use axum::extract::{DefaultBodyLimit, FromRef, FromRequest, FromRequestParts, Path as AxumPath, State as AxumState};
 use axum::http::request::Parts;
 use axum::http::HeaderValue;
+use axum::response::Response;
 use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
 use axum::{middleware, Router};
 use axum_extra::middleware::option_layer;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
-use hyper::{header, Body, Request, Response, StatusCode};
+use http::{header, HeaderMap, StatusCode};
+use http_body_util::BodyExt;
 use libsql_replication::rpc::replication::replication_log_server::{
     ReplicationLog, ReplicationLogServer,
 };
@@ -215,7 +219,7 @@ async fn handle_hrana_pipeline(
         "3" => hrana::Version::Hrana3,
         _ => return Err(Error::InvalidPath("invalid hrana version".to_string())),
     };
-    Ok(state
+    let response = state
         .hrana_http_srv
         .handle_request(
             connection_maker,
@@ -225,7 +229,15 @@ async fn handle_hrana_pipeline(
             hrana_version,
             hrana::Encoding::Json,
         )
-        .await?)
+        .await?;
+    // Convert Full<Bytes> body to axum Body
+    let (parts, body) = response.into_parts();
+    let bytes = body
+        .collect()
+        .await
+        .map_err(|e| Error::Internal(format!("body error: {}", e)))?
+        .to_bytes();
+    Ok(Response::from_parts(parts, Body::from(bytes)))
 }
 
 /// Router wide state that each request has access too via
@@ -330,7 +342,7 @@ where
                         ctx: RequestContext,
                         req: Request<Body>,
                     ) -> Result<Response<Body>, Error> {
-                        Ok(state
+                        let response = state
                             .hrana_http_srv
                             .handle_request(
                                 connection_maker,
@@ -340,7 +352,15 @@ where
                                 $version,
                                 $encoding,
                             )
-                            .await?)
+                            .await?;
+                        // Convert Full<Bytes> body to axum Body
+                        let (parts, body) = response.into_parts();
+                        let bytes = body
+                            .collect()
+                            .await
+                            .map_err(|e| Error::Internal(format!("body error: {}", e)))?
+                            .to_bytes();
+                        Ok(Response::from_parts(parts, Body::from(bytes)))
                     }
                     handle_hrana
                 }};
@@ -411,14 +431,17 @@ where
                 .with_state(state);
 
             // Merge the grpc based axum router into our regular http router
+            // Add services directly - tonic handles both HTTP/1.1 (gRPC-Web) and HTTP/2 (native gRPC)
             let replication = ReplicationLogServer::new(self.replication_service);
             let write_proxy = ProxyServer::new(self.proxy_service);
 
             let grpc_router = Server::builder()
                 .accept_http1(true)
-                .add_service(tonic_web::enable(replication))
-                .add_service(tonic_web::enable(write_proxy))
-                .into_router();
+                .add_service(replication)
+                .add_service(write_proxy);
+            // Convert to axum Router - into_router() is deprecated but functional
+            #[allow(deprecated)]
+            let grpc_router = grpc_router.into_router();
 
             let router = app.merge(grpc_router);
 
@@ -437,20 +460,58 @@ where
                 ))
                 .layer(
                     cors::CorsLayer::new()
-                        .allow_methods(cors::AllowMethods::any())
-                        .allow_headers(cors::Any)
-                        .allow_origin(cors::Any),
-                );
+                        .allow_methods([
+                            http::Method::GET,
+                            http::Method::POST,
+                            http::Method::PUT,
+                            http::Method::DELETE,
+                            http::Method::OPTIONS,
+                        ])
+                        .allow_headers([
+                            http::header::AUTHORIZATION,
+                            http::header::CONTENT_TYPE,
+                            http::header::ACCEPT,
+                        ])
+                        .allow_origin(cors::Any), // TODO: Configure specific origins in production
+                )
+                .layer(DefaultBodyLimit::max(10 * 1024 * 1024)); // 10MB limit
 
             let router = router.fallback(handle_fallback);
-            let h2c = crate::h2c::H2cMaker::new(router);
 
             task_manager.spawn_with_shutdown_notify(|shutdown| async move {
-                hyper::server::Server::builder(acceptor)
-                    .serve(h2c)
-                    .with_graceful_shutdown(shutdown.notified())
-                    .await
-                    .context("http server")?;
+                let builder =
+                    hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
+
+                let mut acceptor = acceptor;
+
+                let shutdown = shutdown.notified();
+                tokio::pin!(shutdown);
+
+                loop {
+                    let conn = tokio::select! {
+                        biased;
+                        _ = &mut shutdown => break,
+                        conn = std::future::poll_fn(|cx| std::pin::Pin::new(&mut acceptor).poll_accept(cx)) => conn,
+                    };
+
+                    let conn = match conn {
+                        Some(Ok(conn)) => conn,
+                        Some(Err(e)) => {
+                            tracing::error!("accept error: {}", e);
+                            continue;
+                        }
+                        None => break,
+                    };
+
+                    let svc = crate::http::admin::router_to_service(router.clone());
+
+                    let builder = builder.clone();
+                    tokio::spawn(async move {
+                        let _ = builder
+                            .serve_connection(hyper_util::rt::tokio::TokioIo::new(conn), svc)
+                            .await;
+                    });
+                }
                 Ok(())
             });
         }
@@ -490,11 +551,11 @@ impl FromRequestParts<AppState> for Authenticated {
 }
 
 fn build_context(
-    headers: &hyper::HeaderMap<HeaderValue>,
+    headers: &HeaderMap<HeaderValue>,
     required_fields: &Vec<&'static str>,
 ) -> UserAuthContext {
     let mut ctx = headers
-        .get(hyper::header::AUTHORIZATION)
+        .get(header::AUTHORIZATION)
         .ok_or(AuthError::AuthHeaderNotFound)
         .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
         .and_then(|t| UserAuthContext::from_auth_str(t))
@@ -521,17 +582,14 @@ impl FromRef<AppState> for Auth {
 pub struct Json<T>(pub T);
 
 #[tonic::async_trait]
-impl<S, T, B> FromRequest<S, B> for Json<T>
+impl<S, T> FromRequest<S> for Json<T>
 where
     T: DeserializeOwned,
-    B: hyper::body::HttpBody + Send + 'static,
-    B::Data: Send,
-    B::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
     S: Send + Sync,
 {
     type Rejection = axum::extract::rejection::JsonRejection;
 
-    async fn from_request(mut req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(mut req: Request<Body>, state: &S) -> Result<Self, Self::Rejection> {
         let headers = req.headers_mut();
 
         headers.insert(

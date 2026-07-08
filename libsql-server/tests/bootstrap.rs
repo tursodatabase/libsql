@@ -17,7 +17,7 @@ fn bootstrap() {
         .build_server(true)
         .build_transport(true)
         .out_dir(&out_dir)
-        .compile_with_config(config, iface_files, dirs)
+        .compile_protos_with_config(config, iface_files, dirs)
         .unwrap();
 
     let status = Command::new("git")

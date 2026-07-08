@@ -53,7 +53,7 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
                 },
                 admin_api_config: Some(AdminApiConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
-                    connector: TurmoilConnector,
+
                     disable_metrics: false,
                     auth_key: None,
                 }),
@@ -407,7 +407,7 @@ fn replica_primary_reset() {
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                        connector: TurmoilConnector,
+
                         disable_metrics: true,
                         auth_key: None,
                     }),
@@ -692,7 +692,7 @@ fn replicate_with_snapshots() {
                 },
                 admin_api_config: Some(AdminApiConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                    connector: TurmoilConnector,
+
                     disable_metrics: true,
                     auth_key: None,
                 }),
@@ -1267,7 +1267,7 @@ fn replicated_return() {
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                        connector: TurmoilConnector,
+
                         disable_metrics: true,
                         auth_key: None,
                     }),
@@ -1397,7 +1397,7 @@ fn replicate_auth() {
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
-                        connector: TurmoilConnector,
+
                         disable_metrics: true,
                         auth_key: None,
                     }),
@@ -1433,13 +1433,14 @@ fn replicate_auth() {
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
-                        connector: TurmoilConnector,
+
                         disable_metrics: true,
                         auth_key: None,
                     }),
                     rpc_client_config: Some(RpcClientConfig {
+                        connector: hyper_util::client::legacy::connect::HttpConnector::new(),
                         remote_url: "http://primary:4567".into(),
-                        connector: TurmoilConnector,
+
                         tls_config: None,
                     }),
                     ..Default::default()
@@ -1545,7 +1546,7 @@ fn replicated_synced_frames_zero_when_no_data_synced() {
                     },
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                        connector: TurmoilConnector,
+
                         disable_metrics: true,
                         auth_key: None,
                     }),

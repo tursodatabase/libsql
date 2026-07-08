@@ -5,11 +5,7 @@ use prost::DecodeError;
 use std::mem::replace;
 
 impl prost::Message for ClientMsg {
-    fn encode_raw<B>(&self, _buf: &mut B)
-    where
-        B: BufMut,
-        Self: Sized,
-    {
+    fn encode_raw(&self, _buf: &mut impl BufMut) {
         panic!("ClientMsg can only be decoded, not encoded")
     }
 
@@ -17,17 +13,13 @@ impl prost::Message for ClientMsg {
         panic!("ClientMsg can only be decoded, not encoded")
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         tag: u32,
         wire_type: WireType,
-        buf: &mut B,
+        buf: &mut impl Buf,
         ctx: DecodeContext,
-    ) -> Result<(), DecodeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
+    ) -> Result<(), DecodeError> {
         match tag {
             1 => {
                 let mut msg = match replace(self, ClientMsg::None) {
@@ -58,11 +50,7 @@ impl prost::Message for ClientMsg {
 }
 
 impl prost::Message for ServerMsg {
-    fn encode_raw<B>(&self, buf: &mut B)
-    where
-        B: BufMut,
-        Self: Sized,
-    {
+    fn encode_raw(&self, buf: &mut impl BufMut) {
         match self {
             ServerMsg::HelloOk(msg) => message::encode(1, msg, buf),
             ServerMsg::HelloError(msg) => message::encode(2, msg, buf),
@@ -80,17 +68,13 @@ impl prost::Message for ServerMsg {
         }
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         _tag: u32,
         _wire_type: WireType,
-        _buf: &mut B,
+        _buf: &mut impl Buf,
         _ctx: DecodeContext,
-    ) -> Result<(), DecodeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
+    ) -> Result<(), DecodeError> {
         panic!("ServerMsg can only be encoded, not decoded")
     }
 

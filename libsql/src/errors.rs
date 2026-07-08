@@ -112,8 +112,15 @@ pub fn sqlite_errmsg_to_string(errmsg: *const std::ffi::c_char) -> String {
 }
 
 #[cfg(feature = "replication")]
-impl From<bincode::Error> for Error {
-    fn from(e: bincode::Error) -> Self {
-        Error::Bincode(e.into())
+impl From<bincode::error::EncodeError> for Error {
+    fn from(e: bincode::error::EncodeError) -> Self {
+        Error::Bincode(e.to_string().into())
+    }
+}
+
+#[cfg(feature = "replication")]
+impl From<bincode::error::DecodeError> for Error {
+    fn from(e: bincode::error::DecodeError) -> Self {
+        Error::Bincode(e.to_string().into())
     }
 }

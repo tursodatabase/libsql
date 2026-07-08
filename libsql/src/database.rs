@@ -761,8 +761,9 @@ impl Database {
     all(feature = "tls", feature = "remote"),
     all(feature = "tls", feature = "sync")
 ))]
-fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-    let mut http = hyper::client::HttpConnector::new();
+fn connector(
+) -> Result<hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>> {
+    let mut http = hyper_util::client::legacy::connect::HttpConnector::new();
     http.enforce_http(false);
     http.set_nodelay(true);
 
@@ -771,6 +772,7 @@ fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnect
         .map_err(crate::Error::InvalidTlsConfiguration)?
         .https_or_http()
         .enable_http1()
+        .enable_http2()
         .wrap_connector(http))
 }
 
@@ -779,7 +781,7 @@ fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnect
     all(not(feature = "tls"), feature = "remote"),
     all(not(feature = "tls"), feature = "sync")
 ))]
-fn connector() -> Result<hyper::client::HttpConnector> {
+fn connector() -> Result<hyper_util::client::legacy::connect::HttpConnector> {
     panic!("The `tls` feature is disabled, you must provide your own http connector");
 }
 

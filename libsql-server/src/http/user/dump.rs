@@ -83,8 +83,7 @@ pub(super) async fn handle_dump(
     AxumState(state): AxumState<AppState>,
     headers: HeaderMap,
     query: Query<DumpQuery>,
-) -> crate::Result<axum::body::StreamBody<impl futures::Stream<Item = Result<bytes::Bytes, Error>>>>
-{
+) -> crate::Result<axum::body::Body> {
     let namespace = namespace_from_headers(
         &headers,
         state.disable_default_namespace,
@@ -124,7 +123,7 @@ pub(super) async fn handle_dump(
         join_handle: Some(join_handle),
     };
 
-    let stream = axum::body::StreamBody::new(stream);
+    let body = axum::body::Body::from_stream(stream);
 
-    Ok(stream)
+    Ok(body)
 }

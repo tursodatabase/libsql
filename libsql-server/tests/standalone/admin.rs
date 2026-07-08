@@ -1,14 +1,14 @@
 use std::time::Duration;
 
-use hyper::StatusCode;
+use axum::http::header::AUTHORIZATION;
+use http::StatusCode;
 use libsql_server::config::{AdminApiConfig, UserApiConfig};
-use s3s::header::AUTHORIZATION;
 use serde_json::json;
 use tempfile::tempdir;
 
 use crate::common::{
     http::Client,
-    net::{SimServer as _, TestServer, TurmoilAcceptor, TurmoilConnector},
+    net::{SimServer as _, TestServer, TurmoilAcceptor},
 };
 
 #[test]
@@ -27,7 +27,6 @@ fn admin_auth() {
             },
             admin_api_config: Some(AdminApiConfig {
                 acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
-                connector: TurmoilConnector,
                 disable_metrics: true,
                 auth_key: Some("secretkey".into()),
             }),

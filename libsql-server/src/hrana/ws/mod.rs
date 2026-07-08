@@ -5,6 +5,8 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use enclose::enclose;
+use http_body_util::combinators::BoxBody;
+use hyper::body::Bytes;
 use tokio::pin;
 use tokio::sync::{mpsc, oneshot};
 
@@ -37,8 +39,8 @@ pub struct Accept {
 
 #[derive(Debug)]
 pub struct Upgrade {
-    pub request: hyper::Request<hyper::Body>,
-    pub response_tx: oneshot::Sender<hyper::Response<hyper::Body>>,
+    pub request: hyper::Request<axum::body::Body>,
+    pub response_tx: oneshot::Sender<hyper::Response<BoxBody<Bytes, std::convert::Infallible>>>,
 }
 
 #[allow(clippy::too_many_arguments)]

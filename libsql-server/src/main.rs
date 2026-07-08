@@ -7,7 +7,7 @@ use std::sync::Arc;
 use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
-use hyper::client::HttpConnector;
+use hyper_util::client::legacy::connect::HttpConnector;
 use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_keys, user_auth_strategies, Auth};
 use tokio::sync::Notify;
 use tokio::time::Duration;
@@ -498,16 +498,10 @@ async fn make_admin_api_config(config: &Cli) -> anyhow::Result<Option<AdminApiCo
         Some(addr) => {
             let acceptor = AddrIncoming::new(tokio::net::TcpListener::bind(addr).await?);
 
-            tracing::info!("listening for incoming adming HTTP connection on {}", addr);
-            let connector = hyper_rustls::HttpsConnectorBuilder::new()
-                .with_native_roots()
-                .https_or_http()
-                .enable_http1()
-                .build();
+            tracing::info!("listening for incoming admin HTTP connection on {}", addr);
 
             Ok(Some(AdminApiConfig {
                 acceptor,
-                connector,
                 disable_metrics: config.disable_metrics,
                 auth_key: config.admin_auth_key.clone(),
             }))
@@ -684,16 +678,6 @@ async fn build_server(
         }
     });
 
-    let mut http = HttpConnector::new();
-    http.enforce_http(false);
-    http.set_nodelay(true);
-
-    let https = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_native_roots()
-        .https_or_http()
-        .enable_all_versions()
-        .wrap_connector(http);
-
     Ok(Server {
         path: config.db_path.clone().into(),
         db_config,
@@ -717,7 +701,6 @@ async fn build_server(
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(30)),
         storage_server_address: config.storage_server_address.clone(),
-        connector: Some(https),
         migrate_bottomless: config.migrate_bottomless,
         enable_deadlock_monitor: config.enable_deadlock_monitor,
         should_sync_from_storage: config.sync_from_storage,

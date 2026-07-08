@@ -140,7 +140,9 @@ fn ws_hrana() {
 
         let msg_data = serde_json::to_string(&msg).unwrap();
 
-        ws.send(tungstenite::Message::Text(msg_data)).await.unwrap();
+        ws.send(tungstenite::Message::Text(msg_data.into()))
+            .await
+            .unwrap();
 
         let Some(tungstenite::Message::Text(msg)) = ws.try_next().await.unwrap() else {
             panic!("wrong message type");

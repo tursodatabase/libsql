@@ -6,6 +6,9 @@ use super::replication_log::rpc::replication_log_client::ReplicationLogClient;
 use super::replication_log::rpc::replication_log_server::ReplicationLog;
 use super::replication_log::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
 
+/// Maximum gRPC message size for decoding (64MB to prevent DoS)
+const MAX_DECODING_MESSAGE_SIZE: usize = 64 * 1024 * 1024;
+
 /// A replication log service that proxies request to the primary.
 pub struct ReplicationLogProxyService {
     client: ReplicationLogClient<Channel>,
@@ -14,7 +17,7 @@ pub struct ReplicationLogProxyService {
 impl ReplicationLogProxyService {
     pub fn new(channel: Channel, uri: Uri) -> Self {
         let client =
-            ReplicationLogClient::with_origin(channel, uri).max_decoding_message_size(usize::MAX);
+            ReplicationLogClient::with_origin(channel, uri).max_decoding_message_size(MAX_DECODING_MESSAGE_SIZE);
 
         Self { client }
     }

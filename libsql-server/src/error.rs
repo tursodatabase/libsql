@@ -1,5 +1,5 @@
 use axum::response::IntoResponse;
-use hyper::StatusCode;
+use http::StatusCode;
 use tonic::metadata::errors::InvalidMetadataValueBytes;
 
 use crate::{
@@ -244,8 +244,14 @@ impl From<tokio::sync::oneshot::error::RecvError> for Error {
     }
 }
 
-impl From<bincode::Error> for Error {
-    fn from(other: bincode::Error) -> Self {
+impl From<bincode::error::EncodeError> for Error {
+    fn from(other: bincode::error::EncodeError) -> Self {
+        Self::Internal(other.to_string())
+    }
+}
+
+impl From<bincode::error::DecodeError> for Error {
+    fn from(other: bincode::error::DecodeError) -> Self {
         Self::Internal(other.to_string())
     }
 }
@@ -296,6 +302,12 @@ pub enum LoadDumpError {
     NotAFile,
     #[error("The passed dump sql is invalid: {0}")]
     InvalidSqlInput(String),
+}
+
+impl From<hyper_util::client::legacy::Error> for LoadDumpError {
+    fn from(e: hyper_util::client::legacy::Error) -> Self {
+        LoadDumpError::Internal(format!("HTTP client error: {}", e))
+    }
 }
 
 impl ResponseError for LoadDumpError {}

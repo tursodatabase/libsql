@@ -1,16 +1,20 @@
 use std::convert::Infallible;
 use std::time::Duration;
 
-use hyper::{service::make_service_fn, Body, Response, StatusCode};
+use http::StatusCode;
+use http_body_util::Full;
+use hyper::service::service_fn;
+use hyper::{Request, Response};
 use insta::{assert_json_snapshot, assert_snapshot};
 use libsql::{Database, Value};
 use serde_json::json;
 use tempfile::tempdir;
-use tower::service_fn;
 use turmoil::Builder;
 
+use bytes;
+
 use crate::common::http::Client;
-use crate::common::net::{TurmoilAcceptor, TurmoilConnector};
+use crate::common::net::{TurmoilConnector, TurmoilStream};
 use crate::namespaces::make_primary;
 
 #[test]
@@ -29,17 +33,27 @@ fn load_namespace_from_dump_from_url() {
     make_primary(&mut sim, tmp.path().to_path_buf());
 
     sim.host("dump-store", || async {
-        let incoming = TurmoilAcceptor::bind(([0, 0, 0, 0], 8080)).await?;
-        let server =
-            hyper::server::Server::builder(incoming).serve(make_service_fn(|_conn| async {
-                Ok::<_, Infallible>(service_fn(|_req| async {
-                    Ok::<_, Infallible>(Response::new(Body::from(DUMP)))
-                }))
-            }));
+        let listener = turmoil::net::TcpListener::bind(("0.0.0.0", 8080)).await?;
 
-        server.await.unwrap();
+        loop {
+            let (stream, _) = listener.accept().await?;
+            let stream = TurmoilStream::new(stream);
 
-        Ok(())
+            let service = service_fn(|_req: Request<hyper::body::Incoming>| async {
+                Ok::<_, Infallible>(Response::new(Full::new(bytes::Bytes::from(DUMP))))
+            });
+
+            tokio::spawn(async move {
+                let io = hyper_util::rt::tokio::TokioIo::new(stream);
+                let builder = hyper_util::server::conn::auto::Builder::new(
+                    hyper_util::rt::TokioExecutor::new(),
+                );
+
+                if let Err(e) = builder.serve_connection(io, service).await {
+                    tracing::error!("Connection error: {}", e);
+                }
+            });
+        }
     });
 
     sim.client("client", async {

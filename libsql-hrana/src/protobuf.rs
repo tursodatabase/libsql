@@ -13,9 +13,8 @@ use super::proto::{
 };
 
 impl prost::Message for StreamResult {
-    fn encode_raw<B>(&self, buf: &mut B)
+    fn encode_raw(&self, buf: &mut impl BufMut)
     where
-        B: BufMut,
         Self: Sized,
     {
         match self {
@@ -33,15 +32,14 @@ impl prost::Message for StreamResult {
         }
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         _tag: u32,
         _wire_type: WireType,
-        _buf: &mut B,
+        _buf: &mut impl Buf,
         _ctx: DecodeContext,
     ) -> Result<(), DecodeError>
     where
-        B: Buf,
         Self: Sized,
     {
         panic!("StreamResult can only be encoded, not decoded")
@@ -53,9 +51,8 @@ impl prost::Message for StreamResult {
 }
 
 impl prost::Message for StreamRequest {
-    fn encode_raw<B>(&self, _buf: &mut B)
+    fn encode_raw(&self, _buf: &mut impl BufMut)
     where
-        B: BufMut,
         Self: Sized,
     {
         panic!("StreamRequest can only be decoded, not encoded")
@@ -65,15 +62,14 @@ impl prost::Message for StreamRequest {
         panic!("StreamRequest can only be decoded, not encoded")
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         tag: u32,
         wire_type: WireType,
-        buf: &mut B,
+        buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError>
     where
-        B: Buf,
         Self: Sized,
     {
         macro_rules! merge {
@@ -107,9 +103,8 @@ impl prost::Message for StreamRequest {
 }
 
 impl prost::Message for StreamResponse {
-    fn encode_raw<B>(&self, buf: &mut B)
+    fn encode_raw(&self, buf: &mut impl BufMut)
     where
-        B: BufMut,
         Self: Sized,
     {
         match self {
@@ -137,15 +132,14 @@ impl prost::Message for StreamResponse {
         }
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         _tag: u32,
         _wire_type: WireType,
-        _buf: &mut B,
+        _buf: &mut impl Buf,
         _ctx: DecodeContext,
     ) -> Result<(), DecodeError>
     where
-        B: Buf,
         Self: Sized,
     {
         panic!("StreamResponse can only be encoded, not decoded")
@@ -157,9 +151,8 @@ impl prost::Message for StreamResponse {
 }
 
 impl prost::Message for BatchResult {
-    fn encode_raw<B>(&self, buf: &mut B)
+    fn encode_raw(&self, buf: &mut impl BufMut)
     where
-        B: BufMut,
         Self: Sized,
     {
         vec_as_map::encode(1, &self.step_results, buf);
@@ -171,15 +164,14 @@ impl prost::Message for BatchResult {
             + vec_as_map::encoded_len(2, &self.step_errors)
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         _tag: u32,
         _wire_type: WireType,
-        _buf: &mut B,
+        _buf: &mut impl Buf,
         _ctx: DecodeContext,
     ) -> Result<(), DecodeError>
     where
-        B: Buf,
         Self: Sized,
     {
         panic!("BatchResult can only be encoded, not decoded")
@@ -192,9 +184,8 @@ impl prost::Message for BatchResult {
 }
 
 impl prost::Message for BatchCond {
-    fn encode_raw<B>(&self, _buf: &mut B)
+    fn encode_raw(&self, _buf: &mut impl BufMut)
     where
-        B: BufMut,
         Self: Sized,
     {
         panic!("BatchCond can only be decoded, not encoded")
@@ -204,15 +195,14 @@ impl prost::Message for BatchCond {
         panic!("BatchCond can only be decoded, not encoded")
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         tag: u32,
         wire_type: WireType,
-        buf: &mut B,
+        buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError>
     where
-        B: Buf,
         Self: Sized,
     {
         match tag {
@@ -267,9 +257,8 @@ impl prost::Message for BatchCond {
 }
 
 impl prost::Message for CursorEntry {
-    fn encode_raw<B>(&self, buf: &mut B)
+    fn encode_raw(&self, buf: &mut impl BufMut)
     where
-        B: BufMut,
         Self: Sized,
     {
         match self {
@@ -305,15 +294,14 @@ impl prost::Message for CursorEntry {
         }
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         _tag: u32,
         _wire_type: WireType,
-        _buf: &mut B,
+        _buf: &mut impl Buf,
         _ctx: DecodeContext,
     ) -> Result<(), DecodeError>
     where
-        B: Buf,
         Self: Sized,
     {
         panic!("CursorEntry can only be encoded, not decoded")
@@ -325,9 +313,8 @@ impl prost::Message for CursorEntry {
 }
 
 impl prost::Message for Value {
-    fn encode_raw<B>(&self, buf: &mut B)
+    fn encode_raw(&self, buf: &mut impl BufMut)
     where
-        B: BufMut,
         Self: Sized,
     {
         match self {
@@ -351,15 +338,14 @@ impl prost::Message for Value {
         }
     }
 
-    fn merge_field<B>(
+    fn merge_field(
         &mut self,
         tag: u32,
         wire_type: WireType,
-        buf: &mut B,
+        buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError>
     where
-        B: Buf,
         Self: Sized,
     {
         match tag {

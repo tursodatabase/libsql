@@ -136,8 +136,8 @@ pub struct QueryAndStats {
     pub stat: QueryStats,
 }
 
-pub(super) async fn handle_stats<C>(
-    State(app_state): State<Arc<AppState<C>>>,
+pub(super) async fn handle_stats(
+    State(app_state): State<Arc<AppState>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<Json<StatsResponse>> {
     let stats = app_state
@@ -149,8 +149,8 @@ pub(super) async fn handle_stats<C>(
     Ok(Json(resp))
 }
 
-pub(super) async fn handle_delete_stats<C>(
-    State(app_state): State<Arc<AppState<C>>>,
+pub(super) async fn handle_delete_stats(
+    State(app_state): State<Arc<AppState>>,
     Path((namespace, stats_type)): Path<(String, String)>,
 ) -> crate::Result<()> {
     let stats = app_state

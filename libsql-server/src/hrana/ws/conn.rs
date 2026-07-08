@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -175,7 +174,7 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
                 bail!(ProtocolError::BinaryWebSocketMessage)
             }
 
-            let client_msg = <proto::ClientMsg as prost::Message>::decode(client_msg.as_slice())
+            let client_msg = <proto::ClientMsg as prost::Message>::decode(&*client_msg)
                 .map_err(|err| ProtocolError::ProtobufDecode { source: err })?;
             handle_client_msg(conn, client_msg).await
         }
@@ -316,11 +315,11 @@ async fn send_msg(conn: &mut Conn, msg: &proto::ServerMsg) -> Result<()> {
         Encoding::Json => {
             let msg =
                 serde_json::to_string(&msg).context("Could not serialize response message")?;
-            tungstenite::Message::Text(msg)
+            tungstenite::Message::Text(msg.into())
         }
         Encoding::Protobuf => {
             let msg = <proto::ServerMsg as prost::Message>::encode_to_vec(msg);
-            tungstenite::Message::Binary(msg)
+            tungstenite::Message::Binary(msg.into())
         }
     };
     conn.ws
@@ -336,7 +335,7 @@ async fn close(conn: &mut Conn, code: CloseCode, reason: String) {
 
     let close_frame = tungstenite::protocol::frame::CloseFrame {
         code,
-        reason: Cow::Owned(reason),
+        reason: reason.into(),
     };
     if let Err(err) = conn
         .ws

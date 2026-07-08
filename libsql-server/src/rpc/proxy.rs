@@ -97,9 +97,10 @@ pub mod rpc {
         fn try_from(value: crate::query::Params) -> Result<Self, Self::Error> {
             match value {
                 crate::query::Params::Named(params) => {
+                    let config = bincode::config::legacy();
                     let iter = params.into_iter().map(|(k, v)| -> Result<_, SqldError> {
                         let v = Value {
-                            data: bincode::serialize(&v)?,
+                            data: bincode::serde::encode_to_vec(&v, config)?,
                         };
                         Ok((k, v))
                     });
@@ -107,11 +108,12 @@ pub mod rpc {
                     Ok(Self::Named(Named { names, values }))
                 }
                 crate::query::Params::Positional(params) => {
+                    let config = bincode::config::legacy();
                     let values = params
                         .iter()
                         .map(|v| {
                             Ok(Value {
-                                data: bincode::serialize(&v)?,
+                                data: bincode::serde::encode_to_vec(&v, config)?,
                             })
                         })
                         .collect::<Result<Vec<_>, SqldError>>()?;
@@ -127,15 +129,23 @@ pub mod rpc {
         fn try_from(value: query::Params) -> Result<Self, Self::Error> {
             match value {
                 query::Params::Positional(pos) => {
+                    let config = bincode::config::legacy();
                     let params = pos
                         .values
                         .into_iter()
-                        .map(|v| bincode::deserialize(&v.data).map_err(|e| e.into()))
+                        .map(|v| -> Result<crate::query::Value, SqldError> {
+                            let (decoded, _) = bincode::serde::decode_from_slice(&v.data, config)?;
+                            Ok(decoded)
+                        })
                         .collect::<Result<Vec<_>, SqldError>>()?;
                     Ok(Self::Positional(params))
                 }
                 query::Params::Named(named) => {
-                    let values = named.values.iter().map(|v| bincode::deserialize(&v.data));
+                    let config = bincode::config::legacy();
+                    let values = named.values.iter().map(|v| -> Result<crate::query::Value, SqldError> {
+                        let (decoded, _) = bincode::serde::decode_from_slice(&v.data, config)?;
+                        Ok(decoded)
+                    });
                     let params = itertools::process_results(values, |values| {
                         named.names.into_iter().zip(values).collect()
                     })?;
@@ -455,8 +465,10 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
     }
 
     fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError> {
-        let data = bincode::serialize(
+        let config = bincode::config::legacy();
+        let data = bincode::serde::encode_to_vec(
             &crate::query::Value::try_from(v).map_err(QueryResultBuilderError::from_any)?,
+            config,
         )
         .map_err(QueryResultBuilderError::from_any)?;
 
