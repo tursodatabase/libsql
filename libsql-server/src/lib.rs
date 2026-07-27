@@ -399,6 +399,11 @@ fn init_version_file(db_path: &Path) -> anyhow::Result<()> {
 fn install_deadlock_monitor() {
     // this is a very generous deadline for the main runtime to respond
     const PONG_DEADLINE: Duration = Duration::from_secs(5);
+    // How many consecutive missed pongs before we conclude the runtime is
+    // deadlocked (not merely slow) and bring the process down so a
+    // supervisor can restart it. With a 1s sleep between pings this is
+    // roughly 3 * (PONG_DEADLINE + 1s) of sustained unresponsiveness.
+    const MAX_CONSECUTIVE_MISSES: u32 = 3;
 
     struct Ping;
     struct Pong;
@@ -411,18 +416,41 @@ fn install_deadlock_monitor() {
             .build()
             .unwrap();
         rt.block_on(async move {
+            let mut consecutive_misses = 0;
             loop {
                 let (snd, ret) = tokio::sync::oneshot::channel();
-                sender.try_send((snd, Ping)).unwrap();
-                match tokio::time::timeout(PONG_DEADLINE, ret).await {
-                    Ok(Ok(Pong)) => (),
-                    Err(_) => {
-                        tracing::error!(
-                            "main runtime failed to respond within deadlines, deadlock detected"
-                        );
-                        // std::process::exit(1);
+                let responded = match sender.try_send((snd, Ping)) {
+                    Ok(()) => {
+                        matches!(
+                            tokio::time::timeout(PONG_DEADLINE, ret).await,
+                            Ok(Ok(Pong))
+                        )
                     }
-                    _ => (),
+                    // The previous ping is still queued — the runtime never
+                    // drained it, so it has made no progress since last ping.
+                    Err(tokio::sync::mpsc::error::TrySendError::Full(_)) => false,
+                    Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
+                        tracing::warn!("deadlock monitor receiver dropped, exiting watcher");
+                        break;
+                    }
+                };
+
+                if responded {
+                    consecutive_misses = 0;
+                } else {
+                    consecutive_misses += 1;
+                    tracing::error!(
+                        consecutive_misses,
+                        max = MAX_CONSECUTIVE_MISSES,
+                        "main runtime failed to respond to deadlock-monitor ping within deadline"
+                    );
+                    if consecutive_misses >= MAX_CONSECUTIVE_MISSES {
+                        tracing::error!(
+                            consecutive_misses,
+                            "main runtime unresponsive for too long, treating as deadlock and exiting"
+                        );
+                        std::process::exit(1);
+                    }
                 }
 
                 tokio::time::sleep(Duration::from_secs(1)).await;
