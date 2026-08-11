@@ -46,7 +46,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
 
     - name: Install Protoc
-      uses: arduino/setup-protoc@v2
+      run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
     - name: Set up cargo cache
       uses: actions/cache@v3
