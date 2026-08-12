@@ -246,7 +246,18 @@ impl Stats {
         let stats_path = db_path.join("stats.json");
         let mut this = if stats_path.try_exists()? {
             let data = tokio::fs::read_to_string(&stats_path).await?;
-            serde_json::from_str(&data)?
+            match serde_json::from_str(&data) {
+                Ok(stats) => stats,
+                // stats are disposable: a corrupt or truncated stats file
+                // (e.g. after a power loss) must not prevent the namespace
+                // from loading
+                Err(e) => {
+                    tracing::warn!(
+                        "failed to parse stats file for namespace `{namespace}`, resetting stats: {e}"
+                    );
+                    Stats::default()
+                }
+            }
         } else {
             Stats::default()
         };
@@ -528,7 +539,9 @@ async fn try_persist_stats(stats: Weak<Stats>, path: &Path) -> anyhow::Result<()
         .await?;
     file.set_len(0).await?;
     file.write_all(&serde_json::to_vec(&stats)?).await?;
-    file.flush().await?;
+    // sync the file to disk before the rename, otherwise a power loss can
+    // leave an empty stats file in place of the old one
+    file.sync_all().await?;
     tokio::fs::rename(temp_path, path).await?;
     Ok(())
 }
@@ -539,4 +552,42 @@ fn next_hour() -> Instant {
         .duration_trunc(chrono::Duration::hours(1))
         .unwrap();
     Instant::now() + (next_hour - utc_now).to_std().unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // a power loss can truncate the stats file; loading it must fall back to
+    // default stats instead of failing the namespace
+    #[tokio::test]
+    async fn corrupt_stats_file_resets_stats() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut join_set = JoinSet::new();
+
+        for corrupt in ["", "{\"rows_read\":"] {
+            std::fs::write(dir.path().join("stats.json"), corrupt).unwrap();
+            let stats = Stats::new(NamespaceName::default(), dir.path(), &mut join_set)
+                .await
+                .unwrap();
+            assert_eq!(stats.rows_read(), 0);
+            assert!(stats.id().is_some());
+        }
+
+        join_set.abort_all();
+    }
+
+    #[tokio::test]
+    async fn valid_stats_file_is_loaded() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut join_set = JoinSet::new();
+
+        std::fs::write(dir.path().join("stats.json"), "{\"rows_read\":42}").unwrap();
+        let stats = Stats::new(NamespaceName::default(), dir.path(), &mut join_set)
+            .await
+            .unwrap();
+        assert_eq!(stats.rows_read(), 42);
+
+        join_set.abort_all();
+    }
 }
