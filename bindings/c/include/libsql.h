@@ -59,14 +59,24 @@ typedef struct {
   int len;
 } blob;
 
+#if defined(__GNUC__) || defined(__clang__)
+#define LIBSQL_DEPRECATED(msg) __attribute__((deprecated(msg)))
+#elif defined(_MSC_VER)
+#define LIBSQL_DEPRECATED(msg) __declspec(deprecated(msg))
+#else
+#define LIBSQL_DEPRECATED(msg)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 int libsql_enable_internal_tracing(void);
 
+LIBSQL_DEPRECATED("sync() is deprecated and will be removed in a future release. Learn more: https://tur.so/newsync")
 int libsql_sync(libsql_database_t db, const char **out_err_msg);
 
+LIBSQL_DEPRECATED("sync() is deprecated and will be removed in a future release. Learn more: https://tur.so/newsync")
 int libsql_sync2(libsql_database_t db, replicated *out_replicated, const char **out_err_msg);
 
 int libsql_open_sync(const char *db_path,
