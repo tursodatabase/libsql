@@ -14,12 +14,20 @@ cbindgen = "0.24.0"
 bytes = "1.5.0"
 lazy_static = "1.4.0"
 tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
-hyper-rustls = { version = "0.25", features = ["webpki-roots"]}
+hyper-rustls = { version = "0.25", default-features = false, features = ["http1", "logging", "native-tokio", "tls12", "webpki-roots"] }
+rustls = { version = "0.22", default-features = false }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 http = "1.1.0"
 anyhow = "1.0.86"
-libsql = { path = "../../libsql", features = ["encryption"] }
+hyper = { workspace = true, features = ["client", "tcp"] }
+libsql = { path = "../../libsql", default-features = false, features = ["core", "replication", "remote", "sync", "tls-no-provider", "encryption"] }
+
+[features]
+default = ["ring"]
+# At least one is required; `aws-lc-rs` wins when both are enabled.
+ring = ["libsql/ring", "rustls/ring"]
+aws-lc-rs = ["libsql/aws-lc-rs", "rustls/aws_lc_rs"]
 
 
 # The produced binaries are too large for mobiles
