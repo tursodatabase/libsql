@@ -89,10 +89,15 @@ environment variables can be used to configure the replication:
 ```bash
 LIBSQL_BOTTOMLESS_BUCKET=my-bucket                 # Default bucket name: bottomless
 LIBSQL_BOTTOMLESS_ENDPOINT='http://localhost:9000' # address can be overridden for local testing, e.g. with Minio
-LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY=           # regular AWS variables are used
-LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID=               # ... to set up auth, regions, etc.
-LIBSQL_BOTTOMLESS_AWS_REGION=                      # .
+LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID=               # AWS access key ID (or S3-compatible provider)
+LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY=           # AWS secret access key (or S3-compatible provider)
+LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION=us-east-1     # AWS region (required; use us-east-1 for MinIO/local dev)
+LIBSQL_BOTTOMLESS_AWS_SESSION_TOKEN=               # Optional, for temporary AWS credentials
 ```
+
+> **Note:** The region variable is `LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION`, not `LIBSQL_BOTTOMLESS_AWS_REGION`.
+> If unset, `sqld` will fail to start with the error:
+> `Error: Internal Error: LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION was not set`
 
 ### bottomless-cli
 
