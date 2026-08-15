@@ -142,6 +142,7 @@ where
     };
     let router = axum::Router::new()
         .route("/", get(handle_get_index))
+        .route("/v1/namespaces", get(handle_get_namespaces))
         .route(
             "/v1/namespaces/:namespace/config",
             get(handle_get_config).post(handle_post_config),
@@ -236,6 +237,19 @@ async fn auth_middleware<B>(
 
 async fn handle_get_index() -> &'static str {
     "Welcome to the sqld admin API"
+}
+
+async fn handle_get_namespaces<C: Connector>(
+    State(app_state): State<Arc<AppState<C>>>,
+) -> Json<Vec<String>> {
+    let store = app_state.namespaces.meta_store();
+    let namespaces = store
+        .list_names()
+        .await
+        .iter()
+        .map(|n| n.to_string())
+        .collect();
+    Json(namespaces)
 }
 
 async fn handle_metrics(State(metrics): State<Metrics>) -> String {
