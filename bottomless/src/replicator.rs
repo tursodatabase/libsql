@@ -3,11 +3,13 @@ use crate::completion_progress::{CompletionProgress, SavepointTracker};
 use crate::read::BatchReader;
 use crate::uuid_utils::decode_unix_timestamp;
 use crate::wal::WalFileReader;
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, Context as _};
 use arc_swap::ArcSwapOption;
 use async_compression::tokio::write::{GzipEncoder, ZstdEncoder};
 use aws_config::BehaviorVersion;
-use aws_sdk_s3::config::{Credentials, Region, SharedCredentialsProvider};
+use aws_sdk_s3::config::{
+    Credentials, Region, SharedCredentialsProvider, StalledStreamProtectionConfig,
+};
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
 use aws_sdk_s3::operation::get_object::GetObjectError;
@@ -24,7 +26,7 @@ use metrics::{counter, gauge, histogram};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::Arc;
 use tokio::fs::{File, OpenOptions};
 use tokio::io::AsyncWriteExt;
@@ -40,6 +42,15 @@ use uuid::{NoContext, Uuid};
 /// This effectively means that at least one in [MAX_RESTORE_STACK_DEPTH] number of
 /// consecutive generations has to have a snapshot included.
 const MAX_RESTORE_STACK_DEPTH: usize = 100;
+
+/// Maximum number of attempts for the snapshot upload of a single generation.
+/// A snapshot upload streams the whole (compressed) database file in a single
+/// request that may run for minutes; if its body stream is aborted mid-flight
+/// the SDK cannot retry the request on its own, so the snapshot task rebuilds
+/// the request from scratch and tries again.
+const SNAPSHOT_UPLOAD_ATTEMPTS: u32 = 3;
+/// Base delay between snapshot upload attempts, doubled on every retry.
+const SNAPSHOT_UPLOAD_RETRY_BASE_DELAY: Duration = Duration::from_millis(500);
 
 pub type Result<T> = anyhow::Result<T>;
 
@@ -59,6 +70,12 @@ pub struct Replicator {
     shutdown_trigger: Option<tokio::sync::watch::Sender<()>>,
     snapshot_waiter: Receiver<Result<Option<Uuid>>>,
     snapshot_notifier: Arc<Sender<Result<Option<Uuid>>>>,
+    /// Set while a snapshot upload task is running. Guarantees that at most one
+    /// snapshot task exists at a time, so concurrent tasks can never interfere
+    /// with each other's upload streams, and lets checkpoints distinguish "the
+    /// snapshot is still uploading" from "the snapshot failed and has to be
+    /// re-triggered".
+    snapshot_in_flight: Arc<AtomicBool>,
 
     pub page_size: usize,
     generation: Arc<ArcSwapOption<Uuid>>,
@@ -76,6 +93,18 @@ pub struct Replicator {
     last_uploaded_frame_no: Receiver<u32>,
     skip_snapshot: bool,
     skip_shutdown_upload: bool,
+}
+
+/// Clears the "snapshot upload in flight" flag when dropped. Dropping (rather
+/// than storing directly at the end of the snapshot task) makes sure the flag
+/// is cleared even when the task panics, so a later checkpoint attempt can
+/// re-trigger the snapshot instead of waiting forever.
+struct SnapshotInFlightGuard(Arc<AtomicBool>);
+
+impl Drop for SnapshotInFlightGuard {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::Release);
+    }
 }
 
 #[derive(Debug)]
@@ -163,6 +192,14 @@ impl Options {
 
         let s3_config = aws_sdk_s3::config::Builder::from(&conf)
             .force_path_style(true)
+            // The SDK's stalled-stream protection aborts uploads whose body
+            // stream stays below a minimum throughput for a ~5s grace period.
+            // A snapshot upload streams the whole database file in a single
+            // request that can run for many minutes and legitimately stalls
+            // when the process is busy (e.g. while compressing another
+            // database's snapshot), which would get it killed mid-flight.
+            // Bottomless owns its retry policy, so the watchdog is disabled.
+            .stalled_stream_protection(StalledStreamProtectionConfig::disabled())
             .build();
 
         Ok(s3_config)
@@ -504,6 +541,7 @@ impl Replicator {
             db_name,
             snapshot_waiter,
             snapshot_notifier: Arc::new(snapshot_notifier),
+            snapshot_in_flight: Arc::new(AtomicBool::new(false)),
             use_compression: options.use_compression,
             encryption_config: options.encryption_config,
             max_frames_per_batch: options.max_frames_per_batch,
@@ -594,6 +632,11 @@ impl Replicator {
 
     pub fn compression_kind(&self) -> CompressionKind {
         self.use_compression
+    }
+
+    /// Returns true while a snapshot upload task is running.
+    pub fn snapshot_in_flight(&self) -> bool {
+        self.snapshot_in_flight.load(Ordering::Acquire)
     }
 
     pub async fn is_snapshotted(&mut self) -> bool {
@@ -954,20 +997,23 @@ impl Replicator {
         Ok(page_size)
     }
 
-    // Returns the compressed database file path and its change counter, extracted
-    // from the header of page1 at offset 24..27 (as per SQLite documentation).
+    // Compresses the main database file into a snapshot artifact unique to the
+    // given generation and returns the path of the file that should be
+    // uploaded. With compression disabled the database file itself is
+    // returned.
     pub async fn maybe_compress_main_db_file(
         db_path: &Path,
+        generation: &Uuid,
         compression: CompressionKind,
-    ) -> Result<ByteStream> {
+    ) -> Result<PathBuf> {
         if !tokio::fs::try_exists(db_path).await? {
             bail!("database file was not found at `{}`", db_path.display())
         }
         match compression {
-            CompressionKind::None => Ok(ByteStream::from_path(db_path).await?),
+            CompressionKind::None => Ok(db_path.to_path_buf()),
             CompressionKind::Gzip => {
                 let mut reader = File::open(db_path).await?;
-                let gzip_path = Self::db_compressed_path(db_path, "gz");
+                let gzip_path = Self::db_compressed_path(db_path, generation, "gz");
                 let compressed_file = OpenOptions::new()
                     .create(true)
                     .write(true)
@@ -983,11 +1029,11 @@ impl Replicator {
                     size,
                     gzip_path.display()
                 );
-                Ok(ByteStream::from_path(gzip_path).await?)
+                Ok(gzip_path)
             }
             CompressionKind::Zstd => {
                 let mut reader = File::open(db_path).await?;
-                let zstd_path = Self::db_compressed_path(db_path, "zstd");
+                let zstd_path = Self::db_compressed_path(db_path, generation, "zstd");
                 let compressed_file = OpenOptions::new()
                     .create(true)
                     .write(true)
@@ -1003,15 +1049,59 @@ impl Replicator {
                     size,
                     zstd_path.display()
                 );
-                Ok(ByteStream::from_path(zstd_path).await?)
+                Ok(zstd_path)
             }
         }
     }
 
-    fn db_compressed_path(db_path: &Path, suffix: &'static str) -> PathBuf {
+    // Path of the compressed snapshot artifact for the given generation. The
+    // path is unique per generation so that a snapshot task can never observe
+    // its file being truncated or rewritten by another snapshot task.
+    fn db_compressed_path(db_path: &Path, generation: &Uuid, suffix: &'static str) -> PathBuf {
         let mut compressed_path: PathBuf = db_path.to_path_buf();
         compressed_path.pop();
-        compressed_path.join(format!("db.{suffix}"))
+        compressed_path.join(format!("db.{generation}.{suffix}"))
+    }
+
+    // Removes leftover snapshot artifacts: per-generation `db.<uuid>.gz|zstd`
+    // files from interrupted runs as well as fixed-name `db.gz|db.zstd` files
+    // written by older versions. Must only be called while no snapshot upload
+    // is in flight.
+    async fn remove_stale_snapshot_artifacts(db_path: &Path) {
+        fn is_snapshot_artifact(name: &str) -> bool {
+            let Some(rest) = name.strip_prefix("db.") else {
+                return false;
+            };
+            match rest {
+                "gz" | "zstd" => true,
+                _ => rest
+                    .strip_suffix(".gz")
+                    .or_else(|| rest.strip_suffix(".zstd"))
+                    .map(|generation| Uuid::parse_str(generation).is_ok())
+                    .unwrap_or(false),
+            }
+        }
+
+        let dir = match db_path.parent() {
+            Some(dir) if !dir.as_os_str().is_empty() => dir,
+            _ => Path::new("."),
+        };
+        let Ok(mut entries) = tokio::fs::read_dir(dir).await else {
+            return;
+        };
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else {
+                continue;
+            };
+            if is_snapshot_artifact(name) {
+                tracing::debug!(
+                    "removing stale snapshot artifact `{}`",
+                    entry.path().display()
+                );
+                let _ = tokio::fs::remove_file(entry.path()).await;
+            }
+        }
     }
 
     fn restore_db_path(&self) -> PathBuf {
@@ -1064,11 +1154,6 @@ impl Replicator {
         }
     }
 
-    pub fn skip_snapshot_for_current_generation(&self) {
-        let generation = self.generation.load().as_deref().cloned();
-        let _ = self.snapshot_notifier.send(Ok(generation));
-    }
-
     // Sends the main database file to S3 - if -wal file is present, it's replicated
     // too - it means that the local file was detected to be newer than its remote
     // counterpart.
@@ -1089,13 +1174,107 @@ impl Replicator {
             return Ok(None);
         }
         let generation = self.generation()?;
+        if self.snapshot_in_flight.swap(true, Ordering::AcqRel) {
+            tracing::warn!(
+                "not snapshotting generation {} of db {}: another snapshot upload is in flight",
+                generation,
+                self.db_name
+            );
+            return Ok(None);
+        }
+        let in_flight = SnapshotInFlightGuard(self.snapshot_in_flight.clone());
         let start_ts = Instant::now();
         let client = self.client.clone();
         let change_counter = self.read_change_counter()?;
-        let snapshot_req = client.put_object().bucket(self.bucket.clone()).key(format!(
-            "{}-{}/db.{}",
-            self.db_name, generation, self.use_compression
-        ));
+        let snapshot_notifier = self.snapshot_notifier.clone();
+        let compression = self.use_compression;
+        let db_path = PathBuf::from(self.db_path.clone());
+        let db_name = self.db_name.clone();
+        let bucket = self.bucket.clone();
+        let handle = tokio::spawn(async move {
+            tracing::trace!("Start snapshotting generation {}", generation);
+            let start = Instant::now();
+            let result = {
+                // the guard is dropped (and the in-flight flag cleared) before
+                // the notifier is updated, so observers of a settled snapshot
+                // state never race with an alive snapshot task
+                let _in_flight = in_flight;
+                Self::upload_snapshot(
+                    client,
+                    bucket,
+                    &db_path,
+                    &db_name,
+                    generation,
+                    compression,
+                    change_counter,
+                )
+                .await
+            };
+            match result {
+                Ok(()) => {
+                    let _ = snapshot_notifier.send(Ok(Some(generation)));
+                    let elapsed = Instant::now() - start;
+                    tracing::info!(
+                        "Snapshot upload of db {} for generation {} finished (took {:?})",
+                        db_name,
+                        generation,
+                        elapsed
+                    );
+                    Self::record_snapshot_upload_time(&db_name, elapsed);
+                }
+                Err(e) => {
+                    tracing::error!(
+                        "Failed to upload snapshot of db {} for generation {}: {:?}",
+                        db_name,
+                        generation,
+                        e
+                    );
+                    let _ = snapshot_notifier.send(Err(e));
+                }
+            }
+        });
+        let elapsed = Instant::now() - start_ts;
+        tracing::debug!("Scheduled DB snapshot {} (took {:?})", generation, elapsed);
+
+        Ok(Some(handle))
+    }
+
+    // Body of the snapshot upload task: compresses the main database file and
+    // uploads it together with its change counter marker.
+    async fn upload_snapshot(
+        client: Client,
+        bucket: String,
+        db_path: &Path,
+        db_name: &str,
+        generation: Uuid,
+        compression: CompressionKind,
+        change_counter: [u8; 4],
+    ) -> Result<()> {
+        // no other snapshot task is in flight, so any artifact still on disk is
+        // a leftover of a previous (interrupted) run
+        Self::remove_stale_snapshot_artifacts(db_path).await;
+        let body_path = Self::maybe_compress_main_db_file(db_path, &generation, compression)
+            .await
+            .with_context(|| {
+                format!("failed to compress db file (path: `{}`)", db_path.display())
+            })?;
+        let snapshot_key = format!("{}-{}/db.{}", db_name, generation, compression);
+        let result = Self::put_snapshot_object(
+            &client,
+            &bucket,
+            &snapshot_key,
+            &body_path,
+            db_name,
+            generation,
+        )
+        .await
+        .context("failed to upload snapshot object");
+        // remove the compressed artifact regardless of the upload outcome: a
+        // re-triggered snapshot recompresses it from the main database file
+        if body_path != db_path {
+            let _ = tokio::fs::remove_file(&body_path).await;
+        }
+        result?;
 
         /* FIXME: we can't rely on the change counter in WAL mode:
          ** "In WAL mode, changes to the database are detected using the wal-index and
@@ -1103,68 +1282,62 @@ impl Replicator {
          ** incremented on each transaction in WAL mode."
          ** Instead, we need to consult WAL checksums.
          */
-        let change_counter_key = format!("{}-{}/.changecounter", self.db_name, generation);
-        let change_counter_req = self
-            .client
+        let change_counter_key = format!("{}-{}/.changecounter", db_name, generation);
+        client
             .put_object()
-            .bucket(&self.bucket)
+            .bucket(&bucket)
             .key(change_counter_key)
             .body(ByteStream::from(Bytes::copy_from_slice(
                 change_counter.as_ref(),
-            )));
-        let snapshot_notifier = self.snapshot_notifier.clone();
-        let compression = self.use_compression;
-        let db_path = PathBuf::from(self.db_path.clone());
-        let db_name = self.db_name.clone();
-        let handle = tokio::spawn(async move {
-            tracing::trace!("Start snapshotting generation {}", generation);
-            let start = Instant::now();
-            let body = match Self::maybe_compress_main_db_file(&db_path, compression).await {
-                Ok(file) => file,
-                Err(e) => {
-                    tracing::error!(
-                        "Failed to compress db file (generation `{}`, path: `{}`): {:?}",
-                        generation,
-                        db_path.display(),
-                        e
-                    );
-                    let _ = snapshot_notifier.send(Err(e));
-                    return;
-                }
-            };
-            let mut result = snapshot_req.body(body).send().await;
-            if let Err(e) = result {
-                tracing::error!(
-                    "Failed to upload snapshot for generation {}: {:?}",
-                    generation,
-                    e
-                );
-                let _ = snapshot_notifier.send(Err(e.into()));
-                return;
-            }
-            result = change_counter_req.send().await;
-            if let Err(e) = result {
-                tracing::error!(
-                    "Failed to upload change counter for generation {}: {:?}",
-                    generation,
-                    e
-                );
-                let _ = snapshot_notifier.send(Err(e.into()));
-                return;
-            }
-            let _ = snapshot_notifier.send(Ok(Some(generation)));
-            let elapsed = Instant::now() - start;
-            tracing::info!("Snapshot upload finished (took {:?})", elapsed);
-            Self::record_snapshot_upload_time(&db_name, elapsed);
-            // cleanup gzip/zstd database snapshot if exists
-            for suffix in &["gz", "zstd"] {
-                let _ = tokio::fs::remove_file(Self::db_compressed_path(&db_path, suffix)).await;
-            }
-        });
-        let elapsed = Instant::now() - start_ts;
-        tracing::debug!("Scheduled DB snapshot {} (took {:?})", generation, elapsed);
+            )))
+            .send()
+            .await
+            .context("failed to upload change counter object")?;
+        Ok(())
+    }
 
-        Ok(Some(handle))
+    // Uploads the snapshot object, retrying a bounded number of times with
+    // backoff. The request body is rebuilt from the file on every attempt:
+    // its length is captured at creation time and sent as Content-Length, and
+    // a partially consumed stream cannot be replayed by the SDK.
+    async fn put_snapshot_object(
+        client: &Client,
+        bucket: &str,
+        key: &str,
+        body_path: &Path,
+        db_name: &str,
+        generation: Uuid,
+    ) -> Result<()> {
+        let mut attempt: u32 = 1;
+        loop {
+            let body = ByteStream::from_path(body_path).await?;
+            let err = match client
+                .put_object()
+                .bucket(bucket)
+                .key(key)
+                .body(body)
+                .send()
+                .await
+            {
+                Ok(_) => return Ok(()),
+                Err(e) => e,
+            };
+            if attempt >= SNAPSHOT_UPLOAD_ATTEMPTS {
+                return Err(err.into());
+            }
+            let delay = SNAPSHOT_UPLOAD_RETRY_BASE_DELAY * 2u32.saturating_pow(attempt - 1);
+            tracing::warn!(
+                "Snapshot upload of db {} for generation {} failed (attempt {}/{}), retrying in {:?}: {:?}",
+                db_name,
+                generation,
+                attempt,
+                SNAPSHOT_UPLOAD_ATTEMPTS,
+                delay,
+                err
+            );
+            tokio::time::sleep(delay).await;
+            attempt += 1;
+        }
     }
 
     // Returns newest replicated generation, or None, if one is not found.
@@ -1453,6 +1626,13 @@ impl Replicator {
         generation: Uuid,
         last_consistent_frame: u32,
     ) -> Result<Option<RestoreAction>> {
+        // We impersonate as a given generation, since we're comparing against local backup at that
+        // generation. This is used later in [Self::new_generation] to create a dependency between
+        // this generation and a new one. It must happen before any early return that requests a
+        // new generation to be made, otherwise the new generation is created with no `.dep` link
+        // to its predecessor and the restore chain is severed.
+        self.generation.store(Some(Arc::new(generation)));
+
         // Check if the database needs to be restored by inspecting the database
         // change counter and the WAL size.
         let local_counter = self.read_change_counter().unwrap_or([0u8; 4]);
@@ -1466,10 +1646,6 @@ impl Replicator {
         tracing::debug!("Counters: l={:?}, r={:?}", local_counter, remote_counter);
 
         let wal_pages = self.get_local_wal_page_count().await;
-        // We impersonate as a given generation, since we're comparing against local backup at that
-        // generation. This is used later in [Self::new_generation] to create a dependency between
-        // this generation and a new one.
-        self.generation.store(Some(Arc::new(generation)));
         match local_counter.cmp(&remote_counter) {
             std::cmp::Ordering::Equal => {
                 tracing::debug!(
