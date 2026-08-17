@@ -308,3 +308,44 @@ impl From<&mut libsql_row> for libsql_row_t {
         Self { ptr: value }
     }
 }
+
+pub struct libsql_tx {
+    pub(crate) tx: Option<libsql::Transaction>,
+}
+
+#[derive(Clone, Debug)]
+#[repr(transparent)]
+pub struct libsql_tx_t {
+    ptr: *const libsql_tx,
+}
+
+impl libsql_tx_t {
+    pub fn null() -> libsql_tx_t {
+        libsql_tx_t {
+            ptr: std::ptr::null(),
+        }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.ptr.is_null()
+    }
+
+    #[inline]
+    pub(crate) fn as_const_ptr(&self) -> *const libsql_tx {
+        self.ptr
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&libsql_tx> for libsql_tx_t {
+    fn from(value: &libsql_tx) -> Self {
+        Self { ptr: value }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&mut libsql_tx> for libsql_tx_t {
+    fn from(value: &mut libsql_tx) -> Self {
+        Self { ptr: value }
+    }
+}
