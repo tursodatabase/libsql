@@ -394,6 +394,7 @@ cfg_replication! {
 
         /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
+        #[deprecated(note = "sync() is deprecated and will be removed in a future release. Use the `turso` crate instead. Learn more: https://tur.so/newsync")]
         pub async fn sync(&self) -> Result<Replicated> {
             match &self.db_type {
                 #[cfg(feature = "replication")]
@@ -413,6 +414,7 @@ cfg_replication! {
 
         /// Sync database from remote until it gets to a given replication_index or further,
         /// and returns the committed frame_no after syncing, if applicable.
+        #[deprecated(note = "sync_until() is deprecated and will be removed in a future release. Use the `turso` crate instead. Learn more: https://tur.so/newsync")]
         pub async fn sync_until(&self, replication_index: FrameNo) -> Result<Replicated> {
             if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.sync_until(replication_index).await
@@ -423,6 +425,7 @@ cfg_replication! {
 
         /// Apply a set of frames to the database and returns the committed frame_no after syncing, if
         /// applicable.
+        #[deprecated(note = "sync_frames() is deprecated and will be removed in a future release. Use the `turso` crate instead. Learn more: https://tur.so/newsync")]
         pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.sync_frames(frames).await
