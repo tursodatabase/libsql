@@ -88,11 +88,9 @@ fn copy_with_cp(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> 
         .status()
     {
         Ok(status) if status.success() => Ok(()),
-        _ => match fs::copy(from.as_ref(), to.as_ref()) {
-            Err(err) if err.kind() == io::ErrorKind::InvalidInput => copy_dir_all(from, to),
-            Ok(_) => Ok(()),
-            Err(err) => Err(err),
-        },
+        // Fall back to a pure-Rust copy where `cp` is unavailable (e.g. Windows).
+        _ if from.as_ref().is_dir() => copy_dir_all(from, to),
+        _ => fs::copy(from.as_ref(), to.as_ref()).map(|_| ()),
     }
 }
 
