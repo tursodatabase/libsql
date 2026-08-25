@@ -18,7 +18,8 @@ tokio = { version = "1.29.1", features = ["sync"], optional = true }
 tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
 hyper = { version = "0.14", features = ["client", "http1", "http2", "stream", "runtime"], optional = true }
-hyper-rustls = { version = "0.25", features = ["webpki-roots"], optional = true }
+hyper-rustls = { version = "0.25", default-features = false, features = ["http1", "logging", "native-tokio", "tls12", "webpki-roots"], optional = true }
+rustls = { version = "0.22", default-features = false, features = ["logging", "tls12"], optional = true }
 base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", features = ["float_roundtrip"], optional = true }
@@ -148,14 +149,22 @@ cloudflare = [
   "dep:worker"
 ]
 encryption = ["core", "libsql-sys/encryption", "dep:bytes"]
-tls = ["dep:hyper-rustls"]
+tls = ["tls-no-provider", "ring"]
+tls-no-provider = ["dep:hyper-rustls", "dep:rustls"]
+# `aws-lc-rs` wins when both are enabled.
+ring = ["tls-no-provider", "rustls?/ring"]
+aws-lc-rs = ["tls-no-provider", "rustls?/aws_lc_rs"]
 
 [[bench]]
 name = "benchmark"
 harness = false
 
+[[example]]
+name = "flutter"
+required-features = ["core", "remote", "tls-no-provider"]
+
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.cargo-udeps.ignore]
-normal = ["hyper-rustls"]
+normal = ["hyper-rustls", "rustls"]

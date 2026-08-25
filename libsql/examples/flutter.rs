@@ -8,8 +8,16 @@ async fn main() {
             "".to_string()
         });
 
+        // A custom connector also picks the crypto provider. The cfgs check libsql's
+        // own features only because this example lives inside the libsql package.
+        #[cfg(feature = "aws-lc-rs")]
+        let provider = rustls::crypto::aws_lc_rs::default_provider();
+        #[cfg(not(feature = "aws-lc-rs"))]
+        let provider = rustls::crypto::ring::default_provider();
+
         let https = hyper_rustls::HttpsConnectorBuilder::new()
-            .with_webpki_roots()
+            .with_provider_and_webpki_roots(provider)
+            .unwrap()
             .https_or_http()
             .enable_http1()
             .build();

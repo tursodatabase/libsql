@@ -75,7 +75,7 @@
 //! flags may be used by including the libsql crate like:
 //!
 //! ```toml
-//! libsql = { version = "*", default-features = false, features = ["core", "replication", "remote" ]
+//! libsql = { version = "*", default-features = false, features = ["core", "replication", "remote"] }
 //! ```
 //!
 //! By default, all the features are enabled but by providing `default-features = false` it will
@@ -88,8 +88,30 @@
 //! that will allow you to sync you remote database locally.
 //! - `remote` this feature flag only includes HTTP code that will allow you to run queries against
 //! a remote database.
-//! - `tls` this feature flag disables the builtin TLS connector and instead requires that you pass
-//! your own connector for any of the features that require HTTP.
+//! - `tls` this feature flag enables the builtin TLS connector with the [ring] crypto
+//! provider. Without either `tls` or `tls-no-provider` you must pass your own connector for
+//! any of the features that require HTTP.
+//! - `tls-no-provider` this feature flag enables the builtin TLS connector without a crypto
+//! provider; pair it with `ring` or `aws-lc-rs`. Omitting both is a compile error in builds
+//! that construct the connector, i.e. ones that also enable `replication`, `remote` or `sync`.
+//! - `ring` this feature flag backs the builtin TLS connector with the [ring] crypto provider.
+//! It is pulled in by `tls` and needs no extra build tooling.
+//! - `aws-lc-rs` this feature flag backs the builtin TLS connector with the [aws-lc-rs]
+//! crypto provider instead. It takes precedence over `ring`, so it can simply be added on
+//! top of the default features, although that compiles both providers. For a single-provider
+//! build, use `tls-no-provider`:
+//!
+//! ```toml
+//! libsql = { version = "*", default-features = false, features = ["core", "replication", "remote", "sync", "tls-no-provider", "aws-lc-rs"] }
+//! ```
+//!
+//! aws-lc-rs needs a C compiler and, on some targets, extra build tooling (see the
+//! [aws-lc-rs requirements]); ring needs a C compiler but no extra tooling, which is why
+//! it is the default.
+//!
+//! [ring]: https://docs.rs/ring
+//! [aws-lc-rs]: https://docs.rs/aws-lc-rs
+//! [aws-lc-rs requirements]: https://aws.github.io/aws-lc-rs/requirements/index.html
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(
@@ -99,7 +121,7 @@
             not(feature = "replication"),
             not(feature = "core")
         ),
-        feature = "tls"
+        feature = "tls-no-provider"
     ),
     allow(unused_imports)
 )]
@@ -110,7 +132,7 @@
             not(feature = "replication"),
             not(feature = "core")
         ),
-        feature = "tls"
+        feature = "tls-no-provider"
     ),
     allow(dead_code)
 )]

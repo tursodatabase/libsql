@@ -32,6 +32,38 @@ unsafe fn set_err_msg(msg: String, output: *mut *const std::ffi::c_char) {
     }
 }
 
+#[cfg(not(any(feature = "ring", feature = "aws-lc-rs")))]
+compile_error!("enable either the `ring` (default) or `aws-lc-rs` feature");
+
+/// `aws-lc-rs` wins when both features are enabled, matching libsql.
+#[cfg(feature = "aws-lc-rs")]
+fn crypto_provider() -> rustls::crypto::CryptoProvider {
+    rustls::crypto::aws_lc_rs::default_provider()
+}
+
+#[cfg(all(feature = "ring", not(feature = "aws-lc-rs")))]
+fn crypto_provider() -> rustls::crypto::CryptoProvider {
+    rustls::crypto::ring::default_provider()
+}
+
+/// On failure, sets `out_err_msg` and returns `None`.
+unsafe fn webpki_connector(
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> Option<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
+    let mut http = hyper::client::HttpConnector::new();
+    http.enforce_http(false);
+    http.set_nodelay(true);
+    match hyper_rustls::HttpsConnectorBuilder::new()
+        .with_provider_and_webpki_roots(crypto_provider())
+    {
+        Ok(builder) => Some(builder.https_or_http().enable_http1().wrap_connector(http)),
+        Err(e) => {
+            set_err_msg(format!("Wrong TLS configuration: {e}"), out_err_msg);
+            None
+        }
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn libsql_enable_internal_tracing() -> std::ffi::c_int {
     if tracing_subscriber::fmt::try_init().is_ok() {
@@ -266,11 +298,10 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
         let mut builder =
             Builder::new_synced_database(db_path, primary_url.to_owned(), auth_token.to_owned());
         if config.with_webpki != 0 {
-            let https = hyper_rustls::HttpsConnectorBuilder::new()
-                .with_webpki_roots()
-                .https_or_http()
-                .enable_http1()
-                .build();
+            let https = match webpki_connector(out_err_msg) {
+                Some(https) => https,
+                None => return 7,
+            };
             builder = builder.connector(https);
         }
         if !config.remote_encryption_key.is_null() {
@@ -311,11 +342,10 @@ pub unsafe extern "C" fn libsql_open_sync_with_config(
         auth_token.to_string(),
     );
     if config.with_webpki != 0 {
-        let https = hyper_rustls::HttpsConnectorBuilder::new()
-            .with_webpki_roots()
-            .https_or_http()
-            .enable_http1()
-            .build();
+        let https = match webpki_connector(out_err_msg) {
+            Some(https) => https,
+            None => return 7,
+        };
         builder = builder.connector(https);
     }
     if config.sync_interval > 0 {
@@ -493,11 +523,10 @@ unsafe fn libsql_open_remote_internal(
     };
 
     if with_webpki {
-        let https = hyper_rustls::HttpsConnectorBuilder::new()
-            .with_webpki_roots()
-            .https_or_http()
-            .enable_http1()
-            .build();
+        let https = match webpki_connector(out_err_msg) {
+            Some(https) => https,
+            None => return 7,
+        };
         builder = builder.connector(https);
     }
     match RT.block_on(builder.build()) {

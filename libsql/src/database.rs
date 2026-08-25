@@ -756,10 +756,9 @@ impl Database {
     }
 }
 
-#[cfg(any(
-    all(feature = "tls", feature = "replication"),
-    all(feature = "tls", feature = "remote"),
-    all(feature = "tls", feature = "sync")
+#[cfg(all(
+    feature = "tls-no-provider",
+    any(feature = "replication", feature = "remote", feature = "sync")
 ))]
 fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     let mut http = hyper::client::HttpConnector::new();
@@ -767,20 +766,52 @@ fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnect
     http.set_nodelay(true);
 
     Ok(hyper_rustls::HttpsConnectorBuilder::new()
-        .with_native_roots()
+        .with_provider_and_native_roots(crypto_provider::get())
         .map_err(crate::Error::InvalidTlsConfiguration)?
         .https_or_http()
         .enable_http1()
         .wrap_connector(http))
 }
 
-#[cfg(any(
-    all(not(feature = "tls"), feature = "replication"),
-    all(not(feature = "tls"), feature = "remote"),
-    all(not(feature = "tls"), feature = "sync")
+#[cfg(all(
+    feature = "tls-no-provider",
+    any(feature = "replication", feature = "remote", feature = "sync")
+))]
+mod crypto_provider {
+    /// `aws-lc-rs` wins when both are enabled: `tls` pulls in `ring`, which would
+    /// otherwise silently beat an explicit opt-in.
+    #[cfg(feature = "aws-lc-rs")]
+    pub(super) fn get() -> rustls::crypto::CryptoProvider {
+        rustls::crypto::aws_lc_rs::default_provider()
+    }
+
+    #[cfg(all(feature = "ring", not(feature = "aws-lc-rs")))]
+    pub(super) fn get() -> rustls::crypto::CryptoProvider {
+        rustls::crypto::ring::default_provider()
+    }
+
+    #[cfg(not(any(feature = "ring", feature = "aws-lc-rs")))]
+    compile_error!(
+        "the `tls-no-provider` feature needs a crypto provider: enable `ring` or `aws-lc-rs`, or use `tls` instead"
+    );
+
+    /// Never reached: the `compile_error!` above rejects this configuration. It
+    /// exists so that the `compile_error!` is the only diagnostic.
+    #[cfg(not(any(feature = "ring", feature = "aws-lc-rs")))]
+    pub(super) fn get() -> rustls::crypto::CryptoProvider {
+        unreachable!()
+    }
+}
+
+#[cfg(all(
+    not(feature = "tls-no-provider"),
+    any(feature = "replication", feature = "remote", feature = "sync")
 ))]
 fn connector() -> Result<hyper::client::HttpConnector> {
-    panic!("The `tls` feature is disabled, you must provide your own http connector");
+    panic!(
+        "no builtin connector: enable `tls`, or `tls-no-provider` with `ring`/`aws-lc-rs`, \
+         or supply your own connector"
+    );
 }
 
 impl std::fmt::Debug for Database {
