@@ -132,7 +132,8 @@ impl Connection {
         P: TryInto<Params>,
         P::Error: Into<crate::BoxError>,
     {
-        let stmt = Statement::prepare(self.clone(), self.raw, sql.into().as_str())?;
+        let sql = sql.into();
+        let stmt = Statement::prepare(self.clone(), self.raw, sql.as_str())?;
         let params = params
             .try_into()
             .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
@@ -331,11 +332,37 @@ impl Connection {
         P: TryInto<Params>,
         P::Error: Into<crate::BoxError>,
     {
-        let stmt = Statement::prepare(self.clone(), self.raw, sql.into().as_str())?;
+        let sql = sql.into();
+        let stmt = self.prepare_single_statement(&sql)?;
         let params = params
             .try_into()
             .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
         stmt.execute(&params)
+    }
+
+    /// Prepare a statement for the single-statement execute API.
+    ///
+    /// SQLite prepares the first statement in an input string and returns a
+    /// pointer to any remaining SQL.  `execute` is intentionally a
+    /// single-statement operation; callers that need more than one statement
+    /// should use `execute_batch` instead.  Check the tail before stepping the
+    /// first statement so a rejected input has no partial side effects.
+    pub(crate) fn prepare_single_statement(&self, sql: &str) -> Result<Statement> {
+        let stmt = Statement::prepare(self.clone(), self.raw, sql)?;
+        let tail = stmt.tail();
+        if tail != 0 && tail < sql.len() {
+            // A tail containing only whitespace or comments produces a null
+            // statement, and is valid after the first statement.  Preparing
+            // the tail lets SQLite perform that distinction for us.
+            let trailing = Statement::prepare(self.clone(), self.raw, &sql[tail..])?;
+            if !trailing.inner.raw_stmt.is_null() {
+                return Err(Error::Misuse(
+                    "multiple SQL statements are not supported; use execute_batch instead"
+                        .to_string(),
+                ));
+            }
+        }
+        Ok(stmt)
     }
 
     /// Execute the SQL statement synchronously.

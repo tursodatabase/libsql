@@ -311,6 +311,7 @@ impl RemoteConnection {
 impl Conn for RemoteConnection {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
+        parser::Statement::ensure_single(&stmts)?;
 
         if self.should_execute_local(&stmts[..])? {
             // TODO(lucio): See if we can arc the params here to cheaply clone
@@ -602,6 +603,7 @@ pub struct RemoteStatement {
 impl RemoteStatement {
     pub async fn prepare(conn: RemoteConnection, sql: &str) -> Result<Self> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
+        parser::Statement::ensure_single(&stmts)?;
 
         if conn.should_execute_local(&stmts[..])? {
             tracing::trace!("Preparing {sql} locally");
