@@ -26,6 +26,11 @@ pub enum Op {
 pub(crate) trait Conn {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64>;
 
+    async fn query(&self, sql: &str, params: Params) -> Result<Rows> {
+        let stmt = self.prepare(sql).await?;
+        stmt.query(params).await
+    }
+
     async fn execute_batch(&self, sql: &str) -> Result<BatchRows>;
 
     async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows>;
@@ -191,9 +196,7 @@ impl Connection {
     /// For more info on how to pass params check [`IntoParams`]'s docs and on how to
     /// extract values out of the rows check the [`Rows`] docs.
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> Result<Rows> {
-        let stmt = self.prepare(sql).await?;
-
-        stmt.query(params).await
+        self.conn.query(sql, params.into_params()?).await
     }
 
     /// Prepares a cached statement.
