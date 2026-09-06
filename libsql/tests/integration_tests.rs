@@ -925,3 +925,86 @@ fn assert_sqlite_error<T>(res: Result<T>, code: i32) {
         }
     }
 }
+
+#[tokio::test]
+async fn test_default_journal_mode_is_wal() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let db_path = temp_dir.path().join("wal_test.db");
+
+    // Test with Builder
+    let db = libsql::Builder::new_local(&db_path).build().await.unwrap();
+    let conn = db.connect().unwrap();
+    let mut rows = conn.query("PRAGMA journal_mode;", ()).await.unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    let mode: String = row.get(0).unwrap();
+    assert_eq!(mode.to_lowercase(), "wal");
+
+    // Test with Database::open
+    let db_path2 = temp_dir.path().join("wal_test2.db");
+    let db2 = Database::open(db_path2.to_str().unwrap()).unwrap();
+    let conn2 = db2.connect().unwrap();
+    let mut rows2 = conn2.query("PRAGMA journal_mode;", ()).await.unwrap();
+    let row2 = rows2.next().await.unwrap().unwrap();
+    let mode2: String = row2.get(0).unwrap();
+    assert_eq!(mode2.to_lowercase(), "wal");
+}
+
+#[tokio::test]
+async fn test_memory_journal_mode_is_memory() {
+    let db = libsql::Builder::new_local(":memory:")
+        .build()
+        .await
+        .unwrap();
+    let conn = db.connect().unwrap();
+    let mut rows = conn.query("PRAGMA journal_mode;", ()).await.unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    let mode: String = row.get(0).unwrap();
+    assert_eq!(mode.to_lowercase(), "memory");
+
+    let db2 = Database::open(":memory:").unwrap();
+    let conn2 = db2.connect().unwrap();
+    let mut rows2 = conn2.query("PRAGMA journal_mode;", ()).await.unwrap();
+    let row2 = rows2.next().await.unwrap().unwrap();
+    let mode2: String = row2.get(0).unwrap();
+    assert_eq!(mode2.to_lowercase(), "memory");
+}
+
+#[tokio::test]
+async fn test_readonly_connection_succeeds() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let db_path = temp_dir.path().join("readonly.db");
+
+    // Initialize database with table and data
+    {
+        let db = libsql::Builder::new_local(&db_path).build().await.unwrap();
+        let conn = db.connect().unwrap();
+        conn.execute("CREATE TABLE test (id INTEGER, val TEXT)", ())
+            .await
+            .unwrap();
+        conn.execute("INSERT INTO test VALUES (1, 'hello')", ())
+            .await
+            .unwrap();
+    }
+
+    // Reopen as read-only
+    let db_ro = libsql::Builder::new_local(&db_path)
+        .flags(libsql::OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .build()
+        .await
+        .unwrap();
+    let conn_ro = db_ro.connect().unwrap();
+
+    // Verify reading works and journal_mode is preserved
+    let mut rows = conn_ro
+        .query("SELECT val FROM test WHERE id = 1", ())
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    let val: String = row.get(0).unwrap();
+    assert_eq!(val, "hello");
+
+    let mut jm_rows = conn_ro.query("PRAGMA journal_mode;", ()).await.unwrap();
+    let jm_row = jm_rows.next().await.unwrap().unwrap();
+    let mode: String = jm_row.get(0).unwrap();
+    assert_eq!(mode.to_lowercase(), "wal");
+}
