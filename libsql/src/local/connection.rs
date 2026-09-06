@@ -77,22 +77,12 @@ impl Connection {
             writer: db.writer()?,
             authorizer: Arc::new(RwLock::new(None)),
         };
-
-        let is_read_only = (db.flags.bits() & ffi::SQLITE_OPEN_READONLY) != 0;
-        let is_memory = db.db_path == ":memory:" || db.db_path.is_empty();
-
-        if !is_read_only && !is_memory {
-            conn.query("PRAGMA journal_mode = WAL", Params::None)?;
-        }
-
         #[cfg(feature = "sync")]
         if let Some(_) = db.sync_ctx {
             // We need to make sure database is in WAL mode with checkpointing
             // disabled so that we can sync our changes back to a remote
             // server.
-            if is_memory {
-                conn.query("PRAGMA journal_mode = WAL", Params::None)?;
-            }
+            conn.query("PRAGMA journal_mode = WAL", Params::None)?;
             conn.wal_disable_checkpoint()?;
         }
         Ok(conn)

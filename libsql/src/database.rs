@@ -623,6 +623,11 @@ impl Database {
                     }
                 }
 
+                let is_read_only = flags.contains(OpenFlags::SQLITE_OPEN_READ_ONLY);
+                if !is_read_only {
+                    conn.query("PRAGMA journal_mode = WAL", crate::params::Params::None)?;
+                }
+
                 let conn = std::sync::Arc::new(LibsqlConnection { conn });
 
                 Ok(Connection { conn })
