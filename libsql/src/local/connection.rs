@@ -504,7 +504,15 @@ impl Connection {
         let (callback, user_data) = match hook {
             Some(_) => {
                 let callback = authorizer_callback as unsafe extern "C" fn(_, _, _, _, _, _) -> _;
-                let user_data = self as *const Connection as *mut ::std::os::raw::c_void;
+                // The callback user data must not point at this `Connection` value:
+                // `Connection` is `Clone`, clones share the raw sqlite handle, and
+                // SQLite may invoke the callback after the value that registered it
+                // has been dropped (#2272). Point at the shared `authorizer`
+                // allocation instead - it outlives the raw handle, because every
+                // owner of the handle (`Connection`, `Statement`, `Transaction`)
+                // holds a clone of this `Arc`.
+                let user_data =
+                    Arc::as_ptr(&self.authorizer) as *mut ::std::os::raw::c_void;
                 (Some(callback), user_data)
             }
             None => (None, std::ptr::null_mut()),
@@ -701,8 +709,11 @@ unsafe extern "C" fn authorizer_callback(
     database_name: *const ::std::os::raw::c_char,
     accessor: *const ::std::os::raw::c_char,
 ) -> ::std::os::raw::c_int {
-    let conn = user_data as *const Connection;
-    let hook = unsafe { (*conn).authorizer.read() };
+    let authorizer = user_data as *const RwLock<Option<AuthHook>>;
+    // SAFETY: `user_data` points at the `Arc` allocation behind the
+    // connection's shared `authorizer`, which outlives the raw sqlite handle
+    // this callback is registered on (see `Connection::authorizer`).
+    let hook = unsafe { (*authorizer).read() };
     let hook = match &*hook {
         Some(hook) => hook,
         None => return ffi::SQLITE_OK,

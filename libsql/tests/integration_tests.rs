@@ -925,3 +925,34 @@ fn assert_sqlite_error<T>(res: Result<T>, code: i32) {
         }
     }
 }
+
+#[tokio::test]
+async fn test_authorizer_survives_dropped_registering_connection() {
+    // Regression test for #2272: the authorizer callback used to receive a raw
+    // pointer to the `Connection` value that registered it. `transaction()`
+    // clones the connection (shared sqlite handle, different struct address),
+    // so dropping the original freed the address SQLite later dereferenced -
+    // a heap use-after-free reachable from safe Rust (reporter's ASan trace).
+    let fired = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let fired_hook = fired.clone();
+
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.authorizer(Some(Arc::new(move |ctx| {
+        let _ = format!("{:?}", ctx.action);
+        fired_hook.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Authorization::Allow
+    })))
+    .unwrap();
+
+    let tx = conn.transaction().await.unwrap();
+    // Free the exact struct whose address the pre-fix code handed to SQLite as
+    // the authorizer user data; the transaction's clone keeps the raw sqlite
+    // handle (and its callback registration) alive.
+    drop(conn);
+
+    tx.execute("CREATE TABLE t(x INTEGER)", ()).await.unwrap();
+    tx.commit().await.unwrap();
+
+    assert!(fired.load(std::sync::atomic::Ordering::SeqCst) > 0);
+}
