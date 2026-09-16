@@ -22,6 +22,14 @@ struct Container {
     cb: Box<UpdateHook>,
 }
 
+#[cfg(test)]
+thread_local! {
+    /// Number of `sqlite3_close_v2` calls made by [`Connection::disconnect`]
+    /// on this thread, so tests can check that a drop closes a handle exactly
+    /// once.
+    static CLOSE_COUNT: std::cell::Cell<usize> = std::cell::Cell::new(0);
+}
+
 /// A connection to a libSQL database.
 #[derive(Clone)]
 pub struct Connection {
@@ -105,9 +113,20 @@ impl Connection {
     }
 
     /// Disconnect from the database.
+    ///
+    /// Closes the underlying handle once the last clone of this connection
+    /// is gone. Calling this more than once is harmless: the handle is
+    /// forgotten after it is closed, so a later call (including the one from
+    /// `Drop`) never touches the freed `sqlite3`.
     pub fn disconnect(&mut self) {
+        if self.raw.is_null() {
+            return;
+        }
         if Arc::get_mut(&mut self.drop_ref).is_some() {
             unsafe { libsql_sys::ffi::sqlite3_close_v2(self.raw) };
+            #[cfg(test)]
+            CLOSE_COUNT.with(|count| count.set(count.get() + 1));
+            self.raw = std::ptr::null_mut();
         }
     }
 
@@ -812,11 +831,41 @@ extern "C" fn update_hook_cb(
 
 #[cfg(test)]
 mod tests {
+    use super::CLOSE_COUNT;
     use crate::{
         local::{Connection, Database},
         params::Params,
         OpenFlags,
     };
+
+    /// Dropping the last owner of a connection must close the `sqlite3`
+    /// handle exactly once. `LibsqlConnection` used to close it from its own
+    /// `Drop` and then again from the inner `Connection`'s `Drop`, so the
+    /// second `sqlite3_close_v2` ran on freed memory.
+    #[tokio::test]
+    async fn drop_closes_the_handle_exactly_once() {
+        let closes = || CLOSE_COUNT.with(|count| count.get());
+        let db = crate::Database::open(":memory:").unwrap();
+
+        // Nothing else refers to the connection.
+        let conn = db.connect().unwrap();
+        let before = closes();
+        drop(conn);
+        assert_eq!(closes() - before, 1);
+
+        // A statement keeps the connection alive and is its last owner.
+        let conn = db.connect().unwrap();
+        let stmt = conn.prepare("SELECT 1").await.unwrap();
+        let before = closes();
+        drop(conn);
+        assert_eq!(
+            closes() - before,
+            0,
+            "closed while a statement still uses it"
+        );
+        drop(stmt);
+        assert_eq!(closes() - before, 1);
+    }
 
     #[tokio::test]
     pub async fn test_kek() {

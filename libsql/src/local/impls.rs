@@ -105,12 +105,6 @@ impl Conn for LibsqlConnection {
     }
 }
 
-impl Drop for LibsqlConnection {
-    fn drop(&mut self) {
-        self.conn.disconnect()
-    }
-}
-
 pub(crate) struct LibsqlStmt(pub crate::local::Statement);
 
 #[async_trait::async_trait]
