@@ -87,6 +87,7 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 * [TablePlus](https://tableplus.com) &mdash; macOS, Windows, and Linux
 * [Dataflare](https://dataflare.app) &mdash; Paid (with limited free version) macOS, Windows, and Linux
 * [libSQL Studio](https://github.com/invisal/libsql-studio) - Runs in the browser
+* [LibreDB Studio](https://libredb.org) - Self-hosted, runs in the browser
 
 ## Getting Started
 
