@@ -403,6 +403,12 @@ impl ManagedConnectionWalWrapper {
     #[track_caller]
     fn release(&self) {
         let mut current = self.manager.current.lock();
+        self.release_locked(&mut current);
+    }
+
+    /// `release` for callers that already hold the `current` guard, so checking
+    /// that we own the slot and releasing it happen in one critical section.
+    fn release_locked(&self, current: &mut MutexGuard<Option<Slot>>) {
         let Some(slot) = current.take() else {
             unreachable!("no lock to release")
         };
@@ -410,10 +416,10 @@ impl ManagedConnectionWalWrapper {
         assert_eq!(slot.id, self.id);
 
         tracing::debug!("transaction finished after {:?}", slot.started_at.elapsed());
-        match self.schedule_next(&mut current) {
+        match self.schedule_next(current) {
             Some(_) => (),
             None => {
-                *current = None;
+                **current = None;
             }
         }
     }
@@ -583,15 +589,17 @@ impl WrapWal<InnerWal> for ManagedConnectionWalWrapper {
         let before = Instant::now();
         let ret = manager.close(wrapped, db, sync_flags, None);
         {
-            let current = self.manager.current.lock();
+            // Check and release under one guard: a Failure slot can be handed to
+            // the next waiter by another thread as soon as the guard is dropped,
+            // and release() would then assert on someone else's slot (abort).
+            let mut current = self.manager.current.lock();
             if let Some(slot @ Slot { id, .. }) = *current {
                 if id == self.id {
                     tracing::debug!(
                         id = self.id,
                         "connection closed without releasing lock: {slot:?}"
                     );
-                    drop(current);
-                    self.release()
+                    self.release_locked(&mut current);
                 }
             }
         }
