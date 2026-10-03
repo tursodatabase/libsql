@@ -39,21 +39,34 @@ struct Slot {
 }
 
 #[derive(Clone)]
-struct Abort(Arc<dyn Fn() + Send + Sync + 'static>);
+struct Abort(Arc<dyn Fn(&dyn Fn() -> bool) -> bool + Send + Sync + 'static>);
 
 impl Abort {
+    /// Force-rolls back the connection's transaction, but only if its connection
+    /// mutex is free and `still_owner` confirms (while we hold that mutex) that
+    /// it still owns the slot we decided to steal. Never blocks: the owner's
+    /// thread holds its own mutex while it runs a statement, possibly parked in
+    /// `acquire` for the very slot that would be handed to us next, so blocking
+    /// here deadlocks the whole write queue.
     fn from_conn<T: Wal + Send + 'static>(conn: &Arc<Mutex<CoreConnection<T>>>) -> Self {
         let conn = Arc::downgrade(conn);
-        Self(Arc::new(move || {
-            conn.upgrade()
-                .expect("connection still owns the slot, so it must exist")
-                .lock()
-                .force_rollback();
+        Self(Arc::new(move |still_owner: &dyn Fn() -> bool| {
+            let Some(conn) = conn.upgrade() else {
+                return false;
+            };
+            let Some(mut conn) = conn.try_lock() else {
+                return false;
+            };
+            if !still_owner() {
+                return false;
+            }
+            conn.force_rollback();
+            true
         }))
     }
 
-    fn abort(&self) {
-        (self.0)()
+    fn try_abort(&self, still_owner: &dyn Fn() -> bool) -> bool {
+        (self.0)(still_owner)
     }
 }
 
@@ -235,6 +248,7 @@ impl ManagedConnectionWalWrapper {
                             SlotState::Acquired(..) => {
                                 if since_started >= self.manager.txn_timeout_duration {
                                     let id = slot.id;
+                                    let started_at = slot.started_at;
                                     drop(current);
                                     let handle = {
                                         self.manager
@@ -242,15 +256,25 @@ impl ManagedConnectionWalWrapper {
                                             .abort_handle
                                             .lock()
                                             .get(&id)
-                                            .unwrap()
-                                            .clone()
+                                            .cloned()
                                     };
                                     // the guard must be dropped before rolling back, or end write txn will
-                                    // deadlock
-                                    tracing::debug!("forcing rollback of {id}");
-                                    handle.abort();
+                                    // deadlock. Re-check ownership under the owner's mutex: the slot may
+                                    // have moved on since we looked.
+                                    let still_owner = || {
+                                        matches!(
+                                            *self.manager.current.lock(),
+                                            Some(Slot { id: sid, started_at: s, state: SlotState::Acquired(..) })
+                                                if sid == id && s == started_at
+                                        )
+                                    };
+                                    let aborted =
+                                        handle.map_or(false, |h| h.try_abort(&still_owner));
+                                    tracing::debug!("forcing rollback of {id}: {aborted}");
                                     tracing::debug!(line = line!(), "parking");
-                                    parker.park();
+                                    // Bounded park either way: if the rollback didn't happen (owner busy
+                                    // or already gone), re-evaluate shortly instead of waiting forever.
+                                    parker.park_deadline(Instant::now() + Duration::from_millis(10));
                                     tracing::debug!(line = line!(), "unparked");
                                 } else {
                                     // otherwise we wait for the txn to timeout, or to be unparked by it
@@ -273,9 +297,14 @@ impl ManagedConnectionWalWrapper {
                                     && !warned_stale_slot
                                 {
                                     warned_stale_slot = true;
+                                    // Lock order current -> abort_handle is safe: nothing takes
+                                    // abort_handle and then current.
+                                    let owner_alive =
+                                        self.manager.inner.abort_handle.lock().contains_key(&slot.id);
                                     tracing::warn!(
-                                        "conn {} waiting on slot {slot:?} that has not progressed for {since_started:?}",
-                                        self.id
+                                        "conn {} waiting on slot {slot:?} that has not progressed for {since_started:?} (owner connection still open: {owner_alive}, queue len: {})",
+                                        self.id,
+                                        self.manager.write_queue.len()
                                     );
                                 }
                                 drop(current);
