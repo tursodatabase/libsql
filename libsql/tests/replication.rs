@@ -53,6 +53,36 @@ async fn inject_frames() {
         10
     );
 
+    // Single-statement APIs must reject a second statement before dispatching
+    // to the embedded replica, so the first statement cannot partially apply.
+    let result = conn
+        .execute("INSERT INTO test VALUES (99); UPDATE test SET c = 42", ())
+        .await;
+    assert!(
+        matches!(result, Err(libsql::Error::Misuse(message)) if message.contains("multiple SQL statements"))
+    );
+
+    let result = conn
+        .query("INSERT INTO test VALUES (100); SELECT c FROM test", ())
+        .await;
+    assert!(
+        matches!(result, Err(libsql::Error::Misuse(message)) if message.contains("multiple SQL statements"))
+    );
+
+    let mut rows = conn.query("select count(*) from test", ()).await.unwrap();
+    assert_eq!(
+        *rows
+            .next()
+            .await
+            .unwrap()
+            .unwrap()
+            .get_value(0)
+            .unwrap()
+            .as_integer()
+            .unwrap(),
+        10
+    );
+
     // inject the same frames again, this should be idempotent
     let mut frames: Vec<FrameMut> = DB
         .chunks(LIBSQL_PAGE_SIZE)

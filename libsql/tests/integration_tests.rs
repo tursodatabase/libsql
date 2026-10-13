@@ -630,6 +630,82 @@ async fn transaction() {
 }
 
 #[tokio::test]
+async fn single_statement_apis_reject_multiple_statements() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.execute("CREATE TABLE values_table (value INTEGER)", ())
+        .await
+        .unwrap();
+
+    let result = conn
+        .execute(
+            "INSERT INTO values_table VALUES (1); UPDATE values_table SET value = 2;",
+            (),
+        )
+        .await;
+    assert!(
+        matches!(result, Err(libsql::Error::Misuse(message)) if message.contains("multiple SQL statements"))
+    );
+
+    let mut rows = conn
+        .query("SELECT value FROM values_table", ())
+        .await
+        .unwrap();
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn query_rejects_multiple_statements_without_side_effects() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.execute("CREATE TABLE values_table (value INTEGER)", ())
+        .await
+        .unwrap();
+
+    let result = conn
+        .query(
+            "INSERT INTO values_table VALUES (1); UPDATE values_table SET value = 2;",
+            (),
+        )
+        .await;
+    assert!(
+        matches!(result, Err(libsql::Error::Misuse(message)) if message.contains("multiple SQL statements"))
+    );
+
+    let mut rows = conn
+        .query("SELECT value FROM values_table", ())
+        .await
+        .unwrap();
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn single_statement_apis_allow_trailing_comments() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.execute("CREATE TABLE values_table (value INTEGER)", ())
+        .await
+        .unwrap();
+
+    conn.execute(
+        "INSERT INTO values_table VALUES (1); -- trailing comment",
+        (),
+    )
+    .await
+    .unwrap();
+
+    let mut rows = conn
+        .query("SELECT value FROM values_table", ())
+        .await
+        .unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap(),
+        1
+    );
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
 async fn custom_params() {
     let conn = setup().await;
 
