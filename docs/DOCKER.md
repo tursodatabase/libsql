@@ -77,6 +77,14 @@ the Ed25519 public key in URL-safe base64.
 
 You can also pass the key directly in the env variable SQLD_AUTH_JWT_KEY.
 
+### `LIBSQL_ADMIN_AUTH_KEY`
+
+Auth key for the admin API (`SQLD_ADMIN_LISTEN_ADDR`). The admin API has no
+authentication at all unless this is set, and it manages every namespace on
+the instance (create/delete/fork, and per-namespace config including
+`jwt_key`). If you set `SQLD_ADMIN_LISTEN_ADDR` to anything reachable outside
+a fully trusted local process, set this too. See `docs/ADMIN_API.md`.
+
 ## Environment variables
 
 ### `SQLD_NODE`
