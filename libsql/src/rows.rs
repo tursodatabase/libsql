@@ -153,7 +153,7 @@ impl fmt::Debug for Row {
 }
 
 /// Convert a `Value` into the implementors type.
-pub trait FromValue: Sealed {
+pub trait FromValue {
     fn from_sql(val: Value) -> Result<Self>
     where
         Self: Sized;
@@ -164,7 +164,6 @@ impl FromValue for crate::Value {
         Ok(val)
     }
 }
-impl Sealed for crate::Value {}
 
 impl FromValue for i32 {
     fn from_sql(val: Value) -> Result<Self> {
@@ -175,7 +174,6 @@ impl FromValue for i32 {
         }
     }
 }
-impl Sealed for i32 {}
 
 impl FromValue for u32 {
     fn from_sql(val: Value) -> Result<Self> {
@@ -186,7 +184,6 @@ impl FromValue for u32 {
         }
     }
 }
-impl Sealed for u32 {}
 
 impl FromValue for i64 {
     fn from_sql(val: Value) -> Result<Self> {
@@ -197,7 +194,6 @@ impl FromValue for i64 {
         }
     }
 }
-impl Sealed for i64 {}
 
 impl FromValue for u64 {
     fn from_sql(val: Value) -> Result<Self> {
@@ -208,7 +204,6 @@ impl FromValue for u64 {
         }
     }
 }
-impl Sealed for u64 {}
 
 impl FromValue for f64 {
     fn from_sql(val: Value) -> Result<Self> {
@@ -219,7 +214,6 @@ impl FromValue for f64 {
         }
     }
 }
-impl Sealed for f64 {}
 
 impl FromValue for Vec<u8> {
     fn from_sql(val: Value) -> Result<Self> {
@@ -230,7 +224,6 @@ impl FromValue for Vec<u8> {
         }
     }
 }
-impl Sealed for Vec<u8> {}
 
 impl<const N: usize> FromValue for [u8; N] {
     fn from_sql(val: Value) -> Result<Self> {
@@ -243,7 +236,6 @@ impl<const N: usize> FromValue for [u8; N] {
         }
     }
 }
-impl<const N: usize> Sealed for [u8; N] {}
 
 impl FromValue for String {
     fn from_sql(val: Value) -> Result<Self> {
@@ -254,7 +246,6 @@ impl FromValue for String {
         }
     }
 }
-impl Sealed for String {}
 
 impl FromValue for bool {
     fn from_sql(val: Value) -> Result<Self> {
@@ -269,7 +260,6 @@ impl FromValue for bool {
         }
     }
 }
-impl Sealed for bool {}
 
 impl<T> FromValue for Option<T>
 where
@@ -282,7 +272,6 @@ where
         }
     }
 }
-impl<T> Sealed for Option<T> {}
 
 pub(crate) trait ColumnsInner {
     fn column_name(&self, idx: i32) -> Option<&str>;
@@ -294,9 +283,3 @@ pub(crate) trait RowInner: ColumnsInner + fmt::Debug {
     fn column_value(&self, idx: i32) -> Result<Value>;
     fn column_str(&self, idx: i32) -> Result<&str>;
 }
-
-mod sealed {
-    pub trait Sealed {}
-}
-
-use sealed::Sealed;
