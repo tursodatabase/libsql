@@ -32,6 +32,28 @@ impl BottomlessWalWrapper {
     }
 }
 
+/// Returns true if the current generation's snapshot upload has completed.
+/// When the upload failed, or was never started (e.g. it was interrupted by a
+/// process restart or a crashed task), it is re-triggered so that the backup
+/// pipeline heals itself instead of refusing checkpoints until the process is
+/// restarted. Re-uploading the snapshot of the current generation at any later
+/// point in time is correct: the main database file only changes on a TRUNCATE
+/// checkpoint, and checkpoints are refused until the snapshot upload succeeds.
+async fn ensure_snapshotted(replicator: &mut Replicator) -> bool {
+    if replicator.is_snapshotted().await {
+        return true;
+    }
+    if replicator.snapshot_in_flight() {
+        tracing::debug!("snapshot upload for the current generation is still in flight");
+    } else {
+        tracing::warn!("current generation is missing its snapshot, re-triggering snapshot");
+        if let Err(e) = replicator.snapshot_main_db_file(false).await {
+            tracing::error!("failed to re-trigger a snapshot upload: {e}");
+        }
+    }
+    false
+}
+
 impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
     fn savepoint_undo(
         &mut self,
@@ -136,7 +158,14 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
                         tracing::debug!(
                             "No committed changes in this generation, not snapshotting"
                         );
-                        replicator.skip_snapshot_for_current_generation();
+                        // The checkpoint is skipped, but the current generation
+                        // still needs its snapshot for the next checkpoint to be
+                        // allowed, so re-trigger it here if it failed. The failed
+                        // state must never be overwritten with a success marker:
+                        // that would let the next checkpoint rotate the generation
+                        // while leaving no snapshot of it behind, silently
+                        // degrading restore.
+                        ensure_snapshotted(replicator).await;
                         return Err(Error::new(SQLITE_BUSY));
                     }
 
@@ -163,8 +192,7 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
                         }
                     }
                     tracing::debug!("commited after {:?}", before.elapsed());
-                    let snapshotted = replicator.is_snapshotted().await;
-                    if !snapshotted {
+                    if !ensure_snapshotted(replicator).await {
                         tracing::warn!("previous generation not snapshotted, skipping checkpoint");
                         return Err(Error::new(SQLITE_BUSY));
                     }

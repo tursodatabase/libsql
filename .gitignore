@@ -5,6 +5,10 @@
 
 libsql-server/testrollbackrestore/**
 libsql-server/testbackuprestore/**
+libsql-server/testsnapshotretry/**
+libsql-server/testsnapshotwedge/**
+libsql-server/testsnapshotoverlap/**
+libsql-server/testsnapshotdep/**
 libsql-sqlite3/**.o.tmp
 /libsql-ffi/bundled/SQLite3MultipleCiphers/build/**
 # will be copied from bundled/src
