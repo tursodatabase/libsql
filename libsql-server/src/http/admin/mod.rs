@@ -257,6 +257,7 @@ async fn handle_get_config<C: Connector>(
         block_writes: config.block_writes,
         block_reason: config.block_reason.clone(),
         max_db_size: Some(max_db_size),
+        max_row_size: Some(config.max_row_size),
         heartbeat_url: config.heartbeat_url.clone().map(|u| u.into()),
         jwt_key: config.jwt_key.clone(),
         allow_attach: config.allow_attach,
@@ -302,6 +303,8 @@ struct HttpDatabaseConfig {
     #[serde(default)]
     max_db_size: Option<bytesize::ByteSize>,
     #[serde(default)]
+    max_row_size: Option<u64>,
+    #[serde(default)]
     heartbeat_url: Option<String>,
     #[serde(default)]
     jwt_key: Option<String>,
@@ -333,6 +336,7 @@ async fn handle_post_config<C>(
     updated.block_reason = req.block_reason;
     updated.allow_attach = req.allow_attach;
     updated.txn_timeout = req.txn_timeout_s.map(Duration::from_secs);
+    updated.max_row_size = req.max_row_size.unwrap_or(updated.max_row_size);
     if let Some(size) = req.max_db_size {
         updated.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
     }
