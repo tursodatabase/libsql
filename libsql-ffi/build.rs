@@ -89,7 +89,12 @@ fn copy_with_cp(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> 
     {
         Ok(status) if status.success() => Ok(()),
         _ => match fs::copy(from.as_ref(), to.as_ref()) {
-            Err(err) if err.kind() == io::ErrorKind::InvalidInput => copy_dir_all(from, to),
+            Err(err)
+                if err.kind() == io::ErrorKind::InvalidInput
+                    || err.kind() == io::ErrorKind::PermissionDenied =>
+            {
+                copy_dir_all(from, to)
+            }
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         },
