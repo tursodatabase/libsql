@@ -53,6 +53,7 @@ impl Statement {
     pub fn run(&self, params: &Params) -> Result<()> {
         self.bind(params);
         let err = self.inner.step();
+        self.inner.reset();
         match err {
             crate::ffi::SQLITE_DONE => Ok(()),
             crate::ffi::SQLITE_ROW => Ok(()),
@@ -124,6 +125,7 @@ impl Statement {
     pub fn execute(&self, params: &Params) -> Result<u64> {
         self.bind(params);
         let err = self.inner.step();
+        self.inner.reset();
         match err {
             crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
