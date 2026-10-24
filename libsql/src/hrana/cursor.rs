@@ -44,7 +44,73 @@ pub struct StepBeginEntry {
 #[derive(Deserialize, Debug)]
 pub struct StepEndEntry {
     pub affected_row_count: u32,
-    pub last_inserted_rowid: Option<String>,
+    /// The Hrana 3 spec types this field as `string | null`, but sqld serializes
+    /// the underlying protobuf `sint64` as a JSON number; accept both encodings.
+    #[serde(deserialize_with = "deserialize_last_insert_rowid")]
+    pub last_insert_rowid: Option<i64>,
+}
+
+fn deserialize_last_insert_rowid<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<i64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    struct RowidVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for RowidVisitor {
+        type Value = Option<i64>;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("an integer, a string-encoded integer, or null")
+        }
+
+        fn visit_unit<E: serde::de::Error>(
+            self,
+        ) -> std::result::Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_none<E: serde::de::Error>(
+            self,
+        ) -> std::result::Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_some<D>(self, deserializer: D) -> std::result::Result<Self::Value, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            deserializer.deserialize_any(self)
+        }
+
+        fn visit_i64<E: serde::de::Error>(
+            self,
+            v: i64,
+        ) -> std::result::Result<Self::Value, E> {
+            Ok(Some(v))
+        }
+
+        fn visit_u64<E: serde::de::Error>(
+            self,
+            v: u64,
+        ) -> std::result::Result<Self::Value, E> {
+            i64::try_from(v)
+                .map(Some)
+                .map_err(|_| E::custom("last_insert_rowid out of range"))
+        }
+
+        fn visit_str<E: serde::de::Error>(
+            self,
+            v: &str,
+        ) -> std::result::Result<Self::Value, E> {
+            v.parse()
+                .map(Some)
+                .map_err(|_| E::custom("invalid last_insert_rowid"))
+        }
+    }
+
+    deserializer.deserialize_option(RowidVisitor)
 }
 
 #[derive(Deserialize, Debug)]
@@ -96,7 +162,6 @@ where
     }
 
     pub async fn into_batch_result(mut self) -> Result<BatchResult> {
-        use serde::de::Error;
         //FIXME: this is for the compatibility with the current libsql client API,
         //       which expects BatchResult to be returned
         let mut step_results = Vec::new();
@@ -117,17 +182,7 @@ where
                 }
             }
             let affected_row_count = step.affected_rows() as u64;
-            let last_insert_rowid = if let Some(rowid) = step.last_inserted_rowid() {
-                let id = rowid.parse::<i64>().map_err(|_| {
-                    serde_json::Error::invalid_value(
-                        serde::de::Unexpected::Str(rowid),
-                        &"decimal integer as a string",
-                    )
-                })?;
-                Some(id)
-            } else {
-                None
-            };
+            let last_insert_rowid = step.last_insert_rowid();
             let step_res = StmtResult {
                 cols,
                 rows,
@@ -206,7 +261,7 @@ where
                 cols: begin.cols.into(),
                 step_no: begin.step,
                 affected_rows: 0,
-                last_inserted_rowid: None,
+                last_insert_rowid: None,
             },
         })
     }
@@ -240,8 +295,8 @@ where
         self.state.affected_rows
     }
 
-    pub fn last_inserted_rowid(&self) -> Option<&str> {
-        self.state.last_inserted_rowid.as_deref()
+    pub fn last_insert_rowid(&self) -> Option<i64> {
+        self.state.last_insert_rowid
     }
 }
 
@@ -293,7 +348,7 @@ where
                 cols: begin.cols.into(),
                 step_no: begin.step,
                 affected_rows: 0,
-                last_inserted_rowid: None,
+                last_insert_rowid: None,
             },
         })
     }
@@ -318,8 +373,8 @@ where
         self.state.affected_rows
     }
 
-    pub fn last_inserted_rowid(&self) -> Option<&str> {
-        self.state.last_inserted_rowid.as_deref()
+    pub fn last_insert_rowid(&self) -> Option<i64> {
+        self.state.last_insert_rowid
     }
 }
 
@@ -393,7 +448,7 @@ struct CursorStepState {
     cols: Arc<[Col]>,
     step_no: u32,
     affected_rows: u32,
-    last_inserted_rowid: Option<String>,
+    last_insert_rowid: Option<i64>,
 }
 
 impl CursorStepState {
@@ -405,7 +460,7 @@ impl CursorStepState {
             }
             CursorEntry::StepEnd(end) => {
                 self.affected_rows = end.affected_row_count;
-                self.last_inserted_rowid = end.last_inserted_rowid;
+                self.last_insert_rowid = end.last_insert_rowid;
                 None
             }
             CursorEntry::StepBegin(begin) => Some(Err(HranaError::CursorError(
@@ -486,5 +541,35 @@ mod test {
 
         let row = step.next().await;
         assert!(row.is_none(), "last row should be None: {:?}", row);
+
+        assert_eq!(step.affected_rows(), 0);
+        assert_eq!(step.last_insert_rowid(), None);
+    }
+
+    #[tokio::test]
+    async fn cursor_step_end_last_insert_rowid() {
+        // sqld serializes the protobuf `sint64` field as a JSON number...
+        let stream = byte_stream(vec![
+            json!({"baton": null, "base_url": null}),
+            json!({"type": "step_begin", "step": 0, "cols": []}),
+            json!({"type": "step_end", "affected_row_count": 1, "last_insert_rowid": 42}),
+        ]);
+        let (mut cursor, _) = Cursor::open(stream).await.unwrap();
+        let mut step = cursor.next_step().await.unwrap();
+        assert!(step.next().await.is_none());
+        assert_eq!(step.affected_rows(), 1);
+        assert_eq!(step.last_insert_rowid(), Some(42));
+
+        // ...while the Hrana 3 spec types the same field as `string | null`.
+        let stream = byte_stream(vec![
+            json!({"baton": null, "base_url": null}),
+            json!({"type": "step_begin", "step": 0, "cols": []}),
+            json!({"type": "step_end", "affected_row_count": 1, "last_insert_rowid": "84"}),
+        ]);
+        let (mut cursor, _) = Cursor::open(stream).await.unwrap();
+        let mut step = cursor.next_step().await.unwrap();
+        assert!(step.next().await.is_none());
+        assert_eq!(step.affected_rows(), 1);
+        assert_eq!(step.last_insert_rowid(), Some(84));
     }
 }
