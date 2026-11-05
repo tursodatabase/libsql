@@ -100,6 +100,23 @@ async fn add_update_hook() {
 }
 
 #[tokio::test]
+async fn update_hook_closure_dropped_on_disconnect() {
+    let conn = setup().await;
+
+    let flag = Arc::new(());
+    let weak = Arc::downgrade(&flag);
+
+    conn.add_update_hook(Box::new(move |_op, _db, _table, _row_id| {
+        let _ = &flag;
+    }))
+    .unwrap();
+
+    assert!(weak.upgrade().is_some());
+    drop(conn);
+    assert!(weak.upgrade().is_none(), "update hook closure captures must be deallocated on connection drop");
+}
+
+#[tokio::test]
 async fn connection_drops_before_statements() {
     let db = Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();

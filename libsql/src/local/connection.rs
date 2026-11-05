@@ -108,8 +108,14 @@ impl Connection {
     pub fn disconnect(&mut self) {
         if Arc::get_mut(&mut self.drop_ref).is_some() {
             unsafe {
-                libsql_sys::ffi::sqlite3_close_v2(self.raw);
-                self.raw = std::ptr::null_mut();
+                if !self.raw.is_null() {
+                    let old_data = ffi::sqlite3_update_hook(self.raw, None, std::ptr::null_mut());
+                    if !old_data.is_null() {
+                        let _ = Box::from_raw(old_data as *mut Container);
+                    }
+                    libsql_sys::ffi::sqlite3_close_v2(self.raw);
+                    self.raw = std::ptr::null_mut();
+                }
             };
         }
     }
