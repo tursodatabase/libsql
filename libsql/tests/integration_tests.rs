@@ -113,7 +113,10 @@ async fn update_hook_closure_dropped_on_disconnect() {
 
     assert!(weak.upgrade().is_some());
     drop(conn);
-    assert!(weak.upgrade().is_none(), "update hook closure captures must be deallocated on connection drop");
+    assert!(
+        weak.upgrade().is_none(),
+        "update hook closure captures must be deallocated on connection drop"
+    );
 }
 
 #[tokio::test]
