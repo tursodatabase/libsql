@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 
-use crate::TransactionBehavior;
+use crate::{Limit, TransactionBehavior};
 
 use libsql_sys::ffi;
 use parking_lot::RwLock;
@@ -693,6 +693,14 @@ impl Connection {
 
     pub fn get_reserved_bytes(&self) -> Result<i32> {
         self.reserved_bytes(None)
+    }
+
+    pub fn limit(&self, limit: Limit) -> i32 {
+        unsafe { ffi::sqlite3_limit(self.raw, limit as c_int, -1) }
+    }
+
+    pub fn set_limit(&self, limit: Limit, new_val: i32) -> i32 {
+        unsafe { ffi::sqlite3_limit(self.raw, limit as c_int, new_val) }
     }
 }
 

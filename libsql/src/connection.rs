@@ -9,7 +9,7 @@ use crate::params::{IntoParams, Params};
 use crate::rows::Rows;
 use crate::statement::Statement;
 use crate::transaction::Transaction;
-use crate::{Result, TransactionBehavior};
+use crate::{Limit, Result, TransactionBehavior};
 
 pub type AuthHook = Arc<dyn Fn(&AuthContext) -> Authorization>;
 
@@ -70,6 +70,14 @@ pub(crate) trait Conn {
 
     fn add_update_hook(&self, _cb: Box<dyn Fn(Op, &str, &str, i64) + Send + Sync>) -> Result<()> {
         Err(crate::Error::UpdateHookNotSupported)
+    }
+
+    fn limit(&self, _limit: Limit) -> Result<i32> {
+        Err(crate::Error::LimitNotSupported)
+    }
+
+    fn set_limit(&self, _limit: Limit, _new_val: i32) -> Result<i32> {
+        Err(crate::Error::LimitNotSupported)
     }
 }
 
@@ -301,6 +309,33 @@ impl Connection {
 
     pub fn add_update_hook(&self, cb: Box<UpdateHook>) -> Result<()> {
         self.conn.add_update_hook(cb)
+    }
+
+    /// Returns the current value of a run-time limit for this connection.
+    ///
+    /// Only supported for local databases and embedded replicas. Remote
+    /// connections return [`Error::LimitNotSupported`](crate::Error::LimitNotSupported).
+    ///
+    /// See SQLite's documentation on `sqlite3_limit` for more information:
+    /// https://sqlite.org/c3ref/limit.html
+    pub fn limit(&self, limit: Limit) -> Result<i32> {
+        self.conn.limit(limit)
+    }
+
+    /// Changes a run-time limit for this connection and returns its previous
+    /// value.
+    ///
+    /// SQLite silently caps `new_val` at the limit's compile-time maximum, so
+    /// this can lower a limit but never raise it past that maximum. A negative
+    /// `new_val` leaves the limit unchanged.
+    ///
+    /// Only supported for local databases and embedded replicas. Remote
+    /// connections return [`Error::LimitNotSupported`](crate::Error::LimitNotSupported).
+    ///
+    /// See SQLite's documentation on `sqlite3_limit` for more information:
+    /// https://sqlite.org/c3ref/limit.html
+    pub fn set_limit(&self, limit: Limit, new_val: i32) -> Result<i32> {
+        self.conn.set_limit(limit, new_val)
     }
 }
 

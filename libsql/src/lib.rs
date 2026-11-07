@@ -158,6 +158,7 @@ pub use params::params_from_iter;
 mod auth;
 mod connection;
 mod database;
+mod limits;
 mod load_extension_guard;
 
 cfg_parser! {
@@ -182,6 +183,7 @@ pub use self::{
     auth::{AuthAction, AuthContext, Authorization},
     connection::{AuthHook, BatchRows, Connection, Op},
     database::{Builder, Database},
+    limits::Limit,
     load_extension_guard::LoadExtensionGuard,
     rows::{Column, Row, Rows},
     statement::Statement,

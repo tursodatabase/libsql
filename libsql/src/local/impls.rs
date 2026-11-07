@@ -8,7 +8,7 @@ use crate::{
     rows::{ColumnsInner, RowInner, RowsInner},
     statement::Stmt,
     transaction::Tx,
-    Column, Connection, Result, Row, Rows, Statement, Transaction, TransactionBehavior, Value,
+    Column, Connection, Limit, Result, Row, Rows, Statement, Transaction, TransactionBehavior, Value,
     ValueType,
 };
 
@@ -102,6 +102,14 @@ impl Conn for LibsqlConnection {
 
     fn add_update_hook(&self, cb: Box<UpdateHook>) -> Result<()> {
         Ok(self.conn.add_update_hook(cb))
+    }
+
+    fn limit(&self, limit: Limit) -> Result<i32> {
+        Ok(self.conn.limit(limit))
+    }
+
+    fn set_limit(&self, limit: Limit, new_val: i32) -> Result<i32> {
+        Ok(self.conn.set_limit(limit, new_val))
     }
 }
 

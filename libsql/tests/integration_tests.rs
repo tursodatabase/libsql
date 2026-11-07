@@ -4,7 +4,7 @@ use futures::{StreamExt, TryStreamExt};
 use libsql::{
     named_params, params,
     params::{IntoParams, IntoValue},
-    AuthAction, Authorization, Connection, Database, Op, Result, Value,
+    AuthAction, Authorization, Connection, Database, Limit, Op, Result, Value,
 };
 use rand::distributions::Uniform;
 use rand::prelude::*;
@@ -911,6 +911,81 @@ async fn test_ignore_authorizer() {
     let rows = conn.query("SELECT * FROM users", ()).await.unwrap();
     // There should be no rows
     assert_eq!(rows.into_stream().count().await, 0);
+}
+
+#[tokio::test]
+async fn test_set_length_limit() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    let default_length = conn.limit(Limit::Length).unwrap();
+    assert!(default_length > 1024 * 1024);
+
+    let big_format = "SELECT length(format('%2000000s', 'x'))";
+    assert_eq!(
+        query_value(&conn, big_format).await.unwrap(),
+        Value::Integer(2_000_000)
+    );
+
+    let previous = conn.set_limit(Limit::Length, 1024 * 1024).unwrap();
+    assert_eq!(previous, default_length);
+    assert_eq!(conn.limit(Limit::Length).unwrap(), 1024 * 1024);
+
+    // SQLite's printf() family stops at the limit and returns NULL instead of
+    // raising an error. Other functions fail with SQLITE_TOOBIG.
+    assert_eq!(query_value(&conn, big_format).await.unwrap(), Value::Null);
+    assert_sqlite_error(
+        query_value(&conn, "SELECT length(zeroblob(2000000))").await,
+        libsql::ffi::SQLITE_TOOBIG,
+    );
+    assert_eq!(
+        query_value(&conn, "SELECT length(format('%1000s', 'x'))")
+            .await
+            .unwrap(),
+        Value::Integer(1000)
+    );
+}
+
+async fn query_value(conn: &Connection, sql: &str) -> Result<Value> {
+    let mut rows = conn.query(sql, ()).await?;
+    let row = rows.next().await?.expect("expected a row");
+    row.get_value(0)
+}
+
+#[tokio::test]
+async fn test_negative_limit_leaves_value_unchanged() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.set_limit(Limit::Length, 4096).unwrap();
+    assert_eq!(conn.set_limit(Limit::Length, -1).unwrap(), 4096);
+    assert_eq!(conn.limit(Limit::Length).unwrap(), 4096);
+}
+
+#[tokio::test]
+async fn test_limit_is_per_connection() {
+    let db = Database::open(":memory:").unwrap();
+    let limited = db.connect().unwrap();
+    let other = db.connect().unwrap();
+    let default_length = other.limit(Limit::Length).unwrap();
+    limited.set_limit(Limit::Length, 4096).unwrap();
+    assert_eq!(limited.limit(Limit::Length).unwrap(), 4096);
+    assert_eq!(other.limit(Limit::Length).unwrap(), default_length);
+}
+
+#[tokio::test]
+async fn test_limit_not_supported_on_remote() {
+    let db = libsql::Builder::new_remote("http://127.0.0.1:1".to_string(), String::new())
+        .build()
+        .await
+        .unwrap();
+    let conn = db.connect().unwrap();
+    assert!(matches!(
+        conn.limit(Limit::Length),
+        Err(libsql::Error::LimitNotSupported)
+    ));
+    assert!(matches!(
+        conn.set_limit(Limit::Length, 4096),
+        Err(libsql::Error::LimitNotSupported)
+    ));
 }
 
 fn assert_sqlite_error<T>(res: Result<T>, code: i32) {

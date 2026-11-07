@@ -197,4 +197,12 @@ impl Conn for SyncedConnection {
     fn get_reserved_bytes(&self) -> Result<i32> {
         self.local.get_reserved_bytes()
     }
+
+    fn limit(&self, limit: crate::Limit) -> Result<i32> {
+        Ok(self.local.limit(limit))
+    }
+
+    fn set_limit(&self, limit: crate::Limit, new_val: i32) -> Result<i32> {
+        Ok(self.local.set_limit(limit, new_val))
+    }
 }
