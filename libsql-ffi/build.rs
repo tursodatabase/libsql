@@ -38,9 +38,9 @@ fn main() {
         "bundled/bindings/bindgen.rs"
     };
 
-    let dir = env!("CARGO_MANIFEST_DIR");
+    let dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
 
-    let full_src_path = Path::new(dir).join(bindgen_rs_path);
+    let full_src_path = dir.join(bindgen_rs_path);
     copy_with_cp(full_src_path, &out_path).unwrap();
 
     println!("cargo:lib_dir={out_dir}");
@@ -192,8 +192,8 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         bindings::write_to_out_dir(header, bindgen_rs_path.as_ref());
     }
 
-    let dir = env!("CARGO_MANIFEST_DIR");
-    copy_with_cp(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+    let dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
+    copy_with_cp(dir.join(bindgen_rs_path), out_path).unwrap();
 
     let mut cfg = cc::Build::new();
     cfg.flag("-std=c11")
@@ -453,8 +453,8 @@ fn build_multiple_ciphers(out_path: &Path) -> PathBuf {
         bindings::write_to_out_dir(header, bindgen_rs_path.as_ref());
     }
 
-    let dir = env!("CARGO_MANIFEST_DIR");
-    copy_with_cp(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+    let dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
+    copy_with_cp(dir.join(bindgen_rs_path), out_path).unwrap();
 
     let out_dir = env::var("OUT_DIR").unwrap();
 
