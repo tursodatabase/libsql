@@ -192,6 +192,9 @@ where
 pub struct OwnedCursorStep<S> {
     cursor: Option<Cursor<S>>,
     state: CursorStepState,
+    /// Set once the step's `StepEnd` arrived. The rest of the response is then
+    /// read to its end, so the HTTP connection can be reused.
+    step_ended: bool,
 }
 
 impl<S> OwnedCursorStep<S>
@@ -208,6 +211,7 @@ where
                 affected_rows: 0,
                 last_inserted_rowid: None,
             },
+            step_ended: false,
         })
     }
 
@@ -252,25 +256,33 @@ where
     type Item = Result<Row>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let cursor = if let Some(cursor) = &mut self.cursor {
-            Pin::new(cursor)
-        } else {
-            return Poll::Ready(None);
-        };
-        match ready!(cursor.poll_next(cx)) {
-            None => {
-                self.cursor = None;
-                Poll::Ready(None)
-            }
-            Some(Err(e)) => Poll::Ready(Some(Err(HranaError::CursorError(
-                CursorResponseError::Other(e.to_string()),
-            )))),
-            Some(Ok(entry)) => {
-                let result = self.state.update(entry);
-                if result.is_none() {
-                    self.cursor.take();
+        loop {
+            let cursor = if let Some(cursor) = &mut self.cursor {
+                Pin::new(cursor)
+            } else {
+                return Poll::Ready(None);
+            };
+            match ready!(cursor.poll_next(cx)) {
+                None => {
+                    self.cursor = None;
+                    return Poll::Ready(None);
                 }
-                Poll::Ready(result)
+                // The step's rows are complete, so a failure while reading
+                // the rest of the response only loses the connection.
+                Some(Err(_)) if self.step_ended => {
+                    self.cursor = None;
+                    return Poll::Ready(None);
+                }
+                Some(Err(e)) => {
+                    return Poll::Ready(Some(Err(HranaError::CursorError(
+                        CursorResponseError::Other(e.to_string()),
+                    ))))
+                }
+                Some(Ok(_)) if self.step_ended => {}
+                Some(Ok(entry)) => match self.state.update(entry) {
+                    Some(result) => return Poll::Ready(Some(result)),
+                    None => self.step_ended = true,
+                },
             }
         }
     }
@@ -486,5 +498,32 @@ mod test {
 
         let row = step.next().await;
         assert!(row.is_none(), "last row should be None: {:?}", row);
+    }
+
+    #[tokio::test]
+    async fn owned_step_reads_the_response_to_its_end() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc;
+
+        let ended = Arc::new(AtomicBool::new(false));
+        let ended_flag = ended.clone();
+        let entries = byte_stream(vec![
+            json!({"baton": null, "base_url": null}),
+            json!({"type": "step_begin", "step": 0, "cols": [{"name": "id"}]}),
+            json!({"type": "row", "row": [{"type": "integer", "value": "1"}]}),
+            json!({"type": "step_end", "affected_row_count": 0, "last_insert_rowid": null}),
+        ]);
+        let byte_stream: ByteStream =
+            Box::new(entries.chain(futures::stream::poll_fn(move |_| {
+                ended_flag.store(true, Ordering::SeqCst);
+                std::task::Poll::Ready(None)
+            })));
+        let (cursor, _) = Cursor::open(byte_stream).await.unwrap();
+        let mut step = cursor.next_step_owned().await.unwrap();
+
+        assert!(step.next().await.unwrap().is_ok());
+        assert!(!ended.load(Ordering::SeqCst));
+        assert!(step.next().await.is_none());
+        assert!(ended.load(Ordering::SeqCst));
     }
 }
