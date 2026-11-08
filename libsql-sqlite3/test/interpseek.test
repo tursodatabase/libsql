@@ -1,0 +1,101 @@
+# 2026 libsql
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for interpolation search inside
+# table (rowid) b-tree pages (sqlite3BtreeTableMoveto() in btree.c).  The search
+# predicts the slot of a rowid from "knots" taken from the parent page's
+# separator keys and then corrects with an exponential + binary search, so
+# its result must always equal that of a plain binary search.
+#
+# Every key distribution below is loaded into an INTEGER PRIMARY KEY table
+# t (all lookups are rowid seeks that go through sqlite3BtreeTableMoveto)
+# and into a mirror table m with no usable index (all lookups are full
+# scans).  Point, range and BETWEEN lookups are then compared for a set of
+# probes made of present keys, their neighbours and the INT64 extremes,
+# before and after DML that leaves separator keys stale.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix interpseek
+
+# One row per probe: the answer to each kind of rowid seek on table $tbl.
+proc seek_results {tbl} {
+  db eval [string map [list %T% $tbl] {
+    SELECT k,
+      (SELECT b      FROM %T% WHERE a=k),
+      (SELECT max(a) FROM %T% WHERE a<k),
+      (SELECT max(a) FROM %T% WHERE a<=k),
+      (SELECT min(a) FROM %T% WHERE a>k),
+      (SELECT min(a) FROM %T% WHERE a>=k),
+      (SELECT count(*) || ',' || total(b) FROM %T% WHERE a BETWEEN k AND k+1000)
+    FROM p ORDER BY k
+  }]
+}
+
+# Key generators.  x runs from 1 to $n.  The multiplier 2654435761 is odd,
+# so (x*2654435761) % 2^32 is a bijection and the "random" keys are
+# distinct; the scaled result stays well inside the 64-bit range.
+set DIST(dense)  {x}
+set DIST(gaps)   {x*7 + (x*x)%5}
+set DIST(random) {((x*2654435761) % 4294967296) * 1073741823 - 2305843009213693952}
+set DIST(skewed) {x*x*x*x}
+set DIST(neg)    {-(x*x*13) + 1000}
+set DIST(edge)   {CASE WHEN x%2 THEN 9223372036854775807 - (x/2)*(x/2)*(x/2)
+                       ELSE -9223372036854775807 - 1 + (x/2)*3 END}
+
+set tn 0
+foreach {pgsz n} {512 3000 4096 8000} {
+  foreach dist {dense gaps random skewed neg edge} {
+    incr tn
+    reset_db
+    execsql "PRAGMA page_size = $pgsz"
+    do_execsql_test 1.$tn.0.$dist.$pgsz [string map [list %K% $DIST($dist) %N% $n] {
+      CREATE TABLE t(a INTEGER PRIMARY KEY, b);
+      CREATE TABLE m(a INT, b);
+      CREATE TABLE p(k INT PRIMARY KEY) WITHOUT ROWID;
+      WITH s(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM s WHERE x<%N%)
+      INSERT OR IGNORE INTO t SELECT (%K%), x%1000 FROM s ORDER BY random();
+      INSERT INTO m SELECT a, b FROM t;
+
+      INSERT OR IGNORE INTO p
+        SELECT a FROM (SELECT a, row_number() OVER (ORDER BY a) AS rn FROM t)
+        WHERE rn%41=0 OR rn<=3 OR rn>%N%-3;
+      INSERT OR IGNORE INTO p
+        SELECT k-1 FROM p WHERE k>-9223372036854775807-1;
+      INSERT OR IGNORE INTO p
+        SELECT k+1 FROM p WHERE k<9223372036854775807;
+      INSERT OR IGNORE INTO p VALUES
+        (-9223372036854775807-1), (-1), (0), (1), (9223372036854775807);
+      SELECT count(*)=(SELECT count(*) FROM m) FROM t;
+    }] {1}
+
+    do_test 1.$tn.1.$dist.$pgsz { seek_results t } [seek_results m]
+
+    # Remove runs of keys so that parent separators no longer equal the
+    # largest key of their child, rewrite some rows and re-insert others.
+    do_execsql_test 1.$tn.2.$dist.$pgsz {
+      DELETE FROM t WHERE a IN (SELECT a FROM t WHERE b%7=0 OR b BETWEEN 300 AND 340);
+      DELETE FROM m WHERE b%7=0 OR b BETWEEN 300 AND 340;
+      UPDATE t SET b=b+1 WHERE a IN (SELECT k FROM p WHERE k%3=0);
+      UPDATE m SET b=b+1 WHERE a IN (SELECT k FROM p WHERE k%3=0);
+      REPLACE INTO t SELECT k, -1 FROM p WHERE k%5=0;
+      INSERT INTO m SELECT a, b FROM t WHERE a IN (SELECT k FROM p WHERE k%5=0)
+        AND a NOT IN (SELECT a FROM m);
+      UPDATE m SET b=-1 WHERE a IN (SELECT k FROM p WHERE k%5=0);
+      SELECT count(*)=(SELECT count(*) FROM m) FROM t;
+    } {1}
+
+    do_test 1.$tn.3.$dist.$pgsz { seek_results t } [seek_results m]
+    do_execsql_test 1.$tn.4.$dist.$pgsz { PRAGMA integrity_check } {ok}
+  }
+}
+
+finish_test
