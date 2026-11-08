@@ -127,8 +127,17 @@ impl Row {
     }
 
     pub fn get_value(&self, idx: i32) -> Result<Value> {
-        let val = self.stmt.inner.column_value(idx);
-        <crate::Value as FromValue>::from_sql(val)
+        // Use the exact byte length, preserve NULs,
+        // and reject invalid UTF-8 instead of truncating or panicking.
+        match self.get_ref(idx)? {
+            ValueRef::Null => Ok(Value::Null),
+            ValueRef::Integer(n) => Ok(Value::Integer(n)),
+            ValueRef::Real(n) => Ok(Value::Real(n)),
+            ValueRef::Text(bytes) => std::str::from_utf8(bytes)
+                .map(|text| Value::Text(text.to_owned()))
+                .map_err(|_| Error::InvalidColumnType),
+            ValueRef::Blob(bytes) => Ok(Value::Blob(bytes.to_vec())),
+        }
     }
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
