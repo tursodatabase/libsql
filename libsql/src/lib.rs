@@ -185,7 +185,7 @@ pub use self::{
     database::{Builder, Database},
     limits::Limit,
     load_extension_guard::LoadExtensionGuard,
-    rows::{Column, Row, Rows},
+    rows::{Column, FromValue, Row, Rows},
     statement::Statement,
     transaction::{Transaction, TransactionBehavior},
 };
