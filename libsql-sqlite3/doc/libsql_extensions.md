@@ -413,3 +413,16 @@ static void sync_db(sqlite3 *db_primary, sqlite3 *db_backup){
   libsql_wal_end_commit(db_backup);
 }
 ```
+
+## Interpolation search for rowid seeks
+
+Seeking a rowid in a table b-tree (`WHERE rowid=?`, rowid ranges, joins on an `INTEGER PRIMARY KEY`, and the row lookup after an index scan) normally binary-searches every page on the way down. libSQL instead predicts the slot of the rowid on each page by linear interpolation. It interpolates between the bounds that the parent page already gives for that page: the cell that points to a child holds the child's largest rowid, and the cell to its left bounds the child from below. From the predicted slot it steps outward by 1, 2, 4, ... cells until the rowid is bracketed, then finishes with a binary search inside the bracket. The root page, and pages on the left or right edge of the tree where one bound is missing, read their first or last cell to get it.
+
+The result is always the same as with binary search, and the worst case is still O(log n) cell reads per page. Unevenly spaced rowids, or bounds left stale by deletes, only cost extra cell reads. Nothing changes in the file format or the API.
+
+It applies to pages with at least 16 cells. It is not used for appends (`BTREE_APPEND`), whose binary search already starts at the last cell. Index b-trees, including `WITHOUT ROWID` tables, are not affected.
+
+Compile-time options:
+
+* `-DLIBSQL_OMIT_INTERP_SEEK` -- compile it out and use the upstream SQLite binary search on every page. Builds with `SQLITE_OMIT_FLOATING_POINT` leave it out automatically.
+* `-DLIBSQL_INTERP_MIN_CELLS=N` -- smallest page, in cells, that uses interpolation (default 16).
