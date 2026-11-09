@@ -98,6 +98,17 @@ do_execsql_test vector-delete {
   SELECT rowid FROM vector_top_k('t_delete_idx', vector('[1,1,1]'), 1);
 } {10 20}
 
+do_execsql_test vector-delete-all {
+  CREATE TABLE t_delete_all( id INTEGER PRIMARY KEY, v FLOAT32(3) );
+  CREATE INDEX t_delete_all_idx ON t_delete_all( libsql_vector_idx(v) );
+  INSERT INTO t_delete_all VALUES (1, vector('[1,1,1]'));
+  INSERT INTO t_delete_all VALUES (2, vector('[-1,-1,-1]'));
+  DELETE FROM t_delete_all;
+  SELECT count(*) FROM t_delete_all_idx_shadow;
+  INSERT INTO t_delete_all VALUES (1, vector('[1,1,1]'));
+  SELECT rowid FROM vector_top_k('t_delete_all_idx', vector('[-1,-1,-1]'), 2);
+} {0 1}
+
 do_execsql_test vector-update {
   CREATE TABLE t_update( id INTEGER PRIMARY KEY, v FLOAT32(3) );
   CREATE INDEX t_update_idx ON t_update( libsql_vector_idx(v) );

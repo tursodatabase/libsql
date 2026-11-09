@@ -484,6 +484,20 @@ void sqlite3DeleteFrom(
     }
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->pSchema==pTab->pSchema );
+#ifndef SQLITE_OMIT_VECTOR
+      /*
+       * Vector index entries live in the index's shadow table, not in its
+       * b-tree, so OP_Clear alone leaves them behind. Open the index with
+       * OPFLAG_FORDELETE, which clears it, as REINDEX does.
+       */
+      if( IsVectorIndex(pIdx) ){
+        int iVecCur = pParse->nTab++;
+        sqlite3VdbeAddOp3(v, OP_OpenVectorIdx, iVecCur, pIdx->tnum, iDb);
+        sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+        sqlite3VdbeChangeP5(v, OPFLAG_FORDELETE);
+        sqlite3VdbeAddOp1(v, OP_Close, iVecCur);
+      }
+#endif
       if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
         sqlite3VdbeAddOp3(v, OP_Clear, pIdx->tnum, iDb, memCnt ? memCnt : -1);
       }else{
