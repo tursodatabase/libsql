@@ -67,6 +67,8 @@ pub enum Error {
     WalConflict,
     #[error("Reserved bytes not supported")]
     ReservedBytesNotSupported,
+    #[error("Disabling WAL checkpoints is only supported in local databases.")]
+    WalDisableCheckpointNotSupported,
 }
 
 #[cfg(feature = "hrana")]

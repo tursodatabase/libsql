@@ -88,6 +88,10 @@ impl Conn for LibsqlConnection {
         self.conn.get_reserved_bytes()
     }
 
+    fn wal_disable_checkpoint(&self) -> Result<()> {
+        self.conn.wal_disable_checkpoint()
+    }
+
     fn enable_load_extension(&self, onoff: bool) -> Result<()> {
         self.conn.enable_load_extension(onoff)
     }

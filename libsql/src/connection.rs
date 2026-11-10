@@ -56,6 +56,10 @@ pub(crate) trait Conn {
         Err(crate::Error::ReservedBytesNotSupported)
     }
 
+    fn wal_disable_checkpoint(&self) -> Result<()> {
+        Err(crate::Error::WalDisableCheckpointNotSupported)
+    }
+
     fn enable_load_extension(&self, _onoff: bool) -> Result<()> {
         Err(crate::Error::LoadExtensionNotSupported)
     }
@@ -265,6 +269,15 @@ impl Connection {
 
     pub fn get_reserved_bytes(&self) -> Result<i32> {
         self.conn.get_reserved_bytes()
+    }
+
+    /// Disable WAL checkpointing for this connection.
+    ///
+    /// Unlike `PRAGMA wal_autocheckpoint = 0`, this also stops the checkpoint
+    /// SQLite runs when the last connection closes. Only supported in local
+    /// databases.
+    pub fn wal_disable_checkpoint(&self) -> Result<()> {
+        self.conn.wal_disable_checkpoint()
     }
 
     /// Enable loading SQLite extensions from SQL queries and Rust API.

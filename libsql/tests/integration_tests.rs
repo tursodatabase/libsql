@@ -1000,3 +1000,31 @@ fn assert_sqlite_error<T>(res: Result<T>, code: i32) {
         }
     }
 }
+
+#[tokio::test]
+async fn test_wal_disable_checkpoint() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("test.db");
+
+    let db = libsql::Builder::new_local(&path).build().await.unwrap();
+    let conn = db.connect().unwrap();
+    conn.query("PRAGMA journal_mode = WAL", ()).await.unwrap();
+    conn.wal_disable_checkpoint().unwrap();
+    conn.execute("CREATE TABLE t (x INTEGER)", ())
+        .await
+        .unwrap();
+    conn.execute("INSERT INTO t VALUES (1)", ()).await.unwrap();
+    drop(conn);
+    drop(db);
+
+    // Without checkpointing disabled, the close above would have moved the
+    // frames into the database file and removed the WAL.
+    let wal = std::fs::metadata(tmp.path().join("test.db-wal")).unwrap();
+    assert!(wal.len() > 0);
+
+    let db = libsql::Builder::new_local(&path).build().await.unwrap();
+    let conn = db.connect().unwrap();
+    let mut rows = conn.query("SELECT x FROM t", ()).await.unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<i64>(0).unwrap(), 1);
+}

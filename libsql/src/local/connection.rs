@@ -603,7 +603,7 @@ impl Connection {
         Ok(buf)
     }
 
-    fn wal_disable_checkpoint(&self) -> Result<()> {
+    pub(crate) fn wal_disable_checkpoint(&self) -> Result<()> {
         let rc = unsafe { libsql_sys::ffi::libsql_wal_disable_checkpoint(self.handle()) };
         if rc != 0 {
             return Err(crate::errors::Error::SqliteFailure(
