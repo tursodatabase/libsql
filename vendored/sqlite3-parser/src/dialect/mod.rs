@@ -57,17 +57,19 @@ impl TokenType {
     }
 }
 
+// Input bytes are not validated as UTF-8 before parsing, so never assume they are.
+// Upstream gwenn/lemon-rs 14f422a (CVE-2025-47736).
 fn from_bytes(bytes: &[u8]) -> String {
-    unsafe { str::from_utf8_unchecked(bytes).to_owned() }
+    String::from_utf8_lossy(bytes).to_string()
 }
 
 include!(concat!(env!("OUT_DIR"), "/keywords.rs"));
 pub(crate) const MAX_KEYWORD_LEN: usize = 17;
 
 pub fn keyword_token(word: &[u8]) -> Option<TokenType> {
-    KEYWORDS
-        .get(UncasedStr::new(unsafe { str::from_utf8_unchecked(word) }))
-        .cloned()
+    // Invalid UTF-8 can never spell a keyword.
+    let word = str::from_utf8(word).ok()?;
+    KEYWORDS.get(UncasedStr::new(word)).cloned()
 }
 
 pub(crate) fn is_identifier(name: &str) -> bool {
@@ -401,5 +403,23 @@ impl TokenType {
             TK_READONLY => Some("READONLY"),
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod invalid_utf8_tests {
+    use super::{from_bytes, keyword_token};
+
+    // CVE-2025-47736: non-UTF-8 input must not panic the parser.
+    #[test]
+    fn invalid_utf8_is_not_a_keyword() {
+        assert_eq!(keyword_token(&[0xff, 0xfe, b'x']), None);
+        assert_eq!(keyword_token(b"select"), keyword_token(b"SELECT"));
+        assert!(keyword_token(b"select").is_some());
+    }
+
+    #[test]
+    fn invalid_utf8_bytes_are_replaced() {
+        assert_eq!(from_bytes(&[b'a', 0xff, b'b']), "a\u{fffd}b");
     }
 }
