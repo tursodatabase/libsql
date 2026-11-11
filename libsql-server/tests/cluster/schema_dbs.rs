@@ -98,8 +98,12 @@ fn schema_migration_basics() {
                 .await
                 .unwrap();
 
-            assert_eq!(
-                conn.query("select count(*) from test", ())
+            // The replica applies the delegated write asynchronously and the
+            // client does not give read-your-writes yet, so poll until it lands.
+            let mut count = 0;
+            for _ in 0..100 {
+                count = conn
+                    .query("select count(*) from test", ())
                     .await
                     .unwrap()
                     .next()
@@ -107,9 +111,13 @@ fn schema_migration_basics() {
                     .unwrap()
                     .unwrap()
                     .get::<u64>(0)
-                    .unwrap(),
-                2
-            );
+                    .unwrap();
+                if count == 2 {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            }
+            assert_eq!(count, 2);
             assert_eq!(
                 conn.query("select count(*) from test2", ())
                     .await
