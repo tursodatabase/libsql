@@ -25,12 +25,18 @@ typedef struct libsql_rows_future libsql_rows_future;
 
 typedef struct libsql_stmt libsql_stmt;
 
+typedef struct libsql_tx libsql_tx;
+
 typedef const libsql_database *libsql_database_t;
 
 typedef struct {
   int frame_no;
   int frames_synced;
 } replicated;
+
+typedef const libsql_connection *libsql_connection_t;
+
+typedef const libsql_tx *libsql_tx_t;
 
 typedef struct {
   const char *db_path;
@@ -43,8 +49,6 @@ typedef struct {
   char offline;
   const char *remote_encryption_key;
 } libsql_config;
-
-typedef const libsql_connection *libsql_connection_t;
 
 typedef const libsql_stmt *libsql_stmt_t;
 
@@ -84,6 +88,14 @@ int libsql_open_sync_with_webpki(const char *db_path,
                                  const char *encryption_key,
                                  libsql_database_t *out_db,
                                  const char **out_err_msg);
+
+int libsql_tx_begin(libsql_connection_t conn, int behavior, libsql_tx_t *out_tx, const char **out_err_msg);
+
+int libsql_tx_commit(libsql_tx_t tx, const char **out_err_msg);
+
+int libsql_tx_rollback(libsql_tx_t tx, const char **out_err_msg);
+
+void libsql_tx_free(libsql_tx_t tx);
 
 int libsql_open_sync_with_config(libsql_config config, libsql_database_t *out_db, const char **out_err_msg);
 
