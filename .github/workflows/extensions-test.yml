@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   c-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: libsql-sqlite3
@@ -41,7 +41,7 @@ jobs:
           make test
 
   rs-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: libsql-sqlite3
@@ -61,7 +61,7 @@ jobs:
           cargo test --features=loadable_extension
 
   extensions-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Extensions Tests
 
     steps:
