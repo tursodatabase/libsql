@@ -442,7 +442,6 @@ where
     }
 }
 
-#[cfg(feature = "remote")]
 impl<T> Drop for RawStream<T>
 where
     T: HttpSend,
@@ -556,4 +555,47 @@ pub enum SqlDescription {
     /// Key identifier of a SQL statement cached by the server. Key is valid only in
     /// the scope of current transaction/prepared statement, which sent a store SQL request.
     SqlId(SqlId),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex as StdMutex;
+
+    #[derive(Clone, Default)]
+    struct MockSend {
+        sent: Arc<StdMutex<Vec<String>>>,
+    }
+
+    impl HttpSend for MockSend {
+        type Stream = futures::stream::Empty<std::io::Result<Bytes>>;
+        type Result = futures::future::Pending<Result<Self::Stream>>;
+
+        fn http_send(&self, _url: Arc<str>, _auth: Arc<str>, _body: String) -> Self::Result {
+            futures::future::pending()
+        }
+
+        fn oneshot(self, _url: Arc<str>, _auth: Arc<str>, body: String) {
+            self.sent.lock().unwrap().push(body);
+        }
+    }
+
+    #[test]
+    fn dropping_stream_with_baton_sends_close() {
+        let client = MockSend::default();
+        let sent = client.sent.clone();
+        let raw = RawStream {
+            client,
+            baton: RefCell::new(Some("baton-1".to_string())),
+            pipeline_url: Arc::from("http://localhost/v3/pipeline"),
+            cursor_url: Arc::from("http://localhost/v3/cursor"),
+            auth_token: Arc::from(""),
+            sql_id_generator: RefCell::new(0),
+        };
+        drop(raw);
+        let sent = sent.lock().unwrap();
+        assert_eq!(sent.len(), 1);
+        assert!(sent[0].contains("baton-1"), "{}", sent[0]);
+        assert!(sent[0].contains("close"), "{}", sent[0]);
+    }
 }
