@@ -14,7 +14,7 @@ concurrency:
 jobs:
   golang-bindings:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       sqld:
@@ -37,7 +37,9 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: '>=1.21'
+        # 1.27.4 rejects the LTO section in the static lib built above (".llvmbc" in
+        # #cgo LDFLAGS); 1.27.3 is the last version that builds go-libsql.
+        go-version: '1.27.3'
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
 
