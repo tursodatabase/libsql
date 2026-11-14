@@ -232,6 +232,12 @@ where
                     .inner
                     .affected_row_count
                     .store(self.cursor_step.affected_rows().into(), Ordering::SeqCst);
+                if let Some(last_insert_rowid) = self.cursor_step.last_insert_rowid() {
+                    self.stream
+                        .inner
+                        .last_insert_rowid
+                        .store(last_insert_rowid, Ordering::SeqCst);
+                }
                 return Ok(None);
             }
         };

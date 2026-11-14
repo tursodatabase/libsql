@@ -291,7 +291,7 @@ where
 {
     pub affected_row_count: AtomicU64,
     total_changes: AtomicU64,
-    last_insert_rowid: AtomicI64,
+    pub(super) last_insert_rowid: AtomicI64,
     is_autocommit: AtomicBool,
     stream: Mutex<RawStream<T>>,
 }
