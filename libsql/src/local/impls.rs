@@ -23,6 +23,12 @@ impl Conn for LibsqlConnection {
         self.conn.execute(sql, params)
     }
 
+    async fn query(&self, sql: &str, params: Params) -> Result<Rows> {
+        let stmt = self.conn.prepare_single_statement(sql)?;
+        let rows = stmt.query(&params)?;
+        Ok(Rows::new(LibsqlRows(rows)))
+    }
+
     async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         self.conn.execute_batch(sql)
     }

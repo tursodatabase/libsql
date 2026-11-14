@@ -192,6 +192,20 @@ impl StmtKind {
 }
 
 impl Statement {
+    /// Reject input containing more than one SQL statement.
+    ///
+    /// The single-statement APIs use this check before dispatching to either
+    /// the local replica or the remote writer.  `execute_batch` remains the
+    /// explicit API for multi-statement input.
+    pub fn ensure_single(stmts: &[Self]) -> Result<()> {
+        if stmts.len() > 1 {
+            return Err(Error::Misuse(
+                "multiple SQL statements are not supported; use execute_batch instead".into(),
+            ));
+        }
+        Ok(())
+    }
+
     pub fn empty() -> Self {
         Self {
             stmt: String::new(),
