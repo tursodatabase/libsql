@@ -110,7 +110,7 @@ fn parse_queries(queries: Vec<QueryObject>) -> crate::Result<Vec<Query>> {
     // forbid them instead.
     if out
         .iter()
-        .any(|q| q.stmt.kind.is_release() || q.stmt.kind.is_release())
+        .any(|q| q.stmt.kind.is_release() || q.stmt.kind.is_savepoint())
     {
         return Err(Error::QueryError(
             "savepoints are not supported in HTTP API, use hrana protocol instead".to_string(),
@@ -151,6 +151,45 @@ async fn handle_query(
         builder.into_ret(),
     );
     Ok(res.into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_queries;
+    use crate::http::user::types::HttpQuery;
+
+    fn parse_statements(statements: &[&str]) -> crate::Result<Vec<crate::query::Query>> {
+        let body = serde_json::json!({ "statements": statements });
+        let query: HttpQuery = serde_json::from_value(body).unwrap();
+        parse_queries(query.statements)
+    }
+
+    #[test]
+    fn savepoints_are_rejected() {
+        for q in ["SAVEPOINT sp", "savepoint sp"] {
+            let err = parse_statements(&[q, "SELECT 1"]).unwrap_err();
+            assert!(
+                err.to_string().contains("savepoints are not supported"),
+                "unexpected error for `{q}`: {err}"
+            );
+        }
+    }
+
+    #[test]
+    fn release_statements_are_rejected() {
+        for q in ["RELEASE sp", "RELEASE SAVEPOINT sp", "ROLLBACK TO sp"] {
+            let err = parse_statements(&[q]).unwrap_err();
+            assert!(
+                err.to_string().contains("savepoints are not supported"),
+                "unexpected error for `{q}`: {err}"
+            );
+        }
+    }
+
+    #[test]
+    fn plain_statements_are_accepted() {
+        parse_statements(&["SELECT 1", "CREATE TABLE t (x)", "INSERT INTO t VALUES (1)"]).unwrap();
+    }
 }
 
 async fn show_console(
