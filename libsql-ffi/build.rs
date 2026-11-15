@@ -82,6 +82,7 @@ fn copy_with_cp(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> 
     #[cfg(not(target_os = "macos"))]
     let command = command.arg("--no-preserve=mode,ownership");
     match command
+        .arg("-f")
         .arg("-R")
         .arg(from.as_ref().to_str().unwrap())
         .arg(to.as_ref().to_str().unwrap())
