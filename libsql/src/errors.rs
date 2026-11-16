@@ -67,6 +67,8 @@ pub enum Error {
     WalConflict,
     #[error("Reserved bytes not supported")]
     ReservedBytesNotSupported,
+    #[error("TEXT value is not valid UTF-8: {0}")]
+    InvalidUtf8Text(std::str::Utf8Error),
 }
 
 #[cfg(feature = "hrana")]

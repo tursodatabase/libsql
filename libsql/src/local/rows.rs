@@ -7,7 +7,6 @@ use libsql_sys::ValueType;
 
 use std::cell::RefCell;
 use std::collections::VecDeque;
-use std::ffi::c_char;
 use std::fmt;
 use std::sync::Arc;
 /// Query result rows.
@@ -335,13 +334,8 @@ impl FromValue for Vec<u8> {
 
 impl FromValue for String {
     fn from_sql(val: libsql_sys::Value) -> Result<Self> {
-        let ret = val.text();
-        if ret.is_null() {
-            return Err(Error::NullValue);
-        }
-        let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const c_char) };
-        let ret = ret.to_str().unwrap();
-        Ok(ret.to_string())
+        let ret = crate::value::text_bytes(&val).ok_or(Error::NullValue)?;
+        Ok(String::from_utf8_lossy(ret).into_owned())
     }
 }
 
@@ -358,13 +352,8 @@ impl FromValue for &[u8] {
 
 impl FromValue for &str {
     fn from_sql(val: libsql_sys::Value) -> Result<Self> {
-        let ret = val.text();
-        if ret.is_null() {
-            return Err(Error::NullValue);
-        }
-        let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const c_char) };
-        let ret = ret.to_str().unwrap();
-        Ok(ret)
+        let ret = crate::value::text_bytes(&val).ok_or(Error::NullValue)?;
+        std::str::from_utf8(ret).map_err(Error::InvalidUtf8Text)
     }
 }
 

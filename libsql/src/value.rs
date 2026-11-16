@@ -221,6 +221,24 @@ where
     }
 }
 
+/// Returns the bytes of a TEXT value, or `None` when SQLite returns a null
+/// pointer.
+///
+/// The length comes from `sqlite3_value_bytes`, because TEXT may contain NUL
+/// bytes and is not guaranteed to be valid UTF-8.
+#[cfg(feature = "core")]
+pub(crate) fn text_bytes<'a>(value: &libsql_sys::Value) -> Option<&'a [u8]> {
+    // `sqlite3_value_text` must be called before `sqlite3_value_bytes`, so
+    // that the length is the length of the UTF-8 text.
+    let text = value.text();
+    if text.is_null() {
+        return None;
+    }
+    let len = value.bytes();
+    assert!(len >= 0, "unexpected negative bytes value from sqlite3");
+    Some(unsafe { std::slice::from_raw_parts(text, len as usize) })
+}
+
 #[cfg(feature = "core")]
 impl From<libsql_sys::Value> for Value {
     fn from(value: libsql_sys::Value) -> Value {
@@ -228,16 +246,10 @@ impl From<libsql_sys::Value> for Value {
             ValueType::Null => Value::Null,
             ValueType::Integer => Value::Integer(value.int64()),
             ValueType::Real => Value::Real(value.double()),
-            ValueType::Text => {
-                let v = value.text();
-                if v.is_null() {
-                    Value::Null
-                } else {
-                    let v = unsafe { std::ffi::CStr::from_ptr(v as *const std::ffi::c_char) };
-                    let v = v.to_str().unwrap();
-                    Value::Text(v.to_owned())
-                }
-            }
+            ValueType::Text => match text_bytes(&value) {
+                Some(v) => Value::Text(String::from_utf8_lossy(v).into_owned()),
+                None => Value::Null,
+            },
             ValueType::Blob => {
                 let (len, blob) = (value.bytes(), value.blob());
 
@@ -405,15 +417,10 @@ impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
             ValueType::Null => ValueRef::Null,
             ValueType::Integer => ValueRef::Integer(value.int64()),
             ValueType::Real => ValueRef::Real(value.double()),
-            ValueType::Text => {
-                let v = value.text();
-                if v.is_null() {
-                    ValueRef::Null
-                } else {
-                    let v = unsafe { std::ffi::CStr::from_ptr(v as *const std::ffi::c_char) };
-                    ValueRef::Text(v.to_bytes())
-                }
-            }
+            ValueType::Text => match text_bytes(&value) {
+                Some(v) => ValueRef::Text(v),
+                None => ValueRef::Null,
+            },
             ValueType::Blob => {
                 let (len, blob) = (value.bytes(), value.blob());
 
