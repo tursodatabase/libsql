@@ -135,6 +135,39 @@ async fn connection_query() {
 }
 
 #[tokio::test]
+async fn text_with_nul_byte() {
+    let conn = setup().await;
+    let mut rows = conn
+        .query("SELECT 'a' || char(0) || 'b', ?1", params!["c\0d"])
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get_value(0).unwrap(), Value::Text("a\0b".to_string()));
+    assert_eq!(row.get::<String>(0).unwrap(), "a\0b");
+    assert_eq!(row.get_str(0).unwrap(), "a\0b");
+    assert_eq!(row.get_value(1).unwrap(), Value::Text("c\0d".to_string()));
+}
+
+#[tokio::test]
+async fn text_with_invalid_utf8() {
+    let conn = setup().await;
+    let mut rows = conn
+        .query("SELECT CAST(x'61ff62' AS TEXT)", ())
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(
+        row.get_value(0).unwrap(),
+        Value::Text("a\u{fffd}b".to_string())
+    );
+    assert_eq!(row.get::<String>(0).unwrap(), "a\u{fffd}b");
+    assert!(matches!(
+        row.get_str(0),
+        Err(libsql::Error::InvalidUtf8Text(_))
+    ));
+}
+
+#[tokio::test]
 async fn connection_execute_transactional_batch_success() {
     let conn = setup().await;
 
