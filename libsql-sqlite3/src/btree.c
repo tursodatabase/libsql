@@ -5702,6 +5702,78 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   return btreeLast(pCur, pRes);
 }
 
+#if defined(SQLITE_OMIT_FLOATING_POINT) && !defined(LIBSQL_OMIT_INTERP_SEEK)
+# define LIBSQL_OMIT_INTERP_SEEK 1   /* the guess needs floating point */
+#endif
+#ifndef LIBSQL_OMIT_INTERP_SEEK
+/*
+** libSQL: interpolation search inside table (rowid) b-tree pages.
+**
+** Binary search ignores the values of the keys it compares.  Rowids are
+** integers and are usually close to evenly spaced within a page, so the
+** slot of a key can be predicted by linear interpolation between two
+** "knots": an exclusive lower and an inclusive upper bound on the keys of
+** the page.  When descending from an interior page those knots are free:
+** the cell that points at the child holds the child's largest rowid and
+** its left neighbour bounds the child from below.  The search on every
+** page records the nearest keys it compared on each side of intKey, and
+** those become the knots of the child it descends into.
+**
+** On a page with both knots and at least LIBSQL_INTERP_MIN_CELLS cells,
+** the first probe goes to the interpolated slot, the next ones step away
+** from it by 1, 2, 4, ... cells until intKey is bracketed, and the rest of
+** the search is the usual binary search inside the bracket.  The knots
+** only pick probe positions, so the result is always exact and stale or
+** corrupt separator keys only cost extra probes.  The worst case is about
+** twice the probes of a binary search.  A page that lacks a knot (the
+** root, and pages on the left or right edge of the tree) first probes its
+** first or last cell to get one.
+*/
+#ifndef LIBSQL_INTERP_MIN_CELLS
+# define LIBSQL_INTERP_MIN_CELLS 16
+#endif
+
+/*
+** Predict the slot of intKey on pPage by linear interpolation between the
+** knots kLo and kHi, and clamp it to [lwr,upr], the cells of pPage that
+** the search has not ruled out yet.
+**
+** The knots are the keys just outside [lwr,upr].  kLo is the key of cell
+** lwr-1, or if lwr==0 the lower bound that the parent gave for this page.
+** kHi is the key of cell upr+1 if the search has compared that cell.
+** Otherwise upr is the last cell and kHi is the upper bound from the
+** parent, which on a leaf is the key of the last cell itself and on an
+** interior page belongs to the right-most child, one slot past the last
+** cell.
+**
+** The caller guarantees kLo<intKey<=kHi.  That holds even on a corrupt
+** page, because both knots are keys that this search has itself compared
+** against intKey.  The differences are taken in unsigned 64-bit
+** arithmetic, where they cannot overflow and are exact however large the
+** rowids are.  nKey>=1, so there is no division by zero, and the quotient
+** lies between 0 and iHi-iLo.
+*/
+static SQLITE_INLINE int btreeInterpGuess(
+  MemPage *pPage,          /* The page being searched */
+  i64 intKey,              /* The rowid being sought */
+  i64 kLo, i64 kHi,        /* Knots:  kLo < intKey <= kHi */
+  int lwr, int upr         /* Cells not yet ruled out */
+){
+  u64 nOff = (u64)intKey - (u64)kLo;   /* 1 <= nOff <= nKey */
+  u64 nKey = (u64)kHi - (u64)kLo;
+  int iLo = lwr-1;                     /* Slot of kLo */
+  int iHi = upr + (upr<pPage->nCell-1 || !pPage->leaf);    /* Slot of kHi */
+  int i;
+  assert( kLo<intKey && intKey<=kHi );
+  assert( lwr>=0 && lwr<=upr && upr<pPage->nCell );
+  if( nKey>>63 ){ nOff >>= 1;  nKey >>= 1; }   /* Keep the casts signed */
+  i = iLo + (int)((double)(i64)nOff * (double)(iHi-iLo) / (double)(i64)nKey);
+  if( i<lwr ) i = lwr;
+  if( i>upr ) i = upr;
+  return i;
+}
+#endif /* LIBSQL_OMIT_INTERP_SEEK */
+
 /* Move the cursor so that it points to an entry in a table (a.k.a INTKEY)
 ** table near the key intKey.   Return a success code.
 **
@@ -5732,6 +5804,15 @@ int sqlite3BtreeTableMoveto(
   int *pRes                /* Write search results here */
 ){
   int rc;
+#ifndef LIBSQL_OMIT_INTERP_SEEK
+  i64 kLo = 0, kHi = 0;    /* Keys of the current page are in (kLo,kHi] */
+  u8 bKnots = 0;           /* 0x01: kLo is known and less than intKey.
+                           ** 0x02: kHi is known and not less than intKey */
+  int iGuess = 0;          /* Interpolated slot on the current page */
+  int nStep = 1;           /* Distance of the next probe from iGuess */
+  int eStep;               /* 0: bisect.  1: step away from iGuess.
+                           ** 2: probing an end cell for a missing knot */
+#endif
 
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
@@ -5809,8 +5890,22 @@ int sqlite3BtreeTableMoveto(
     upr = pPage->nCell-1;
     assert( biasRight==0 || biasRight==1 );
     idx = upr>>(1-biasRight); /* idx = biasRight ? upr : (lwr+upr)/2; */
+#ifndef LIBSQL_OMIT_INTERP_SEEK
+    eStep = 0;
+    if( !biasRight && upr>=LIBSQL_INTERP_MIN_CELLS-1 ){
+      if( (bKnots & 0x01)==0 ){
+        idx = 0;  eStep = 2;              /* first cell gives kLo */
+      }else if( (bKnots & 0x02)==0 ){
+        idx = upr;  eStep = 2;            /* last cell gives kHi */
+      }else{
+        idx = iGuess = btreeInterpGuess(pPage, intKey, kLo, kHi, 0, upr);
+        nStep = 1;  eStep = 1;
+      }
+    }
+#endif
     for(;;){
       i64 nCellKey;
+      assert( idx>=lwr && idx<=upr );   /* only probe inside the bracket */
       pCell = findCellPastPtr(pPage, idx);
       if( pPage->intKeyLeaf ){
         while( 0x80 <= *(pCell++) ){
@@ -5822,14 +5917,27 @@ int sqlite3BtreeTableMoveto(
       getVarint(pCell, (u64*)&nCellKey);
       if( nCellKey<intKey ){
         lwr = idx+1;
+#ifndef LIBSQL_OMIT_INTERP_SEEK
+        kLo = nCellKey;
+#endif
         if( lwr>upr ){ c = -1; break; }
       }else if( nCellKey>intKey ){
         upr = idx-1;
+#ifndef LIBSQL_OMIT_INTERP_SEEK
+        kHi = nCellKey;
+#endif
         if( lwr>upr ){ c = +1; break; }
       }else{
         assert( nCellKey==intKey );
         pCur->ix = (u16)idx;
         if( !pPage->leaf ){
+#ifndef LIBSQL_OMIT_INTERP_SEEK
+          /* The child holds keys in (key[idx-1], intKey].  kLo might be
+          ** an earlier, smaller key than key[idx-1].  That is harmless:
+          ** with kHi==intKey the guess is the child's last cell. */
+          bKnots = (u8)((bKnots & 0x01) | (lwr>0) | 0x02);
+          kHi = nCellKey;
+#endif
           lwr = idx;
           goto moveto_table_next_layer;
         }else{
@@ -5840,6 +5948,26 @@ int sqlite3BtreeTableMoveto(
           return SQLITE_OK;
         }
       }
+#ifndef LIBSQL_OMIT_INTERP_SEEK
+      if( eStep ){
+        if( eStep==2 ){
+          /* Probed the first or last cell for a missing knot and did not
+          ** find intKey beyond it.  If that was the first cell and kHi is
+          ** missing too, probe the last cell next. */
+          if( idx==0 && (bKnots & 0x02)==0 ){ idx = upr;  continue; }
+          idx = iGuess = btreeInterpGuess(pPage, intKey, kLo, kHi, lwr, upr);
+          nStep = 1;  eStep = 1;
+          continue;
+        }
+        /* Step away from iGuess by 1, 2, 4, ... cells, towards intKey.
+        ** Once a step passes intKey, the bound it set puts the next step
+        ** outside [lwr,upr], and the binary search takes over. */
+        idx = nCellKey<intKey ? iGuess+nStep : iGuess-nStep;
+        nStep += nStep;
+        if( idx>=lwr && idx<=upr ) continue;
+        eStep = 0;
+      }
+#endif
       assert( lwr+upr>=0 );
       idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2; */
     }
@@ -5852,6 +5980,11 @@ int sqlite3BtreeTableMoveto(
       rc = SQLITE_OK;
       goto moveto_table_finish;
     }
+#ifndef LIBSQL_OMIT_INTERP_SEEK
+    /* The child holds keys in (key[lwr-1], key[lwr]].  A side that no
+    ** probe on this page bounded keeps this page's own knot, if any. */
+    bKnots |= (u8)((lwr>0) | ((lwr<pPage->nCell)<<1));
+#endif
 moveto_table_next_layer:
     if( lwr>=pPage->nCell ){
       chldPg = get4byte(&pPage->aData[pPage->hdrOffset+8]);
