@@ -50,10 +50,14 @@ set DIST(skewed) {x*x*x*x}
 set DIST(neg)    {-(x*x*13) + 1000}
 set DIST(edge)   {CASE WHEN x%2 THEN 9223372036854775807 - (x/2)*(x/2)*(x/2)
                        ELSE -9223372036854775807 - 1 + (x/2)*3 END}
+# Rowids too large to be told apart as doubles: dense above 2^62, and
+# dense runs that each start at a multiple of 2^52.
+set DIST(high)   {4611686018427387904 + x}
+set DIST(shard)  {(x%7)*4503599627370496 + x/7}
 
 set tn 0
 foreach {pgsz n} {512 3000 4096 8000} {
-  foreach dist {dense gaps random skewed neg edge} {
+  foreach dist {dense gaps random skewed neg edge high shard} {
     incr tn
     reset_db
     execsql "PRAGMA page_size = $pgsz"

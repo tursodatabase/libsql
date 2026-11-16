@@ -420,6 +420,8 @@ Seeking a rowid in a table b-tree (`WHERE rowid=?`, rowid ranges, joins on an `I
 
 The result is always the same as with binary search, and the worst case is still O(log n) cell reads per page. Unevenly spaced rowids, or bounds left stale by deletes, only cost extra cell reads. Nothing changes in the file format or the API.
 
+The prediction uses exact 64-bit differences between rowids, so it works the same for rowids of any size, for example ids that carry a shard or a tag in their high bits. It helps most when rowids are evenly spaced within a page (sequential ids, ids with regular gaps, random ids, timestamps). When the gaps between neighbouring rowids are heavy-tailed, so that a few huge gaps dominate every page, a seek reads about 20% more cells than binary search does and takes about the same time.
+
 It applies to pages with at least 16 cells. It is not used for appends (`BTREE_APPEND`), whose binary search already starts at the last cell. Index b-trees, including `WITHOUT ROWID` tables, are not affected.
 
 Compile-time options:
