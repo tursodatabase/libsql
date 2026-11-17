@@ -251,12 +251,7 @@ impl ManagedConnectionWalWrapper {
                                     let started_at = slot.started_at;
                                     drop(current);
                                     let handle = {
-                                        self.manager
-                                            .inner
-                                            .abort_handle
-                                            .lock()
-                                            .get(&id)
-                                            .cloned()
+                                        self.manager.inner.abort_handle.lock().get(&id).cloned()
                                     };
                                     // the guard must be dropped before rolling back, or end write txn will
                                     // deadlock. Re-check ownership under the owner's mutex: the slot may
@@ -274,7 +269,8 @@ impl ManagedConnectionWalWrapper {
                                     tracing::debug!(line = line!(), "parking");
                                     // Bounded park either way: if the rollback didn't happen (owner busy
                                     // or already gone), re-evaluate shortly instead of waiting forever.
-                                    parker.park_deadline(Instant::now() + Duration::from_millis(10));
+                                    parker
+                                        .park_deadline(Instant::now() + Duration::from_millis(10));
                                     tracing::debug!(line = line!(), "unparked");
                                 } else {
                                     // otherwise we wait for the txn to timeout, or to be unparked by it
@@ -299,8 +295,12 @@ impl ManagedConnectionWalWrapper {
                                     warned_stale_slot = true;
                                     // Lock order current -> abort_handle is safe: nothing takes
                                     // abort_handle and then current.
-                                    let owner_alive =
-                                        self.manager.inner.abort_handle.lock().contains_key(&slot.id);
+                                    let owner_alive = self
+                                        .manager
+                                        .inner
+                                        .abort_handle
+                                        .lock()
+                                        .contains_key(&slot.id);
                                     tracing::warn!(
                                         "conn {} waiting on slot {slot:?} that has not progressed for {since_started:?} (owner connection still open: {owner_alive}, queue len: {})",
                                         self.id,
