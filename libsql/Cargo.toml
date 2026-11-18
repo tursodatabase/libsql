@@ -49,12 +49,14 @@ chrono = { version = "0.4", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports", "async", "async_futures", "async_tokio"] }
-pprof = { version = "0.14.0", features = ["criterion", "flamegraph"] }
 tokio = { version = "1.29.1", features = ["full"] }
 tokio-test = "0.4"
 tracing-subscriber = "0.3"
 tempfile = { version = "3.7.0" }
 rand = "0.8.5"
+
+[target.'cfg(not(windows))'.dev-dependencies]
+pprof = { version = "0.14.0", features = ["criterion", "flamegraph"] }
 
 [features]
 default = ["core", "replication", "remote", "sync", "tls"]
