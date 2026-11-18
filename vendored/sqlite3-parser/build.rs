@@ -18,7 +18,7 @@ fn main() -> Result<()> {
     // compile rlemon:
     {
         assert!(Build::new()
-            .target(&env::var("HOST").unwrap())
+            .host(&env::var("HOST").unwrap())
             .get_compiler()
             .to_command()
             .arg("-o")
