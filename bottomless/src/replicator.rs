@@ -483,6 +483,12 @@ impl Replicator {
                         }
                         drop(permit);
                     });
+
+                    // A JoinSet holds every finished task until it is joined, so
+                    // without this the set keeps one entry per uploaded batch for
+                    // the whole life of the replicator and memory grows with the
+                    // WAL. Reap the finished uploads as they complete.
+                    while join_set.try_join_next().is_some() {}
                 }
 
                 while join_set.join_next().await.is_some() {}
