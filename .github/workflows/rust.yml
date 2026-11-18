@@ -81,6 +81,22 @@ jobs:
       - uses: taiki-e/install-action@cargo-udeps
       - uses: Swatinem/rust-cache@v2
       - run: cargo +nightly hack udeps -p libsql --each-feature
+      # udeps ignores hyper-rustls and rustls, so these check compilability instead.
+      - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features remote,tls
+      - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features remote,tls,aws-lc-rs
+      - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features remote,tls-no-provider,aws-lc-rs
+      # The single-provider mobile config; no other job builds it.
+      - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p sql-experimental --no-default-features --features aws-lc-rs
+      - name: tls-no-provider without a provider must fail
+        run: |
+          if out=$(cargo check -p libsql --no-default-features --features remote,tls-no-provider 2>&1); then
+            echo "expected the crypto-provider compile_error, but the build succeeded"
+            exit 1
+          elif ! grep -q "needs a crypto provider" <<< "$out"; then
+            echo "$out"
+            echo "build failed, but not with the expected compile_error"
+            exit 1
+          fi
       - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features core 
       - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features replication 
       - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features remote
@@ -247,6 +263,9 @@ jobs:
       - name: Install x86_64-pc-windows-msvc target
         run: rustup target add x86_64-pc-windows-msvc
       - name: build libsql all features
+        # --all-features pulls aws-lc-sys, which shells out to nasm; the runner has none.
+        env:
+          AWS_LC_SYS_PREBUILT_NASM: 1
         run: |
           cargo clean -p libsql-ffi
           cargo build -p libsql --all-features --release --target x86_64-pc-windows-msvc
