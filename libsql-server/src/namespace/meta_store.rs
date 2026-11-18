@@ -309,7 +309,7 @@ fn process(msg: ChangeMsg, inner: Arc<MetaStoreInner>) {
     let (namespace, config, ret_chan, flush) = msg;
     if let Some(config) = config {
         let ret = if flush {
-            try_process(&inner, &namespace, &config)
+            try_process(&mut inner.conn.blocking_lock(), &inner, &namespace, &config)
         } else {
             Ok(())
         };
@@ -330,10 +330,13 @@ fn process(msg: ChangeMsg, inner: Arc<MetaStoreInner>) {
         let _ = ret_chan.send(ret);
     } else {
         let ret = if flush {
+            // Take "conn" before "configs", in the same order as `MetaStore::remove`: the opposite
+            // order deadlocks against a concurrent namespace delete.
+            let mut conn = inner.conn.blocking_lock();
             let mut configs = inner.configs.blocking_lock();
             if let Some(config_watch) = configs.get_mut(&namespace) {
                 let config = config_watch.subscribe().borrow().clone();
-                try_process(&inner, &namespace, &config.config)
+                try_process(&mut conn, &inner, &namespace, &config.config)
             } else {
                 Ok(())
             }
@@ -345,13 +348,13 @@ fn process(msg: ChangeMsg, inner: Arc<MetaStoreInner>) {
 }
 
 fn try_process(
+    conn: &mut MetaStoreConnection,
     inner: &MetaStoreInner,
     namespace: &NamespaceName,
     config: &DatabaseConfig,
 ) -> Result<()> {
     let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
 
-    let mut conn = inner.conn.blocking_lock();
     if let Some(schema) = config.shared_schema_name.as_ref() {
         let tx = conn.transaction()?;
         if inner.db_kind.is_primary() {
@@ -381,7 +384,7 @@ fn try_process(
         )?;
     }
 
-    if let Err(e) = checkpoint(&conn) {
+    if let Err(e) = checkpoint(conn) {
         tracing::warn!("failed to checkpoint metastore: {e}");
     }
 
@@ -727,5 +730,68 @@ impl MetaStoreHandle {
 
     pub fn namespace(&self) -> &NamespaceName {
         &self.namespace
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+
+    use super::*;
+
+    // A fork ends with `MetaStoreHandle::flush` and a namespace delete calls `MetaStore::remove`.
+    // Both take the `conn` and `configs` locks, so they must take them in the same order.
+    #[test]
+    fn concurrent_flush_and_remove_do_not_deadlock() {
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+
+        let finished = rt.block_on(async {
+            let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
+            let store = MetaStore::new(
+                Default::default(),
+                tmp.path(),
+                maker().unwrap(),
+                manager,
+                DatabaseKind::Primary,
+            )
+            .await
+            .unwrap();
+
+            let handle = store
+                .handle(NamespaceName::from_string("flushed".into()).unwrap())
+                .await;
+            let flushes = async {
+                for _ in 0..1000 {
+                    handle.flush().await.unwrap();
+                }
+            };
+            let removes = tokio::task::spawn_blocking({
+                let store = store.clone();
+                let removed = NamespaceName::from_string("removed".into()).unwrap();
+                move || {
+                    for _ in 0..1000 {
+                        store.remove(removed.clone()).unwrap();
+                    }
+                }
+            });
+
+            tokio::time::timeout(Duration::from_secs(30), async {
+                let ((), removes) = tokio::join!(flushes, removes);
+                removes.unwrap();
+            })
+            .await
+            .is_ok()
+        });
+
+        // The blocking threads of a deadlocked store never return, so don't wait for them.
+        rt.shutdown_background();
+        assert!(
+            finished,
+            "flush and remove deadlocked on the meta store locks"
+        );
     }
 }
