@@ -219,7 +219,7 @@ int double_cmp(const void *a, const void *b);
 
 static char *sqlite3StrDup( const char *z ) {
     char *res = sqlite3_malloc( (int) (strlen(z)+1) );
-    return strcpy( res, z );
+    return res ? strcpy( res, z ) : NULL;
 }
 
 /*
