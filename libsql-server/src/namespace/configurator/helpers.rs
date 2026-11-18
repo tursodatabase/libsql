@@ -86,7 +86,11 @@ pub(super) async fn make_primary_connection_maker(
             // disabling this allows us to prevent checkpointing of the wal file.
             if !std::env::var("LIBSQL_DISABLE_INIT_CHECKPOINTING").is_ok() {
                 tracing::debug!("Checkpointing before initializing bottomless");
-                crate::replication::primary::logger::checkpoint_db(&db_path.join("data"))?;
+                let data_path = db_path.join("data");
+                tokio::task::spawn_blocking(move || {
+                    crate::replication::primary::logger::checkpoint_db(&data_path)
+                })
+                .await??;
                 tracing::debug!("Checkpointed before initializing bottomless");
             } else {
                 tracing::warn!("Disabling initial checkpoint before bottomless");
@@ -111,16 +115,32 @@ pub(super) async fn make_primary_connection_maker(
         DEFAULT_AUTO_CHECKPOINT
     };
 
-    let logger = Arc::new(ReplicationLogger::open(
-        &db_path,
-        primary_config.max_log_size,
-        primary_config.max_log_duration,
-        is_dirty,
-        auto_checkpoint,
-        primary_config.scripted_backup.clone(),
-        name.clone(),
-        encryption_config.clone(),
-    )?);
+    // Opening the logger can recover the whole database file into the replication log, which
+    // takes a long time for big databases: keep it off the async workers.
+    let logger = tokio::task::spawn_blocking({
+        let db_path = db_path.to_path_buf();
+        let max_log_size = primary_config.max_log_size;
+        let max_log_duration = primary_config.max_log_duration;
+        let scripted_backup = primary_config.scripted_backup.clone();
+        let name = name.clone();
+        let encryption_config = encryption_config.clone();
+        let span = tracing::Span::current();
+        move || {
+            let _enter = span.enter();
+            ReplicationLogger::open(
+                &db_path,
+                max_log_size,
+                max_log_duration,
+                is_dirty,
+                auto_checkpoint,
+                scripted_backup,
+                name,
+                encryption_config,
+            )
+        }
+    })
+    .await??;
+    let logger = Arc::new(logger);
 
     tracing::debug!("sending stats");
 
