@@ -108,6 +108,22 @@ do_execsql_test vector-update {
   SELECT rowid FROM vector_top_k('t_update_idx', vector('[1,1,1]'), 2);
 } {20 10}
 
+do_execsql_test vector-top-k-zero {
+  CREATE TABLE t_top_k_zero( id INTEGER PRIMARY KEY, v FLOAT32(3) );
+  CREATE INDEX t_top_k_zero_idx ON t_top_k_zero( libsql_vector_idx(v) );
+  INSERT INTO t_top_k_zero VALUES (1, vector('[1,1,1]'));
+  INSERT INTO t_top_k_zero VALUES (2, vector('[-1,-1,-1]'));
+  SELECT count(*) FROM vector_top_k('t_top_k_zero_idx', vector('[1,1,1]'), 0);
+} {0}
+
+do_execsql_test vector-hidden-columns {
+  CREATE TABLE t_hidden( id INTEGER PRIMARY KEY, v FLOAT32(3) );
+  CREATE INDEX t_hidden_idx ON t_hidden( libsql_vector_idx(v) );
+  INSERT INTO t_hidden VALUES (10, vector('[1,1,1]'));
+  INSERT INTO t_hidden VALUES (20, vector('[-1,-1,-1]'));
+  SELECT idx, vector, k, id FROM vector_top_k('t_hidden_idx', '[1,1,1]', 2);
+} {t_hidden_idx {[1,1,1]} 2 10 t_hidden_idx {[1,1,1]} 2 20}
+
 do_execsql_test vector-simple {
   CREATE TABLE t_simple( v FLOAT32(3));
   CREATE INDEX t_simple_idx ON t_simple( libsql_vector_idx(v) );
