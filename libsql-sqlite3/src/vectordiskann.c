@@ -1478,6 +1478,11 @@ int diskAnnSearch(
     *pzErrMsg = sqlite3_mprintf("vector index(search): vector type differs from column type: %d != %d", pVector->type, pIndex->nNodeVectorType);
     return SQLITE_ERROR;
   }
+  if( k == 0 ){
+    pRows->nRows = 0;
+    pRows->nCols = pKey->nKeyColumns;
+    return SQLITE_OK;
+  }
 
   rc = diskAnnSelectRandomShadowRow(pIndex, &nStartRowid);
   if( rc == SQLITE_DONE ){
@@ -1491,8 +1496,9 @@ int diskAnnSearch(
   }
   rc = diskAnnSearchCtxInit(pIndex, &ctx, pVector, pIndex->searchL, k, DISKANN_BLOB_READONLY);
   if( rc != SQLITE_OK ){
+    // on failure the init has already freed what it allocated, so ctx must not be deinitialized
     *pzErrMsg = sqlite3_mprintf("vector index(search): failed to initialize search context");
-    goto out;
+    return rc;
   }
   rc = diskAnnSearchInternal(pIndex, &ctx, nStartRowid, pzErrMsg);
   if( rc != SQLITE_OK ){

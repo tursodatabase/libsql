@@ -217469,6 +217469,11 @@ int diskAnnSearch(
     *pzErrMsg = sqlite3_mprintf("vector index(search): vector type differs from column type: %d != %d", pVector->type, pIndex->nNodeVectorType);
     return SQLITE_ERROR;
   }
+  if( k == 0 ){
+    pRows->nRows = 0;
+    pRows->nCols = pKey->nKeyColumns;
+    return SQLITE_OK;
+  }
 
   rc = diskAnnSelectRandomShadowRow(pIndex, &nStartRowid);
   if( rc == SQLITE_DONE ){
@@ -217482,8 +217487,9 @@ int diskAnnSearch(
   }
   rc = diskAnnSearchCtxInit(pIndex, &ctx, pVector, pIndex->searchL, k, DISKANN_BLOB_READONLY);
   if( rc != SQLITE_OK ){
+    // on failure the init has already freed what it allocated, so ctx must not be deinitialized
     *pzErrMsg = sqlite3_mprintf("vector index(search): failed to initialize search context");
-    goto out;
+    return rc;
   }
   rc = diskAnnSearchInternal(pIndex, &ctx, nStartRowid, pzErrMsg);
   if( rc != SQLITE_OK ){
@@ -220050,6 +220056,7 @@ struct vectorVtab_cursor {
   int nWrites;               /* Number of row written to the storage backing virtual table */
   VectorOutRows rows;
   int iRow;
+  sqlite3_value *apArgs[3];  /* Arguments of the last xFilter, returned as the hidden columns */
 };
 
 /* Column numbers */
@@ -220057,6 +220064,14 @@ struct vectorVtab_cursor {
 #define VECTOR_COLUMN_VECTOR 1
 #define VECTOR_COLUMN_K      2
 #define VECTOR_COLUMN_OFFSET 3
+
+static void vectorVtabFreeArgs(vectorVtab_cursor *pCur){
+  int i;
+  for(i = 0; i < VECTOR_COLUMN_OFFSET; i++){
+    sqlite3_value_free(pCur->apArgs[i]);
+    pCur->apArgs[i] = NULL;
+  }
+}
 
 static int vectorVtabConnect(
   sqlite3 *db,
@@ -220110,6 +220125,7 @@ static int vectorVtabClose(sqlite3_vtab_cursor *cur){
   vectorVtab_cursor *pCur = (vectorVtab_cursor*)cur;
   vectorVtab *pVTab = (vectorVtab *)cur->pVtab;
   vectorOutRowsFree(pVTab->db, &pCur->rows);
+  vectorVtabFreeArgs(pCur);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }
@@ -220131,6 +220147,12 @@ static int vectorVtabColumn(
   int iCol                    /* Which column to return */
 ){
   vectorVtab_cursor *pCur = (vectorVtab_cursor*)cur;
+  if( iCol < VECTOR_COLUMN_OFFSET ){
+    if( pCur->apArgs[iCol] != NULL ){
+      sqlite3_result_value(context, pCur->apArgs[iCol]);
+    }
+    return SQLITE_OK;
+  }
   vectorOutRowsGet(context, &pCur->rows, pCur->iRow, iCol - VECTOR_COLUMN_OFFSET);
   return SQLITE_OK;
 }
@@ -220153,8 +220175,17 @@ static int vectorVtabFilter(
 ){
   vectorVtab_cursor *pCur = (vectorVtab_cursor *)pVtabCursor;
   vectorVtab *pVTab = (vectorVtab *)pVtabCursor->pVtab;
+  int i;
   pCur->rows.aIntValues = NULL;
   pCur->rows.ppValues = NULL;
+
+  vectorVtabFreeArgs(pCur);
+  for(i = 0; i < argc && i < VECTOR_COLUMN_OFFSET; i++){
+    pCur->apArgs[i] = sqlite3_value_dup(argv[i]);
+    if( pCur->apArgs[i] == NULL ){
+      return SQLITE_NOMEM_BKPT;
+    }
+  }
 
   if( vectorIndexSearch(pVTab->db, argc, argv, &pCur->rows, &pCur->nReads, &pCur->nWrites, &pVTab->base.zErrMsg) != 0 ){
     return SQLITE_ERROR;
