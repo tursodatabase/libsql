@@ -74,6 +74,38 @@ fn basic_query() {
 }
 
 #[test]
+fn sqlean_crypto_hashes() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    sim.host("primary", make_standalone_server);
+
+    sim.client("test", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        let mut rows = conn
+            .query("select hex(sha256('a')), hex(sha512('a'))", ())
+            .await?;
+        let row = rows.next().await?.unwrap();
+
+        assert_eq!(
+            row.get::<String>(0)?,
+            "CA978112CA1BBDCAFAC231B39A23DC4DA786EFF8147C4E72B9807785AFEE48BB"
+        );
+        assert_eq!(
+            row.get::<String>(1)?,
+            "1F40FC92DA241694750979EE6CF582F2D5D7D28E18335DE05ABC54D0560E0F5302860C652BF08D560252AA5E74210546F369FBBBCE8C12CFC7957B2652FE9A75"
+        );
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
 fn basic_metrics() {
     let mut sim = turmoil::Builder::new()
         .simulation_duration(Duration::from_secs(1000))
