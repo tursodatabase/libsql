@@ -60,6 +60,17 @@ jobs:
     - name: Build sql-experimental
       run: cargo b -j16 --release -p sql-experimental
 
+    # Newer Go toolchains reject static libraries that carry an embedded LLVM
+    # bitcode section during cgo linking ("disallowed LTO section .llvmbc").
+    # The section is only used for LTO (which the release build does not do),
+    # so strip it from the archive before handing it to go-libsql.
+    - name: Strip embedded LLVM bitcode from static library
+      run: |
+        set -eux
+        lib=target/release/libsql_experimental.a
+        objcopy --remove-section .llvmbc --remove-section .llvmcmd "$lib"
+        ranlib "$lib"
+
     - name: go-libsql checkout
       uses: actions/checkout@v3
       with:

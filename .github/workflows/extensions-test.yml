@@ -22,11 +22,15 @@ jobs:
       run:
         working-directory: libsql-sqlite3
     name: CR SQLite C Tests
+    env:
+      LIBCLANG_PATH: /usr/lib/llvm-18/lib
 
     steps:
       - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Install deps
+        run: sudo apt update && sudo apt install -y libclang-18-dev
       - name: build libsql
         run: |
           ./configure
@@ -46,11 +50,15 @@ jobs:
       run:
         working-directory: libsql-sqlite3
     name: CR SQLite Rust Tests
+    env:
+      LIBCLANG_PATH: /usr/lib/llvm-18/lib
 
     steps:
       - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Install deps
+        run: sudo apt update && sudo apt install -y libclang-18-dev
       - name: build libsql
         run: |
           ./configure
@@ -63,6 +71,11 @@ jobs:
   extensions-tests:
     runs-on: ubuntu-latest
     name: Extensions Tests
+    env:
+      LIBCLANG_PATH: /usr/lib/llvm-18/lib
+      # wabt-sys v0.6.1 bundles a CMakeLists that declares a pre-3.5
+      # cmake_minimum_required, which CMake 4.x refuses; allow it.
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
 
     steps:
       - uses: hecrj/setup-rust-action@v2
@@ -70,7 +83,7 @@ jobs:
         uses: actions/checkout@v3
       - name: install libs
         run: |
-          sudo apt install libblas-dev liblapack-dev
+          sudo apt update && sudo apt install -y libclang-18-dev libblas-dev liblapack-dev
       - name: build libsql and ffi bindings
         run: |
           cargo xtask build-bundled
