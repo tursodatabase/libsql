@@ -58,7 +58,13 @@ jobs:
         restore-keys: ${{ runner.os }}-cargo-
 
     - name: Build sql-experimental
+      # Disable embedded LLVM bitcode so the resulting static library has no
+      # .llvmbc section; newer Go toolchains reject it during cgo linking
+      # ("disallowed LTO section .llvmbc"). The release profile has no LTO,
+      # so dropping embedded bitcode is safe.
       run: cargo b -j16 --release -p sql-experimental
+      env:
+        RUSTFLAGS: "-C embed-bitcode=no"
 
     - name: go-libsql checkout
       uses: actions/checkout@v3
