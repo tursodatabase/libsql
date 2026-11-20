@@ -73,6 +73,9 @@ jobs:
     name: Extensions Tests
     env:
       LIBCLANG_PATH: /usr/lib/llvm-18/lib
+      # wabt-sys v0.6.1 bundles a CMakeLists that declares a pre-3.5
+      # cmake_minimum_required, which CMake 4.x refuses; allow it.
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
 
     steps:
       - uses: hecrj/setup-rust-action@v2
