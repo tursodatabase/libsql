@@ -133,22 +133,18 @@ impl Conn for SyncedConnection {
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {
         if self.should_execute_local(sql).await? {
-            Ok(Statement {
-                inner: Box::new(LibsqlStmt(self.local.prepare(sql)?)),
-            })
+            Ok(Statement::new(Box::new(LibsqlStmt(
+                self.local.prepare(sql)?,
+            ))))
         } else {
-            let stmt = Statement {
-                inner: Box::new(self.remote.prepare(sql).await?),
-            };
+            let stmt = Statement::new(Box::new(self.remote.prepare(sql).await?));
 
-            Ok(Statement {
-                inner: Box::new(SyncedStatement {
-                    conn: self.local.clone(),
-                    inner: stmt,
-                    context: self.context.clone(),
-                    read_your_writes: self.read_your_writes,
-                }),
-            })
+            Ok(Statement::new(Box::new(SyncedStatement {
+                conn: self.local.clone(),
+                inner: stmt,
+                context: self.context.clone(),
+                read_your_writes: self.read_your_writes,
+            })))
         }
     }
 
