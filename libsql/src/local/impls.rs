@@ -37,9 +37,7 @@ impl Conn for LibsqlConnection {
 
         let stmt = self.conn.prepare(sql)?;
 
-        Ok(Statement {
-            inner: Box::new(LibsqlStmt(stmt)),
-        })
+        Ok(Statement::new(Box::new(LibsqlStmt(stmt))))
     }
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction> {

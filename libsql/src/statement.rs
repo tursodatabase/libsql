@@ -1,6 +1,8 @@
 use crate::params::IntoParams;
+use crate::params::IntoValue;
 use crate::params::Params;
 pub use crate::Column;
+use crate::Value;
 use crate::{Error, Result};
 use crate::{Row, Rows};
 
@@ -30,9 +32,18 @@ pub(crate) trait Stmt {
 /// A cached prepared statement.
 pub struct Statement {
     pub(crate) inner: Box<dyn Stmt + Send + Sync>,
+    /// Values set with [`Statement::raw_bind_parameter`], by 1-based index.
+    raw_params: Vec<Value>,
 }
 
 impl Statement {
+    pub(crate) fn new(inner: Box<dyn Stmt + Send + Sync>) -> Self {
+        Self {
+            inner,
+            raw_params: Vec::new(),
+        }
+    }
+
     /// Finalize the cached statement.
     pub fn finalize(&mut self) {
         self.inner.finalize();
@@ -105,5 +116,72 @@ impl Statement {
     /// Fetch the list of columns for the prepared statement.
     pub fn columns(&self) -> Vec<Column> {
         self.inner.columns()
+    }
+
+    /// Bind a value to the parameter at `one_based_col_index`, to be used by
+    /// [`Statement::raw_execute`] and [`Statement::raw_query`].
+    ///
+    /// This is the low-level binding API from rusqlite, for callers such as
+    /// language bindings that receive parameters one at a time. Named
+    /// parameters (`:name`, `@name`, `$name`) are bound by their index too;
+    /// [`Statement::parameter_name`] maps an index to its name.
+    ///
+    /// Bindings are kept until [`Statement::clear_bindings`] is called, so
+    /// the statement can be run again with some values changed. A parameter
+    /// that was never bound is `NULL`, as in SQLite.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Error::Misuse` if the index is `0`, or larger than
+    /// [`Statement::parameter_count`] when the statement reports its
+    /// parameters (statements prepared on a remote connection report none
+    /// until they are executed, so only the lower bound is checked there).
+    pub fn raw_bind_parameter(
+        &mut self,
+        one_based_col_index: usize,
+        param: impl IntoValue,
+    ) -> Result<()> {
+        let count = self.parameter_count();
+        if one_based_col_index == 0 || (count > 0 && one_based_col_index > count) {
+            return Err(Error::Misuse(format!(
+                "parameter index {one_based_col_index} is out of range (1..={count})"
+            )));
+        }
+        let value = param.into_value()?;
+        if self.raw_params.len() < one_based_col_index {
+            self.raw_params.resize(one_based_col_index, Value::Null);
+        }
+        self.raw_params[one_based_col_index - 1] = value;
+        Ok(())
+    }
+
+    /// Clear the values set with [`Statement::raw_bind_parameter`].
+    pub fn clear_bindings(&mut self) {
+        self.raw_params.clear();
+    }
+
+    /// Execute the statement with the values set with
+    /// [`Statement::raw_bind_parameter`], check [`Connection::execute`] for usage.
+    pub async fn raw_execute(&self) -> Result<usize> {
+        self.inner.execute(&self.raw_params()).await
+    }
+
+    /// Run a query on the statement with the values set with
+    /// [`Statement::raw_bind_parameter`], check [`Connection::query`] for usage.
+    pub async fn raw_query(&self) -> Result<Rows> {
+        self.inner.query(&self.raw_params()).await
+    }
+
+    /// Every parameter the statement reports is bound, unbound ones as `NULL`,
+    /// so a value from an earlier run never survives in the underlying
+    /// SQLite statement.
+    fn raw_params(&self) -> Params {
+        let len = self.raw_params.len().max(self.parameter_count());
+        if len == 0 {
+            return Params::None;
+        }
+        let mut values = self.raw_params.clone();
+        values.resize(len, Value::Null);
+        Params::Positional(values)
     }
 }

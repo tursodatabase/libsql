@@ -1000,3 +1000,94 @@ fn assert_sqlite_error<T>(res: Result<T>, code: i32) {
         }
     }
 }
+
+#[tokio::test]
+async fn statement_raw_bind_parameter() {
+    let conn = setup().await;
+
+    let mut stmt = conn
+        .prepare("INSERT INTO users (id, name) VALUES (?1, ?2)")
+        .await
+        .unwrap();
+    stmt.raw_bind_parameter(1, 1).unwrap();
+    stmt.raw_bind_parameter(2, "Alice").unwrap();
+    assert_eq!(stmt.raw_execute().await.unwrap(), 1);
+
+    // Bindings are kept, so only the changed value needs to be bound again.
+    stmt.reset();
+    stmt.raw_bind_parameter(1, 2).unwrap();
+    assert_eq!(stmt.raw_execute().await.unwrap(), 1);
+
+    let mut rows = conn
+        .query("SELECT id, name FROM users ORDER BY id", ())
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<i64>(0).unwrap(), 1);
+    assert_eq!(row.get::<String>(1).unwrap(), "Alice");
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<i64>(0).unwrap(), 2);
+    assert_eq!(row.get::<String>(1).unwrap(), "Alice");
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn statement_raw_bind_parameter_named_and_unbound() {
+    let conn = setup().await;
+    conn.execute("INSERT INTO users (id, name) VALUES (1, 'Alice')", ())
+        .await
+        .unwrap();
+
+    let mut stmt = conn
+        .prepare("SELECT :id, :name, name FROM users WHERE id = :id")
+        .await
+        .unwrap();
+    assert_eq!(stmt.parameter_count(), 2);
+    assert_eq!(stmt.parameter_name(1), Some(":id"));
+    stmt.raw_bind_parameter(1, 1).unwrap();
+
+    // `:name` was never bound, so it is NULL.
+    let mut rows = stmt.raw_query().await.unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get_value(0).unwrap(), Value::Integer(1));
+    assert_eq!(row.get_value(1).unwrap(), Value::Null);
+    assert_eq!(row.get::<String>(2).unwrap(), "Alice");
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn statement_raw_bind_parameter_out_of_range() {
+    let conn = setup().await;
+
+    let mut stmt = conn
+        .prepare("SELECT * FROM users WHERE id = ?")
+        .await
+        .unwrap();
+    assert!(matches!(
+        stmt.raw_bind_parameter(0, 1),
+        Err(libsql::Error::Misuse(_))
+    ));
+    assert!(matches!(
+        stmt.raw_bind_parameter(2, 1),
+        Err(libsql::Error::Misuse(_))
+    ));
+    stmt.raw_bind_parameter(1, 1).unwrap();
+}
+
+#[tokio::test]
+async fn statement_clear_bindings() {
+    let conn = setup().await;
+
+    let mut stmt = conn.prepare("SELECT ?1").await.unwrap();
+    stmt.raw_bind_parameter(1, 42).unwrap();
+    let mut rows = stmt.raw_query().await.unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get_value(0).unwrap(), Value::Integer(42));
+    drop(rows);
+
+    stmt.reset();
+    stmt.clear_bindings();
+    let mut rows = stmt.raw_query().await.unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get_value(0).unwrap(), Value::Null);
+}

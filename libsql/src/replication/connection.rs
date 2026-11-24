@@ -498,9 +498,7 @@ impl Conn for RemoteConnection {
     async fn prepare(&self, sql: &str) -> Result<Statement> {
         let stmt = RemoteStatement::prepare(self.clone(), sql).await?;
 
-        Ok(crate::Statement {
-            inner: Box::new(stmt),
-        })
+        Ok(crate::Statement::new(Box::new(stmt)))
     }
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction> {
