@@ -126723,14 +126723,31 @@ SQLITE_PRIVATE void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
 SQLITE_PRIVATE int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   char *zTail;                  /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
+#ifndef SQLITE_OMIT_VECTOR
+  if( sqlite3StrICmp(zName, VECTOR_INDEX_GLOBAL_META_TABLE)==0 ){
+    return 1;
+  }
+#endif
   zTail = strrchr(zName, '_');
   if( zTail==0 ) return 0;
   *zTail = 0;
   pTab = sqlite3FindTable(db, zName, 0);
   *zTail = '_';
-  if( pTab==0 ) return 0;
-  if( !IsVirtual(pTab) ) return 0;
-  return sqlite3IsShadowTableOf(db, pTab, zName);
+  if( pTab && IsVirtual(pTab) ){
+    return sqlite3IsShadowTableOf(db, pTab, zName);
+  }
+#ifndef SQLITE_OMIT_VECTOR
+  if( sqlite3StrICmp(zTail, "_shadow")==0 ){
+    Index *pIdx;
+    *zTail = 0;
+    pIdx = sqlite3FindIndex(db, zName, 0);
+    *zTail = '_';
+    if( pIdx && IsVectorIndex(pIdx) ){
+      return 1;
+    }
+  }
+#endif
+  return 0;
 }
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
@@ -128506,6 +128523,16 @@ SQLITE_PRIVATE void sqlite3CreateIndex(
   }
   if( vectorIdxRc >= 1 ){
     pIndex->idxIsVector = 1;
+    if( pIndex->zName ){
+      char *zShadow = sqlite3MPrintf(db, "%s_shadow", pIndex->zName);
+      if( zShadow ){
+        Table *pShadow = sqlite3HashFind(&pIndex->pSchema->tblHash, zShadow);
+        if( pShadow && IsOrdinaryTable(pShadow) ){
+          pShadow->tabFlags |= TF_Shadow;
+        }
+        sqlite3DbFree(db, zShadow);
+      }
+    }
   }
   if( vectorIdxRc == 1 ){
     skipRefill = 1;
@@ -219598,11 +219625,15 @@ int vectorIndexDrop(sqlite3 *db, const char *zDbSName, const char *zIdxName) {
   // we want to try delete all traces of index on every attempt
   // this is done to prevent unrecoverable situations where index were dropped but index parameters deletion failed and second attempt will fail on first step
   int rcIdx, rcParams;
+  u64 savedFlags;
 
   assert( zDbSName != NULL );
 
+  savedFlags = db->flags & SQLITE_Defensive;
+  db->flags &= ~(u64)SQLITE_Defensive;
   rcIdx = diskAnnDropIndex(db, zDbSName, zIdxName);
   rcParams = removeIndexParameters(db, zIdxName);
+  db->flags |= savedFlags;
   return rcIdx != SQLITE_OK ? rcIdx : rcParams;
 }
 
@@ -219723,22 +219754,26 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
     return CREATE_OK;
   }
 
+  u64 savedFlags = db->flags & SQLITE_Defensive;
+  int res = CREATE_FAIL;
+  db->flags &= ~(u64)SQLITE_Defensive;
+
   rc = initVectorIndexMetaTable(db, zDbSName);
   if( rc != SQLITE_OK ){
     sqlite3ErrorMsg(pParse, "vector index: failed to init meta table: %s", sqlite3_errmsg(db));
-    return CREATE_FAIL;
+    goto out;
   }
   rc = parseVectorIdxParams(pParse, &idxParams, type, dims, pListItem + 1, pArgsList->nExpr - 1);
   if( rc != SQLITE_OK ){
-    return CREATE_FAIL;
+    goto out;
   }
   if( vectorIdxKeyGet(pIdx, &idxKey, &pzErrMsg) != 0 ){
     sqlite3ErrorMsg(pParse, "vector index: failed to detect underlying table key: %s", pzErrMsg);
-    return CREATE_FAIL;
+    goto out;
   }
   if( idxKey.nKeyColumns != 1 ){
     sqlite3ErrorMsg(pParse, "vector index: unsupported for tables without ROWID and composite primary key");
-    return CREATE_FAIL;
+    goto out;
   }
   rc = diskAnnCreateIndex(db, zDbSName, pIdx->zName, &idxKey, &idxParams, &pzErrMsg);
   if( rc != SQLITE_OK ){
@@ -219747,7 +219782,7 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
     }else{
       sqlite3ErrorMsg(pParse, "vector index: unable to initialize diskann");
     }
-    return CREATE_FAIL;
+    goto out;
   }
   rc = insertIndexParameters(db, zDbSName, pIdx->zName, &idxParams);
 
@@ -219757,13 +219792,17 @@ int vectorIndexCreate(Parse *pParse, const Index *pIdx, const char *zDbSName, co
     // we are violating unique constraint here which means that someone inserted parameters in the table before us
     // taking aside corruption scenarios, this can be in case of loading dump (because tables and data are loaded before indices)
     // this case is valid and we must proceed with index creating but avoid index-refill step as it is already filled
-    return CREATE_OK_SKIP_REFILL;
+    res = CREATE_OK_SKIP_REFILL;
+    goto out;
   }
   if( rc != SQLITE_OK ){
     sqlite3ErrorMsg(pParse, "vector index: unable to update global metadata table");
-    return CREATE_FAIL;
+    goto out;
   }
-  return CREATE_OK;
+  res = CREATE_OK;
+out:
+  db->flags |= savedFlags;
+  return res;
 }
 
 // extracts schema and index name part if full index name is composite (e.g. schema_name.index_name)
