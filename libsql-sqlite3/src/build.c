@@ -2566,14 +2566,31 @@ void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
 int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   char *zTail;                  /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
+#ifndef SQLITE_OMIT_VECTOR
+  if( sqlite3StrICmp(zName, VECTOR_INDEX_GLOBAL_META_TABLE)==0 ){
+    return 1;
+  }
+#endif
   zTail = strrchr(zName, '_');
   if( zTail==0 ) return 0;
   *zTail = 0;
   pTab = sqlite3FindTable(db, zName, 0);
   *zTail = '_';
-  if( pTab==0 ) return 0;
-  if( !IsVirtual(pTab) ) return 0;
-  return sqlite3IsShadowTableOf(db, pTab, zName);
+  if( pTab && IsVirtual(pTab) ){
+    return sqlite3IsShadowTableOf(db, pTab, zName);
+  }
+#ifndef SQLITE_OMIT_VECTOR
+  if( sqlite3StrICmp(zTail, "_shadow")==0 ){
+    Index *pIdx;
+    *zTail = 0;
+    pIdx = sqlite3FindIndex(db, zName, 0);
+    *zTail = '_';
+    if( pIdx && IsVectorIndex(pIdx) ){
+      return 1;
+    }
+  }
+#endif
+  return 0;
 }
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
@@ -4349,6 +4366,16 @@ void sqlite3CreateIndex(
   }
   if( vectorIdxRc >= 1 ){
     pIndex->idxIsVector = 1;
+    if( pIndex->zName ){
+      char *zShadow = sqlite3MPrintf(db, "%s_shadow", pIndex->zName);
+      if( zShadow ){
+        Table *pShadow = sqlite3HashFind(&pIndex->pSchema->tblHash, zShadow);
+        if( pShadow && IsOrdinaryTable(pShadow) ){
+          pShadow->tabFlags |= TF_Shadow;
+        }
+        sqlite3DbFree(db, zShadow);
+      }
+    }
   }
   if( vectorIdxRc == 1 ){
     skipRefill = 1;

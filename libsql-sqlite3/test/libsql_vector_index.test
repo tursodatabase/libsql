@@ -532,6 +532,10 @@ do_execsql_test vector-index-attach-query {
   SELECT * FROM vector_top_k('t.t_attach_idx', vector('[3,4,5]'), 4);
 } {3 4 2 1}
 
+do_execsql_test vector-index-attach-table-list {
+  SELECT name, type FROM pragma_table_list WHERE schema = 't' ORDER BY name;
+} {libsql_vector_meta_shadow shadow sqlite_schema table t_attach table t_attach_idx_shadow shadow}
+
 # protect binary file with test in order to make it more explicit when someone change it (expclitily or not; with malicious intent or not)
 do_test vector-index-v2-anti-hacker-check {
   md5file libsql_vector_index_v2.db
@@ -570,3 +574,65 @@ do_test vector-index-v2-query-3 {
 do_test vector-index-v2-query-4 {
   execsql { SELECT t.id FROM vector_top_k('t_idx', vector('[-1,1,1,1]'), 3) i INNER JOIN t ON t.rowid = i.id; } dbv2
 } {d a b}
+
+do_test vector-pragma-table-list-shadow {
+  forcedelete test_shadow_list.db
+  forcedelete test_shadow_list.db-journal
+  sqlite3 db_shadow test_shadow_list.db
+  execsql {
+    CREATE TABLE docs(id INTEGER PRIMARY KEY, emb F32_BLOB(3));
+    CREATE INDEX docs_emb ON docs(libsql_vector_idx(emb));
+    CREATE INDEX docs_id_idx ON docs(id);
+    CREATE TABLE docs_id_idx_shadow(x INT);
+    CREATE TABLE user_shadow(x INT);
+    SELECT name, type FROM pragma_table_list WHERE schema = 'main' ORDER BY name;
+  } db_shadow
+} {docs table docs_emb_shadow shadow docs_id_idx_shadow table libsql_vector_meta_shadow shadow sqlite_schema table user_shadow table}
+
+do_test vector-pragma-table-list-shadow-reopen {
+  db_shadow close
+  sqlite3 db_shadow test_shadow_list.db
+  execsql {
+    SELECT name, type FROM pragma_table_list WHERE schema = 'main' ORDER BY name;
+  } db_shadow
+} {docs table docs_emb_shadow shadow docs_id_idx_shadow table libsql_vector_meta_shadow shadow sqlite_schema table user_shadow table}
+
+do_test vector-pragma-table-list-shadow-after-drop {
+  execsql {
+    DROP INDEX docs_emb;
+    SELECT name, type FROM pragma_table_list WHERE schema = 'main' ORDER BY name;
+  } db_shadow
+} {docs table docs_id_idx_shadow table libsql_vector_meta_shadow shadow sqlite_schema table user_shadow table}
+
+do_test vector-shadow-defensive-mode {
+  sqlite3_db_config db_shadow DEFENSIVE 1
+  execsql {
+    CREATE INDEX docs_emb2 ON docs(libsql_vector_idx(emb));
+    INSERT INTO docs VALUES (1, vector('[1,2,3]')), (2, vector('[4,5,6]'));
+  } db_shadow
+  set res {}
+  lappend res [execsql { SELECT id FROM vector_top_k('docs_emb2', vector('[1,2,3]'), 1); } db_shadow]
+  lappend res [catchsql { DELETE FROM libsql_vector_meta_shadow; } db_shadow]
+  lappend res [catchsql { DELETE FROM docs_emb2_shadow; } db_shadow]
+  lappend res [catchsql { DROP TABLE docs_emb2_shadow; } db_shadow]
+  lappend res [catchsql { DROP TABLE libsql_vector_meta_shadow; } db_shadow]
+  lappend res [catchsql { ALTER TABLE docs_emb2_shadow RENAME TO stolen; } db_shadow]
+  execsql {
+    VACUUM;
+    DELETE FROM docs;
+    DROP INDEX docs_emb2;
+    DROP TABLE docs;
+  } db_shadow
+  db_shadow close
+  forcedelete test_shadow_list.db
+  forcedelete test_shadow_list.db-journal
+  set res
+} [list \
+  1 \
+  {1 {table libsql_vector_meta_shadow may not be modified}} \
+  {1 {table docs_emb2_shadow may not be modified}} \
+  {1 {table docs_emb2_shadow may not be dropped}} \
+  {1 {table libsql_vector_meta_shadow may not be dropped}} \
+  {1 {table docs_emb2_shadow may not be altered}} \
+]
+
